@@ -58,9 +58,11 @@ logger = logging.getLogger("geox.tools.attributes")
 # Attribute Result
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class AttributeResult:
     """Output from a single attribute computation."""
+
     name: str
     volume: np.ndarray
     units: str
@@ -74,11 +76,10 @@ class AttributeResult:
 @dataclass
 class AttributeStack:
     """Collection of computed attributes with governance metadata."""
+
     attributes: dict[str, AttributeResult] = field(default_factory=dict)
     source_volume_checksum: str = ""
-    timestamp: str = field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
     def add(self, result: AttributeResult) -> None:
         self.attributes[result.name] = result
@@ -99,6 +100,7 @@ class AttributeStack:
 # ---------------------------------------------------------------------------
 # 1. COHERENCE / SEMBLANCE
 # ---------------------------------------------------------------------------
+
 
 def compute_coherence(
     volume: np.ndarray,
@@ -130,16 +132,14 @@ def compute_coherence(
     wi, wx, ws = window_shape
     hi, hx, hs = wi // 2, wx // 2, ws // 2
 
-    padded = np.pad(volume.astype(np.float64), (
-        (hi, hi), (hx, hx), (hs, hs)
-    ), mode="reflect")
+    padded = np.pad(volume.astype(np.float64), ((hi, hi), (hx, hx), (hs, hs)), mode="reflect")
 
     coherence = np.zeros((ni, nx, ns), dtype=np.float64)
 
     for i in range(ni):
         for x in range(nx):
             for s in range(ns):
-                window = padded[i:i + wi, x:x + wx, s:s + ws]
+                window = padded[i : i + wi, x : x + wx, s : s + ws]
                 n_traces = wi * wx
 
                 # Reshape to (n_traces, samples)
@@ -147,8 +147,8 @@ def compute_coherence(
 
                 # Semblance = (sum of traces)^2 / (n * sum of traces^2)
                 sum_trace = traces.sum(axis=0)
-                numerator = (sum_trace ** 2).sum()
-                denominator = n_traces * (traces ** 2).sum()
+                numerator = (sum_trace**2).sum()
+                denominator = n_traces * (traces**2).sum()
 
                 if denominator > 0:
                     coherence[i, x, s] = numerator / denominator
@@ -210,6 +210,7 @@ def compute_coherence(
 # ---------------------------------------------------------------------------
 # 2. VOLUMETRIC CURVATURE
 # ---------------------------------------------------------------------------
+
 
 def compute_curvature(
     volume: np.ndarray,
@@ -349,6 +350,7 @@ def compute_curvature(
 # 3. SPECTRAL DECOMPOSITION
 # ---------------------------------------------------------------------------
 
+
 def compute_spectral_decomposition(
     traces: np.ndarray,
     sample_rate_ms: float = 4.0,
@@ -418,14 +420,18 @@ def compute_spectral_decomposition(
             padded_trace = np.pad(trace, half_win, mode="reflect")
 
             for s in range(n_samples):
-                segment = padded_trace[s:s + window_samples] * hann_window
+                segment = padded_trace[s : s + window_samples] * hann_window
                 spectrum = np.fft.rfft(segment)
                 # RMS energy in band
-                band_energy[t, s] = np.sqrt(np.mean(np.abs(spectrum[freq_mask]) ** 2)) if freq_mask.any() else 0.0
+                band_energy[t, s] = (
+                    np.sqrt(np.mean(np.abs(spectrum[freq_mask]) ** 2)) if freq_mask.any() else 0.0
+                )
 
         # Reshape back if 3D input
         if traces.ndim == 3:
             band_volume = band_energy.reshape(ni, nx, n_samples)
+        elif traces.ndim == 2:
+            band_volume = band_energy.reshape(n_traces, n_samples)
         else:
             band_volume = band_energy
 
@@ -474,16 +480,18 @@ def compute_spectral_decomposition(
             created_by="compute_spectral_decomposition",
         )
 
-        results.append(AttributeResult(
-            name=band_name,
-            volume=band_volume,
-            units="amplitude",
-            equation_reference="STFT spectral decomposition, Partyka et al. (1999)",
-            uncertainty=0.12,
-            contrast_metadata=cm,
-            processing_time_ms=round(band_elapsed, 2),
-            notes=f"RMS energy in {band_low}-{band_high} Hz band. Tuning effects may amplify thin beds.",
-        ))
+        results.append(
+            AttributeResult(
+                name=band_name,
+                volume=band_volume,
+                units="amplitude",
+                equation_reference="STFT spectral decomposition, Partyka et al. (1999)",
+                uncertainty=0.12,
+                contrast_metadata=cm,
+                processing_time_ms=round(band_elapsed, 2),
+                notes=f"RMS energy in {band_low}-{band_high} Hz band. Tuning effects may amplify thin beds.",
+            )
+        )
 
     return results
 
@@ -491,6 +499,7 @@ def compute_spectral_decomposition(
 # ---------------------------------------------------------------------------
 # 4. AMPLITUDE ATTRIBUTES
 # ---------------------------------------------------------------------------
+
 
 def compute_rms_amplitude(
     volume: np.ndarray,
@@ -515,8 +524,8 @@ def compute_rms_amplitude(
             trace = volume[i, x, :].astype(np.float64)
             padded = np.pad(trace, half_w, mode="reflect")
             for s in range(volume.shape[2]):
-                window = padded[s:s + window_samples]
-                result[i, x, s] = np.sqrt(np.mean(window ** 2))
+                window = padded[s : s + window_samples]
+                result[i, x, s] = np.sqrt(np.mean(window**2))
 
     elapsed = (time.perf_counter() - start) * 1000
 
@@ -588,9 +597,9 @@ def compute_envelope(volume: np.ndarray) -> AttributeResult:
                 h[0] = 1
                 if n % 2 == 0:
                     h[n // 2] = 1
-                    h[1:n // 2] = 2
+                    h[1 : n // 2] = 2
                 else:
-                    h[1:(n + 1) // 2] = 2
+                    h[1 : (n + 1) // 2] = 2
             analytic = np.fft.ifft(spectrum * h)
             result[i, x, :] = np.abs(analytic)
 
@@ -675,6 +684,7 @@ def compute_attributes(
         AttributeStack with all computed attributes + ContrastMetadata
     """
     import hashlib
+
     checksum = hashlib.sha256(volume.tobytes()).hexdigest()[:16]
 
     stack = AttributeStack(source_volume_checksum=checksum)
@@ -708,8 +718,7 @@ def compute_attributes(
 
         else:
             logger.warning(
-                f"Unknown attribute '{attr_name}'. "
-                f"Supported: {list(SUPPORTED_ATTRIBUTES.keys())}"
+                f"Unknown attribute '{attr_name}'. Supported: {list(SUPPORTED_ATTRIBUTES.keys())}"
             )
 
     return stack
@@ -718,6 +727,7 @@ def compute_attributes(
 # ---------------------------------------------------------------------------
 # SeismicAttributeTool — BaseTool for ToolRegistry
 # ---------------------------------------------------------------------------
+
 
 class SeismicAttributeTool(BaseTool):
     """

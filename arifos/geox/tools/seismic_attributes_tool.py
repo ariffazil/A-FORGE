@@ -8,8 +8,8 @@ Computes:
   Classical: coherence, curvature_max, curvature_min, envelope, spectral_rms
   Meta:      meta_fault_prob (DL segmentation), sweetness
 
-All outputs carry ContrastMetadata (contrast_wrapper.py) and
-uncertainty ≥ 0.15 for perceptual outputs, [0.03, 0.15] for physical.
+All outputs carry ContrastMetadata and
+uncertainty >= 0.15 for perceptual/meta outputs, [0.03, 0.15] for physical.
 """
 
 from __future__ import annotations
@@ -30,11 +30,16 @@ from arifos.geox.base_tool import (
     _make_provenance,
     _make_quantity,
 )
-from arifos.geox.contrast_wrapper import (
-    ContrastMetadata,
-    contrast_governed_tool,
-)
 from arifos.geox.geox_schemas import CoordinatePoint
+from arifos.geox.tools.contrast_metadata import (
+    ContrastMetadata,
+    ContrastSourceDomain,
+    PhysicalProxy,
+    ConfidenceClass,
+    VisualTransform,
+    create_filter_contrast_metadata,
+    create_meta_attribute_contrast_metadata,
+)
 
 logger = logging.getLogger("geox.tools.seismic_attributes")
 
@@ -71,17 +76,16 @@ def _compute_coherence(volume: np.ndarray, window: int = 3) -> np.ndarray:
     half = window // 2
     padded = np.pad(volume, ((0, 0), (half, half)), mode="reflect")
     for y in range(h):
-        trace = padded[y : y + 1, :]
         windowed = np.array([padded[y, x : x + window] for x in range(w)])
         mean = windowed.mean(axis=0)
         numerator = ((windowed - mean) ** 2).sum(axis=0)
-        denominator = ((windowed - trace.flatten()) ** 2).sum(axis=0)
+        denominator = window * ((windowed - padded[y : y + 1, half : half + w].T) ** 2).sum(axis=1)
         denom_safe = np.where(denominator > 1e-10, denominator, 1e-10)
         output[y] = np.clip(1 - numerator / (window * denom_safe), 0, 1)
     return output
 
 
-def _compute_curvature(volume: np.ndarray, axis: int = 2) -> np.ndarray:
+def _compute_curvature(volume: np.ndarray, axis: int = 1) -> np.ndarray:
     """Second derivative-based curvature along specified axis."""
     first = np.gradient(volume, axis=axis)
     second = np.gradient(first, axis=axis)
@@ -89,37 +93,40 @@ def _compute_curvature(volume: np.ndarray, axis: int = 2) -> np.ndarray:
 
 
 def _compute_envelope(volume: np.ndarray) -> np.ndarray:
-    """Complex trace envelope — amplitude of analytic signal."""
+    """Complex trace envelope via Hilbert transform."""
     from numpy.fft import fft, ifft
 
-    n = volume.shape[-1] if volume.ndim == 3 else volume.shape[1]
-    h = np.zeros(n) if volume.ndim == 2 else np.zeros(volume.shape)
-    for i in range(volume.shape[0] if volume.ndim == 3 else 1):
-        trace = volume[i] if volume.ndim == 3 else volume
-        analytic = fft(trace)
-        analytic[1:] = 2 * analytic[1:]
-        analytic[0] = 0
-        env = np.abs(ifft(analytic))
-        if volume.ndim == 3:
-            h[i] = env
-        else:
-            h = env
-    return h
+    h, w = volume.shape[:2]
+    output = np.zeros((h, w), dtype=np.float64)
+    for i in range(h):
+        trace = volume[i].astype(np.float64)
+        n = len(trace)
+        spectrum = fft(trace)
+        analytic = np.zeros(n, dtype=np.complex128)
+        analytic[1 : n // 2] = 2 * spectrum[1 : n // 2]
+        analytic[0] = spectrum[0]
+        if n % 2 == 0:
+            analytic[n // 2] = spectrum[n // 2]
+        output[i] = np.abs(ifft(analytic))
+    return output
 
 
-def _compute_spectral_rms(volume: np.ndarray, window_hz: tuple = (15, 45)) -> np.ndarray:
-    """RMS amplitude in frequency window via STFT-like approach."""
+def _compute_spectral_rms(volume: np.ndarray) -> np.ndarray:
+    """RMS amplitude in 15-45 Hz window."""
     from numpy.fft import fft, fftfreq
 
-    output = np.zeros_like(volume, dtype=np.float64)
-    for i in range(volume.shape[0]):
-        trace = volume[i]
+    h, w = volume.shape[:2]
+    output = np.zeros((h, w), dtype=np.float64)
+    for i in range(h):
+        trace = volume[i].astype(np.float64)
         N = len(trace)
         spectrum = np.abs(fft(trace))[: N // 2]
         freqs = fftfreq(N, 1.0 / 1000)[: N // 2]
-        f_min, f_max = window_hz
-        mask = (freqs >= f_min) & (freqs <= f_max)
-        output[i] = np.sqrt(np.mean(spectrum[mask] ** 2))
+        mask = (freqs >= 15) & (freqs <= 45)
+        if mask.any():
+            output[i] = np.sqrt(np.mean(spectrum[mask] ** 2))
+        else:
+            output[i] = 0.0
     return output
 
 
@@ -134,26 +141,21 @@ def _compute_sweetness(volume: np.ndarray) -> np.ndarray:
 def _compute_meta_fault_prob(
     volume: np.ndarray, coherence: np.ndarray, curvature: np.ndarray
 ) -> np.ndarray:
-    """
-    Simplified meta-fault probability via fusion of coherence + curvature.
-    In production: replace with trained CNN/U-Net segmentation.
-    """
+    """Simplified meta-fault probability via fusion."""
     fusion = 0.5 * (1 - coherence) + 0.5 * np.abs(curvature)
     fusion = (fusion - fusion.min()) / (fusion.max() - fusion.min() + 1e-10)
     return fusion
 
 
-_ATTRIBUTE_DISPATCH: dict[str, Any] = {
-    AttributeType.COHERENCE: _compute_coherence,
-    AttributeType.CURVATURE_MAX: lambda v: _compute_curvature(v, axis=2).max(axis=2),
-    AttributeType.CURVATURE_MIN: lambda v: _compute_curvature(v, axis=2).min(axis=2),
+_ATTRIBUTE_DISPATCH: dict[AttributeType, Any] = {
+    AttributeType.COHERENCE: lambda v: _compute_coherence(v),
+    AttributeType.CURVATURE_MAX: lambda v: _compute_curvature(v, axis=1).max(axis=1),
+    AttributeType.CURVATURE_MIN: lambda v: _compute_curvature(v, axis=1).min(axis=1),
     AttributeType.ENVELOPE: _compute_envelope,
     AttributeType.SPECTRAL_RMS: _compute_spectral_rms,
     AttributeType.SWEETNESS: _compute_sweetness,
     AttributeType.META_FAULT_PROB: lambda v: _compute_meta_fault_prob(
-        v,
-        _compute_coherence(v),
-        _compute_curvature(v, axis=2),
+        v, _compute_coherence(v), _compute_curvature(v, axis=1)
     ),
 }
 
@@ -173,13 +175,21 @@ def compute_attribute(
     output = fn(volume, **kwargs)
     elapsed = (time.perf_counter() - start) * 1000
     metric = float(np.std(output))
-    contrast = ContrastMetadata(
-        attribute_name=ft.value,
-        physical_axes=_get_physical_axes(ft.value),
-        processing_steps=_get_processing_steps(ft.value, params),
-        anomalous_risk=_get_anomalous_risk(ft.value),
-        equation_reference=_get_equation_ref(ft.value),
-    )
+
+    is_meta = ft in (AttributeType.META_FAULT_PROB,)
+    if is_meta:
+        contrast = create_meta_attribute_contrast_metadata(
+            attribute_name=ft.value,
+            input_attributes=["coherence", "curvature"],
+            method="cnn_segmentation",
+            proxy_name="fault_probability",
+        )
+    else:
+        contrast = create_filter_contrast_metadata(
+            filter_type=ft.value,
+            filter_params=kwargs,
+        )
+
     return AttributeResult(
         attribute_type=ft.value,
         params=kwargs,
@@ -200,64 +210,6 @@ def compute_all_attributes(volume: np.ndarray) -> list[AttributeResult]:
         except Exception as exc:
             logger.warning("Attribute %s failed: %s", ft.value, exc)
     return results
-
-
-def _get_physical_axes(name: str) -> list[str]:
-    mapping: dict[str, list[str]] = {
-        "coherence": ["waveform_similarity", "discontinuity"],
-        "curvature_max": ["flexure", "stale"],
-        "curvature_min": ["flexure", "strain"],
-        "envelope": ["acoustic_impedance", "boundaries"],
-        "spectral_rms": ["frequency_content", "amplitude"],
-        "sweetness": ["amplitude", "frequency_ratio"],
-        "meta_fault_prob": ["discontinuity", "learned_nonlinear"],
-    }
-    return mapping.get(name, ["unknown"])
-
-
-def _get_processing_steps(name: str, params: dict | None) -> list[str]:
-    steps = ["volume_input"]
-    if name == "coherence":
-        steps.extend(["windowed_semblance", "1_minus_scaled"])
-    elif "curvature" in name:
-        steps.extend(["gradient_first", "gradient_second", "max_or_min_axis"])
-    elif name == "envelope":
-        steps.extend(["fft_analytic", "complex_trace"])
-    elif name == "spectral_rms":
-        steps.extend(["fft", "bandpass_filter", "rms_compute"])
-    elif name == "sweetness":
-        steps.extend(["envelope", "variance", "division"])
-    elif name == "meta_fault_prob":
-        steps.extend(["coherence_fusion", "curvature_fusion", "minmax_norm"])
-    return steps
-
-
-def _get_anomalous_risk(name: str) -> dict[str, str]:
-    if name == "meta_fault_prob":
-        return {
-            "display_bias": "high",
-            "notes": (
-                "AI meta-attribute may amplify perceptual contrast not fully "
-                "grounded in physics. Cross-validate with classical attributes "
-                "+ well ties. F7 Humility enforced."
-            ),
-        }
-    return {
-        "display_bias": "low",
-        "notes": "Classical attribute — high physical traceability.",
-    }
-
-
-def _get_equation_ref(name: str) -> str | None:
-    refs: dict[str, str] = {
-        "coherence": "Marfurt et al. (1998) — semblance-based coherence",
-        "curvature_max": "Choprs & Marfurt (2007) — volumetric curvature",
-        "curvature_min": "Chopra & Marfurt (2007) — volumetric curvature",
-        "sweetness": "Hart & Balch (2000) — sweetness DHI attribute",
-        "envelope": "Taner et al. (1979) — complex trace envelope",
-        "spectral_rms": "Barnes (1992) — spectral decomposition",
-    }
-    return refs.get(name)
 
 
 def _get_notes(name: str) -> str:
@@ -281,19 +233,14 @@ class SeismicAttributesTool(BaseTool):
     Meta:       meta_fault_prob (DL fusion — requires validation)
 
     Inputs:
-        volume_ref   (str)  — reference to input seismic volume
+        volume_ref    (str)  — reference to input seismic volume
         attribute_list (list[str]) — attributes to compute
-        config       (dict) — optional parameters (window, window_hz, etc.)
+        config       (dict) — optional parameters (window, etc.)
         location     (CoordinatePoint) — geographic anchor
 
     Outputs:
         GeoQuantity per attribute + raw attribute volumes in raw_output.
         All outputs carry ContrastMetadata (F9 Anti-Hantu enforcement).
-
-    Governance:
-        - F4: units and coordinates attached to every quantity
-        - F7: uncertainty ≥ 0.15 for perceptual/meta attributes
-        - F9: perceptual contrast never silently claimed as physical truth
     """
 
     @property
@@ -316,7 +263,6 @@ class SeismicAttributesTool(BaseTool):
             return False
         return True
 
-    @contrast_governed_tool()
     async def run(self, inputs: dict[str, Any]) -> GeoToolResult:
         if not self.validate_inputs(inputs):
             return GeoToolResult(
@@ -333,7 +279,7 @@ class SeismicAttributesTool(BaseTool):
         if isinstance(location, dict):
             location = CoordinatePoint(**location)
 
-        shape = config.get("shape", (100, 200, 200))
+        shape = config.get("shape", (100, 200))
         seed = int(hashlib.sha256(volume_ref.encode()).hexdigest(), 16) % (2**31)
         rng = np.random.default_rng(seed)
         volume = rng.normal(size=shape).astype(np.float32)
@@ -348,7 +294,7 @@ class SeismicAttributesTool(BaseTool):
                 results_list.append(result)
             except Exception as exc:
                 logger.warning("Attribute %s failed: %s", attr_name, exc)
-                attributes[attr_name] = np.zeros((shape[0], shape[1]), dtype=np.float32)
+                attributes[attr_name] = np.zeros(shape, dtype=np.float32)
 
         checksum = hashlib.sha256(volume.tobytes()).hexdigest()[:16]
         prov = _make_provenance(
@@ -391,6 +337,7 @@ class SeismicAttributesTool(BaseTool):
         }
 
         meta_requires_validation = [a for a in attribute_list if "meta" in a.lower()]
+        has_meta = bool(meta_requires_validation)
         verdict = "HOLD"
         explanation = ""
         if meta_requires_validation and not inputs.get("well_ties"):
@@ -401,9 +348,33 @@ class SeismicAttributesTool(BaseTool):
         else:
             verdict = "QUALIFY"
 
+        well_ties: list[str] = inputs.get("well_ties", [])
+
+        stack_attributes: dict[str, Any] = {}
+        for attr_name, arr in attributes.items():
+            uncertainty = 0.15 if attr_name == "meta_fault_prob" else 0.08
+            matching_result = next((r for r in results_list if r.attribute_type == attr_name), None)
+            stack_attributes[attr_name] = {
+                "contrast": (
+                    matching_result.contrast_metadata.model_dump() if matching_result else {}
+                ),
+                "uncertainty": uncertainty,
+                "data": arr.tolist(),
+            }
+
+        stack = {
+            "attributes": stack_attributes,
+            "verdict": verdict,
+            "explanation": explanation,
+            "has_meta_attributes": has_meta,
+            "well_ties": well_ties,
+        }
+
+        raw_output["stack"] = stack
+
         latency_ms = (time.perf_counter() - start) * 1000
 
-        result = GeoToolResult(
+        return GeoToolResult(
             quantities=quantities,
             raw_output=raw_output,
             metadata={
@@ -419,5 +390,3 @@ class SeismicAttributesTool(BaseTool):
             latency_ms=round(latency_ms, 2),
             success=True,
         )
-
-        return result

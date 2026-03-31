@@ -40,6 +40,7 @@ from arifos.geox.geox_tools import BaseTool, GeoToolResult
 # ValidationResult
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ValidationResult:
     """
@@ -76,6 +77,7 @@ class ValidationResult:
 # ---------------------------------------------------------------------------
 # AggregateVerdict
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class AggregateVerdict:
@@ -194,6 +196,7 @@ def _parse_range(s: str) -> tuple[float, float]:
 # GeoXValidator
 # ---------------------------------------------------------------------------
 
+
 class GeoXValidator:
     """
     Earth → Language contract validator.
@@ -215,9 +218,7 @@ class GeoXValidator:
     SEAL_THRESHOLD: float = 0.80
     PARTIAL_LOWER: float = 0.50
 
-    def extract_predictions(
-        self, text: str, location: CoordinatePoint
-    ) -> list[GeoPrediction]:
+    def extract_predictions(self, text: str, location: CoordinatePoint) -> list[GeoPrediction]:
         """
         Parse LLM output text to extract testable geological claims.
 
@@ -240,14 +241,20 @@ class GeoXValidator:
         for pattern, default_units, quantity_type in _PREDICTION_PATTERNS:
             for match in re.finditer(pattern, text_lower, re.IGNORECASE):
                 raw_value = match.group(1)
-                detected_units = match.group(2) if match.lastindex >= 2 else default_units
+                detected_units = (
+                    match.group(2)
+                    if (match.lastindex is not None and match.lastindex >= 2)
+                    else default_units
+                )
 
                 lo, hi = _parse_range(raw_value)
                 if lo == 0.0 and hi == 0.0:
                     continue
 
                 # Normalise units
-                units = detected_units.strip().replace("°", "deg") if detected_units else default_units
+                units = (
+                    detected_units.strip().replace("°", "deg") if detected_units else default_units
+                )
                 # Convert percent porosity to fraction if needed
                 if quantity_type == "porosity_pct" and (lo > 1.0 or hi > 1.0):
                     lo, hi = lo / 100.0, hi / 100.0
@@ -310,32 +317,34 @@ class GeoXValidator:
 
         for tool in tools:
             try:
-                result: GeoToolResult = await tool.run({
-                    "query": f"verify {pred.target}",
-                    "location": pred.location,
-                    "depth_range_m": (
-                        pred.location.depth_m - 500 if pred.location.depth_m else 1000,
-                        pred.location.depth_m + 500 if pred.location.depth_m else 3000,
-                    ),
-                    "scenario": {
-                        "latitude": pred.location.latitude,
-                        "longitude": pred.location.longitude,
-                        "target_depth_m": pred.location.depth_m or 2500.0,
-                    },
-                    "timesteps_ma": [0.0, 5.0, 10.0],
-                    "bbox": {
-                        "west": pred.location.longitude - 0.5,
-                        "east": pred.location.longitude + 0.5,
-                        "south": pred.location.latitude - 0.5,
-                        "north": pred.location.latitude + 0.5,
-                    },
-                    "bands": ["B04", "B08", "TIR"],
-                    "date_range": ("2023-01-01", "2024-01-01"),
-                    "image_path": f"synthetic_{pred.target}.png",
-                    "interpretation_query": f"Estimate {pred.target}",
-                    "basin": "Malay Basin",
-                    "max_results": 3,
-                })
+                result: GeoToolResult = await tool.run(
+                    {
+                        "query": f"verify {pred.target}",
+                        "location": pred.location,
+                        "depth_range_m": (
+                            pred.location.depth_m - 500 if pred.location.depth_m else 1000,
+                            pred.location.depth_m + 500 if pred.location.depth_m else 3000,
+                        ),
+                        "scenario": {
+                            "latitude": pred.location.latitude,
+                            "longitude": pred.location.longitude,
+                            "target_depth_m": pred.location.depth_m or 2500.0,
+                        },
+                        "timesteps_ma": [0.0, 5.0, 10.0],
+                        "bbox": {
+                            "west": pred.location.longitude - 0.5,
+                            "east": pred.location.longitude + 0.5,
+                            "south": pred.location.latitude - 0.5,
+                            "north": pred.location.latitude + 0.5,
+                        },
+                        "bands": ["B04", "B08", "TIR"],
+                        "date_range": ("2023-01-01", "2024-01-01"),
+                        "image_path": f"synthetic_{pred.target}.png",
+                        "interpretation_query": f"Estimate {pred.target}",
+                        "basin": "Malay Basin",
+                        "max_results": 3,
+                    }
+                )
 
                 if not result.success:
                     continue
@@ -505,6 +514,7 @@ class GeoXValidator:
 
         # Validate each insight (could be parallelised with asyncio.gather)
         import asyncio
+
         results = await asyncio.gather(
             *[self.validate_insight(i, tools) for i in insights],
             return_exceptions=False,
@@ -567,15 +577,29 @@ class GeoXValidator:
         compliance["F1_amanah"] = f1_ok
 
         # F2: Truth — check no absolute certainty claims
-        certainty_phrases = ["100% certain", "definitely contains", "guaranteed to", "absolutely confirmed"]
+        certainty_phrases = [
+            "100% certain",
+            "definitely contains",
+            "guaranteed to",
+            "absolutely confirmed",
+        ]
         f2_ok = not any(phrase in text.lower() for phrase in certainty_phrases)
         compliance["F2_truth"] = f2_ok
 
         # F4: Clarity — at least one unit is mentioned
         unit_patterns = [
-            r"\d+\s*m\b", r"\d+\s*km\b", r"\d+\s*MPa\b", r"\d+\s*psi\b",
-            r"\d+\s*°?C\b", r"\d+\s*m/s\b", r"\d+\s*%\b", r"\d+\s*g/cm",
-            r"\bfraction\b", r"\bdegC\b", r"\bmeters?\b", r"\bmetres?\b",
+            r"\d+\s*m\b",
+            r"\d+\s*km\b",
+            r"\d+\s*MPa\b",
+            r"\d+\s*psi\b",
+            r"\d+\s*°?C\b",
+            r"\d+\s*m/s\b",
+            r"\d+\s*%\b",
+            r"\d+\s*g/cm",
+            r"\bfraction\b",
+            r"\bdegC\b",
+            r"\bmeters?\b",
+            r"\bmetres?\b",
         ]
         f4_ok = any(re.search(p, text, re.IGNORECASE) for p in unit_patterns)
         compliance["F4_clarity"] = f4_ok
@@ -607,6 +631,7 @@ class GeoXValidator:
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
+
 
 def _quantity_matches_target(qty: GeoQuantity, target: str) -> bool:
     """

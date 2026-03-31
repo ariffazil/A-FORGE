@@ -51,6 +51,7 @@ from arifos.geox.base_tool import (
 from arifos.geox.tools.macrostrat_tool import MacrostratTool
 from arifos.geox.tools.lem_bridge import LEMBridgeTool
 from arifos.geox.tools.seismic_visual_filter import SeismicVisualFilterTool
+from arifos.geox.tools.single_line_interpreter import SingleLineInterpreter
 
 
 
@@ -1139,4 +1140,5 @@ class ToolRegistry:
         registry.register(LEMBridgeTool())
         registry.register(SeismicVisualFilterTool())
         registry.register(SeismicAttributesTool())
+        registry.register(SingleLineInterpreter())
         return registry

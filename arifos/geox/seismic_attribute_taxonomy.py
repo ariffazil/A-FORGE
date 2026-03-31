@@ -815,7 +815,7 @@ def is_meta_intelligence(name: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-def get_governance_flags(name: str) -> dict[str, bool | str]:
+def get_governance_flags(name: str) -> dict[str, bool | str | None]:
     """
     Return governance flags for an attribute.
     Used by compute_attributes tool to set ContrastMetadata risk level.
