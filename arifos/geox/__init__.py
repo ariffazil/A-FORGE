@@ -1,98 +1,174 @@
 """
-GEOX — Geological Intelligence Coprocessor for arifOS
+GEOX — Geospatial World-Model Agent for arifOS
 DITEMPA BUKAN DIBERI
 
-A governed, agentic geological intelligence coprocessor built on arifOS.
-Four planes: Earth (LEM) · Perception (VLM) · Language/Agent (LLM via arifOS) · Governance
+Theory of Anomalous Contrast (ToAC) — The Core Principle:
 
-GEOX plugs into the arifOS Constitutional MCP Kernel (AAA architecture:
-Architect · Auditor · Agent) and enforces the 13 Constitutional Floors
-as they apply to geological reasoning and prospect evaluation.
+    Visual contrast is NOT physical reality.
+    Every pixel you see has been transformed:
+        Physical Signal → Processing → Display Encoding → Perception
 
-Pipeline: 000 INIT → 111 THINK → 333 EXPLORE → 555 HEART →
-          777 REASON → 888 AUDIT → 999 SEAL
+    GEOX prevents conflation (confusion between visual and physical) by:
+        1. Computing PHYSICAL attributes FIRST
+        2. Documenting EVERY transform in the chain
+        3. AUDITING for anomalous contrast (display >> physical)
+        4. REQUIRING human review when risk is high
 
-Verdict vocabulary: SEAL | PARTIAL | SABAR | VOID
-arifOS verdicts:    CLAIM | PLAUSIBLE | HYPOTHESIS | ESTIMATE | UNKNOWN
+Architecture: THEORY → ENGINE → TOOLS → GOVERNANCE
+
+    THEORY: ContrastTaxonomy, DataSource, VisualTransform, ProxyStrategy
+    ENGINE: ContrastSpace, TransformRegistry, AnomalyDetector
+    TOOLS: SeismicSingleLineTool, ContrastGovernedTool, VisualizationAuditor
+    GOVERNANCE: FloorEnforcer, AuditLogger, VerdictRenderer
+
+Bond et al. (2007) Anti-Bias:
+
+    79% of expert geoscientists failed on simple synthetic seismic
+    because conceptual bias dominated over data. GEOX fixes this by:
+        - NEVER showing raw seismic to LLM first
+        - Computing physical attributes BEFORE interpretation
+        - Running explicit bias audit with historical failure rates
+        - Documenting 3+ alternative interpretations
 """
 
-from __future__ import annotations
+__version__ = "0.4.0"
+__author__ = "arifOS"
 
-__version__ = "0.1.0"
-__author__ = "GEOX Core Team — arifOS Geological Intelligence Division"
-__license__ = "Proprietary — All Rights Reserved"
-__description__ = "Geological Intelligence Coprocessor for arifOS"
-__url__ = "https://github.com/arifos/geox"
-__seal__ = "DITEMPA BUKAN DIBERI"
+# THEORY Layer — Core principles
+from .THEORY import (
+    # Taxonomy
+    ContrastTaxonomy,
+    DataSource,
+    VisualTransform,
+    ProxyStrategy,
+    # Verdicts
+    ContrastVerdict,
+    GeoxVerdict,
+    # Factory
+    create_seismic_taxonomy,
+    # Functions
+    assess_conflation_risk,
+    check_floor_compliance,
+    # Constants
+    GEOX_SEAL,
+    GEOX_SABAR,
+    GEOX_PARTIAL,
+    GEOX_REVIEW,
+    GEOX_HOLD,
+    GEOX_BLOCK,
+    GEOX_VOID,
+)
 
-# ---------------------------------------------------------------------------
-# Public API surface
-# ---------------------------------------------------------------------------
+# ENGINE Layer — Processing core
+from .ENGINE import (
+    ContrastSpace,
+    ContrastFeature,
+    TransformRegistry,
+    get_registry,
+    AnomalyDetector,
+    ConflationAlert,
+)
 
-from arifos.geox.geox_agent import (
-    GeoXAgent,
-    GeoXConfig,
+# TOOLS Layer — Generic tools
+from .TOOLS.generic import (
+    ContrastGovernedTool,
+    ToolResult,
+    AttributePipeline,
+    PipelineStage,
+    VisualizationAuditor,
+    VisualizationAuditResult,
 )
-from arifos.geox.geox_memory import (
-    GeoMemoryEntry,
-    GeoMemoryStore,
+
+# TOOLS Layer — Seismic tools
+from .TOOLS.seismic import (
+    SeismicSingleLineTool,
+    SeismicAttributeCalculator,
+    SeismicInterpretationProtocol,
+    AttributeResult,
+    InterpretationStep,
+    InterpretationCheckpoint,
+    compute_semblance,
+    compute_dip_steered_coherence,
 )
-from arifos.geox.geox_reporter import GeoXReporter
-from arifos.geox.geox_schemas import (
-    CoordinatePoint,
-    GeoInsight,
-    GeoPrediction,
-    GeoQuantity,
-    GeoRequest,
-    GeoResponse,
-    ProvenanceRecord,
-    export_json_schemas,
-)
-from arifos.geox.geox_tools import (
-    BaseTool,
-    EarthModelTool,
-    EOFoundationModelTool,
-    GeoRAGTool,
-    GeoToolResult,
-    SeismicVLMTool,
-    SimulatorTool,
-    ToolRegistry,
-)
-from arifos.geox.geox_validator import (
-    AggregateVerdict,
-    GeoXValidator,
-    ValidationResult,
+
+# GOVERNANCE Layer — Compliance
+from .GOVERNANCE import (
+    FloorEnforcer,
+    FloorCheckResult,
+    AuditLogger,
+    AuditEntry,
+    VerdictRenderer,
+    RenderedVerdict,
+    ConflationReport,
+    generate_conflation_report,
 )
 
 __all__ = [
-    # Schemas
-    "CoordinatePoint",
-    "ProvenanceRecord",
-    "GeoQuantity",
-    "GeoPrediction",
-    "GeoInsight",
-    "GeoRequest",
-    "GeoResponse",
-    "export_json_schemas",
-    # Tools
-    "GeoToolResult",
-    "BaseTool",
-    "EarthModelTool",
-    "EOFoundationModelTool",
-    "SeismicVLMTool",
-    "SimulatorTool",
-    "GeoRAGTool",
-    "ToolRegistry",
-    # Validator
-    "ValidationResult",
-    "AggregateVerdict",
-    "GeoXValidator",
-    # Agent
-    "GeoXConfig",
-    "GeoXAgent",
-    # Memory
-    "GeoMemoryEntry",
-    "GeoMemoryStore",
-    # Reporter
-    "GeoXReporter",
+    # Version
+    "__version__",
+    
+    # THEORY
+    "ContrastTaxonomy",
+    "DataSource",
+    "VisualTransform",
+    "ProxyStrategy",
+    "ContrastVerdict",
+    "GeoxVerdict",
+    "create_seismic_taxonomy",
+    "assess_conflation_risk",
+    "check_floor_compliance",
+    "GEOX_SEAL",
+    "GEOX_SABAR",
+    "GEOX_PARTIAL",
+    "GEOX_REVIEW",
+    "GEOX_HOLD",
+    "GEOX_BLOCK",
+    "GEOX_VOID",
+    
+    # ENGINE
+    "ContrastSpace",
+    "ContrastFeature",
+    "TransformRegistry",
+    "get_registry",
+    "AnomalyDetector",
+    "ConflationAlert",
+    
+    # TOOLS (Generic)
+    "ContrastGovernedTool",
+    "ToolResult",
+    "AttributePipeline",
+    "PipelineStage",
+    "VisualizationAuditor",
+    "VisualizationAuditResult",
+    
+    # TOOLS (Seismic)
+    "SeismicSingleLineTool",
+    "SeismicAttributeCalculator",
+    "SeismicInterpretationProtocol",
+    "AttributeResult",
+    "InterpretationStep",
+    "InterpretationCheckpoint",
+    "compute_semblance",
+    "compute_dip_steered_coherence",
+    
+    # GOVERNANCE
+    "FloorEnforcer",
+    "FloorCheckResult",
+    "AuditLogger",
+    "AuditEntry",
+    "VerdictRenderer",
+    "RenderedVerdict",
+    "ConflationReport",
+    "generate_conflation_report",
 ]
+
+
+def get_geox_info() -> dict:
+    """Get information about the GEOX installation."""
+    return {
+        "version": __version__,
+        "theory": "Theory of Anomalous Contrast (ToAC)",
+        "layers": ["THEORY", "ENGINE", "TOOLS", "GOVERNANCE"],
+        "domains": ["seismic", "generic (extensible)"],
+        "constitutional_floors": ["F1", "F4", "F7", "F9", "F13"],
+    }
