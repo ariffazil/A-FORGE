@@ -1,0 +1,56 @@
+[
+  {
+    "id": "4fc4f06e-ef88-4cb7-94d3-734c7d25f71f",
+    "summary": "Profile: explore\nTools visible: read_file, list_files, grep_text\nMock provider completed the task without additional tool calls.",
+    "keywords": [
+      "summarize",
+      "this",
+      "package",
+      "profile",
+      "explore",
+      "tools",
+      "visible",
+      "read_file",
+      "list_files",
+      "grep_text",
+      "mock",
+      "provider",
+      "completed",
+      "task",
+      "without",
+      "additional"
+    ],
+    "createdAt": "2026-04-02T03:25:20.678Z",
+    "metadata": {
+      "profile": "explore",
+      "turnCount": 1
+    }
+  },
+  {
+    "id": "a134a97a-a9f6-46e8-a4ba-44ad3e200aee",
+    "summary": "Profile: explore\nTools visible: read_file, list_files, grep_text\nMock provider completed the task without additional tool calls.",
+    "keywords": [
+      "explain",
+      "repository",
+      "structure",
+      "main",
+      "entrypoints",
+      "profile",
+      "explore",
+      "tools",
+      "visible",
+      "read_file",
+      "list_files",
+      "grep_text",
+      "mock",
+      "provider",
+      "completed",
+      "task"
+    ],
+    "createdAt": "2026-04-02T03:25:20.786Z",
+    "metadata": {
+      "profile": "explore",
+      "turnCount": 1
+    }
+  }
+]
