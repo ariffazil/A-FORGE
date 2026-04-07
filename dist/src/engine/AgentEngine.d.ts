@@ -24,4 +24,5 @@ export declare class AgentEngine {
     run(options: EngineRunOptions): Promise<AgentRunResult>;
     private executeToolCalls;
     private estimateApiCost;
+    private buildEmptyMetrics;
 }

@@ -4,6 +4,7 @@ import { ShortTermMemory } from "../memory/ShortTermMemory.js";
 import { resolveWorkingDirectory } from "../utils/paths.js";
 import { redactForExternalMode } from "./redact.js";
 import { buildModeSettings } from "../flags/modes.js";
+import { validateInputClarity, checkHarmDignity, checkInjection, checkCoherence, checkConfidence, checkGrounding, checkEntropy, checkToolHarm, countEvidence, } from "../governance/index.js";
 export class AgentEngine {
     profile;
     dependencies;
@@ -25,6 +26,42 @@ export class AgentEngine {
             experimentalToolsEnabled: modeSettings.allowExperimentalTools &&
                 (this.dependencies.featureFlags?.ENABLE_EXPERIMENTAL_TOOLS ?? false),
         };
+        // === F3: Input Clarity Check ===
+        const clarityCheck = validateInputClarity(options.task);
+        if (clarityCheck.verdict === "SABAR") {
+            return {
+                sessionId,
+                finalText: `SABAR: ${clarityCheck.message}`,
+                turnCount: 0,
+                totalEstimatedTokens: 0,
+                transcript: [],
+                metrics: this.buildEmptyMetrics(options, startedAt, "F3", clarityCheck.reason),
+            };
+        }
+        // === F6: Harm/Dignity Check ===
+        const harmCheck = checkHarmDignity(options.task);
+        if (harmCheck.verdict === "VOID") {
+            return {
+                sessionId,
+                finalText: `VOID: ${harmCheck.message}`,
+                turnCount: 0,
+                totalEstimatedTokens: 0,
+                transcript: [],
+                metrics: this.buildEmptyMetrics(options, startedAt, "F6", harmCheck.reason),
+            };
+        }
+        // === F9: Injection Check ===
+        const injectionCheck = checkInjection(options.task);
+        if (injectionCheck.verdict === "VOID") {
+            return {
+                sessionId,
+                finalText: `VOID: ${injectionCheck.message}`,
+                turnCount: 0,
+                totalEstimatedTokens: 0,
+                transcript: [],
+                metrics: this.buildEmptyMetrics(options, startedAt, "F9", injectionCheck.reason),
+            };
+        }
         shortTermMemory.append({
             role: "system",
             content: this.profile.systemPrompt,
@@ -96,7 +133,7 @@ export class AgentEngine {
                 for (const call of turnResponse.toolCalls) {
                     toolCallsByType[call.toolName] = (toolCallsByType[call.toolName] ?? 0) + 1;
                 }
-                const toolExecution = await this.executeToolCalls(turnResponse, shortTermMemory, permissionContext, sessionId, workingDirectory);
+                const toolExecution = await this.executeToolCalls(turnResponse, shortTermMemory, permissionContext, sessionId, workingDirectory, relevantMemories.length);
                 pendingMessages = toolExecution.messages;
                 blockedDangerousActions += toolExecution.blockedDangerousActions;
                 blockedCommands += toolExecution.blockedCommands;
@@ -110,6 +147,18 @@ export class AgentEngine {
         }
         if (!finalResponse) {
             finalResponse = "Stopped because the maximum turn count was reached.";
+        }
+        // === F7: Confidence Check (end of session) ===
+        const confidenceCheck = checkConfidence({
+            evidenceCount: toolCallCount,
+            toolCallCount,
+            turnCount,
+            hasContradictions: false, // Would need cross-turn tracking
+            memoryHits: relevantMemories.length,
+        });
+        if (confidenceCheck.verdict === "HOLD" && !errorMessage) {
+            // Append confidence warning to response but don't block
+            finalResponse += `\n\n[CONFIDENCE: ${confidenceCheck.confidence.toFixed(2)} - ${confidenceCheck.message}]`;
         }
         await this.dependencies.longTermMemory.store({
             id: sessionId,
@@ -164,14 +213,47 @@ export class AgentEngine {
         }
         return result;
     }
-    async executeToolCalls(turnResponse, shortTermMemory, permissionContext, sessionId, workingDirectory) {
+    async executeToolCalls(turnResponse, shortTermMemory, permissionContext, sessionId, workingDirectory, memoryCount) {
         const toolMessages = [];
         let blockedDangerousActions = 0;
         let blockedCommands = 0;
         let timeoutEvents = 0;
         let restrictedPathAttempts = 0;
+        // Track for governance checks
+        let cumulativeRisk = 0.1;
+        const toolResults = [];
+        const messageTexts = [];
         for (const call of turnResponse.toolCalls) {
             let toolMessage;
+            // === F6: Tool-level Harm Check ===
+            const toolHarmCheck = checkToolHarm(call.toolName, call.args);
+            if (toolHarmCheck.verdict === "VOID") {
+                toolMessage = {
+                    role: "tool",
+                    toolCallId: call.id,
+                    toolName: call.toolName,
+                    content: `VOID: ${toolHarmCheck.message}`,
+                };
+                shortTermMemory.append(toolMessage);
+                toolMessages.push(toolMessage);
+                blockedDangerousActions += 1;
+                continue;
+            }
+            // === F4: Entropy Check ===
+            const entropyCheck = checkEntropy(call.toolName, call.args, cumulativeRisk, toolResults.length === 0);
+            if (entropyCheck.verdict === "HOLD") {
+                toolMessage = {
+                    role: "tool",
+                    toolCallId: call.id,
+                    toolName: call.toolName,
+                    content: `HOLD: ${entropyCheck.message}`,
+                };
+                shortTermMemory.append(toolMessage);
+                toolMessages.push(toolMessage);
+                blockedDangerousActions += 1;
+                continue;
+            }
+            cumulativeRisk = entropyCheck.riskAfter;
             try {
                 const toolResult = await this.dependencies.toolRegistry.runTool(call.toolName, call.args, {
                     sessionId,
@@ -179,6 +261,23 @@ export class AgentEngine {
                     modeName: this.profile.modeName,
                     policy: this.dependencies.toolPolicy,
                 }, permissionContext);
+                // Track for grounding check
+                toolResults.push({ ok: toolResult.ok, output: toolResult.output });
+                // === F8: Grounding Check ===
+                const evidenceCount = countEvidence(toolResults);
+                const groundingCheck = checkGrounding(call.toolName, evidenceCount, memoryCount, toolResults.length === 0);
+                if (groundingCheck.verdict === "HOLD") {
+                    toolMessage = {
+                        role: "tool",
+                        toolCallId: call.id,
+                        toolName: call.toolName,
+                        content: `HOLD: ${groundingCheck.message}`,
+                    };
+                    shortTermMemory.append(toolMessage);
+                    toolMessages.push(toolMessage);
+                    blockedDangerousActions += 1;
+                    continue;
+                }
                 toolMessage = {
                     role: "tool",
                     toolCallId: call.id,
@@ -207,8 +306,17 @@ export class AgentEngine {
                     content: `Tool error: ${message}`,
                 };
             }
+            // Track message text for coherence check
+            messageTexts.push(toolMessage.content);
             shortTermMemory.append(toolMessage);
             toolMessages.push(toolMessage);
+        }
+        // === F11: Coherence Check ===
+        const coherenceCheck = checkCoherence(messageTexts);
+        if (coherenceCheck.verdict === "HOLD" && toolMessages.length > 0) {
+            // Append coherence warning to last message
+            const lastMsg = toolMessages[toolMessages.length - 1];
+            lastMsg.content += `\n[WARNING: ${coherenceCheck.message}]`;
         }
         return {
             messages: toolMessages,
@@ -225,6 +333,36 @@ export class AgentEngine {
         }
         return ((inputTokens / 1_000_000) * pricing.inputCostPerMillionTokens +
             (outputTokens / 1_000_000) * pricing.outputCostPerMillionTokens);
+    }
+    buildEmptyMetrics(options, startedAt, blockedFloor, reason) {
+        const wallClockMs = Date.now() - startedAt.getTime();
+        return {
+            taskSuccess: 0,
+            turnsUsed: 0,
+            toolCalls: 0,
+            toolCallsByType: {},
+            responsesCalls: 0,
+            toolCallParseFailures: 0,
+            previousResponseResumes: 0,
+            memoryInjectedItems: 0,
+            memoryInjectedBytes: 0,
+            memoryUsedReferences: 0,
+            plannerSubtasks: Number(options.metadata?.plannerSubtasks ?? 0),
+            workerSuccessRate: Number(options.metadata?.workerSuccessRate ?? 0),
+            coordinationFailures: Number(options.metadata?.coordinationFailures ?? 0),
+            trustMode: this.dependencies.featureFlags?.ENABLE_DANGEROUS_TOOLS ? "local_vps" : "default",
+            blockedDangerousActions: 1,
+            blockedCommands: 0,
+            timeoutEvents: 0,
+            restrictedPathAttempts: 0,
+            llmTokensIn: 0,
+            llmTokensOut: 0,
+            llmCost: 0,
+            wallClockMs,
+            completion: false,
+            testsPassed: false,
+            errorMessage: `Blocked by ${blockedFloor}: ${reason}`,
+        };
     }
 }
 function extractKeywords(task, response) {
