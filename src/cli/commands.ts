@@ -14,6 +14,8 @@ import type { RuntimeConfig } from "../config/RuntimeConfig.js";
 import { ForgeScoreboard } from "../scoreboard/ForgeScoreboard.js";
 import { RunMetricsLogger } from "../scoreboard/RunMetricsLogger.js";
 import type { ForgeTaskRecord } from "../types/scoreboard.js";
+import { createPersonalOS } from "../personal/index.js";
+import { PersonalOS as PersonalOSv2 } from "../personal-v2/PersonalOS.js";
 
 function getMode(
   options: Record<string, string | boolean>,
@@ -235,8 +237,130 @@ export async function runCliCommand(
     );
   }
 
+  if (command === "me") {
+    // Personal OS mode — human-facing interface
+    const personalOS = createPersonalOS();
+    const input = String(options.say ?? "");
+    
+    if (!input) {
+      return personalOS.showDashboard();
+    }
+    
+    return await personalOS.process(input);
+  }
+
+  if (command === "os") {
+    // Personal OS v2 — Wave 1: Trust Foundation
+    const os = new PersonalOSv2();
+    await os.initialize();
+    
+    const subcommand = String(options.cmd ?? "dashboard");
+    const input = String(options.say ?? "");
+    
+    try {
+      switch (subcommand) {
+        case "dashboard":
+        case "status": {
+          const dash = os.getDashboard();
+          return [
+            "🜂 PERSONAL OS v2 — Dashboard",
+            "",
+            `Continuity: ${dash.continuity.state} (${dash.continuity.message})`,
+            `Session: ${dash.continuity.sessionId}`,
+            `Last Checkpoint: ${dash.continuity.lastCheckpoint}`,
+            "",
+            "Memory:",
+            ...Object.entries(dash.memory).map(([k, v]) => `  ${k}: ${v}`),
+            "",
+            "Approvals:",
+            ...Object.entries(dash.approvals).map(([k, v]) => `  ${k}: ${v}`),
+          ].join("\n");
+        }
+        
+        case "remember": {
+          if (!input) return "Usage: agent os remember \"what to remember\"";
+          const response = await os.process({ command: "remember", what: input });
+          return `${response.badge}\n\n${response.summary}`;
+        }
+        
+        case "recall": {
+          if (!input) return "Usage: agent os recall \"what to recall\"";
+          const response = await os.process({ command: "recall", what: input });
+          return `${response.badge}\n\n${response.summary}`;
+        }
+        
+        case "track": {
+          if (!input) return "Usage: agent os track \"what to track\"";
+          const response = await os.process({ command: "track", what: input });
+          return `${response.badge}\n\n${response.summary}`;
+        }
+        
+        case "think": {
+          if (!input) return "Usage: agent os think \"A vs B\"";
+          const response = await os.process({ command: "think", what: input });
+          return `${response.badge}\n\n${response.summary}`;
+        }
+        
+        case "hold": {
+          if (!input) return "Usage: agent os hold \"what to hold\"";
+          const response = await os.process({ command: "hold", what: input });
+          return `${response.badge}\n\n${response.summary}${response.holdId ? `\n\nHold ID: ${response.holdId}` : ""}`;
+        }
+        
+        case "approve": {
+          const holdId = String(options.hold ?? "");
+          if (!holdId) return "Usage: agent os approve --hold <hold-id>";
+          const response = os.approve(holdId);
+          return `${response.badge}\n\n${response.summary}`;
+        }
+        
+        case "reject": {
+          const holdId = String(options.hold ?? "");
+          if (!holdId) return "Usage: agent os reject --hold <hold-id>";
+          const response = os.reject(holdId);
+          return `${response.badge}\n\n${response.summary}`;
+        }
+        
+        case "holds":
+        case "queue": {
+          return os.getHoldQueue();
+        }
+        
+        case "a2a": {
+          const baseUrl = String(options.url ?? "https://arifosmcp.arif-fazil.com");
+          return JSON.stringify(os.getA2ACard(baseUrl), null, 2);
+        }
+        
+        case "mcp": {
+          return JSON.stringify(os.getMCPManifest(), null, 2);
+        }
+        
+        default:
+          return [
+            "🜂 Personal OS v2 — Commands:",
+            "",
+            "  agent os dashboard          — Show status",
+            "  agent os remember \"...\"   — Store in memory",
+            "  agent os recall \"...\"     — Retrieve from memory",
+            "  agent os track \"...\"      — Monitor something",
+            "  agent os think \"...\"      — Compare/reason",
+            "  agent os hold \"...\"       — Block for approval",
+            "  agent os approve --hold <id>",
+            "  agent os reject --hold <id>",
+            "  agent os holds              — Show approval queue",
+            "  agent os a2a                — Output A2A card",
+            "  agent os mcp                — Output MCP manifest",
+          ].join("\n");
+      }
+    } finally {
+      await os.shutdown();
+    }
+  }
+
   return [
     "Usage:",
+    "  agent os [cmd]              — Personal OS v2 (continuity, memory, approval)",
+    "  agent me [\"...\"]            — Personal OS mode (legacy)",
     "  agent explore --goal \"explain this repo\" [--mode internal|external] [--cwd path]",
     "  agent fix --file src/file.ts [--issue \"what to fix\"] [--mode internal|external] [--cwd path]",
     "  agent test [--goal \"what to validate\"] [--mode internal|external] [--cwd path]",
