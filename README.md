@@ -1,4 +1,10 @@
-# AF-FORGE ΔΩΨ
+# AF-FORGE ΔΩΨ — Agent Workbench (TypeScript Runtime)
+
+> **⚠️ SOURCE OF TRUTH:** This is a **TypeScript runtime shell** for the arifOS ecosystem.
+> 
+> **Canonical doctrine and kernel:** [`ariffazil/arifOS`](https://github.com/ariffazil/arifOS)
+> 
+> **Runtime truth:** `/health` and `/tools` on deployed arifOS server
 
 **Constitutional Event-Sourced Agent Runtime**  
 *Ditempa Bukan Diberi — Forged, Not Given*
