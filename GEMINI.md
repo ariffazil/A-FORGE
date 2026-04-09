@@ -24,14 +24,23 @@
 - web-architect: web/system design
 - vps-operator: infra/container ops
 
-## No-chaos rules
-- One primary skill per task.
-- Max 2 secondary skills.
-- floor-checker first for risky operations.
-- trinity-forger only for role orchestration.
-- metabolic-loop only for stage governance.
-- vps-operator never designs architecture.
-- web-architect never executes production infra changes.
+## Context Doctrine (Refined)
+1. **Context Law:** Context is a bounded workspace for active inference, not intelligence.
+2. **Optimization Law:** Maximize relevance density, not just token reduction.
+3. **Attention Law:** Only attended information has causal influence (Attention is currency).
+4. **Retrieval Law:** Intelligence is the ability to select/assemble from external memory.
+5. **Compression Law:** All summaries must be traceable to source (Loss awareness).
+6. **Entropy Law:** Uncontrolled context leads to reasoning collapse.
+7. **Workspace Law:** Use a small, sharp active workspace (Sovereign Sparsity).
+8. **Iteration Law:** Decompose complexity into loops, not monolithic prompts.
+9. **Verification Law:** Reasoning without grounding is structured hallucination.
+10. **Humility Law:** Humility is the Gödel lock against overconfidence.
+
+## Four Pillars
+- **Attention:** Spend it with the least waste.
+- **Optimization:** Discipline over brute force.
+- **Humility:** Calibrated boundedness (anti-Bad Genius).
+- **Human Judgment:** The final authority on consequential branches.
 
 ---
 

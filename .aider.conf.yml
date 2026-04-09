@@ -1,0 +1,33 @@
+# Aider Configuration File
+# Place this at ~/.aider.conf.yml or project root
+
+# ============================================
+# KIMI (Moonshot AI) Configuration
+# ============================================
+# Model: kimi-k2-0711-preview (latest as of 2025)
+# Set environment variable: MOONSHOT_API_KEY=your_key
+
+# ============================================
+# MINIMAX Configuration
+# ============================================
+# Model: minimax-text-01 or other minimax models
+# Set environment variable: MINIMAX_API_KEY=your_key
+
+# ============================================
+# OpenCode / OpenRouter Configuration
+# ============================================
+# For custom endpoints or OpenRouter
+# Set OPENAI_API_BASE and OPENAI_API_KEY accordingly
+
+# Default settings
+edit-format: diff
+auto-commits: false
+no-auto-commits: true
+pretty: true
+check-update: false
+
+# Watch files for changes
+watch-files: false
+
+# Default model (fallback - override with --model)
+# model: moonshot/kimi-k2-0711-preview

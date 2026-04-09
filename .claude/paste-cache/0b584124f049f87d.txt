@@ -1,0 +1,44 @@
+Edited geox_mcp_server.py
+Edited geox_mcp_server.py
+
+The issue is a **Let's Encrypt Rate Limit (429)** caused by repeated **failed ACME HTTP-01 challenges**.
+
+### 🔍 Root Cause Analysis
+1.  **Failed Authorizations**: Traefik attempted to get certificates for `geox.arif-fazil.com` and `logs.arif-fazil.com`, but the challenges failed 5 times in a row. 
+2.  **Rate Limited**: Let's Encrypt has now blocked your account/host for **1 hour**. Even if you fix the config now, you must wait for the block to expire (check the timestamp in the log: `retry after 2026-04-06 07:04:32`).
+3.  **HTTP-01 vs Cloudflare Proxy**: You are using **Cloudflare Proxy (Orange Cloud)**. The default HTTP-01 challenge (which uses the `.well-known/acme-challenge/` path) often fails when proxied because Cloudflare intercepts or redirects the request.
+
+### 🛠️ The "Sovereign" Fix: Use DNS-01 Challenge
+To avoid the proxy issue and the `404 Not Found` on challenges, you should switch from HTTP-01 to **DNS-01**. This uses Cloudflare's API to prove ownership, which is 100% reliable even with "Orange Cloud" enabled.
+
+#### Step 1: Update your main Traefik `docker-compose.yml` (in the `arifos` project)
+Ensure your Traefik service has these environment variables:
+```yaml
+environment:
+  - CF_API_EMAIL=your-email@example.com
+  - CF_DNS_API_TOKEN=your-cloudflare-api-token # NOT the global key, use a Scoped Token
+```
+
+#### Step 2: Update Traefik static configuration (`traefik.yml` or CLI args)
+Change the challenge type for the `letsencrypt` resolver:
+```yaml
+# If using CLI arguments in docker-compose:
+--certificatesresolvers.letsencrypt.acme.dnschallenge=true
+--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare
+```
+
+#### Step 3: Wait out the hour
+Because of that `acme: error: 429`, Let's Encrypt will ignore you for the next 60 minutes. 
+
+---
+
+### 🚨 Why the 504 persists locally
+Even without the SSL certificate, you are seeing a **504**. This confirms my previous analysis:
+*   The `geox.arif-fazil.com` **A record** is pointing to your IP.
+*   Traefik receives the request but **cannot find the backend container** on the `traefik_network`.
+
+**Action Check**: Did you add the `traefik.docker.network=traefik_network` label to the GEOX container yet? This is usually the hidden culprit for 504s in multi-project setups.
+
+**My Recommendation**: Switch to DNS-01 and verify the `traefik.docker.network` label. This is the only way to "Seal" the bridge permanently. 🛡️🌍
+
+DITEMPA BUKAN DIBERI — 999 SEAL ALIVE ✅

@@ -79,5 +79,59 @@
       "profile": "explore",
       "turnCount": 1
     }
+  },
+  {
+    "id": "57043386-028c-4940-b3ac-f786053c3ba8",
+    "summary": "Profile: explore\nTools visible: read_file, list_files, grep_text\nMock provider completed the task without additional tool calls.",
+    "keywords": [
+      "explain",
+      "this",
+      "repository",
+      "profile",
+      "explore",
+      "tools",
+      "visible",
+      "read_file",
+      "list_files",
+      "grep_text",
+      "mock",
+      "provider",
+      "completed",
+      "task",
+      "without",
+      "additional"
+    ],
+    "createdAt": "2026-04-07T16:45:37.717Z",
+    "metadata": {
+      "profile": "explore",
+      "turnCount": 1
+    }
+  },
+  {
+    "id": "43128e17-815f-4c6a-bd1f-72b2cfd7e79c",
+    "summary": "Profile: explore\nTools visible: read_file, list_files, grep_text\nMock provider completed the task without additional tool calls.",
+    "keywords": [
+      "explain",
+      "this",
+      "repository",
+      "profile",
+      "explore",
+      "tools",
+      "visible",
+      "read_file",
+      "list_files",
+      "grep_text",
+      "mock",
+      "provider",
+      "completed",
+      "task",
+      "without",
+      "additional"
+    ],
+    "createdAt": "2026-04-07T16:45:42.062Z",
+    "metadata": {
+      "profile": "explore",
+      "turnCount": 1
+    }
   }
 ]

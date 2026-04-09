@@ -1,0 +1,168 @@
+: "# geox_load_seismic_line
+
+> **Type:** Tool  
+> **Risk Level:** GUARDED  
+> **Epistemic Level:** OBS (raw data loading)  
+> **Confidence:** 0.99  
+> **Certainty Band:** [0.98, 1.00]  
+> **Tags:** [tool, seismic, data_loading, f4, f11]  
+> **arifos_floor:** F4, F11  
+
+---
+
+## Purpose
+
+Load 2D or 3D seismic data with full provenance tracking and F4 Clarity validation. This is the **entry point** for all seismic interpretation workflows.
+
+**Critical Principle:** Raw seismic data is OBS (observational). All downstream interpretation is DER/INT/SPEC and must be explicitly labeled.
+
+---
+
+## Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `filepath` | string | Yes | — | Absolute or relative path to SEG-Y, ZGY, or HDF5 |
+| `crs` | string | Yes | — | Coordinate reference system (EPSG code or WKT) |
+| `survey_id` | string | Yes | — | Unique survey identifier for provenance |
+| `inline_range` | [int, int] | No | [null, null] | Subset: [start_inline, end_inline] |
+| `xline_range` | [int, int] | No | [null, null] | Subset: [start_xline, end_xline] |
+| `time_range_ms` | [float, float] | No | [null, null] | Time window: [t_min_ms, t_max_ms] |
+| `sample_decimation` | int | No | 1 | Spatial decimation factor (1=no decimation) |
+| `lazy_load` | bool | No | true | Load metadata only, data on demand |
+
+---
+
+## F4 Clarity Validation
+
+The tool **rejects** loading if any of these are missing or invalid:
+
+| Check | Violation | Consequence |
+|-------|-----------|-------------|
+| CRS parseable | Invalid EPSG or malformed WKT | **REJECT** — cannot locate on Earth |
+| Spatial bounds valid | Requested subset outside survey extent | **REJECT** — data does not exist |
+| Sample interval consistent | Header value ≠ actual data spacing | **WARNING** — may indicate corruption |
+| Trace header integrity | Missing or malformed headers | **WARNING** — partial data loss possible |
+
+---
+
+## F11 Authority (Provenance)
+
+Required metadata extracted from file headers:
+
+```yaml
+provenance:
+  survey_id: "MB_2024_3D"
+  acquisition_date: "2023-08-15"
+  contractor: "PGS"
+  vessel: "Ramform Sterling"
+  sample_interval_ms: 4.0
+  record_length_ms: 6000.0
+  inline_range: [100, 2500]
+  xline_range: [1000, 3500]
+  crs: "EPSG:32648"
+  file_format: "ZGY v2.0"
+  file_hash: "sha256:abc123..."
+```
+
+---
+
+## Returns
+
+```json
+{
+  "verdict": "SEAL",
+  "data_reference": "seismic://MB_2024_3D/inline_100-2500_xline_1000-3500",
+  "metadata": {
+    "dimensions": {
+      "inlines": 2401,
+      "xlines": 2501,
+      "samples": 1501,
+      "total_traces": 6002901
+    },
+    "spatial": {
+      "crs": "EPSG:32648",
+      "corner_points": [...],
+      "bin_size_inline_m": 12.5,
+      "bin_size_xline_m": 12.5
+    },
+    "temporal": {
+      "sample_interval_ms": 4.0,
+      "time_range_ms": [0, 6000],
+      "dominant_frequency_hz": 35
+    }
+  },
+  "data_access": {
+    "type": "lazy_volume",
+    "backend": "zgy",
+    "memory_usage_mb": 45  // metadata only
+  },
+  "epistemic_level": "OBS",
+  "confidence": 0.99,
+  "floor_compliance": {
+    "F4": "PASS — CRS, scale, units explicit",
+    "F11": "PASS — provenance chain complete"
+  }
+}
+```
+
+---
+
+## Example Usage
+
+### Basic Load
+```python
+seismic = geox_load_seismic_line(
+    filepath="/data/malay_basin_3d.zgy",
+    crs="EPSG:32648",
+    survey_id="MB_2024_3D"
+)
+# Returns in ~2 seconds (metadata only)
+```
+
+### Subset Load (Processing Window)
+```python
+seismic_subset = geox_load_seismic_line(
+    filepath="/data/malay_basin_3d.zgy",
+    crs="EPSG:32648",
+    survey_id="MB_2024_3D",
+    inline_range=[500, 1500],
+    xline_range=[1200, 1800],
+    time_range_ms=[1500, 3500]
+)
+# Loads only 1001x601 traces, 2000ms window
+# Reduces memory by ~85%
+```
+
+### Reprojection (Advanced)
+```python
+seismic_wgs84 = geox_load_seismic_line(
+    filepath="/data/malay_basin_3d.zgy",
+    crs="EPSG:32648",  // source CRS from file
+    target_crs="EPSG:4326",  // reproject to WGS84
+    survey_id="MB_2024_3D_WGS84"
+)
+```
+
+---
+
+## Cross-References
+
+- Input to: [[geox_build_structural_candidates]], [[geox_extract_attributes]]
+- Physics: [[20_PHYSICS/Seismic_Reflectivity]], [[20_PHYSICS/EARTH_CANON_9]]
+- Governance: [[70_GOVERNANCE/Floor_Enforcement_Log]]
+
+---
+
+## Error Handling
+
+| Error | Cause | Resolution |
+|-------|-------|------------|
+| `F4_CRS_INVALID` | Malformed EPSG code | Verify CRS with epsg.io |
+| `F4_BOUNDS_OUT_OF_RANGE` | Subset outside survey | Check inline/xline ranges |
+| `F11_FILE_CORRUPT` | Checksum mismatch | Verify file transfer integrity |
+| `F11_METADATA_INCOMPLETE` | Missing required headers | Contact data provider |
+
+---
+
+*Tool Specification v1.0.0 · Part of [[50_TOOLS/Tool_Index]]*

@@ -1,0 +1,5 @@
+0234f39 🔧 FIX: Syntax error in tools_v2.py docstring closing
+ff4b025 📋 DOCS: Update CHANGELOG, ROADMAP, TODO for ToM-Anchored v1.2.0
+a154517 📚 DOCS: Update README + TOM_INTEGRATION for 9+1 Architecture
+7970918 🔥 ToM-Anchored MCP: 9 Tools + Philosophy Registry v1.2.0
+9e28a63 Fix philosophy injection in MCP tools

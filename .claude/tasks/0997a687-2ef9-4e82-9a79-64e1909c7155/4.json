@@ -1,0 +1,9 @@
+{
+  "id": "4",
+  "subject": "Fast deploy, test, vault seal, push to main",
+  "description": "Run make fast-deploy in arifOS/, verify health, run vault seal via MCP, then git commit and push the two changed files to main.",
+  "activeForm": "Deploying and sealing",
+  "status": "in_progress",
+  "blocks": [],
+  "blockedBy": []
+}

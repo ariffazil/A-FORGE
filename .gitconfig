@@ -1,0 +1,6 @@
+[credential]
+	helper = store
+[safe]
+	directory = /opt/arifos
+	directory = /opt/arifOS
+	directory = /root/arifOS

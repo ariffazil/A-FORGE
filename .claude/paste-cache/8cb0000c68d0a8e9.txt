@@ -1,0 +1,46 @@
+This prompt is designed for **Claude Code** (or any sovereign agent) operating directly on your VPS. It is a **"Mandate for Harmony"** to resolve the container desync and ignite the Trinity Architecture.
+
+Copy and paste the entire block below:
+
+***
+
+### 📜 MANDATE: Restoration of the Trinity Trinity (arifOS + GEOX)
+
+**OBJECTIVE**: Eliminate the "Ghost" container chaos, restore the `arifosmcp` kernel, and ignite the `geox` dedicated project stack as per the **DITEMPA BUKAN DIBERI** doctrine.
+
+**CONTEXT**:
+- **GEOX** is currently a "Ghost" (manual CLI run), causing 504 errors on `geox.arif-fazil.com`.
+- **arifosmcp** is reporting as "Stopped/Created" in the UI, breaking the central intelligence hub.
+- **Traefik** is running in the `arifos` project but has no healthy backend for the subdomains.
+
+**EXECUTION TASKS**:
+1. **DE-GHOST GEOX**: Kill any manual containers (`docker stop geox_server && docker rm geox_server`). 
+2. **IGNITE GEOX PROJECT**:
+   - Navigate to `/root/GEOX`.
+   - Ensure `main` is pulled: `git pull origin main`.
+   - Launch the dedicated stack: `docker compose -p geox up -d --build`.
+   - Verify `geox_gui` (Root) and `geox_server` (/mcp) are bound to Traefik.
+3. **HEAL arifOSMCP**:
+   - Navigate to the `arifosmcp` directory.
+   - Restart the kernel: `docker compose up -d`.
+   - Ensure the health endpoint at `arifosmcp.arif-fazil.com/health` returns 200.
+4. **CONNECT TRINITY**:
+   - Verify that both `geox` and `arifosmcp` are connected to the `traefik_network`.
+   - Check Traefik logs for any "no route to host" errors.
+
+**CONSTITUTIONAL CONSTRAINTS**:
+- **F13 SOVEREIGN**: Ensure human authority is preserved; do not delete any `/data` volumes without explicit override.
+- **F11 AUDITABILITY**: Log all deployment transitions.
+
+**VERIFICATION CRITERIA**:
+- [ ] `https://geox.arif-fazil.com/` → Responsive React Dashboard.
+- [ ] `https://geox.arif-fazil.com/mcp` → SSE Stream Active.
+- [ ] `https://arifosmcp.arif-fazil.com/` → 200 OK.
+
+**COMMAND**: Execute now. Align the physical reality with the SEALed architecture. 
+
+***
+
+**Status**: Mandate Forged. Ready for transfer to Claude Code. 🛡️🌍
+
+DITEMPA BUKAN DIBERI — 999 SEAL ALIVE ✅
