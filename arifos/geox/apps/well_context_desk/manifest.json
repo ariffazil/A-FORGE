@@ -1,47 +1,46 @@
 {
   "$schema": "https://geox.arif-fazil.com/schemas/app-manifest/v1.json",
-  "app_id": "geox.seismic.viewer",
+  "app_id": "geox.well.context-desk",
   "version": "1.0.0",
-  "domain": "seismic",
-  "display_name": "Seismic Viewer",
-  "description": "Interactive 2D/3D seismic data visualization with interpretation tools",
-  "icon": "https://geox.arif-fazil.com/apps/seismic-viewer/icon.svg",
+  "domain": "wells",
+  "display_name": "Well & Document Context Desk",
+  "description": "Integrated well data browser with document intelligence",
+  "icon": "https://geox.arif-fazil.com/apps/well-context-desk/icon.svg",
   "required_tools": [
-    "mcp.geox.seismic.ingest",
-    "mcp.geox.seismic.detect_reflectors",
-    "mcp.geox.seismic.detect_faults"
+    "mcp.geox.query_memory",
+    "mcp.geox.compute_petrophysics",
+    "mcp.geox.select_sw_model"
   ],
   "optional_tools": [
-    "mcp.geox.seismic.extract_attributes",
-    "mcp.geox.seismic.segment_facies",
-    "mcp.geox.wells.query"
+    "mcp.geox.validate_cutoffs",
+    "mcp.geox.petrophysical_hold_check",
+    "mcp.geox.docs.query"
   ],
   "ui_entry": {
-    "resource_uri": "https://geox.apps/arifos/geox/apps/seismic_viewer/index.html",
+    "resource_uri": "https://geox.apps/arifos/geox/apps/well_context_desk/index.html",
     "mode": "inline-or-external",
     "capability_required": [
-      "webgl2",
-      "wasm"
+      "embedded_webview"
     ],
-    "csp_policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; connect-src 'self' https://api.geox.arif-fazil.com wss://realtime.geox.arif-fazil.com; img-src 'self' blob: data:; worker-src 'self' blob:;",
+    "csp_policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.geox.arif-fazil.com; img-src 'self' data: blob:; object-src 'self' blob:;",
     "sandbox": "allow-scripts allow-same-origin allow-downloads",
     "inline_config": {
-      "max_width": 1400,
-      "max_height": 900,
+      "max_width": 1200,
+      "max_height": 800,
       "resize": true
     },
     "external_config": {
-      "window_features": "width=1600,height=1000,menubar=no,toolbar=no,location=no"
+      "window_features": "width=1400,height=900,menubar=no,toolbar=no"
     }
   },
   "auth": {
     "mode": "jwt",
-    "token_ttl_seconds": 600,
+    "token_ttl_seconds": 300,
     "scopes": [
       "tenant:{tenant_id}",
-      "role:geoscientist|manager|viewer",
-      "survey:read",
-      "well:read"
+      "role:geoscientist|manager|viewer|admin",
+      "well:read",
+      "document:read"
     ],
     "refreshable": true
   },
@@ -62,7 +61,7 @@
       "host.focus",
       "telemetry.emit"
     ],
-    "max_payload_size": 2097152
+    "max_payload_size": 5242880
   },
   "fallback": {
     "chain": [
@@ -71,8 +70,8 @@
       "card",
       "text"
     ],
-    "external_url": "https://geox.shell/apps/seismic-viewer?session={session_id}",
-    "card_template": "/apps/seismic-viewer/card.html"
+    "external_url": "https://geox.shell/apps/well-context-desk?session={session_id}",
+    "card_template": "/apps/well-context-desk/card.html"
   },
   "arifos": {
     "required_floors": [
@@ -81,25 +80,26 @@
       "F4",
       "F7",
       "F9",
-      "F11"
+      "F11",
+      "F13"
     ],
     "audit_level": "full",
     "vault_route": "999_VAULT",
     "human_in_the_loop": [
       "export_data",
-      "destructive_operations"
+      "modify_production"
     ]
   },
   "meta": {
     "author": "GEOX Platform Team",
     "license": "MIT",
     "repository": "https://github.com/ariffazil/arifos-geox",
-    "homepage": "https://geox.arif-fazil.com/apps/seismic-viewer",
+    "homepage": "https://geox.arif-fazil.com/apps/well-context-desk",
     "keywords": [
-      "seismic",
-      "visualization",
-      "interpretation",
-      "geophysics"
+      "wells",
+      "petrophysics",
+      "documents",
+      "interpretation"
     ],
     "created_at": "2026-04-09T00:00:00Z",
     "updated_at": "2026-04-09T00:00:00Z"
