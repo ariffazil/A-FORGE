@@ -1,0 +1,324 @@
+[
+    {
+        "Id": "b690a33d40e26ae82099bda473d3e08dc39bf12b8217f75224a51ab32630d7d0",
+        "Created": "2026-04-08T20:02:29.117263264Z",
+        "Path": "uvicorn",
+        "Args": [
+            "arifosmcp.runtime.server:app",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8080"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 1791892,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-04-08T20:02:29.172362525Z",
+            "FinishedAt": "0001-01-01T00:00:00Z",
+            "Health": {
+                "Status": "healthy",
+                "FailingStreak": 0,
+                "Log": [
+                    {
+                        "Start": "2026-04-09T09:16:43.588415555Z",
+                        "End": "2026-04-09T09:16:43.642566365Z",
+                        "ExitCode": 0,
+                        "Output": ""
+                    },
+                    {
+                        "Start": "2026-04-09T09:17:13.643772079Z",
+                        "End": "2026-04-09T09:17:13.7019435Z",
+                        "ExitCode": 0,
+                        "Output": ""
+                    },
+                    {
+                        "Start": "2026-04-09T09:17:43.703270486Z",
+                        "End": "2026-04-09T09:17:43.776891511Z",
+                        "ExitCode": 0,
+                        "Output": ""
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:13.777639403Z",
+                        "End": "2026-04-09T09:18:13.838805027Z",
+                        "ExitCode": 0,
+                        "Output": ""
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:43.840193685Z",
+                        "End": "2026-04-09T09:18:43.900516177Z",
+                        "ExitCode": 0,
+                        "Output": ""
+                    }
+                ]
+            }
+        },
+        "Image": "sha256:85cfc77e546304e3940aeb02b77246a3048737d8c3f76d478adcf35148b83a28",
+        "ResolvConfPath": "/var/lib/docker/containers/b690a33d40e26ae82099bda473d3e08dc39bf12b8217f75224a51ab32630d7d0/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/b690a33d40e26ae82099bda473d3e08dc39bf12b8217f75224a51ab32630d7d0/hostname",
+        "HostsPath": "/var/lib/docker/containers/b690a33d40e26ae82099bda473d3e08dc39bf12b8217f75224a51ab32630d7d0/hosts",
+        "LogPath": "/var/lib/docker/containers/b690a33d40e26ae82099bda473d3e08dc39bf12b8217f75224a51ab32630d7d0/b690a33d40e26ae82099bda473d3e08dc39bf12b8217f75224a51ab32630d7d0-json.log",
+        "Name": "/arifosmcp",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "/root/arifOS:/usr/src/app:ro"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {
+                    "max-file": "3",
+                    "max-size": "50m"
+                }
+            },
+            "NetworkMode": "arifos_core_network",
+            "PortBindings": {
+                "8080/tcp": [
+                    {
+                        "HostIp": "",
+                        "HostPort": "8080"
+                    }
+                ]
+            },
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": null,
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": null,
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "BlkioDeviceReadBps": [],
+            "BlkioDeviceWriteBps": [],
+            "BlkioDeviceReadIOps": [],
+            "BlkioDeviceWriteIOps": [],
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": [],
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/root/arifOS",
+                "Destination": "/usr/src/app",
+                "Mode": "ro",
+                "RW": false,
+                "Propagation": "rprivate"
+            }
+        ],
+        "Config": {
+            "Hostname": "b690a33d40e2",
+            "Domainname": "",
+            "User": "arifos",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "8080/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "ARIFOS_ENV=production",
+                "ARIFOS_LOG_LEVEL=info",
+                "PYTHONPATH=/usr/src/app",
+                "PYTHONUNBUFFERED=1",
+                "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+                "PYTHON_VERSION=3.12.13",
+                "PYTHON_SHA256=c08bc65a81971c1dd5783182826503369466c7e67374d1646519adf05207b684",
+                "PYTHONDONTWRITEBYTECODE=1",
+                "VPS_MODE=1",
+                "ARIFOS_DEPLOYMENT=vps"
+            ],
+            "Cmd": [
+                "uvicorn",
+                "arifosmcp.runtime.server:app",
+                "--host",
+                "0.0.0.0",
+                "--port",
+                "8080"
+            ],
+            "Healthcheck": {
+                "Test": [
+                    "CMD-SHELL",
+                    "curl -fsS --max-time 5 http://localhost:8080/kernel/health/integrity | grep -q '\"boot_state\":\"SEALED\"' || exit 1"
+                ],
+                "Interval": 30000000000,
+                "Timeout": 10000000000,
+                "StartPeriod": 30000000000,
+                "Retries": 3
+            },
+            "Image": "arifos/arifosmcp:latest",
+            "Volumes": null,
+            "WorkingDir": "/usr/src/app",
+            "Entrypoint": null,
+            "Labels": {
+                "traefik.enable": "true",
+                "traefik.http.routers.arifosmcp.entrypoints": "websecure",
+                "traefik.http.routers.arifosmcp.rule": "Host(`arifosmcp.arif-fazil.com`)",
+                "traefik.http.routers.arifosmcp.tls.certresolver": "letsencrypt",
+                "traefik.http.services.arifosmcp.loadbalancer.server.port": "8080"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "91d0dd0d659361c09eb33dbf7d8312d6ec29c045b672fea4eca8b52b4c86a06c",
+            "SandboxKey": "/var/run/docker/netns/91d0dd0d6593",
+            "Ports": {
+                "8080/tcp": [
+                    {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "8080"
+                    },
+                    {
+                        "HostIp": "::",
+                        "HostPort": "8080"
+                    }
+                ]
+            },
+            "Networks": {
+                "arifos_core_network": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "arifosmcp"
+                    ],
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "f2362e2d34ddc69289eec8cfbd102b45397b262b07b2004c3ab3fd17d05155b0",
+                    "EndpointID": "6d4753bd5c1c03662be556dc8435b2e1a44f61bd7f2cdb00e10c0f52bc20ee18",
+                    "Gateway": "172.22.0.1",
+                    "IPAddress": "172.22.0.6",
+                    "MacAddress": "d6:8b:52:16:a3:42",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "arifosmcp",
+                        "b690a33d40e2"
+                    ]
+                },
+                "traefik_network": {
+                    "IPAMConfig": {},
+                    "Links": null,
+                    "Aliases": [],
+                    "DriverOpts": {},
+                    "GwPriority": 0,
+                    "NetworkID": "81bb9df307bbb862f435f14990612a92ed088b6a8b5c9acea4fe789a078e520b",
+                    "EndpointID": "63ee91d801527910b6759ca96128ef8ff97c5c3311c8792c5579df45cda4ec7c",
+                    "Gateway": "172.20.0.1",
+                    "IPAddress": "172.20.0.3",
+                    "MacAddress": "2a:ae:b3:04:a1:5c",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "arifosmcp",
+                        "b690a33d40e2"
+                    ]
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:f0d3f2386d95a7bb96736d4ed677f243d6da7bcdcc1ea9f94e7086fa8fb0653b",
+            "size": 2397,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    }
+]

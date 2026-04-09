@@ -1,0 +1,2291 @@
+[
+    {
+        "Id": "62f9367d617a5c0f06ed3d9ab5b64244db8894927e3daf259eb95d7c9babf589",
+        "Created": "2026-03-28T16:31:03.498112512Z",
+        "Path": "/portainer",
+        "Args": [],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 2710,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-04-07T17:01:17.11739681Z",
+            "FinishedAt": "2026-04-07T17:01:15.400837303Z"
+        },
+        "Image": "sha256:c5cf195671294b44110c926cff8ea05c78acc863ced25f29d5e2c8671cb4f38c",
+        "ResolvConfPath": "/var/lib/docker/containers/62f9367d617a5c0f06ed3d9ab5b64244db8894927e3daf259eb95d7c9babf589/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/62f9367d617a5c0f06ed3d9ab5b64244db8894927e3daf259eb95d7c9babf589/hostname",
+        "HostsPath": "/var/lib/docker/containers/62f9367d617a5c0f06ed3d9ab5b64244db8894927e3daf259eb95d7c9babf589/hosts",
+        "LogPath": "/var/lib/docker/containers/62f9367d617a5c0f06ed3d9ab5b64244db8894927e3daf259eb95d7c9babf589/62f9367d617a5c0f06ed3d9ab5b64244db8894927e3daf259eb95d7c9babf589-json.log",
+        "Name": "/apps_portainer",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "/opt/arifos/data/portainer:/data:rw",
+                "/var/run/docker.sock:/var/run/docker.sock:rw"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {
+                    "max-file": "3",
+                    "max-size": "50m"
+                }
+            },
+            "NetworkMode": "arifosmcp_arifos_trinity",
+            "PortBindings": {
+                "9000/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "9000"
+                    }
+                ]
+            },
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": null,
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/opt/arifos/data/portainer",
+                "Destination": "/data",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": "rprivate"
+            },
+            {
+                "Type": "bind",
+                "Source": "/var/run/docker.sock",
+                "Destination": "/var/run/docker.sock",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": "rprivate"
+            }
+        ],
+        "Config": {
+            "Hostname": "62f9367d617a",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "8000/tcp": {},
+                "9000/tcp": {},
+                "9443/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Cmd": null,
+            "Image": "portainer/portainer-ce:2.21.4-alpine",
+            "Volumes": {
+                "/data": {}
+            },
+            "WorkingDir": "/",
+            "Entrypoint": [
+                "/portainer"
+            ],
+            "Labels": {
+                "com.arifos.deployed": "2026-03-28",
+                "com.arifos.purpose": "container-gui",
+                "com.arifos.service": "portainer",
+                "com.docker.compose.config-hash": "638fa2584bee4eec860946757c6a46c785e6f9770a4a273a496feb66533b82e5",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "",
+                "com.docker.compose.image": "sha256:c5cf195671294b44110c926cff8ea05c78acc863ced25f29d5e2c8671cb4f38c",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "portainer-pocketbase-wireguard",
+                "com.docker.compose.project.config_files": "/opt/arifos/apps/portainer-pocketbase-wireguard/docker-compose.yml",
+                "com.docker.compose.project.working_dir": "/opt/arifos/apps/portainer-pocketbase-wireguard",
+                "com.docker.compose.replace": "apps_portainer",
+                "com.docker.compose.service": "apps_portainer",
+                "com.docker.compose.version": "5.1.1",
+                "com.docker.desktop.extension.api.version": ">= 0.2.2",
+                "com.docker.desktop.extension.icon": "https://portainer-io-assets.sfo2.cdn.digitaloceanspaces.com/logos/portainer.png",
+                "com.docker.extension.additional-urls": "[{\"title\":\"Website\",\"url\":\"https://www.portainer.io?utm_campaign=DockerCon&utm_source=DockerDesktop\"},{\"title\":\"Documentation\",\"url\":\"https://docs.portainer.io\"},{\"title\":\"Support\",\"url\":\"https://join.slack.com/t/portainer/shared_invite/zt-txh3ljab-52QHTyjCqbe5RibC2lcjKA\"}]",
+                "com.docker.extension.detailed-description": "<p data-renderer-start-pos=\"226\">Portainer&rsquo;s Docker Desktop extension gives you access to all of Portainer&rsquo;s rich management functionality within your docker desktop experience.</p><h2 data-renderer-start-pos=\"374\">With Portainer you can:</h2><ul><li>See all your running containers</li><li>Easily view all of your container logs</li><li>Console into containers</li><li>Easily deploy your code into containers using a simple form</li><li>Turn your YAML into custom templates for easy reuse</li></ul><h2 data-renderer-start-pos=\"660\">About Portainer&nbsp;</h2><p data-renderer-start-pos=\"680\">Portainer is the worlds&rsquo; most popular universal container management platform with more than 650,000 active monthly users. Portainer can be used to manage Docker Standalone, Kubernetes, Docker Swarm and Nomad environments through a single common interface. It includes a simple GitOps automation engine and a Kube API.&nbsp;</p><p data-renderer-start-pos=\"1006\">Portainer Business Edition is our fully supported commercial grade product for business-wide use. It includes all the functionality that businesses need to manage containers at scale. Visit <a class=\"sc-jKJlTe dPfAtb\" href=\"http://portainer.io/\" title=\"http://Portainer.io\" data-renderer-mark=\"true\">Portainer.io</a> to learn more about Portainer Business and <a class=\"sc-jKJlTe dPfAtb\" href=\"http://portainer.io/take-3?utm_campaign=DockerCon&amp;utm_source=Docker%20Desktop\" title=\"http://portainer.io/take-3?utm_campaign=DockerCon&amp;utm_source=Docker%20Desktop\" data-renderer-mark=\"true\">get 3 free nodes.</a></p>",
+                "com.docker.extension.publisher-url": "https://www.portainer.io",
+                "com.docker.extension.screenshots": "[{\"alt\": \"screenshot one\", \"url\": \"https://portainer-io-assets.sfo2.digitaloceanspaces.com/screenshots/docker-extension-1.png\"},{\"alt\": \"screenshot two\", \"url\": \"https://portainer-io-assets.sfo2.digitaloceanspaces.com/screenshots/docker-extension-2.png\"},{\"alt\": \"screenshot three\", \"url\": \"https://portainer-io-assets.sfo2.digitaloceanspaces.com/screenshots/docker-extension-3.png\"},{\"alt\": \"screenshot four\", \"url\": \"https://portainer-io-assets.sfo2.digitaloceanspaces.com/screenshots/docker-extension-4.png\"},{\"alt\": \"screenshot five\", \"url\": \"https://portainer-io-assets.sfo2.digitaloceanspaces.com/screenshots/docker-extension-5.png\"},{\"alt\": \"screenshot six\", \"url\": \"https://portainer-io-assets.sfo2.digitaloceanspaces.com/screenshots/docker-extension-6.png\"},{\"alt\": \"screenshot seven\", \"url\": \"https://portainer-io-assets.sfo2.digitaloceanspaces.com/screenshots/docker-extension-7.png\"},{\"alt\": \"screenshot eight\", \"url\": \"https://portainer-io-assets.sfo2.digitaloceanspaces.com/screenshots/docker-extension-8.png\"},{\"alt\": \"screenshot nine\", \"url\": \"https://portainer-io-assets.sfo2.digitaloceanspaces.com/screenshots/docker-extension-9.png\"}]",
+                "io.portainer.server": "true",
+                "org.opencontainers.image.description": "Docker container management made simple, with the world’s most popular GUI-based container management platform.",
+                "org.opencontainers.image.title": "Portainer",
+                "org.opencontainers.image.vendor": "Portainer.io",
+                "traefik.enable": "true",
+                "traefik.http.routers.portainer.entrypoints": "websecure",
+                "traefik.http.routers.portainer.rule": "Host(`portainer.arif-fazil.com`)",
+                "traefik.http.routers.portainer.tls.certresolver": "letsencrypt",
+                "traefik.http.services.portainer_svc.loadbalancer.server.port": "9000"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "54baf91b933b69894116ce642c89099d5267885da7aadfcda4dcc8622e7c433c",
+            "SandboxKey": "/var/run/docker/netns/54baf91b933b",
+            "Ports": {
+                "8000/tcp": null,
+                "9000/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "9000"
+                    }
+                ],
+                "9443/tcp": null
+            },
+            "Networks": {
+                "arifosmcp_arifos_trinity": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "apps_portainer",
+                        "apps_portainer"
+                    ],
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "e190e8bfa08bbcb7f1b25750cb30d52c3c7d6100f43cc7ac654392f459ef7f64",
+                    "EndpointID": "b936ca91030ea227dec8432db4ecaf6c7c7d6eee5a63c77ed353c3936bd005a3",
+                    "Gateway": "172.19.0.1",
+                    "IPAddress": "172.19.0.5",
+                    "MacAddress": "d6:0f:bd:13:35:81",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "apps_portainer",
+                        "62f9367d617a"
+                    ]
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+            "digest": "sha256:d68a03c64f691674a232058ec74e470fc89069a4a87e9697e9dd01afa2e04abc",
+            "size": 2421,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    },
+    {
+        "Id": "f6b9de1cb63bd31de05c529e186f306eb89f587777ca6bb26a545217f5dc2ae7",
+        "Created": "2026-03-28T16:31:03.448830382Z",
+        "Path": "/usr/local/bin/pocketbase",
+        "Args": [
+            "serve",
+            "--http",
+            "0.0.0.0:8090",
+            "--dir",
+            "/pb_data"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 2935,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-04-07T17:01:17.154685909Z",
+            "FinishedAt": "2026-04-07T17:01:15.399271614Z"
+        },
+        "Image": "sha256:27aac0151fdc47c7a2e7773c65fc98d701f097407b68d00f6b3a0e47b83c6a27",
+        "ResolvConfPath": "/var/lib/docker/containers/f6b9de1cb63bd31de05c529e186f306eb89f587777ca6bb26a545217f5dc2ae7/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/f6b9de1cb63bd31de05c529e186f306eb89f587777ca6bb26a545217f5dc2ae7/hostname",
+        "HostsPath": "/var/lib/docker/containers/f6b9de1cb63bd31de05c529e186f306eb89f587777ca6bb26a545217f5dc2ae7/hosts",
+        "LogPath": "/var/lib/docker/containers/f6b9de1cb63bd31de05c529e186f306eb89f587777ca6bb26a545217f5dc2ae7/f6b9de1cb63bd31de05c529e186f306eb89f587777ca6bb26a545217f5dc2ae7-json.log",
+        "Name": "/apps_pocketbase",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "/opt/arifos/data/pocketbase:/pb_data:rw"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {
+                    "max-file": "3",
+                    "max-size": "50m"
+                }
+            },
+            "NetworkMode": "arifosmcp_arifos_trinity",
+            "PortBindings": {
+                "8090/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "8090"
+                    }
+                ]
+            },
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": null,
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/opt/arifos/data/pocketbase",
+                "Destination": "/pb_data",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": "rprivate"
+            }
+        ],
+        "Config": {
+            "Hostname": "f6b9de1cb63b",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "8090/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+            ],
+            "Cmd": [
+                "serve",
+                "--http",
+                "0.0.0.0:8090",
+                "--dir",
+                "/pb_data"
+            ],
+            "Image": "apps_pocketbase:local",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": [
+                "/usr/local/bin/pocketbase"
+            ],
+            "Labels": {
+                "com.arifos.deployed": "2026-03-28",
+                "com.arifos.purpose": "api-backend",
+                "com.arifos.service": "pocketbase",
+                "com.docker.compose.config-hash": "87ef029b62c8c00652185176724c3e081104f2100e51320f6a0bc7744f327ff4",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "",
+                "com.docker.compose.image": "sha256:27aac0151fdc47c7a2e7773c65fc98d701f097407b68d00f6b3a0e47b83c6a27",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "portainer-pocketbase-wireguard",
+                "com.docker.compose.project.config_files": "/opt/arifos/apps/portainer-pocketbase-wireguard/docker-compose.yml",
+                "com.docker.compose.project.working_dir": "/opt/arifos/apps/portainer-pocketbase-wireguard",
+                "com.docker.compose.replace": "apps_pocketbase",
+                "com.docker.compose.service": "apps_pocketbase",
+                "com.docker.compose.version": "5.1.1",
+                "org.opencontainers.image.ref.name": "ubuntu",
+                "org.opencontainers.image.version": "22.04",
+                "traefik.enable": "true",
+                "traefik.http.routers.pocketbase.entrypoints": "websecure",
+                "traefik.http.routers.pocketbase.rule": "Host(`pocketbase.arif-fazil.com`)",
+                "traefik.http.routers.pocketbase.tls.certresolver": "letsencrypt",
+                "traefik.http.services.pocketbase_svc.loadbalancer.server.port": "8090"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "c4a56cbd1f3fd1041a83ae5faf464cff956f6dd3556e31d4b10b2bb86ba31028",
+            "SandboxKey": "/var/run/docker/netns/c4a56cbd1f3f",
+            "Ports": {
+                "8090/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "8090"
+                    }
+                ]
+            },
+            "Networks": {
+                "arifosmcp_arifos_trinity": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "apps_pocketbase",
+                        "apps_pocketbase"
+                    ],
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "e190e8bfa08bbcb7f1b25750cb30d52c3c7d6100f43cc7ac654392f459ef7f64",
+                    "EndpointID": "efc7738c2dc0f12982a1c8b062e9d5b560c59679c95fdaaed8f909c797560266",
+                    "Gateway": "172.19.0.1",
+                    "IPAddress": "172.19.0.9",
+                    "MacAddress": "ca:7b:34:a0:67:36",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "apps_pocketbase",
+                        "f6b9de1cb63b"
+                    ]
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:4ad8df5b98bddb29a5fcf2e46fc6e79ac9558c1576859555b80b0350247b0251",
+            "size": 862,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    },
+    {
+        "Id": "35b3e5e9b08a278208c5238267c45e515abd14a72b1c838b27a4ca708109b84e",
+        "Created": "2026-03-28T16:31:03.475620706Z",
+        "Path": "docker-entrypoint.sh",
+        "Args": [
+            "/usr/bin/dumb-init",
+            "node",
+            "server.js"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 2559,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-04-07T17:01:17.159777914Z",
+            "FinishedAt": "2026-04-07T17:01:15.402331436Z",
+            "Health": {
+                "Status": "healthy",
+                "FailingStreak": 0,
+                "Log": [
+                    {
+                        "Start": "2026-04-09T09:16:44.075219119Z",
+                        "End": "2026-04-09T09:16:44.124432489Z",
+                        "ExitCode": 0,
+                        "Output": ""
+                    },
+                    {
+                        "Start": "2026-04-09T09:17:14.125752865Z",
+                        "End": "2026-04-09T09:17:14.174640414Z",
+                        "ExitCode": 0,
+                        "Output": ""
+                    },
+                    {
+                        "Start": "2026-04-09T09:17:44.175554297Z",
+                        "End": "2026-04-09T09:17:44.2158853Z",
+                        "ExitCode": 0,
+                        "Output": ""
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:14.217196862Z",
+                        "End": "2026-04-09T09:18:14.26092831Z",
+                        "ExitCode": 0,
+                        "Output": ""
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:44.261928453Z",
+                        "End": "2026-04-09T09:18:44.309583314Z",
+                        "ExitCode": 0,
+                        "Output": ""
+                    }
+                ]
+            }
+        },
+        "Image": "sha256:5f26407fd2ede54df76d63304ef184576a6c1bb73f934a58a11abdd852fab549",
+        "ResolvConfPath": "/var/lib/docker/containers/35b3e5e9b08a278208c5238267c45e515abd14a72b1c838b27a4ca708109b84e/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/35b3e5e9b08a278208c5238267c45e515abd14a72b1c838b27a4ca708109b84e/hostname",
+        "HostsPath": "/var/lib/docker/containers/35b3e5e9b08a278208c5238267c45e515abd14a72b1c838b27a4ca708109b84e/hosts",
+        "LogPath": "/var/lib/docker/containers/35b3e5e9b08a278208c5238267c45e515abd14a72b1c838b27a4ca708109b84e/35b3e5e9b08a278208c5238267c45e515abd14a72b1c838b27a4ca708109b84e-json.log",
+        "Name": "/apps_wireguard",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "/opt/arifos/data/wireguard:/etc/wireguard:rw"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {
+                    "max-file": "3",
+                    "max-size": "50m"
+                }
+            },
+            "NetworkMode": "arifosmcp_arifos_trinity",
+            "PortBindings": {
+                "51820/udp": [
+                    {
+                        "HostIp": "",
+                        "HostPort": "51820"
+                    }
+                ],
+                "51821/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "51821"
+                    }
+                ]
+            },
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": [
+                "CAP_NET_ADMIN"
+            ],
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Sysctls": {
+                "net.ipv4.ip_forward": "1",
+                "net.ipv6.conf.all.forwarding": "1"
+            },
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": [
+                {
+                    "PathOnHost": "/dev/net/tun",
+                    "PathInContainer": "/dev/net/tun",
+                    "CgroupPermissions": "rwm"
+                }
+            ],
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "bind",
+                "Source": "/opt/arifos/data/wireguard",
+                "Destination": "/etc/wireguard",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": "rprivate"
+            }
+        ],
+        "Config": {
+            "Hostname": "35b3e5e9b08a",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "51820/udp": {},
+                "51821/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "WG_EASY_ALLOW_IPV6=false",
+                "WG_HOST=wireguard.arif-fazil.com",
+                "WG_PERSISTENT_KEEPALIVE=25",
+                "WG_DEFAULT_DNS=1.1.1.1,1.0.0.1",
+                "WG_PORT=51820",
+                "WG_EASY_UI_USERNAME=arif",
+                "WG_ALLOWED_IPS=0.0.0.0/0",
+                "WG_DEFAULT_ADDRESS=10.8.0.x",
+                "WG_MTU=1420",
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "NODE_VERSION=22.16.0",
+                "YARN_VERSION=1.22.22",
+                "DEBUG=Server,WireGuard"
+            ],
+            "Cmd": [
+                "/usr/bin/dumb-init",
+                "node",
+                "server.js"
+            ],
+            "Healthcheck": {
+                "Test": [
+                    "CMD-SHELL",
+                    "/usr/bin/timeout 5s /bin/sh -c \"/usr/bin/wg show | /bin/grep -q interface || exit 1\" --interval=1m --timeout=5s --retries=3"
+                ]
+            },
+            "Image": "ghcr.io/wg-easy/wg-easy:14",
+            "Volumes": null,
+            "WorkingDir": "/app",
+            "Entrypoint": [
+                "docker-entrypoint.sh"
+            ],
+            "Labels": {
+                "com.arifos.deployed": "2026-03-28",
+                "com.arifos.purpose": "vpn-server",
+                "com.arifos.service": "wireguard",
+                "com.docker.compose.config-hash": "0e4e429b859f9c2d4caeb191363c7523c6cd70219023d5a121107708664a7b24",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "",
+                "com.docker.compose.image": "sha256:5f26407fd2ede54df76d63304ef184576a6c1bb73f934a58a11abdd852fab549",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "portainer-pocketbase-wireguard",
+                "com.docker.compose.project.config_files": "/opt/arifos/apps/portainer-pocketbase-wireguard/docker-compose.yml",
+                "com.docker.compose.project.working_dir": "/opt/arifos/apps/portainer-pocketbase-wireguard",
+                "com.docker.compose.replace": "apps_wireguard",
+                "com.docker.compose.service": "apps_wireguard",
+                "com.docker.compose.version": "5.1.1",
+                "traefik.enable": "true",
+                "traefik.http.routers.wireguard.entrypoints": "websecure",
+                "traefik.http.routers.wireguard.rule": "Host(`wireguard.arif-fazil.com`)",
+                "traefik.http.routers.wireguard.tls.certresolver": "letsencrypt",
+                "traefik.http.services.wireguard_svc.loadbalancer.server.port": "51821"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "cc92aa2d97a9df715f73c921658bedd6daab04a3740fb52b2f640dcd7e99c44f",
+            "SandboxKey": "/var/run/docker/netns/cc92aa2d97a9",
+            "Ports": {
+                "51820/udp": [
+                    {
+                        "HostIp": "0.0.0.0",
+                        "HostPort": "51820"
+                    },
+                    {
+                        "HostIp": "::",
+                        "HostPort": "51820"
+                    }
+                ],
+                "51821/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "51821"
+                    }
+                ]
+            },
+            "Networks": {
+                "arifosmcp_arifos_trinity": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "apps_wireguard",
+                        "apps_wireguard"
+                    ],
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "e190e8bfa08bbcb7f1b25750cb30d52c3c7d6100f43cc7ac654392f459ef7f64",
+                    "EndpointID": "e30b1c6c0e0a7d5a656ed6ee14459b49fbe2489b82299c0c456eecac00e6b24f",
+                    "Gateway": "172.19.0.1",
+                    "IPAddress": "172.19.0.2",
+                    "MacAddress": "12:7d:0e:e8:d7:b4",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "apps_wireguard",
+                        "35b3e5e9b08a"
+                    ]
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:b81b9e82dc1fac78fb29bb7290f4df236b92599b0549d904ed1df04c981d1623",
+            "size": 2379,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    },
+    {
+        "Id": "c9be46520e6a6e1af3cd3db91d25585f2a2325f64c367a3fc6d086fa5c7e3510",
+        "Created": "2026-03-28T06:42:59.312082287Z",
+        "Path": "/app/start.sh",
+        "Args": [],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 2646,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-04-07T17:01:17.154923077Z",
+            "FinishedAt": "2026-04-07T17:01:15.402657657Z",
+            "Health": {
+                "Status": "healthy",
+                "FailingStreak": 0,
+                "Log": [
+                    {
+                        "Start": "2026-04-09T09:16:53.241118599Z",
+                        "End": "2026-04-09T09:16:53.2968085Z",
+                        "ExitCode": 0,
+                        "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\r100    41  100    41    0     0  15897      0 --:--:-- --:--:-- --:--:-- 20500\n{\"status\":\"ok\",\"service\":\"eigent-server\"}"
+                    },
+                    {
+                        "Start": "2026-04-09T09:17:23.297854744Z",
+                        "End": "2026-04-09T09:17:23.35943978Z",
+                        "ExitCode": 0,
+                        "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0{\"status\":\"ok\",\"service\":\"eigent-server\"}\r100    41  100    41    0     0  14380      0 --:--:-- --:--:-- --:--:-- 20500\n"
+                    },
+                    {
+                        "Start": "2026-04-09T09:17:53.36132776Z",
+                        "End": "2026-04-09T09:17:53.419228974Z",
+                        "ExitCode": 0,
+                        "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\r100    41  100    41    0     0  15860      0 --:--:-- --:--:-- --:--:-- 20500\n{\"status\":\"ok\",\"service\":\"eigent-server\"}"
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:23.421183225Z",
+                        "End": "2026-04-09T09:18:23.482264582Z",
+                        "ExitCode": 0,
+                        "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\r100    41  100    41    0     0  13576      0 --:--:-- --:--:-- --:--:-- 20500\n{\"status\":\"ok\",\"service\":\"eigent-server\"}"
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:53.48273101Z",
+                        "End": "2026-04-09T09:18:53.536942502Z",
+                        "ExitCode": 0,
+                        "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0\r100    41  100    41    0     0  16459      0 --:--:-- --:--:-- --:--:-- 20500\n{\"status\":\"ok\",\"service\":\"eigent-server\"}"
+                    }
+                ]
+            }
+        },
+        "Image": "sha256:c623197da8db681f54ab5304af22bb1848d455212a1e093d465404a86f0f2080",
+        "ResolvConfPath": "/var/lib/docker/containers/c9be46520e6a6e1af3cd3db91d25585f2a2325f64c367a3fc6d086fa5c7e3510/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/c9be46520e6a6e1af3cd3db91d25585f2a2325f64c367a3fc6d086fa5c7e3510/hostname",
+        "HostsPath": "/var/lib/docker/containers/c9be46520e6a6e1af3cd3db91d25585f2a2325f64c367a3fc6d086fa5c7e3510/hosts",
+        "LogPath": "/var/lib/docker/containers/c9be46520e6a6e1af3cd3db91d25585f2a2325f64c367a3fc6d086fa5c7e3510/c9be46520e6a6e1af3cd3db91d25585f2a2325f64c367a3fc6d086fa5c7e3510-json.log",
+        "Name": "/eigent_api",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": null,
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {
+                    "max-file": "3",
+                    "max-size": "50m"
+                }
+            },
+            "NetworkMode": "arifosmcp_arifos_trinity",
+            "PortBindings": {
+                "5678/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "3001"
+                    }
+                ]
+            },
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": null,
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [],
+        "Config": {
+            "Hostname": "c9be46520e6a",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "5678/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "celery_result_url=redis://:ArifOS_Redis_2026@eigent_redis:6379/0",
+                "CHAT_SHARE_SALT=eigent-arifOS-salt-2026",
+                "APP_HOST=0.0.0.0",
+                "LITELLM_API_KEY=sk-cp-PfAjUvvTPsI8MMpeFbX3Se_Hbp3qyKeYsynjnvG2maVFVJSFFJA8Gz5yRXPizmHrMQWv8W_plVVci6TCOqOyUVSZx8OMJftBCZXskYol11TYtiyMfbGL_hQ",
+                "CHAT_SHARE_SECRET_KEY=eigent-chat-share-arifOS-2026",
+                "redis_url=redis://:ArifOS_Redis_2026@eigent_redis:6379/0",
+                "ALLOWED_ORIGINS=https://eigent.vps.arif-fazil.com,https://arifosmcp.arif-fazil.com,https://aaa.arif-fazil.com",
+                "EXECUTION_RUNNING_TIMEOUT_SECONDS=600",
+                "TRIGGER_SCHEDULE_POLLER_INTERVAL=1",
+                "debug=false",
+                "ENABLE_EXECUTION_TIMEOUT_CHECKER=true",
+                "APP_PORT=5678",
+                "secret_key=eigent-arifos-secret-2026-ditempa-bukan-diberi",
+                "APP_ENV=production",
+                "LITELLM_URL=https://api.minimax.io/v1",
+                "SESSION_REDIS_URL=redis://:ArifOS_Redis_2026@eigent_redis:6379/1",
+                "celery_broker_url=redis://:ArifOS_Redis_2026@eigent_redis:6379/0",
+                "EXECUTION_PENDING_TIMEOUT_SECONDS=60",
+                "database_url=postgresql+psycopg2://eigent:ArifOS_Eigent_2026_Strong@eigent_postgres:5432/eigent",
+                "FALLBACK_MODEL=minimax_m2_5",
+                "EXECUTION_TIMEOUT_CHECKER_INTERVAL=1",
+                "TRIGGER_SCHEDULE_POLLER_BATCH_SIZE=100",
+                "url_prefix=/api",
+                "ENABLE_TRIGGER_SCHEDULE_POLLER_TASK=true",
+                "PATH=/app/.venv/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+                "PYTHON_VERSION=3.12.12",
+                "PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4",
+                "UV_TOOL_BIN_DIR=/usr/local/bin",
+                "UV_COMPILE_BYTECODE=0",
+                "UV_LINK_MODE=copy",
+                "UV_PYTHON_INSTALL_MIRROR=https://registry.npmmirror.com/-/binary/python-build-standalone"
+            ],
+            "Cmd": [
+                "/app/start.sh"
+            ],
+            "Healthcheck": {
+                "Test": [
+                    "CMD",
+                    "curl",
+                    "-f",
+                    "http://localhost:5678/health"
+                ],
+                "Interval": 30000000000,
+                "Timeout": 10000000000,
+                "StartPeriod": 40000000000,
+                "Retries": 3
+            },
+            "Image": "server-api",
+            "Volumes": null,
+            "WorkingDir": "/app",
+            "Entrypoint": null,
+            "Labels": {
+                "com.docker.compose.config-hash": "edb05ee3b533fd9a8a81fb33fd6bfe6d8bd9621ea754246400d78b45ce9bd556",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "redis:service_healthy:false,postgres:service_healthy:false",
+                "com.docker.compose.image": "sha256:c623197da8db681f54ab5304af22bb1848d455212a1e093d465404a86f0f2080",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "server",
+                "com.docker.compose.project.config_files": "/srv/arifOS/arifosmcp/eigent/server/docker-compose.yml",
+                "com.docker.compose.project.working_dir": "/srv/arifOS/arifosmcp/eigent/server",
+                "com.docker.compose.service": "api",
+                "com.docker.compose.version": "5.1.1",
+                "org.opencontainers.image.created": "2026-02-04T21:30:09.000Z",
+                "org.opencontainers.image.description": "An extremely fast Python package and project manager, written in Rust.",
+                "org.opencontainers.image.licenses": "Apache-2.0",
+                "org.opencontainers.image.revision": "ea4560831e503c6ce34d18739476a71ac6e9a9de",
+                "org.opencontainers.image.source": "https://github.com/astral-sh/uv",
+                "org.opencontainers.image.title": "uv",
+                "org.opencontainers.image.url": "https://github.com/astral-sh/uv",
+                "org.opencontainers.image.version": "0.9.30-python3.12-bookworm-slim",
+                "traefik.enable": "true",
+                "traefik.http.routers.eigent.entrypoints": "websecure",
+                "traefik.http.routers.eigent.rule": "Host(`eigent.vps.arif-fazil.com`)",
+                "traefik.http.routers.eigent.tls.certresolver": "letsencrypt",
+                "traefik.http.services.eigent.loadbalancer.server.port": "5678"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "fdedb8595ca974955613a424717daac0228c8ef87511a6ace4fe9b7f4add22ef",
+            "SandboxKey": "/var/run/docker/netns/fdedb8595ca9",
+            "Ports": {
+                "5678/tcp": [
+                    {
+                        "HostIp": "127.0.0.1",
+                        "HostPort": "3001"
+                    }
+                ]
+            },
+            "Networks": {
+                "arifosmcp_arifos_trinity": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "eigent_api",
+                        "api"
+                    ],
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "e190e8bfa08bbcb7f1b25750cb30d52c3c7d6100f43cc7ac654392f459ef7f64",
+                    "EndpointID": "358a7c6a413f8159493200b613cec32538934d50a6823bae0e53762d035dd44e",
+                    "Gateway": "172.19.0.1",
+                    "IPAddress": "172.19.0.3",
+                    "MacAddress": "82:64:bd:05:04:46",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "eigent_api",
+                        "api",
+                        "c9be46520e6a"
+                    ]
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:d12d06c633bf103e8e31e0bdc1e40ff2aa7669c5ef33916c2ac24bc4722f9ac3",
+            "size": 3527,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    },
+    {
+        "Id": "bce94959c8a71e94605f93559fc8ab1b75479f3cf42dbf0b30e006d0451f19ad",
+        "Created": "2026-03-28T06:42:59.309127084Z",
+        "Path": "/app/celery/beat/start",
+        "Args": [],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 2936,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-04-07T17:01:17.151423132Z",
+            "FinishedAt": "2026-04-07T17:01:15.404982511Z"
+        },
+        "Image": "sha256:d8c1f865af8ab01e66df41ae10ca2f3810e70c85978ea15d2c1ecba352f7489c",
+        "ResolvConfPath": "/var/lib/docker/containers/bce94959c8a71e94605f93559fc8ab1b75479f3cf42dbf0b30e006d0451f19ad/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/bce94959c8a71e94605f93559fc8ab1b75479f3cf42dbf0b30e006d0451f19ad/hostname",
+        "HostsPath": "/var/lib/docker/containers/bce94959c8a71e94605f93559fc8ab1b75479f3cf42dbf0b30e006d0451f19ad/hosts",
+        "LogPath": "/var/lib/docker/containers/bce94959c8a71e94605f93559fc8ab1b75479f3cf42dbf0b30e006d0451f19ad/bce94959c8a71e94605f93559fc8ab1b75479f3cf42dbf0b30e006d0451f19ad-json.log",
+        "Name": "/eigent_celery_beat",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": null,
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {
+                    "max-file": "3",
+                    "max-size": "50m"
+                }
+            },
+            "NetworkMode": "arifosmcp_arifos_trinity",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": null,
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [],
+        "Config": {
+            "Hostname": "bce94959c8a7",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "5678/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "celery_broker_url=redis://:ArifOS_Redis_2026@eigent_redis:6379/0",
+                "debug=false",
+                "SESSION_REDIS_URL=redis://:ArifOS_Redis_2026@eigent_redis:6379/1",
+                "ENABLE_TRIGGER_SCHEDULE_POLLER_TASK=true",
+                "secret_key=eigent-arifos-secret-2026-ditempa-bukan-diberi",
+                "ENABLE_EXECUTION_TIMEOUT_CHECKER=true",
+                "LITELLM_URL=https://api.minimax.io/v1",
+                "EXECUTION_TIMEOUT_CHECKER_INTERVAL=1",
+                "APP_PORT=5678",
+                "LITELLM_API_KEY=sk-cp-PfAjUvvTPsI8MMpeFbX3Se_Hbp3qyKeYsynjnvG2maVFVJSFFJA8Gz5yRXPizmHrMQWv8W_plVVci6TCOqOyUVSZx8OMJftBCZXskYol11TYtiyMfbGL_hQ",
+                "EXECUTION_RUNNING_TIMEOUT_SECONDS=600",
+                "celery_result_url=redis://:ArifOS_Redis_2026@eigent_redis:6379/0",
+                "CHAT_SHARE_SECRET_KEY=eigent-chat-share-arifOS-2026",
+                "APP_HOST=0.0.0.0",
+                "CHAT_SHARE_SALT=eigent-arifOS-salt-2026",
+                "database_url=postgresql+psycopg2://eigent:ArifOS_Eigent_2026_Strong@eigent_postgres:5432/eigent",
+                "EXECUTION_PENDING_TIMEOUT_SECONDS=60",
+                "url_prefix=/api",
+                "redis_url=redis://:ArifOS_Redis_2026@eigent_redis:6379/0",
+                "TRIGGER_SCHEDULE_POLLER_BATCH_SIZE=100",
+                "FALLBACK_MODEL=minimax_m2_5",
+                "TRIGGER_SCHEDULE_POLLER_INTERVAL=1",
+                "APP_ENV=production",
+                "ALLOWED_ORIGINS=https://eigent.vps.arif-fazil.com,https://arifosmcp.arif-fazil.com,https://aaa.arif-fazil.com",
+                "PATH=/app/.venv/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+                "PYTHON_VERSION=3.12.12",
+                "PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4",
+                "UV_TOOL_BIN_DIR=/usr/local/bin",
+                "UV_COMPILE_BYTECODE=0",
+                "UV_LINK_MODE=copy",
+                "UV_PYTHON_INSTALL_MIRROR=https://registry.npmmirror.com/-/binary/python-build-standalone"
+            ],
+            "Cmd": [
+                "/app/celery/beat/start"
+            ],
+            "Image": "server-celery_beat",
+            "Volumes": null,
+            "WorkingDir": "/app",
+            "Entrypoint": null,
+            "Labels": {
+                "com.docker.compose.config-hash": "a460c34ef0d6187d38579170b1e68965fe64a9b3fad06eeff0b5628fb1495a98",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "redis:service_healthy:false,postgres:service_healthy:false",
+                "com.docker.compose.image": "sha256:d8c1f865af8ab01e66df41ae10ca2f3810e70c85978ea15d2c1ecba352f7489c",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "server",
+                "com.docker.compose.project.config_files": "/srv/arifOS/arifosmcp/eigent/server/docker-compose.yml",
+                "com.docker.compose.project.working_dir": "/srv/arifOS/arifosmcp/eigent/server",
+                "com.docker.compose.service": "celery_beat",
+                "com.docker.compose.version": "5.1.1",
+                "org.opencontainers.image.created": "2026-02-04T21:30:09.000Z",
+                "org.opencontainers.image.description": "An extremely fast Python package and project manager, written in Rust.",
+                "org.opencontainers.image.licenses": "Apache-2.0",
+                "org.opencontainers.image.revision": "ea4560831e503c6ce34d18739476a71ac6e9a9de",
+                "org.opencontainers.image.source": "https://github.com/astral-sh/uv",
+                "org.opencontainers.image.title": "uv",
+                "org.opencontainers.image.url": "https://github.com/astral-sh/uv",
+                "org.opencontainers.image.version": "0.9.30-python3.12-bookworm-slim"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "e149f24ce66bbd8018507697a2e2d24d616838560719a3999bdc0705ca2fd56e",
+            "SandboxKey": "/var/run/docker/netns/e149f24ce66b",
+            "Ports": {
+                "5678/tcp": null
+            },
+            "Networks": {
+                "arifosmcp_arifos_trinity": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "eigent_celery_beat",
+                        "celery_beat"
+                    ],
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "e190e8bfa08bbcb7f1b25750cb30d52c3c7d6100f43cc7ac654392f459ef7f64",
+                    "EndpointID": "3eed7d34e7591c91e13003ef577d0b899789505ee929b6f33b880a6bf5bcef49",
+                    "Gateway": "172.19.0.1",
+                    "IPAddress": "172.19.0.8",
+                    "MacAddress": "22:68:13:31:b5:1c",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "eigent_celery_beat",
+                        "celery_beat",
+                        "bce94959c8a7"
+                    ]
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:00f1bb95c657b72000fe19a4e944be26986a8eaa0eb7e76e8f057880ba8f7141",
+            "size": 3527,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    },
+    {
+        "Id": "f84747d62710a6b17268783e8da057b864180379e550b16295dcf733e9f983c6",
+        "Created": "2026-03-28T06:42:59.308386217Z",
+        "Path": "/app/celery/worker/start",
+        "Args": [],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 2655,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-04-07T17:01:17.120465185Z",
+            "FinishedAt": "2026-04-07T17:01:15.399966481Z"
+        },
+        "Image": "sha256:0a09efc8b8ba00cd806904265f484646415d252d29944fe87a94f7652eede5fd",
+        "ResolvConfPath": "/var/lib/docker/containers/f84747d62710a6b17268783e8da057b864180379e550b16295dcf733e9f983c6/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/f84747d62710a6b17268783e8da057b864180379e550b16295dcf733e9f983c6/hostname",
+        "HostsPath": "/var/lib/docker/containers/f84747d62710a6b17268783e8da057b864180379e550b16295dcf733e9f983c6/hosts",
+        "LogPath": "/var/lib/docker/containers/f84747d62710a6b17268783e8da057b864180379e550b16295dcf733e9f983c6/f84747d62710a6b17268783e8da057b864180379e550b16295dcf733e9f983c6-json.log",
+        "Name": "/eigent_celery_worker",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": null,
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {
+                    "max-file": "3",
+                    "max-size": "50m"
+                }
+            },
+            "NetworkMode": "arifosmcp_arifos_trinity",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": null,
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [],
+        "Config": {
+            "Hostname": "f84747d62710",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "5678/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "ENABLE_TRIGGER_SCHEDULE_POLLER_TASK=true",
+                "APP_ENV=production",
+                "database_url=postgresql+psycopg2://eigent:ArifOS_Eigent_2026_Strong@eigent_postgres:5432/eigent",
+                "celery_broker_url=redis://:ArifOS_Redis_2026@eigent_redis:6379/0",
+                "CHAT_SHARE_SALT=eigent-arifOS-salt-2026",
+                "celery_result_url=redis://:ArifOS_Redis_2026@eigent_redis:6379/0",
+                "SESSION_REDIS_URL=redis://:ArifOS_Redis_2026@eigent_redis:6379/1",
+                "LITELLM_URL=https://api.minimax.io/v1",
+                "TRIGGER_SCHEDULE_POLLER_BATCH_SIZE=100",
+                "url_prefix=/api",
+                "TRIGGER_SCHEDULE_POLLER_INTERVAL=1",
+                "ALLOWED_ORIGINS=https://eigent.vps.arif-fazil.com,https://arifosmcp.arif-fazil.com,https://aaa.arif-fazil.com",
+                "APP_PORT=5678",
+                "debug=false",
+                "ENABLE_EXECUTION_TIMEOUT_CHECKER=true",
+                "EXECUTION_RUNNING_TIMEOUT_SECONDS=600",
+                "EXECUTION_TIMEOUT_CHECKER_INTERVAL=1",
+                "CHAT_SHARE_SECRET_KEY=eigent-chat-share-arifOS-2026",
+                "EXECUTION_PENDING_TIMEOUT_SECONDS=60",
+                "redis_url=redis://:ArifOS_Redis_2026@eigent_redis:6379/0",
+                "secret_key=eigent-arifos-secret-2026-ditempa-bukan-diberi",
+                "APP_HOST=0.0.0.0",
+                "LITELLM_API_KEY=sk-cp-PfAjUvvTPsI8MMpeFbX3Se_Hbp3qyKeYsynjnvG2maVFVJSFFJA8Gz5yRXPizmHrMQWv8W_plVVci6TCOqOyUVSZx8OMJftBCZXskYol11TYtiyMfbGL_hQ",
+                "FALLBACK_MODEL=minimax_m2_5",
+                "PATH=/app/.venv/bin:/root/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "LANG=C.UTF-8",
+                "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+                "PYTHON_VERSION=3.12.12",
+                "PYTHON_SHA256=fb85a13414b028c49ba18bbd523c2d055a30b56b18b92ce454ea2c51edc656c4",
+                "UV_TOOL_BIN_DIR=/usr/local/bin",
+                "UV_COMPILE_BYTECODE=0",
+                "UV_LINK_MODE=copy",
+                "UV_PYTHON_INSTALL_MIRROR=https://registry.npmmirror.com/-/binary/python-build-standalone"
+            ],
+            "Cmd": [
+                "/app/celery/worker/start"
+            ],
+            "Image": "server-celery_worker",
+            "Volumes": null,
+            "WorkingDir": "/app",
+            "Entrypoint": null,
+            "Labels": {
+                "com.docker.compose.config-hash": "46bc46f025cc1106aeab547bd64b36085c1bbd82d46073db39812fdd147076ed",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "postgres:service_healthy:false,redis:service_healthy:false",
+                "com.docker.compose.image": "sha256:0a09efc8b8ba00cd806904265f484646415d252d29944fe87a94f7652eede5fd",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "server",
+                "com.docker.compose.project.config_files": "/srv/arifOS/arifosmcp/eigent/server/docker-compose.yml",
+                "com.docker.compose.project.working_dir": "/srv/arifOS/arifosmcp/eigent/server",
+                "com.docker.compose.service": "celery_worker",
+                "com.docker.compose.version": "5.1.1",
+                "org.opencontainers.image.created": "2026-02-04T21:30:09.000Z",
+                "org.opencontainers.image.description": "An extremely fast Python package and project manager, written in Rust.",
+                "org.opencontainers.image.licenses": "Apache-2.0",
+                "org.opencontainers.image.revision": "ea4560831e503c6ce34d18739476a71ac6e9a9de",
+                "org.opencontainers.image.source": "https://github.com/astral-sh/uv",
+                "org.opencontainers.image.title": "uv",
+                "org.opencontainers.image.url": "https://github.com/astral-sh/uv",
+                "org.opencontainers.image.version": "0.9.30-python3.12-bookworm-slim"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "421ae3c2889dbcb8a84876972ea9d09626b75fa6d716e75170c65c25e842764e",
+            "SandboxKey": "/var/run/docker/netns/421ae3c2889d",
+            "Ports": {
+                "5678/tcp": null
+            },
+            "Networks": {
+                "arifosmcp_arifos_trinity": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "eigent_celery_worker",
+                        "celery_worker"
+                    ],
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "e190e8bfa08bbcb7f1b25750cb30d52c3c7d6100f43cc7ac654392f459ef7f64",
+                    "EndpointID": "002f97f2f3adfe2041ec285669041d054cc55c620b2c90534519d0129671ef83",
+                    "Gateway": "172.19.0.1",
+                    "IPAddress": "172.19.0.4",
+                    "MacAddress": "aa:79:fe:37:ec:1e",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "eigent_celery_worker",
+                        "celery_worker",
+                        "f84747d62710"
+                    ]
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:80d46d688478719746f7dfb5738040bd73427fb76a9cba6a878601cb6fdbff2b",
+            "size": 3527,
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    },
+    {
+        "Id": "41d2fd69803a3a5cf23e3f9e2ee98d94cc046add4304f4dc36b8df48a17a347c",
+        "Created": "2026-03-28T06:42:59.133072134Z",
+        "Path": "docker-entrypoint.sh",
+        "Args": [
+            "postgres"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 2877,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-04-07T17:01:17.164730798Z",
+            "FinishedAt": "2026-04-07T17:01:15.399326987Z",
+            "Health": {
+                "Status": "healthy",
+                "FailingStreak": 0,
+                "Log": [
+                    {
+                        "Start": "2026-04-09T09:18:21.123230029Z",
+                        "End": "2026-04-09T09:18:21.195127646Z",
+                        "ExitCode": 0,
+                        "Output": "/var/run/postgresql:5432 - accepting connections\n"
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:31.196334724Z",
+                        "End": "2026-04-09T09:18:31.264113424Z",
+                        "ExitCode": 0,
+                        "Output": "/var/run/postgresql:5432 - accepting connections\n"
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:41.265092117Z",
+                        "End": "2026-04-09T09:18:41.338694524Z",
+                        "ExitCode": 0,
+                        "Output": "/var/run/postgresql:5432 - accepting connections\n"
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:51.339728311Z",
+                        "End": "2026-04-09T09:18:51.409068233Z",
+                        "ExitCode": 0,
+                        "Output": "/var/run/postgresql:5432 - accepting connections\n"
+                    },
+                    {
+                        "Start": "2026-04-09T09:19:01.410205025Z",
+                        "End": "2026-04-09T09:19:01.483736615Z",
+                        "ExitCode": 0,
+                        "Output": "/var/run/postgresql:5432 - accepting connections\n"
+                    }
+                ]
+            }
+        },
+        "Image": "sha256:2586e2a95d1c9b31cb2967feb562948f7d364854453d703039b6efa45fe48417",
+        "ResolvConfPath": "/var/lib/docker/containers/41d2fd69803a3a5cf23e3f9e2ee98d94cc046add4304f4dc36b8df48a17a347c/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/41d2fd69803a3a5cf23e3f9e2ee98d94cc046add4304f4dc36b8df48a17a347c/hostname",
+        "HostsPath": "/var/lib/docker/containers/41d2fd69803a3a5cf23e3f9e2ee98d94cc046add4304f4dc36b8df48a17a347c/hosts",
+        "LogPath": "/var/lib/docker/containers/41d2fd69803a3a5cf23e3f9e2ee98d94cc046add4304f4dc36b8df48a17a347c/41d2fd69803a3a5cf23e3f9e2ee98d94cc046add4304f4dc36b8df48a17a347c-json.log",
+        "Name": "/eigent_postgres",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "server_eigent_db_data:/var/lib/postgresql/data:rw"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {
+                    "max-file": "3",
+                    "max-size": "50m"
+                }
+            },
+            "NetworkMode": "arifosmcp_arifos_trinity",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": null,
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "server_eigent_db_data",
+                "Source": "/var/lib/docker/volumes/server_eigent_db_data/_data",
+                "Destination": "/var/lib/postgresql/data",
+                "Driver": "local",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+        "Config": {
+            "Hostname": "41d2fd69803a",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "5432/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "POSTGRES_PASSWORD=ArifOS_Eigent_2026_Strong",
+                "POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C",
+                "POSTGRES_DB=eigent",
+                "POSTGRES_USER=eigent",
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/postgresql/16/bin",
+                "GOSU_VERSION=1.19",
+                "LANG=en_US.utf8",
+                "PG_MAJOR=16",
+                "PG_VERSION=16.13-1.pgdg13+1",
+                "PGDATA=/var/lib/postgresql/data"
+            ],
+            "Cmd": [
+                "postgres"
+            ],
+            "Healthcheck": {
+                "Test": [
+                    "CMD-SHELL",
+                    "pg_isready -U eigent -d eigent"
+                ],
+                "Interval": 10000000000,
+                "Timeout": 5000000000,
+                "Retries": 5
+            },
+            "Image": "postgres:16",
+            "Volumes": {
+                "/var/lib/postgresql/data": {}
+            },
+            "WorkingDir": "",
+            "Entrypoint": [
+                "docker-entrypoint.sh"
+            ],
+            "Labels": {
+                "com.docker.compose.config-hash": "a38aaf59b6ae2cea82582c37aa21a06035d97af430eebe51a5f8a36036f1e064",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "",
+                "com.docker.compose.image": "sha256:2586e2a95d1c9b31cb2967feb562948f7d364854453d703039b6efa45fe48417",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "server",
+                "com.docker.compose.project.config_files": "/srv/arifOS/arifosmcp/eigent/server/docker-compose.yml",
+                "com.docker.compose.project.working_dir": "/srv/arifOS/arifosmcp/eigent/server",
+                "com.docker.compose.service": "postgres",
+                "com.docker.compose.version": "5.1.1"
+            },
+            "StopSignal": "SIGINT"
+        },
+        "NetworkSettings": {
+            "SandboxID": "c96cd3dc0209f46e0ccad1d2e1eccdfd43b10b31ee5115e30f245c670b6dfe17",
+            "SandboxKey": "/var/run/docker/netns/c96cd3dc0209",
+            "Ports": {
+                "5432/tcp": null
+            },
+            "Networks": {
+                "arifosmcp_arifos_trinity": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "eigent_postgres",
+                        "postgres"
+                    ],
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "e190e8bfa08bbcb7f1b25750cb30d52c3c7d6100f43cc7ac654392f459ef7f64",
+                    "EndpointID": "85a3162cf48fe16aa260cd222b4dba5c2eda61974ab0cf47309b947d1ecf8279",
+                    "Gateway": "172.19.0.1",
+                    "IPAddress": "172.19.0.7",
+                    "MacAddress": "36:da:e2:12:75:c8",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "eigent_postgres",
+                        "postgres",
+                        "41d2fd69803a"
+                    ]
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:6c8c5db168194563125927cbc43e6caa972b1c1503593406184db3e74c6d074e",
+            "size": 3628,
+            "annotations": {
+                "com.docker.official-images.bashbrew.arch": "amd64",
+                "org.opencontainers.image.base.digest": "sha256:edc9450a9fe37d30b508808052f8d0564e3ed9eaf565e043c6f5632957f7381e",
+                "org.opencontainers.image.base.name": "debian:trixie-slim",
+                "org.opencontainers.image.created": "2026-03-16T22:34:02Z",
+                "org.opencontainers.image.revision": "31041e40d9b06ce075f5edd767243e53efb5ee62",
+                "org.opencontainers.image.source": "https://github.com/docker-library/postgres.git#31041e40d9b06ce075f5edd767243e53efb5ee62:16/trixie",
+                "org.opencontainers.image.url": "https://hub.docker.com/_/postgres",
+                "org.opencontainers.image.version": "16.13"
+            },
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    },
+    {
+        "Id": "dc010dd4e08c5d7ae54fe16bbcfce3ee580da0f8050858097629386fd522a68b",
+        "Created": "2026-03-28T06:42:59.128094012Z",
+        "Path": "docker-entrypoint.sh",
+        "Args": [
+            "redis-server",
+            "--requirepass",
+            "ArifOS_Redis_2026"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 2709,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2026-04-07T17:01:17.156383157Z",
+            "FinishedAt": "2026-04-07T17:01:15.402179477Z",
+            "Health": {
+                "Status": "healthy",
+                "FailingStreak": 0,
+                "Log": [
+                    {
+                        "Start": "2026-04-09T09:18:15.595467521Z",
+                        "End": "2026-04-09T09:18:15.645132212Z",
+                        "ExitCode": 0,
+                        "Output": "Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.\nPONG\n"
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:25.647093896Z",
+                        "End": "2026-04-09T09:18:25.691674693Z",
+                        "ExitCode": 0,
+                        "Output": "Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.\nPONG\n"
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:35.692348158Z",
+                        "End": "2026-04-09T09:18:35.736088809Z",
+                        "ExitCode": 0,
+                        "Output": "PONG\nWarning: Using a password with '-a' or '-u' option on the command line interface may not be safe.\n"
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:45.737044629Z",
+                        "End": "2026-04-09T09:18:45.77643191Z",
+                        "ExitCode": 0,
+                        "Output": "Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.\nPONG\n"
+                    },
+                    {
+                        "Start": "2026-04-09T09:18:55.777747891Z",
+                        "End": "2026-04-09T09:18:55.816824484Z",
+                        "ExitCode": 0,
+                        "Output": "Warning: Using a password with '-a' or '-u' option on the command line interface may not be safe.\nPONG\n"
+                    }
+                ]
+            }
+        },
+        "Image": "sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065",
+        "ResolvConfPath": "/var/lib/docker/containers/dc010dd4e08c5d7ae54fe16bbcfce3ee580da0f8050858097629386fd522a68b/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/dc010dd4e08c5d7ae54fe16bbcfce3ee580da0f8050858097629386fd522a68b/hostname",
+        "HostsPath": "/var/lib/docker/containers/dc010dd4e08c5d7ae54fe16bbcfce3ee580da0f8050858097629386fd522a68b/hosts",
+        "LogPath": "/var/lib/docker/containers/dc010dd4e08c5d7ae54fe16bbcfce3ee580da0f8050858097629386fd522a68b/dc010dd4e08c5d7ae54fe16bbcfce3ee580da0f8050858097629386fd522a68b-json.log",
+        "Name": "/eigent_redis",
+        "RestartCount": 0,
+        "Driver": "overlayfs",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": [
+                "server_eigent_redis_data:/data:rw"
+            ],
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {
+                    "max-file": "3",
+                    "max-size": "50m"
+                }
+            },
+            "NetworkMode": "arifosmcp_arifos_trinity",
+            "PortBindings": {},
+            "RestartPolicy": {
+                "Name": "unless-stopped",
+                "MaximumRetryCount": 0
+            },
+            "AutoRemove": false,
+            "VolumeDriver": "",
+            "VolumesFrom": null,
+            "ConsoleSize": [
+                0,
+                0
+            ],
+            "CapAdd": null,
+            "CapDrop": null,
+            "CgroupnsMode": "private",
+            "Dns": [],
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": [],
+            "GroupAdd": null,
+            "IpcMode": "private",
+            "Cgroup": "",
+            "Links": null,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyRootfs": false,
+            "SecurityOpt": null,
+            "UTSMode": "",
+            "UsernsMode": "",
+            "ShmSize": 67108864,
+            "Runtime": "runc",
+            "Isolation": "",
+            "CpuShares": 0,
+            "Memory": 0,
+            "NanoCpus": 0,
+            "CgroupParent": "",
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": null,
+            "BlkioDeviceReadBps": null,
+            "BlkioDeviceWriteBps": null,
+            "BlkioDeviceReadIOps": null,
+            "BlkioDeviceWriteIOps": null,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "Devices": null,
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "MemoryReservation": 0,
+            "MemorySwap": 0,
+            "MemorySwappiness": null,
+            "OomKillDisable": null,
+            "PidsLimit": null,
+            "Ulimits": null,
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "IOMaximumIOps": 0,
+            "IOMaximumBandwidth": 0,
+            "MaskedPaths": [
+                "/proc/acpi",
+                "/proc/asound",
+                "/proc/interrupts",
+                "/proc/kcore",
+                "/proc/keys",
+                "/proc/latency_stats",
+                "/proc/sched_debug",
+                "/proc/scsi",
+                "/proc/timer_list",
+                "/proc/timer_stats",
+                "/sys/devices/virtual/powercap",
+                "/sys/firmware"
+            ],
+            "ReadonlyPaths": [
+                "/proc/bus",
+                "/proc/fs",
+                "/proc/irq",
+                "/proc/sys",
+                "/proc/sysrq-trigger"
+            ]
+        },
+        "Storage": {
+            "RootFS": {
+                "Snapshot": {
+                    "Name": "overlayfs"
+                }
+            }
+        },
+        "Mounts": [
+            {
+                "Type": "volume",
+                "Name": "server_eigent_redis_data",
+                "Source": "/var/lib/docker/volumes/server_eigent_redis_data/_data",
+                "Destination": "/data",
+                "Driver": "local",
+                "Mode": "rw",
+                "RW": true,
+                "Propagation": ""
+            }
+        ],
+        "Config": {
+            "Hostname": "dc010dd4e08c",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "AttachStderr": true,
+            "ExposedPorts": {
+                "6379/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "GOSU_VERSION=1.17",
+                "REDIS_VERSION=7.4.8",
+                "REDIS_DOWNLOAD_URL=http://download.redis.io/releases/redis-7.4.8.tar.gz",
+                "REDIS_DOWNLOAD_SHA=f6773cb7d63be236c59c2917a82f1f08e47b77d89b2f0c9f53becb22b8ea4172"
+            ],
+            "Cmd": [
+                "redis-server",
+                "--requirepass",
+                "ArifOS_Redis_2026"
+            ],
+            "Healthcheck": {
+                "Test": [
+                    "CMD",
+                    "redis-cli",
+                    "-a",
+                    "ArifOS_Redis_2026",
+                    "ping"
+                ],
+                "Interval": 10000000000,
+                "Timeout": 5000000000,
+                "Retries": 5
+            },
+            "Image": "redis:7-alpine",
+            "Volumes": {
+                "/data": {}
+            },
+            "WorkingDir": "/data",
+            "Entrypoint": [
+                "docker-entrypoint.sh"
+            ],
+            "Labels": {
+                "com.docker.compose.config-hash": "c45981a635710dc65050fda8b88bbeb3e17bb420c77d1c16f0acd4152e2f47d5",
+                "com.docker.compose.container-number": "1",
+                "com.docker.compose.depends_on": "",
+                "com.docker.compose.image": "sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065",
+                "com.docker.compose.oneoff": "False",
+                "com.docker.compose.project": "server",
+                "com.docker.compose.project.config_files": "/srv/arifOS/arifosmcp/eigent/server/docker-compose.yml",
+                "com.docker.compose.project.working_dir": "/srv/arifOS/arifosmcp/eigent/server",
+                "com.docker.compose.service": "redis",
+                "com.docker.compose.version": "5.1.1"
+            }
+        },
+        "NetworkSettings": {
+            "SandboxID": "19f8c360611f9329e532d0dfb75422b08b5d28e207e83ba36a89c11522c77701",
+            "SandboxKey": "/var/run/docker/netns/19f8c360611f",
+            "Ports": {
+                "6379/tcp": null
+            },
+            "Networks": {
+                "arifosmcp_arifos_trinity": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "eigent_redis",
+                        "redis"
+                    ],
+                    "DriverOpts": null,
+                    "GwPriority": 0,
+                    "NetworkID": "e190e8bfa08bbcb7f1b25750cb30d52c3c7d6100f43cc7ac654392f459ef7f64",
+                    "EndpointID": "153f8a4aeb8800a4d1d565c1486ade7e0c2031230dc6711cfecd3940244d5ca0",
+                    "Gateway": "172.19.0.1",
+                    "IPAddress": "172.19.0.6",
+                    "MacAddress": "16:a0:c5:30:58:23",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "DNSNames": [
+                        "eigent_redis",
+                        "redis",
+                        "dc010dd4e08c"
+                    ]
+                }
+            }
+        },
+        "ImageManifestDescriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": "sha256:4bfd9eca23339865dc14fe75f6d9ae643f714924623978dd2798f1a673b08f43",
+            "size": 2483,
+            "annotations": {
+                "com.docker.official-images.bashbrew.arch": "amd64",
+                "org.opencontainers.image.base.digest": "sha256:22e0ec13c0db6b3e1ba3280e831fc50ba7bffe58e81f31670a64b1afede247bc",
+                "org.opencontainers.image.base.name": "alpine:3.21",
+                "org.opencontainers.image.created": "2026-02-23T17:34:10Z",
+                "org.opencontainers.image.revision": "9d9b74b729d555ef784db63c1941b73d1c47a6f9",
+                "org.opencontainers.image.source": "https://github.com/redis/docker-library-redis.git#9d9b74b729d555ef784db63c1941b73d1c47a6f9:7.4/alpine",
+                "org.opencontainers.image.url": "https://hub.docker.com/_/redis",
+                "org.opencontainers.image.version": "7.4.8-alpine"
+            },
+            "platform": {
+                "architecture": "amd64",
+                "os": "linux"
+            }
+        }
+    }
+]
