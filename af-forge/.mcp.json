@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "af-forge": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["dist/src/mcp/server.js"],
+      "description": "AF-FORGE constitutional agent runtime — governance checks, floor status, governed task execution"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "mcp": {
+    "servers": {
+      "af-forge": {
+        "type": "stdio",
+        "command": "node",
+        "args": ["dist/src/mcp/server.js"]
+      }
+    }
+  }
+}

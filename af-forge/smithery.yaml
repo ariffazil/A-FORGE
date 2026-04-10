@@ -1,0 +1,24 @@
+name: af-forge
+version: 0.1.0
+description: AF-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.
+
+server:
+  type: stdio
+  command: node
+  args:
+    - dist/src/mcp/server.js
+
+build:
+  command: npm install && npm run build
+
+tools:
+  - name: forge_check_governance
+    description: Run F3/F6/F9 constitutional floor checks on a task string
+  - name: forge_health
+    description: Return server health and F1–F13 floor implementation status
+  - name: forge_run
+    description: Run a governed agent task (explore profile, mock LLM)
+
+resources:
+  - uri: forge://governance/floors
+    description: Constitutional floor definitions (F1–F13)

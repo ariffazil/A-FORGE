@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "af-forge": {
+      "command": "node",
+      "args": ["dist/src/mcp/server.js"],
+      "description": "AF-FORGE constitutional agent runtime"
+    }
+  }
+}

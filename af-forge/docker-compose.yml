@@ -1,0 +1,25 @@
+name: af-forge
+
+services:
+  af-forge-bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: af-forge-bridge
+    ports:
+      - "7071:7071"
+    environment:
+      NODE_ENV: production
+      AGENT_WORKBENCH_PROVIDER: mock
+      AGENT_WORKBENCH_DEFAULT_MODE: external_safe_mode
+      # Set OPENAI_API_KEY in .env to use openai_responses provider
+    env_file:
+      - path: .env
+        required: false
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:7071/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
