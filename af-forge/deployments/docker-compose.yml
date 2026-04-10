@@ -1,0 +1,178 @@
+# arifOS Docker Compose - AAA Level Deployment
+# 
+# Usage:
+#   docker-compose up -d                    # Start services
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d  # Production
+#   docker-compose down -v                  # Stop and clean up
+
+version: "3.8"
+
+services:
+  # --- Core arifOS Runtime ---
+  arifos:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile
+      target: production
+    image: arifos:latest
+    container_name: arifos-runtime
+    restart: unless-stopped
+    
+    environment:
+      # Core Configuration
+      - NODE_ENV=production
+      - AGENT_WORKBENCH_PROVIDER=${AGENT_WORKBENCH_PROVIDER:-mock}
+      - AGENT_WORKBENCH_MODEL=${AGENT_WORKBENCH_MODEL:-gpt-5}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
+      
+      # Safety Configuration (external_safe_mode by default)
+      - AGENT_WORKBENCH_DEFAULT_MODE=${AGENT_WORKBENCH_DEFAULT_MODE:-external_safe_mode}
+      - AGENT_WORKBENCH_TRUST_LOCAL_VPS=${AGENT_WORKBENCH_TRUST_LOCAL_VPS:-0}
+      
+      # Paths
+      - AGENT_WORKBENCH_MEMORY_PATH=/data/memory.json
+      - AGENT_WORKBENCH_SCOREBOARD_PATH=/data/scoreboard.json
+      - AGENT_WORKBENCH_RUN_METRICS_DIR=/logs/metrics
+      
+      # Policy
+      - AGENT_WORKBENCH_COMMAND_TIMEOUT_MS=30000
+      - AGENT_WORKBENCH_MAX_FILE_BYTES=262144
+      - AGENT_WORKBENCH_ALLOWED_COMMAND_PREFIXES=npm test,node
+      - AGENT_WORKBENCH_BLOCKED_COMMAND_PATTERNS=rm -rf,shutdown,reboot
+      
+      # Feature Flags
+      - ENABLE_DANGEROUS_TOOLS=${ENABLE_DANGEROUS_TOOLS:-false}
+      - ENABLE_BACKGROUND_JOBS=${ENABLE_BACKGROUND_JOBS:-false}
+      - ENABLE_EXPERIMENTAL_TOOLS=${ENABLE_EXPERIMENTAL_TOOLS:-false}
+    
+    volumes:
+      - arifos-data:/data
+      - arifos-logs:/logs
+      - ${HOST_WORKSPACE:-./workspace}:/workspace:ro
+    
+    networks:
+      - arifos-network
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Security
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=100m
+    
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('healthy')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # --- MCP Server (FastMCP) ---
+  arifos-mcp:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile.mcp
+    image: arifos-mcp:latest
+    container_name: arifos-mcp-server
+    restart: unless-stopped
+    
+    environment:
+      - MCP_TRANSPORT=http
+      - MCP_PORT=8000
+      - MCP_HOST=0.0.0.0
+    
+    ports:
+      - "${MCP_PORT:-8000}:8000"
+    
+    networks:
+      - arifos-network
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # --- Observability: Prometheus ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: arifos-prometheus
+    restart: unless-stopped
+    
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    
+    networks:
+      - arifos-network
+
+  # --- Observability: Grafana ---
+  grafana:
+    image: grafana/grafana:latest
+    container_name: arifos-grafana
+    restart: unless-stopped
+    
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    
+    networks:
+      - arifos-network
+    
+    depends_on:
+      - prometheus
+
+# --- Volumes ---
+volumes:
+  arifos-data:
+    driver: local
+  arifos-logs:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# --- Networks ---
+networks:
+  arifos-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

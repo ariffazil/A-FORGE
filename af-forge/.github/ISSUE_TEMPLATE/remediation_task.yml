@@ -1,0 +1,99 @@
+name: Remediation Task
+description: Track arifOS AAA remediation work with canonical context and success metrics
+title: "[REM] <ID> - <Brief Description>"
+labels: ["remediation", "aaa"]
+body:
+  - type: input
+    id: task_id
+    attributes:
+      label: Task ID
+      description: e.g., DOC-001, GOV-002, PY-003
+      placeholder: "DOC-001"
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase
+      options:
+        - Phase 1 - Documentation Debt (F11)
+        - Phase 2 - AF-FORGE Governance Gaps (F13)
+        - Phase 3 - Python arifosmcp Hardening (F1)
+        - Phase 4 - GEOX Python Hardening (F2)
+        - Phase 5 - Canon Compliance (F8)
+    validations:
+      required: true
+  
+  - type: input
+    id: floor
+    attributes:
+      label: Constitutional Floor
+      description: Primary arifOS Floor addressed
+      placeholder: "F11 Coherence"
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - P0-Critical
+        - P1-High
+        - P2-Medium
+        - P3-Low
+    validations:
+      required: true
+  
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why this task matters (1-2 sentences)
+      placeholder: "Keep AF-FORGE docs consistent with 004REALITY Floors so future contributors don't fork semantics."
+    validations:
+      required: true
+  
+  - type: textarea
+    id: success_metrics
+    attributes:
+      label: Success Metrics (Testable)
+      description: 3-5 concrete, automatable success criteria
+      placeholder: |
+        - [ ] Metric 1: e.g., Mapping table exists in AAA_DEPLOYMENT_GUIDE.md
+        - [ ] Metric 2: PR references 004REALITY.md
+        - [ ] Metric 3: Reviewer confirms no contradictions
+        - [ ] Metric 4: CI doc lint checks all Floors listed
+    validations:
+      required: true
+  
+  - type: textarea
+    id: exit_criteria
+    attributes:
+      label: Exit Criteria
+      description: What "done" looks like
+      placeholder: "Phase 1 complete when merged to default branch and README/AAA guide are consistent on scope."
+  
+  - type: checkboxes
+    id: canon_alignment
+    attributes:
+      label: Canon Alignment Check
+      options:
+        - label: No hantu (no personhood/feeling claims)
+        - label: Scope and uncertainty explicit
+        - label: Floors invoked correctly
+        - label: Reversibility path documented
+  
+  - type: input
+    id: estimated_effort
+    attributes:
+      label: Estimated Effort
+      placeholder: "2-3 hours"
+  
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Blocked by or blocks other tasks
+      placeholder: "Blocks: None\nBlocked by: None"

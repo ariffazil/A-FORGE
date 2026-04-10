@@ -1,0 +1,270 @@
+# arifOS Kubernetes Deployment - AAA Level
+# 
+# Usage:
+#   kubectl apply -f k8s-deployment.yaml
+#   kubectl get pods -l app=arifos
+#   kubectl logs -f deployment/arifos
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: arifos
+  labels:
+    name: arifos
+    version: "1.0.0-AAA"
+
+---
+# ConfigMap for non-sensitive configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: arifos-config
+  namespace: arifos
+data:
+  NODE_ENV: "production"
+  AGENT_WORKBENCH_PROVIDER: "mock"
+  AGENT_WORKBENCH_MODEL: "gpt-5"
+  AGENT_WORKBENCH_DEFAULT_MODE: "external_safe_mode"
+  AGENT_WORKBENCH_COMMAND_TIMEOUT_MS: "30000"
+  AGENT_WORKBENCH_MAX_FILE_BYTES: "262144"
+  AGENT_WORKBENCH_ALLOWED_COMMAND_PREFIXES: "npm test,node"
+  AGENT_WORKBENCH_BLOCKED_COMMAND_PATTERNS: "rm -rf,shutdown,reboot"
+  ENABLE_DANGEROUS_TOOLS: "false"
+  ENABLE_BACKGROUND_JOBS: "false"
+  ENABLE_EXPERIMENTAL_TOOLS: "false"
+
+---
+# Secret for sensitive configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: arifos-secrets
+  namespace: arifos
+type: Opaque
+stringData:
+  OPENAI_API_KEY: ""  # Set via kubectl or external secrets manager
+  GRAFANA_PASSWORD: "admin"
+
+---
+# Persistent Volume Claim for data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: arifos-data-pvc
+  namespace: arifos
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+# Deployment for arifOS Runtime
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: arifos
+  namespace: arifos
+  labels:
+    app: arifos
+    version: "1.0.0-AAA"
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: arifos
+  template:
+    metadata:
+      labels:
+        app: arifos
+        version: "1.0.0-AAA"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      
+      containers:
+        - name: arifos
+          image: arifos:latest
+          imagePullPolicy: IfNotPresent
+          
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          
+          envFrom:
+            - configMapRef:
+                name: arifos-config
+          
+          env:
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: arifos-secrets
+                  key: OPENAI_API_KEY
+            - name: AGENT_WORKBENCH_MEMORY_PATH
+              value: "/data/memory.json"
+            - name: AGENT_WORKBENCH_SCOREBOARD_PATH
+              value: "/data/scoreboard.json"
+            - name: AGENT_WORKBENCH_RUN_METRICS_DIR
+              value: "/logs/metrics"
+          
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: logs
+              mountPath: /logs
+            - name: tmp
+              mountPath: /tmp
+          
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+          
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          
+          livenessProbe:
+            exec:
+              command:
+                - node
+                - -e
+                - "console.log('healthy')"
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          readinessProbe:
+            exec:
+              command:
+                - node
+                - -e
+                - "console.log('ready')"
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+      
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: arifos-data-pvc
+        - name: logs
+          emptyDir:
+            sizeLimit: 1Gi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 100Mi
+
+---
+# Service for arifOS
+apiVersion: v1
+kind: Service
+metadata:
+  name: arifos
+  namespace: arifos
+  labels:
+    app: arifos
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: arifos
+
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: arifos-hpa
+  namespace: arifos
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: arifos
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+
+---
+# Network Policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: arifos-network-policy
+  namespace: arifos
+spec:
+  podSelector:
+    matchLabels:
+      app: arifos
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: arifos
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443  # HTTPS only
+        - protocol: TCP
+          port: 53   # DNS
+        - protocol: UDP
+          port: 53   # DNS

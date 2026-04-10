@@ -1,0 +1,499 @@
+openapi: 3.1.0
+info:
+  title: arifOS Constitutional AI Governance API
+  description: |
+    arifOS provides constitutional AI governance through 13 enforcement floors (F1-F13).
+    
+    ## Key Features
+    - **F3**: Input Clarity - blocks vague/empty tasks
+    - **F6**: Harm/Dignity - protects human dignity
+    - **F9**: Injection Resistance - blocks prompt attacks
+    - **F13**: Human Sovereignty - 888_HOLD gate for critical actions
+    
+    ## Authentication
+    API keys can be passed via `X-API-Key` header or `Authorization: Bearer` header.
+    
+    ## Rate Limiting
+    - Standard: 100 requests/minute
+    - Enterprise: 1000 requests/minute
+  version: 1.0.0-AAA
+  contact:
+    name: arifOS Team
+    url: https://arifos.dev
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.arifos.dev/v1
+    description: Production
+  - url: http://localhost:8000
+    description: Local Development
+
+tags:
+  - name: Governance
+    description: Constitutional floor enforcement
+  - name: Session
+    description: Session management (F1)
+  - name: Status
+    description: Health and status endpoints
+  - name: MCP
+    description: Model Context Protocol endpoints
+
+paths:
+  /health:
+    get:
+      tags: [Status]
+      summary: Health check
+      description: Check if the arifOS service is healthy
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+        '503':
+          description: Service is unhealthy or degraded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+
+  /status:
+    get:
+      tags: [Status]
+      summary: Get system status
+      description: Get detailed system status and metrics
+      operationId: getStatus
+      responses:
+        '200':
+          description: System status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemStatus'
+
+  /governance/check:
+    post:
+      tags: [Governance]
+      summary: Full governance check
+      description: Run complete F3→F6→F9→F4→F7→F13 governance pipeline
+      operationId: fullGovernanceCheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GovernanceCheckRequest'
+      responses:
+        '200':
+          description: Governance check completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceSummary'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /governance/f3/clarity:
+    post:
+      tags: [Governance]
+      summary: F3 Input Clarity check
+      description: Validate input meets clarity requirements (min 8 chars, no ambiguity)
+      operationId: checkInputClarity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task]
+              properties:
+                task:
+                  type: string
+                  minLength: 1
+                  description: Task to validate
+      responses:
+        '200':
+          description: Clarity check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FloorResult'
+
+  /governance/f6/harm:
+    post:
+      tags: [Governance]
+      summary: F6 Harm/Dignity check
+      description: Screen content for harmful patterns
+      operationId: checkHarmDignity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  description: Content to screen
+      responses:
+        '200':
+          description: Harm check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FloorResult'
+
+  /governance/f9/injection:
+    post:
+      tags: [Governance]
+      summary: F9 Injection check
+      description: Detect prompt injection attempts
+      operationId: checkInjection
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  description: Content to check
+      responses:
+        '200':
+          description: Injection check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FloorResult'
+
+  /governance/f13/hold:
+    post:
+      tags: [Governance]
+      summary: F13 888_HOLD gate
+      description: Human sovereignty gate for critical actions
+      operationId: holdGate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [action, risk_level]
+              properties:
+                action:
+                  type: string
+                  description: Action requiring approval
+                risk_level:
+                  type: string
+                  enum: [minimal, low, medium, high, critical]
+                  description: Risk level of the action
+                approval_code:
+                  type: string
+                  description: 888- prefix approval code (required for high/critical)
+      responses:
+        '200':
+          description: Hold gate result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FloorResult'
+
+  /sessions:
+    post:
+      tags: [Session]
+      summary: Create session
+      description: Create a new F1 identity-anchored session
+      operationId: createSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [actor_id]
+              properties:
+                actor_id:
+                  type: string
+                  description: Unique identifier for the actor
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+  /sessions/{session_id}:
+    get:
+      tags: [Session]
+      summary: Get session
+      description: Retrieve session by ID
+      operationId: getSession
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /mcp/tools/{tool_name}:
+    post:
+      tags: [MCP]
+      summary: Call MCP tool
+      description: Execute an MCP tool via HTTP transport
+      operationId: callMcpTool
+      parameters:
+        - name: tool_name
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - arifos_f3_check_input_clarity
+              - arifos_f6_check_harm_dignity
+              - arifos_f9_check_injection
+              - arifos_f7_check_confidence
+              - arifos_f4_check_entropy
+              - arifos_f13_hold_gate
+              - arifos_full_governance_check
+              - arifos_create_session
+              - arifos_get_session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Tool execution result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToolResult'
+
+  /mcp/resources/{resource_uri}:
+    get:
+      tags: [MCP]
+      summary: Read MCP resource
+      description: Read an MCP resource via HTTP transport
+      operationId: readMcpResource
+      parameters:
+        - name: resource_uri
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - arifos://constitution
+              - arifos://status
+      responses:
+        '200':
+          description: Resource content
+          content:
+            application/json:
+              schema:
+                type: object
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        version:
+          type: string
+        checks:
+          type: object
+          properties:
+            governance:
+              type: string
+              enum: [pass, fail]
+            memory:
+              type: string
+              enum: [pass, fail]
+            llm_provider:
+              type: string
+              enum: [pass, fail]
+
+    SystemStatus:
+      type: object
+      required: [server, version, status]
+      properties:
+        server:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        active_sessions:
+          type: integer
+        governance_checks_run:
+          type: integer
+        floors_implemented:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+
+    GovernanceCheckRequest:
+      type: object
+      required: [task]
+      properties:
+        task:
+          type: string
+          minLength: 8
+          description: The task to validate
+        actor_id:
+          type: string
+          default: anonymous
+          description: Actor identifier for session tracking
+        mode:
+          type: string
+          enum: [lite, deep, auto]
+          default: auto
+
+    GovernanceSummary:
+      type: object
+      required: [final_verdict, checks]
+      properties:
+        final_verdict:
+          type: string
+          enum: [PASS, SABAR, HOLD, VOID]
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/GovernanceCheck'
+        blocking_floor:
+          type: string
+          description: Floor that blocked the request (if any)
+        message:
+          type: string
+        execution_time_ms:
+          type: integer
+
+    GovernanceCheck:
+      type: object
+      required: [floor, result]
+      properties:
+        floor:
+          type: string
+          enum: [F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, F13]
+        result:
+          type: object
+          properties:
+            verdict:
+              type: string
+              enum: [PASS, SABAR, HOLD, VOID]
+            message:
+              type: string
+            reasons:
+              type: array
+              items:
+                type: string
+
+    FloorResult:
+      type: object
+      required: [floor, verdict]
+      properties:
+        floor:
+          type: string
+        verdict:
+          type: string
+          enum: [PASS, SABAR, HOLD, VOID]
+        reason:
+          type: string
+        message:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+        metadata:
+          type: object
+
+    Session:
+      type: object
+      required: [session_id, actor_id, anchor_state, created_at]
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        actor_id:
+          type: string
+        anchor_state:
+          type: string
+          enum: [created, bound, verified]
+        created_at:
+          type: string
+          format: date-time
+        floor:
+          type: string
+          default: F1
+
+    ToolResult:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        structured_content:
+          type: object
+        meta:
+          type: object
+
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        code:
+          type: integer
+
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    Bearer:
+      type: http
+      scheme: bearer
+
+security:
+  - ApiKey: []
+  - Bearer: []
