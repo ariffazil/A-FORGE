@@ -32,3 +32,8 @@ vault_ledger/
 C:/
 waw/
 arif-sites/temp/
+.aider*
+.cache/
+.local/
+arifOS/
+node_modules/
