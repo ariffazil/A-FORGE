@@ -1,3 +1,13 @@
+---
+type: Blueprint
+tags: [memory, state, wiki, vault999, architecture]
+sources: [raw/README.md, raw/ARCHITECTURE.md]
+last_sync: 2026-04-10
+confidence: 0.95
+status: active
+operator: arifOS_bot
+---
+
 # Memory Stack — 3-Layer Architecture
 
 > **Correction**: VAULT999 is NOT machine working memory — it is the immutable governance ledger.  

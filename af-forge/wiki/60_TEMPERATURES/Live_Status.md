@@ -142,4 +142,4 @@ verdict: SEAL (confidence: 0.88) | tools_loaded: 12
 - [[50_CRACKS/Orphaned_Compose_Projects]] — orphaned project recovery
 - [[50_CRACKS/Naming_Divergence]] — container name drift
 - [[00_OPERATORS/Reconnect_Recovery_Runbook]] — 3-tier action plan
-- [[20_BLUEPRINTS/Stack_Components]] — topology diagram
+- [[20_BLUEPRINTS/Stack_Components]] — topology and component map

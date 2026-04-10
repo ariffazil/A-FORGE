@@ -1,75 +1,60 @@
-# AF-FORGE Omega-Wiki Index
+# AF-FORGE Wiki Index
 
-> **Version**: v0.5.0 (Compose Map + Intelligence Audit + Runbook)  
-> **System**: OPERATIONAL with 3 open cracks | Tier 1 recovery complete | Tier 2 awaiting Arif approval
+> **Version**: v1.0.0  
+> **Status**: proper wiki tree established  
+> **Focus**: VPS infrastructure, components, operations, cracks, and recovery  
+> **Last Updated**: 2026-04-10
 
----
+## Start here
+- [[SCHEMA]] — what this wiki is, how it is maintained, and the Karpathy-style persistence pattern
+- [[log]] — chronological history of wiki ingests, fixes, and audits
 
-## Constitution
-- [[SCHEMA]] -- F1-F13 governance, page types, frontmatter spec
+## 00_OPERATORS, who runs the forge
+- [[00_OPERATORS/Reconnect_Recovery_Runbook]] — controlled reconnect/recovery path for degraded MCP wiring
 
----
+## 10_RITUALS, how the forge operates
+- [[10_RITUALS/Build]] — build, deploy, verify, rollback ritual for AF-FORGE changes
+- [[10_RITUALS/Ingest]] — ingest workflow for new infrastructure knowledge and external docs
 
-## 00_OPERATORS -- Who Runs the Forge
-- [[00_OPERATORS/Reconnect_Recovery_Runbook]] -- ACTIVE 3-tier runbook: Tier 1 done, Tier 2 awaiting `yes`
+## 20_BLUEPRINTS, what is built
+- [[20_BLUEPRINTS/Memory_Stack]] — L1/L2/L3 memory model for state, wiki, and VAULT999
+- [[20_BLUEPRINTS/Stack_Components]] — VPS topology, components, ports, domains, and control surfaces
+- [[20_BLUEPRINTS/Adapter_Bus]] — CLI/agent adapter surface and trust boundary map
 
----
+## 30_ALLOYS, dependencies and pinned surfaces
+- [[30_ALLOYS/Dependency_Surface]] — core runtime dependencies, service substrates, and coupling points
 
-## 10_RITUALS -- How We Operate
-- [[10_RITUALS/Build]] -- 000_INIT to 999_SEAL procedure
-- [[10_RITUALS/Ingest]] -- Context7 MCP integration pattern
+## 40_HAMMERS, tooling
+- [[40_HAMMERS/Operational_Tooling]] — tools used to operate, inspect, and recover the forge
+- [[70_SMITH_NOTES/Context7_Template]] — reusable note template for Context7-based ingests
 
----
+## 50_CRACKS, what broke or is risky
+- [[50_CRACKS/Intelligence_Gaps]] — degraded MCP wiring and capability gaps
+- [[50_CRACKS/Orphaned_Compose_Projects]] — orphaned compose projects and recovery implications
+- [[50_CRACKS/Naming_Divergence]] — container naming drift from canonical targets
 
-## 20_BLUEPRINTS -- What We Build
-- [[20_BLUEPRINTS/Memory_Stack]] -- L1/L2/L3 memory architecture
+## 60_TEMPERATURES, machine state
+- [[60_TEMPERATURES/Live_Status]] — live machine and container snapshot
 
----
+## 80_FEDERATION, how AF-FORGE relates to the other wikis
+- [[80_FEDERATION/Three_Wikis_Map]] — arifOS, GEOX, AF-FORGE role separation
 
-## 50_CRACKS -- What Broke
-- [[50_CRACKS/Intelligence_Gaps]] -- HIGH: arifOS MCP degraded (Qdrant/Redis/Ollama unwired)
-- [[50_CRACKS/Orphaned_Compose_Projects]] -- HIGH: portainer + eigent compose dirs deleted
-- [[50_CRACKS/Naming_Divergence]] -- 6 containers with non-canonical names
+## 90_AUDITS, sealed reference material
+- [[90_AUDITS/Memory_Manifest]] — memory/audit manifest for AF-FORGE
 
----
+## Raw sources
+These are copied from repo root to keep the wiki grounded:
+- `raw/README.md`
+- `raw/MAP.md`
+- `raw/ARCHITECTURE.md`
+- `raw/VPS_NATIVE.md`
+- `raw/ROADMAP.md`
+- `raw/RUNTIME_POLICY.md`
+- `raw/package.json`
 
-## 60_TEMPERATURES -- How Hot It Runs
-- [[60_TEMPERATURES/Live_Status]] -- Rev 2: compose project map, intelligence state, all 20 containers
+## Current verdict
+- **Wiki shape:** proper and navigable
+- **Grounding:** seeded from repo docs and VPS/component material
+- **Open work:** continue ingesting operational docs and keep temperature/crack pages current
 
----
-
-## 70_SMITH_NOTES -- What We Learned
-- [[70_SMITH_NOTES/Context7_Template]] -- Template for Context7 MCP ingest sessions
-
----
-
-## 80_FEDERATION -- Cross-Wiki Links
-- [[80_FEDERATION/Three_Wikis_Map]] -- arifOS / GEOX / AF-FORGE dependency flow and purpose
-
----
-
-## 90_AUDITS -- Sealed History
-- [[90_AUDITS/Memory_Manifest]] -- Memory inventory audit
-
----
-
-## System Status
-
-```
-+------------------------------------------------------------------+
-|  Wiki Version:   v0.5.0 (Compose Map + Intelligence Audit)      |
-|  Intel State:    WARN MCP degraded: Qdrant/Redis/Ollama unwired  |
-|  Orphaned:       WARN portainer + eigent compose dirs missing    |
-|  Standalone:     WARN arifosmcp + ollama outside compose mgmt   |
-|  Naming Drift:   WARN 6 containers with non-canonical names      |
-|  Runbook:        Tier 1 DONE, Tier 2 awaiting Arif yes          |
-|  Raw Backups:    orphaned-containers + arifosmcp pre-reconnect   |
-|  Schema:         ACTIVE                                          |
-+------------------------------------------------------------------+
-```
-
----
-
-*Sealed by: VAULT999 | 2026.04.09*  
-*Constitutional Authority: Muhammad Arif bin Fazil*  
 *DITEMPA BUKAN DIBERI*

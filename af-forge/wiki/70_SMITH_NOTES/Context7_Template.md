@@ -19,7 +19,7 @@ tags: [context7, ingest, docs, library-name]
 Library: **[Library Name]**  
 Version: **[Version]**  
 Source: Context7 MCP  
-Blueprint: [[20_BLUEPRINTS/BluePrintName]]
+Blueprint: `20_BLUEPRINTS/BluePrintName.md`
 
 **Scope of INGEST:**
 - [ ] Core architecture
@@ -143,9 +143,9 @@ query-docs library_id="[library]" query="[query terms]" version="[version]"
 
 ## Cross-Links
 
-- Blueprint: [[20_BLUEPRINTS/BluePrintName]]
+- Blueprint: `20_BLUEPRINTS/BluePrintName.md`
 - Alloys: [[30_ALLOYS/Dependency_Matrix]]
-- Related Smith Notes: [[70_SMITH_NOTES/Previous_Note]]
+- Related Smith Notes: `70_SMITH_NOTES/Previous_Note.md`
 - Raw Source: `raw/external/context7/[library]-v[version].json`
 
 ---

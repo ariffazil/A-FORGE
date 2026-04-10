@@ -1,0 +1,28 @@
+{
+  "name": "af-forge",
+  "version": "0.1.0",
+  "description": "AF-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
+  "type": "module",
+  "bin": {
+    "agent": "./dist/src/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node dist/test/AgentEngine.test.js",
+    "example:explore": "node dist/examples/runExploreExample.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "pyright": "^1.1.408",
+    "yaml-language-server": "^1.21.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.15.30",
+    "typescript": "^5.8.3"
+  }
+}

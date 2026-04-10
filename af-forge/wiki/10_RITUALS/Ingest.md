@@ -241,12 +241,12 @@ IDLE → RESOLVED → FETCHED → RAW_STORED → INGESTED
 
 ## Cross-Links
 
-- [[20_BLUEPRINTS/FastMCP_Integration]] — Example output
-- [[30_ALLOYS/Dependency_Matrix]] — Where versions are pinned
-- [[70_SMITH_NOTES/Context7_Template]] — Smith note template
-- [[raw/external/context7/manifest.json]] — Source tracking
-- [[arifos::F2_Truth]] — Citation requirements
-- [[arifos::F1_Amanah]] — Reversibility principle
+- `20_BLUEPRINTS/FastMCP_Integration.md` — example output path
+- [[30_ALLOYS/Dependency_Matrix]] — where versions are pinned
+- [[70_SMITH_NOTES/Context7_Template]] — smith note template
+- `raw/external/context7/manifest.json` — source tracking
+- `F2 Truth` — citation requirements
+- `F1 Amanah` — reversibility principle
 
 ---
 
