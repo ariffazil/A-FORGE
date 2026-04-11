@@ -23,11 +23,11 @@ export class CoordinatorAgent {
     };
   }> {
     const tasks = await this.planWorkerTasks(highLevelTask);
-    const reports: WorkerReport[] = [];
 
-    for (const task of tasks) {
-      reports.push(await this.workerAgent.run(task, workingDirectory));
-    }
+    // Run all workers in parallel (F-bound by budget, not sequential)
+    const reports: WorkerReport[] = await Promise.all(
+      tasks.map((task) => this.workerAgent.run(task, workingDirectory)),
+    );
 
     const reportBody = reports
       .map((report) => `Worker ${report.workerName}\n${report.summary}`)

@@ -65,6 +65,10 @@ export class AgentEngine {
       experimentalToolsEnabled:
         modeSettings.allowExperimentalTools &&
         (this.dependencies.featureFlags?.ENABLE_EXPERIMENTAL_TOOLS ?? false),
+      // F13 Sovereign: 888_HOLD is lifted only in internal_mode with dangerous tools enabled
+      holdEnabled:
+        this.profile.modeName === "internal_mode" &&
+        (this.dependencies.featureFlags?.ENABLE_DANGEROUS_TOOLS ?? false),
     };
 
     // === F3: Input Clarity Check ===

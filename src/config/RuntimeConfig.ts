@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { readFeatureFlags, type FeatureFlags } from "../flags/featureFlags.js";
 
 export type LlmProviderConfig = {
-  kind: "mock" | "openai_responses";
+  kind: "mock" | "openai_responses" | "ollama";
   model: string;
   apiKey?: string;
   baseUrl: string;
@@ -51,14 +51,19 @@ export function readRuntimeConfig(): RuntimeConfig {
   const providerKind =
     process.env.AGENT_WORKBENCH_PROVIDER === "openai_responses"
       ? "openai_responses"
-      : "mock";
+      : process.env.AGENT_WORKBENCH_PROVIDER === "ollama"
+        ? "ollama"
+        : "mock";
 
   return {
     provider: {
       kind: providerKind,
-      model: process.env.AGENT_WORKBENCH_MODEL ?? "gpt-5",
+      model: process.env.AGENT_WORKBENCH_MODEL ?? (providerKind === "ollama" ? "llama3.2" : "gpt-5"),
       apiKey: process.env.OPENAI_API_KEY,
-      baseUrl: process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1",
+      baseUrl:
+        providerKind === "ollama"
+          ? (process.env.OLLAMA_BASE_URL ?? process.env.OPENAI_BASE_URL ?? "http://localhost:11434")
+          : (process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1"),
       timeoutMs: Number(process.env.AGENT_WORKBENCH_LLM_TIMEOUT_MS ?? "120000"),
     },
     featureFlags: readFeatureFlags({

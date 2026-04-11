@@ -18,6 +18,8 @@ export type ToolPermissionContext = {
   enabledTools: Set<string>;
   dangerousToolsEnabled: boolean;
   experimentalToolsEnabled: boolean;
+  /** F13 Sovereign: when false, dangerous tools return 888_HOLD instead of executing */
+  holdEnabled: boolean;
 };
 
 export type ToolExecutionContext = {

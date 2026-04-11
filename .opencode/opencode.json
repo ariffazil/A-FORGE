@@ -1,0 +1,97 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-20250514",
+  "permission": {
+    "bash": "ask",
+    "edit": "ask",
+    "webfetch": "allow",
+    "forge_run_command": "ask",
+    "forge_write_file": "ask"
+  },
+  "tools": {
+    "mcp_*": false,
+    "skill": "allow"
+  },
+  "agent": {
+    "build": {
+      "description": "Default build agent with full AF-FORGE constitutional constraints",
+      "mode": "primary",
+      "permission": {
+        "bash": "ask",
+        "edit": "ask"
+      },
+      "prompt": "{file:.opencode/prompts/build.txt}"
+    },
+    "plan": {
+      "description": "Read-only planning agent for analysis without changes",
+      "mode": "primary",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny"
+      }
+    },
+    "forge-explore": {
+      "description": "AF-FORGE exploration agent - read-only repository analysis matching explore profile",
+      "mode": "subagent",
+      "permission": {
+        "edit": "deny",
+        "bash": "deny",
+        "write": "deny",
+        "grep": "allow",
+        "read": "allow",
+        "glob": "allow",
+        "list": "allow"
+      }
+    },
+    "forge-coordinator": {
+      "description": "AF-FORGE coordinator - multi-agent task orchestration matching coordinator profile",
+      "mode": "subagent",
+      "permission": {
+        "bash": "ask",
+        "edit": "ask"
+      },
+      "steps": 10
+    },
+    "forge-worker": {
+      "description": "AF-FORGE worker - restricted subtask executor matching worker profile",
+      "mode": "subagent",
+      "permission": {
+        "bash": "ask",
+        "edit": "ask",
+        "read": "allow",
+        "grep": "allow",
+        "list": "allow"
+      },
+      "steps": 5
+    },
+    "forge-tester": {
+      "description": "AF-FORGE tester - runs tests and validates code matching test profile",
+      "mode": "subagent",
+      "permission": {
+        "bash": "allow",
+        "read": "allow",
+        "grep": "allow",
+        "list": "allow"
+      },
+      "steps": 4
+    }
+  },
+  "mcp": {
+    "afforge": {
+      "type": "local",
+      "command": ["node", "dist/src/server.js"],
+      "enabled": false,
+      "environment": {
+        "AF_FORGE_PORT": "7071"
+      }
+    }
+  },
+  "rules": [
+    "When using bash commands that modify files, always request approval first.",
+    "For destructive operations (delete, force push, etc.), always use question tool to request 888_HOLD approval.",
+    "Use @forge-explore for repository analysis tasks.",
+    "Use @forge-coordinator for multi-step tasks requiring parallel execution.",
+    "Use @forge-worker for focused subtasks with limited scope.",
+    "Follow arifOS constitutional principles: F1 Amanah, F2 Truth, F9 Anti-Hantu, F13 Sovereign."
+  ]
+}

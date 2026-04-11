@@ -200,3 +200,27 @@ AF-FORGE is the **TypeScript execution runtime** that complements the Python ari
 ---
 
 **Motto:** *Ditempa Bukan Diberi* — Forged, Not Given [ΔΩΨ | ARIF]
+
+---
+
+## 🏛️ Trinity Ecosystem — Live Links
+
+| Ring | Domain | Realm | Status |
+|------|--------|-------|--------|
+| **Ring 1** | [arif-fazil.com](https://arif-fazil.com) | **THE SOUL** | ✅ LIVE |
+| **Ring 2** | [arifos.arif-fazil.com](https://arifos.arif-fazil.com) | **THE MIND** | ✅ LIVE |
+| **Ring 3** | [aaa.arif-fazil.com](https://aaa.arif-fazil.com) | **THE BODY** | ✅ LIVE |
+
+### 🌐 Documentation & Interface
+- **Theory (APEX):** [https://apex.arif-fazil.com](https://apex.arif-fazil.com)
+- **Unified Wiki:** [https://wiki.arif-fazil.com](https://wiki.arif-fazil.com)
+- **Spatial (GEOX):** [https://geox.arif-fazil.com](https://geox.arif-fazil.com)
+- **Control Portal:** [https://forge.arif-fazil.com](https://forge.arif-fazil.com)
+- **Agent Workspace:** [https://waw.arif-fazil.com](https://waw.arif-fazil.com)
+
+### ⚡ arifOS MCP Endpoints
+- **MCP Server:** [https://arifosmcp.arif-fazil.com/mcp](https://arifosmcp.arif-fazil.com/mcp)
+- **Health:** [https://arifosmcp.arif-fazil.com/health](https://arifosmcp.arif-fazil.com/health)
+- **Tools:** [https://arifosmcp.arif-fazil.com/tools](https://arifosmcp.arif-fazil.com/tools)
+
+**Seal:** VAULT999 | **Verdict:** 999_SEAL | **Alignment:** ΔΩΨ

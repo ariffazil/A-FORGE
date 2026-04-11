@@ -1,6 +1,7 @@
 import type { LlmProvider } from "./LlmProvider.js";
 import { MockLlmProvider } from "./MockLlmProvider.js";
 import { OpenAIResponsesProvider } from "./OpenAIResponsesProvider.js";
+import { OllamaProvider } from "./OllamaProvider.js";
 import type { RuntimeConfig } from "../config/RuntimeConfig.js";
 
 export function createLlmProvider(config: RuntimeConfig): LlmProvider {
@@ -13,6 +14,14 @@ export function createLlmProvider(config: RuntimeConfig): LlmProvider {
 
     return new OpenAIResponsesProvider({
       apiKey: config.provider.apiKey,
+      model: config.provider.model,
+      baseUrl: config.provider.baseUrl,
+      timeoutMs: config.provider.timeoutMs,
+    });
+  }
+
+  if (config.provider.kind === "ollama") {
+    return new OllamaProvider({
       model: config.provider.model,
       baseUrl: config.provider.baseUrl,
       timeoutMs: config.provider.timeoutMs,
