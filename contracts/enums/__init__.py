@@ -1,9 +1,7 @@
-# GEOX Dimension-Native Registry Package
+# GEOX Contracts — Enums
 # DITEMPA BUKAN DIBERI
-#
-# This package now imports canonical enums from contracts.
 
-from contracts.enums import (
+from contracts.enums.statuses import (
     Dimension,
     Verdict,
     FloorStatus,
@@ -12,6 +10,9 @@ from contracts.enums import (
     ToolCategory,
     ProspectVerdict,
     ClaimTag,
+    VerdictCode,
+    FloorCode,
+    DimensionCode,
     CONSTITUTIONAL_FLOORS,
     CANONICAL_TOOLS,
     SEAL,
@@ -26,6 +27,9 @@ __all__ = [
     "ToolCategory",
     "ProspectVerdict",
     "ClaimTag",
+    "VerdictCode",
+    "FloorCode",
+    "DimensionCode",
     "CONSTITUTIONAL_FLOORS",
     "CANONICAL_TOOLS",
     "SEAL",

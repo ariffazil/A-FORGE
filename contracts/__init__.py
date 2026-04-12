@@ -1,9 +1,10 @@
-# GEOX Dimension-Native Registry Package
-# DITEMPA BUKAN DIBERI
+# GEOX Contracts Package
+# DITEMPA BUKAN DIBERI — Forged, Not Given
 #
-# This package now imports canonical enums from contracts.
+# This package owns the absolute truth for all GEOX interfaces.
+# No runtime may define contracts outside this package.
 
-from contracts.enums import (
+from contracts.enums.statuses import (
     Dimension,
     Verdict,
     FloorStatus,
@@ -12,6 +13,9 @@ from contracts.enums import (
     ToolCategory,
     ProspectVerdict,
     ClaimTag,
+    VerdictCode,
+    FloorCode,
+    DimensionCode,
     CONSTITUTIONAL_FLOORS,
     CANONICAL_TOOLS,
     SEAL,
@@ -26,6 +30,9 @@ __all__ = [
     "ToolCategory",
     "ProspectVerdict",
     "ClaimTag",
+    "VerdictCode",
+    "FloorCode",
+    "DimensionCode",
     "CONSTITUTIONAL_FLOORS",
     "CANONICAL_TOOLS",
     "SEAL",
