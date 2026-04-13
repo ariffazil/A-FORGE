@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   af-forge-bridge:
     build:
@@ -7,8 +5,8 @@ services:
       dockerfile: Dockerfile
     container_name: af-forge-bridge
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:7071:7071"
+    expose:
+      - "7071"
     environment:
       - NODE_ENV=production
       - AF_FORGE_PORT=7071
@@ -26,16 +24,66 @@ services:
       - AGENT_WORKBENCH_SCOREBOARD_PATH=/data/scoreboard.json
       - AGENT_WORKBENCH_RUN_METRICS_DIR=/data/metrics
       - AGENT_WORKBENCH_DEFAULT_MODE=${AGENT_WORKBENCH_DEFAULT_MODE:-external}
+      - POSTGRES_URL=${POSTGRES_URL:-}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
     volumes:
       - af-forge-data:/data
     networks:
       - af-forge-internal
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:7071/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  arifos-mcp:
+    # Placeholder: build from arifOS repo or pull prebuilt image
+    # image: ghcr.io/ariffazil/arifos-mcp:latest
+    image: alpine:latest
+    container_name: af-forge-arifos-mcp
+    restart: unless-stopped
+    command: ["sh", "-c", "echo 'arifOS MCP placeholder — replace with real image' && sleep infinity"]
+    expose:
+      - "8080"
+    networks:
+      - af-forge-internal
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: af-forge-ollama
+    restart: unless-stopped
+    expose:
+      - "11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - af-forge-internal
+    # No public port: internal network only
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:11434/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
 
   postgres:
     image: postgres:16-alpine
@@ -84,6 +132,7 @@ services:
       - af-forge-internal
     depends_on:
       - af-forge-bridge
+      - arifos-mcp
 
   prometheus:
     image: prom/prometheus:latest
@@ -103,13 +152,33 @@ services:
     ports:
       - "127.0.0.1:9090:9090"
 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: af-forge-grafana
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deploy/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+    networks:
+      - af-forge-internal
+    depends_on:
+      - prometheus
+
 volumes:
   af-forge-data:
+  ollama-data:
   postgres-data:
   redis-data:
   caddy-data:
   caddy-config:
   prometheus-data:
+  grafana-data:
 
 networks:
   af-forge-internal:

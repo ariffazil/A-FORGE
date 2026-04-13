@@ -1,13 +1,17 @@
 # AF FORGE — Caddy Reverse Proxy
-# Public entrypoint for bridge server and operator endpoints
+# Public entrypoint: only Caddy faces the internet. All backend services are internal.
 
 :80 {
 	bind 0.0.0.0
 
-	# Health check
+	# Health check for gateway itself
 	health /healthz
 
-	# Reverse proxy to AF FORGE bridge server
+	# arifOS MCP governance kernel
+	reverse_proxy /mcp arifos-mcp:8080
+	reverse_proxy /arifos/* arifos-mcp:8080
+
+	# AF FORGE bridge server — operator, sense, metrics, human escalation
 	reverse_proxy /operator/* af-forge-bridge:7071
 	reverse_proxy /metrics af-forge-bridge:7071
 	reverse_proxy /sense af-forge-bridge:7071
