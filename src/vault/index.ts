@@ -8,3 +8,4 @@ export {
   computeInputHash,
   generateSealId,
 } from "./VaultClient.js";
+export { PostgresVaultClient } from "./PostgresVaultClient.js";

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { mkdir, rm } from "node:fs/promises";
 import { FileVaultClient, type VaultSealRecord } from "../src/vault/VaultClient.js";
-import { TicketStore, resetTicketStore } from "../src/approval/TicketStore.js";
+import { FileTicketStore, resetTicketStore } from "../src/approval/TicketStore.js";
 import { runCliCommand } from "../src/cli/commands.js";
 import type { AgentProfile } from "../src/types/agent.js";
 import type { LlmProvider } from "../src/llm/LlmProvider.js";
@@ -124,7 +124,7 @@ test("FileVaultClient findById returns correct record", async () => {
 test("TicketStore query deduplicates and filters correctly", async () => {
   await withTempDir(async (dir) => {
     const ticketPath = resolve(dir, "tickets.jsonl");
-    const store = new TicketStore({ filePath: ticketPath });
+    const store = new FileTicketStore({ filePath: ticketPath });
 
     await store.createTicket({
       ticketId: "t1",
@@ -182,7 +182,7 @@ test("CLI operator approvals queries tickets via HOME override", async () => {
     process.env.HOME = dir;
     resetTicketStore();
     try {
-      const store = new TicketStore();
+      const store = new FileTicketStore();
       await store.createTicket({
         ticketId: "t1",
         sessionId: "sess-1",

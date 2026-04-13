@@ -9,12 +9,13 @@ import { LongTermMemory } from "./memory/LongTermMemory.js";
 import { createLlmProvider } from "./llm/providerFactory.js";
 import { AgentEngine } from "./engine/AgentEngine.js";
 import type { AgentProfile } from "./types/agent.js";
-import { readRuntimeConfig } from "./config/RuntimeConfig.js";
+import { readRuntimeConfig, type RuntimeConfig } from "./config/RuntimeConfig.js";
 import { ForgeScoreboard } from "./scoreboard/ForgeScoreboard.js";
 import { RunMetricsLogger } from "./scoreboard/RunMetricsLogger.js";
 import { RunReporter } from "./engine/RunReporter.js";
-import { FileVaultClient } from "./vault/index.js";
+import { FileVaultClient, PostgresVaultClient } from "./vault/index.js";
 import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "./escalation/index.js";
+import { FileTicketStore, PostgresTicketStore } from "./approval/index.js";
 
 function buildToolRegistry(): ToolRegistry {
   const registry = new ToolRegistry();
@@ -25,6 +26,30 @@ function buildToolRegistry(): ToolRegistry {
   registry.register(new RunTestsTool());
   registry.register(new RunCommandTool());
   return registry;
+}
+
+function createVaultClient(runtimeConfig: RuntimeConfig) {
+  if (runtimeConfig.postgresUrl) {
+    try {
+      const client = new PostgresVaultClient(runtimeConfig.postgresUrl);
+      return client;
+    } catch {
+      process.stderr.write("[WARN] Postgres vault unavailable; falling back to FileVaultClient\n");
+    }
+  }
+  return new FileVaultClient();
+}
+
+function createTicketStore(runtimeConfig: RuntimeConfig) {
+  if (runtimeConfig.postgresUrl) {
+    try {
+      const store = new PostgresTicketStore(runtimeConfig.postgresUrl);
+      return store;
+    } catch {
+      process.stderr.write("[WARN] Postgres ticket store unavailable; falling back to FileTicketStore\n");
+    }
+  }
+  return new FileTicketStore();
 }
 
 function createEngine(profile: AgentProfile): AgentEngine {
@@ -41,7 +66,8 @@ function createEngine(profile: AgentProfile): AgentEngine {
       new ForgeScoreboard(runtimeConfig.scoreboardPath),
       new RunMetricsLogger(runtimeConfig.runMetricsDir),
     ),
-    vaultClient: new FileVaultClient(),
+    vaultClient: createVaultClient(runtimeConfig),
+    ticketStore: createTicketStore(runtimeConfig),
     escalationClient,
     featureFlags: runtimeConfig.featureFlags,
     toolPolicy: runtimeConfig.toolPolicy,

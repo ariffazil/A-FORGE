@@ -160,8 +160,8 @@ test("Replay with humanApprovedTicketId bypasses F13 force-hold and marks ticket
   const root = resolve(tmpdir(), `agent-replay-${Date.now()}`);
   await mkdir(root, { recursive: true });
 
-  const { TicketStore } = await import("../src/approval/TicketStore.js");
-  const store = new TicketStore({ filePath: resolve(root, "tickets.jsonl") });
+  const { FileTicketStore } = await import("../src/approval/TicketStore.js");
+  const store = new FileTicketStore({ filePath: resolve(root, "tickets.jsonl") });
   await store.initialize();
 
   const ticket = await store.createTicket({

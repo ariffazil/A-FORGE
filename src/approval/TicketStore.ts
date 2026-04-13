@@ -8,6 +8,7 @@
 import { homedir } from "node:os";
 import { resolve, dirname } from "node:path";
 import { appendFile, readFile, mkdir } from "node:fs/promises";
+import { PostgresTicketStore } from "./PostgresTicketStore.js";
 
 export type TicketStatus =
   | "PENDING"
@@ -51,7 +52,24 @@ export interface ApprovalTicket {
   previousTicketId?: string;
 }
 
-export class TicketStore {
+export interface TicketStore {
+  initialize(): Promise<void>;
+  createTicket(ticket: ApprovalTicket): Promise<ApprovalTicket>;
+  findById(ticketId: string): Promise<ApprovalTicket | undefined>;
+  findLatestBySessionId(sessionId: string): Promise<ApprovalTicket | undefined>;
+  query(options?: {
+    status?: TicketStatus;
+    sessionId?: string;
+    riskLevel?: ApprovalTicket["riskLevel"];
+  }): Promise<ApprovalTicket[]>;
+  updateTicket(
+    ticketId: string,
+    patch: Partial<Omit<ApprovalTicket, "ticketId">>,
+  ): Promise<ApprovalTicket | undefined>;
+  countOpen(): Promise<number>;
+}
+
+export class FileTicketStore implements TicketStore {
   private readonly filePath: string;
   private readonly defaultExpiryHours: number;
   private initialized = false;
@@ -170,7 +188,16 @@ let globalStore: TicketStore | null = null;
 
 export function getTicketStore(): TicketStore {
   if (!globalStore) {
-    globalStore = new TicketStore();
+    const postgresUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+    if (postgresUrl) {
+      try {
+        globalStore = new PostgresTicketStore(postgresUrl);
+        return globalStore;
+      } catch {
+        process.stderr.write("[WARN] Postgres ticket store unavailable; falling back to FileTicketStore\n");
+      }
+    }
+    globalStore = new FileTicketStore();
   }
   return globalStore;
 }

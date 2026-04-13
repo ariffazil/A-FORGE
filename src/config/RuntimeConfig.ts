@@ -31,6 +31,8 @@ export type RuntimeConfig = {
   trustLocalVps: boolean;
   defaultMode: "internal_mode" | "external_safe_mode";
   humanEscalationWebhookUrl?: string;
+  postgresUrl?: string;
+  redisUrl?: string;
 };
 
 function parseCsvEnv(name: string, fallback: string[]): string[] {
@@ -133,5 +135,7 @@ export function readRuntimeConfig(): RuntimeConfig {
           ? "internal_mode"
           : "external_safe_mode",
     humanEscalationWebhookUrl: process.env.HUMAN_ESCALATION_WEBHOOK_URL,
+    postgresUrl: process.env.POSTGRES_URL || process.env.DATABASE_URL,
+    redisUrl: process.env.REDIS_URL,
   };
 }

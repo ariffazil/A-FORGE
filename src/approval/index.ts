@@ -6,5 +6,6 @@ export type {
   HoldQueueItem,
   ExecutionRecord,
 } from "./ApprovalBoundary.js";
-export { TicketStore, getTicketStore, resetTicketStore } from "./TicketStore.js";
-export type { ApprovalTicket, TicketStatus } from "./TicketStore.js";
+export { FileTicketStore, getTicketStore, resetTicketStore } from "./TicketStore.js";
+export { PostgresTicketStore } from "./PostgresTicketStore.js";
+export type { ApprovalTicket, TicketStatus, TicketStore } from "./TicketStore.js";

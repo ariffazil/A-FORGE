@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import { TicketStore } from "../src/approval/TicketStore.js";
+import { FileTicketStore } from "../src/approval/TicketStore.js";
 
 test("TicketStore lifecycle: create, query, update, replay", async () => {
-  const store = new TicketStore({ filePath: resolve(tmpdir(), `tickets-${Date.now()}.jsonl`) });
+  const store = new FileTicketStore({ filePath: resolve(tmpdir(), `tickets-${Date.now()}.jsonl`) });
   await store.initialize();
 
   const ticket = await store.createTicket({
