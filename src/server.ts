@@ -25,6 +25,7 @@ import { getTicketStore } from "./approval/index.js";
 import { FileVaultClient } from "./vault/index.js";
 import { LocalGovernanceClient } from "./governance/index.js";
 import { getAdaptiveThresholds } from "./governance/thresholds.js";
+import { createOperatorAuthMiddleware } from "./middleware/operatorAuth.js";
 
 const app = express();
 app.use(express.json());
@@ -34,6 +35,16 @@ app.use((req, _res, next) => {
   console.error(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
+
+// Operator / Human-expert auth middleware
+const OPERATOR_API_TOKEN = process.env.OPERATOR_API_TOKEN;
+if (!OPERATOR_API_TOKEN) {
+  console.error("[WARN] OPERATOR_API_TOKEN is not set; /operator and /human-expert endpoints are unauthenticated");
+}
+
+const requireOperatorAuth = createOperatorAuthMiddleware(OPERATOR_API_TOKEN);
+app.use("/operator", requireOperatorAuth);
+app.use("/human-expert", requireOperatorAuth);
 
 /**
  * POST /sense

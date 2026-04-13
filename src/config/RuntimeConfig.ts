@@ -34,6 +34,7 @@ export type RuntimeConfig = {
   postgresUrl?: string;
   redisUrl?: string;
   arifosGovernanceUrl?: string;
+  operatorApiToken?: string;
 };
 
 function parseCsvEnv(name: string, fallback: string[]): string[] {
@@ -139,5 +140,6 @@ export function readRuntimeConfig(): RuntimeConfig {
     postgresUrl: process.env.POSTGRES_URL || process.env.DATABASE_URL,
     redisUrl: process.env.REDIS_URL,
     arifosGovernanceUrl: process.env.ARIFOS_GOVERNANCE_URL,
+    operatorApiToken: process.env.OPERATOR_API_TOKEN,
   };
 }
