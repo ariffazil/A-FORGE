@@ -6,6 +6,8 @@
  * Only then does ForgeExecutionManifest reach AF-FORGE for diff-only application.
  */
 
+import type { WorkerTask } from "./agent.js";
+
 export type ChangeOperation = "patch_apply" | "append" | "create_new";
 
 export interface ProposedChange {
@@ -27,4 +29,33 @@ export interface PlannerOutput {
   create_new_file_reason?: string;
   risk_score: number;
   confidence: number;
+}
+
+export type PlanJudgeVerdict = "SEAL" | "HOLD" | "SABAR";
+
+export interface PlanningStrategy {
+  strategyId: string;
+  strategyName: string;
+  systemPromptSuffix: string;
+  riskBias: number;
+}
+
+export interface PlanCandidate {
+  strategyId: string;
+  strategyName: string;
+  tasks: WorkerTask[];
+  confidence: number;
+  rationale: string;
+  riskScore: number;
+  generatedAt: string;
+}
+
+export interface PlanComparison {
+  candidates: PlanCandidate[];
+  divergenceScore: number;
+  consensusReached: boolean;
+  selectedStrategyId: string | null;
+  selectedTasks: WorkerTask[];
+  verdict: PlanJudgeVerdict;
+  reason: string;
 }

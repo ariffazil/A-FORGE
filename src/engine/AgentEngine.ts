@@ -39,11 +39,14 @@ import type { HumanEscalationClient } from "../escalation/index.js";
 import { recordHumanEscalation } from "../metrics/prometheus.js";
 import type { TicketStore, ApprovalTicket } from "../approval/index.js";
 import { getTicketStore } from "../approval/index.js";
+import type { MemoryContract } from "../memory-contract/index.js";
+import { getMemoryContract } from "../memory-contract/index.js";
 
 export type AgentEngineDependencies = {
   llmProvider: LlmProvider;
   toolRegistry: ToolRegistry;
   longTermMemory: LongTermMemory;
+  memoryContract?: MemoryContract;
   featureFlags?: FeatureFlags;
   toolPolicy?: ToolPolicyConfig;
   runReporter?: RunReporter;
@@ -155,8 +158,14 @@ export class AgentEngine {
       role: "system",
       content: this.profile.systemPrompt,
     });
+
+    const sacredMessages = await this.injectSacredMemories();
+    for (const msg of sacredMessages) {
+      shortTermMemory.append(msg);
+    }
+    const initialMessages: AgentMessage[] = [...sacredMessages];
+
     const relevantMemories = await this.dependencies.longTermMemory.searchRelevant(options.task);
-    const initialMessages: AgentMessage[] = [];
     if (relevantMemories.length > 0) {
       const memoryContext = relevantMemories
         .map((record, index) => `Memory ${index + 1}: ${record.summary}`)
@@ -358,6 +367,46 @@ export class AgentEngine {
     }
 
     return result;
+  }
+
+  private async injectSacredMemories(): Promise<AgentMessage[]> {
+    const messages: AgentMessage[] = [];
+    try {
+      const contract = this.dependencies.memoryContract ?? getMemoryContract();
+      await contract.initialize();
+      const sacred = contract.getByTier("sacred");
+      if (sacred.length === 0) return messages;
+
+      const lawEntries = sacred
+        .filter((m) => m.tags.includes("eureka-capsule"))
+        .sort((a, b) => {
+          const lawA = Number(a.tags.find((t) => t.startsWith("law-"))?.replace("law-", "") ?? "0");
+          const lawB = Number(b.tags.find((t) => t.startsWith("law-"))?.replace("law-", "") ?? "0");
+          return lawA - lawB;
+        });
+
+      if (lawEntries.length === 0) return messages;
+
+      const content =
+        "EUREKA CAPSULE — CONSTITUTIONAL RUNTIME LAWS (sacred, immutable):\n\n" +
+        lawEntries
+          .map((m) => {
+            const lawNum = m.tags.find((t) => t.startsWith("law-"))?.replace("law-", "") ?? "?";
+            const titleMatch = m.content.match(/LAW \d+: ([^\]]+)/);
+            const title = titleMatch ? titleMatch[1] : `Law ${lawNum}`;
+            return `[${title}]\n${m.content}`;
+          })
+          .join("\n\n");
+
+      const msg: AgentMessage = {
+        role: "system",
+        content,
+      };
+      messages.push(msg);
+    } catch {
+      // MemoryContract is optional — silently skip if unavailable
+    }
+    return messages;
   }
 
   private async executeToolCalls(
