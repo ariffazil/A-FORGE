@@ -7,6 +7,7 @@ import { GrepTextTool } from "./tools/SearchTools.js";
 import { RunCommandTool, RunTestsTool } from "./tools/ShellTools.js";
 import { GEOX_TOOLS } from "./tools/GEOXTools.js";
 import { WEALTH_TOOLS } from "./tools/WealthTools.js";
+import { GEOXLogInterpreterTool } from "./domains/geophysics/logInterpreter.js";
 import { LongTermMemory } from "./memory/LongTermMemory.js";
 import { createLlmProvider } from "./llm/providerFactory.js";
 import { AgentEngine } from "./engine/AgentEngine.js";
@@ -29,6 +30,7 @@ function buildToolRegistry(): ToolRegistry {
   registry.register(new RunTestsTool());
   registry.register(new RunCommandTool());
   for (const ToolClass of GEOX_TOOLS) registry.register(new ToolClass());
+  registry.register(new GEOXLogInterpreterTool());
   for (const ToolClass of WEALTH_TOOLS) registry.register(new ToolClass());
   return registry;
 }

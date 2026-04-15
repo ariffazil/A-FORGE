@@ -1158,6 +1158,45 @@ server.tool(
 );
 
 /**
+ * geox_log_interpreter
+ * Triple-combo log interpreter: GR + RT + RHOB + NPHI → Vsh, PHIE, SW, fluid type, lithology.
+ * Uses anomalous contrast theory: every geological feature = contrast in ≥2 independent properties.
+ */
+server.tool(
+  "geox_log_interpreter",
+  "Interpret triple-combo wireline logs (GR, RT, RHOB, NPHI, SP, DT, CAL) to compute Vsh, PHIE, SW, fluid type, and lithology using anomalous contrast theory. Returns Vsh, PHIE, SW, BVW, anomaly score, fluid flags (WATER/GAS/OIL), lithology, quality, and anomalous contrast metrics (κGR, κRHOB, κNPHI, κRT, composite). All tagged ESTIMATE/HYPOTHESIS/UNKNOWN per F8.",
+  {
+    GR: z.array(z.number()).optional().describe("Gamma Ray API values"),
+    RT: z.array(z.number()).optional().describe("Deep resistivity ohm-m"),
+    RHOB: z.array(z.number()).optional().describe("Bulk density g/cc"),
+    NPHI: z.array(z.number()).optional().describe("Neutron porosity fraction"),
+    SP: z.array(z.number()).optional().describe("Spontaneous potential mV"),
+    DT: z.array(z.number()).optional().describe("Sonic transit time us/ft"),
+    CAL: z.array(z.number()).optional().describe("Caliper inches"),
+    depth: z.array(z.number()).optional().describe("Depth values matching log arrays"),
+    GR_clean: z.number().optional().describe("GR for clean sand baseline"),
+    GR_shale: z.number().optional().describe("GR for shale baseline"),
+    RW: z.number().optional().describe("Formation water resistivity ohm-m"),
+    matrix: z.string().optional().describe("Matrix type (sandstone, limestone, dolomite)"),
+  },
+  async ({ GR, RT, RHOB, NPHI, SP, DT, CAL, depth, GR_clean, GR_shale, RW, matrix }) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("geox_log_interpreter");
+    return runStage("333_MIND" as MetabolicStage, async () => {
+    try {
+      const { GEOXLogInterpreterTool } = await import("../domains/geophysics/logInterpreter.js");
+      const tool = new GEOXLogInterpreterTool();
+      const result = await tool.run({ GR, RT, RHOB, NPHI, SP, DT, CAL, depth, GR_clean, GR_shale, RW, matrix }, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
+      const parsed = JSON.parse(result.output as string);
+      const response = { content: [{ type: "text" as const, text: JSON.stringify(parsed, null, 2) }] };
+      await telemetrySuccess("geox_log_interpreter", startedAt);
+      return response;
+    } catch (err) { await telemetryFailure("geox_log_interpreter", startedAt, err); throw err; }
+    });
+  }
+);
+
+/**
  * geox_maraoh_impact
  * Assess community dignity and cultural heritage impact (F6 maruah).
  */
