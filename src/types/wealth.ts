@@ -1,59 +1,95 @@
 /**
- * WEALTH — Sovereign Resource Intelligence (Layer 2)
- * 
- * Wealth is Organized Survival Energy across Time.
- * This contract governs the allocation of Energy, Time, and Capital.
- * Aligned to the WEALTH Civilizational Constitution.
+ * WEALTH — Capital Intelligence Types
+ *
+ * Financial domain types for thermodynamic cost estimation.
+ * Mirrors GEOX physics-first pattern applied to capital decisions.
+ *
+ * EMV  = Σ (probability_i × outcome_i)
+ * NPV  = Σ (cash_flow_t / (1 + r)^t) − initial_investment
+ * κᵣ   = reversibility coefficient [0, 1] — 1 = fully reversible
+ * blast_radius = maximum adverse outcome if action fails
  */
 
-export type WealthScale = "Individual" | "Family" | "Organization" | "Nation" | "Machine" | "Civilization";
-
-export interface SovereignWealthContract {
-  scale: WealthScale;
-  subjectId: string; // The Son, The Family, The AI, The Nation
-  intent: string;    // e.g., "Invest in Engineering Degree", "Build Fusion Reactor"
-  
-  // The 8 Dimensions of Resource Intelligence
-  metrics: {
-    // 1. Flow: Metabolic Health (Net energy/cash movement)
-    flow: { rate: number; burn: number; isPositive: boolean };
-    
-    // 2. Mass: Structural Gravity (Assets vs Liabilities)
-    mass: { assets: number; obligations: number; gravityRatio: number };
-    
-    // 3. Velocity: Compounding Trajectory (Growth/Innovation delta)
-    velocity: { growthRate: number; innovationDelta: number };
-    
-    // 4. Time: Patience Thresholds (Payback/Recovery)
-    time: { paybackPeriod: number; horizon: number; runway: number };
-    
-    // 5. Reward: Temporal Coherence (NPV - Is it worth it across time?)
-    reward: { npv: number; futureValue: number };
-    
-    // 6. Energy: Efficiency (IRR/PI - Conversion of capital to growth)
-    energy: { irr: number; efficiencyRatio: number };
-    
-    // 7. Entropy: Fragility (EMV/Risk - Fragility under uncertainty)
-    entropy: { riskScore: number; volatility: number; uncertainty: number };
-    
-    // 8. Survival Load: Existential Obligation (DSCR/Leverage)
-    survivalLoad: { leverageRatio: number; dscr: number; isSustainable: boolean };
-  };
-
-  // Thermodynamic Coupling (Landauer limits & Entropy)
-  thermodynamics: {
-    joulesExpended: number;
-    entropyGenerated: number;
-  };
-
-  verdict: {
-    action: "ALLOCATE" | "HOLD" | "VOID";
-    rationale: string;
-  };
+export interface WealthMetrics {
+  emv: number;
+  npv: number;
+  kappa_r: number;
+  blastRadius: number;
+  dS_predict: number;
 }
 
-export interface SurvivalAudit {
-  status: "COMPOUNDING" | "STAGNATING" | "DECAYING";
-  criticalFragility: string[]; // List of entropy/leverage warnings
-  survivalHorizon: string;     // Estimated time until resource exhaustion
+export interface CashFlow {
+  period: number;
+  amount: number;
+  probability: number;
 }
+
+export interface WealthScenario {
+  name: string;
+  cashFlows: CashFlow[];
+  initialInvestment: number;
+  discountRate: number;
+  riskFreeRate: number;
+}
+
+export interface EMVResult {
+  emv: number;
+  expectedValue: number;
+  weightedOutcomes: number;
+  scenarios: number;
+  reason: string;
+}
+
+export interface NPVResult {
+  npv: number;
+  presentValues: number[];
+  discountRate: number;
+  initialInvestment: number;
+  reason: string;
+}
+
+export interface WealthVerdict {
+  verdict: "SEAL" | "HOLD" | "VOID";
+  emvPass: boolean;
+  npvPass: boolean;
+  reversibilityPass: boolean;
+  blastRadiusPass: boolean;
+  thermodynamicPass: boolean;
+  reason: string;
+}
+
+export type WealthDecision =
+  | "PROCEED"
+  | "HOLD"
+  | "VOID"
+  | "REQUIRE_HUMAN_APPROVAL";
+
+export interface ThermodynamicCost {
+  toolName: string;
+  landauerCost: number;
+  kappa_r: number;
+  blastRadius: number;
+  dS_predict: number;
+  emv: number;
+  npv: number;
+  isReversible: boolean;
+  isExpensive: boolean;
+  thermodynamicBand: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+}
+
+export interface ThermodynamicVerdict {
+  verdict: "PASS" | "HOLD" | "VOID";
+  cost: ThermodynamicCost;
+  violations: string[];
+  landauerReason: string;
+  reversibilityReason: string;
+  blastRadiusReason: string;
+  wealthReason: string;
+}
+
+export const KAPPA_R_THRESHOLD = 0.7;
+export const BLAST_RADIUS_THRESHOLD = 0.8;
+export const LANDAUER_COST_THRESHOLD = 0.7;
+export const DS_PREDICT_THRESHOLD = 0.4;
+export const NPV_MIN = 0;
+export const EMV_MIN = 0;
