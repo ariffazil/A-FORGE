@@ -1,0 +1,98 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geox.arif-fazil.com/schemas/telemetry.schema.json",
+  "title": "GEOX Telemetry Schema",
+  "description": "Runtime telemetry for all GEOX surfaces",
+  "type": "object",
+  "required": ["epoch", "capability_id", "surface", "confidence", "verdict"],
+  "properties": {
+    "epoch": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp"
+    },
+    "capability_id": {
+      "type": "string",
+      "pattern": "^geox\.[a-z]+\.[a-z-]+$",
+      "description": "Fully qualified capability ID"
+    },
+    "surface": {
+      "type": "string",
+      "enum": ["site", "webmcp", "mcp", "a2a"],
+      "description": "Which surface generated this telemetry"
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Session identifier"
+    },
+    "request_id": {
+      "type": "string",
+      "description": "Unique request identifier"
+    },
+    "dS": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Entropy delta"
+    },
+    "peace2": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Coherence metric"
+    },
+    "kappa_r": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Risk density"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Output confidence (0-1)"
+    },
+    "uncertainty": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Uncertainty bounds"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["888_SEAL", "888_QUALIFY", "888_HOLD", "888_VOID"],
+      "description": "Governance verdict"
+    },
+    "witness": {
+      "type": "object",
+      "required": ["human", "ai", "earth"],
+      "properties": {
+        "human": { "type": "boolean" },
+        "ai": { "type": "boolean" },
+        "earth": { "type": "boolean" }
+      }
+    },
+    "qdf": {
+      "type": "string",
+      "description": "Data provenance classification"
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "References to supporting evidence"
+    },
+    "timing": {
+      "type": "object",
+      "properties": {
+        "latency_ms": { "type": "integer" },
+        "queue_time_ms": { "type": "integer" },
+        "processing_time_ms": { "type": "integer" }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "properties": {
+        "agent_id": { "type": "string" },
+        "authority_level": { "type": "integer" },
+        "delegation_chain": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

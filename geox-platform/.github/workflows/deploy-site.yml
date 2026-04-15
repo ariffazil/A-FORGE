@@ -1,0 +1,55 @@
+name: Deploy Site
+
+on:
+  push:
+    branches: [main, canary]
+    paths:
+      - 'apps/site/**'
+      - 'packages/schemas/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate registry.json
+        run: |
+          cd apps/site
+          node -e "JSON.parse(require('fs').readFileSync('registry.json'))" || exit 1
+          echo "✓ registry.json is valid JSON"
+
+      - name: Validate schemas
+        run: |
+          npm install -g ajv-cli
+          ajv validate -s packages/schemas/registry.schema.json -d apps/site/registry.json || exit 1
+          echo "✓ Registry validates against schema"
+
+      - name: Deploy to Cloudflare Pages (Production)
+        if: github.ref == 'refs/heads/main'
+        uses: cloudflare/pages-action@v1
+        with:
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          projectName: geox-site
+          directory: apps/site
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to Cloudflare Pages (Preview)
+        if: github.ref == 'refs/heads/canary'
+        uses: cloudflare/pages-action@v1
+        with:
+          accountId: ${{ secrets.CF_ACCOUNT_ID }}
+          projectName: geox-site
+          directory: apps/site
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: canary

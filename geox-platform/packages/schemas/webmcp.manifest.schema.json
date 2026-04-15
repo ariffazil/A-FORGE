@@ -1,0 +1,68 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geox.arif-fazil.com/schemas/webmcp.manifest.schema.json",
+  "title": "GEOX WebMCP Manifest Schema",
+  "description": "Schema for WebMCP browser-native capability manifests",
+  "type": "object",
+  "required": ["manifest_version", "origin", "capabilities"],
+  "properties": {
+    "manifest_version": {
+      "type": "string",
+      "const": "2026-04"
+    },
+    "origin": {
+      "type": "string",
+      "format": "uri",
+      "description": "Authorized origin for this manifest"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "handler", "schema"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9]*$"
+          },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "handler": {
+            "type": "string",
+            "enum": ["js_function", "iframe_message", "worker"]
+          },
+          "schema": {
+            "type": "object",
+            "properties": {
+              "inputs": { "type": "object" },
+              "outputs": { "type": "object" }
+            }
+          },
+          "ui": {
+            "type": "object",
+            "properties": {
+              "requires_user_activation": { "type": "boolean" },
+              "modal": { "type": "boolean" },
+              "confirmation_text": { "type": "string" }
+            }
+          },
+          "session": {
+            "type": "object",
+            "properties": {
+              "requires_auth": { "type": "boolean" },
+              "scope": { "type": "string" },
+              "ttl_seconds": { "type": "integer" }
+            }
+          }
+        }
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "properties": {
+        "message": { "type": "string" },
+        "link": { "type": "string", "format": "uri" }
+      }
+    }
+  }
+}

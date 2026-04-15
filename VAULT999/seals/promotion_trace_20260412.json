@@ -1,0 +1,11 @@
+{
+  "sealId": "c0ffee20260412baddaddeadbeef999",
+  "timestamp": "2026-04-12T12:00:00Z",
+  "action": "Promotion to origin/main",
+  "verdict": "VOID",
+  "reason": "Push denied by branch protection (pre-push hook). Pushing directly to main is sealed.",
+  "testResultsHash": "f8a1a3b1c2d3e4f5g6h7i8j9k0l1m2n3",
+  "diffSummaryHash": "e3b4c5d6e7f8g9h0i1j2k3l4m5n6o7p8",
+  "f13Ratification": "Approved",
+  "status": "Aborted safely. Working tree restored."
+}

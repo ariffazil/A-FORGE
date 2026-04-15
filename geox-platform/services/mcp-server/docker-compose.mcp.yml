@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  mcp:
+    build:
+      context: ../..
+      dockerfile: services/mcp-server/Dockerfile
+    image: ghcr.io/geox-platform/geox-mcp:latest
+    container_name: geox-mcp
+    restart: unless-stopped
+    ports:
+      - "8765:8765"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - MCP_SERVER_NAME=geox-mcp
+    volumes:
+      - mcp-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import http.client; conn = http.client.HTTPConnection('localhost', 8765); conn.request('GET', '/health'); print(conn.getresponse().status)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mcp-data:

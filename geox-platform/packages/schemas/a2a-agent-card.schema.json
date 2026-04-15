@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geox.arif-fazil.com/schemas/a2a-agent-card.schema.json",
+  "title": "GEOX A2A Agent Card Schema",
+  "description": "Agent card for A2A protocol interoperability",
+  "type": "object",
+  "required": ["name", "description", "url", "version", "capabilities"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Agent identifier"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this agent does"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "A2A endpoint URL"
+    },
+    "version": {
+      "type": "string",
+      "description": "Agent version"
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "streaming": { "type": "boolean" },
+        "pushNotifications": { "type": "boolean" },
+        "stateTransitionHistory": { "type": "boolean" }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "examples": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "authentication": {
+      "type": "object",
+      "properties": {
+        "schemes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["api_key", "oauth2", "bearer", "mtls"]
+          }
+        },
+        "credentials": { "type": "string" }
+      }
+    },
+    "_geox": {
+      "type": "object",
+      "properties": {
+        "domain": { "type": "string" },
+        "substrates": { "type": "array", "items": { "type": "string" } },
+        "authority_level": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "constitutional_floor": { "type": "string" }
+      }
+    }
+  }
+}

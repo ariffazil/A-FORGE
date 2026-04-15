@@ -1,0 +1,112 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# GEOX Platform — Four-Surface Docker Compose
+# Wires Site + WebMCP + MCP + A2A together
+# ═══════════════════════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ─── SURFACE 1: Site (Static) ───
+  geox-site:
+    image: nginx:alpine
+    container_name: geox-site
+    volumes:
+      - ./apps/site:/usr/share/nginx/html:ro
+      - ./nginx/site.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "8080:80"
+    networks:
+      - geox-net
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── SURFACE 3: MCP Server (Wired to GEOX Backend) ───
+  geox-mcp:
+    build:
+      context: ./services/mcp-server
+      dockerfile: Dockerfile
+    container_name: geox-mcp
+    environment:
+      - GEOX_BACKEND_URL=http://geox-unified:8000
+      - REGISTRY_PATH=/app/registry.json
+      - LOG_LEVEL=info
+    volumes:
+      - ./apps/site/registry.json:/app/registry.json:ro
+      - ../GEOX:/app/geox-backend:ro  # Mount GEOX backend for imports
+    ports:
+      - "8001:8000"
+    networks:
+      - geox-net
+    depends_on:
+      - geox-unified
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── GEOX Unified Backend ───
+  geox-unified:
+    build:
+      context: ../GEOX
+      dockerfile: Dockerfile
+    container_name: geox-unified
+    environment:
+      - TRANSPORT=sse
+      - PORT=8000
+      - HOST=0.0.0.0
+    ports:
+      - "8000:8000"
+    networks:
+      - geox-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── SURFACE 4: A2A Gateway ───
+  geox-a2a:
+    build:
+      context: ./services/a2a-gateway
+      dockerfile: Dockerfile
+    container_name: geox-a2a
+    environment:
+      - PORT=3002
+      - ALLOWED_ORIGINS=http://localhost:8080,https://geox.arif-fazil.com
+      - MCP_SERVER_URL=http://geox-mcp:8000
+    volumes:
+      - ./agents:/app/agents:ro
+    ports:
+      - "3002:3002"
+    networks:
+      - geox-net
+    depends_on:
+      - geox-mcp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── Reverse Proxy (nginx) ───
+  nginx:
+    image: nginx:alpine
+    container_name: geox-nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    networks:
+      - geox-net
+    depends_on:
+      - geox-site
+      - geox-mcp
+      - geox-a2a
+
+networks:
+  geox-net:
+    driver: bridge

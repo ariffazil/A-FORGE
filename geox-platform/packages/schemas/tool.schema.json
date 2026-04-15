@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geox.arif-fazil.com/schemas/tool.schema.json",
+  "title": "GEOX MCP Tool Schema",
+  "description": "Schema for MCP tools exposed by GEOX",
+  "type": "object",
+  "required": ["name", "description", "inputSchema", "annotations"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^geox_[a-z_]+$",
+      "description": "Tool name with geox_ prefix"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this tool does"
+    },
+    "inputSchema": {
+      "type": "object",
+      "description": "JSON Schema for tool inputs"
+    },
+    "annotations": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "readOnlyHint": { "type": "boolean" },
+        "destructiveHint": { "type": "boolean" },
+        "idempotentHint": { "type": "boolean" },
+        "openWorldHint": { "type": "boolean" }
+      }
+    },
+    "_geox": {
+      "type": "object",
+      "description": "GEOX-specific metadata",
+      "properties": {
+        "skill_id": { "type": "string" },
+        "domain": { "type": "string" },
+        "substrates": { "type": "array", "items": { "type": "string" } },
+        "complexity": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "verdict_trigger": {
+          "type": "object",
+          "properties": {
+            "888_HOLD_conditions": { "type": "array", "items": { "type": "string" } },
+            "888_VOID_conditions": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    }
+  }
+}

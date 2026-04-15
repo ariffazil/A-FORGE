@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geox.arif-fazil.com/schemas/a2a-task.schema.json",
+  "title": "GEOX A2A Task Schema",
+  "description": "Task envelope for agent-to-agent delegation",
+  "type": "object",
+  "required": ["id", "sessionId", "status"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique task ID"
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Session this task belongs to"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["submitted", "working", "input-required", "completed", "canceled", "failed"]
+    },
+    "message": {
+      "type": "object",
+      "required": ["role", "parts"],
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "agent"] },
+        "parts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["text", "file", "data", "uri"] },
+              "text": { "type": "string" },
+              "mimeType": { "type": "string" },
+              "uri": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "uri": { "type": "string" },
+          "data": { "type": "string" }
+        }
+      }
+    },
+    "history": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "skill_id": { "type": "string" },
+        "delegation_chain": { "type": "array", "items": { "type": "string" } },
+        "authority_level": { "type": "integer" },
+        "verdict": { "type": "string", "enum": ["888_SEAL", "888_QUALIFY", "888_HOLD", "888_VOID"] }
+      }
+    },
+    "_geox_telemetry": {
+      "type": "object",
+      "description": "GEOX runtime telemetry",
+      "properties": {
+        "epoch": { "type": "string", "format": "date-time" },
+        "dS": { "type": "number" },
+        "peace2": { "type": "number" },
+        "kappa_r": { "type": "number" },
+        "confidence": { "type": "number" },
+        "witness": {
+          "type": "object",
+          "properties": {
+            "human": { "type": "boolean" },
+            "ai": { "type": "boolean" },
+            "earth": { "type": "boolean" }
+          }
+        },
+        "qdf": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "sealId": "CHATGPT-MCP-2026-04-12-0400",
+  "timestamp": "2026-04-12T04:00:00Z",
+  "action": "ChatGPT MCP Compatibility Fix",
+  "repository": "ariffazil/arifOS",
+  "branch": "main",
+  "commit": "aa6a7ab",
+  
+  "problem": {
+    "error": "Not Acceptable: Client must accept text/event-stream",
+    "endpoint": "https://arifosmcp.arif-fazil.com/mcp",
+    "cause": "ChatGPT's MCP client doesn't properly negotiate SSE headers required by streamable-http transport"
+  },
+  
+  "analysis": {
+    "serverTransport": "streamable-http (FastMCP 3.x)",
+    "statelessMode": true,
+    "requiresAcceptHeader": "application/json, text/event-stream",
+    "chatgptCompatible": false,
+    "workingEndpoints": ["/health", "/tools", "/metadata"]
+  },
+  
+  "fixesApplied": [
+    {
+      "file": "server.py",
+      "change": "stateless_http=False → stateless_http=True",
+      "effect": "Server no longer requires session state, but still requires SSE Accept header"
+    },
+    {
+      "file": "CHATGPT_DEPLOYMENT_GUIDE.md",
+      "content": "Documentation of issue and 4 solution options"
+    }
+  ],
+  
+  "deploymentStatus": {
+    "container": "arifosmcp",
+    "status": "restarted with new config",
+    "ports": "8080 (HTTP), 8089 (SSE-unused)",
+    "health": "healthy"
+  },
+  
+  "solutionOptions": {
+    "option1": {
+      "name": "Use REST API (Immediate)",
+      "compatible": true,
+      "endpoints": {
+        "GET /tools": "List all 17 MCP tools",
+        "GET /health": "Server health check",
+        "GET /metadata": "Server metadata"
+      }
+    },
+    "option2": {
+      "name": "Configure ChatGPT Headers",
+      "compatible": "maybe",
+      "requires": "Add Accept: application/json, text/event-stream header"
+    },
+    "option3": {
+      "name": "Deploy MCP Proxy",
+      "compatible": true,
+      "description": "Python proxy that handles SSE negotiation for ChatGPT"
+    },
+    "option4": {
+      "name": "Use STDIO Mode (Local)",
+      "compatible": true,
+      "command": "python ops/runtime/stdio_server.py"
+    }
+  },
+  
+  "recommendation": "Use Option 1 (REST API) for immediate ChatGPT integration via custom GPT actions",
+  
+  "verdict": "PARTIAL",
+  "status": "Server fixed and deployed, ChatGPT compatibility requires client-side handling or proxy",
+  
+  "filesChanged": [
+    "server.py",
+    "CHATGPT_DEPLOYMENT_GUIDE.md",
+    "CONTRAST_ANALYSIS_2026-04-12.md"
+  ]
+}

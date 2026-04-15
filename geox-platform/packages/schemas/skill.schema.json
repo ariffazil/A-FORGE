@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geox.arif-fazil.com/schemas/skill.schema.json",
+  "title": "GEOX Skill Schema",
+  "description": "Schema for Earth intelligence operational skills",
+  "type": "object",
+  "required": ["id", "name", "domain", "substrates", "description", "inputs", "outputs", "complexity", "mcp_resource"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z_]+$",
+      "description": "Unique skill identifier (snake_case)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable skill name"
+    },
+    "domain": {
+      "type": "string",
+      "enum": ["sensing", "geodesy", "terrain", "water", "atmosphere", "mobility", "infrastructure", "hazards", "governance", "time", "orchestration"],
+      "description": "Domain classification"
+    },
+    "substrates": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["human", "machine", "infrastructure", "orbital", "environment", "void"]
+      },
+      "minItems": 1,
+      "description": "Substrates this skill operates across"
+    },
+    "description": {
+      "type": "string",
+      "description": "What this skill does"
+    },
+    "inputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Required input parameters"
+    },
+    "outputs": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Produced output artifacts"
+    },
+    "complexity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Complexity rating (1=simple, 5=expert)"
+    },
+    "dependencies": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Other skills this depends on"
+    },
+    "mcp_resource": {
+      "type": "string",
+      "pattern": "^geox://resources/[a-z]+/[a-z_]+$",
+      "description": "MCP resource URI for this skill"
+    },
+    "verdict_classes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["888_SEAL", "888_QUALIFY", "888_HOLD", "888_VOID"]
+      },
+      "description": "Possible verdicts for this skill"
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "requires_auth": { "type": "boolean" },
+        "requires_human": { "type": "boolean" },
+        "max_batch_size": { "type": "integer" },
+        "rate_limit": { "type": "string" }
+      }
+    }
+  }
+}

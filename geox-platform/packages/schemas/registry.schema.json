@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://geox.arif-fazil.com/schemas/registry.schema.json",
+  "title": "GEOX Registry Schema",
+  "description": "Master registry for skills, domains, and substrates",
+  "type": "object",
+  "required": ["meta", "domains", "skills"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["name", "version", "seal"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "seal": { "type": "string" },
+        "total_skills": { "type": "integer" },
+        "domains": { "type": "integer" },
+        "substrates": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "domains": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "skills"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "skills": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "skills": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z_]+$": {
+          "$ref": "skill.schema.json"
+        }
+      },
+      "additionalProperties": false
+    },
+    "agents": {
+      "type": "object",
+      "patternProperties": {
+        "^[a-z-]+$": {
+          "$ref": "a2a-agent-card.schema.json"
+        }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "skills": { "type": "array", "items": { "type": "string" } },
+          "agents": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    }
+  }
+}
