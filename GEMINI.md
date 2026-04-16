@@ -1,47 +1,18 @@
-# arifOS workspace context
+# 🏛 arifOS v2.0 workspace context
+## AGI Constitutional Schema v1.0
 
 ## Canonical tool names and operational meaning
-- `arifos.init` = session bootstrap / identity binding
-- `arifos.route` = task routing
-- `arifos.judge` = policy verdict
-- `arifos.vault` = immutable audit record / verification
-- `arifos.mind` = reasoning
-- `arifos.heart` = safety and impact review
-- `arifos.memory` = governed memory retrieval
-- `arifos.sense` = evidence acquisition / grounding
-- `arifos.ops` = operational metrics / cost estimation
-- `arifos.forge` = build / test / code execution
+- `Tier 00 — IDENTITY`: Session bootstrap / Identity binding / Vault (`arifos_init`, `arifos_vault`)
+- `Tier 01 — PERCEPTION`: Environment sensing / Data ingestion (`arifos_sense`, `wealth_ingest_*`)
+- `Tier 02 — PHYSICS`: Earth intelligence / Subsurface engines (`geox_*`)
+- `Tier 03 — ECONOMICS`: Capital intelligence / Wealth engines (`wealth_*`)
+- `Tier 04 — RISK`: Ethics / Entropy / Adverse analysis (`arifos_heart`, `wealth_audit_entropy`)
+- `Tier 05 — EXECUTION`: Bounded tool execution (`arifos_forge`)
+- `Tier 06 — STEWARDSHIP`: Civilizational impact / Long-term modeling
+- `Tier 07 — REFLECTION`: Reasoning / Mind / Metacognition (`arifos_mind`)
 
-## Local skill registry
-- planner: goal → steps decomposition (Bounded, No Exec)
-- executor: bounded tool execution (Policy-gated)
-- verifier: validation of outputs/diffs (Promotion gate)
-- forge-operator: execution discipline
-- floor-checker: F1-F13 validation
-- swarm-conductor: meta router
-- trinity-forger: multi-stage handoff orchestration
-- metabolic-loop: stage progression across `000→111→333→666→777→888→999`
-- web-architect: web/system design
-- vps-operator: infra/container ops
-
-## Shared MCP launchers
-- `.github/mcp/start-arifos-stdio.sh`
-- `.github/mcp/start-geox-stdio.sh`
-- `.github/mcp/start-playwright.sh`
-- Shared server names: `arifos-local`, `geox-local`, `playwright`
-- Keep `.mcp.json`, `.claude/mcp.json`, `.cursor/mcp.json`, `.opencode.json`, and `.gemini/settings.json` aligned
-
-## Context Doctrine (Refined)
-1. **Context Law:** Context is a bounded workspace for active inference, not intelligence.
-2. **Optimization Law:** Maximize relevance density, not just token reduction.
-3. **Attention Law:** Only attended information has causal influence (Attention is currency).
-4. **Retrieval Law:** Intelligence is the ability to select/assemble from external memory.
-5. **Compression Law:** All summaries must be traceable to source (Loss awareness).
-6. **Entropy Law:** Uncontrolled context leads to reasoning collapse.
-7. **Workspace Law:** Use a small, sharp active workspace.
-8. **Iteration Law:** Decompose complexity into loops, not monolithic prompts.
-9. **Verification Law:** Reasoning without grounding is structured hallucination.
-10. **Humility Law:** Humility is the uncertainty guard against overconfidence.
+## Context Doctrine (The Seven Axioms)
+Refer to **[CONSTITUTION.md](./CONSTITUTION.md)** for the foundational laws governing this AGI organism. These Axioms take absolute precedence over all other directives.
 
 ## Four Pillars
 - **Attention:** Spend it with the least waste.
@@ -52,7 +23,7 @@
 ---
 
 ## Project Overview (AF-FORGE)
-**AF-FORGE** is a policy-governed, event-sourced agent runtime. It employs a **Planner/Executor/Verifier** architecture.
+**AF-FORGE** is a policy-governed, event-sourced agent runtime running on **arifOS v2.0**. It employs a **Cognitive-Layered Architecture** where every action is a metabolic step through the AGI Routing DAG.
 
 ### Core Architecture & Technologies
 - **Language/Runtime:** TypeScript (NodeNext), Node.js (v22+), Bun.

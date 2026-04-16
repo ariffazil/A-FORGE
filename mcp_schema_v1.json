@@ -1,0 +1,105 @@
+{
+  "mcp_schema_version": "1.0-CONSTITUTIONAL",
+  "organism": "arifOS",
+  "version": "2.0-CANONICAL",
+  "architect": "Arif",
+  "axioms": [
+    { "id": "Λ1", "name": "Identity Precedes Action", "desc": "No tool executes without session anchoring." },
+    { "id": "Λ2", "name": "Reality Before Simulation", "desc": "All projections must ground in sensed, ingested data." },
+    { "id": "Λ3", "name": "Risk Before Reward", "desc": "Entropy and adversarial layers precede capital allocation." },
+    { "id": "Λ4", "name": "Judgment Before Execution", "desc": "No irreversible act without constitutional SEAL." },
+    { "id": "Λ5", "name": "Orthogonality Preservation", "desc": "Ωₒᵣₜₕₒ ≥ 0.95 across Physics | Wealth | Governance lanes." },
+    { "id": "Λ6", "name": "Vault Closure", "desc": "Every executed action must close into the Vault record." },
+    { "id": "Λ7", "name": "Metabolism Continuity", "desc": "Monitor runs passively at all times — never disabled." }
+  ],
+  "thresholds": {
+    "omega_ortho": { "seal": 0.95, "hold": 0.85, "void": 0.0 },
+    "delta_s": { "seal": 0.20, "hold": 0.50, "void": 1.0 },
+    "peace_squared": { "seal": 0.70, "hold": 0.40, "void": 0.0 },
+    "kappa_r_phys": { "seal": 0.40, "hold": 0.10, "void": 0.0 }
+  },
+  "cognitive_tiers": [
+    { "tier": 0, "name": "IDENTITY", "range": [1, 15] },
+    { "tier": 1, "name": "PERCEPTION", "range": [16, 30] },
+    { "tier": 2, "name": "PHYSICS", "range": [31, 45] },
+    { "tier": 3, "name": "ECONOMICS", "range": [46, 60] },
+    { "tier": 4, "name": "RISK", "range": [61, 70] },
+    { "tier": 5, "name": "EXECUTION", "range": [71, 80] },
+    { "tier": 6, "name": "STEWARDSHIP", "range": [81, 89] },
+    { "tier": 7, "name": "REFLECTION", "range": [90, 99] }
+  ],
+  "tools": [
+    {
+      "id": "T00_01",
+      "name": "arifos_arifos_init",
+      "tier": 0,
+      "cognitive_layer": "IDENTITY",
+      "axioms_enforced": ["Λ1"],
+      "reversible": true,
+      "kappa_r": 1.0
+    },
+    {
+      "id": "T00_07",
+      "name": "arifos_arifos_gateway",
+      "tier": 0,
+      "cognitive_layer": "IDENTITY",
+      "axioms_enforced": ["Λ5"],
+      "desc": "Orthogonality gate — Ωₒᵣₜₕₒ computation"
+    },
+    {
+      "id": "T01_16",
+      "name": "arifos_arifos_sense",
+      "tier": 1,
+      "cognitive_layer": "PERCEPTION",
+      "axioms_enforced": ["Λ2"]
+    },
+    {
+      "id": "T02_32",
+      "name": "geox_well_compute_petrophysics",
+      "tier": 2,
+      "cognitive_layer": "PHYSICS",
+      "required_predecessors": ["T01_23"]
+    },
+    {
+      "id": "T03_46",
+      "name": "wealth_evaluate_ROI",
+      "tier": 3,
+      "cognitive_layer": "ECONOMICS",
+      "required_predecessors": ["T02_41"]
+    },
+    {
+      "id": "T04_61",
+      "name": "arifos_arifos_heart",
+      "tier": 4,
+      "cognitive_layer": "RISK",
+      "axioms_enforced": ["Λ3"]
+    },
+    {
+      "id": "T05_71",
+      "name": "arifos_arifos_forge",
+      "tier": 5,
+      "cognitive_layer": "EXECUTION",
+      "axioms_enforced": ["Λ4"],
+      "seal_required": true,
+      "reversible": false
+    },
+    {
+      "id": "T07_90",
+      "name": "arifos_arifos_mind",
+      "tier": 7,
+      "cognitive_layer": "REFLECTION"
+    }
+  ],
+  "routing_dag": {
+    "logic": "T00 -> T01 -> (T02 || T03) -> T04 -> GATE -> JUDGE -> T05 -> Λ6 -> T07",
+    "strict_sequencing": true
+  },
+  "judgment_gate": {
+    "seal_conditions": [
+      "omega_ortho >= 0.95",
+      "peace_squared > 0.70",
+      "delta_s < 0.20",
+      "kappa_r > 0.40"
+    ]
+  }
+}
