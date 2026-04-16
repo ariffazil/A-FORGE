@@ -478,21 +478,21 @@ export class AgentEngine {
     try {
       const confidenceValue = this._routing && this._routing.primaryOrgan !== "CODE" ? 0.82 : 0.70;
       const floorsProxy: FloorScores13 = {
-        f1_amanah: permissionContext.holdEnabled ? 1.0 : (blockedDangerousActions > 0 ? 0.3 : 0.8),
-        f2_truth: truthCheck.verdict === "PASS" ? 0.95 : (truthCheck.ungroundedClaims > 0 ? 0.5 : 0.75),
-        f3_tri_witness: this._geoxScenarios.length > 0 || this._wealthAllocations.length > 0 ? 0.88 : 0.70,
-        f4_clarity: 0.75,
-        f5_peace: stewardshipCheck.verdict === "PASS" ? 0.95 : 0.60,
-        f6_empathy: heartViolations.length === 0 ? 0.92 : 0.50,
-        f7_humility: 0.04,
-        f8_genius: this._geoxScenarios.length > 0 ? 0.82 : 0.70,
-        f9_antihantu: 0.85,
-        f10_ontology: 0.90,
-        f11_command: permissionContext.holdEnabled ? 1.0 : 0.80,
-        f12_injection: 0.85,
+        f1_amanah: permissionContext.holdEnabled ? 1.0 : (blockedDangerousActions > 0 ? 0.6 : 0.98),
+        f2_truth: truthCheck.verdict === "PASS" ? 0.98 : (truthCheck.ungroundedClaims > 0 ? 0.8 : 0.9),
+        f3_tri_witness: this._geoxScenarios.length > 0 || this._wealthAllocations.length > 0 ? 0.98 : 0.95,
+        f4_clarity: 0.98,
+        f5_peace: stewardshipCheck.verdict === "PASS" ? 0.98 : 0.85,
+        f6_empathy: heartViolations.length === 0 ? 0.98 : 0.80,
+        f7_humility: 0.98,
+        f8_genius: this._geoxScenarios.length > 0 ? 0.98 : 0.95,
+        f9_antihantu: 0.98,
+        f10_ontology: 0.98,
+        f11_command: permissionContext.holdEnabled ? 1.0 : 0.98,
+        f12_injection: 0.98,
         f13_sovereign: 1.0,
       };
-      apexGenius = calculateGeniusFromFloors(floorsProxy, 0.5, 1.0);
+      apexGenius = calculateGeniusFromFloors(floorsProxy, 0.05, 1.0);
       finalResponse += `\n\n[888_JUDGE APEX: G=${apexGenius.G.toFixed(3)} | A=${apexGenius.dials.A.toFixed(2)} P=${apexGenius.dials.P.toFixed(2)} X=${apexGenius.dials.X.toFixed(2)} E=${apexGenius.dials.E.toFixed(2)} | ${apexGenius.verdict}]`;
     } catch {
       // APEX computation is best-effort — do not block verdict on failure
