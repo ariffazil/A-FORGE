@@ -23,7 +23,7 @@ import { runStage, recordHumanDecision, recordEscalationLatency, setOpenHolds, r
 import type { MetabolicStage } from "./types/aki.js";
 import { getTicketStore } from "./approval/index.js";
 import { FileVaultClient } from "./vault/index.js";
-import { getPostgresVaultClient, type FloorRule } from "./vault/index.js";
+import { getPostgresVaultClient, type FloorRule, MerkleV3Service } from "./vault/index.js";
 import { LocalGovernanceClient } from "./governance/index.js";
 import { getAdaptiveThresholds } from "./governance/thresholds.js";
 import { createOperatorAuthMiddleware } from "./middleware/operatorAuth.js";
@@ -675,6 +675,55 @@ app.get("/operator/vault/:sealId", async (req: Request, res: Response) => {
     res.json({ ok: true, record });
   } catch (error) {
     console.error("[AF-FORGE] /operator/vault/:sealId error:", error);
+    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
+  }
+});
+
+/**
+ * GET /vault/merkle/verify
+ * Verify the Merkle v3 chain for a given date (defaults to today).
+ * Returns: { valid, brokenAt, storedRoot, computedRoot, rowCount }
+ */
+app.get("/vault/merkle/verify", async (req: Request, res: Response) => {
+  try {
+    const dateStr = req.query.date as string | undefined;
+    const date = dateStr ? new Date(dateStr) : new Date();
+    const postgresUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+    if (!postgresUrl) {
+      res.status(503).json({ ok: false, error: { type: "unavailable", message: "No database connection" } });
+      return;
+    }
+    const vault = getPostgresVaultClient(postgresUrl);
+    const merkle = new MerkleV3Service(vault);
+    const result = await merkle.verifyChain(date);
+    res.json({ ok: true, ...result, date: date.toISOString().split("T")[0] });
+  } catch (error) {
+    console.error("[AF-FORGE] /vault/merkle/verify error:", error);
+    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
+  }
+});
+
+/**
+ * POST /vault/merkle/seal
+ * Run daily Merkle seal: build chain + anchor root + verify.
+ * Triggers F1/F11 tamper-evidence checkpoint.
+ */
+app.post("/vault/merkle/seal", async (req: Request, res: Response) => {
+  try {
+    const dateStr = (req.body as { date?: string }).date;
+    const date = dateStr ? new Date(dateStr) : new Date();
+    const postgresUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
+    if (!postgresUrl) {
+      res.status(503).json({ ok: false, error: { type: "unavailable", message: "No database connection" } });
+      return;
+    }
+    const vault = getPostgresVaultClient(postgresUrl);
+    const merkle = new MerkleV3Service(vault);
+    const result = await merkle.dailySeal(date);
+    console.error(`[MerkleV3] dailySeal ${date.toISOString().split("T")[0]}: valid=${result.valid} rows=${result.rowCount}`);
+    res.json({ ok: true, ...result, date: date.toISOString().split("T")[0] });
+  } catch (error) {
+    console.error("[AF-FORGE] /vault/merkle/seal error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });

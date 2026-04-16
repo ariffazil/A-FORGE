@@ -1,0 +1,35 @@
+# AF-FORGE Agent Plane — Prometheus scrape config
+# Place in /etc/prometheus/prometheus.yml or mount as a volume
+# DITEMPA BUKAN DIBERI
+
+scrape_configs:
+  # AF-FORGE Bridge Server metrics
+  - job_name: "af-forge-bridge"
+    static_configs:
+      - targets: ["af-forge-bridge:7071"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  # AF-FORGE MCP Server
+  - job_name: "af-forge-mcp"
+    static_configs:
+      - targets: ["af-forge-mcp:3000"]
+    metrics_path: /metrics
+    scrape_interval: 15s
+
+  # Node Exporter — hardware/OS metrics
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+    scrape_interval: 30s
+
+  # cAdvisor — container metrics
+  - job_name: "cadvisor"
+    static_configs:
+      - targets: ["cadvisor:8080"]
+    scrape_interval: 30s
+
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

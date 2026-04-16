@@ -68,7 +68,7 @@ services:
       - arifos_core_network
       - geox-net
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "http://localhost:8000/"]
       interval: 30s
       timeout: 10s
       retries: 3

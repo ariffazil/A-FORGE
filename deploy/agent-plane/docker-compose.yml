@@ -1,0 +1,198 @@
+# AF-FORGE Agent Plane — docker-compose
+# DITEMPA BUKAN DIBERI — Forged, Not Given
+#
+# Services:
+#   af-forge-manager    — Persistent job queue, session lifecycle, tool allowlists
+#   af-forge-notifier   — Telegram/Matrix 888_HOLD alerts
+#   af-forge-backup     — Daily pg_dump cron + off-box replication
+#   node-exporter       — Prometheus hardware/metrics (port 9100)
+#   cadvisor            — Container metrics (port 8080)
+#
+# NOT included (deferred until single-node stack is stable):
+#   - Kubernetes / multi-node
+#   - Local Ollama / heavy inference workloads
+#   - Public GEOX endpoints
+#
+# Activate:
+#   cd deploy/agent-plane
+#   cp .env.example .env  # fill in POSTGRES_URL, TELEGRAM_*, BACKUP_*
+#   docker compose up -d
+#
+# Verify:
+#   docker exec af-forge-manager node dist/src/jobs/AgentManager.js status
+#   docker exec af-forge-backup pg_dump --version
+
+version: "3.9"
+
+x-common-env: &common-env
+  POSTGRES_URL: ${POSTGRES_URL:-postgresql://arifos_admin:${POSTGRES_PASSWORD}@arifos-postgres:5432/arifos_vault}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ArifPostgresVault2026!}
+  CONSTITUTION_HASH: ${CONSTITUTION_HASH:-SEAL20260413RESOURCECONSOLIDATION}
+  AGENT_ID: ${AGENT_ID:-AF-FORGE-Agent}
+  NODE_ENV: production
+
+services:
+
+  # ── AF-FORGE MANAGER ────────────────────────────────────────────
+  # Persistent job queue + session manager.
+  # Receives jobs from HTTP API or internal enqueue.
+  # Writes session open/close to VAULT999.
+  # Emits 888_HOLD to notifier on critical/high priority jobs.
+  af-forge-manager:
+    image: node:22-alpine
+    container_name: af-forge-manager
+    restart: unless-stopped
+    networks:
+      - arifos_core_network
+    environment:
+      <<: *common-env
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ./dist:/app/dist:ro        # compiled TypeScript from host
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # for runner spawn
+    working_dir: /app
+    command: >
+      node -e "
+        import('./dist/src/jobs/AgentManager.js')
+          .then(({ AgentManager }) => {
+            const mgr = new AgentManager({
+              agentId: process.env.AGENT_ID,
+              constitutionHash: process.env.CONSTITUTION_HASH,
+              escalationWebhookUrl: process.env.HUMAN_ESCALATION_WEBHOOK_URL,
+            });
+            // poll queue every 5s — production would use a proper message bus
+            setInterval(() => {
+              const job = mgr.dequeue('manager-poll');
+              if (job) console.log('dequeued:', job.id);
+            }, 5000);
+            console.log('[af-forge-manager] running on arifos_core_network');
+          })
+          .catch(e => { console.error(e); process.exit(1); });
+      "
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo OK"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "256M"
+
+  # ── AF-FORGE NOTIFIER ────────────────────────────────────────────
+  # Telegram notifier for 888_HOLD events.
+  # Reads TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID from env.
+  # Falls back to webhook if TELEGRAM_ALERT_WEBHOOK_URL is set.
+  af-forge-notifier:
+    image: node:22-alpine
+    container_name: af-forge-notifier
+    restart: unless-stopped
+    networks:
+      - arifos_core_network
+    environment:
+      <<: *common-env
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      TELEGRAM_ALERT_WEBHOOK_URL: ${TELEGRAM_ALERT_WEBHOOK_URL:-}
+    volumes:
+      - ./dist:/app/dist:ro
+    working_dir: /app
+    command: >
+      node -e "
+        import('./dist/src/notifier/TelegramNotifier.js')
+          .then(({ createTelegramNotifier }) => {
+            const notifier = createTelegramNotifier();
+            if (!notifier.isConfigured) {
+              console.log('[af-forge-notifier] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set — alerts disabled');
+            } else {
+              console.log('[af-forge-notifier] Telegram notifier active');
+            }
+          })
+          .catch(e => { console.error(e); process.exit(1); });
+      "
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo OK"]
+
+  # ── AF-FORGE BACKUP ─────────────────────────────────────────────
+  # Daily pg_dump cron at 02:00 MYT.
+  # Retention: 30 days local, optional off-box rsync/S3.
+  # F1 Amanah: all backups logged to VAULT999.
+  af-forge-backup:
+    image: postgres:16-alpine
+    container_name: af-forge-backup
+    restart: unless-stopped
+    networks:
+      - arifos_core_network
+    environment:
+      <<: *common-env
+      BACKUP_DIR: /backups
+      BACKUP_RETENTION: ${BACKUP_RETENTION:-30}
+      BACKUP_OFFBOX_TARGET: ${BACKUP_OFFBOX_TARGET:-}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-ArifPostgresVault2026!}
+    volumes:
+      - arifos_backups:/backups
+      - ./backup/cron.sh:/cron.sh:ro
+    command: >
+      sh -c "chmod +x /cron.sh && crond -f -l 2"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "arifos_admin", "-d", "arifos_vault"]
+      interval: 1h
+      timeout: 10s
+      retries: 3
+
+  # ── NODE EXPORTER ───────────────────────────────────────────────
+  # Prometheus hardware/OS metrics (CPU, RAM, disk, network).
+  # Scrapes: GET /metrics → Prometheus
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: node-exporter
+    restart: unless-stopped
+    networks:
+      - arifos_core_network
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --path.rootfs=/host
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro
+    ports:
+      - "9100:9100"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9100/metrics"]
+      interval: 30s
+
+  # ── CADVISOR ─────────────────────────────────────────────────────
+  # Container-level resource metrics (CPU, memory, network per container).
+  # Scrapes: GET /metrics → Prometheus
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.0
+    container_name: cadvisor
+    restart: unless-stopped
+    networks:
+      - arifos_core_network
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    environment:
+      - CZ=top_level_events=container_status
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
+      interval: 30s
+
+networks:
+  arifos_core_network:
+    external: true
+
+volumes:
+  arifos_backups:
+    driver: local

@@ -25,6 +25,7 @@ export {
   computeInputHash,
   generateSealId,
 };
+export { MerkleV3Service, type TelemetryRow, type MerkleVerificationResult } from "./MerkleV3Service.js";
 
 let _postgresVaultClient: PostgresVaultClient | null = null;
 
