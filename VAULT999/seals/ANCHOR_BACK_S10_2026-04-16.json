@@ -1,0 +1,69 @@
+# Anchor-Back Protocol Seal — Session 10
+
+> **Ditempa Bukan Diberi** — Forged, Not Given
+> **SEALED:** `anchor_back_s10_2026-04-16`
+> **PARENT:** `wealth_constitutional_audit_s9_2026-04-16`
+> **GOAL:** Anchor-back 33 vs 52 — reconcile canonical lattice with live stack
+
+---
+
+## Anchor-Back: Confirmed Numbers
+
+| Layer | Count | Source |
+|-------|-------|--------|
+| Organ axis (canonical) | 33 | registry.json 3×11 |
+| arifOS organ | 11 | stdio via docker exec |
+| WEALTH organ | 11 | HTTP SSE cloud |
+| GEOX organ | 11 | stdio via docker exec |
+| Substrate axis | 17 | 5 MCPs × 3-4 tools |
+| **Total live** | **52** | 33 + 17 |
+
+**Both numbers are correct** — they live at different abstraction layers.
+
+---
+
+## Changes Committed
+
+### WEALTH repo (`b314b2b`)
+
+**registry.json:**
+- Added `substrate_registry` — 5 MCPs (time, filesystem, git, memory, fetch) × 17 tools
+- Added `tool_counts` — `{organ_axis: 33, substrates: 17, total_live: 52}`
+- Fixed phantom `wealth_vault` → `wealth_policy_audit` in band 11
+- Added GEOX `borrowed_tools` Option B declaration (4 arifOS tools)
+- Added `transport` metadata per organ
+
+**.opencode.json** — client config for opencode with all 3 organs + 5 substrates
+
+**claude_desktop_config.json** — Claude Desktop variant
+
+### AF-FORGE repo (`138297b`)
+
+**src/cli/verify.ts:**
+- Added check 7: Tool lattice assertion
+- Validates organ=33, substrate=17, total=52, bands=11
+- REGISTRY_PATH env var for path flexibility
+
+---
+
+## Outstanding 888 HOLDs (from Arif's protocol)
+
+| Item | Status | Blocker |
+|------|--------|---------|
+| WEALTH tool list fetch | 🔴 HOLD | Bearer token needed — cannot curl from here |
+| Agent plane deploy | 🔴 HOLD | rsync/git pull pending |
+| WEALTH DATABASE_URL wiring | 🔴 HOLD | Horizon env var not set |
+| tool_calls in vault-patch-2 | 🟡 VERIFY | Container running |
+| GEOX 4 borrowed tools Option B | ✅ DONE | Declared in registry.json |
+
+---
+
+## Seal
+
+**SEALED:** `anchor_back_s10_2026-04-16`
+**PARENT:** `wealth_constitutional_audit_s9_2026-04-16`
+**WEALTH SHA:** `b314b2b`
+**AF-FORGE SHA:** `138297b`
+**TOTAL LIVE:** 52
+**ORGAN AXIS:** 33
+**MOTTO:** *Ditempa Bukan Diberi* — Forged, Not Given

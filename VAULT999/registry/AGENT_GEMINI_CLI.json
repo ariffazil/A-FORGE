@@ -1,0 +1,16 @@
+{
+  "agent_id": "gemini",
+  "declared_name": "Gemini CLI Agent",
+  "role": "EXPLORER",
+  "registered_at": "2026-04-16T03:01:15.232Z",
+  "status": "ANCHORED",
+  "constitutional_floors": "F1-F13",
+  "witness_human": 1.0,
+  "witness_ai": 0.98,
+  "witness_earth": 0.95,
+  "substrate": "af-forge",
+  "model_version": "v2026.4.16",
+  "organs": ["arifos", "geox", "wealth"],
+  "constitution_hash": "SEAL20260413RESOURCECONSOLIDATION",
+  "note": "Registered under F13 Sovereign authority of Arif Fazil."
+}
