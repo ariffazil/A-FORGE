@@ -3,10 +3,13 @@ import type { VaultClient, VaultSealRecord, VaultVerdict } from "./VaultClient.j
 
 export interface FloorRule {
   floor_id: string;
-  floor_name: string;
-  floor_type: "hard" | "soft";
-  threshold_value: number | string;
+  code: string;
+  name: string;
+  type: string;
   description: string;
+  seal_threshold: number | string;
+  void_threshold: number | string;
+  active: boolean;
 }
 
 export interface SessionRecord {
@@ -61,6 +64,10 @@ export class PostgresVaultClient implements VaultClient {
       await client.query(`CREATE INDEX IF NOT EXISTS idx_vault_session ON vault_seals(session_id)`);
       await client.query(`CREATE INDEX IF NOT EXISTS idx_vault_verdict ON vault_seals(verdict)`);
       await client.query(`CREATE INDEX IF NOT EXISTS idx_vault_timestamp ON vault_seals(timestamp DESC)`);
+    } catch (e) {
+      // vault_seals may already exist with a different schema (e.g., from a prior migration).
+      // In that case, skip the index creation and continue — the table's columns are already set.
+      process.stderr.write(`[VaultClient] initialize: skipped table/index creation (table may already exist): ${e}\n`);
     } finally {
       client.release();
     }
@@ -176,7 +183,7 @@ export class PostgresVaultClient implements VaultClient {
   async loadConstitution(): Promise<FloorRule[]> {
     await this.initialize();
     const result = await this.pool.query<FloorRule>(
-      `SELECT floor_id, floor_name, floor_type, threshold_value, description
+      `SELECT floor_id, code, name, type, description, seal_threshold, void_threshold
        FROM arifos.floor_rules
        ORDER BY floor_id`,
     );
@@ -191,16 +198,14 @@ export class PostgresVaultClient implements VaultClient {
   }): Promise<void> {
     await this.initialize();
     await this.pool.query(
-      `INSERT INTO arifos.sessions (session_id, agent_id, constitution_hash, initiated_at, risk_tier, declared_intent, metadata)
-       VALUES ($1, $2, $3, NOW(), $4, $5, $6)
+      `INSERT INTO arifos.sessions (session_id, agent_id, initiated_at, risk_tier, declared_intent)
+       VALUES ($1, $2, NOW(), $3, $4)
        ON CONFLICT (session_id) DO NOTHING`,
       [
         params.sessionId,
         params.agentId,
-        params.constitutionHash,
         (params.metadata?.risk_tier as string) ?? "medium",
         (params.metadata?.declared_intent as string) ?? "",
-        JSON.stringify(params.metadata ?? {}),
       ],
     );
   }

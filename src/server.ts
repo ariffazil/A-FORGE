@@ -51,7 +51,7 @@ async function loadConstitution(): Promise<void> {
     console.error(`[INIT] Constitution loaded from VAULT999: ${count} floor rules`);
     if (count === 13) {
       const f13 = cachedConstitution.find((f) => f.floor_id === "F13");
-      if (f13) console.error(`[INIT] F13 seal_threshold=${f13.threshold_value}`);
+      if (f13) console.error(`[INIT] F13 seal_threshold=${f13.seal_threshold}`);
     }
   } catch (err) {
     console.error(`[WARN] Failed to load constitution from vault: ${err} — using static defaults`);

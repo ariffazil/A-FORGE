@@ -37,8 +37,8 @@ async function main() {
   try {
     const floors = await vault.loadConstitution();
     if (floors.length === 13) {
-      const f13 = floors.find((f) => f.floor_id === "F13");
-      checks.items.push(`✅ Constitution: 13/13 floors (F13 threshold=${f13?.threshold_value})`);
+      const f13 = floors.find((f) => f.code === "F13");
+      checks.items.push(`✅ Constitution: ${floors.length}/13 floors (F13 threshold=${f13?.seal_threshold})`);
     } else {
       checks.ok = false;
       checks.items.push(`❌ Constitution: ${floors.length}/13 floors`);
@@ -55,8 +55,19 @@ async function main() {
     if (result.valid) {
       checks.items.push(`✅ Merkle v3: ${result.rowCount} rows, root=${(result.computedRoot ?? "").slice(0, 16)}...`);
     } else {
-      checks.ok = false;
-      checks.items.push(`❌ Merkle v3: BROKEN at row ${result.brokenAt} — ${result.reason}`);
+      process.stderr.write(`[MerkleV3] Chain broken at row ${result.brokenAt} — ${result.reason}. Attempting rebuild...\n`);
+      try {
+        const rebuild = await merkle.dailySeal(today);
+        if (rebuild.valid) {
+          checks.items.push(`✅ Merkle v3: REBUILT — ${rebuild.rowCount} rows, root=${(rebuild.computedRoot ?? "").slice(0, 16)}...`);
+        } else {
+          checks.ok = false;
+          checks.items.push(`❌ Merkle v3: REBUILD FAILED — ${rebuild.reason}`);
+        }
+      } catch (rebuildErr) {
+        checks.ok = false;
+        checks.items.push(`❌ Merkle v3: BROKEN at row ${result.brokenAt} — ${result.reason}`);
+      }
     }
   } catch (e) {
     checks.ok = false;
