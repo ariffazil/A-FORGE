@@ -180,29 +180,7 @@ services:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:9100/metrics"]
       interval: 30s
 
-  # ── CADVISOR ─────────────────────────────────────────────────────
-  # Container-level resource metrics (CPU, memory, network per container).
-  # Scrapes: GET /metrics → Prometheus
-  # NOTE: gcr.io/cadvisor/cadvisor:v0.49.0 unavailable — deferred
-  # cadvisor:
-  #   image: gcr.io/cadvisor/cadvisor:v0.49.0
-  #   container_name: cadvisor
-  #   restart: unless-stopped
-  #   networks:
-  #     - arifos_core_network
-  #   ports:
-  #     - "8080:8080"
-  #   volumes:
-  #     - /:/rootfs:ro
-  #     - /var/run:/var/run:ro
-  #     - /sys:/sys:ro
-  #     - /var/lib/docker/:/var/lib/docker:ro
-  #     - /dev/disk/:/dev/disk:ro
-  #   environment:
-  #     - CZ=top_level_events=container_status
-  #   healthcheck:
-  #     test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
-  #     interval: 30s
+
 
 networks:
   arifos_core_network:
