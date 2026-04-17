@@ -27,6 +27,8 @@ import { FileVaultClient } from "./vault/index.js";
 import { getPostgresVaultClient, type FloorRule, MerkleV3Service } from "./vault/index.js";
 import { LocalGovernanceClient } from "./governance/index.js";
 import { getAdaptiveThresholds } from "./governance/thresholds.js";
+import { SealService } from "./governance/SealService.js";
+import { PlanValidator } from "./planner/PlanValidator.js";
 import { createOperatorAuthMiddleware } from "./middleware/operatorAuth.js";
 import { AAAgent } from "./agents/AAAgent.js";
 import { WorkerAgent } from "./agents/WorkerAgent.js";
@@ -217,10 +219,12 @@ app.post("/route", async (req: Request, res: Response) => {
       const config = readRuntimeConfig();
       const llmProvider = createLlmProvider(config);
       const aaaProfile = buildAAAProfile(mode === "internal" ? "internal_mode" : "external_safe_mode");
-      const workerAgent = new WorkerAgent((t) => new AgentEngine(t.profile, { 
-        llmProvider, 
+      const sealService = new SealService(new PlanValidator());
+      const workerAgent = new WorkerAgent((t) => new AgentEngine(t.profile, {
+        llmProvider,
         toolRegistry: new ToolRegistry(),
-        longTermMemory: new LongTermMemory(config.memoryPath)
+        longTermMemory: new LongTermMemory(config.memoryPath),
+        sealService,
       }));
       const aaaAgent = new AAAgent(aaaProfile, workerAgent, llmProvider);
 

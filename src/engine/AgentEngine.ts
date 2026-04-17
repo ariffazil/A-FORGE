@@ -39,8 +39,9 @@ import {
   type FloorScores13,
 } from "../governance/index.js";
 import { getAdaptiveThresholds } from "../governance/thresholds.js";
-import type { VaultClient, VaultSealRecord, VaultTelemetrySnapshot, PostgresVaultClient } from "../vault/index.js";
-import { computeInputHash, generateSealId } from "../vault/index.js";
+import type { VaultClient, VaultSealRecord, VaultTelemetrySnapshot } from "../vault/index.js";
+import { computeInputHash, generateSealId, MerkleV3Service } from "../vault/index.js";
+import { PostgresVaultClient } from "../vault/PostgresVaultClient.js";
 import type { HumanEscalationClient } from "../escalation/index.js";
 import { recordHumanEscalation, recordFloorViolation, runStage } from "../metrics/prometheus.js";
 import type { MetabolicStage } from "../types/aki.js";
@@ -1027,7 +1028,7 @@ export class AgentEngine {
     startedAt: Date,
   ): Promise<{ finalText: string; sealError?: string }> {
     if (!this.dependencies.vaultClient) {
-      return { finalText };
+      throw new Error("VAULT999: vaultClient not configured — append-only guarantee cannot be met. Halting.");
     }
     const verdict = this.inferVerdict(finalText);
     const hashofinput = computeInputHash(options.task, finalText, sessionId, turnCount);
@@ -1068,6 +1069,7 @@ export class AgentEngine {
     };
     try {
       await this.dependencies.vaultClient.seal(record);
+      // Note: MerkleV3Service.dailySeal() is called inside PostgresVaultClient.seal() on every SEAL
       return { finalText: sealedFinalText };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

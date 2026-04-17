@@ -37,6 +37,7 @@ export type RuntimeConfig = {
   redisUrl?: string;
   arifosGovernanceUrl?: string;
   operatorApiToken?: string;
+  actorId: string;
 };
 
 function parseCsvEnv(name: string, fallback: string[]): string[] {
@@ -143,6 +144,7 @@ export function readRuntimeConfig(): RuntimeConfig {
     redisUrl: process.env.REDIS_URL,
     arifosGovernanceUrl: process.env.ARIFOS_GOVERNANCE_URL,
     operatorApiToken: process.env.OPERATOR_API_TOKEN,
+    actorId: process.env.ACTOR_ID ?? "ariffazil::agent-civ",
   };
 
   if (config.trustLocalVps) {

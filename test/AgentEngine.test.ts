@@ -14,6 +14,7 @@ import { ReadFileTool, WriteFileTool } from "../src/tools/FileTools.js";
 import { redactForExternalMode } from "../src/engine/redact.js";
 import { ForgeScoreboard } from "../src/scoreboard/ForgeScoreboard.js";
 import { RunReporter } from "../src/engine/RunReporter.js";
+import { NoOpVaultClient } from "../src/vault/index.js";
 
 class ScriptedProvider implements LlmProvider {
   readonly name = "scripted";
@@ -58,6 +59,7 @@ test("agent engine stores task summaries in long-term memory", async () => {
     llmProvider: new MockLlmProvider(),
     toolRegistry: registry,
     longTermMemory: new LongTermMemory(memoryPath),
+    vaultClient: new NoOpVaultClient(),
   });
 
   const result = await engine.run({
@@ -111,6 +113,7 @@ test("agent engine supports multi-turn tool execution", async () => {
     llmProvider: provider,
     toolRegistry: registry,
     longTermMemory: new LongTermMemory(memoryPath),
+    vaultClient: new NoOpVaultClient(),
     toolPolicy: {
       commandTimeoutMs: 1000,
       maxFileBytes: 262144,
@@ -147,6 +150,7 @@ test("agent engine aborts when token budget is exceeded", async () => {
       llmProvider: new ScriptedProvider([{ content: "too many tokens", inputTokens: 10, outputTokens: 10 }]),
       toolRegistry: new ToolRegistry(),
       longTermMemory: new LongTermMemory(memoryPath),
+      vaultClient: new NoOpVaultClient(),
     },
   );
 
@@ -261,6 +265,7 @@ test("forge scoreboard records runs and summarizes the current week", async () =
     toolRegistry: new ToolRegistry(),
     longTermMemory: new LongTermMemory(memoryPath),
     runReporter: new RunReporter(scoreboard),
+    vaultClient: new NoOpVaultClient(),
     apiPricing: {
       inputCostPerMillionTokens: 1,
       outputCostPerMillionTokens: 2,

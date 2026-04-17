@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Pool, type PoolConfig } from "pg";
 import type { VaultClient, VaultSealRecord, VaultVerdict } from "./VaultClient.js";
 
@@ -39,9 +40,11 @@ export interface ToolCallRecord {
 export class PostgresVaultClient implements VaultClient {
   private pool: Pool;
   private initialized = false;
+  private readonly actorId: string;
 
-  constructor(connectionString: string, poolConfig?: Omit<PoolConfig, "connectionString">) {
+  constructor(connectionString: string, poolConfig?: Omit<PoolConfig, "connectionString">, actorId?: string) {
     this.pool = new Pool({ ...poolConfig, connectionString });
+    this.actorId = actorId ?? process.env.ACTOR_ID ?? "ariffazil::agent-civ";
   }
 
   getPool(): Pool {
@@ -82,18 +85,57 @@ export class PostgresVaultClient implements VaultClient {
 
   async seal(record: VaultSealRecord): Promise<void> {
     await this.initialize();
+
+    // Step 1: Write to vault_events (shared schema: Python + A-FORGE both use this)
+    const eventType = record.verdict === "SEAL" ? "A_FORGE_SEAL" : `A_FORGE_${record.verdict}`;
+    const chainHash = this.computeChainHash(record);
     await this.pool.query(
-      `INSERT INTO vault_seals (seal_id, session_id, verdict, timestamp, data)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [record.sealId, record.sessionId, record.verdict, record.timestamp, JSON.stringify(record)],
+      `INSERT INTO vault_events
+       (event_id, event_type, session_id, actor_id, stage, verdict, payload, risk_tier,
+        merkle_leaf, prev_hash, chain_hash, signature, signed_by, sealed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+      [
+        record.sealId ?? record.record_id,
+        eventType,
+        record.sessionId,
+        this.actorId,
+        "A_FORGE_ENGINE",
+        record.verdict,
+        JSON.stringify({
+          task: record.task,
+          finalText: record.finalText,
+          floors_triggered: record.floors_triggered,
+          turnCount: record.turnCount,
+          profileName: record.profileName,
+          escalation: record.escalation,
+        }),
+        "medium",
+        chainHash.slice(0, 64),
+        record.prev_hash ?? "0".repeat(64),
+        chainHash,
+        `A_FORGE:${this.actorId}`,
+        this.actorId,
+        record.timestamp,
+      ],
     );
 
-    // Step 5: Wire ARCHIVIST to write canon on every SEAL
+    // Step 2: ARCHIVIST — write canon record on every SEAL
     if (record.verdict === "SEAL") {
       await this.writeToCanon(record).catch((err) =>
         console.error(`[Archivist] Failed to write canon: ${err}`),
       );
     }
+  }
+
+  private computeChainHash(record: VaultSealRecord): string {
+    const content = [
+      record.sessionId,
+      record.verdict,
+      record.hashofinput,
+      record.task.slice(0, 80),
+      String(record.turnCount),
+    ].join("|");
+    return createHash("sha256").update(content).digest("hex");
   }
 
   private async writeToCanon(record: VaultSealRecord): Promise<void> {
@@ -104,13 +146,8 @@ export class PostgresVaultClient implements VaultClient {
     const identifier = record.record_id ?? record.sealId ?? "UNKNOWN";
     const adrId = adrIdMatch ? adrIdMatch[0] : `AUTO-${identifier.slice(0, 8).toUpperCase()}`;
 
-    // Map profile to agent_id (best effort)
-    const agentId = record.profileName === "archivist" ? "ARCHIVIST-Agent" : 
-                    record.profileName === "engineer" ? "ENGINEER-Agent" :
-                    record.profileName === "aaa" ? "AAA-Agent" : "ARCHIVIST-Agent";
-
     await this.pool.query(
-      `INSERT INTO arifos.canon_records 
+      `INSERT INTO arifos.canon_records
        (adr_id, title, decision, rationale, agent_id, session_id, epoch, sealed_by, payload)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        ON CONFLICT (adr_id) DO NOTHING`,
@@ -119,10 +156,10 @@ export class PostgresVaultClient implements VaultClient {
         title,
         record.finalText.slice(0, 500),
         record.task,
-        agentId,
+        this.actorId,
         record.sessionId,
         record.timestamp,
-        "Muhammad Arif bin Fazil",
+        this.actorId,
         JSON.stringify(record),
       ],
     );

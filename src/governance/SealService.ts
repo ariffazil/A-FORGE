@@ -65,7 +65,6 @@ export class SealService {
   }
 
   /**
-<<<<<<< HEAD
    * Validate an entire PlanDAG by authorizing every node.
    * Returns the first non-PASS verdict, or PASS if all nodes pass.
    */
@@ -99,16 +98,12 @@ export class SealService {
   }
 
   /**
-=======
->>>>>>> origin/promotion/ecosystem-final
    * Hardened Authorization Loop
    * Phases 0-4 implementation
    */
   public async authorizeNode(context: SealContext): Promise<SealVerdict> {
-    // Phase 0: Context Binding
     const sealId = this.computeSealId(context);
 
-    // Phase 1: Structural Validation
     const structural = this.validator.validate(context.dag);
     if (!structural.isValid) {
       return this.createVerdict('VOID', sealId, context.node.id, 1.0, {
@@ -117,7 +112,6 @@ export class SealService {
       }, `Structural failure: ${structural.errors.join('; ')}`);
     }
 
-    // Phase 2: Epistemic Enforcement (DETERMINISTIC)
     const epistemic = this.enforceEpistemics(context.node);
     if (epistemic.status === 'HOLD') {
       return this.createVerdict('HOLD', sealId, context.node.id, 0.5, {
@@ -126,10 +120,8 @@ export class SealService {
       }, `Epistemic hold: ${epistemic.reason}`);
     }
 
-    // Phase 3: Risk Escalation (Simplified for Phase 2)
     const riskScore = this.calculateRiskScore(context, structural, epistemic);
 
-    // Phase 4: Verdict Synthesis
     const status = this.synthesizeStatus(riskScore, epistemic);
 
     return this.createVerdict(status, sealId, context.node.id, riskScore, {

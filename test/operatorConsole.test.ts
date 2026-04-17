@@ -31,6 +31,7 @@ function mockRuntimeConfig(): RuntimeConfig {
     runMetricsDir: resolve(tmpdir(), "mock-metrics"),
     trustLocalVps: false,
     defaultMode: "external_safe_mode",
+    actorId: "ariffazil::agent-civ",
   };
 }
 

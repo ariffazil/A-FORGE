@@ -19,6 +19,8 @@ import { FileVaultClient, PostgresVaultClient } from "./vault/index.js";
 import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "./escalation/index.js";
 import { FileTicketStore, PostgresTicketStore } from "./approval/index.js";
 import { LocalGovernanceClient, HttpGovernanceClient } from "./governance/index.js";
+import { SealService } from "./governance/SealService.js";
+import { PlanValidator } from "./planner/PlanValidator.js";
 
 function buildToolRegistry(): ToolRegistry {
   const registry = new ToolRegistry();
@@ -44,13 +46,15 @@ function createGovernanceClient(runtimeConfig: RuntimeConfig) {
 function createVaultClient(runtimeConfig: RuntimeConfig) {
   if (runtimeConfig.postgresUrl) {
     try {
-      const client = new PostgresVaultClient(runtimeConfig.postgresUrl);
+      const client = new PostgresVaultClient(runtimeConfig.postgresUrl, undefined, runtimeConfig.actorId);
       return client;
-    } catch {
-      process.stderr.write("[WARN] Postgres vault unavailable; falling back to FileVaultClient\n");
+    } catch (err) {
+      throw new Error(`VAULT999: postgres vault configured but unreachable — ${String(err)}. Halting.`);
     }
   }
-  return new FileVaultClient();
+  const client = new FileVaultClient();
+  process.stderr.write("[WARN] VAULT999: no postgresUrl configured; using FileVaultClient (append-only guarantee applies to local JSONL)\n");
+  return client;
 }
 
 function createTicketStore(runtimeConfig: RuntimeConfig) {
@@ -70,6 +74,8 @@ function createEngine(profile: AgentProfile): AgentEngine {
   const escalationClient = runtimeConfig.humanEscalationWebhookUrl
     ? new WebhookHumanEscalationClient(runtimeConfig.humanEscalationWebhookUrl)
     : new NoOpHumanEscalationClient();
+  const vaultClient = createVaultClient(runtimeConfig);
+  const sealService = new SealService(new PlanValidator());
 
   return new AgentEngine(profile, {
     llmProvider: createLlmProvider(runtimeConfig),
@@ -79,10 +85,11 @@ function createEngine(profile: AgentProfile): AgentEngine {
       new ForgeScoreboard(runtimeConfig.scoreboardPath),
       new RunMetricsLogger(runtimeConfig.runMetricsDir),
     ),
-    vaultClient: createVaultClient(runtimeConfig),
+    vaultClient,
     ticketStore: createTicketStore(runtimeConfig),
     governanceClient: createGovernanceClient(runtimeConfig),
     escalationClient,
+    sealService,
     featureFlags: runtimeConfig.featureFlags,
     toolPolicy: runtimeConfig.toolPolicy,
     apiPricing: runtimeConfig.apiPricing,

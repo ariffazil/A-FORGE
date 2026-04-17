@@ -8,6 +8,7 @@ import { ToolRegistry } from "../src/tools/ToolRegistry.js";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { mkdir } from "node:fs/promises";
+import { NoOpVaultClient } from "../src/vault/index.js";
 
 test("F6: Harm/Dignity floor blocks harmful input", async () => {
   const root = resolve(tmpdir(), `agent-governance-f6-${Date.now()}`);
@@ -17,6 +18,7 @@ test("F6: Harm/Dignity floor blocks harmful input", async () => {
     llmProvider: new MockLlmProvider(),
     toolRegistry: new ToolRegistry(),
     longTermMemory: new LongTermMemory(resolve(root, "memory.json")),
+    vaultClient: new NoOpVaultClient(),
   });
 
   const result = await engine.run({
@@ -37,6 +39,7 @@ test("F3: Input Clarity floor blocks empty input", async () => {
     llmProvider: new MockLlmProvider(),
     toolRegistry: new ToolRegistry(),
     longTermMemory: new LongTermMemory(resolve(root, "memory.json")),
+    vaultClient: new NoOpVaultClient(),
   });
 
   const result = await engine.run({
