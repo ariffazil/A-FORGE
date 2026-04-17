@@ -35,7 +35,10 @@ services:
       - /root/arifOS/core:/usr/src/app/core:ro
       - /root/arifOS/server.py:/usr/src/app/server.py:ro
       - /root/arifOS/skills:/usr/src/app/skills:ro
+      - /root/arifOS/scripts:/usr/src/app/scripts:ro
       - /root/WELL:/app/well:ro
+    entrypoint: ["/usr/src/app/scripts/entrypoint-arifos.sh"]
+    command: ["uvicorn", "arifosmcp.runtime.server:app", "--host", "0.0.0.0", "--port", "8080"]
     networks:
       - arifos_core_network
     logging: *default-logging
