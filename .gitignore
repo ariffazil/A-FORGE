@@ -51,15 +51,10 @@ venv/
 .DS_Store
 Thumbs.db
 
-# Sibling projects (not part of AF-FORGE runtime)
-arifOS/
-APEX/
-WEALTH/
-GEOX/
-geox/
-geox-gui/
-geox-site/
-arif-sites/
+# Sibling projects (tracked via submodules or external means)
+# !arifOS/
+# !GEOX/
+
 control_plane/
 execution_plane/
 ARCHIVE_*/
