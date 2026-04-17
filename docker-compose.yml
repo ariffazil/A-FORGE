@@ -28,6 +28,7 @@ services:
       - OLLAMA_URL=http://ollama:11434
       - PYTHONPATH=/usr/src/app
       - WELL_STATE_PATH=/app/well/state.json
+      - ARIFOS_SESSION_STORE_PATH=/tmp/arifos_runtime_sessions.json
     volumes:
       # Live code mount — local edits reflected immediately without docker cp
       - /root/arifOS/arifosmcp:/usr/src/app/arifosmcp:ro
