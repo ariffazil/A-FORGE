@@ -11,8 +11,21 @@ mcp = FastMCP("WELL — Biological Substrate")
 # Constants - Updated path to /var/lib for service access
 WELL_STATE_PATH = Path(os.environ.get("WELL_STATE_PATH", "/var/lib/arifosmcp/WELL/state.json"))
 
+try:
+    from arifosmcp.runtime.vault_postgres import SupabaseStateStore
+    state_store = SupabaseStateStore()
+except Exception:
+    state_store = None
+
 def _get_raw_state() -> Dict[str, Any]:
-    """Helper to read WELL state with fallback."""
+    """Helper to read WELL state with fallback and cloud sync."""
+    # 1. Try Cloud Primary if available
+    if state_store:
+        cloud_state = state_store.read_state("ARIF", "main_telemetry")
+        if cloud_state:
+            return cloud_state
+
+    # 2. Witness Fallback (Local)
     if not WELL_STATE_PATH.exists():
         return {
             "ok": False,
@@ -29,10 +42,16 @@ def _get_raw_state() -> Dict[str, Any]:
         return {"error": str(e), "ok": False}
 
 def _save_state(state: Dict[str, Any]) -> bool:
-    """Helper to save WELL state."""
+    """Helper to save WELL state (Dual-Write)."""
     try:
-        # Update timestamp on every write
+        # Update timestamp
         state["timestamp"] = datetime.now(timezone.utc).isoformat() + "Z"
+        
+        # 1. Cloud Write (Primary)
+        if state_store:
+            state_store.write_state("ARIF", "main_telemetry", state)
+
+        # 2. Local Write (Witness)
         with open(WELL_STATE_PATH, "w") as f:
             json.dump(state, f, indent=2)
         return True
