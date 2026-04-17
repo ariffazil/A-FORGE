@@ -9,3 +9,6 @@
 !examples/**
 !test/
 !test/**
+!WELL/
+!WELL/**
+!pyproject.toml
