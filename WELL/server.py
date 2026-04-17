@@ -233,6 +233,61 @@ def well_log(
 
 
 @mcp.tool()
+def well_pressure(
+    load_delta: float,
+    source: str = "forge",
+    ctx: Context | None = None,
+) -> dict[str, Any]:
+    """
+    Signal cognitive pressure/load from an external source (e.g. AF-FORGE).
+    Increments decision_fatigue and potentially triggers W6 Metabolic Pause.
+    """
+    state = _load_state()
+    metrics = state.get("metrics", {})
+    cog = dict(metrics.get("cognitive", {"clarity": 10, "decision_fatigue": 0}))
+    
+    # Increment fatigue
+    old_fatigue = cog.get("decision_fatigue", 0)
+    new_fatigue = min(10.0, old_fatigue + load_delta)
+    cog["decision_fatigue"] = new_fatigue
+    metrics["cognitive"] = cog
+    
+    # W6 Logic: Repetitive Pressure Spike
+    # If fatigue jumps > 2.0 in a single signal, flag as high-frequency loop
+    violations = state.get("floors_violated", [])
+    if load_delta > 2.0 and "W6_METABOLIC_PAUSE" not in violations:
+        violations.append("W6_METABOLIC_PAUSE")
+    
+    # Recompute overall score
+    score, new_violations = _compute_score(metrics)
+    # Merge violations
+    for v in new_violations:
+        if v not in violations:
+            violations.append(v)
+            
+    state["metrics"] = metrics
+    state["well_score"] = score
+    state["floors_violated"] = violations
+    _save_state(state)
+    
+    _append_event({
+        "event": "PRESSURE_SIGNAL",
+        "source": source,
+        "load_delta": load_delta,
+        "new_fatigue": new_fatigue,
+        "w6_triggered": "W6_METABOLIC_PAUSE" in violations
+    })
+    
+    return {
+        "ok": True,
+        "well_score": score,
+        "decision_fatigue": new_fatigue,
+        "w6_active": "W6_METABOLIC_PAUSE" in violations,
+        "message": "Metabolic Pause active. Step away for 15 minutes." if "W6_METABOLIC_PAUSE" in violations else "Pressure logged."
+    }
+
+
+@mcp.tool()
 def well_readiness(ctx: Context | None = None) -> dict[str, Any]:
     """
     Reflect current biological readiness for arifOS JUDGE context.
