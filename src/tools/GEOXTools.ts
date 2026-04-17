@@ -11,212 +11,36 @@
  * @constitutional F8 Grounding — all outputs must carry uncertainty bounds
  */
 
-import { BaseTool } from "./base.js";
+import { DelegatedTruthTool } from "./DelegatedTruthTool.js";
 import type { ToolResult, ToolExecutionContext } from "../types/tool.js";
 
-export interface HazardCheckArgs {
-  location?: string;
-  latitude?: number;
-  longitude?: number;
-  hazard_types?: Array<"seismic" | "volcanic" | "flood" | "landslide" | "subsidence">;
-  scenario?: string;
-}
-
-export interface HazardResult {
-  hazardLevel: "low" | "medium" | "high" | "critical";
-  probability: number;
-  maxIntensity: number;
-  uncertaintyTag: "ESTIMATE" | "HYPOTHESIS" | "UNKNOWN";
-  confidenceInterval: [number, number];
-  physicalConstraints: {
-    maxSafeDepth?: number;
-    maxExtractionRate?: number;
-    exclusionZoneRadius?: number;
-    seismicRiskIndex?: number;
-    environmentalImpact?: number;
-  };
-  groundingEvidence: string[];
-  recommendations: string[];
-}
-
-const HAZARD_BASE_RATES: Record<string, number> = {
-  seismic: 0.08,
-  volcanic: 0.03,
-  flood: 0.15,
-  landslide: 0.12,
-  subsidence: 0.10,
-};
-
-const HAZARD_INTENSITY: Record<string, number> = {
-  seismic: 0.7,
-  volcanic: 0.6,
-  flood: 0.5,
-  landslide: 0.55,
-  subsidence: 0.45,
-};
-
-function scoreHazardLocation(args: HazardCheckArgs): number {
-  if (!args.location && args.latitude === undefined) return 0.3;
-
-  const loc = (args.location ?? "").toLowerCase();
-  const lat = args.latitude ?? 0;
-
-  let score = 0.3;
-
-  // Known high-risk areas
-  const highRiskPatterns = [
-    /pacific.*ring|ring.*fire|subduction|trench/i,
-    /indonesia|japan|philippines|chile|peru|ecuador/i,
-    /himalaya|andes|alaska|java/i,
-    /flood.*plain|delt|coastal|lowland/i,
-    /karst|cave|limestone|sinkhole/i,
-  ];
-
-  for (const pattern of highRiskPatterns) {
-    if (pattern.test(loc)) score += 0.3;
-  }
-
-  // Latitude-based risk (equatorial regions have higher seismic/volcanic)
-  if (Math.abs(lat) < 23) score += 0.15;
-  if (Math.abs(lat) > 55) score += 0.1;
-
-  return Math.min(1.0, score);
-}
-
-function tagUncertainty(hazardLevel: string, probability: number, groundingEvidenceCount: number): "ESTIMATE" | "HYPOTHESIS" | "UNKNOWN" {
-  if (groundingEvidenceCount === 0) return "UNKNOWN";
-  if (hazardLevel === "critical" || probability > 0.5) return "HYPOTHESIS";
-  return "ESTIMATE";
-}
+const GEOX_TRUTH_LANE_URL = process.env.GEOX_TRUTH_LANE_URL || "https://geox.arif-fazil.com";
 
 /**
  * geox_check_hazard
  *
- * Checks physical hazard risk for a given location and hazard types.
- * Returns structured physical constraints with explicit uncertainty tags.
- *
- * F8 Grounding: Every output carries ESTIMATE/HYPOTHESIS/UNKNOWN tag.
- * F6 Maruah: High environmental impact triggers dignity review.
+ * Delegates to GEOX Truth Lane (Earth Intelligence).
  */
-export class GEOXCheckHazardTool extends BaseTool {
+export class GEOXCheckHazardTool extends DelegatedTruthTool {
   readonly name = "geox_check_hazard";
-  readonly description = "Check physical hazard risk for a location. Returns hazard level, probability, intensity, and physical constraint envelopes. All outputs tagged ESTIMATE/HYPOTHESIS/UNKNOWN per F8.";
+  readonly description = "Check physical hazard risk for a location. Returns hazard level, probability, intensity, and physical constraint envelopes. Delegated to GEOX Truth Lane.";
   readonly riskLevel = "guarded" as const;
+  readonly laneBaseUrl = GEOX_TRUTH_LANE_URL;
 
   readonly parameters = {
     type: "object" as const,
     properties: {
-      location: {
-        type: "string" as const,
-        description: "Location name or coordinates (lat,lon)",
-      },
-      latitude: {
-        type: "number" as const,
-        description: "Latitude of the location",
-      },
-      longitude: {
-        type: "number" as const,
-        description: "Longitude of the location",
-      },
-      hazard_types: {
-        type: "array" as const,
-        items: { type: "string" as const, enum: ["seismic", "volcanic", "flood", "landslide", "subsidence"] },
-        description: "Types of hazard to assess",
-      },
-      scenario: {
-        type: "string" as const,
-        description: "Optional scenario context (e.g., 'extraction', 'construction', 'evacuation')",
-      },
+      location: { type: "string" as const, description: "Location name or coordinates (lat,lon)" },
+      latitude: { type: "number" as const, description: "Latitude" },
+      longitude: { type: "number" as const, description: "Longitude" },
+      hazard_types: { type: "array" as const, items: { type: "string" as const } },
+      scenario: { type: "string" as const },
     },
     additionalProperties: false,
   };
 
   async run(args: Record<string, unknown>, _context: ToolExecutionContext): Promise<ToolResult> {
-    const hazardTypes = (args.hazard_types as string[]) ?? ["seismic"];
-    const scenario = (args.scenario as string) ?? "general";
-
-    // Calculate base risk score from location
-    const locationRisk = scoreHazardLocation(args as HazardCheckArgs);
-
-    // Aggregate hazard results
-    const results: Array<{ type: string; probability: number; intensity: number }> = [];
-    for (const htype of hazardTypes) {
-      const baseRate = HAZARD_BASE_RATES[htype] ?? 0.1;
-      const intensity = HAZARD_INTENSITY[htype] ?? 0.5;
-      const probability = Math.min(0.95, baseRate + locationRisk * 0.4);
-      results.push({ type: htype, probability, intensity });
-    }
-
-    // Highest hazard drives the verdict
-    const worst = results.reduce((a, b) => (a.probability * a.intensity > b.probability * b.intensity ? a : b));
-    const riskScore = worst.probability * worst.intensity;
-
-    let hazardLevel: HazardResult["hazardLevel"];
-    if (riskScore >= 0.5) hazardLevel = "critical";
-    else if (riskScore >= 0.3) hazardLevel = "high";
-    else if (riskScore >= 0.15) hazardLevel = "medium";
-    else hazardLevel = "low";
-
-    // Physical constraints derived from hazard assessment
-    const physicalConstraints: HazardResult["physicalConstraints"] = {};
-    if (worst.type === "seismic" || hazardLevel === "critical" || hazardLevel === "high") {
-      physicalConstraints.seismicRiskIndex = riskScore;
-      physicalConstraints.exclusionZoneRadius = Math.round(50 * riskScore);
-    }
-    if (scenario === "extraction") {
-      physicalConstraints.maxExtractionRate = Math.round(500 * (1 - riskScore));
-      physicalConstraints.maxSafeDepth = Math.round(3000 * (1 - riskScore * 0.5));
-    }
-    physicalConstraints.environmentalImpact = riskScore * 0.8;
-
-    // Grounding evidence — would come from GEOX Python sibling in production
-    const groundingEvidence: string[] = [];
-    if (locationRisk > 0.4) {
-      groundingEvidence.push("Location in known active tectonic zone (seismic hazard map)");
-    }
-    if (worst.probability > 0.3) {
-      groundingEvidence.push(`Historical hazard frequency for ${worst.type} in region (USGS database)`);
-    }
-    groundingEvidence.push("Probabilistic risk model (RADIUS v3.2)");
-
-    const uncertaintyTag = tagUncertainty(hazardLevel, worst.probability, groundingEvidence.length);
-
-    // Confidence interval
-    const ciLow = Math.max(0, worst.probability - 0.15);
-    const ciHigh = Math.min(1, worst.probability + 0.15);
-    const confidenceInterval: [number, number] = [ciLow, ciHigh];
-
-    // Recommendations
-    const recommendations: string[] = [];
-    if (hazardLevel === "critical") {
-      recommendations.push("CRITICAL: Mandatory 888_HOLD before any physical intervention");
-      recommendations.push("Evacuate non-essential personnel from zone");
-      recommendations.push("Activate continuous seismic monitoring");
-    } else if (hazardLevel === "high") {
-      recommendations.push("HIGH: 888_HOLD required for extraction operations");
-      recommendations.push("Implement exclusion zone protocol");
-    } else if (hazardLevel === "medium") {
-      recommendations.push("MEDIUM: Enhanced monitoring required");
-      recommendations.push("Review emergency protocols");
-    } else {
-      recommendations.push("LOW: Standard operations permitted with routine monitoring");
-    }
-
-    const output: HazardResult = {
-      hazardLevel,
-      probability: worst.probability,
-      maxIntensity: worst.intensity,
-      uncertaintyTag,
-      confidenceInterval,
-      physicalConstraints,
-      groundingEvidence,
-      recommendations,
-    };
-
-    return {
-      ok: true,
-      output: JSON.stringify(output, null, 2),
-    };
+    return this.delegate("geox_check_hazard", args);
   }
 }
 
