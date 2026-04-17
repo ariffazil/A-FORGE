@@ -20,7 +20,9 @@ from fastmcp import FastMCP, Context
 WELL_DIR = Path(__file__).parent
 STATE_PATH = WELL_DIR / "state.json"
 EVENTS_PATH = WELL_DIR / "events.jsonl"
-VAULT_LEDGER_PATH = Path("/root/arifOS/core/vault999/well_ledger.jsonl")
+VAULT_LEDGER_PATH = Path(
+    __import__("os").environ.get("WELL_VAULT_PATH", str(WELL_DIR / "vault_ledger.jsonl"))
+)
 
 # ── Server ─────────────────────────────────────────────────────────────────────
 mcp = FastMCP(
