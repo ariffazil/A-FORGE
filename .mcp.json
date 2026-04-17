@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "arifos-local": {
+      "command": "bash",
+      "args": [
+        "/root/.github/mcp/start-arifos-stdio.sh"
+      ],
+      "cwd": "/root"
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=utbmmjmbolmuahwixjqc"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "@playwright/mcp"
+      ],
+      "cwd": "/root"
+    }
+  }
+}

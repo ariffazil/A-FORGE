@@ -147,7 +147,7 @@ Execution is never self-authorized.
 | MCP Transport | `@modelcontextprotocol/sdk` |
 | Schema Validation | `zod` |
 | Metrics | `prom-client` |
-| Persistence | PostgreSQL (optional) or local JSONL |
+| Persistence | **Supabase cloud** (primary) + local JSONL (fallback) |
 | Container | Docker Compose |
 
 ---
@@ -195,7 +195,7 @@ src/
 ├── governance/        # arifOS F1–F13 floor enforcement
 ├── llm/               # LLM provider abstractions
 ├── mcp/               # MCP stdio server
-├── memory-contract/   # Governed 5-tier memory
+├── memory-contract/   # Governed 5-tier memory (local JSONL fallback)
 ├── ops/               # Thermodynamic cost estimator
 ├── planner/           # Plan validation
 ├── policy/            # Sense (111) and Judge (888) policy layer
@@ -206,6 +206,8 @@ test/                  # node:test suite
 examples/              # Usage examples
 deploy/                # Docker, systemd, Caddy, Prometheus, Grafana
 ```
+
+**Cloud Persistence:** A-FORGE uses **Supabase cloud** (`utbmmjmbolmuahwixjqc`) as primary storage for vault seals, approval tickets, sessions, and memory. Local JSONL files serve as fallback when cloud is unavailable.
 
 ---
 
