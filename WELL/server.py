@@ -339,6 +339,67 @@ def well_readiness(ctx: Context | None = None) -> dict[str, Any]:
 
 
 @mcp.tool()
+async def well_init(
+    session_id: str | None = None,
+    actor_id: str = "well-substrate",
+    ctx: Context | None = None,
+) -> dict[str, Any]:
+    """
+    Open a WELL governance session — writes a 000_INIT event to VAULT999.
+    Call this at the start of any WELL-aware session to anchor identity and
+    connect to the canonical Merkle chain.
+    Returns session_id and chain position for subsequent well_anchor seals.
+    W0: WELL holds a mirror, not a veto. Operator sovereignty is invariant.
+    """
+    import sys
+    import uuid as _uuid
+
+    ARIFOS_PATH = "/root/arifOS"
+    if ARIFOS_PATH not in sys.path:
+        sys.path.append(ARIFOS_PATH)
+
+    sid = session_id or f"well-session-{_uuid.uuid4().hex[:12]}"
+
+    try:
+        from arifosmcp.runtime.vault_postgres import seal_to_vault
+
+        state = _load_state()
+        score = state.get("well_score", 50)
+        violations = state.get("floors_violated", [])
+
+        res = await seal_to_vault(
+            event_type="WELL_SESSION_INIT",
+            session_id=sid,
+            actor_id=actor_id,
+            stage="000_INIT",
+            verdict="ACTIVE",
+            payload={
+                "well_score": score,
+                "floors_violated": violations,
+                "w0": "OPERATOR_VETO_INTACT",
+            },
+            risk_tier="low",
+        )
+
+        _append_event({
+            "event": "WELL_INIT",
+            "session_id": sid,
+            "vault_id": res.ledger_id if hasattr(res, "ledger_id") else str(res),
+        })
+
+        return {
+            "ok": True,
+            "session_id": sid,
+            "stage": "000_INIT",
+            "well_score": score,
+            "chain_hash": res.chain_hash if hasattr(res, "chain_hash") else "",
+            "w0": "OPERATOR_VETO_INTACT / HIERARCHY_INVARIANT",
+        }
+    except Exception as e:
+        return {"ok": False, "session_id": sid, "error": str(e)}
+
+
+@mcp.tool()
 async def well_anchor(
     force: bool = False,
     ctx: Context | None = None,

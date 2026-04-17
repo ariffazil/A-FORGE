@@ -27,10 +27,14 @@ services:
       - QDRANT_URL=http://qdrant:6333
       - OLLAMA_URL=http://ollama:11434
       - PYTHONPATH=/usr/src/app
+      - WELL_STATE_PATH=/app/well/state.json
     volumes:
       # Live code mount — local edits reflected immediately without docker cp
       - /root/arifOS/arifosmcp:/usr/src/app/arifosmcp:ro
       - /root/arifOS/core:/usr/src/app/core:ro
+      - /root/arifOS/server.py:/usr/src/app/server.py:ro
+      - /root/arifOS/skills:/usr/src/app/skills:ro
+      - /root/WELL:/app/well:ro
     networks:
       - arifos_core_network
     logging: *default-logging
