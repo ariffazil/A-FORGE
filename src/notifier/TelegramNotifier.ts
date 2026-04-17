@@ -1,5 +1,5 @@
 /**
- * AF-FORGE Telegram Notifier
+ * A-FORGE Telegram Notifier
  *
  * Sends 888_HOLD alerts and system status messages via Telegram Bot API.
  * Integrated into AgentManager for F13 Sovereign human ratification.
@@ -78,7 +78,7 @@ export class TelegramNotifier implements NotifierService {
     if (!this.isConfigured) return;
 
     const emoji = payload.severity === "critical" ? "🚨" : payload.severity === "warn" ? "⚠️" : "ℹ️";
-    const text = `${emoji} *AF-FORGE*\n${payload.message}`;
+    const text = `${emoji} *A-FORGE*\n${payload.message}`;
 
     await this.sendRaw({
       chat_id: this.chatId,
@@ -114,3 +114,5 @@ export class TelegramNotifier implements NotifierService {
 export function createTelegramNotifier(): NotifierService {
   return new TelegramNotifier();
 }
+
+

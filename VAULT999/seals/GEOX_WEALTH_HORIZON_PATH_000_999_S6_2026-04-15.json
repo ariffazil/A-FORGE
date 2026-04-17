@@ -1,4 +1,4 @@
-# AF-FORGE GEOX + WEALTH HORIZON PATH SEAL — Session 6
+# A-FORGE GEOX + WEALTH HORIZON PATH SEAL — Session 6
 
 > **Ditempa Bukan Diberi** — Forged, Not Given
 > **SEALED:** `geox_wealth_horizon_path_000_999_s6_2026-04-15`
@@ -208,7 +208,7 @@
 | **TOTAL** | **139** | **139** | **0 failures** |
 
 `npm run build` → zero TS errors.
-Docker `af-forge-bridge` rebuilt and running.
+Docker `A-FORGE-bridge` rebuilt and running.
 MCP server now exposes **19 tools** (was 14, added 5 GEOX + 0 WEALTH new MCP endpoints — WEALTH tools 4-6 use existing patterns).
 
 ---
@@ -223,5 +223,6 @@ This seal certifies GEOX and WEALTH full pipeline paths from 000-999 are impleme
 **TOOLS:** 14 runtime + 5 MCP = 19 GEOX/WEALTH tools total
 **BUILD:** zero TS errors
 **TESTS:** 139/139 passing
-**DOCKER:** af-forge-bridge rebuilt
+**DOCKER:** A-FORGE-bridge rebuilt
 **MOTTO:** *Ditempa Bukan Diberi* — Forged, Not Given
+

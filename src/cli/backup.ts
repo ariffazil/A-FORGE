@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * af-forge-backup CLI
+ * A-FORGE-backup CLI
  *
  * DITEMPA BUKAN DIBERI — F1 Amanah: backup before any irreversible change
  *
@@ -29,7 +29,7 @@ async function main() {
   switch (cmd) {
     case "daily":
     case "backup": {
-      console.error(`[af-forge-backup] Starting daily backup...`);
+      console.error(`[A-FORGE-backup] Starting daily backup...`);
       const result = await manager.dailyBackup();
       if (result.ok) {
         console.log(JSON.stringify({
@@ -41,7 +41,7 @@ async function main() {
         }));
         process.exit(result.verified ? 0 : 1);
       } else {
-        console.error(`[af-forge-backup] FAILED: ${result.error}`);
+        console.error(`[A-FORGE-backup] FAILED: ${result.error}`);
         process.exit(1);
       }
     }
@@ -53,10 +53,10 @@ async function main() {
         .sort()
         .at(-1);
       if (!latest) {
-        console.error(`[af-forge-backup] No backups found in ${backupDir}`);
+        console.error(`[A-FORGE-backup] No backups found in ${backupDir}`);
         process.exit(1);
       }
-      console.error(`[af-forge-backup] Verifying latest backup: ${latest}`);
+      console.error(`[A-FORGE-backup] Verifying latest backup: ${latest}`);
       process.exit(0);
     }
 
@@ -83,6 +83,8 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(`[af-forge-backup] Fatal: ${err}`);
+  console.error(`[A-FORGE-backup] Fatal: ${err}`);
   process.exit(1);
 });
+
+

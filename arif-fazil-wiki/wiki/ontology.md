@@ -371,7 +371,7 @@ Arif believes that getting the ontology right — the names, categories, and rel
 |------|---------|--------|
 | arifOS | Arif Operating System | Constitutional AI runtime |
 | GEOX | Geo + X (unknown/variable) | Earth knowledge system |
-| AF-FORGE | Arif Fazil Forge | Agent workbench |
+| A-FORGE | Arif Fazil Forge | Agent workbench |
 | VAULT999 | Final storage + 999 seal | Attestation system |
 | OpenClaw | Open + Claw (grasping tool) | MCP gateway |
 
@@ -482,3 +482,5 @@ status: active
 ---
 
 **Seal:** VAULT999 | **ΔΩΨ | ARIF**
+
+

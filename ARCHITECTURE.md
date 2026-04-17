@@ -99,8 +99,10 @@ agent-workbench/
 
 ## 9-Agent Federation (SOT v2026-04-16)
 
-AF-FORGE functions as the execution adapter for the arifOS federation:
+A-FORGE functions as the execution adapter for the arifOS federation:
 - **AAA-Agent** (`POST /route`) evaluates intents, calculates thermodynamic cost (`OPS/777`), and routes requests to the correct Specialist Organ (e.g. `GEOX`, `WEALTH`).
 - If an operation breaches the Gödel Lock (High Risk/Constitutional Contradiction), it forces `888_HOLD`.
 - Terminal decisions (`SEAL`) are routed via the **ARCHIVIST-Agent** directly into `arifos.canon_records` via `PostgresVaultClient`.
+
+
 

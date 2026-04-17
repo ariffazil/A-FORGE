@@ -1,5 +1,5 @@
 /**
- * AF-FORGE MCP Server — Core (shared tool + resource registry)
+ * A-FORGE MCP Server — Core (shared tool + resource registry)
  *
  * Single source of truth for all MCP components.
  *
@@ -27,7 +27,7 @@ import { GEOX_TOOLS } from "../tools/GEOXTools.js";
 import { WEALTH_TOOLS } from "../tools/WealthTools.js";
 
 export const server = new McpServer({
-  name: "af-forge",
+  name: "A-FORGE",
   version: "0.1.0",
 });
 
@@ -223,7 +223,7 @@ server.registerTool(
 server.registerTool(
   "forge_check_governance",
   {
-    description: "Run AF-FORGE constitutional governance checks.",
+    description: "Run A-FORGE constitutional governance checks.",
     inputSchema: z.object({ task: z.string() })
   },
   heartHandler
@@ -244,7 +244,7 @@ const forgeHandler = async ({ task, mode }: { task: string, mode?: "internal_mod
     const { buildExploreProfile } = await import("../agents/profiles.js");
     const { tmpdir } = await import("node:os");
     const { resolve } = await import("node:path");
-    const root = resolve(tmpdir(), `af-forge-mcp-${Date.now()}`);
+    const root = resolve(tmpdir(), `A-FORGE-mcp-${Date.now()}`);
     const { mkdir, rm } = await import("node:fs/promises");
     await mkdir(root, { recursive: true });
     try {
@@ -392,3 +392,5 @@ server.resource("forge://memory/working", "forge://memory/working", { mimeType: 
     }]
   };
 });
+
+

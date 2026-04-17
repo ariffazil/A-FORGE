@@ -35,7 +35,7 @@
 | [[projects/arifos]] | Entity | Constitutional AI runtime (F1-F13) | ✅ Active |
 | [[projects/arifos-v2-hardening]] | Reference | V2.0.0 Architectural Hardening Report | ✅ Active |
 | [[projects/geox]] | Entity | Earth knowledge system (GEOX) | ✅ Active |
-| [[projects/af-forge]] | Entity | Agent workbench and forge | ✅ Active |
+| [[projects/A-FORGE]] | Entity | Agent workbench and forge | ✅ Active |
 | [[projects/vault999]] | Entity | Final seal and attestation system | ✅ Active |
 | [[projects/trinity-sites]] | Reference | arif-fazil.com sites architecture | ✅ Active |
 | [[projects/arifos-mcp-migration]] | Reference | Universal naming migration (Phase A/B/C) | ✅ Active |
@@ -92,7 +92,7 @@
 |-------------|---------|-------|
 | arifOS | `[[arifos::Page_Name]]` | Constitutional floors, architecture |
 | GEOX | `[[geox::Page_Name]]` | Earth knowledge, physics |
-| AF-FORGE | `[[afforge::Page_Name]]` | Build processes, tools |
+| A-FORGE | `[[afforge::Page_Name]]` | Build processes, tools |
 
 ---
 
@@ -115,3 +115,5 @@ See [[log]] for chronological record of all wiki operations.
 
 **Navigation:** Use `[[Page_Name]]` syntax to link between pages.  
 **Questions:** Check [[arif-fazil]] first, then ask specific questions.
+
+

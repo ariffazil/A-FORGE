@@ -1,5 +1,5 @@
 # 🌌 arifOS: Metabolic Intelligence Federation Map
-## The Trinity Ecosystem (@WELL, @WEALTH, @GEOX, @AF-FORGE)
+## The Trinity Ecosystem (@WELL, @WEALTH, @GEOX, @A-FORGE)
 
 This document provides the high-level architectural mapping of all arifOS MCP organs and their metabolic links.
 
@@ -26,12 +26,12 @@ This document provides the high-level architectural mapping of all arifOS MCP or
 | Tool | Link | Impact |
 | :--- | :--- | :--- |
 | `well_readiness` | → `arifOS` | Downgrades SEAL to HOLD if substrate is degraded. |
-| `well_pressure` | ← `AF-FORGE` | Increases `decision_fatigue` based on agentic workload. |
+| `well_pressure` | ← `A-FORGE` | Increases `decision_fatigue` based on agentic workload. |
 | `W6_PAUSE` | Enforcement | Hard-blocks execution for 15m if repetitive loops detected. |
 
 ---
 
-## ⚒️ 3. The Agentic Forge (@AF-FORGE)
+## ⚒️ 3. The Agentic Forge (@A-FORGE)
 **Role:** The Hand of Action.
 **Function:** Bounded tool execution and plan generation.
 **Axiom:** *Execution is the proof of Alignment.*
@@ -74,10 +74,12 @@ This document provides the high-level architectural mapping of all arifOS MCP or
 
 1.  **INTENT (000_INIT):** Human (WELL) signals intent to arifOS.
 2.  **SENSE (111_SENSE):** arifOS polls organs (@WEALTH, @GEOX) for reality grounding.
-3.  **THINK (333_MIND):** AF-FORGE generates a plan based on organ data.
-4.  **FEEDBACK:** AF-FORGE action exerts pressure (well_pressure) on the Human (WELL).
+3.  **THINK (333_MIND):** A-FORGE generates a plan based on organ data.
+4.  **FEEDBACK:** A-FORGE action exerts pressure (well_pressure) on the Human (WELL).
 5.  **JUDGE (888_JUDGE):** arifOS kernel checks F-Floors (arifOS) + W-Floors (WELL).
 6.  **SEAL (999_VAULT):** Final result is hashed, signed, and anchored to VAULT999.
 
 ---
 **SEALED v2026.04.17 — 999_ALIVE**
+
+

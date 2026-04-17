@@ -30,7 +30,7 @@
 - `wiki/biography/timeline.md` — Life timeline
 - `wiki/projects/arifos.md` — arifOS project
 - `wiki/projects/geox.md` — GEOX project
-- `wiki/projects/af-forge.md` — AF-FORGE project
+- `wiki/projects/A-FORGE.md` — A-FORGE project
 - `wiki/communication/boundaries.md` — Lines not to cross
 - `wiki/agents-guide/how-to-work-with-arif.md` — Agent guidance
 
@@ -249,3 +249,5 @@
 
 **Log Integrity:** Maintained under F11 Audit  
 **Retention:** Permanent — part of Arif's documented history
+
+

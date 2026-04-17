@@ -8,9 +8,11 @@
   "witness_human": 1.0,
   "witness_ai": 0.98,
   "witness_earth": 0.95,
-  "substrate": "af-forge",
+  "substrate": "A-FORGE",
   "model_version": "v2026.4.16",
   "organs": ["arifos", "geox", "wealth"],
   "constitution_hash": "SEAL20260413RESOURCECONSOLIDATION",
   "note": "Registered under F13 Sovereign authority of Arif Fazil."
 }
+
+

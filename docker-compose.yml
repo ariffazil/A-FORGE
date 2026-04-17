@@ -4,8 +4,8 @@ x-default-logging: &default-logging
     max-size: "10m"
     max-file: "3"
 
-# ── AF-FORGE Root Stack ───────────────────────────────────────────────────────
-# Services: af-forge-bridge (agent executor), arifos-mcp (kernel), ollama (LLM)
+# ── A-FORGE Root Stack ───────────────────────────────────────────────────────
+# Services: A-FORGE-bridge (agent executor), arifos-mcp (kernel), ollama (LLM)
 # Network:  arifos_core_network (external, canonical — shared with agent-plane)
 # Data:     postgres / redis / qdrant from arifos_core_network (no duplicates)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -15,7 +15,7 @@ services:
   # ── Constitutional Kernel (MCP server) ──────────────────────────
   arifos-mcp:
     image: ariffazil/arifosmcp:latest
-    container_name: af-forge-arifos-mcp
+    container_name: A-FORGE-arifos-mcp
     restart: unless-stopped
     expose:
       - "8080"
@@ -51,12 +51,12 @@ services:
       retries: 3
       start_period: 15s
 
-  # ── Agent Executor (AF-FORGE bridge) ────────────────────────────
-  af-forge-bridge:
+  # ── Agent Executor (A-FORGE bridge) ────────────────────────────
+  A-FORGE-bridge:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: af-forge-bridge
+    container_name: A-FORGE-bridge
     restart: unless-stopped
     expose:
       - "7071"
@@ -69,7 +69,7 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
       - HUMAN_ESCALATION_WEBHOOK_URL=${HUMAN_ESCALATION_WEBHOOK_URL:-}
-      - ARIFOS_GOVERNANCE_URL=${ARIFOS_GOVERNANCE_URL:-http://af-forge-arifos-mcp:8080}
+      - ARIFOS_GOVERNANCE_URL=${ARIFOS_GOVERNANCE_URL:-http://A-FORGE-arifos-mcp:8080}
       - AGENT_WORKBENCH_TRUST_LOCAL_VPS=${AGENT_WORKBENCH_TRUST_LOCAL_VPS:-0}
       - ENABLE_DANGEROUS_TOOLS=${ENABLE_DANGEROUS_TOOLS:-false}
       - ENABLE_BACKGROUND_JOBS=${ENABLE_BACKGROUND_JOBS:-false}
@@ -82,7 +82,7 @@ services:
       - POSTGRES_URL=postgresql://${POSTGRES_USER:-arifos_admin}:${POSTGRES_PASSWORD_ENCODED:-ArifPostgresVault2026%21}@postgres:5432/${POSTGRES_DB:-arifos_vault}
       - REDIS_URL=redis://redis:6379
     volumes:
-      - af-forge-data:/data
+      - A-FORGE-data:/data
     networks:
       - arifos_core_network
     logging: *default-logging
@@ -99,7 +99,7 @@ services:
   # ── Local LLM Inference ─────────────────────────────────────────
   ollama:
     image: ollama/ollama:latest
-    container_name: af-forge-ollama
+    container_name: A-FORGE-ollama
     restart: unless-stopped
     expose:
       - "11434"
@@ -116,10 +116,12 @@ services:
       start_period: 30s
 
 volumes:
-  af-forge-data:
+  A-FORGE-data:
   ollama-data:
 
 networks:
   arifos_core_network:
     external: true
     name: arifos_core_network
+
+

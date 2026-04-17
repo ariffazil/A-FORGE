@@ -4,7 +4,7 @@
   "pipeline": "000-999",
   "organ": "TRI_ORGAN_LATTICE",
   "action": "RUNTIME_FORGE_COMPLETE",
-  "scope": "AF-FORGE VPS tri-organ lattice runtime wiring",
+  "scope": "A-FORGE VPS tri-organ lattice runtime wiring",
   "verdict": "SEAL",
   "components_forged": [
     {
@@ -86,3 +86,4 @@
   "wealth_objective_function": "[Peace² × ΔKnowledge / ΔEntropy × ΔCapital] — partial implementation via WealthEngine.allocate() ROI scoring",
   "公约": "Ditempa Bukan Diberi"
 }
+

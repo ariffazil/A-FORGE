@@ -96,7 +96,7 @@ Output:
 
 - `npm run build` → zero TS errors
 - `make test` → 14 files, 139 tests, 0 failures
-- Docker `af-forge-bridge` rebuilt
+- Docker `A-FORGE-bridge` rebuilt
 
 ---
 
@@ -108,3 +108,4 @@ Output:
 **BUILD:** clean
 **TESTS:** 139/139
 **MOTTO:** *Ditempa Bukan Diberi* — Forged, Not Given
+

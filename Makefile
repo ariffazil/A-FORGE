@@ -12,7 +12,7 @@ down:
 	docker compose down
 
 logs:
-	docker compose logs -f af-forge-bridge
+	docker compose logs -f A-FORGE-bridge
 
 test:
 	npm run build
@@ -37,3 +37,5 @@ clean:
 
 install:
 	npm install
+
+

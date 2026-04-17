@@ -3,8 +3,8 @@
   "timestamp": "2026-04-17T03:52:00Z",
   "domain": "4+1_FEDERATION",
   "verdict": "SEAL",
-  "actor": "af-forge",
-  "message": "4+1 MCP federation connected: GEOX → WEALTH → arifOS → AF-FORGE → WELL (W0 mirror intact)",
+  "actor": "A-FORGE",
+  "message": "4+1 MCP federation connected: GEOX → WEALTH → arifOS → A-FORGE → WELL (W0 mirror intact)",
   "servers": {
     "WELL": {
       "url": "https://afwell.fastmcp.app/mcp",
@@ -31,7 +31,7 @@
       ]
     },
     "arifOS": {
-      "url": "http://af-forge-arifos-mcp:8080",
+      "url": "http://A-FORGE-arifos-mcp:8080",
       "name": "arifos-aaa-mcp",
       "tools": 22,
       "status": "SEAL",
@@ -42,7 +42,7 @@
     },
     "WEALTH": {
       "status": "NOT_DEPLOYED_STANDALONE",
-      "note": "WEALTH logic lives in af-forge TypeScript tools; standalone MCP pending"
+      "note": "WEALTH logic lives in A-FORGE TypeScript tools; standalone MCP pending"
     }
   },
   "golden_path": {
@@ -55,3 +55,4 @@
   "W0_SOVEREIGNTY_INVARIANT": true,
   "federation_complete": true
 }
+

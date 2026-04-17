@@ -1,5 +1,5 @@
 /**
- * AF-FORGE MCP Telemetry & Audit Logger
+ * A-FORGE MCP Telemetry & Audit Logger
  *
  * Lightweight operational telemetry for the MCP server.
  * - In-memory counters
@@ -145,7 +145,7 @@ class McpTelemetry {
   private writeJournald(payload: Record<string, unknown>): void {
     const entry = JSON.stringify({
       ts: new Date().toISOString(),
-      source: "af-forge-mcp",
+      source: "A-FORGE-mcp",
       ...payload,
     });
     process.stderr.write(`${entry}\n`);
@@ -188,3 +188,5 @@ export function withTelemetry<T extends Record<string, unknown>>(
     }
   };
 }
+
+

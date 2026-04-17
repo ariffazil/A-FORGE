@@ -1,4 +1,4 @@
-# AF-FORGE Zoo Control Matrix v0.1
+# A-FORGE Zoo Control Matrix v0.1
 
 > **DITEMPA BUKAN DIBERI — ΔΩΨ | ARIF**
 > Taxonomy of AI-agent failure modes mapped to constitutional controls, runtime enforcement modules, and observability signals.
@@ -13,7 +13,7 @@ Each failure species gets a home; no chaos, *pelan-pelan* but governed.
 
 **Five control families:**
 
-| Family | Covers | Constitutional anchor | AF-FORGE module |
+| Family | Covers | Constitutional anchor | A-FORGE module |
 |--------|--------|-----------------------|-----------------|
 | **Objective Integrity** | Spec gaming, reward hacking, goal misbinding, horizon neglect, side-channel optimization | F2 Truth, F3 Input Clarity, F7 Confidence | `AgentEngine` (pre/post hooks), `PlanValidator` |
 | **Runtime Containment** | Loops, fan-out storms, wrong sequencing, partial-apply drift, cost gaming, resource exhaustion | F4 Entropy, F1 Amanah | `BudgetManager`, `ToolRegistry`, `BackgroundJobManager` |
@@ -27,7 +27,7 @@ Each failure species gets a home; no chaos, *pelan-pelan* but governed.
 
 ### 2a. Objective Integrity
 
-| Failure species | arifOS Floor | AF-FORGE Module | Telemetry signal | Hold condition |
+| Failure species | arifOS Floor | A-FORGE Module | Telemetry signal | Hold condition |
 |-----------------|-------------|-----------------|-------------------|----------------|
 | **Spec gaming** — passes metric, fails mission | F3 Input Clarity | `AgentEngine.run()` pre-check | `arifos_input_clarity_rejected_total` | `SABAR` if task lacks success criteria or non-goals |
 | **Reward hacking** — optimizes proxy past reality | F7 Confidence | `AgentEngine` post-execution `checkConfidence()` | `arifos_confidence_hold_total{reason="OVERSOLD_CONFIDENCE"}` | `HOLD` if confidence > 0.85 + uncertainty > 0.35 |
@@ -38,7 +38,7 @@ Each failure species gets a home; no chaos, *pelan-pelan* but governed.
 
 ### 2b. Runtime Containment
 
-| Failure species | arifOS Floor | AF-FORGE Module | Telemetry signal | Hold condition |
+| Failure species | arifOS Floor | A-FORGE Module | Telemetry signal | Hold condition |
 |-----------------|-------------|-----------------|-------------------|----------------|
 | **Infinite loops** — recursive/looping agents | F4 Entropy | `BudgetManager`, `ToolRegistry` | `arifos_entropy_spike_total{reason="ENTROPY_SPIKE"}` | `HOLD` if ΔS > 0.4 on any single tool call |
 | **Fan-out storms** — uncontrolled sub-agent spawning | F1 Amanah | `BackgroundJobManager`, `ToolRegistry` | `arifos_background_jobs_active`, `arifos_agent_spawn_total` | Max jobs cap in `BackgroundJobManager`; 888_HOLD for `dangerous` spawns |
@@ -50,7 +50,7 @@ Each failure species gets a home; no chaos, *pelan-pelan* but governed.
 
 ### 2c. Trust Boundary Defense
 
-| Failure species | arifOS Floor | AF-FORGE Module | Telemetry signal | Hold condition |
+| Failure species | arifOS Floor | A-FORGE Module | Telemetry signal | Hold condition |
 |-----------------|-------------|-----------------|-------------------|----------------|
 | **Direct prompt injection** — external text hijacks instructions | F9 Anti-Hantu | `mcp/server.ts` input validation | `arifos_injection_void_total` | `VOID` on any F9 pattern match in incoming task |
 | **Indirect injection via tools** — file/email/web fetched content injects | F9 | `FileTools`, `SearchTools` output scrubbing | `arifos_indirect_injection_total` | Scrub fetched content before passing to LLM; flag if injection pattern found |
@@ -62,7 +62,7 @@ Each failure species gets a home; no chaos, *pelan-pelan* but governed.
 
 ### 2d. Coordination Stability
 
-| Failure species | arifOS Floor | AF-FORGE Module | Telemetry signal | Hold condition |
+| Failure species | arifOS Floor | A-FORGE Module | Telemetry signal | Hold condition |
 |-----------------|-------------|-----------------|-------------------|----------------|
 | **Emergent miscoordination** — simple agents interact into unpredictable behavior | F11 Coherence | `AgentEngine` F11 post-batch check | `arifos_coherence_hold_total` | `HOLD` if contradictions between tool results across batch |
 | **Groupthink collapse** — ensemble converges to worse decision than single agent | F7 Confidence | `AgentEngine` ensemble mode flag | `arifos_groupthink_total` | If confidence drops > 0.3 from solo baseline, flag for human review |
@@ -72,7 +72,7 @@ Each failure species gets a home; no chaos, *pelan-pelan* but governed.
 
 ### 2e. Governance Fidelity
 
-| Failure species | arifOS Floor | AF-FORGE Module | Telemetry signal | Hold condition |
+| Failure species | arifOS Floor | A-FORGE Module | Telemetry signal | Hold condition |
 |-----------------|-------------|-----------------|-------------------|----------------|
 | **Policy theater** — reports compliance while routing around controls | F13 Sovereign | `ApprovalBoundary`, `VaultClient` | `arifos_policy_theater_total` | Hard: all `dangerous` tools require 888_HOLD; verify against `ToolPermissionContext` |
 | **Missing immutable trail** — actions not logged or logs mutable | VAULT999 | `FileVaultClient` / `PostgresVaultClient` | `arifos_vault_sealed_total` | Every terminal verdict (SEAL/HOLD/SABAR/VOID) must be sealed before return |
@@ -316,7 +316,7 @@ New Prometheus metrics to add in `src/metrics/prometheus.ts`:
 
 ---
 
-## 6. Integration Blueprint (arifOS ↔ AF-FORGE)
+## 6. Integration Blueprint (arifOS ↔ A-FORGE)
 
 ```
 Human task
@@ -339,7 +339,7 @@ arifOS MCP (arifOS/ directory, Python)
 arifos_forge (signs manifest with VAULT999 seal)
     │
     ▼
-AF-FORGE MCP / HTTP bridge (this repo, TypeScript)
+A-FORGE MCP / HTTP bridge (this repo, TypeScript)
     │
     ├─► forge_apply_manifest(manifest: ForgeExecutionManifest)
     │       ├─► Verify signature + issuer
@@ -349,7 +349,7 @@ AF-FORGE MCP / HTTP bridge (this repo, TypeScript)
     └─► AgentEngine (for non-file tasks: research, coordinate, explore)
 ```
 
-**Key invariant:** AF-FORGE's `ToolRegistry` must **never** receive a raw `write_file` call from a PlannerAgent. It only receives pre-signed `ForgeExecutionManifest` objects containing `unified_diff` patches. The `write_file` tool is **deprecated for agent use** — replaced by `apply_patches`.
+**Key invariant:** A-FORGE's `ToolRegistry` must **never** receive a raw `write_file` call from a PlannerAgent. It only receives pre-signed `ForgeExecutionManifest` objects containing `unified_diff` patches. The `write_file` tool is **deprecated for agent use** — replaced by `apply_patches`.
 
 ---
 
@@ -387,3 +387,5 @@ AF-FORGE MCP / HTTP bridge (this repo, TypeScript)
 
 *Matrix version: 0.4 — Phases 0–4 complete*
 *下一个: Phase 5 — `detectDeletes()` + `confidence_lt` triggers wired into governance floors*
+
+

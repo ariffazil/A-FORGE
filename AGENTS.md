@@ -1,7 +1,7 @@
-<!-- AGENTS.md — AF-FORGE Agent Workbench -->
+<!-- AGENTS.md — A-FORGE Agent Workbench -->
 <!-- Generated from actual project contents. Read this first before modifying code. -->
 
-# AF-FORGE Agent Workbench — AGENTS.md
+# A-FORGE Agent Workbench — AGENTS.md
 
 > **For AI coding agents working on this codebase.**  
 > **Motto:** *Ditempa Bukan Diberi* — Forged, Not Given [ΔΩΨ | ARIF]
@@ -10,7 +10,7 @@
 
 ## Project Overview
 
-AF-FORGE is a **constitutional, event-sourced agent runtime** written in TypeScript. It implements a **Planner/Executor/Verifier triad** architecture with built-in policy gates, governed memory, and `888_HOLD` human sovereignty controls.
+A-FORGE is a **constitutional, event-sourced agent runtime** written in TypeScript. It implements a **Planner/Executor/Verifier triad** architecture with built-in policy gates, governed memory, and `888_HOLD` human sovereignty controls.
 
 **Key Philosophy:**
 - State is explicit (state machine, not chat loop)
@@ -35,9 +35,9 @@ The project includes:
 
 ## Workspace Structure
 
-**The repository root (`/root`) is the active AF-FORGE runtime.**
+**The repository root (`/root`) is the active A-FORGE runtime.**
 
-> **Important:** When older documentation references a path like `AF-FORGE/`, it means the repository root (`/root`), not a nested folder. There is a stale copy at `agent-workbench/` from earlier development — **do not use it**; the canonical source lives directly under `/root/src/`.
+> **Important:** When older documentation references a path like `A-FORGE/`, it means the repository root (`/root`), not a nested folder. There is a stale copy at `agent-workbench/` from earlier development — **do not use it**; the canonical source lives directly under `/root/src/`.
 
 **Sibling directories are separate subprojects** and are not governed by this `AGENTS.md`:
 - `arifOS/` — Python constitutional kernel (F1–F13) and VAULT999
@@ -94,7 +94,7 @@ npm test
 # Run the full test battery (includes all individual test files)
 make test
 
-# Run other AF-FORGE test files manually
+# Run other A-FORGE test files manually
 node dist/test/AgentEngine.test.js
 node dist/test/PlanValidator.test.js
 node dist/test/ParallelPlannerContract.test.js
@@ -129,7 +129,7 @@ AGENT_WORKBENCH_TRUST_LOCAL_VPS=1 node dist/src/cli.js explore "scan this repo"
 **Important:** Always rebuild (`npm run build`) before running tests after making changes. There is no watch mode.
 
 **Directory distinction:**
-- `test/` (singular) — AF-FORGE TypeScript tests
+- `test/` (singular) — A-FORGE TypeScript tests
 - `tests/` (plural) — Currently empty/unused in this repo
 
 ---
@@ -231,7 +231,7 @@ src/
 ├── scoreboard/          # Metrics and telemetry
 │   ├── ForgeScoreboard.ts     # Weekly task aggregation
 │   └── RunMetricsLogger.ts    # Per-run JSON logging
-├── server.ts            # AF-FORGE HTTP Bridge Server (Express, port 7071)
+├── server.ts            # A-FORGE HTTP Bridge Server (Express, port 7071)
 ├── tools/               # Tool implementations
 │   ├── base.ts                # BaseTool abstract class + Tool interface
 │   ├── ToolRegistry.ts        # Tool registration and dispatch
@@ -277,7 +277,7 @@ examples/
 
 scripts/
 ├── ingest-eureka-capsule.ts   # Script to ingest sacred constitutional memories
-└── start-af-forge-mcp.sh      # Shell wrapper to start the MCP server
+└── start-A-FORGE-mcp.sh      # Shell wrapper to start the MCP server
 
 deploy/
 ├── caddy/                     # Caddy reverse-proxy configuration
@@ -671,7 +671,7 @@ agent operator vault [--verdict <verdict>] [--sessionId <id>] [--since <iso>] [-
 - **AKI Types:** `src/types/aki.ts` — TypeScript contracts for the Arif Kernel Interface envelope, verdicts, and JSON-RPC error shapes.
 - **Docker:** Multi-stage `Dockerfile` builds the bridge server. `docker-compose.yml` brings up the full stack.
 - **GitHub Actions:** `.github/workflows/ci.yml` runs the test suite on push/PR.
-- **Systemd:** `deploy/systemd/af-forge.service` provides a service unit template for Linux deployments.
+- **Systemd:** `deploy/systemd/A-FORGE.service` provides a service unit template for Linux deployments.
 
 ---
 
@@ -687,7 +687,7 @@ agent operator vault [--verdict <verdict>] [--sessionId <id>] [--since <iso>] [-
 
 ## 9-Agent Federation (SOT v2026-04-16)
 
-AF-FORGE now physically integrates the **Central Nervous System** of the arifOS federation:
+A-FORGE now physically integrates the **Central Nervous System** of the arifOS federation:
 
 1. **APEX** (Sovereign): External human authority (Arif).
 2. **AAA-Agent** (ASI): Federal Coordinator. Receives all inter-agent routing requests and holds the `888_HOLD` escalation path.
@@ -698,4 +698,6 @@ AF-FORGE now physically integrates the **Central Nervous System** of the arifOS 
 7. **WEALTH-Agent** (AGI): Capital, transactions, and NAV specialist.
 8. **ARCHIVIST-Agent** (AGI): Canon and Memory Keeper. Automatically writes every `SEAL` to the `arifos.canon_records` immutable ledger.
 9. **NOTIFIER-Agent** (TOOL): Human-loop delivery. Bridges `888_HOLD` to external webhooks (e.g., Telegram sidecar on port 9001).
+
+
 

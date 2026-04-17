@@ -1,9 +1,9 @@
 /**
- * Planner output types for the arifOS → AF-FORGE governance pipeline.
+ * Planner output types for the arifOS → A-FORGE governance pipeline.
  *
  * PlannerAgent (read-only LLM) emits ProposedChange[] which PolicyEnforcer
  * validates before ApprovalRouter decides AUTO_APPROVED / HUMAN_APPROVAL_REQUIRED / REJECTED.
- * Only then does ForgeExecutionManifest reach AF-FORGE for diff-only application.
+ * Only then does ForgeExecutionManifest reach A-FORGE for diff-only application.
  */
 
 import type { WorkerTask } from "./agent.js";
@@ -59,3 +59,5 @@ export interface PlanComparison {
   verdict: PlanJudgeVerdict;
   reason: string;
 }
+
+

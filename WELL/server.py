@@ -3,7 +3,7 @@ WELL MCP Server — Human Substrate Governance Layer
 Phase 1: Immutable Ledger & Observability
 
 W0 Sovereignty Invariant: WELL holds a mirror, not a veto.
-WELL informs. arifOS judges. AF-FORGE executes. Hierarchy is invariant.
+WELL informs. arifOS judges. A-FORGE executes. Hierarchy is invariant.
 """
 
 from __future__ import annotations
@@ -241,7 +241,7 @@ def well_pressure(
     ctx: Context | None = None,
 ) -> dict[str, Any]:
     """
-    Signal cognitive pressure/load from an external source (e.g. AF-FORGE).
+    Signal cognitive pressure/load from an external source (e.g. A-FORGE).
     Increments decision_fatigue and potentially triggers W6 Metabolic Pause.
     """
     state = _load_state()
@@ -490,3 +490,5 @@ def well_check_floors(ctx: Context | None = None) -> dict[str, Any]:
 # ── Entry ──────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     mcp.run()
+
+

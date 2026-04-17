@@ -20,7 +20,7 @@ authority: ARIF_SOVEREIGN
 | **R2** | Every session MUST close with a SEAL call that writes `999_SEAL` or `999_VAULT` to `vault_events` |
 | **R3** | `session_id` at SEAL MUST match `session_id` from INIT |
 | **R4** | Each event `prev_hash` MUST equal previous event's `chain_hash` |
-| **R5** | AF-FORGE MUST NOT write directly to `vault_events` |
+| **R5** | A-FORGE MUST NOT write directly to `vault_events` |
 | **R6** | Delegate lanes (GEOX, 4TD) MUST route INIT/SEAL through arifOS |
 | **R7** | SEAL MUST NOT succeed if INIT has not been called for the session |
 | **R8** | `actor_id` MUST be non-empty and non-anonymous at both INIT and SEAL |
@@ -31,7 +31,7 @@ authority: ARIF_SOVEREIGN
 
 **Role:** Sovereign truth engine, vault authority, constitutional gate
 **Runtime:** Python / FastMCP
-**Container:** `af-forge-arifos-mcp` (port 8080)
+**Container:** `A-FORGE-arifos-mcp` (port 8080)
 **Vault path:** `public.vault_events` + `public.vault_seals`
 
 ### INIT
@@ -251,7 +251,7 @@ GEOX never writes to vault_events directly.
 
 ---
 
-## Lane: AF-FORGE (Execution Shell)
+## Lane: A-FORGE (Execution Shell)
 
 **Role:** Orchestration, CLI, execution dispatch, operator console
 **Runtime:** TypeScript / Node.js
@@ -270,10 +270,10 @@ GEOX never writes to vault_events directly.
 | Bypass arifOS judge/seal | ❌ NEVER |
 | Hold sovereign INIT authority | ❌ NEVER |
 
-### AF-FORGE Boundary Invariant
+### A-FORGE Boundary Invariant
 
-> AF-FORGE is a governed execution shell. It dispatches actions that Python MCPs authorize.
-> Any attempt by AF-FORGE to own truth, write vault, or bypass the constitutional gate is a F13 violation.
+> A-FORGE is a governed execution shell. It dispatches actions that Python MCPs authorize.
+> Any attempt by A-FORGE to own truth, write vault, or bypass the constitutional gate is a F13 violation.
 
 ---
 
@@ -321,3 +321,5 @@ For every consecutive pair (N, N+1) in vault_events ordered by id:
 ---
 
 *DITEMPA BUKAN DIBERI — 999 SEAL ALIVE*
+
+

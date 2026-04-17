@@ -1,5 +1,5 @@
 /**
- * AF-FORGE Backup Manager
+ * A-FORGE Backup Manager
  *
  * Manages VAULT999 PostgreSQL backups via pg_dump.
  * F1 Amanah compliant: all backups are to local disk first, then optionally
@@ -202,3 +202,5 @@ export class BackupManager {
     } catch { /* best effort */ }
   }
 }
+
+

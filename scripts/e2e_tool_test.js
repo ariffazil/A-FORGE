@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * E2E Tool Test — AF-FORGE
+ * E2E Tool Test — A-FORGE
  * Budget: ~50 tool calls across 4 tiers
  * Tiers:
  *   1. Safe: read_file, list_files, grep_text (no blast radius)
@@ -123,7 +123,7 @@ async function testShellSafe() {
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main() {
   const budget = parseInt(process.argv[2] ?? '50');
-  console.log('\n═══ AF-FORGE E2E Tool Test ═══');
+  console.log('\n═══ A-FORGE E2E Tool Test ═══');
   console.log(`Budget: ${budget} calls | internal_mode | e2e session\n`);
 
   console.log('─── Tier 1: Safe ───');
@@ -145,3 +145,4 @@ async function main() {
 }
 
 main().catch(e => { console.error('Error:', e.message); process.exit(1); });
+

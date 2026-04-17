@@ -7,7 +7,7 @@ This document maps the required updates across the arifOS ecosystem repositories
 
 ---
 
-## 1. `af-forge` (Execution Substrate / Body)
+## 1. `A-FORGE` (Execution Substrate / Body)
 *Location: `/root`*
 
 ### Files to Update:
@@ -29,7 +29,7 @@ This document maps the required updates across the arifOS ecosystem repositories
 
 ### Files to Update:
 *   **`README.md` / `ARCHITECTURE.md`**:
-    *   **Update:** Acknowledge `af-forge` as the official **Execution Adapter** that fulfills the AAA routing and Vault persistence requirements.
+    *   **Update:** Acknowledge `A-FORGE` as the official **Execution Adapter** that fulfills the AAA routing and Vault persistence requirements.
     *   **Detail:** Reiterate the Gödel Lock mechanism—AAA cannot SEAL itself on high-risk paths and must defer to F13 (Human Sovereign) via the Notifier.
 *   **`core/kernel/loop_controller.py`** *(New/WIP)*:
     *   **Update:** Ensure its documentation or header reflects its current **HOLD** status, pending thermal cooling of the federation.
@@ -62,3 +62,5 @@ To synchronize the GitHub repositories, the following sequence will be executed 
 2.  Stage the changes (`git add .`).
 3.  Commit with standard semantic message: `docs(architecture): map AAA federation to SOT (v2026.04.16)`
 4.  Push to remote (`git push origin main` or equivalent).
+
+

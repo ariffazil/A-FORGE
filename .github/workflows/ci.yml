@@ -18,3 +18,4 @@ jobs:
       - run: node dist/test/governanceViolation.test.js
       - run: node dist/test/ticketStore.test.js
       - run: node dist/test/operatorConsole.test.js
+

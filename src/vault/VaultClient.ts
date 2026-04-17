@@ -1,7 +1,7 @@
 /**
  * VAULT999 Client
  *
- * Append-only seal persistence for the AF-FORGE constitutional runtime.
+ * Append-only seal persistence for the A-FORGE constitutional runtime.
  * Every terminal verdict (SEAL, HOLD, SABAR, VOID) is hashed and written
  * to an immutable ledger — either a local JSONL file or a no-op sink.
  */
@@ -209,3 +209,5 @@ export function computeInputHash(
 export function generateSealId(): string {
   return randomUUID();
 }
+
+

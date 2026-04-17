@@ -1,4 +1,4 @@
-# AF-FORGE — Agent Workbench
+# A-FORGE — Agent Workbench
 
 > **The forge where Arif builds — an agent workbench for constitutional AI development.**
 > **Type:** Entity | **Status:** Active development environment
@@ -15,7 +15,7 @@ A **constitutional agent workbench** that implements the Ω-Wiki pattern and pro
 
 **The Problem:** AI development tools lack constitutional governance by default.
 
-**The Solution:** AF-FORGE provides:
+**The Solution:** A-FORGE provides:
 - Ω-Wiki pattern implementation (compilation over retrieval)
 - Agent orchestration with F1-F13 constraints
 - Smith/forge metaphor for disciplined building
@@ -28,7 +28,7 @@ A **constitutional agent workbench** that implements the Ω-Wiki pattern and pro
 Based on aligned arifOS + GEOX conventions:
 
 ```
-af-forge/
+A-FORGE/
 │
 ├── 00_OPERATORS/          # WHO runs the forge
 │   ├── Agent_Initialization.md
@@ -204,7 +204,7 @@ af-forge/
 
 **Literal:** "Forged, not given"
 
-**Meaning in AF-FORGE:**
+**Meaning in A-FORGE:**
 - Systems require work to create
 - Nothing comes for free
 - The process of forging creates value
@@ -216,17 +216,17 @@ af-forge/
 
 ```
 /root/
-├── af-forge/               # Main workbench
+├── A-FORGE/               # Main workbench
 │   ├── src/               # TypeScript source
 │   ├── test/              # Test suite
 │   ├── examples/          # Usage examples
-│   └── wiki/              # AF-FORGE Ω-Wiki
+│   └── wiki/              # A-FORGE Ω-Wiki
 │
-├── AF-FORGE/              # Additional resources
+├── A-FORGE/              # Additional resources
 │   └── (project files)
 │
 └── arif-fazil-wiki/       # This wiki
-    └── wiki/projects/af-forge.md
+    └── wiki/projects/A-FORGE.md
 ```
 
 ---
@@ -298,7 +298,7 @@ af-forge/
 
 ## Sources
 
-- `/root/af-forge/` — Main implementation
+- `/root/A-FORGE/` — Main implementation
 - `/root/AF_FORGE_WIKI_ALIGNED.md` — Ω-Wiki alignment
 - `/root/AF_FORGE_ARCHITECTURE_KARPATHY_MAPPED.md` — Karpathy pattern
 - Direct work with Arif
@@ -311,8 +311,8 @@ af-forge/
 ---
 type: Entity
 subtype: Project
-tags: [af-forge, agent-workbench, Ω-wiki, smith-forge]
-sources: [/root/af-forge/, /root/AF_FORGE_WIKI_ALIGNED.md]
+tags: [A-FORGE, agent-workbench, Ω-wiki, smith-forge]
+sources: [/root/A-FORGE/, /root/AF_FORGE_WIKI_ALIGNED.md]
 last_sync: 2026-04-10
 confidence: 0.90
 certainty_band: [0.85, 0.95]
@@ -325,3 +325,5 @@ status: active
 ---
 
 **Seal:** VAULT999 | **ΔΩΨ | ARIF**
+
+

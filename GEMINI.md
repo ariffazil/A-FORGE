@@ -22,21 +22,21 @@ Refer to **[CONSTITUTION.md](./CONSTITUTION.md)** for the foundational laws gove
 
 ---
 
-## Project Overview (AF-FORGE)
-**AF-FORGE** is a policy-governed, event-sourced agent runtime running on **arifOS v2.0**. It employs a **Cognitive-Layered Architecture** where every action is a metabolic step through the AGI Routing DAG.
+## Project Overview (A-FORGE)
+**A-FORGE** is a policy-governed, event-sourced agent runtime running on **arifOS v2.0**. It employs a **Cognitive-Layered Architecture** where every action is a metabolic step through the AGI Routing DAG.
 
 ### Core Architecture & Technologies
 - **Language/Runtime:** TypeScript (NodeNext), Node.js (v22+), Bun.
 - **Components:** Planner, Executor, Verifier, Policy Engine, Event Store, Memory Gateway.
 
 ## Project Commands (Namespaced)
-- /af:planner (if applicable, but mainly skills)
-- /af:vps: Infrastructure operations
-- /af:forge: bounded execution discipline
-- /af:trinity: multi-role orchestration
-- /af:metabolic: stage-governance workflow
-- /af:floorcheck: F1-F13 validation
-- /af:swarm: meta routing
+- /a:planner (if applicable, but mainly skills)
+- /a:vps: Infrastructure operations
+- /a:forge: bounded execution discipline
+- /a:trinity: multi-role orchestration
+- /a:metabolic: stage-governance workflow
+- /a:floorcheck: F1-F13 validation
+- /a:swarm: meta routing
 
 ---
 
@@ -45,3 +45,5 @@ Refer to **[CONSTITUTION.md](./CONSTITUTION.md)** for the foundational laws gove
 - **Build:** `npm run build`
 - **Test:** `npm test`
 - **CLI:** `node dist/src/cli.js <command> [options]`
+
+

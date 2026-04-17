@@ -9,14 +9,14 @@
       "stage": "111_SENSE",
       "uncertainty": 0.575,
       "confidence": 0.425,
-      "note": "Python Sense implementation, not AF-FORGE"
+      "note": "Python Sense implementation, not A-FORGE"
     },
     "destructive": {
       "status": "fail",
       "holdTriggered": false,
       "verdict": "SABAR",
       "expected": "888_HOLD",
-      "note": "AF-FORGE P0 policy layer not integrated"
+      "note": "A-FORGE P0 policy layer not integrated"
     },
     "ambiguous": {
       "status": "pass",
@@ -34,17 +34,19 @@
     "pythonSenseActive": true
   },
   "issues": [
-    "AF-FORGE TypeScript P0 implementation not integrated with Python MCP",
+    "A-FORGE TypeScript P0 implementation not integrated with Python MCP",
     "888_HOLD not triggered for destructive queries (Python Sense lacks keyword detection)",
     "No mode_used field (lite/deep) - Python Sense doesn't implement Lite/Deep split",
     "Risk indicators not exposed in response"
   ],
   "rollback_performed": false,
   "rollback_available": "arifosmcp:pre-p0-restart-20260407-165348",
-  "recommendation": "REQUIRES INTEGRATION WORK: AF-FORGE must be exposed as HTTP service or subprocess callable by Python MCP",
+  "recommendation": "REQUIRES INTEGRATION WORK: A-FORGE must be exposed as HTTP service or subprocess callable by Python MCP",
   "next_steps": [
-    "Option A: Start AF-FORGE as HTTP service, configure MCP to use it",
-    "Option B: Modify Python Sense to call AF-FORGE CLI (requires code edit)",
+    "Option A: Start A-FORGE as HTTP service, configure MCP to use it",
+    "Option B: Modify Python Sense to call A-FORGE CLI (requires code edit)",
     "Option C: Accept Python Sense implementation (different feature set)"
   ]
 }
+
+

@@ -37,7 +37,7 @@
 
 **claude_desktop_config.json** — Claude Desktop variant
 
-### AF-FORGE repo (`138297b`)
+### A-FORGE repo (`138297b`)
 
 **src/cli/verify.ts:**
 - Added check 7: Tool lattice assertion
@@ -63,7 +63,8 @@
 **SEALED:** `anchor_back_s10_2026-04-16`
 **PARENT:** `wealth_constitutional_audit_s9_2026-04-16`
 **WEALTH SHA:** `b314b2b`
-**AF-FORGE SHA:** `138297b`
+**A-FORGE SHA:** `138297b`
 **TOTAL LIVE:** 52
 **ORGAN AXIS:** 33
 **MOTTO:** *Ditempa Bukan Diberi* — Forged, Not Given
+

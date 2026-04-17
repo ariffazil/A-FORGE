@@ -2,7 +2,7 @@
  * Delegated Truth Tool
  *
  * Implements the 4+1 Architecture by delegating truth logic (math, physical models)
- * to external MCP servers. This ensures AF-FORGE remains a "shell only" runtime.
+ * to external MCP servers. This ensures A-FORGE remains a "shell only" runtime.
  *
  * @module tools/DelegatedTruthTool
  */
@@ -66,3 +66,5 @@ export abstract class DelegatedTruthTool extends BaseTool {
     }
   }
 }
+
+

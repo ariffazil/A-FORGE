@@ -3,7 +3,7 @@ import type { MetabolicStage } from "../types/aki.js";
 
 const metabolicStageDuration = new Histogram({
   name: "arifos_metabolic_stage_duration_seconds",
-  help: "Duration of AF-FORGE runtime stages in seconds.",
+  help: "Duration of A-FORGE runtime stages in seconds.",
   labelNames: ["stage"],
   buckets: [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60],
 });
@@ -40,7 +40,7 @@ const holdOpenTotal = new Gauge({
 
 const bridgeContractMismatchTotal = new Counter({
   name: "arifos_bridge_contract_mismatch_total",
-  help: "Count of AF-FORGE / arifOS bridge contract mismatches.",
+  help: "Count of A-FORGE / arifOS bridge contract mismatches.",
   labelNames: ["reason"],
 });
 
@@ -84,3 +84,5 @@ export function setOpenHolds(count: number): void {
 export function recordBridgeContractMismatch(reason: string): void {
   bridgeContractMismatchTotal.inc({ reason });
 }
+
+

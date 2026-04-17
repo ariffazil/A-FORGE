@@ -13,7 +13,7 @@
   },
   "repositories_synced": [
     {
-      "name": "af-forge",
+      "name": "A-FORGE",
       "path": "/root",
       "local_commit": "b99b88e26",
       "remote_commit": "b99b88e26",
@@ -60,3 +60,5 @@
   "kernel_version": "2026.04.09",
   "horizon": "II.1"
 }
+
+

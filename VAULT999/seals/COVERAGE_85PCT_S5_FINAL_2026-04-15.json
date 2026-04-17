@@ -1,4 +1,4 @@
-# AF-FORGE SEMANTIC COVERAGE 85% SEAL — Session 5 Final
+# A-FORGE SEMANTIC COVERAGE 85% SEAL — Session 5 Final
 
 > **Ditempa Bukan Diberi** — Forged, Not Given
 > **SEALED:** `coverage_85pct_s5_final_2026-04-15`
@@ -231,7 +231,7 @@ This is the WEALTH tool that was the missing piece to hit 85%.
 | **TOTAL** | **139** | **139** | **0 failures** |
 
 `npm run build` → zero TS errors.
-Docker `af-forge-bridge` rebuilt and running.
+Docker `A-FORGE-bridge` rebuilt and running.
 
 ---
 
@@ -258,5 +258,6 @@ This seal certifies that R1-R8 were completed in order, all 139 tests pass, buil
 **COVERAGE:** 67% → **85%** (+18pp)
 **TESTS:** 139/139 passing, 0 failures
 **BUILD:** zero TS errors
-**DOCKER:** af-forge-bridge rebuilt
+**DOCKER:** A-FORGE-bridge rebuilt
 **MOTTO:** *Ditempa Bukan Diberi* — Forged, Not Given
+

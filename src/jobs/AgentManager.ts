@@ -1,5 +1,5 @@
 /**
- * AF-FORGE Agent Manager
+ * A-FORGE Agent Manager
  *
  * Persistent control-plane service that:
  * - Owns the job queue (enqueue, dequeue, heartbeat, complete, fail)
@@ -244,3 +244,5 @@ export interface NotifierService {
   }): Promise<void>;
   sendAlert(payload: { severity: "info" | "warn" | "critical"; message: string }): Promise<void>;
 }
+
+

@@ -1,4 +1,4 @@
-# AF-FORGE GEOX 11/11 COMPLETE SEAL — Session 7
+# A-FORGE GEOX 11/11 COMPLETE SEAL — Session 7
 
 > **Ditempa Bukan Diberi** — Forged, Not Given
 > **SEALED:** `geox_11of11_complete_s7_2026-04-15`
@@ -86,7 +86,7 @@ Climate projections for emissions scenarios (baseline/ndc/1.5c/2c/high_emission)
 
 - `npm run build` → zero TS errors
 - `make test` → 14 files, 139 tests, 0 failures
-- Docker `af-forge-bridge` rebuilt
+- Docker `A-FORGE-bridge` rebuilt
 
 ---
 
@@ -99,3 +99,4 @@ Climate projections for emissions scenarios (baseline/ndc/1.5c/2c/high_emission)
 **BUILD:** clean
 **TESTS:** 139/139 passing
 **MOTTO:** *Ditempa Bukan Diberi* — Forged, Not Given
+

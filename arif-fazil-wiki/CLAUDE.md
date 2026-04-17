@@ -48,7 +48,7 @@ arif-fazil-wiki/
     ├── methodology.md  # Thinking patterns, working style
     ├── ontology.md     # Language, naming conventions, concepts
     ├── biography/      # Life story, background
-    ├── projects/       # arifOS, GEOX, AF-FORGE, etc.
+    ├── projects/       # arifOS, GEOX, A-FORGE, etc.
     ├── relationships/  # How Arif relates to AI, people, ideas
     ├── communication/  # Language patterns, triggers, boundaries
     └── agents-guide/   # How to work effectively with Arif
@@ -134,7 +134,7 @@ Structure:
 - Internal wiki: `[[page-name]]` or `[[biography/timeline]]`
 - arifOS wiki: `[[arifos::Page_Name]]`
 - GEOX wiki: `[[geox::Page_Name]]`
-- AF-FORGE wiki: `[[afforge::Page_Name]]`
+- A-FORGE wiki: `[[afforge::Page_Name]]`
 
 ---
 
@@ -241,3 +241,5 @@ This wiki operates under arifOS F1-F13:
 ---
 
 *"The wiki that knows the smith must itself be forged with the same discipline."*
+
+

@@ -1,7 +1,7 @@
 /**
  * WELL Readiness / Human Substrate Gate
  *
- * Implements the Operator-State Modulation required by the AF-FORGE 2.0 Blue Map.
+ * Implements the Operator-State Modulation required by the A-FORGE 2.0 Blue Map.
  * Reads the telemetry mirrored by WELL and imposes caution or high scrutiny
  * if the operator is fatigued.
  *
@@ -83,3 +83,5 @@ export async function checkWellReadiness(riskLevel: "low" | "medium" | "high" | 
     message: messages.join(" | "),
   };
 }
+
+

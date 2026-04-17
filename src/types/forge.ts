@@ -1,7 +1,7 @@
 /**
- * ForgeExecutionManifest — the signed diff-manifest that arifOS issues to AF-FORGE.
+ * ForgeExecutionManifest — the signed diff-manifest that arifOS issues to A-FORGE.
  *
- * AF-FORGE never receives raw "write whatever" instructions from a PlannerAgent.
+ * A-FORGE never receives raw "write whatever" instructions from a PlannerAgent.
  * It only receives pre-signed ForgeExecutionManifest objects containing unified_diff
  * patches, issued by arifOS after PolicyEnforcer approval and VAULT999 seal.
  */
@@ -25,3 +25,5 @@ export interface ForgeExecutionManifest {
     floors_passed: string[];
   };
 }
+
+

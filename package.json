@@ -1,7 +1,7 @@
 {
-  "name": "af-forge",
+  "name": "A-FORGE",
   "version": "0.1.0",
-  "description": "AF-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
+  "description": "A-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
   "type": "module",
   "bin": {
     "agent": "./dist/src/cli.js",
@@ -31,3 +31,5 @@
     "typescript": "^5.8.3"
   }
 }
+
+

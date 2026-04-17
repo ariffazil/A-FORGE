@@ -51,3 +51,4 @@ The external surfaces share those same subsystems instead of reimplementing them
 - `AGENT_WORKBENCH_TRUST_LOCAL_VPS=1` is a high-blast-radius switch: it effectively opens internal mode, wildcard command prefixes, and dangerous/experimental/background capabilities.
 - Treat the checked-out repo as the source of truth. Verify browser notes, pasted plans, and deployment claims against live files, config, and git state before relying on them.
 - Distinguish source edits from live rollout. Do not claim a route, site, service, or manifest is deployed without checking the running surface.
+

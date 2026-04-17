@@ -1,5 +1,5 @@
 /**
- * AF-FORGE Webhook Notifier
+ * A-FORGE Webhook Notifier
  * 
  * Sends 888_HOLD alerts to an external or local webhook (e.g., the notifier sidecar).
  */
@@ -61,3 +61,5 @@ export class WebhookNotifier implements NotifierService {
     }
   }
 }
+
+

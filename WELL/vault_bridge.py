@@ -1,6 +1,6 @@
 # WELL to VAULT999 Bridge (Sovereignty Refined)
 # Role: Immutable biological anchoring with High-Signal Filtering.
-# Axiom: WELL informs, arifOS judges, AF-FORGE executes.
+# Axiom: WELL informs, arifOS judges, A-FORGE executes.
 
 import json
 import hashlib
@@ -69,3 +69,5 @@ if __name__ == "__main__":
     force_sync = "--force" in sys.argv
     result = bridge_to_vault(force=force_sync)
     print(json.dumps(result, indent=2))
+
+

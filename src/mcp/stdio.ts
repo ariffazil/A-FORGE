@@ -1,5 +1,5 @@
 /**
- * AF-FORGE MCP Server — STDIO entry point
+ * A-FORGE MCP Server — STDIO entry point
  *
  * Imports all tools + resources from core.ts and runs stdio transport.
  * This is the canonical entry point for local MCP clients
@@ -25,10 +25,12 @@ async function main(): Promise<void> {
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  process.stderr.write("[af-forge-mcp] Server started on stdio\n");
+  process.stderr.write("[A-FORGE-mcp] Server started on stdio\n");
 }
 
 main().catch((err) => {
-  process.stderr.write(`[af-forge-mcp] Fatal: ${err}\n`);
+  process.stderr.write(`[A-FORGE-mcp] Fatal: ${err}\n`);
   process.exit(1);
 });
+
+

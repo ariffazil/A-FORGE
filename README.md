@@ -1,4 +1,4 @@
-# AF-FORGE — The Metabolic Shell
+# A-FORGE — The Metabolic Shell
 
 **Organism Role:** Operator Console & Orchestration Shell (4+1 Architecture)  
 **Constitutional Authority:** [`ariffazil/arifOS`](https://github.com/ariffazil/arifOS)  
@@ -7,15 +7,15 @@
 > **Intelligence is forged, not given.**  
 > *DITEMPA BUKAN DIBERI — 999 SEAL ALIVE*
 
-AF-FORGE is the policy-governed, event-sourced agent runtime that acts as the primary interface for the **arifOS v2.0** organism. It owns no truth — it merely displays the synthesis of the Truth Lanes.
+A-FORGE is the policy-governed, event-sourced agent runtime that acts as the primary interface for the **arifOS v2.0** organism. It owns no truth — it merely displays the synthesis of the Truth Lanes.
 
 It enforces **13 Constitutional Floors** through a multi-layered governance system, ensuring every action by AI agents is aligned, reversible where necessary, and verifiably logged.
 
 ---
 
-## What AF-FORGE Is
+## What A-FORGE Is
 
-AF-FORGE is the **Metabolic Shell** — the display, orchestration, and execution surface of the organism.
+A-FORGE is the **Metabolic Shell** — the display, orchestration, and execution surface of the organism.
 
 Its role is to:
 - Execute governed agent workflows
@@ -29,13 +29,13 @@ In simple terms:
 > WEALTH may evaluate.  
 > WELL may reflect.  
 > arifOS judges.  
-> **AF-FORGE orchestrates.**
+> **A-FORGE orchestrates.**
 
 ---
 
-## What AF-FORGE Owns
+## What A-FORGE Owns
 
-AF-FORGE is the canonical home of:
+A-FORGE is the canonical home of:
 
 - Agent execution engine (`AgentEngine`)
 - Tool registry and permissioning
@@ -49,9 +49,9 @@ AF-FORGE is the canonical home of:
 
 ---
 
-## What AF-FORGE Does Not Own
+## What A-FORGE Does Not Own
 
-AF-FORGE is the **shell**, not the law.
+A-FORGE is the **shell**, not the law.
 
 It does **not** replace:
 - **arifOS** — Constitutional judgment, floor enforcement, VAULT999 ledger
@@ -59,7 +59,7 @@ It does **not** replace:
 - **WEALTH** — Capital Intelligence (NPV, EMV, allocation, portfolio logic)
 - **WELL** — Human Intelligence (operator readiness, fatigue, biological reflection)
 
-AF-FORGE may orchestrate.  
+A-FORGE may orchestrate.  
 It may not adjudicate.  
 The constitutional lanes decide.
 
@@ -67,7 +67,7 @@ The constitutional lanes decide.
 
 ## The 4+1 Architecture
 
-AF-FORGE is the **Metabolic Shell** within the unified 4+1 architecture.
+A-FORGE is the **Metabolic Shell** within the unified 4+1 architecture.
 
 | Lane       | Authority              | Primary Role                                      | Status |
 |------------|------------------------|---------------------------------------------------|--------|
@@ -75,7 +75,7 @@ AF-FORGE is the **Metabolic Shell** within the unified 4+1 architecture.
 | **GEOX**   | Earth Intelligence     | Subsurface reasoning, volumetrics, timing, witness | ✅ Active |
 | **WEALTH** | Capital Intelligence   | EMV, NPV, allocation, portfolio support           | ✅ Active |
 | **WELL**   | Human Intelligence     | Operator readiness, fatigue, biological reflection | ✅ Active |
-| **AF-FORGE**| Metabolic Shell       | Display, orchestration, runtime execution          | ✅ Active |
+| **A-FORGE**| Metabolic Shell       | Display, orchestration, runtime execution          | ✅ Active |
 
 ---
 
@@ -156,8 +156,8 @@ Execution is never self-authorized.
 
 ```bash
 # Clone
-git clone https://github.com/ariffazil/af-forge.git
-cd af-forge
+git clone https://github.com/ariffazil/A-FORGE.git
+cd A-FORGE
 
 # Install dependencies
 npm install
@@ -211,13 +211,13 @@ deploy/                # Docker, systemd, Caddy, Prometheus, Grafana
 
 ## Design Philosophy
 
-AF-FORGE does not exist to make intelligence faster.  
+A-FORGE does not exist to make intelligence faster.  
 It exists to make intelligence **lawful, legible, and governable**.
 
 Its purpose is **bounded agency under sovereign control** — not maximal autonomy.
 
 The operator is always the authority.  
-AF-FORGE merely executes within constitutional bounds.
+A-FORGE merely executes within constitutional bounds.
 
 ---
 
@@ -225,3 +225,5 @@ AF-FORGE merely executes within constitutional bounds.
 
 **DITEMPA BUKAN DIBERI**  
 **999 SEAL ALIVE**
+
+

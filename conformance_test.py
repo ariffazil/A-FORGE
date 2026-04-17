@@ -301,19 +301,19 @@ async def test_geox_delegate() -> None:
     log("GEOX", "R4-CHAIN", chain_ok, chain_msg)
 
 
-# ── R5: AF-FORGE boundary check ───────────────────────────────────────────────
+# ── R5: A-FORGE boundary check ───────────────────────────────────────────────
 
 def test_afforge_boundary() -> None:
-    print("\n━━━ Lane: AF-FORGE (boundary check) ━━━")
-    # AF-FORGE is TypeScript — check that no vault_postgres import exists in AF-FORGE src
-    afforge_dir = Path("/root/AF-FORGE/src") if Path("/root/AF-FORGE/src").exists() else None
+    print("\n━━━ Lane: A-FORGE (boundary check) ━━━")
+    # A-FORGE is TypeScript — check that no vault_postgres import exists in A-FORGE src
+    afforge_dir = Path("/root/A-FORGE/src") if Path("/root/A-FORGE/src").exists() else None
     if afforge_dir is None:
-        log("AF-FORGE", "R5-NO-VAULT-WRITE", True, "AF-FORGE/src not found in Python path — correct, it is TypeScript only")
+        log("A-FORGE", "R5-NO-VAULT-WRITE", True, "A-FORGE/src not found in Python path — correct, it is TypeScript only")
         return
 
     vault_refs = list(afforge_dir.rglob("vault_events")) + list(afforge_dir.rglob("*vault_postgres*"))
-    log("AF-FORGE", "R5-NO-VAULT-WRITE", len(vault_refs) == 0,
-        f"no direct vault_events writes in AF-FORGE src ({len(vault_refs)} refs found)")
+    log("A-FORGE", "R5-NO-VAULT-WRITE", len(vault_refs) == 0,
+        f"no direct vault_events writes in A-FORGE src ({len(vault_refs)} refs found)")
 
 
 # ── R7: SEAL without INIT detection ──────────────────────────────────────────
@@ -379,3 +379,5 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
+
+

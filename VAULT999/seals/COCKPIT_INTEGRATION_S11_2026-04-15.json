@@ -4,7 +4,7 @@
   "commit_sha": "bfddb24",
   "timestamp": "2026-04-15T00:00:00Z",
   "component": "geox-gui dist + cockpit integration analysis",
-  "description": "geox-gui cockpit maps directly to af-forge: WellContextDesk embeds LogDock with geox_compute_petrophysics MCP calls; geox_log_interpreter wired to AF-FORGE bridge via /geox/log_interpreter; geox-gui dist built successfully (542KB main JS)",
+  "description": "geox-gui cockpit maps directly to A-FORGE: WellContextDesk embeds LogDock with geox_compute_petrophysics MCP calls; geox_log_interpreter wired to A-FORGE bridge via /geox/log_interpreter; geox-gui dist built successfully (542KB main JS)",
   "pipeline_stage": "333_MIND",
   "organ": "GEOX",
   "integration": {
@@ -23,7 +23,8 @@
       "AppIframeHost (seismic_viewer)"
     ],
     "redundancy_resolved": "WellContextDesk (in geox-gui) replaces standalone well-desk app; earth3d tab embeds seismic_viewer via iframe; Map tab uses MalayBasinPilotDashboard directly",
-    "note": "geox-gui is separate repo; cockpit build pushes to Cloudflare Pages via geox-gui CI; AF-FORGE bridge provides /geox/log_interpreter for cockpit's geox_compute_petrophysics MCP chain"
+    "note": "geox-gui is separate repo; cockpit build pushes to Cloudflare Pages via geox-gui CI; A-FORGE bridge provides /geox/log_interpreter for cockpit's geox_compute_petrophysics MCP chain"
   },
   "seal_chain": ["bfddb24", "9cd0a6a", "e2b2d86", "ea9f0fa"]
 }
+

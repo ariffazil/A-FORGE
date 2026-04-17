@@ -10,7 +10,7 @@ This workspace is a **policy-governed AI engineering workspace** with three prim
 
 | Directory | Stack | Role |
 |-----------|-------|------|
-| `AF-FORGE/` | TypeScript / Node.js 22+ | Agent runtime (Planner/Executor/Verifier, event store, policy engine) |
+| `A-FORGE/` | TypeScript / Node.js 22+ | Agent runtime (Planner/Executor/Verifier, event store, policy engine) |
 | `arifOS/` | Python 3.12+ / FastMCP | Policy kernel (F1-F13 governance, MCP server, immutable audit path) |
 | `GEOX/` | Python 3.10+ + React 19 | Geospatial domain service (seismic, well-log, governance verdicts) |
 | `APEX/` | Docs only | Constitutional theory hub |
@@ -45,9 +45,9 @@ Keep repo and tool identifiers exactly as implemented, but use operational descr
 
 ---
 
-## AF-FORGE Commands
+## A-FORGE Commands
 
-Work from `AF-FORGE/`:
+Work from `A-FORGE/`:
 
 ```bash
 npm install          # install dependencies
@@ -67,7 +67,7 @@ AGENT_WORKBENCH_TRUST_LOCAL_VPS=1 node dist/src/cli.js explore "scan this repo"
 
 There is **no watch mode**. Always `npm run build` before running tests after any change.
 
-### AF-FORGE Environment Variables
+### A-FORGE Environment Variables
 
 | Variable | Effect |
 |----------|--------|
@@ -152,7 +152,7 @@ Public deployment truth must stay explicit: only the dashboard (`/`), health end
 
 ## Architecture
 
-### AF-FORGE Core Execution Flow
+### A-FORGE Core Execution Flow
 
 ```
 CLI (cli.ts) → AgentProfile → AgentEngine
@@ -207,7 +207,7 @@ These are non-negotiable in all subprojects. The four most load-bearing:
 
 ---
 
-## AF-FORGE Code Conventions
+## A-FORGE Code Conventions
 
 **TypeScript ESM imports require `.js` extensions** (NodeNext module resolution):
 
@@ -297,3 +297,5 @@ These are **unambiguous execution directives** — do not ask for clarification:
 | `yes` / `start` / `Start. ✅` | Proceed with the proposed action |
 | `1 2 3 4 forge` | Execute items 1, 2, 3, 4 in order |
 | `alligned` / `align all` | Sync all agent config files (CLAUDE.md, GEMINI.md, copilot-instructions.md, AGENTS.md, KIMI.md) |
+
+

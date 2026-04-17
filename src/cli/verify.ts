@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * af-forge-verify — One-shot system health check
+ * A-FORGE-verify — One-shot system health check
  * DITEMPA BUKAN DIBERI
  *
  * Verifies:
@@ -160,7 +160,7 @@ async function main() {
   }
 
   // Print results
-  console.error("\nAF-FORGE System Verification");
+  console.error("\nA-FORGE System Verification");
   console.error("════════════════════════════════");
   for (const item of checks.items) console.error(item);
   console.error("════════════════════════════════");
@@ -172,3 +172,5 @@ main().catch((e) => {
   console.error(`Fatal: ${e}`);
   process.exit(1);
 });
+
+

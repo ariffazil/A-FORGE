@@ -2,7 +2,7 @@
  * arifOS Core Types — v0.1
  *
  * Fundamental types for the Quantum-Level Intelligence Stack.
- * Aligned to AF-FORGE constitutional governance.
+ * Aligned to A-FORGE constitutional governance.
  */
 
 export type MetabolicState =
@@ -74,3 +74,5 @@ export interface MetabolicTransition {
   reason?: string;
   timestamp: number;
 }
+
+

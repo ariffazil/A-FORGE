@@ -1,10 +1,10 @@
-# AF-FORGE Agent Plane — docker-compose
+# A-FORGE Agent Plane — docker-compose
 # DITEMPA BUKAN DIBERI — Forged, Not Given
 #
 # Services:
-#   af-forge-manager    — Persistent job queue, session lifecycle, tool allowlists
-#   af-forge-notifier   — Telegram/Matrix 888_HOLD alerts
-#   af-forge-backup     — Daily pg_dump cron + off-box replication
+#   A-FORGE-manager    — Persistent job queue, session lifecycle, tool allowlists
+#   A-FORGE-notifier   — Telegram/Matrix 888_HOLD alerts
+#   A-FORGE-backup     — Daily pg_dump cron + off-box replication
 #   node-exporter       — Prometheus hardware/metrics (port 9100)
 #   cadvisor            — Container metrics (port 8080)
 #
@@ -19,8 +19,8 @@
 #   docker compose up -d
 #
 # Verify:
-#   docker exec af-forge-manager node dist/src/jobs/AgentManager.js status
-#   docker exec af-forge-backup pg_dump --version
+#   docker exec A-FORGE-manager node dist/src/jobs/AgentManager.js status
+#   docker exec A-FORGE-backup pg_dump --version
 
 version: "3.9"
 
@@ -28,19 +28,19 @@ x-common-env: &common-env
   POSTGRES_URL: ${POSTGRES_URL:-postgresql://arifos_admin:${POSTGRES_PASSWORD}@arifos-postgres:5432/arifos_vault}
   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ArifPostgresVault2026!}
   CONSTITUTION_HASH: ${CONSTITUTION_HASH:-SEAL20260413RESOURCECONSOLIDATION}
-  AGENT_ID: ${AGENT_ID:-AF-FORGE-Agent}
+  AGENT_ID: ${AGENT_ID:-A-FORGE-Agent}
   NODE_ENV: production
 
 services:
 
-  # ── AF-FORGE MANAGER ────────────────────────────────────────────
+  # ── A-FORGE MANAGER ────────────────────────────────────────────
   # Persistent job queue + session manager.
   # Receives jobs from HTTP API or internal enqueue.
   # Writes session open/close to VAULT999.
   # Emits 888_HOLD to notifier on critical/high priority jobs.
-  af-forge-manager:
+  A-FORGE-manager:
     image: node:22-alpine
-    container_name: af-forge-manager
+    container_name: A-FORGE-manager
     restart: unless-stopped
     networks:
       - arifos_core_network
@@ -66,7 +66,7 @@ services:
               const job = mgr.dequeue('manager-poll');
               if (job) console.log('dequeued:', job.id);
             }, 5000);
-            console.log('[af-forge-manager] running on arifos_core_network');
+            console.log('[A-FORGE-manager] running on arifos_core_network');
           })
           .catch(e => { console.error(e); process.exit(1); });
       "
@@ -81,13 +81,13 @@ services:
           cpus: "0.5"
           memory: "256M"
 
-  # ── AF-FORGE NOTIFIER ────────────────────────────────────────────
+  # ── A-FORGE NOTIFIER ────────────────────────────────────────────
   # Telegram notifier for 888_HOLD events.
   # Reads TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID from env.
   # Falls back to webhook if TELEGRAM_ALERT_WEBHOOK_URL is set.
-  af-forge-notifier:
+  A-FORGE-notifier:
     image: node:22-alpine
-    container_name: af-forge-notifier
+    container_name: A-FORGE-notifier
     restart: unless-stopped
     networks:
       - arifos_core_network
@@ -105,9 +105,9 @@ services:
           .then(({ createTelegramNotifier }) => {
             const notifier = createTelegramNotifier();
             if (!notifier.isConfigured) {
-              console.log('[af-forge-notifier] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set — alerts disabled');
+              console.log('[A-FORGE-notifier] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set — alerts disabled');
             } else {
-              console.log('[af-forge-notifier] Telegram notifier active');
+              console.log('[A-FORGE-notifier] Telegram notifier active');
             }
           })
           .catch(e => { console.error(e); process.exit(1); });
@@ -115,13 +115,13 @@ services:
     healthcheck:
       test: ["CMD", "sh", "-c", "echo OK"]
 
-  # ── AF-FORGE BACKUP ─────────────────────────────────────────────
+  # ── A-FORGE BACKUP ─────────────────────────────────────────────
   # Daily pg_dump cron at 02:00 MYT.
   # Retention: 30 days local, optional off-box rsync/S3.
   # F1 Amanah: all backups logged to VAULT999.
-  af-forge-backup:
+  A-FORGE-backup:
     image: postgres:16-alpine
-    container_name: af-forge-backup
+    container_name: A-FORGE-backup
     restart: unless-stopped
     networks:
       - arifos_core_network
@@ -196,3 +196,5 @@ networks:
 volumes:
   arifos_backups:
     driver: local
+
+

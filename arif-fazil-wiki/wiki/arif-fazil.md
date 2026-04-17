@@ -22,7 +22,7 @@ A **geologist-turned-systems-architect** who originated a constitutional AI gove
 | **Training** | Geologist — sparse evidence, layered systems, provenance thinking |
 | **Role** | Systems architect, ontology designer, constitutional framer |
 | **Method** | Abstraction first, implementation second; names matter |
-| **Output** | arifOS, GEOX, AF-FORGE, Ω-Wiki paradigm, F1-F13 floors |
+| **Output** | arifOS, GEOX, A-FORGE, Ω-Wiki paradigm, F1-F13 floors |
 
 ### What Arif Is Not
 
@@ -94,7 +94,7 @@ Earth science knowledge framework:
 
 **Status:** Active domain knowledge system
 
-### [[projects/af-forge|AF-FORGE]] — Agent Workbench
+### [[projects/A-FORGE|A-FORGE]] — Agent Workbench
 
 The forge where Arif builds:
 - **Ω-Wiki Pattern** — This very wiki architecture
@@ -237,3 +237,5 @@ status: active
 **Seal:** VAULT999 | **ΔΩΨ | ARIF**
 
 *"The smith who forges the sword must himself be forged in the same discipline."*
+
+

@@ -106,7 +106,7 @@ async function main() {
         type: "system",
         description: "Eureka Capsule — 33-tool orthogonal architecture review (2026-04-14)",
         reference:
-          "https://github.com/ariffazil/af-forge/blob/main/AGENTS.md",
+          "https://github.com/ariffazil/A-FORGE/blob/main/AGENTS.md",
       },
       confidence: 1.0,
       reason: law.reason,
@@ -129,3 +129,5 @@ main().catch((err) => {
   console.error("Ingestion failed:", err);
   process.exit(1);
 });
+
+

@@ -1,5 +1,5 @@
 # 🌌 arifOS: Metabolic Intelligence Trinity Map
-## The Unified Architecture of @WELL, @WEALTH, @GEOX, and @AF-FORGE
+## The Unified Architecture of @WELL, @WEALTH, @GEOX, and @A-FORGE
 
 This map defines the canonical hierarchy and metabolic links between all arifOS MCP organs.
 
@@ -23,7 +23,7 @@ This map defines the canonical hierarchy and metabolic links between all arifOS 
 
 ---
 
-### ⚒️ III. The Agentic Forge (@AF-FORGE)
+### ⚒️ III. The Agentic Forge (@A-FORGE)
 **Path:** `/root/` (Root Workspace)  
 **Role:** The Hand of Action (Execution Plane).  
 **Link:** Driven by arifOS `777_FORGE` stage; signals pressure back to `@WELL`.  
@@ -54,10 +54,12 @@ This map defines the canonical hierarchy and metabolic links between all arifOS 
 
 1.  **INTENT:** Human (`@WELL`) signals intent to the `arifOS` Kernel.
 2.  **GROUNDING:** `arifOS` polls `@GEOX` (Physics) and `@WEALTH` (Economics) for reality checks.
-3.  **PLANNING:** `@AF-FORGE` constructs a metabolic execution plan.
+3.  **PLANNING:** `@A-FORGE` constructs a metabolic execution plan.
 4.  **FEEDBACK:** Each Forge action exerts `well_pressure` on the Human Substrate.
 5.  **JUDGMENT:** `arifOS` evaluates F-Floors (System) + W-Floors (Human).
 6.  **SEAL:** Result anchored to `VAULT999` with cryptographic proof.
 
 ---
 **SEALED v2026.04.17 — 999_ALIVE**
+
+

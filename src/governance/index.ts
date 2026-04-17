@@ -2,7 +2,7 @@
  * arifOS 13 Floors — Governance Enforcement Modules
  *
  * Minimal, correct implementations for missing/upgrade floors.
- * Plugs into AF-FORGE distributed enforcement mesh.
+ * Plugs into A-FORGE distributed enforcement mesh.
  *
  * @module governance
  * @constitutional F1-F13 — Full constitutional coverage
@@ -236,3 +236,5 @@ export function summarizeGovernance(checks: GovernanceCheck[]): GovernanceSummar
     checks,
   };
 }
+
+

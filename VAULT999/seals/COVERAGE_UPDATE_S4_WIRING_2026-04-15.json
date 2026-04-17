@@ -1,4 +1,4 @@
-# AF-FORGE SEMANTIC COVERAGE UPDATE — Session 4 Seal
+# A-FORGE SEMANTIC COVERAGE UPDATE — Session 4 Seal
 
 > **Ditempa Bukan Diberi** — Forged, Not Given
 > **SEALED:** `coverage_update_s4_wiring_2026-04-15`
@@ -200,9 +200,10 @@ This seal certifies that the following were completed in Session 4:
 - [x] `goxWealthTools.test.ts` — 21 tests, all passing
 - [x] All 14 test files, 139 tests, 0 failures
 - [x] `npm run build` → zero TS errors
-- [x] Docker `af-forge-bridge` rebuilt and running
+- [x] Docker `A-FORGE-bridge` rebuilt and running
 
 **SEALED:** `coverage_update_s4_wiring_2026-04-15`
 **PREVIOUS:** `audit_000_999_tri_organ_2026-04-15`
 **COVERAGE:** 47% → 67%
 **MOTTO:** *Ditempa Bukan Diberi* — Forged, Not Given
+

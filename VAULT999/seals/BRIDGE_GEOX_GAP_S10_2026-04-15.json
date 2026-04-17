@@ -4,7 +4,7 @@
   "commit_sha": "9cd0a6a",
   "timestamp": "2026-04-15T00:00:00Z",
   "component": "server.ts + geox/mcp/server.py + requirements.txt",
-  "description": "Seal the GEOX TypeScript/Python integration gap: /geox/log_interpreter + /geox/contract bridge endpoints; geox_log_interpreter tool added to Python MCP via httpx async call to af-forge-bridge:7071; httpx>=0.25.0 added to geox requirements.txt",
+  "description": "Seal the GEOX TypeScript/Python integration gap: /geox/log_interpreter + /geox/contract bridge endpoints; geox_log_interpreter tool added to Python MCP via httpx async call to A-FORGE-bridge:7071; httpx>=0.25.0 added to geox requirements.txt",
   "pipeline_stage": "333_MIND",
   "organ": "GEOX",
   "integration": {
@@ -12,7 +12,8 @@
     "geox_contract_endpoint": "GET /geox/contract",
     "python_mcp_forwarded": "geox_log_interpreter via httpx.AsyncClient",
     "python_mcp_tool_name": "geox_log_interpreter",
-    "note": "geox/ is gitignored; Python MCP files updated in-place but not committed to af-forge repo"
+    "note": "geox/ is gitignored; Python MCP files updated in-place but not committed to A-FORGE repo"
   },
   "seal_chain": ["e2b2d86", "9cd0a6a"]
 }
+

@@ -1,5 +1,5 @@
 /**
- * AF-FORGE Agent Plane — Public API
+ * A-FORGE Agent Plane — Public API
  *
  * Exports the three core control-plane services:
  *   AgentManager  — job queue, session lifecycle, tool allowlists
@@ -12,3 +12,5 @@ export type { JobStatus, JobPriority, JobDefinition, JobRunState, AgentManagerCo
 
 export { BackupManager } from "./BackupManager.js";
 export type { BackupResult, BackupManagerConfig } from "./BackupManager.js";
+
+

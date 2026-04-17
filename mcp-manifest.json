@@ -18,7 +18,7 @@
       },
       "annotations": {"readOnlyHint": false, "openWorldHint": false},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"],
+      "mcp_servers": ["arifOS", "A-FORGE"],
       "aliases": ["Anchor session"]
     },
     {
@@ -35,7 +35,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": true},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"]
+      "mcp_servers": ["arifOS", "A-FORGE"]
     },
     {
       "id": 3,
@@ -52,7 +52,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": true},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"]
+      "mcp_servers": ["arifOS", "A-FORGE"]
     },
     {
       "id": 4,
@@ -68,7 +68,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"]
+      "mcp_servers": ["arifOS", "A-FORGE"]
     },
     {
       "id": 5,
@@ -84,7 +84,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"],
+      "mcp_servers": ["arifOS", "A-FORGE"],
       "aliases": ["Execute judge", "Forge judge check"]
     },
     {
@@ -94,14 +94,14 @@
       "stage": "777",
       "domain": "constitutional",
       "tags": ["constitutional", "public"],
-      "description": "Delegated Execution Bridge — validates JUDGE SEAL, constructs manifest, dispatches to AF-FORGE",
+      "description": "Delegated Execution Bridge — validates JUDGE SEAL, constructs manifest, dispatches to A-FORGE",
       "parameters": {
         "plan": {"type": "object", "description": "Execution plan from planner"},
         "verdict": {"type": "string", "description": "Judge verdict (must be SEAL)"}
       },
       "annotations": {"readOnlyHint": false, "destructiveHint": false, "openWorldHint": true},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"],
+      "mcp_servers": ["arifOS", "A-FORGE"],
       "aliases": ["Forge execute"]
     },
     {
@@ -117,7 +117,7 @@
       },
       "annotations": {"readOnlyHint": false, "openWorldHint": false},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"],
+      "mcp_servers": ["arifOS", "A-FORGE"],
       "aliases": ["Get vault data", "Monitor metabolism"]
     },
     {
@@ -166,7 +166,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"]
+      "mcp_servers": ["arifOS", "A-FORGE"]
     },
     {
       "id": 11,
@@ -247,7 +247,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"]
+      "mcp_servers": ["arifOS", "A-FORGE"]
     },
     {
       "id": 16,
@@ -264,7 +264,7 @@
       },
       "annotations": {"readOnlyHint": false, "openWorldHint": false},
       "authority": "GEOX",
-      "mcp_servers": ["GEOX", "AF-FORGE"],
+      "mcp_servers": ["GEOX", "A-FORGE"],
       "consolidates": ["geox_set_scene", "geox_fetch_authoritative_state", "map_get_context_summary", "map_georeference"]
     },
     {
@@ -281,7 +281,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "GEOX",
-      "mcp_servers": ["GEOX", "AF-FORGE"],
+      "mcp_servers": ["GEOX", "A-FORGE"],
       "consolidates": ["geox_prospect_evaluate", "geox_score_risk"]
     },
     {
@@ -297,7 +297,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "GEOX",
-      "mcp_servers": ["GEOX", "AF-FORGE"],
+      "mcp_servers": ["GEOX", "A-FORGE"],
       "consolidates": ["geox_compute_stoiip"]
     },
     {
@@ -415,7 +415,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "GEOX",
-      "mcp_servers": ["GEOX", "AF-FORGE"],
+      "mcp_servers": ["GEOX", "A-FORGE"],
       "consolidates": ["geox_search_skills", "geox_get_skill", "geox_skill_metadata", "geox_skill_dependencies"]
     },
     {
@@ -495,7 +495,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "GEOX",
-      "mcp_servers": ["GEOX", "AF-FORGE"],
+      "mcp_servers": ["GEOX", "A-FORGE"],
       "consolidates": ["geox_validate_operation", "geox_constitutional_gate", "geox_audit_hold_breach"]
     },
     {
@@ -509,7 +509,7 @@
       "parameters": {},
       "annotations": {"readOnlyHint": false, "openWorldHint": false},
       "authority": "WEALTH",
-      "mcp_servers": ["WEALTH", "AF-FORGE"]
+      "mcp_servers": ["WEALTH", "A-FORGE"]
     },
     {
       "id": 32,
@@ -525,7 +525,7 @@
       },
       "annotations": {"readOnlyHint": false, "openWorldHint": false},
       "authority": "WEALTH",
-      "mcp_servers": ["WEALTH", "AF-FORGE"],
+      "mcp_servers": ["WEALTH", "A-FORGE"],
       "consolidates": ["wealth_snapshot_portfolio", "wealth_record_transaction"]
     },
     {
@@ -541,7 +541,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "WEALTH",
-      "mcp_servers": ["WEALTH", "AF-FORGE"],
+      "mcp_servers": ["WEALTH", "A-FORGE"],
       "consolidates": ["wealth_check_floors"]
     },
     {
@@ -575,7 +575,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "WEALTH",
-      "mcp_servers": ["WEALTH", "AF-FORGE"],
+      "mcp_servers": ["WEALTH", "A-FORGE"],
       "consolidates": ["wealth_npv_reward", "wealth_irr_yield", "wealth_dscr_leverage", "wealth_emv_risk", "wealth_brent_score"]
     },
     {
@@ -830,8 +830,8 @@
         "path": {"type": "string", "default": "."}
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": true},
-      "authority": "AF-FORGE",
-      "mcp_servers": ["AF-FORGE"]
+      "authority": "A-FORGE",
+      "mcp_servers": ["A-FORGE"]
     },
     {
       "id": 52,
@@ -846,8 +846,8 @@
         "issue": {"type": "string"}
       },
       "annotations": {"readOnlyHint": false, "openWorldHint": false},
-      "authority": "AF-FORGE",
-      "mcp_servers": ["AF-FORGE"]
+      "authority": "A-FORGE",
+      "mcp_servers": ["A-FORGE"]
     },
     {
       "id": 53,
@@ -862,8 +862,8 @@
         "path": {"type": "string", "default": "."}
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
-      "authority": "AF-FORGE",
-      "mcp_servers": ["AF-FORGE"]
+      "authority": "A-FORGE",
+      "mcp_servers": ["A-FORGE"]
     },
     {
       "id": 54,
@@ -877,8 +877,8 @@
         "goal": {"type": "string"}
       },
       "annotations": {"readOnlyHint": false, "openWorldHint": true},
-      "authority": "AF-FORGE",
-      "mcp_servers": ["AF-FORGE"]
+      "authority": "A-FORGE",
+      "mcp_servers": ["A-FORGE"]
     },
     {
       "id": 55,
@@ -894,8 +894,8 @@
         "limit": {"type": "integer", "default": 2000}
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
-      "authority": "AF-FORGE",
-      "mcp_servers": ["AF-FORGE"]
+      "authority": "A-FORGE",
+      "mcp_servers": ["A-FORGE"]
     },
     {
       "id": 56,
@@ -910,8 +910,8 @@
         "content": {"type": "string"}
       },
       "annotations": {"readOnlyHint": false, "destructiveHint": false, "openWorldHint": false},
-      "authority": "AF-FORGE",
-      "mcp_servers": ["AF-FORGE"]
+      "authority": "A-FORGE",
+      "mcp_servers": ["A-FORGE"]
     },
     {
       "id": 57,
@@ -926,8 +926,8 @@
         "pattern": {"type": "string", "default": "*"}
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
-      "authority": "AF-FORGE",
-      "mcp_servers": ["AF-FORGE"]
+      "authority": "A-FORGE",
+      "mcp_servers": ["A-FORGE"]
     },
     {
       "id": 58,
@@ -943,8 +943,8 @@
         "include": {"type": "string"}
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
-      "authority": "AF-FORGE",
-      "mcp_servers": ["AF-FORGE"]
+      "authority": "A-FORGE",
+      "mcp_servers": ["A-FORGE"]
     },
     {
       "id": 59,
@@ -958,8 +958,8 @@
         "patches": {"type": "array"}
       },
       "annotations": {"readOnlyHint": false, "destructiveHint": false, "openWorldHint": false},
-      "authority": "AF-FORGE",
-      "mcp_servers": ["AF-FORGE"]
+      "authority": "A-FORGE",
+      "mcp_servers": ["A-FORGE"]
     },
     {
       "id": 60,
@@ -972,7 +972,7 @@
       "parameters": {},
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"]
+      "mcp_servers": ["arifOS", "A-FORGE"]
     },
     {
       "id": 61,
@@ -985,7 +985,7 @@
       "parameters": {},
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"]
+      "mcp_servers": ["arifOS", "A-FORGE"]
     },
     {
       "id": 62,
@@ -1059,7 +1059,7 @@
       },
       "annotations": {"readOnlyHint": true, "openWorldHint": false},
       "authority": "arifOS",
-      "mcp_servers": ["arifOS", "AF-FORGE"],
+      "mcp_servers": ["arifOS", "A-FORGE"],
       "consolidates": ["forge_remember", "arifos_memory"]
     }
   ],
@@ -1148,7 +1148,7 @@
       "tools": [46, 47, 48, 49, 50],
       "tool_count": 5
     },
-    "AF-FORGE": {
+    "A-FORGE": {
       "framework": "@modelcontextprotocol/sdk",
       "transport": "stdio, http",
       "port": 7071,
@@ -1158,3 +1158,5 @@
     }
   }
 }
+
+

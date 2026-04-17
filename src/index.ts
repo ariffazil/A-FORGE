@@ -1,5 +1,5 @@
 /**
- * AF-FORGE Public API Exports
+ * A-FORGE Public API Exports
  * 
  * Constitutional Agent Runtime - Planner/Executor/Verifier Triad
  * arifOS 000-999 Pipeline: INIT → SENSE → MIND → HEART → ASI → JUDGE → FORGE → VAULT
@@ -111,3 +111,5 @@ export type { FeatureFlags } from "./flags/featureFlags.js";
 export { readFeatureFlags } from "./flags/featureFlags.js";
 export type { ModeSettings } from "./flags/modes.js";
 export { buildModeSettings } from "./flags/modes.js";
+
+

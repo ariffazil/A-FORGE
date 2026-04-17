@@ -17,22 +17,22 @@
 
 	# AF FORGE bridge server — operator, sense, metrics, human escalation
 	handle /operator/* {
-		reverse_proxy af-forge-bridge:7071
+		reverse_proxy AF-FORGE-bridge:7071
 	}
 	handle /metrics {
-		reverse_proxy af-forge-bridge:7071
+		reverse_proxy AF-FORGE-bridge:7071
 	}
 	handle /sense {
-		reverse_proxy af-forge-bridge:7071
+		reverse_proxy AF-FORGE-bridge:7071
 	}
 	handle /human-expert/* {
-		reverse_proxy af-forge-bridge:7071
+		reverse_proxy AF-FORGE-bridge:7071
 	}
 	handle /health {
-		reverse_proxy af-forge-bridge:7071
+		reverse_proxy AF-FORGE-bridge:7071
 	}
 	handle /ready {
-		reverse_proxy af-forge-bridge:7071
+		reverse_proxy AF-FORGE-bridge:7071
 	}
 
 	# Default respond
@@ -66,3 +66,4 @@ mcp.arif-fazil.com {
 		protocols tls1.2 tls1.3
 	}
 }
+

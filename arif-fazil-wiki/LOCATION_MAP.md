@@ -46,7 +46,7 @@ This is the root of the wiki. All paths below are relative to this location.
     ├── projects/
     │   ├── arifos.md          ← Constitutional AI runtime
     │   ├── geox.md            ← Earth knowledge system
-    │   └── af-forge.md        ← Agent workbench
+    │   └── A-FORGE.md        ← Agent workbench
     ├── relationships/         ← How Arif relates to others
     ├── communication/
     │   └── boundaries.md      ← Lines not to cross
@@ -99,7 +99,7 @@ This is the root of the wiki. All paths below are relative to this location.
 |--------|--------------|---------|
 | arifOS | `[[arifos::Page_Name]]` | `[[arifos::Floors]]` |
 | GEOX | `[[geox::Page_Name]]` | `[[geox::Earth_Canon_9]]` |
-| AF-FORGE | `[[afforge::Page_Name]]` | `[[afforge::SCHEMA]]` |
+| A-FORGE | `[[afforge::Page_Name]]` | `[[afforge::SCHEMA]]` |
 
 ### Physical Locations of Other Wikis
 
@@ -114,8 +114,8 @@ This is the root of the wiki. All paths below are relative to this location.
 │   │   └── ...
 │   └── arifOS/               ← arifOS wiki (if exists)
 │       └── ...
-└── af-forge/
-    └── wiki/                 ← AF-FORGE wiki
+└── A-FORGE/
+    └── wiki/                 ← A-FORGE wiki
         └── ...
 ```
 
@@ -157,7 +157,7 @@ This is the root of the wiki. All paths below are relative to this location.
 |------|---------|
 | `/root/arif-fazil-wiki/wiki/projects/arifos.md` | Constitutional AI runtime |
 | `/root/arif-fazil-wiki/wiki/projects/geox.md` | Earth knowledge system |
-| `/root/arif-fazil-wiki/wiki/projects/af-forge.md` | Agent workbench |
+| `/root/arif-fazil-wiki/wiki/projects/A-FORGE.md` | Agent workbench |
 
 ### Biography
 
@@ -285,3 +285,5 @@ You should see:
 ---
 
 **Seal:** VAULT999 | **ΔΩΨ | ARIF**
+
+

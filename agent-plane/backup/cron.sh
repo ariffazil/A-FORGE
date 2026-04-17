@@ -1,5 +1,5 @@
 #!/bin/sh
-# AF-FORGE Backup Cron — runs pg_dump daily
+# A-FORGE Backup Cron — runs pg_dump daily
 # DITEMPA BUKAN DIBERI — F1 Amanah: backup before any irreversible change
 #
 # Schedule: 02:00 MYT daily (18:00 UTC)
@@ -7,7 +7,7 @@
 # Off-box: rsync to $BACKUP_OFFBOX_TARGET if configured
 #
 # Usage:
-#   docker compose run af-forge-backup
+#   docker compose run A-FORGE-backup
 #   Or run directly: ./cron.sh
 
 set -e
@@ -25,7 +25,7 @@ RETENTION_DAYS="${BACKUP_RETENTION:-30}"
 TIMESTAMP=$(date +%Y-%m-%dT%H%M%S%z)
 BACKUP_FILE="${BACKUP_DIR}/arifos_vault-${TIMESTAMP}.sql.gz"
 
-echo "[$(date -Iseconds)] AF-FORGE backup started: ${BACKUP_FILE}"
+echo "[$(date -Iseconds)] A-FORGE backup started: ${BACKUP_FILE}"
 
 # pg_dump with compression
 pg_dump -h "${PGHOST}" -p "${PGPORT:-5432}" -U "${PGUSER}" -d "${PGDATABASE}" -Fc | gzip > "${BACKUP_FILE}"
@@ -53,4 +53,6 @@ if [ -n "${BACKUP_OFFBOX_TARGET}" ]; then
     echo "[$(date -Iseconds)] Off-box push failed (rsync not available or target unreachable)"
 fi
 
-echo "[$(date -Iseconds)] AF-FORGE backup finished"
+echo "[$(date -Iseconds)] A-FORGE backup finished"
+
+

@@ -1,5 +1,5 @@
 /**
- * AF-FORGE HTTP Bridge Server
+ * A-FORGE HTTP Bridge Server
  * 
  * Exposes Sense and Judge functionality to Python MCP
  * Port: 7071 (configurable via AF_FORGE_PORT)
@@ -179,7 +179,7 @@ app.post("/sense", async (req: Request, res: Response) => {
         human_review_required: judge.human_review_required,
       },
       context: {
-        source: "af-forge",
+        source: "A-FORGE",
         version: "0.1.0",
         epoch: "2026-04-08",
         received_context: context,
@@ -189,7 +189,7 @@ app.post("/sense", async (req: Request, res: Response) => {
     return payload;
     });
   } catch (error) {
-    console.error("[AF-FORGE] /sense error:", error);
+    console.error("[A-FORGE] /sense error:", error);
     res.status(500).json({
       ok: false,
       error: {
@@ -236,7 +236,7 @@ app.post("/route", async (req: Request, res: Response) => {
       });
     });
   } catch (error) {
-    console.error("[AF-FORGE] /route error:", error);
+    console.error("[A-FORGE] /route error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -268,7 +268,7 @@ app.post("/governance/evaluate", async (req: Request, res: Response) => {
 
     res.json({ ok: true, ...result });
   } catch (error) {
-    console.error("[AF-FORGE] /governance/evaluate error:", error);
+    console.error("[A-FORGE] /governance/evaluate error:", error);
     res.status(500).json({
       ok: false,
       error: {
@@ -305,7 +305,7 @@ app.get("/contract", (_req: Request, res: Response) => {
     ok: true,
     api_version: "0.1.0",
     min_compatible_client: "0.1.0",
-    service: "af-forge",
+    service: "A-FORGE",
     governance_surface: "HTTP bridge + MCP stdio",
     capabilities: {
       sense: true,
@@ -325,7 +325,7 @@ app.get("/contract", (_req: Request, res: Response) => {
       a2a: "POST /a2a",
       a2a_agent_card: "GET /.well-known/agent-card.json",
       python_mcp: "geox-mcp:8765",
-      bridge: "af-forge-bridge:7071",
+      bridge: "A-FORGE-bridge:7071",
     },
     timestamp: new Date().toISOString(),
   });
@@ -333,13 +333,13 @@ app.get("/contract", (_req: Request, res: Response) => {
 
 /**
  * GET /geox/contract
- * GEOX capabilities manifest — exposes AF-FORGE GEOX tools to external callers
+ * GEOX capabilities manifest — exposes A-FORGE GEOX tools to external callers
  * including the GEOX Python MCP and well-desk app.
  */
 app.get("/geox/contract", (_req: Request, res: Response) => {
   res.json({
     ok: true,
-    service: "af-forge-geox",
+    service: "A-FORGE-geox",
     version: "0.1.0",
     namespace: "GEOX",
     tools: [
@@ -434,8 +434,8 @@ app.get("/geox/contract", (_req: Request, res: Response) => {
       },
     ],
     python_mcp_route: "geox-mcp:8765",
-    bridge_route: "af-forge-bridge:7071/geox/*",
-    note: "geox_log_interpreter is executed by AF-FORGE TypeScript runtime; Python MCP geox_well_compute_petrophysics is a separate sibling service",
+    bridge_route: "A-FORGE-bridge:7071/geox/*",
+    note: "geox_log_interpreter is executed by A-FORGE TypeScript runtime; Python MCP geox_well_compute_petrophysics is a separate sibling service",
   });
 });
 
@@ -457,7 +457,7 @@ app.post("/geox/log_interpreter", async (req: Request, res: Response) => {
       res.json({ ok: true, result: JSON.parse(result.output as string) });
     });
   } catch (error) {
-    console.error("[AF-FORGE] /geox/log_interpreter error:", error);
+    console.error("[A-FORGE] /geox/log_interpreter error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -469,7 +469,7 @@ app.post("/geox/log_interpreter", async (req: Request, res: Response) => {
 app.get("/health", (_req: Request, res: Response) => {
   res.json({
     ok: true,
-    service: "af-forge-sense",
+    service: "A-FORGE-sense",
     status: "healthy",
     version: "0.1.0",
     contract_url: "/contract",
@@ -512,7 +512,7 @@ app.get("/human-expert/tickets", async (req: Request, res: Response) => {
     });
     res.json({ ok: true, count: tickets.length, tickets });
   } catch (error) {
-    console.error("[AF-FORGE] /human-expert/tickets error:", error);
+    console.error("[A-FORGE] /human-expert/tickets error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -532,7 +532,7 @@ app.get("/human-expert/tickets/:ticketId", async (req: Request, res: Response) =
     }
     res.json({ ok: true, ticket });
   } catch (error) {
-    console.error("[AF-FORGE] /human-expert/tickets/:ticketId error:", error);
+    console.error("[A-FORGE] /human-expert/tickets/:ticketId error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -613,7 +613,7 @@ app.post("/human-expert/decision", async (req: Request, res: Response) => {
 
     res.json({ ok: true, ticket: updated });
   } catch (error) {
-    console.error("[AF-FORGE] /human-expert/decision error:", error);
+    console.error("[A-FORGE] /human-expert/decision error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -645,7 +645,7 @@ app.post("/human-expert/tickets/:ticketId/replay", async (req: Request, res: Res
 
     res.json({ ok: true, ticket: updated, replayToken });
   } catch (error) {
-    console.error("[AF-FORGE] /human-expert/tickets/:ticketId/replay error:", error);
+    console.error("[A-FORGE] /human-expert/tickets/:ticketId/replay error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -668,7 +668,7 @@ app.get("/operator/approvals", async (req: Request, res: Response) => {
     });
     res.json({ ok: true, count: tickets.length, tickets });
   } catch (error) {
-    console.error("[AF-FORGE] /operator/approvals error:", error);
+    console.error("[A-FORGE] /operator/approvals error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -688,7 +688,7 @@ app.get("/operator/approvals/:ticketId", async (req: Request, res: Response) => 
     }
     res.json({ ok: true, ticket });
   } catch (error) {
-    console.error("[AF-FORGE] /operator/approvals/:ticketId error:", error);
+    console.error("[A-FORGE] /operator/approvals/:ticketId error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -714,7 +714,7 @@ app.get("/operator/vault", async (req: Request, res: Response) => {
     });
     res.json({ ok: true, count: records.length, records });
   } catch (error) {
-    console.error("[AF-FORGE] /operator/vault error:", error);
+    console.error("[A-FORGE] /operator/vault error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -733,7 +733,7 @@ app.get("/operator/vault/:sealId", async (req: Request, res: Response) => {
     }
     res.json({ ok: true, record });
   } catch (error) {
-    console.error("[AF-FORGE] /operator/vault/:sealId error:", error);
+    console.error("[A-FORGE] /operator/vault/:sealId error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -757,7 +757,7 @@ app.get("/vault/merkle/verify", async (req: Request, res: Response) => {
     const result = await merkle.verifyChain(date);
     res.json({ ok: true, ...result, date: date.toISOString().split("T")[0] });
   } catch (error) {
-    console.error("[AF-FORGE] /vault/merkle/verify error:", error);
+    console.error("[A-FORGE] /vault/merkle/verify error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
@@ -782,14 +782,14 @@ app.post("/vault/merkle/seal", async (req: Request, res: Response) => {
     console.error(`[MerkleV3] dailySeal ${date.toISOString().split("T")[0]}: valid=${result.valid} rows=${result.rowCount}`);
     res.json({ ok: true, ...result, date: date.toISOString().split("T")[0] });
   } catch (error) {
-    console.error("[AF-FORGE] /vault/merkle/seal error:", error);
+    console.error("[A-FORGE] /vault/merkle/seal error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
   }
 });
 
 // Error handling
 app.use((err: Error, _req: Request, res: Response, _next: express.NextFunction) => {
-  console.error("[AF-FORGE] Unhandled error:", err);
+  console.error("[A-FORGE] Unhandled error:", err);
   res.status(500).json({
     ok: false,
     error: {
@@ -810,7 +810,7 @@ export async function startServer(): Promise<void> {
   await loadConstitution();
   app.listen(port, "0.0.0.0", async () => {
     console.error(`═══════════════════════════════════════════════════════════`);
-    console.error(`  AF-FORGE Sense Bridge Server`);
+    console.error(`  A-FORGE Sense Bridge Server`);
     console.error(`  Listening on 0.0.0.0:${port}`);
     console.error(`  Endpoints:`);
     console.error(`    POST /sense  - Sense + Judge evaluation`);
@@ -827,3 +827,5 @@ export async function startServer(): Promise<void> {
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   void startServer();
 }
+
+
