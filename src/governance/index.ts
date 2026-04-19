@@ -51,6 +51,15 @@ export {
   type GovernanceVerdict,
 } from "./GovernanceClient.js";
 
+// A-FORGE ↔ arifOS Risk Tier Bridge (T0-T3 classification)
+export {
+  GovernanceBridge,
+  SABARHaltError,
+  type RiskTier,
+  type RiskClassificationResult,
+  type GovernanceBridgeOptions,
+} from "./GovernanceBridge.js";
+
 /**
  * Unified governance check — runs all applicable floors.
  * Returns first non-PASS verdict or PASS if all clear.

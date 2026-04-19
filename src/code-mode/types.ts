@@ -42,6 +42,8 @@ export interface ScriptResult {
   tokensConsumed: number;
   executionTimeMs: number;
   floorsTriggered: string[];
+  /** T0-T3 risk tier from GovernanceBridge (if bridge was active) */
+  riskTier?: string;
 }
 
 export interface SandboxOptions {

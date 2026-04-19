@@ -11,6 +11,11 @@
 
 import { SecurityScanner } from "./sandbox/SecurityScanner.js";
 import { NodeSandbox } from "./sandbox/NodeSandbox.js";
+import {
+  GovernanceBridge,
+  SABARHaltError,
+  type RiskClassificationResult,
+} from "../governance/GovernanceBridge.js";
 import type {
   SecurityAnalysis,
   ScriptResult,
@@ -30,6 +35,10 @@ export interface CodeModeExecutorOptions {
   defaultMemoryLimitMb?: number;
   /** Network hosts the sandbox may reach (empty = none) */
   allowedNetworkHosts?: string[];
+  /** arifOS governance bridge base URL (e.g., http://localhost:8080) */
+  governanceBridgeUrl?: string;
+  /** If true, T3 actions require an explicit hold flag to proceed */
+  holdEnabled?: boolean;
 }
 
 export interface CodeModeExecutionRequest {
@@ -67,6 +76,8 @@ export class CodeModeExecutor {
   private readonly sandbox: NodeSandbox;
   private readonly gateways: Map<string, McpGatewayBinding>;
   private readonly allowedNetworkHosts: string[];
+  private readonly governanceBridge: GovernanceBridge | null;
+  private readonly holdEnabled: boolean;
 
   constructor(options: CodeModeExecutorOptions) {
     this.sandbox = new NodeSandbox({
@@ -75,6 +86,10 @@ export class CodeModeExecutor {
     });
     this.gateways = new Map(options.gateways.map((g) => [g.name, g]));
     this.allowedNetworkHosts = options.allowedNetworkHosts ?? [];
+    this.holdEnabled = options.holdEnabled ?? false;
+    this.governanceBridge = options.governanceBridgeUrl
+      ? new GovernanceBridge({ baseUrl: options.governanceBridgeUrl, fallbackOnFailure: true })
+      : null;
   }
 
   /**
@@ -207,6 +222,23 @@ export class CodeModeExecutor {
       // In strict mode, this could be upgraded to HOLD
     }
 
+    // ── Stage 1b: T0-T3 Risk Tier Classification (A-FORGE Bridge) ───────
+    let riskClassification: RiskClassificationResult | undefined;
+    if (this.governanceBridge) {
+      try {
+        riskClassification = await this.governanceBridge.classifyScript(
+          script,
+          this.holdEnabled,
+        );
+      } catch (err) {
+        if (err instanceof SABARHaltError) {
+          throw err; // Propagate SABAR_HALT immediately
+        }
+        // Bridge failure: log and continue with F12 analysis only
+        process.stderr.write(`[WARN] GovernanceBridge unreachable: ${err instanceof Error ? err.message : String(err)}\n`);
+      }
+    }
+
     // ── Stage 2: Thermodynamic Budget Gate (OPS/777) ────────────────────
     // TODO: integrate with ThermodynamicCostEstimator once blueprint is forged
     const estimatedOutputTokens = 8_000; // Hard cap enforced at Stage 5
@@ -238,6 +270,7 @@ export class CodeModeExecutor {
     return {
       ...sanitized,
       floorsTriggered: [...new Set(floorsTriggered)],
+      riskTier: riskClassification?.tier,
     };
   }
 
