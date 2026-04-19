@@ -97,6 +97,12 @@ agent-workbench/
     AgentEngine.test.ts
 ```
 
+## Sovereign Intelligence Architecture
+
+A-FORGE is the runtime execution layer of the sovereign intelligence stack. For the complete architectural treatise on post-LLM sovereign systems, thermodynamic governance, and the 000–999 metabolic pipeline, see:
+
+- **`docs/architecture/SOVEREIGN_INTELLIGENCE.md`** — The canonical bridge between arifOS constitutional law and A-FORGE execution reality
+
 ## 9-Agent Federation (SOT v2026-04-16)
 
 A-FORGE functions as the execution adapter for the arifOS federation:
