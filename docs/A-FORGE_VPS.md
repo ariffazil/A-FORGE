@@ -284,3 +284,42 @@ Avoid adding these until Tier 1 is stable and monitored: [ppl-ai-file-upload.s3.
 ***
 
 
+
+---
+
+## Ops Patterns — Sealed from Live Incidents
+
+### Pattern: Postgres Backup Container Healthcheck (2026-04-19)
+
+**Incident:** `af-forge-backup` reported unhealthy for 5+ hours despite Postgres being fully operational.
+
+**Root cause:** `pg_isready` without `-h` defaults to the local Unix socket (`/var/run/postgresql`). On a cron-only backup container, no local Postgres process exists — no socket — so the probe always returns exit code 2 ("no response"), even when the target database is healthy over TCP.
+
+**Diagnosis command that proved it:**
+```bash
+docker exec af-forge-backup pg_isready -h postgres -U arifos_admin -d arifos_vault
+# postgres:5432 - accepting connections ← healthy over TCP
+```
+
+**Canonical healthcheck template for any future Postgres backup container:**
+```yaml
+healthcheck:
+  test: ["CMD", "pg_isready",
+         "-h", "postgres",
+         "-U", "arifos_admin",
+         "-d", "arifos_vault"]
+  interval: 10s
+  timeout: 10s
+  retries: 3
+  start_period: 10s
+```
+
+**Rules:**
+- Always pass `-h <postgres_service>` — force TCP to the Docker network service, never rely on local Unix socket
+- Match `-U` and `-d` to the vault DB credentials defined in stack `.env`
+- Keep healthcheck as a liveness probe only — backup jobs themselves run via `cron` inside the container
+- Backup containers are cron-only images; they do not run Postgres locally
+
+**F1 note:** The unhealthy status was a false alarm (probe bug, not data loss). However, false alarms erode trust in health signals. A correct probe prevents alert fatigue and keeps 888_HOLD telemetry meaningful.
+
+---
