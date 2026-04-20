@@ -6,8 +6,8 @@ x-default-logging: &default-logging
 
 # ── A-FORGE Root Stack ───────────────────────────────────────────────────────
 # Services: af-forge-bridge (agent executor), arifos-mcp (kernel), ollama (LLM)
-# Network:  arifos_core_network (external, canonical — shared with agent-plane)
-# Data:     postgres / redis / qdrant from arifos_core_network (no duplicates)
+# Network:  arifos (external, canonical — shared with agent-plane)
+# Data:     postgres / redis / qdrant from arifos (no duplicates)
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
@@ -42,16 +42,16 @@ services:
       - ARIFOS_APP_VERSION=v2026.2.17
     volumes:
       # Live code mount — local edits reflected immediately without docker cp
-      - /root/arifOS/arifosmcp:/usr/src/app/arifosmcp:ro
+      - /root/arifOS/arifos:/usr/src/app/arifos:ro
       - /root/arifOS/core:/usr/src/app/core:ro
       - /root/arifOS/server.py:/usr/src/app/server.py:ro
       - /root/arifOS/skills:/usr/src/app/skills:ro
       - /root/arifOS/scripts:/usr/src/app/scripts:ro
       - /root/WELL:/app/well:ro
     entrypoint: ["/usr/src/app/scripts/entrypoint-arifos.sh"]
-    command: ["uvicorn", "arifosmcp.runtime.server:app", "--host", "0.0.0.0", "--port", "8080"]
+    command: ["uvicorn", "arifos.runtime.server:app", "--host", "0.0.0.0", "--port", "8080"]
     networks:
-      - arifos_core_network
+      - arifos
     logging: *default-logging
     depends_on:
       - ollama
@@ -99,7 +99,7 @@ services:
     volumes:
       - A-FORGE-data:/data
     networks:
-      - arifos_core_network
+      - arifos
     logging: *default-logging
     depends_on:
       arifos-mcp:
@@ -125,7 +125,7 @@ services:
         limits:
           memory: "4G"
     networks:
-      - arifos_core_network
+      - arifos
     logging: *default-logging
     healthcheck:
       test: ["CMD-SHELL", "ollama list > /dev/null 2>&1"]
@@ -139,8 +139,8 @@ volumes:
   ollama-data:
 
 networks:
-  arifos_core_network:
+  arifos:
     external: true
-    name: arifos_core_network
+    name: arifos
 
 
