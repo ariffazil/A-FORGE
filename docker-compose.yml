@@ -14,8 +14,8 @@ services:
 
   # ── Constitutional Kernel (MCP server) ──────────────────────────
   arifos-mcp:
-    image: ariffazil/arifosmcp:latest
-    container_name: A-FORGE-arifos-mcp
+    image: ariffazil/arifos:latest
+    container_name: A-FORGE-arifos
     restart: unless-stopped
     expose:
       - "8080"
@@ -84,7 +84,7 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
       - HUMAN_ESCALATION_WEBHOOK_URL=${HUMAN_ESCALATION_WEBHOOK_URL:-}
-      - ARIFOS_GOVERNANCE_URL=${ARIFOS_GOVERNANCE_URL:-http://A-FORGE-arifos-mcp:8080}
+      - ARIFOS_GOVERNANCE_URL=${ARIFOS_GOVERNANCE_URL:-http://A-FORGE-arifos:8080}
       - AGENT_WORKBENCH_TRUST_LOCAL_VPS=${AGENT_WORKBENCH_TRUST_LOCAL_VPS:-0}
       - ENABLE_DANGEROUS_TOOLS=${ENABLE_DANGEROUS_TOOLS:-false}
       - ENABLE_BACKGROUND_JOBS=${ENABLE_BACKGROUND_JOBS:-false}
