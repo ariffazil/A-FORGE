@@ -26,7 +26,7 @@ spec:
         - containerPort: 8100
         env:
         - name: GEOX_ARIFOS_KERNEL_URL
-          value: "http://arifosmcp:8000/mcp"
+          value: "http://arifos:8000/mcp"
         - name: GEOX_LOG_LEVEL
           value: "INFO"
         resources:
