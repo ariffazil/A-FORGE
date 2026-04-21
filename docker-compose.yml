@@ -1,146 +1,21 @@
-x-default-logging: &default-logging
-  driver: json-file
-  options:
-    max-size: "5m"
-    max-file: "2"
-
-# ── A-FORGE Root Stack ───────────────────────────────────────────────────────
-# Services: af-forge-bridge (agent executor), arifos-mcp (kernel), ollama (LLM)
-# Network:  arifos (external, canonical — shared with agent-plane)
-# Data:     postgres / redis / qdrant from arifos (no duplicates)
-# ─────────────────────────────────────────────────────────────────────────────
-
+version: '3.8'
 services:
-
-  # ── Constitutional Kernel (MCP server) ──────────────────────────
-  arifos-mcp:
-    image: ariffazil/arifos:latest
-    container_name: A-FORGE-arifos
-    restart: unless-stopped
-    expose:
-      - "8080"
-    deploy:
-      resources:
-        limits:
-          memory: "512M"
-    environment:
-      - PORT=8080
-      - OPERATOR_API_TOKEN=${OPERATOR_API_TOKEN:-AF_FORGE_999_SEAL}
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-arifos_admin}:${POSTGRES_PASSWORD_ENCODED:-ArifPostgresVault2026%21}@postgres:5432/${POSTGRES_DB:-arifos_vault}
-      - SUPABASE_URL=https://utbmmjmbolmuahwixjqc.supabase.co
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0Ym1tam1ib2xtdWFod2l4anFjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjQxNDMzMSwiZXhwIjoyMDkxOTkwMzMxfQ.4M3cakfaNoQK_4RMIlGTAfFCRsL4hD2U6gzD1KF-x4o}
-      - REDIS_URL=redis://redis:6379
-      - QDRANT_URL=http://qdrant:6333
-      - OLLAMA_URL=http://ollama:11434
-      - EMBEDDING_MODEL=bge-m3
-      - PYTHONPATH=/usr/src/app
-      - WELL_STATE_PATH=/app/well/state.json
-      - ARIFOS_SESSION_STORE_PATH=/tmp/arifos_runtime_sessions.json
-      - ORGAN_ID=arifos
-      # Git metadata — injected at deploy time from host git (main branch)
-      - GIT_SHA=2a57274
-      - ARIFOS_APP_VERSION=v2026.2.17
-    volumes:
-      # Live code mount — local edits reflected immediately without docker cp
-      - /root/arifOS/arifos:/usr/src/app/arifos:ro
-      - /root/arifOS/core:/usr/src/app/core:ro
-      - /root/arifOS/server.py:/usr/src/app/server.py:ro
-      - /root/arifOS/skills:/usr/src/app/skills:ro
-      - /root/arifOS/scripts:/usr/src/app/scripts:ro
-      - /root/WELL:/app/well:ro
-    entrypoint: ["/usr/src/app/scripts/entrypoint-arifos.sh"]
-    command: ["uvicorn", "arifos.runtime.server:app", "--host", "0.0.0.0", "--port", "8080"]
-    networks:
-      - arifos
-    logging: *default-logging
-    depends_on:
-      - ollama
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-
-  # ── Agent Executor (A-FORGE bridge) ────────────────────────────
-  af-forge-bridge:
+  af-bridge:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: af-forge-bridge
-    restart: unless-stopped
-    expose:
-      - "7071"
-    deploy:
-      resources:
-        limits:
-          memory: "1G"
+    container_name: af-bridge-prod
+    ports:
+      - "7071:7071"
     environment:
       - NODE_ENV=production
-      - AF_FORGE_PORT=7071
-      - AGENT_WORKBENCH_PROVIDER=${AGENT_WORKBENCH_PROVIDER:-mock}
-      - AGENT_WORKBENCH_MODEL=${AGENT_WORKBENCH_MODEL:-gpt-5}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
-      - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://ollama:11434}
-      - HUMAN_ESCALATION_WEBHOOK_URL=${HUMAN_ESCALATION_WEBHOOK_URL:-}
-      - ARIFOS_GOVERNANCE_URL=${ARIFOS_GOVERNANCE_URL:-http://A-FORGE-arifos:8080}
-      - AGENT_WORKBENCH_TRUST_LOCAL_VPS=${AGENT_WORKBENCH_TRUST_LOCAL_VPS:-0}
-      - ENABLE_DANGEROUS_TOOLS=${ENABLE_DANGEROUS_TOOLS:-false}
-      - ENABLE_BACKGROUND_JOBS=${ENABLE_BACKGROUND_JOBS:-false}
-      - ENABLE_EXPERIMENTAL_TOOLS=${ENABLE_EXPERIMENTAL_TOOLS:-false}
-      - AGENT_WORKBENCH_MEMORY_PATH=/data/memory.json
-      - AGENT_WORKBENCH_SCOREBOARD_PATH=/data/scoreboard.json
-      - AGENT_WORKBENCH_RUN_METRICS_DIR=/data/metrics
-      - AGENT_WORKBENCH_DEFAULT_MODE=${AGENT_WORKBENCH_DEFAULT_MODE:-external}
-      - OPERATOR_API_TOKEN=${OPERATOR_API_TOKEN:-AF_FORGE_999_SEAL}
-      - POSTGRES_URL=postgresql://${POSTGRES_USER:-arifos_admin}:${POSTGRES_PASSWORD_ENCODED:-ArifPostgresVault2026%21}@postgres:5432/${POSTGRES_DB:-arifos_vault}
-      - REDIS_URL=redis://redis:6379
-    volumes:
-      - A-FORGE-data:/data
-    networks:
-      - arifos
-    logging: *default-logging
-    depends_on:
-      arifos-mcp:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7071/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
-  # ── Local LLM Inference ─────────────────────────────────────────
-  ollama:
-    image: ollama/ollama:latest
-    container_name: A-FORGE-ollama
+      - OPERATOR_API_TOKEN=arif2026
+    env_file:
+      - .env
     restart: unless-stopped
-    expose:
-      - "11434"
-    volumes:
-      - ollama-data:/root/.ollama
-    deploy:
-      resources:
-        limits:
-          memory: "4G"
-    networks:
-      - arifos
-    logging: *default-logging
-    healthcheck:
-      test: ["CMD-SHELL", "ollama list > /dev/null 2>&1"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
+    network_mode: host
 
-volumes:
-  A-FORGE-data:
-  ollama-data:
-
-networks:
-  arifos:
-    external: true
-    name: arifos
-
-
+# networks:
+#   arifos:
+#     name: arifos_arifos
+#     external: true
