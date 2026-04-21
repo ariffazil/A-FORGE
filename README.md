@@ -1,13 +1,13 @@
 # A-FORGE — The Metabolic Shell
 
-**Organism Role:** Operator Console & Orchestration Shell (4+1 Architecture)  
-**Constitutional Authority:** [`ariffazil/arifOS`](https://github.com/ariffazil/arifOS)  
-**Epoch:** 2026-04-17  
+**Organism Role:** Execution Engine & Bridge (connects AAA to arifOS)
+**Constitutional Authority:** [`ariffazil/arifos`](https://github.com/ariffazil/arifos)
+**Epoch:** 2026-04-21
 
-> **Intelligence is forged, not given.**  
+> **Intelligence is forged, not given.**
 > *DITEMPA BUKAN DIBERI — 999 SEAL ALIVE*
 
-A-FORGE is the policy-governed, event-sourced agent runtime that acts as the primary interface for the **arifOS v2.0** organism. It owns no truth — it merely displays the synthesis of the Truth Lanes.
+A-FORGE is the policy-governed, event-sourced agent runtime that acts as the bridge between the AAA operator and the arifOS constitutional kernel.
 
 It enforces **13 Constitutional Floors** through a multi-layered governance system, ensuring every action by AI agents is aligned, reversible where necessary, and verifiably logged.
 
