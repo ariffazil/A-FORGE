@@ -94,3 +94,7 @@ GEOX/
 # VAULT999 — runtime receipt cache. Supabase is primary ledger.
 # Resolved: 2026-04-19 — F1 Amanah compliance
 VAULT999/
+.coverage
+htmlcov/
+coverage.xml
+*.cover
