@@ -137,7 +137,7 @@ score = dual_frequency_stability_test(profile, f1=25, f2=35)
 ## Demo Usage
 
 ```bash
-cd /root/GEOX
+cd /opt/arifos/src/geox
 python -m arifos.GEOX.oned.demo
 ```
 
@@ -226,4 +226,3 @@ Full 000-999 pipeline schema: `schema_000_999.json`
 ---
 
 *DITEMPA BUKAN DIBERI — The 9D manifold is the unit cell.*
-

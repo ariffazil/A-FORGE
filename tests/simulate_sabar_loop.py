@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 # 1. Mock the missing 'blake3' to allow imports
 sys.modules['blake3'] = MagicMock()
 
-# 2. Add /root/arifOS to sys.path
-sys.path.append("/root/arifOS")
+# 2. Add canonical arifOS repo to sys.path
+sys.path.append("/opt/arifos/src/arifOS")
 
 # 3. Mock the organs entirely for the loop logic test
 mock_organs = MagicMock()

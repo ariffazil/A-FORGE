@@ -133,7 +133,7 @@ async function main() {
 
   // 7. Tool lattice — 33 organ + 17 substrate = 52
   try {
-    const regPath = resolve(process.env.REGISTRY_PATH ?? "/root/WEALTH/registry.json");
+    const regPath = resolve(process.env.REGISTRY_PATH ?? "/opt/arifos/src/wealth/registry.json");
     const reg = JSON.parse(readFileSync(regPath, "utf8"));
     const toolCounts = reg.tool_counts ?? {};
 
@@ -172,5 +172,4 @@ main().catch((e) => {
   console.error(`Fatal: ${e}`);
   process.exit(1);
 });
-
 

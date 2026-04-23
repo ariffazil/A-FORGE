@@ -42,12 +42,12 @@ services:
       - ARIFOS_APP_VERSION=v2026.2.17
     volumes:
       # Live code mount — local edits reflected immediately without docker cp
-      - /root/arifOS/arifosmcp:/usr/src/app/arifosmcp:ro
-      - /root/arifOS/core:/usr/src/app/core:ro
-      - /root/arifOS/server.py:/usr/src/app/server.py:ro
-      - /root/arifOS/skills:/usr/src/app/skills:ro
-      - /root/arifOS/scripts:/usr/src/app/scripts:ro
-      - /root/WELL:/app/well:ro
+      - ${ARIFOS_REPO:-/opt/arifos/src/arifOS}/arifosmcp:/usr/src/app/arifosmcp:ro
+      - ${ARIFOS_REPO:-/opt/arifos/src/arifOS}/core:/usr/src/app/core:ro
+      - ${ARIFOS_REPO:-/opt/arifos/src/arifOS}/server.py:/usr/src/app/server.py:ro
+      - ${ARIFOS_REPO:-/opt/arifos/src/arifOS}/skills:/usr/src/app/skills:ro
+      - ${ARIFOS_REPO:-/opt/arifos/src/arifOS}/scripts:/usr/src/app/scripts:ro
+      - ${WELL_REPO:-/opt/arifos/src/well}:/app/well:ro
     entrypoint: ["/usr/src/app/scripts/entrypoint-arifos.sh"]
     command: ["uvicorn", "arifosmcp.runtime.server:app", "--host", "0.0.0.0", "--port", "8080"]
     networks:
@@ -142,5 +142,4 @@ networks:
   arifos_core_network:
     external: true
     name: arifos_core_network
-
 

@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 SOT_PATH = "/opt/arifos/sites/arif-fazil.com/GEOX/status.json"
 SOT_DIR = os.path.dirname(SOT_PATH)
+ARIFOS_REPO = os.environ.get("ARIFOS_REPO", "/opt/arifos/src/arifOS")
 
 def get_container_status(name):
     try:
@@ -37,7 +38,7 @@ status_data = {
         }
     },
     "integrity": {
-        "skills_linked": os.path.islink("/root/arifOS/GEOX/skills"),
+        "skills_linked": os.path.islink(f"{ARIFOS_REPO}/GEOX/skills"),
         "submodule_sync": True
     }
 }
@@ -47,4 +48,3 @@ with open(SOT_PATH, "w") as f:
     json.dump(status_data, f, indent=2)
 
 print(f"Live SOT updated at {status_data['timestamp']}")
-

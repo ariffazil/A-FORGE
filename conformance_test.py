@@ -18,7 +18,11 @@ from pathlib import Path
 from typing import Any
 
 # ── Vault DB connection ────────────────────────────────────────────────────────
-sys.path.insert(0, "/root/arifOS")
+ARIFOS_REPO = "/opt/arifos/src/arifOS"
+WEALTH_REPO = "/opt/arifos/src/wealth"
+GEOX_REPO = "/opt/arifos/src/geox"
+A_FORGE_REPO = "/opt/arifos/src/A-FORGE"
+sys.path.insert(0, ARIFOS_REPO)
 
 RESULTS: list[dict] = []
 
@@ -154,7 +158,7 @@ async def test_well() -> None:
 
     # harmless action — readiness check (reads state only, no vault write)
     try:
-        state_path = Path("/root/WELL/state.json")
+        state_path = Path(WELL_REPO) / "state.json"
         if state_path.exists():
             state = json.loads(state_path.read_text())
             score = state.get("well_score", 0)
@@ -215,7 +219,7 @@ async def test_wealth() -> None:
     # harmless action — NPV compute (no vault write)
     try:
         import sys as _sys
-        _sys.path.insert(0, "/root/WEALTH")
+        _sys.path.insert(0, WEALTH_REPO)
         # Just verify module loads — don't call full server
         log("WEALTH", "R2-WORK", True, "wealth compute layer reachable")
     except Exception as e:
@@ -274,7 +278,7 @@ async def test_GEOX_delegate() -> None:
 
     # harmless action — risk compute (no vault write)
     try:
-        sys.path.insert(0, "/root/GEOX")
+        sys.path.insert(0, GEOX_REPO)
         log("GEOX", "R2-WORK", True, "GEOX compute layer reachable (delegate)")
     except Exception as e:
         log("GEOX", "R2-WORK", False, str(e))
@@ -306,7 +310,8 @@ async def test_GEOX_delegate() -> None:
 def test_afforge_boundary() -> None:
     print("\n━━━ Lane: A-FORGE (boundary check) ━━━")
     # A-FORGE is TypeScript — check that no vault_postgres import exists in A-FORGE src
-    afforge_dir = Path("/root/A-FORGE/src") if Path("/root/A-FORGE/src").exists() else None
+    afforge_dir = Path(A_FORGE_REPO) / "src"
+    afforge_dir = afforge_dir if afforge_dir.exists() else None
     if afforge_dir is None:
         log("A-FORGE", "R5-NO-VAULT-WRITE", True, "A-FORGE/src not found in Python path — correct, it is TypeScript only")
         return
@@ -379,6 +384,4 @@ async def main() -> None:
 
 if __name__ == "__main__":
     asyncio.run(main())
-
-
 

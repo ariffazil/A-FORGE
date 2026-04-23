@@ -5,7 +5,7 @@ DITEMPA BUKAN DIBERI
 
 """
 GEOX 1D Demo — Joint inversion toy example.
-Run: cd /root/GEOX && python -m arifos.GEOX.oned.demo
+Run: cd /opt/arifos/src/geox && python -m arifos.GEOX.oned.demo
 DITEMPA BUKAN DIBERI
 """
 
@@ -174,4 +174,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

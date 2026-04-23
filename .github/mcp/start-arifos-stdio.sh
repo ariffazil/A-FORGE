@@ -7,7 +7,8 @@ set -euo pipefail
 
 export PATH="/usr/local/bin:/root/.local/bin:${PATH}"
 export ARIFOS_MINIMAL_STDIO=1
-export PYTHONPATH="/root/arifOS${PYTHONPATH:+:${PYTHONPATH}}"
+ARIFOS_REPO="${ARIFOS_REPO:-/opt/arifos/src/arifOS}"
+export PYTHONPATH="${ARIFOS_REPO}${PYTHONPATH:+:${PYTHONPATH}}"
 
-cd /root/arifOS
+cd "${ARIFOS_REPO}"
 exec python3 -m arifosmcp.runtime.__main__ stdio
