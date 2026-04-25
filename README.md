@@ -4,6 +4,20 @@
 **Constitutional Authority:** [`ariffazil/arifos`](https://github.com/ariffazil/arifos)
 **Epoch:** 2026-04-21
 
+<!-- SOT:version_info -->
+| Field | Value |
+|-------|-------|
+| VERSION | 0.1.0 |
+| PACKAGE | A-FORGE |
+| CONSTITUTIONAL_KERNEL | arifOS F1–F13 |
+| TRANSPORT | MCP stdio + Express HTTP (port 7071) |
+| LANGUAGE | TypeScript/Node.js |
+| TOOLS_COUNT | 7 (DelegatedTruth, Editor, File, Search, Shell, Wealth, ToolRegistry) |
+| SRC_SUBDIRS | 31 subdirectories |
+
+_Auto-generated from package.json + src/tools/_
+<!-- /SOT:version_info -->
+
 > **Intelligence is forged, not given.**
 > *DITEMPA BUKAN DIBERI — 999 SEAL ALIVE*
 
@@ -64,6 +78,34 @@ It may not adjudicate.
 The constitutional lanes decide.
 
 ---
+
+## File Structure
+
+<!-- SOT:file_structure -->
+```
+A-FORGE/
+├── src/
+│   ├── tools/           ← TypeScript tool implementations (7 files)
+│   │   ├── DelegatedTruthTool.ts
+│   │   ├── EditorTools.ts
+│   │   ├── FileTools.ts
+│   │   ├── SearchTools.ts
+│   │   ├── ShellTools.ts
+│   │   ├── WealthTools.ts
+│   │   └── ToolRegistry.ts
+│   ├── mcp/             ← MCP transport (stdio, server, telemetry)
+│   ├── agents/          ← Agent profiles (AAA, Coordinator, Worker)
+│   ├── governance/     ← Constitutional policy gates
+│   ├── vault/          ← VAULT999 integration
+│   ├── scoreboard/     ← Per-run metrics
+│   ├── mcp/            ← MCP server adapters
+│   └── [22 other subdirs]
+├── package.json         ← npm manifest (TypeScript ESM)
+├── server.ts            ← HTTP bridge (Express, port 7071)
+└── tsconfig.json
+```
+<!-- /SOT:file_structure -->
+
 
 ## The 4+1 Architecture
 
