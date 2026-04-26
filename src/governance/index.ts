@@ -38,6 +38,9 @@ export { checkWellReadiness, type WellReadinessResult, type WellVerdict } from "
 // F1: Amanah Lock Manager (SERI_KEMBANGAN_ACCORDS Phase 1)
 export { AmanahLockManager, type AmanahLockRecord, type AcquireResult, type ReleaseResult } from "./AmanahLockManager.js";
 
+// F4: Pre-flight Entropy Guard (SERI_KEMBANGAN_ACCORDS Phase 3)
+export { runPreflight, type PreflightResult, type PreflightStatus } from "./preflight.js";
+
 // Seal Service
 export { SealService, type SealContext, type SealVerdict, type SealStatus, type EpistemicVerdict, type EpistemicThresholds } from "./SealService.js";
 

@@ -4,6 +4,7 @@ import { BaseTool } from "./base.js";
 import type { ToolExecutionContext, ToolResult } from "../types/tool.js";
 import { resolveSandboxedPath } from "../utils/paths.js";
 import { AmanahLockManager } from "../governance/index.js";
+import { runPreflight } from "../governance/preflight.js";
 
 function resolveTargetPath(context: ToolExecutionContext, filePath: string): string {
   return resolveSandboxedPath(context.workingDirectory, filePath);
@@ -78,6 +79,16 @@ export class WriteFileTool extends BaseTool {
         ok: false,
         output: `F1 AMANAH 888-HOLD: Resource locked by ${activeLock.actor_id} (${activeLock.lock_id}).`,
         metadata: { path: targetPath, verdict: "888-HOLD", holder: activeLock, floor: "F1" },
+      };
+    }
+
+    // F4 Pre-flight entropy check (Seri Kembangan Phase 3)
+    const preflight = await runPreflight(context.sessionId, targetPath);
+    if (!preflight.ok) {
+      return {
+        ok: false,
+        output: `888-HOLD: ${preflight.message}`,
+        metadata: { path: targetPath, verdict: "888-HOLD", floor: "F1+F4", preflight },
       };
     }
 

@@ -16,6 +16,7 @@ import type { ToolExecutionContext, ToolResult } from "../types/tool.js";
 import type { PatchResult } from "../types/policy.js";
 import { resolveSandboxedPath } from "../utils/paths.js";
 import { AmanahLockManager } from "../governance/index.js";
+import { runPreflight } from "../governance/preflight.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -88,6 +89,28 @@ export class ApplyPatchesTool extends BaseTool {
         ok: false,
         output: JSON.stringify(results, null, 2),
         metadata: { applied: false, count: results.length, verdict: "888-HOLD", floor: "F1" },
+      };
+    }
+
+    // F4 Pre-flight entropy check (Seri Kembangan Phase 3)
+    for (const patch of patches) {
+      const targetPath = resolveSandboxedPath(context.workingDirectory, patch.file_path);
+      const preflight = await runPreflight(context.sessionId, targetPath);
+      if (!preflight.ok) {
+        results.push({
+          file_path: patch.file_path,
+          applied: false,
+          stdout: "",
+          stderr: `888-HOLD: ${preflight.message}`,
+        });
+      }
+    }
+    const preflightFailures = results.filter((r) => !r.applied && r.stderr.includes("888-HOLD"));
+    if (preflightFailures.length > 0) {
+      return {
+        ok: false,
+        output: JSON.stringify(results, null, 2),
+        metadata: { applied: false, count: results.length, verdict: "888-HOLD", floor: "F1+F4", preflightFailures },
       };
     }
 
