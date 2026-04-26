@@ -13,7 +13,7 @@ import { z } from "zod";
 import { validateInputClarity } from "../governance/f3InputClarity.js";
 import { checkHarmDignity } from "../governance/f6HarmDignity.js";
 import { checkInjection } from "../governance/f9Injection.js";
-import { checkWellReadiness } from "../governance/index.js";
+import { checkWellReadiness, AmanahLockManager } from "../governance/index.js";
 import { readRuntimeConfig } from "../config/RuntimeConfig.js";
 import { createLlmProvider } from "../llm/providerFactory.js";
 import { getApprovalBoundary, routeApproval } from "../approval/index.js";
@@ -646,6 +646,62 @@ server.resource("forge://memory/working", "forge://memory/working", { mimeType: 
     }]
   };
 });
+
+// ── Tier 01 Amanah (SERI_KEMBANGAN_ACCORDS) ────────────────────────────────────
+
+const amanahManager = AmanahLockManager.getInstance();
+
+server.tool(
+  "request_amanah_lock",
+  "Request an Amanah (F1) lock on a resource before irreversible mutation.",
+  {
+    resource_id: z.string().describe("Canonical path or identifier of the target resource (e.g., file path, container name)"),
+    actor_id: z.string().describe("Agent or human identifier requesting the lock"),
+    justification: z.string().describe("Semantic intent for the lock — what mutation is planned"),
+    session_id: z.string().optional().describe("Session context for re-entrant locks"),
+    ttl_seconds: z.number().optional().default(300).describe("Lock TTL in seconds (default 5 min)"),
+  },
+  async ({ resource_id, actor_id, justification, session_id, ttl_seconds }) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("request_amanah_lock");
+    return runStage("000_INIT" as MetabolicStage, async () => {
+      try {
+        const result = await amanahManager.acquireLock(resource_id, actor_id, justification, session_id, ttl_seconds * 1000);
+        const text = JSON.stringify(result, null, 2);
+        await telemetrySuccess("request_amanah_lock", startedAt);
+        return { content: [{ type: "text" as const, text }] };
+      } catch (err) {
+        await telemetryFailure("request_amanah_lock", startedAt, err);
+        throw err;
+      }
+    });
+  }
+);
+
+server.tool(
+  "release_amanah_lock",
+  "Release an Amanah (F1) lock, requiring ownership proof.",
+  {
+    lock_id: z.string().describe("The lock_id returned by request_amanah_lock"),
+    actor_id: z.string().describe("Agent or human identifier that originally acquired the lock"),
+    release_reason: z.string().optional().describe("Why the lock is being released"),
+  },
+  async ({ lock_id, actor_id, release_reason }) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("release_amanah_lock");
+    return runStage("000_INIT" as MetabolicStage, async () => {
+      try {
+        const result = await amanahManager.releaseLock(lock_id, actor_id, release_reason);
+        const text = JSON.stringify(result, null, 2);
+        await telemetrySuccess("release_amanah_lock", startedAt);
+        return { content: [{ type: "text" as const, text }] };
+      } catch (err) {
+        await telemetryFailure("release_amanah_lock", startedAt, err);
+        throw err;
+      }
+    });
+  }
+);
 
 // ── VAULT999 Resources ─────────────────────────────────────────────────────────
 

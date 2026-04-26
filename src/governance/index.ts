@@ -35,6 +35,9 @@ export { checkCoherence, checkResponseCoherence, type CoherenceResult, type Cohe
 // W0: WELL Readiness (NEW)
 export { checkWellReadiness, type WellReadinessResult, type WellVerdict } from "./wellReadiness.js";
 
+// F1: Amanah Lock Manager (SERI_KEMBANGAN_ACCORDS Phase 1)
+export { AmanahLockManager, type AmanahLockRecord, type AcquireResult, type ReleaseResult } from "./AmanahLockManager.js";
+
 // Seal Service
 export { SealService, type SealContext, type SealVerdict, type SealStatus, type EpistemicVerdict, type EpistemicThresholds } from "./SealService.js";
 

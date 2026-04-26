@@ -15,6 +15,7 @@ import { BaseTool } from "./base.js";
 import type { ToolExecutionContext, ToolResult } from "../types/tool.js";
 import type { PatchResult } from "../types/policy.js";
 import { resolveSandboxedPath } from "../utils/paths.js";
+import { AmanahLockManager } from "../governance/index.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -54,6 +55,41 @@ export class ApplyPatchesTool extends BaseTool {
   async run(args: Record<string, unknown>, context: ToolExecutionContext): Promise<ToolResult> {
     const patches = args.patches as PatchRequest[];
     const results: PatchResult[] = [];
+
+    // F1 Amanah Lock check — all patches must be covered by the same session lock
+    const amanah = AmanahLockManager.getInstance();
+    for (const patch of patches) {
+      const targetPath = resolveSandboxedPath(context.workingDirectory, patch.file_path);
+      const activeLock = await amanah.getActiveLock(targetPath);
+      if (!activeLock) {
+        results.push({
+          file_path: patch.file_path,
+          applied: false,
+          stdout: "",
+          stderr: `F1 AMANAH 888-HOLD: No lock held for ${targetPath}. Call request_amanah_lock first.`,
+        });
+        continue;
+      }
+      if (activeLock.session_id !== context.sessionId) {
+        results.push({
+          file_path: patch.file_path,
+          applied: false,
+          stdout: "",
+          stderr: `F1 AMANAH 888-HOLD: Resource locked by ${activeLock.actor_id} (${activeLock.lock_id}).`,
+        });
+        continue;
+      }
+    }
+
+    // If any patch failed the lock check, abort entirely
+    const lockFailures = results.filter((r) => !r.applied && r.stderr.includes("888-HOLD"));
+    if (lockFailures.length > 0) {
+      return {
+        ok: false,
+        output: JSON.stringify(results, null, 2),
+        metadata: { applied: false, count: results.length, verdict: "888-HOLD", floor: "F1" },
+      };
+    }
 
     for (const patch of patches) {
       const targetPath = resolveSandboxedPath(context.workingDirectory, patch.file_path);

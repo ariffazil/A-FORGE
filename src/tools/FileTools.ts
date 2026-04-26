@@ -3,6 +3,7 @@ import { dirname } from "node:path";
 import { BaseTool } from "./base.js";
 import type { ToolExecutionContext, ToolResult } from "../types/tool.js";
 import { resolveSandboxedPath } from "../utils/paths.js";
+import { AmanahLockManager } from "../governance/index.js";
 
 function resolveTargetPath(context: ToolExecutionContext, filePath: string): string {
   return resolveSandboxedPath(context.workingDirectory, filePath);
@@ -61,6 +62,25 @@ export class WriteFileTool extends BaseTool {
 
   async run(args: Record<string, unknown>, context: ToolExecutionContext): Promise<ToolResult> {
     const targetPath = resolveTargetPath(context, String(args.path ?? ""));
+
+    // F1 Amanah Lock check
+    const amanah = AmanahLockManager.getInstance();
+    const activeLock = await amanah.getActiveLock(targetPath);
+    if (!activeLock) {
+      return {
+        ok: false,
+        output: `F1 AMANAH 888-HOLD: No lock held for ${targetPath}. Call request_amanah_lock first.`,
+        metadata: { path: targetPath, verdict: "888-HOLD", floor: "F1" },
+      };
+    }
+    if (activeLock.session_id !== context.sessionId) {
+      return {
+        ok: false,
+        output: `F1 AMANAH 888-HOLD: Resource locked by ${activeLock.actor_id} (${activeLock.lock_id}).`,
+        metadata: { path: targetPath, verdict: "888-HOLD", holder: activeLock, floor: "F1" },
+      };
+    }
+
     const content = String(args.content ?? "");
     if (Buffer.byteLength(content, "utf8") > (context.policy?.maxFileBytes ?? 262144)) {
       throw new Error(`Refusing to write file above size limit: ${targetPath}`);
@@ -70,7 +90,7 @@ export class WriteFileTool extends BaseTool {
     return {
       ok: true,
       output: `Wrote file: ${targetPath}`,
-      metadata: { path: targetPath },
+      metadata: { path: targetPath, lock_id: activeLock.lock_id },
     };
   }
 }
