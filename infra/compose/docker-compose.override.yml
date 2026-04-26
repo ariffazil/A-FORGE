@@ -1,0 +1,8 @@
+services:
+  arifosmcp:
+    image: arifosmcp:hotfix2
+    volumes:
+      - type: bind
+        source: /opt/arifos/src/arifOS/server.py
+        target: /usr/src/app/server.py
+        read_only: true

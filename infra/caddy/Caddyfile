@@ -1,0 +1,171 @@
+# arifOS Infrastructure — Consolidated Caddyfile
+# Single source of truth for all domains
+# All static files served from /srv/ (bind-mounted from host /var/www/)
+# Location: /etc/arifos/compose/Caddyfile (symlinked to container)
+
+# =====================================================================
+# GLOBAL OPTIONS
+# =====================================================================
+
+{
+    admin off
+    email arif@arif-fazil.com
+    log {
+        output file /data/logs/caddy.log
+    }
+}
+
+# =====================================================================
+# STATIC SITES
+# =====================================================================
+
+# Main arif-fazil.com site
+arif-fazil.com {
+    encode zstd gzip
+    root * /srv/arif-fazil.com
+    file_server
+    handle /.well-known/* {
+        file_server
+    }
+}
+
+# www → redirect to root (301)
+www.arif-fazil.com {
+    redir https://arif-fazil.com{uri} permanent
+}
+
+# APEX constitutional documentation
+apex.arif-fazil.com {
+    encode zstd gzip
+    root * /srv/apex.arif-fazil.com
+    file_server
+    handle /.well-known/* {
+        file_server
+    }
+}
+
+# AAA agent gateway — human surface + A2A API
+aaa.arif-fazil.com {
+    encode zstd gzip
+    handle /a2a/* {
+        reverse_proxy aaa-a2a:3001
+    }
+    handle /.well-known/agent.json {
+        reverse_proxy aaa-a2a:3001
+    }
+    handle /agent.json {
+        reverse_proxy aaa-a2a:3001
+    }
+    handle /health {
+        reverse_proxy aaa-a2a:3001
+    }
+    handle {
+        root * /srv/aaa.arif-fazil.com
+        file_server
+    }
+}
+
+# A-FORGE agent framework
+forge.arif-fazil.com {
+    encode zstd gzip
+    root * /srv/forge.arif-fazil.com
+    file_server
+    handle /.well-known/* {
+        file_server
+    }
+}
+
+# WAW — WEALTH as Governed Intelligence
+waw.arif-fazil.com {
+    encode zstd gzip
+    root * /srv/waw.arif-fazil.com
+    file_server
+    handle /.well-known/* {
+        file_server
+    }
+}
+
+# WAWA — secondary WAW instance → redirect to waw (301)
+wawa.arif-fazil.com {
+    redir https://waw.arif-fazil.com{uri} permanent
+}
+
+# Wiki / knowledge base
+wiki.arif-fazil.com {
+    encode zstd gzip
+    root * /srv/wiki.arif-fazil.com
+    file_server
+    handle /.well-known/* {
+        file_server
+    }
+}
+
+# WEALTH — Capital Intelligence
+wealth.arif-fazil.com {
+    encode zstd gzip
+    root * /srv/wealth.arif-fazil.com
+    handle /sse* {
+        reverse_proxy wealth-organ:8000
+    }
+    handle {
+        file_server
+    }
+}
+
+# =====================================================================
+# ADMIN / INFRASTRUCTURE
+# =====================================================================
+
+# Dozzle — container log viewer
+dozzle.arif-fazil.com {
+    reverse_proxy dozzle:8080
+}
+
+# =====================================================================
+# DYNAMIC SERVICES (MCP CONTAINERS)
+# =====================================================================
+
+# arifOS MCP — primary agent interface
+mcp.arif-fazil.com {
+    encode zstd gzip
+    handle /mcp* {
+        reverse_proxy arifosmcp:8080
+    }
+    handle /health* {
+        reverse_proxy arifosmcp:8080
+    }
+    handle /tools* {
+        reverse_proxy arifosmcp:8080
+    }
+    handle /.well-known/* {
+        reverse_proxy arifosmcp:8080
+    }
+    handle /sse* {
+        reverse_proxy arifosmcp:8080
+    }
+    handle /api* {
+        reverse_proxy arifosmcp:8080
+    }
+    handle /status* {
+        reverse_proxy arifosmcp:8080
+    }
+    handle / {
+        root * /srv/mcp.arif-fazil.com
+        file_server
+    }
+}
+
+arifosmcp.arif-fazil.com {
+    redir https://mcp.arif-fazil.com{uri} permanent
+}
+
+geox.arif-fazil.com {
+    encode zstd gzip
+    reverse_proxy /mcp* geox:8081
+    root * /var/www/html/geox
+    file_server
+    templates
+    handle /.well-known/* {
+        file_server
+    }
+}
