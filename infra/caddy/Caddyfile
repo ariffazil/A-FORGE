@@ -104,9 +104,19 @@ wiki.arif-fazil.com {
 wealth.arif-fazil.com {
     encode zstd gzip
     root * /srv/wealth.arif-fazil.com
+
+    handle /mcp* {
+        reverse_proxy wealth-organ:8000
+    }
+
+    handle /health {
+        reverse_proxy wealth-organ:8000
+    }
+
     handle /sse* {
         reverse_proxy wealth-organ:8000
     }
+
     handle {
         file_server
     }
