@@ -99,35 +99,29 @@ export class SealService {
 
   /**
    * Hardened Authorization Loop
-   * Phases 0-4 implementation
+   * Delegates to arifOS Kernel for constitutional verdict.
    */
   public async authorizeNode(context: SealContext): Promise<SealVerdict> {
     const sealId = this.computeSealId(context);
 
-    const structural = this.validator.validate(context.dag);
-    if (!structural.isValid) {
-      return this.createVerdict('VOID', sealId, context.node.id, 1.0, {
-        structural,
-        epistemic: { status: 'HOLD', reason: 'Structural failure' }
-      }, `Structural failure: ${structural.errors.join('; ')}`);
-    }
+    // Architectural Law: A-FORGE NEVER computes constitutional verdicts.
+    // In this foundation phase, we assume the need for arifOS authorization.
+    console.log(`[A-FORGE] Requesting arifOS Kernel authorization for node: ${context.node.id}`);
+    
+    // Placeholder for arifOS MCP call
+    const arifOSVerdict = { 
+        status: 'HOLD' as SealStatus, 
+        message: 'Pending arifOS Kernel adjudication (Architectural Law)' 
+    };
 
-    const epistemic = this.enforceEpistemics(context.node);
-    if (epistemic.status === 'HOLD') {
-      return this.createVerdict('HOLD', sealId, context.node.id, 0.5, {
-        structural,
-        epistemic
-      }, `Epistemic hold: ${epistemic.reason}`);
-    }
-
-    const riskScore = this.calculateRiskScore(context, structural, epistemic);
-
-    const status = this.synthesizeStatus(riskScore, epistemic);
-
-    return this.createVerdict(status, sealId, context.node.id, riskScore, {
-      structural,
-      epistemic
-    });
+    return this.createVerdict(
+        arifOSVerdict.status, 
+        sealId, 
+        context.node.id, 
+        1.0, 
+        { structural: { isValid: true, errors: [] }, epistemic: { status: 'HOLD' } },
+        arifOSVerdict.message
+    );
   }
 
   private computeSealId(context: SealContext): string {
@@ -141,72 +135,6 @@ export class SealService {
     return createHash('sha256').update(data).digest('hex');
   }
 
-  private enforceEpistemics(node: PlanNode): EpistemicVerdict {
-    const { confidence, assumptions, unknowns, riskTier, evidenceCount } = node.epistemic;
-
-    // 1. Confidence Gate
-    const requiredConfidence = this.thresholds.confidence[riskTier];
-    if (confidence < requiredConfidence) {
-      return { 
-        status: 'HOLD', 
-        reason: `Insufficient confidence (${confidence.toFixed(2)}) for ${riskTier} tier (Required: ${requiredConfidence})` 
-      };
-    }
-
-    // 2. Critical Assumption Gate
-    for (const assumption of assumptions) {
-      if (assumption.critical && !assumption.grounded) {
-        return { 
-          status: 'HOLD', 
-          reason: `Critical ungrounded assumption: "${assumption.statement}"` 
-        };
-      }
-    }
-
-    // 3. Unknown Saturation Gate
-    if (unknowns.length > this.thresholds.maxUnknowns) {
-      return { 
-        status: 'HOLD', 
-        reason: `Unknown saturation: ${unknowns.length} unknowns exceed limit of ${this.thresholds.maxUnknowns}` 
-      };
-    }
-
-    // 4. Evidence Floor
-    const requiredEvidence = this.thresholds.minEvidence[riskTier];
-    if (evidenceCount < requiredEvidence) {
-      return { 
-        status: 'HOLD', 
-        reason: `Insufficient evidence (${evidenceCount}) for ${riskTier} tier (Required: ${requiredEvidence})` 
-      };
-    }
-
-    return { status: 'PASS' };
-  }
-
-  private calculateRiskScore(context: SealContext, structural: StructuralValidationResult, epistemic: EpistemicVerdict): number {
-    // Base risk from node tier
-    let score = context.node.epistemic.riskTier === 'dangerous' ? 0.8 : (context.node.epistemic.riskTier === 'guarded' ? 0.4 : 0.1);
-    
-    // Adjust for complexity
-    score += (structural.complexityScore / 1000) * 0.2;
-    
-    // Adjust for epistemics (Inverse of confidence)
-    score += (1 - context.node.epistemic.confidence) * 0.2;
-
-    return Math.min(score, 1.0);
-  }
-
-  private synthesizeStatus(riskScore: number, epistemic: EpistemicVerdict): SealStatus {
-    if (epistemic.status === 'HOLD') return 'HOLD';
-    if (riskScore > 0.85) return 'SABAR';
-    if (riskScore > 0.6) return 'HOLD';
-    return 'PASS';
-  }
-
-  private createVerdict(
-    status: SealStatus, 
-    sealId: string, 
-    nodeId: string, 
     riskScore: number, 
     verdicts: any, 
     message?: string

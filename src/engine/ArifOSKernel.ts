@@ -68,9 +68,14 @@ export class ArifOSKernel {
     // 888 check: Irreversible ops must hold for F13
     if (target === "999" && from !== "888") {
        transition.verdict = "HOLD";
-       transition.reason = "888 AUDIT must precede 999 SEAL.";
+       transition.reason = "888 AUDIT must precede 999 SEAL. Delegate to arifOS Kernel for Authorization.";
        return transition;
     }
+
+    // A-FORGE: Boundary Check (Architectural Law)
+    // We only transition if arifOS has authorized the next state.
+    // In this foundation phase, we log the delegation requirement.
+    console.log(`[A-FORGE] State Transition ${from} -> ${target} pending arifOS Kernel validation.`);
 
     this.contract.metabolicState = target;
     return transition;

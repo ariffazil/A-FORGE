@@ -13,8 +13,14 @@ RUN npm run build
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
-COPY package*.json ./
+
+# Security Hardening
+RUN addgroup -S arifos && adduser -S arifos -G arifos
+USER arifos
+
+COPY --chown=arifos:arifos package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
-COPY --from=builder /app/dist ./dist
+COPY --from=builder --chown=arifos:arifos /app/dist ./dist
+
 EXPOSE 7071
 CMD ["node", "dist/src/server.js"]
