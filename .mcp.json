@@ -1,11 +1,9 @@
 {
   "mcpServers": {
-    "arifos-local": {
-      "command": "bash",
-      "args": [
-        "/root/.github/mcp/start-arifos-stdio.sh"
-      ],
-      "cwd": "/root"
+    "arifOS": {
+      "type": "http",
+      "url": "http://localhost:8080/mcp",
+      "description": "arifOS v2026.04.26-KANON — 13 canonical tools, F1-F13 floors, VAULT999"
     },
     "supabase": {
       "type": "http",

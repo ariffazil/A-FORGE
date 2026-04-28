@@ -16,11 +16,12 @@ ENV NODE_ENV=production
 
 # Security Hardening
 RUN addgroup -S arifos && adduser -S arifos -G arifos
-USER arifos
 
 COPY --chown=arifos:arifos package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=builder --chown=arifos:arifos /app/dist ./dist
+
+USER arifos
 
 EXPOSE 7071
 CMD ["node", "dist/src/server.js"]

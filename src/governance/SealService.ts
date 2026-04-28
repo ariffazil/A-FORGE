@@ -135,8 +135,12 @@ export class SealService {
     return createHash('sha256').update(data).digest('hex');
   }
 
-    riskScore: number, 
-    verdicts: any, 
+  private createVerdict(
+    status: SealStatus,
+    sealId: string,
+    nodeId: string,
+    riskScore: number,
+    verdicts: any,
     message?: string
   ): SealVerdict {
     return {
