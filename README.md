@@ -51,7 +51,7 @@ A-FORGE is the **execution shell** — it does not adjudicate. It receives verdi
 | Language | TypeScript / Node.js |
 | Constitutional kernel | `arifOS F1–F13` |
 | Transport | MCP stdio + Express HTTP (port 7071) |
-| Tools | 7 (DelegatedTruth, Editor, File, Search, Shell, Wealth, ToolRegistry) |
+| Tools | 11 (DelegatedTruth, Editor, File×3, Search, Shell×2, Wealth, MiniMax×2) |
 | Subdirectories | 31 source subdirectories |
 
 ---
@@ -78,10 +78,11 @@ Execution + Observability
 |------|---------|
 | `DelegatedTruth` | Governed tool delegation with constitutional checks |
 | `Editor` | File editing with path boundary enforcement |
-| `File` | Safe filesystem operations |
+| `File` (×3) | Read, Write, List — safe filesystem operations |
 | `Search` | Web and codebase search |
-| `Shell` | Shell command execution with permissioning |
+| `Shell` (×2) | Shell command execution with permissioning |
 | `Wealth` | Capital intelligence invocation |
+| `MiniMax` (×2) | Web search and image understanding via MiniMax MCP |
 | `ToolRegistry` | MCP tool registration and permissioning |
 
 ---
