@@ -31,16 +31,15 @@ export function getAdaptiveThresholds(
   riskLevel: RiskLevel = "medium",
 ): AdaptiveThresholds {
   // F3: stricter for execution/critical, looser for informational/low
-  // For high/critical risk, defer to F6/F9 pattern matching rather than blocking on length
   const f3MinLength =
-    riskLevel === "critical" ? 5
-    : riskLevel === "high" ? 5
+    riskLevel === "critical" ? 30
+    : riskLevel === "high" ? 20
     : riskLevel === "medium" ? 10
     : 3;
 
   const f3MinWords =
-    riskLevel === "critical" ? 1
-    : riskLevel === "high" ? 1
+    riskLevel === "critical" ? 4
+    : riskLevel === "high" ? 3
     : riskLevel === "medium" ? 2
     : 1;
 

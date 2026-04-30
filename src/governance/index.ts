@@ -29,8 +29,9 @@ export { checkGenius, countEvidence, type GeniusResult, type GeniusVerdict } fro
 // F9: Anti-Hantu (UPGRADE)
 export { checkAntiHantu, redactSecrets, type AntiHantuResult, type AntiHantuVerdict } from "./f9AntiHantu.js";
 
-// F11: Auth (NEW)
+// F11: Auth/Coherence (upgraded from basic contradiction to full coherence check)
 export { checkAuth, checkResponseAuth, type AuthResult, type AuthVerdict } from "./f11Auth.js";
+export { checkCoherence, checkResponseCoherence, checkToolOutputCoherence, type CoherenceResult, type CoherenceVerdict } from "./f11Coherence.js";
 
 // W0: WELL Readiness (NEW)
 export { checkWellReadiness, type WellReadinessResult, type WellVerdict } from "./wellReadiness.js";
