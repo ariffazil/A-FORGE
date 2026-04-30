@@ -7,6 +7,7 @@ import { ApplyPatchesTool } from "./tools/EditorTools.js";
 import { GrepTextTool } from "./tools/SearchTools.js";
 import { RunCommandTool, RunTestsTool } from "./tools/ShellTools.js";
 import { WEALTH_TOOLS } from "./tools/WealthTools.js";
+import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "./tools/MiniMaxTools.js";
 import { GEOXLogInterpreterTool } from "./domains/geophysics/logInterpreter.js";
 import { LongTermMemory } from "./memory/LongTermMemory.js";
 import { createLlmProvider } from "./llm/providerFactory.js";
@@ -34,6 +35,8 @@ function buildToolRegistry(): ToolRegistry {
   registry.register(new RunCommandTool());
   registry.register(new GEOXLogInterpreterTool());
   for (const ToolClass of WEALTH_TOOLS) registry.register(new ToolClass());
+  registry.register(new MiniMaxWebSearchTool());
+  registry.register(new MiniMaxUnderstandImageTool());
   return registry;
 }
 

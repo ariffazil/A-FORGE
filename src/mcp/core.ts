@@ -24,6 +24,8 @@ import type { MetabolicStage } from "../types/aki.js";
 import { FileVaultClient, SupabaseVaultClient, type VaultVerdict } from "../vault/index.js";
 import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "../escalation/index.js";
 import { WEALTH_TOOLS } from "../tools/WealthTools.js";
+import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../tools/MiniMaxTools.js";
+import { getMiniMaxClient } from "../tools/MiniMaxMcpClient.js";
 
 export const server = new McpServer({
   name: "A-FORGE",
@@ -144,6 +146,38 @@ server.tool(
 
 // ── Tier 01 Perception ───────────────────────────────────────────────────────
 
+// MiniMax Web Search — Stage 111 SENSE
+server.tool(
+  "minimax_web_search",
+  "Search the web using MiniMax AI. For Stage 111 SENSE grounding in current information.",
+  { query: z.string() },
+  async ({ query }) => {
+    try {
+      const output = await getMiniMaxClient().webSearch(query);
+      return { content: [{ type: "text" as const, text: output }] };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { content: [{ type: "text" as const, text: `ERROR: ${msg}` }], isError: true };
+    }
+  }
+);
+
+// MiniMax Image Understanding — Stage 111 SENSE
+server.tool(
+  "minimax_understand_image",
+  "Analyze an image using MiniMax AI vision. Accepts image URL or local path.",
+  { image_source: z.string(), prompt: z.string().optional().default("") },
+  async ({ image_source, prompt }) => {
+    try {
+      const output = await getMiniMaxClient().understandImage(image_source, prompt);
+      return { content: [{ type: "text" as const, text: output }] };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return { content: [{ type: "text" as const, text: `ERROR: ${msg}` }], isError: true };
+    }
+  }
+);
+
 server.tool(
   "arif_sense_observe",
   "Environmental sensing and reality grounding (Stage 111 SENSE).",
@@ -256,6 +290,8 @@ const forgeHandler = async ({ task, mode }: { task: string, mode?: "internal_mod
       registry.register(new ListFilesTool());
       registry.register(new GrepTextTool());
       for (const T of WEALTH_TOOLS) registry.register(new T());
+      registry.register(new MiniMaxWebSearchTool());
+      registry.register(new MiniMaxUnderstandImageTool());
       const engine = new AgentEngine(buildExploreProfile(mode ?? "external_safe_mode"), {
         llmProvider: createLlmProvider(runtimeConfig),
         longTermMemory: new LongTermMemory(resolve(root, "mem.json")),
