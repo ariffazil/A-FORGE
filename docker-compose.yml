@@ -6,16 +6,16 @@ services:
       dockerfile: Dockerfile
     container_name: af-bridge-prod
     ports:
-      - "7071:7071"
+      - "127.0.0.1:7071:7071"
     environment:
       - NODE_ENV=production
       - OPERATOR_API_TOKEN=arif2026
     env_file:
       - .env
     restart: unless-stopped
-    network_mode: host
+    networks:
+      - arifos_core_network
 
-# networks:
-#   arifos:
-#     name: arifos_arifos
-#     external: true
+networks:
+  arifos_core_network:
+    external: true

@@ -32,15 +32,40 @@ const INJECTION_PATTERNS: Array<{ pattern: RegExp; severity: "high" | "critical"
 ];
 
 // F9 Anti-Hantu: arifOS Shadow Detection Patterns
+// Only trigger VOID when vocabulary appears WITH manipulation patterns or multiple shadow terms
 const SHADOW_PATTERNS: Array<{ pattern: RegExp; vocabulary: string }> = [
   { pattern: /\bmaruah\b/i, vocabulary: "Maruah" },
   { pattern: /\bseal\s+verdict\b/i, vocabulary: "SEAL" },
   { pattern: /[\u03A9\u03C9]/, vocabulary: "Omega (Ω)" }, // Ω
-  { pattern: /\bvault999\b/i, vocabulary: "Vault999" },
   { pattern: /\bmetabolic\s+pulse\b/i, vocabulary: "Metabolic Pulse" },
   { pattern: /\btri-witness\b/i, vocabulary: "Tri-Witness" },
   { pattern: /\b\u039B2\b/, vocabulary: "Lambda2 (Λ2)" }, // Λ2
 ];
+
+// System names that are valid references, not shadow patterns
+const VALID_SYSTEM_NAMES = ["vault999", "vaulT999", "vault", "arifOS", "A-FORGE", "arifos"];
+
+function isShadowContext(input: string, foundVocab: string[]): boolean {
+  // Shadow = vocabulary + manipulation intent OR multiple vocab items
+  // NOT just single system name references
+  if (foundVocab.length >= 2) return true;
+
+  // Check for manipulation patterns alongside single vocab
+  const manipulationPatterns = [
+    /delete|wipe|remove|drop|truncate/i,
+    /bypass|override|ignore/i,
+    /fabricat|谎|假/i,
+    /unauthorized|forged|shadow/i,
+  ];
+  const hasManipulation = manipulationPatterns.some(p => p.test(input));
+  if (hasManipulation && foundVocab.length >= 1) return true;
+
+  // Single system name reference is NOT shadow
+  const singleSystemRef = foundVocab.every(v => VALID_SYSTEM_NAMES.some(s => v.toLowerCase().includes(s.toLowerCase())));
+  if (singleSystemRef && foundVocab.length === 1) return false;
+
+  return foundVocab.length >= 2;
+}
 
 export interface ShadowContext {
   sessionId?: string;
@@ -70,7 +95,7 @@ export function checkAntiHantu(input: string, context?: ShadowContext): AntiHant
   }
 
   // 3. F9 Anti-Hantu: Pattern 4 — Identity Forgery (No Session ID)
-  if (foundVocab.length > 0 && !context?.sessionId) {
+  if (foundVocab.length > 0 && !context?.sessionId && isShadowContext(input, foundVocab.map(v => v.vocabulary))) {
     triggered.push("shadow: arifOS vocabulary used without valid session_id");
   }
 

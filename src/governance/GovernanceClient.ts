@@ -42,9 +42,12 @@ export class LocalGovernanceClient implements GovernanceClient {
   async evaluate(request: GovernanceRequest): Promise<GovernanceResponse> {
     const floorsTriggered: string[] = [];
 
-    // F3: Witness
-    const clarity = checkWitness(request.task, this.thresholds?.f3);
+    // F3: Witness — skip short tasks that F6 will likely block anyway
+    const harmCheck = checkEmpathy(request.task);
+    const isLikelyHarm = harmCheck.verdict === "VOID";
+    const clarity = isLikelyHarm ? { verdict: "PASS" as const } : checkWitness(request.task, this.thresholds?.f3);
     if (clarity.verdict === "SABAR") {
+      // Only SABAR if F6 didn't catch it first
       floorsTriggered.push("F3");
       return { verdict: "SABAR", floorsTriggered, message: clarity.message };
     }

@@ -261,7 +261,12 @@ app.post("/governance/evaluate", async (req: Request, res: Response) => {
       return;
     }
 
-    const adaptive = getAdaptiveThresholds(intentModel ?? "advisory", riskLevel ?? "medium");
+    const riskLevelMap: Record<string, string> = {
+      low: "low", medium: "medium", high: "high", critical: "critical",
+      dangerous: "high", safe: "low",
+    };
+    const risk = riskLevelMap[riskLevel ?? "medium"] ?? "medium";
+    const adaptive = getAdaptiveThresholds(intentModel ?? "advisory", risk as any);
     const client = new LocalGovernanceClient({ f3: adaptive.f3 });
     const result = await client.evaluate({
       task,

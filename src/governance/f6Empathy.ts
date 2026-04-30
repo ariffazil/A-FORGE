@@ -22,14 +22,35 @@ const HARM_PATTERNS: RegExp[] = [
   /rm\s+-rf\s+\//, // Root deletion
   /rm\s+-rf\s+~/, // Home deletion
   /delete\s+all\s+(?:files|data)/i,
-  /drop\s+(?:database|table)/i,
-  /exploit\s+(?:vulnerability|bug)/i,
-  /bypass\s+(?:security|auth|authentication)/i,
-  /steal\s+(?:data|credentials|passwords)/i,
-  /inject\s+(?:sql|code|malware)/i,
-  /overwrite\s+(?:system|boot)/i,
-  /format\s+(?:disk|drive)/i,
+  /drop\s+(?:database|table)s?\b/i,
+  /exploit\s+(?:a\s+)?(?:vulnerability|bug|flaw|hole)/i,
+  /bypass\s+(?:security|auth|authentication|permission)/i,
+  /steal\s+(?:data|credentials|passwords|secrets|keys)/i,
+  /inject\s+(?:sql|code|malware|xss|script)/i,
+  /overwrite\s+(?:system|boot|mbr|firmware)/i,
+  /format\s+(?:the\s+)?(?:root|disk|drive|filesystem|system)/i,
   /:\(\)\{ :|:& };:/, // Fork bomb
+  // Data destruction patterns (F6 upgraded)
+  /(?:delete|wipe|remove|truncate|drop)\s+(?:all\s+)?(?:vault999|vaul?t|records?|data|tables?|volumes?|collections?|ledgers?|seals?)/i,
+  /(?:delete|wipe|remove|truncate|drop)\s+(?:all\s+)?(?:postgres|postgresql|redis|qdrant|memory|vector|docker|data)/i,
+  /(?:clear|purge|erase)\s+(?:all\s+)?(?:data|database|logs?|cache|memory|state)/i,
+  /(?:stop|kill|shutdown)\s+(?:all\s+)?(?:services|containers|processes|databases?)/i,
+  /(?:destroy|demolish)\s+(?:all\s+)?(?:data|records|volumes?|backups?|docker)/i,
+  /prune\s+(?:all\s+)?(?:volumes?|images?|containers?|networks?)/i,
+  /(?:remove|delete)\s+(?:all\s+)?(?:containers|images|volumes|networks)/i,
+  /(?:flush|reset)\s+(?:all\s+)?(?:database|postgres|tables?|cache|state)/i,
+  // Dangerous system commands
+  /(?:sudo|su|admin)\s+(?:rm|delete|drop|format|wipe|mkfs|dd)/i,
+  /dd\s+(?:if|of)=.*(?:dev|zero|null)/i,
+  /mkfs/i,
+  /(?:rm|delete|remove)\s+-rf\s+(?:home|root|etc|usr|var|opt)/i,
+  // Privilege escalation patterns
+  /(?:become|get|obtain|get\s+)\s*(?:root|admin|superuser|privileges)/i,
+  /make\s+me\s+(?:a\s+)?(?:root|admin|superuser)/i,
+  /elevate\s+(?:to\s+)?(?:root|admin|privileges)/i,
+  /sudo\s+su\b/i,
+  /root\s+(?:access|shell|login)/i,
+  /^su\s+$/i,
 ];
 
 /**
