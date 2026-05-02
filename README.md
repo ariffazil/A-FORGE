@@ -12,30 +12,26 @@
 
 ## What A-FORGE Is
 
-A-FORGE is the **Metabolic Shell** — the execution engine, orchestration surface, and operator observability layer of the arifOS organism.
+A-FORGE is the **Security Enforcement Shell** — the execution engine, orchestration surface, and operator observability layer of the arifOS organism.
 
 Its role:
-- Execute governed agent workflows
-- Display synthesis from constitutional and domain lanes
-- Invoke tools through policy-gated permissioning
-- Route terminal verdicts to VAULT999
-- Maintain operator-facing observability (Prometheus metrics, scoreboard)
+- **Enforce Security Policy**: Validate agent identity (L2) and federation scope (L3) before tool execution.
+- **Metabolic Execution**: Translate constitutional verdicts into actual system modifications.
+- **Orchestration**: Route tool calls and coordinate between domain organs (GEOX, WEALTH, WELL).
+- **Audit Logging**: Bridge terminal outcomes to VAULT999.
 
-In simple terms:
-> GEOX may witness.  
-> WEALTH may evaluate.  
-> WELL may reflect.  
-> arifOS judges.  
-> **A-FORGE orchestrates.**
+### Position in 000–999 Pipeline
+A-FORGE primarily spans stages **333–777** in the metabolic loop. It executes planned actions, routes tool calls, and exposes observability, while arifOS handles the upstream **888 JUDGE** and downstream **999 SEAL**.
 
 ---
 
-## Position in the arifOS Trinity
+## Position in the Sovereign Flow
 
 ```
-ARIF (Human) → AAA (Identity) → A-FORGE (Execute) → arifOS (Judge) → VAULT999 (Seal)
-                              ↑
-                        YOU ARE HERE
+SOUL (Human Δ) → MIND (arifOS Ω) → BODY (AAA/A-FORGE Ψ) → VAULT999 (Seal)
+                     ↓               ↑
+               Constitutional   Security Enforcement
+                Translation     & Execution
 ```
 
 A-FORGE is the **execution shell** — it does not adjudicate. It receives verdicts from arifOS and translates them into action.
@@ -46,67 +42,25 @@ A-FORGE is the **execution shell** — it does not adjudicate. It receives verdi
 
 | Field | Value |
 |-------|-------|
-| Canonical repository | `https://github.com/ariffazil/A-FORGE` |
-| Version | `0.1.0` |
-| Language | TypeScript / Node.js |
-| Constitutional kernel | `arifOS F1–F13` |
-| Transport | MCP stdio + Express HTTP (port 7071) |
-| Tools | 11 (DelegatedTruth, Editor, File×3, Search, Shell×2, Wealth, MiniMax×2) |
-| Subdirectories | 31 source subdirectories |
-
----
-
-## Architecture
-
-A-FORGE enforces **13 Constitutional Floors** through a multi-layered governance system:
-
-```
-Agent Intent
-    ↓
-A-FORGE Tool Registry (F3, F4, F6, F7, F8, F9, F11, OPS/777 gates)
-    ↓
-arifOS 888_JUDGE (constitutional verdict)
-    ↓
-VAULT999 SEAL (immutable ledger)
-    ↓
-Execution + Observability
-```
-
-### Canonical Tools
-
-| Tool | Purpose |
-|------|---------|
-| `DelegatedTruth` | Governed tool delegation with constitutional checks |
-| `Editor` | File editing with path boundary enforcement |
-| `File` (×3) | Read, Write, List — safe filesystem operations |
-| `Search` | Web and codebase search |
-| `Shell` (×2) | Shell command execution with permissioning |
-| `Wealth` | Capital intelligence invocation |
-| `MiniMax` (×2) | Web search and image understanding via MiniMax MCP |
-| `ToolRegistry` | MCP tool registration and permissioning |
-
----
-
-## Server Surfaces
-
-| Surface | Port | Protocol | Purpose |
-|---------|------|----------|---------|
-| **MCP stdio** | — | stdio | Governed agent, governance, patch-application tools |
-| **HTTP bridge** | `7071` | Express | Operator console, Prometheus metrics |
+| Role | **Security Enforcement** |
+| Governing kernel | `arifOS MIND (Ω)` |
+| Enforcement Level | `F1-F13 Always-On` |
+| Tools | 11 callable tools + ToolRegistry (internal) |
+| Position | Stages 333-777 |
 
 ---
 
 ## Constitutional Policy Gates
 
-A-FORGE enforces floors on tool execution:
+A-FORGE operates under all 13 arifOS floors (F1–F13), with this README highlighting the **most visible execution-time gates**:
 
 - **F3 WITNESS** — Evidence required before execution
-- **F4 CLARITY** — Intent must be transparent
-- **F6 EMPATHY** — Consequence must be considered
-- **F7 HUMILITY** — Limits must be acknowledged
-- **F8 GENIUS** — Elegant execution, not brute force
-- **F9 ANTIHANTU** — No manipulation or deception
-- **F11 AUTH** — Identity verification before execution
+- **F4 CLARITY** — Intent must be transparent (ΔS ≤ 0)
+- **F6 EMPATHY** — **Maruah-first**: stakeholder dignity preserved
+- **F7 HUMILITY** — Epistemic limits acknowledged
+- **F8 GENIUS** — Elegant execution (G ≥ 0.80)
+- **F9 ANTIHANTU** — Zero hallucination or deception
+- **F11 AUTH/AUDIT** — Identity verified and Entscheidung logged
 - **OPS/777** — Operational telemetry and cost measurement
 
 ---
@@ -123,13 +77,16 @@ A-FORGE enforces floors on tool execution:
 
 ---
 
-## Live Sites
+## Live Surfaces (as of 2026-05-02)
 
 | Surface | URL |
 |---------|-----|
-| arifOS | https://arifosmcp.arif-fazil.com/ |
-| Human | https://arif-fazil.com/ |
-| MCP | https://arifosmcp.arif-fazil.com/mcp |
+| Human (SOUL) | https://arif-fazil.com/ |
+| arifOS (MIND) | https://arifos.arif-fazil.com/ |
+| Cockpit (BODY) | https://aaa.arif-fazil.com/ |
+| MCP Machine | https://mcp.arif-fazil.com/ |
+
+> **Note:** `https://arifosmcp.arif-fazil.com/` is a legacy 301 redirect to the canonical `mcp.arif-fazil.com` endpoint.
 
 *arifOS may judge. A-FORGE executes. The seal is earned, not assumed.*
 *DITEMPA BUKAN DIBERI — Execution is forged through disciplined orchestration.*
