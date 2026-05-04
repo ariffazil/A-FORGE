@@ -47,6 +47,24 @@ A-FORGE is the **execution shell** — it does not adjudicate. It receives verdi
 | Enforcement Level | `F1-F13 Always-On` |
 | Tools | 11 callable tools + ToolRegistry (internal) |
 | Position | Stages 333-777 |
+| Runtime SOT | [`RUNTIME_SOT.md`](./RUNTIME_SOT.md) |
+
+---
+
+## Runtime Source of Truth
+
+The canonical **A-FORGE bridge runtime** on the VPS is the standalone compose project in this repo:
+
+- **Compose owner:** `/root/A-FORGE/docker-compose.yml`
+- **Live container:** `af-bridge-prod`
+- **Bind:** `127.0.0.1:7071`
+- **Shared federation network:** `arifos_core_network`
+- **Governance target:** `http://arifosmcp:8080`
+- **Data plane targets:** `postgres`, `redis`, `qdrant`, `ollama`
+
+`/root/compose/docker-compose.yml` remains the **federation base stack** for shared services, but it is **not** the runtime owner of the A-FORGE bridge container. If the bridge is moved into `/root/compose` later, update this section and `RUNTIME_SOT.md` in the same change.
+
+A-FORGE prefers **HTTP governance through arifOS** when `ARIFOS_GOVERNANCE_URL` is set. If that variable is absent, the CLI falls back to in-process `LocalGovernanceClient`; treat that as a degraded or local-development path, not the default VPS contract.
 
 ---
 

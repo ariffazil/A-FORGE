@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { readFeatureFlags, type FeatureFlags } from "../flags/featureFlags.js";
 
 export type LlmProviderConfig = {
-  kind: "mock" | "openai_responses" | "ollama";
+  kind: "mock" | "openai_responses" | "ollama" | "sea_lion";
   model: string;
   apiKey?: string;
   baseUrl: string;
@@ -21,6 +21,7 @@ export type ToolPolicyConfig = {
 
 export type RuntimeConfig = {
   provider: LlmProviderConfig;
+  fallbackProvider?: LlmProviderConfig;
   featureFlags: FeatureFlags;
   toolPolicy: ToolPolicyConfig;
   apiPricing: {
@@ -61,17 +62,43 @@ export function readRuntimeConfig(): RuntimeConfig {
       ? "openai_responses"
       : process.env.AGENT_WORKBENCH_PROVIDER === "ollama"
         ? "ollama"
-        : "mock";
+        : process.env.AGENT_WORKBENCH_PROVIDER === "sea_lion"
+          ? "sea_lion"
+          : "mock";
+
+  const fallbackProviderKind = process.env.LLM_FALLBACK_PROVIDER ?? "";
+  const fallbackProvider: LlmProviderConfig | undefined =
+    fallbackProviderKind === "ollama"
+      ? {
+          kind: "ollama",
+          model: process.env.LLM_FALLBACK_MODEL ?? process.env.AGENT_WORKBENCH_MODEL ?? "llama3.2",
+          baseUrl: process.env.OLLAMA_BASE_URL ?? "http://ollama:11434",
+          timeoutMs: Number(process.env.AGENT_WORKBENCH_LLM_TIMEOUT_MS ?? "120000"),
+        }
+      : fallbackProviderKind === "openai_responses"
+        ? {
+            kind: "openai_responses",
+            model: process.env.LLM_FALLBACK_MODEL ?? "gpt-5",
+            apiKey: process.env.OPENAI_API_KEY,
+            baseUrl: process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1",
+            timeoutMs: Number(process.env.AGENT_WORKBENCH_LLM_TIMEOUT_MS ?? "120000"),
+          }
+        : undefined;
 
   const config: RuntimeConfig = {
     provider: {
       kind: providerKind,
-      model: process.env.AGENT_WORKBENCH_MODEL ?? (providerKind === "ollama" ? "llama3.2" : "gpt-5"),
-      apiKey: process.env.OPENAI_API_KEY,
+      model: process.env.AGENT_WORKBENCH_MODEL ?? (providerKind === "ollama" ? "llama3.2" : providerKind === "sea_lion" ? "aisingapore/Gemma-SEA-LION-v4-27B-IT" : "gpt-5"),
+      apiKey:
+        providerKind === "sea_lion"
+          ? (process.env.SEA_LION_API_KEY ?? process.env.OPENAI_API_KEY)
+          : process.env.OPENAI_API_KEY,
       baseUrl:
         providerKind === "ollama"
           ? (process.env.OLLAMA_BASE_URL ?? process.env.OPENAI_BASE_URL ?? "http://localhost:11434")
-          : (process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1"),
+          : providerKind === "sea_lion"
+            ? (process.env.SEA_LION_BASE_URL ?? "https://api.sea-lion.ai/v1")
+            : (process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1"),
       timeoutMs: Number(process.env.AGENT_WORKBENCH_LLM_TIMEOUT_MS ?? "120000"),
     },
     featureFlags: readFeatureFlags({
@@ -145,6 +172,7 @@ export function readRuntimeConfig(): RuntimeConfig {
     arifosGovernanceUrl: process.env.ARIFOS_GOVERNANCE_URL,
     operatorApiToken: process.env.OPERATOR_API_TOKEN,
     actorId: process.env.ACTOR_ID ?? "ariffazil::agent-civ",
+    fallbackProvider,
   };
 
   if (config.trustLocalVps) {

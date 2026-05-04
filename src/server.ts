@@ -333,7 +333,7 @@ app.get("/contract", (_req: Request, res: Response) => {
       GEOX_contract: "GET /GEOX/contract",
       a2a: "POST /a2a",
       a2a_agent_card: "GET /.well-known/agent-card.json",
-      python_mcp: "GEOX-mcp:8765",
+      python_mcp: "GEOX-mcp:8081",
       bridge: "A-FORGE-bridge:7071",
     },
     timestamp: new Date().toISOString(),
@@ -442,7 +442,7 @@ app.get("/GEOX/contract", (_req: Request, res: Response) => {
         risk_level: "guarded",
       },
     ],
-    python_mcp_route: "GEOX-mcp:8765",
+    python_mcp_route: "GEOX-mcp:8081",
     bridge_route: "A-FORGE-bridge:7071/GEOX/*",
     note: "GEOX_log_interpreter is executed by A-FORGE TypeScript runtime; Python MCP GEOX_well_compute_petrophysics is a separate sibling service",
   });
