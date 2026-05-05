@@ -16,6 +16,7 @@ import {
   SABARHaltError,
   type RiskClassificationResult,
 } from "../governance/GovernanceBridge.js";
+import { ThermodynamicCostEstimator } from "../ops/ThermodynamicCostEstimator.js";
 import type {
   SecurityAnalysis,
   ScriptResult,
@@ -240,8 +241,31 @@ export class CodeModeExecutor {
     }
 
     // ── Stage 2: Thermodynamic Budget Gate (OPS/777) ────────────────────
-    // TODO: integrate with ThermodynamicCostEstimator once blueprint is forged
-    const estimatedOutputTokens = 8_000; // Hard cap enforced at Stage 5
+    const thermo = new ThermodynamicCostEstimator();
+    const thermoScan = thermo.estimate("run_command", { command: script.slice(0, 500) });
+
+    // Map thermodynamic band to output token cap:
+    // CRITICAL → block execution (blast radius too high)
+    // HIGH → tight cap (2K) | MEDIUM → moderate cap (4K) | LOW → generous cap (8K)
+    let estimatedOutputTokens = 8_000;
+    if (thermoScan.thermodynamicBand === "CRITICAL") {
+      throw new CodeModeSecurityError(
+        `Thermodynamic VOID: band=${thermoScan.thermodynamicBand} blastRadius=${thermoScan.blastRadius.toFixed(2)} dS=${thermoScan.dS_predict.toFixed(2)} — script blocked before execution`,
+        {
+          riskLevel: "dangerous",
+          rawFlags: ["OPS/777", "CRITICAL_BAND", `blastRadius=${thermoScan.blastRadius.toFixed(2)}`],
+          recommendedFloors: ["F1", "F4", "OPS"],
+          disallowedImports: [],
+          networkCalls: [],
+          fileSystemAccess: [],
+          shellCommands: [],
+        },
+      );
+    } else if (thermoScan.thermodynamicBand === "HIGH") {
+      estimatedOutputTokens = 2_000;
+    } else if (thermoScan.thermodynamicBand === "MEDIUM") {
+      estimatedOutputTokens = 4_000;
+    }
 
     // ── Stage 3: MCP Binding Injection ──────────────────────────────────
     const bindings = this.buildMcpBindings(context.allowedGateways);

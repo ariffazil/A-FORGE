@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { join } from "node:path";
 import type {
   AgentMessage,
   AgentProfile,
@@ -9,6 +10,7 @@ import type {
 import type { ToolPermissionContext } from "../types/tool.js";
 import type { LlmProvider } from "../llm/LlmProvider.js";
 import { BudgetManager } from "./BudgetManager.js";
+import { BudgetAwareRouter } from "../llm/BudgetAwareRouter.js";
 import { ShortTermMemory } from "../memory/ShortTermMemory.js";
 import { LongTermMemory } from "../memory/LongTermMemory.js";
 import { resolveWorkingDirectory } from "../utils/paths.js";
@@ -52,6 +54,7 @@ import { getMemoryContract } from "../memory-contract/index.js";
 import { ThermodynamicCostEstimator } from "../ops/ThermodynamicCostEstimator.js";
 import { routeIntent, type RoutingDecision } from "./IntentRouter.js";
 import { WealthEngine } from "./WealthEngine.js";
+import type { ToolAction, TokenBudget, StressState } from "../types/wealth.js";
 import { buildDefaultGEOXScenarios } from "./defaultGEOXScenarios.js";
 import { evaluateWithConfidence, calculateConfidenceEstimate } from "../policy/confidence.js";
 import { ArifOSKernel } from "./ArifOSKernel.js";
@@ -75,6 +78,8 @@ export type AgentEngineDependencies = {
     inputCostPerMillionTokens: number;
     outputCostPerMillionTokens: number;
   };
+  /** Fallback LLM provider for automatic downshifting at 80% budget (e.g. Ollama/Sea-Lion) */
+  fallbackProvider?: LlmProvider;
 };
 
 export class AgentEngine {
@@ -93,8 +98,29 @@ export class AgentEngine {
     const startedAt = new Date();
     const sessionId = options.sessionId ?? randomUUID();
     const workingDirectory = resolveWorkingDirectory(options.workingDirectory);
-    const shortTermMemory = new ShortTermMemory();
-    const budgetManager = new BudgetManager(this.profile.budget);
+    // [P0] ShortTermMemory with sliding window and eviction bridge to LongTermMemory — 2026-05-05
+    const shortTermMemory = new ShortTermMemory({
+      maxMessages: 5,
+      maxTokens: 4096,
+      archivePath: join(workingDirectory, ".arifos", "archive.jsonl"),
+      onEvict: async (summary) => {
+        try {
+          await this.dependencies.longTermMemory.appendRunningSummary(summary);
+        } catch {
+          // Non-fatal: eviction failure must not break the agent loop
+        }
+      },
+    });
+    const budgetManager = new BudgetManager(this.profile.budget, this.dependencies.apiPricing);
+
+    // [Q2] Wrap LLM provider with budget-aware router for transparent
+    // downshifting / refusal based on real-time consumption.
+    const llmProvider = new BudgetAwareRouter({
+      primary: this.dependencies.llmProvider,
+      budgetManager,
+      fallback: this.dependencies.fallbackProvider,
+    });
+
     const modeSettings = buildModeSettings(this.profile.modeName);
     const intentModel = options.intentModel ?? "advisory";
     const riskLevel = options.riskLevel ?? "medium";
@@ -241,27 +267,27 @@ export class AgentEngine {
       const allocations = await wealthEngine.allocate(GEOXScenarios as import("../types/arifos.js").GEOXScenarioContract[]);
       this._wealthAllocations = allocations.map((a: { id: string; maruahScore: number }) => ({ id: a.id, maruahScore: a.maruahScore }));
       const budgetStatus = wealthEngine.getBudgetStatus();
-      shortTermMemory.append({
+      shortTermMemory.pin({
         role: "system",
         content: `[333_MIND] Thermodynamic budget: joules=${budgetStatus.utilization * 100 | 0}% utilized, ${budgetStatus.remaining.toLocaleString()} remaining`,
       });
     }
 
     // === 444_ROUTE: Context Injection into shortTermMemory ===
-    shortTermMemory.append({
+    shortTermMemory.pin({
       role: "system",
       content: `[222_THINK] Intent → ${routing.primaryOrgan} (conf=${routing.confidence.toFixed(2)}) | ${routing.reasoning}`,
     });
 
     if (this._GEOXScenarios.length > 0) {
-      shortTermMemory.append({
+      shortTermMemory.pin({
         role: "system",
         content: `[333_MIND] GEOX activated: ${this._GEOXScenarios.map((s) => `${s.id}(${s.tag}[${s.physicalConstraints?.environmentalImpact ?? "?"}])`).join(", ")}`,
       });
     }
 
     if (this._wealthAllocations.length > 0) {
-      shortTermMemory.append({
+      shortTermMemory.pin({
         role: "system",
         content: `[333_MIND] WEALTH activated: ${this._wealthAllocations.map((a) => `${a.id}(maruah ${a.maruahScore.toFixed(2)})`).join(", ")}`,
       });
@@ -284,7 +310,7 @@ export class AgentEngine {
     }
     if (heartViolations.length > 0) {
       floorsTriggered.push(...heartViolations);
-      shortTermMemory.append({
+      shortTermMemory.pin({
         role: "system",
         content: `[555_HEART] Red-team triggered: ${heartViolations.join(", ")} — maruah review required`,
       });
@@ -303,37 +329,36 @@ export class AgentEngine {
       this._kernel.injectContext("floorsTriggered", floorsTriggered);
     }
 
-    shortTermMemory.append({
-      role: "system",
-      content: this.profile.systemPrompt,
-    });
-
+    // [Q2] Position-aware prompt assembly — 2026-05-05
+    // Rationale: LLMs exhibit "Lost-in-the-Middle" — U-shaped attention bias.
+    // Critical instructions at the prompt top (position [1]) or bottom are
+    // reliably attended to; mid-prompt content is statistically ignored.
+    // Assembly order: [1] System instructions (pinned) → [2] Running summary
+    // → [3] Recent conversation window → [4] Current user query.
     const sacredMessages = await this.injectSacredMemories();
-    for (const msg of sacredMessages) {
-      shortTermMemory.append(msg);
-    }
-    const initialMessages: AgentMessage[] = [...sacredMessages];
+    const runningSummary = await this.dependencies.longTermMemory.getRunningSummary();
 
-    const relevantMemories = await this.dependencies.longTermMemory.searchRelevant(options.task);
-    if (relevantMemories.length > 0) {
-      const memoryContext = relevantMemories
-        .map((record, index) => `Memory ${index + 1}: ${record.summary}`)
-        .join("\n");
-
-      const memoryMessage: AgentMessage = {
-        role: "system",
-        content: `Relevant past task summaries:\n${memoryContext}`,
-      };
-      shortTermMemory.append(memoryMessage);
-      initialMessages.push(memoryMessage);
-    }
+    // Build dynamic system prompt that includes sacred memories + running summary.
+    // This ensures position [1] for ALL providers (OpenAI instructions, Ollama system).
+    const dynamicSystemPrompt = this.buildDynamicSystemPrompt(
+      this.profile.systemPrompt,
+      sacredMessages,
+      runningSummary,
+    );
 
     const userMessage: AgentMessage = {
       role: "user",
       content: modeSettings.transformOutgoingText(options.task),
     };
     shortTermMemory.append(userMessage);
-    initialMessages.push(userMessage);
+
+    // For stateless providers, the full conversation window is sent each turn.
+    // For OpenAI with previousResponseId, only incremental messages are sent.
+    const initialMessages = this.getMessagesForTurn(
+      shortTermMemory,
+      [userMessage],
+      undefined, // first turn: no previous response
+    );
 
     let finalResponse = "";
     let turnCount = 0;
@@ -351,18 +376,29 @@ export class AgentEngine {
     let llmTokensIn = 0;
     let llmTokensOut = 0;
     let errorMessage: string | undefined;
-    const memoryInjectedItems = relevantMemories.length;
-    const memoryInjectedBytes = Buffer.byteLength(
-      relevantMemories.map((record) => record.summary).join("\n"),
-      "utf8",
-    );
+    const memoryInjectedItems = runningSummary ? 1 : 0;
+    const memoryInjectedBytes = Buffer.byteLength(runningSummary ?? "", "utf8");
 
     try {
       while (turnCount < this.profile.budget.maxTurns) {
         turnCount += 1;
         responsesCalls += 1;
-        const turnResponse = await this.dependencies.llmProvider.completeTurn({
-          profile: this.profile,
+        // Refresh dynamic system prompt before each turn (running summary may have updated)
+        const refreshedSummary = await this.dependencies.longTermMemory.getRunningSummary();
+        const turnProfile: AgentProfile = {
+          ...this.profile,
+          systemPrompt: this.buildDynamicSystemPrompt(
+            this.profile.systemPrompt,
+            sacredMessages,
+            refreshedSummary,
+          ),
+        };
+
+        // [Q2] Pre-flight budget enforcement: hard stop BEFORE spend occurs
+        budgetManager.assertWithinBudget();
+
+        const turnResponse = await llmProvider.completeTurn({
+          profile: turnProfile,
           messages: pendingMessages,
           tools: this.dependencies.toolRegistry.listForModel(permissionContext),
           previousResponseId,
@@ -374,6 +410,7 @@ export class AgentEngine {
         toolCallParseFailures += turnResponse.providerMetrics?.toolCallParseFailures ?? 0;
         previousResponseResumes += turnResponse.providerMetrics?.resumedWithPreviousResponseId ? 1 : 0;
         budgetManager.assertWithinBudget();
+        budgetManager.evaluateThresholds();
         previousResponseId = turnResponse.responseId;
 
         const assistantMessage: AgentMessage = {
@@ -391,6 +428,23 @@ export class AgentEngine {
         for (const call of turnResponse.toolCalls) {
           toolCallsByType[call.toolName] = (toolCallsByType[call.toolName] ?? 0) + 1;
         }
+
+        // [Q2] WEALTH advisory: evaluate planned tool chain before execution
+        const plannedActions: ToolAction[] = turnResponse.toolCalls.map((call) =>
+          this.estimateToolAction(call.toolName, call.args),
+        );
+        const budgetStatus = budgetManager.getStatus();
+        const wealthAdvice = wealthEngine.evaluatePlan(plannedActions, {
+          remainingTokens: Math.max(0, budgetStatus.totalTokensUsed - this.profile.budget.tokenCeiling) * -1,
+          remainingTurns: budgetStatus.turnsRemaining,
+        });
+        if (wealthAdvice.deferred.length > 0) {
+          console.warn(`[WEALTH-ADVISORY] Deferred ${wealthAdvice.deferred.length} actions: ${wealthAdvice.reason}`);
+        }
+
+        // [Q2] Pre-flight budget enforcement before tool execution
+        budgetManager.assertWithinBudget();
+
         const toolExecution = await runStage("777_FORGE" as MetabolicStage, () =>
           this.executeToolCalls(
           turnResponse,
@@ -398,11 +452,53 @@ export class AgentEngine {
           permissionContext,
           sessionId,
           workingDirectory,
-          relevantMemories.length,
+          memoryInjectedItems,
           floorsTriggered,
           ),
         );
-        pendingMessages = toolExecution.messages;
+
+        // [Q2] WEALTH advisory: stress check after tool execution
+        const stressState: StressState = {
+          consecutiveFailures: toolExecution.blockedDangerousActions + toolExecution.timeoutEvents,
+          budgetBurnRate: turnCount > 0 ? budgetManager.getTotalEstimatedTokens() / turnCount : 0,
+          diminishingReturns: toolExecution.blockedDangerousActions > 0 && toolCallCount > 3,
+          cumulativeStress:
+            (toolExecution.blockedDangerousActions * 0.5) +
+            (toolExecution.timeoutEvents * 0.3) +
+            (budgetManager.usagePercent() > 0.8 ? 0.8 : 0),
+        };
+        const continueAdvice = wealthEngine.shouldContinue(stressState);
+        if (continueAdvice.verdict === "VOID") {
+          finalResponse = `[WEALTH-ADVISORY] ${continueAdvice.reason}`;
+          floorsTriggered.push("WEALTH_VOID");
+          break;
+        }
+
+        // [Q2] MemoryContract: store tool results into the tiered pipeline
+        try {
+          const contract = this.dependencies.memoryContract ?? getMemoryContract();
+          await contract.initialize();
+          for (const msg of toolExecution.messages) {
+            if (msg.role !== "tool") continue;
+            const tier = contract.classify(msg.content, "external", 0.7);
+            await contract.store({
+              content: msg.content.slice(0, 1000),
+              tier,
+              source: { type: "external", description: `Tool ${msg.toolName ?? "unknown"}` },
+              confidence: 0.7,
+              reason: "Tool execution result stored by AgentEngine memory pipeline",
+              tags: ["tool-result", msg.toolName ?? "unknown"],
+            });
+          }
+        } catch {
+          // Non-fatal: MemoryContract storage failure must not break the loop
+        }
+
+        pendingMessages = this.getMessagesForTurn(
+          shortTermMemory,
+          toolExecution.messages,
+          previousResponseId,
+        );
         blockedDangerousActions += toolExecution.blockedDangerousActions;
         blockedCommands += toolExecution.blockedCommands;
         timeoutEvents += toolExecution.timeoutEvents;
@@ -417,6 +513,24 @@ export class AgentEngine {
 
     if (!finalResponse) {
       finalResponse = "Stopped because the maximum turn count was reached.";
+    }
+
+    // [Q2] MemoryContract: store session conclusion into tiered pipeline
+    try {
+      const contract = this.dependencies.memoryContract ?? getMemoryContract();
+      await contract.initialize();
+      const success = !finalResponse.startsWith("Run failed") && !finalResponse.startsWith("[WEALTH-ADVISORY]");
+      const tier = contract.classify(finalResponse, "inferred", success ? 0.85 : 0.3);
+      await contract.store({
+        content: finalResponse.slice(0, 2000),
+        tier,
+        source: { type: "inferred", description: "Agent final response" },
+        confidence: success ? 0.85 : 0.3,
+        reason: "AgentEngine session conclusion stored to memory pipeline",
+        tags: ["session-conclusion", success ? "verified" : "unverified"],
+      });
+    } catch {
+      // Non-fatal: MemoryContract storage failure must not break seal
     }
 
     // === 888_JUDGE: Confidence evaluation (only when organ routing occurred) ===
@@ -535,6 +649,8 @@ export class AgentEngine {
       llmTokensIn,
       llmTokensOut,
       llmCost: this.estimateApiCost(llmTokensIn, llmTokensOut),
+      totalCostUsd: budgetManager.getStatus().totalCostUsd,
+      turnsRemaining: budgetManager.getStatus().turnsRemaining,
       wallClockMs,
       completion,
       testsPassed,
@@ -1128,6 +1244,8 @@ export class AgentEngine {
       llmTokensIn: 0,
       llmTokensOut: 0,
       llmCost: 0,
+      totalCostUsd: 0,
+      turnsRemaining: 0,
       wallClockMs,
       completion: false,
       testsPassed: false,
@@ -1135,6 +1253,82 @@ export class AgentEngine {
         ? `Blocked by ${blockedFloor}: ${reason}; Seal error: ${sealError}`
         : `Blocked by ${blockedFloor}: ${reason}`,
     };
+  }
+
+  /**
+   * [Q2] Build dynamic system prompt that pins sacred memories + running summary
+   * at position [1], preventing "Lost-in-the-Middle" drift.
+   */
+  private buildDynamicSystemPrompt(
+    basePrompt: string,
+    sacredMessages: AgentMessage[],
+    runningSummary?: string,
+  ): string {
+    const parts: string[] = [basePrompt];
+
+    if (sacredMessages.length > 0) {
+      const sacredContent = sacredMessages.map((m) => m.content).join("\n\n");
+      parts.push(`\n\n--- SACRED CONTEXT (immutable) ---\n${sacredContent}`);
+    }
+
+    if (runningSummary) {
+      parts.push(`\n\n--- RUNNING CONTEXT SUMMARY ---\n${runningSummary}`);
+    }
+
+    return parts.join("");
+  }
+
+  /**
+   * [Q2] Assemble messages for the current turn with provider-aware optimization.
+   * OpenAI Responses API maintains server-side state via previousResponseId,
+   * so we send only incremental messages. Stateless providers (Ollama, SeaLion)
+   * receive the full conversation window to maintain coherence.
+   */
+  private getMessagesForTurn(
+    shortTermMemory: ShortTermMemory,
+    incrementalMessages: AgentMessage[],
+    previousResponseId: string | undefined,
+  ): AgentMessage[] {
+    if (
+      this.dependencies.llmProvider.name === "openai-responses" &&
+      previousResponseId
+    ) {
+      return incrementalMessages;
+    }
+    return shortTermMemory.getMessages();
+  }
+
+  /**
+   * [Q2] Heuristic token/value estimator for WEALTH advisory knapsack.
+   * No external LLM call — uses static heuristics based on tool type.
+   */
+  private estimateToolAction(
+    toolName: string,
+    _args: Record<string, unknown>,
+  ): ToolAction {
+    const name = toolName.toLowerCase();
+
+    // Value heuristics: data retrieval > validation > formatting
+    let estimatedValue = 0.5;
+    if (name.includes("read") || name.includes("grep") || name.includes("list")) {
+      estimatedValue = 1.0;
+    } else if (name.includes("test") || name.includes("run")) {
+      estimatedValue = 0.5;
+    } else if (name.includes("write") || name.includes("patch")) {
+      estimatedValue = 0.3;
+    }
+
+    // Token heuristics: file reads can be large; writes/formatting are smaller
+    let estimatedTokens = 500;
+    if (name.includes("read_file")) {
+      estimatedTokens = 1500;
+    } else if (name.includes("run_tests") || name.includes("run_command")) {
+      estimatedTokens = 1200;
+    } else if (name.includes("list_files")) {
+      estimatedTokens = 200;
+    }
+
+    return { name: toolName, estimatedTokens, estimatedValue };
   }
 }
 

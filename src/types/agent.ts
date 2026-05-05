@@ -5,6 +5,15 @@ export type AgentModeName = "internal_mode" | "external_safe_mode";
 export type AgentBudget = {
   tokenCeiling: number;
   maxTurns: number;
+  perTurnTokenLimit?: number;
+};
+
+export type BudgetStatus = {
+  totalTokensUsed: number;
+  totalCostUsd: number;
+  usagePercent: number;
+  turnsRemaining: number;
+  shouldDownshift: boolean;
 };
 
 export type AgentProfile = {
@@ -122,6 +131,8 @@ export type RunMetrics = {
   llmTokensIn: number;
   llmTokensOut: number;
   llmCost: number;
+  totalCostUsd: number;
+  turnsRemaining: number;
   wallClockMs: number;
   completion: boolean;
   testsPassed: boolean;

@@ -71,6 +71,65 @@ async function federationSearch(queryVector: number[], limit = 5): Promise<Feder
 export class LongTermMemory {
   constructor(private readonly filePath: string) {}
 
+  /**
+   * Append a summary fragment to the running summary log.
+   * [P0|Q2] Sliding window eviction bridge with token cap — 2026-05-05
+   */
+  async appendRunningSummary(summary: string, maxSummaryTokens = 2048): Promise<void> {
+    const records = await this.readAll();
+    const existingIndex = records.findIndex((r) => r.id === "running-summary");
+
+    if (existingIndex >= 0) {
+      records[existingIndex].summary += "\n---\n" + summary;
+      records[existingIndex].createdAt = new Date().toISOString();
+    } else {
+      records.push({
+        id: "running-summary",
+        summary,
+        keywords: ["running-summary", "context", "evicted"],
+        createdAt: new Date().toISOString(),
+        metadata: { source: "ShortTermMemory eviction" },
+      });
+    }
+
+    // [Q2-CORRECTION] Gap 4: Cap running summary to prevent unbounded growth
+    const running = records[existingIndex >= 0 ? existingIndex : records.length - 1];
+    const fragments = running.summary.split("\n---\n");
+    while (
+      Math.ceil(running.summary.length / 4) > maxSummaryTokens &&
+      fragments.length > 1
+    ) {
+      fragments.shift();
+      running.summary = fragments.join("\n---\n");
+    }
+
+    await this.writeAll(records);
+
+    // Dual-write to federation
+    try {
+      const record = records.find((r) => r.id === "running-summary")!;
+      const vector = await getEmbedding(record.summary.slice(-500)); // embed latest chunk only
+      await federationUpsert(record.id, vector, {
+        summary: record.summary,
+        keywords: record.keywords,
+        createdAt: record.createdAt,
+        metadata: record.metadata,
+        writer_bot: "A-FORGE",
+      });
+    } catch (e) {
+      console.warn("[LongTermMemory] Federation upsert for running-summary failed (non-fatal):", e);
+    }
+  }
+
+  /**
+   * Retrieve the current running summary, if any.
+   */
+  async getRunningSummary(): Promise<string | undefined> {
+    const records = await this.readAll();
+    const record = records.find((r) => r.id === "running-summary");
+    return record?.summary;
+  }
+
   async store(record: TaskMemoryRecord): Promise<void> {
     // Keep local file write for A-FORGE internal use
     const records = await this.readAll();
@@ -151,6 +210,7 @@ export class LongTermMemory {
   private async readAll(): Promise<TaskMemoryRecord[]> {
     try {
       const raw = await readFile(this.filePath, "utf8");
+      if (!raw.trim()) return [];
       return JSON.parse(raw) as TaskMemoryRecord[];
     } catch (error) {
       const typedError = error as NodeJS.ErrnoException;

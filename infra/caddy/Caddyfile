@@ -49,6 +49,9 @@ aaa.arif-fazil.com {
 	handle /a2a/* {
 		reverse_proxy aaa-a2a:3001
 	}
+	handle /api/* {
+		reverse_proxy aaa-a2a:3001
+	}
 	handle /.well-known/agent.json {
 		reverse_proxy aaa-a2a:3001
 	}

@@ -14,6 +14,7 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { join } from "node:path";
 import type { AgentMessage, AgentProfile, AgentRunResult, EngineRunOptions, LlmTurnResponse } from "../types/agent.js";
 import type { ToolPermissionContext } from "../types/tool.js";
 import type { LlmProvider } from "../llm/LlmProvider.js";
@@ -321,7 +322,18 @@ export class PipelineCoordinator {
     metrics: AgentRunResult["metrics"];
   }> {
     const workingDirectory = resolveWorkingDirectory(options.workingDirectory);
-    const shortTermMemory = new ShortTermMemory();
+    const shortTermMemory = new ShortTermMemory({
+      maxMessages: 5,
+      maxTokens: 4096,
+      archivePath: join(workingDirectory, ".arifos", "archive.jsonl"),
+      onEvict: async (summary) => {
+        try {
+          await this.deps.longTermMemory.appendRunningSummary(summary);
+        } catch {
+          // Non-fatal: eviction failure must not break the agent loop
+        }
+      },
+    });
     const budgetManager = new BudgetManager(this.profile.budget);
     const modeSettings = buildModeSettings(this.profile.modeName);
     const intentModel = options.intentModel ?? "advisory";
@@ -349,11 +361,11 @@ export class PipelineCoordinator {
     }
 
     const floorsTriggered: string[] = [];
-    shortTermMemory.append({ role: "system", content: this.profile.systemPrompt });
+    shortTermMemory.pin({ role: "system", content: this.profile.systemPrompt });
 
     // Sacred memories
     const sacredMessages = await this.injectSacredMemories();
-    for (const msg of sacredMessages) shortTermMemory.append(msg);
+    for (const msg of sacredMessages) shortTermMemory.pin(msg);
 
     // Routing context injection
     if (this.session?.routing) {
@@ -504,6 +516,8 @@ export class PipelineCoordinator {
       llmTokensIn,
       llmTokensOut,
       llmCost: this.estimateApiCost(llmTokensIn, llmTokensOut),
+      totalCostUsd: budgetManager.getStatus().totalCostUsd,
+      turnsRemaining: budgetManager.getStatus().turnsRemaining,
       wallClockMs,
       completion: !errorMessage && !finalResponse.startsWith("Stopped"),
       testsPassed: false,
@@ -715,6 +729,7 @@ export class PipelineCoordinator {
       trustMode: this.deps.featureFlags?.ENABLE_DANGEROUS_TOOLS ? "local_vps" : "default",
       blockedDangerousActions: 0, blockedCommands: 0, timeoutEvents: 0, restrictedPathAttempts: 0,
       llmTokensIn: 0, llmTokensOut: 0, llmCost: 0,
+      totalCostUsd: 0, turnsRemaining: 0,
       wallClockMs: Date.now() - startedAt.getTime(),
       completion: false, testsPassed: false, errorMessage: message,
     };

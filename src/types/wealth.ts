@@ -94,3 +94,34 @@ export const DS_PREDICT_THRESHOLD = 0.4;
 export const NPV_MIN = 0;
 export const EMV_MIN = 0;
 
+// [Q2] WEALTH advisory mode types — 2026-05-05
+
+export type ToolAction = {
+  name: string;
+  estimatedTokens: number;
+  estimatedValue: number;
+};
+
+export type TokenBudget = {
+  remainingTokens: number;
+  remainingTurns: number;
+};
+
+export type WealthAdvice = {
+  approved: ToolAction[];
+  deferred: ToolAction[];
+  reason: string;
+};
+
+export type StressState = {
+  consecutiveFailures: number;
+  budgetBurnRate: number;
+  diminishingReturns: boolean;
+  cumulativeStress: number;
+};
+
+export type ContinueAdvice = {
+  verdict: "PROCEED" | "VOID";
+  reason: string;
+};
+

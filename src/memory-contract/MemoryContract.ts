@@ -570,6 +570,50 @@ export class MemoryContract {
     await writeFile(this.storePath, lines);
   }
 
+  /**
+   * [Q2] Explicit tier classifier for AgentEngine memory pipeline.
+   * Maps content + source + confidence to the correct constitutional tier.
+   */
+  classify(
+    content: string,
+    sourceType: "human" | "inferred" | "external" | "system",
+    confidence: number,
+  ): MemoryTier {
+    // Sacred: system-level constitution, identity, non-negotiables
+    if (sourceType === "system" && confidence >= 0.95) {
+      const lower = content.toLowerCase();
+      if (
+        lower.includes("constitution") ||
+        lower.includes("sovereign") ||
+        lower.includes("floor") ||
+        lower.includes("never") ||
+        lower.includes("always") ||
+        lower.includes("must not") ||
+        lower.includes("shall not")
+      ) {
+        return "sacred";
+      }
+    }
+
+    // Canon: stable, verified facts from human or high-confidence sources
+    if ((sourceType === "human" || confidence >= 0.9) && content.length < 500) {
+      return "canon";
+    }
+
+    // Quarantine: unverified, conflicting, or low-confidence information
+    if (confidence < 0.4) {
+      return "quarantine";
+    }
+
+    // Ephemeral: temporary, turn-specific scratch
+    if (sourceType === "inferred" && confidence < 0.7) {
+      return "ephemeral";
+    }
+
+    // Working: active, mutable context (default for most agent memories)
+    return "working";
+  }
+
   private inferTier(content: string): MemoryTier {
     const lower = content.toLowerCase();
     
