@@ -19,6 +19,8 @@ RUN addgroup -S arifos && adduser -S arifos -G arifos
 
 COPY --chown=arifos:arifos package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
+# MiniMax MCP runtime — required by MiniMaxMcpClient.ts
+RUN npm install -g minimax-coding-plan-mcp@0.1.2 --force && npm cache clean --force
 COPY --from=builder --chown=arifos:arifos /app/dist ./dist
 
 USER arifos
