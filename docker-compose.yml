@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   af-bridge:
-    image: ghcr.io/ariffazil/a-forge:c694a2f
+    image: ghcr.io/ariffazil/a-forge:3159d22
     container_name: af-bridge-prod
     ports:
       - "127.0.0.1:7071:7071"
