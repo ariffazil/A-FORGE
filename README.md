@@ -51,6 +51,14 @@ A-FORGE is the **execution shell** — it does not adjudicate. It receives verdi
 
 ---
 
+## What Changed (2026-05-10)
+
+- arifOS embodiment contracts now gate execution plans before downstream tool invocation.
+- The runtime source of truth remains the standalone A-FORGE bridge on `127.0.0.1:7071`, not the federation base compose file.
+- The `h1-roadmap-1778019172` branch is no longer ahead of `main`; the remaining frontier is dry-run sandboxing, rollback atomicity, telemetry, and Qdrant test-noise cleanup.
+
+---
+
 ## Runtime Source of Truth
 
 The canonical **A-FORGE bridge runtime** on the VPS is the standalone compose project in this repo:
