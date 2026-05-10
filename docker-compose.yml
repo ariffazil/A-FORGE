@@ -1,9 +1,7 @@
 version: '3.8'
 services:
   af-bridge:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/ariffazil/a-forge:c694a2f
     container_name: af-bridge-prod
     ports:
       - "127.0.0.1:7071:7071"
