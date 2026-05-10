@@ -3,7 +3,7 @@
 > **Intelligence is forged, not given.**
 > **DITEMPA BUKAN DIBERI — 999 SEAL ALIVE**
 
-[![A-FORGE](https://img.shields.io/badge/A%E2%80%93FORGE-v0.1.0-FF6B35?style=flat-square)](https://github.com/ariffazil/A-FORGE)
+[![A-FORGE](https://img.shields.io/badge/A--FORGE-v2026.05.10-FF6B35?style=flat-square)](https://github.com/ariffazil/A-FORGE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square)](https://github.com/ariffazil/A-FORGE)
 [![arifOS](https://img.shields.io/badge/arifOS-F1%E2%80%93F13_Governed-FF6B00?style=flat-square)](https://github.com/ariffazil/arifOS)
 [![License](https://img.shields.io/badge/License-AGPL_V3-4EAF0C?style=flat-square)](./LICENSE)
