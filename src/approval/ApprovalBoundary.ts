@@ -212,11 +212,31 @@ export class ApprovalBoundary {
     context?: string,
     stagedActionId?: string
   ): HoldQueueItem {
-    const requiresExplicitApproval = preview.riskAssessment.level !== "minimal" &&
-                                     preview.riskAssessment.level !== "low";
-    
-    const badge: ActionBadge = requiresExplicitApproval ? "✋ Needs Yes" : "📋 Ready";
-    const state: ActionState = requiresExplicitApproval ? "holding" : "ready";
+    // AFK auto-approve: low/minimal risk + AFK_MODE + ENABLE_DANGEROUS_TOOLS → skip hold
+    const isLowRisk =
+      preview.riskAssessment.level === "minimal" ||
+      preview.riskAssessment.level === "low";
+    const isAfkAutoApprove =
+      process.env.ENABLE_AFK_AUTO_APPROVE === "1" &&
+      process.env.AFK_MODE === "true" &&
+      isLowRisk &&
+      process.env.ENABLE_DANGEROUS_TOOLS === "1";
+
+    const requiresExplicitApproval =
+      !isAfkAutoApprove &&
+      preview.riskAssessment.level !== "minimal" &&
+      preview.riskAssessment.level !== "low";
+
+    const badge: ActionBadge = isAfkAutoApprove
+      ? "🤖 AFK-Auto"
+      : requiresExplicitApproval
+        ? "✋ Needs Yes"
+        : "📋 Ready";
+    const state: ActionState = isAfkAutoApprove
+      ? "approved"
+      : requiresExplicitApproval
+        ? "holding"
+        : "ready";
     
     const holdId = `hold_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     
