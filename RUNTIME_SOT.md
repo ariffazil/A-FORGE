@@ -1,15 +1,15 @@
 # A-FORGE Runtime SOT
 
-> Audited against the live VPS on **2026-05-04**.
+> Audited against the live VPS on **2026-05-11**.
 
 ## Canonical runtime owner
 
-The authoritative runtime for the A-FORGE bridge on this VPS is:
+The authoritative bridge definition for A-FORGE on this VPS remains:
 
 - **Repo:** `/root/A-FORGE`
 - **Compose file:** `/root/A-FORGE/docker-compose.yml`
-- **Container:** `af-bridge-prod`
-- **Image:** `a-forge-af-bridge`
+- **Expected container:** `af-bridge-prod`
+- **Configured image:** `ghcr.io/ariffazil/a-forge:3159d22`
 - **Network:** `arifos_core_network`
 
 `/root/compose/docker-compose.yml` is the federation stack for shared services. It is **not** the source of truth for the A-FORGE bridge container in the current live topology.
@@ -19,9 +19,11 @@ The authoritative runtime for the A-FORGE bridge on this VPS is:
 | Field | Value |
 |---|---|
 | Bind address | `127.0.0.1:7071` |
-| Health | `GET /health` returns `ok: true`, `status: healthy`, `version: 0.1.0` |
+| Health | `GET /health` currently **unreachable** on `127.0.0.1:7071` |
 | Start mode | Docker Compose, restart `unless-stopped` |
 | External exposure | Expected to stay local-only behind Caddy or another reverse proxy |
+| Live container state | `af-bridge-prod` is **not present/running** at audit time |
+| Related live container | `forge-notifier` is running and healthy |
 
 ## Governance and data-plane contract
 
@@ -33,17 +35,15 @@ The authoritative runtime for the A-FORGE bridge on this VPS is:
 | `QDRANT_URL` | `http://qdrant:6333` |
 | `OLLAMA_BASE_URL` | `http://ollama:11434` |
 
-This means the bridge is wired into the same internal federation network as arifOS and the shared data plane, without needing public bounce URLs.
+This means the bridge is configured to use the same internal federation network as arifOS and the shared data plane, without needing public bounce URLs.
 
 ## Current operational note
 
-At audit time, the A-FORGE repo working tree was **dirty**:
+At the 2026-05-11 audit:
 
-- modified: `src/server.ts`
-- untracked: `SKILLS.md`
-- untracked: `src/reply/`
-
-Treat the running bridge as a **live dev runtime**, not a sealed canonical release, until the working tree is reviewed and committed or explicitly discarded.
+- the compose definition is present and still canonical,
+- the bridge container is **not** running,
+- and any doc claiming a healthy local `7071` bridge is stale until `af-bridge-prod` is recreated and `/health` answers again.
 
 ## Rule for future audits
 

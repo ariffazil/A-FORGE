@@ -1,75 +1,42 @@
-# SOT: AAA Federation Integration Mapping
-**Timestamp:** 2026-04-16
-**Status:** HEADED_TRANSITION
-**Seal:** PARTIAL (Cooling Required)
+# SOT: AAA Federation Runtime Mapping
+**Timestamp:** 2026-05-11
+**Status:** LIVE_WITH_ONE_EXECUTION_GAP
+**Seal:** PARTIAL — execution bridge absent, federation surfaces otherwise healthy
 
-This document maps the required updates across the arifOS ecosystem repositories to reflect the newly integrated **AAA-Agent (Federal Coordinator)**, **ARCHIVIST-Agent (Canon Keeper)**, and **NOTIFIER-Agent (Human-Loop Delivery)**.
-
----
-
-## 1. `A-FORGE` (Execution Substrate / Body)
-*Location: `/root`*
-
-### Files to Update:
-*   **`README.md`**:
-    *   **Update:** Declare the transition from "Headless" to "Headed" execution.
-    *   **Detail:** Add AAA-Agent routing, VAULT999 automated canon writing via Archivist, and 888_HOLD webhook integration via Notifier.
-    *   **Caveat:** Explicitly state that `LoopController`, `TaskGraphPlanner`, `AgentHandoff`, and `EvalHarness` remain in **HOLD** per canon v2026-04-10.
-*   **`AGENTS.md`**:
-    *   **Update:** Expand the agent registry to include the 9-Agent Federation.
-    *   **Detail:** Add `AAA-Agent` (ASI), `ARCHIVIST-Agent` (AGI), and `NOTIFIER-Agent` (TOOL).
-*   **`ARCHITECTURE.md`**:
-    *   **Update:** Map the new intent routing topology (`POST /route`).
-    *   **Detail:** Diagram the flow from `AAA-Agent` to Specialist Organs (GEOX/WEALTH) to VAULT999.
+This document is the current cross-repo runtime map for the AAA-led federation after ingress repair, WEALTH invariant sealing, and arifOS readiness repair.
 
 ---
 
-## 2. `arifOS` (Constitutional Law / Nucleus)
-*Location: `/root/arifOS`*
+## Federation Runtime Snapshot
 
-### Files to Update:
-*   **`README.md` / `ARCHITECTURE.md`**:
-    *   **Update:** Acknowledge `A-FORGE` as the official **Execution Adapter** that fulfills the AAA routing and Vault persistence requirements.
-    *   **Detail:** Reiterate the Gödel Lock mechanism—AAA cannot SEAL itself on high-risk paths and must defer to F13 (Human Sovereign) via the Notifier.
-*   **`core/kernel/loop_controller.py`** *(New/WIP)*:
-    *   **Update:** Ensure its documentation or header reflects its current **HOLD** status, pending thermal cooling of the federation.
-
----
-
-## 3. `GEOX` (Earth/Physics Organ)
-*Location: `/root/GEOX`*
-
-### Files to Update:
-*   **`README.md`**:
-    *   **Update:** Define its role as a "Specialist Agent" in the 9-Agent Federation.
-    *   **Detail:** Clarify that its inputs are routed downstream from the `AAA-Agent` Federal Coordinator after constitutional classification.
+| Organ | Repo | Public / Local Surface | Current Truth |
+|---|---|---|---|
+| AAA | `/root/AAA` | `https://aaa.arif-fazil.com/ready` | `healthy` |
+| arifOS | `/root/arifOS` | `https://arifos.arif-fazil.com/ready` | `pass` |
+| GEOX | `/root/geox` | `https://geox.arif-fazil.com/ready` | `ok` |
+| WEALTH | `/root/wealth` | `https://wealth.arif-fazil.com/ready` | `ready` |
+| WELL | `/root/WELL` | `https://well.arif-fazil.com/ready` | `WELL_PASS` |
+| A-FORGE bridge | `/root/A-FORGE` | `127.0.0.1:7071/health` | **unreachable** |
 
 ---
 
-## 4. `WEALTH` (Economic Organ)
-*Location: `/root/WEALTH`*
+## Routing Law
 
-### Files to Update:
-*   **`README.md`**:
-    *   **Update:** Define its role as a "Specialist Agent" in the 9-Agent Federation.
-    *   **Detail:** Clarify that its inputs are routed downstream from the `AAA-Agent` Federal Coordinator.
-
----
-
-## Git Alignment Plan
-To synchronize the GitHub repositories, the following sequence will be executed for each repo:
-1.  Apply the markdown documentation updates described above.
-2.  Stage the changes (`git add .`).
-3.  Commit with standard semantic message: `docs(architecture): map AAA federation to SOT (v2026.04.16)`
-4.  Push to remote (`git push origin main` or equivalent).
+1. **AAA** identifies and brokers the operator session.
+2. **arifOS** judges with the 13 canonical tools and F1-F13 floors.
+3. **GEOX / WEALTH / WELL** provide earth, capital, and human-readiness evidence.
+4. **A-FORGE** is still the execution adapter of record, but its standalone bridge container is not currently running.
+5. **VAULT999** remains the immutable audit destination.
 
 ---
 
-## Trinity Epoch 2026-05-02
-- Trinity ingress LIVE (Caddy service-name routing).
-- Trinity surfaces corrected (arif-fazil.com, arifos, aaa).
-- VAULT999 remains OFF; WEALTH/GEOX patches pending in feature branches.
+## Current Constraint
 
+The federation is no longer in the earlier transition described by this document's previous revision. The actual current gap is narrower:
 
+- ingress is fixed,
+- arifOS readiness is fixed,
+- WEALTH canonical invariant surface is live,
+- but the A-FORGE bridge runtime at `127.0.0.1:7071` is not up.
 
-
+Any future execution-seal claim must account for that missing bridge runtime explicitly.

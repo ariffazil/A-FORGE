@@ -3,7 +3,7 @@
     "arifOS": {
       "type": "http",
       "url": "http://localhost:8080/mcp",
-      "description": "arifOS v2026.04.26-KANON — 13 canonical tools, F1-F13 floors, VAULT999"
+      "description": "arifOS v2026.05.11-EMBODY — 13 canonical tools, F1-F13 floors, VAULT999, federation gateway"
     },
     "supabase": {
       "type": "http",
@@ -11,10 +11,18 @@
     },
     "playwright": {
       "command": "npx",
-      "args": [
-        "@playwright/mcp"
-      ],
+      "args": ["@playwright/mcp"],
       "cwd": "/root"
+    },
+    "tavily-remote-mcp": {
+      "type": "http",
+      "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=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",
+      "description": "Tavily MCP — web search + URL extraction (F2/F3 grounded)"
+    },
+    "exa": {
+      "type": "http",
+      "url": "https://mcp.exa.ai/mcp",
+      "description": "Exa MCP — web search + code search + content extraction (OAuth)"
     }
   }
 }

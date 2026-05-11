@@ -45,17 +45,20 @@ A-FORGE is the **execution shell** — it does not adjudicate. It receives verdi
 | Role | **Security Enforcement** |
 | Governing kernel | `arifOS MIND (Ω)` |
 | Enforcement Level | `F1-F13 Always-On` |
+| Repo head audited | `1f73d8a` |
 | Tools | 11 callable tools + ToolRegistry (internal) |
 | Position | Stages 333-777 |
 | Runtime SOT | [`RUNTIME_SOT.md`](./RUNTIME_SOT.md) |
+| Bridge status | `127.0.0.1:7071` currently unreachable |
 
 ---
 
-## What Changed (2026-05-10)
+## What Changed (2026-05-11)
 
 - arifOS embodiment contracts now gate execution plans before downstream tool invocation.
-- The runtime source of truth remains the standalone A-FORGE bridge on `127.0.0.1:7071`, not the federation base compose file.
-- The `h1-roadmap-1778019172` branch is no longer ahead of `main`; the remaining frontier is dry-run sandboxing, rollback atomicity, telemetry, and Qdrant test-noise cleanup.
+- The runtime source of truth still points at the standalone A-FORGE bridge on `127.0.0.1:7071`, not the federation base compose file.
+- At audit time, that bridge container was not running, so any doc claiming a healthy local bridge is stale until `af-bridge-prod` is recreated.
+- The remaining frontier is restoring the standalone bridge runtime while preserving arifOS-first governance.
 
 ---
 
@@ -64,7 +67,7 @@ A-FORGE is the **execution shell** — it does not adjudicate. It receives verdi
 The canonical **A-FORGE bridge runtime** on the VPS is the standalone compose project in this repo:
 
 - **Compose owner:** `/root/A-FORGE/docker-compose.yml`
-- **Live container:** `af-bridge-prod`
+- **Expected container:** `af-bridge-prod`
 - **Bind:** `127.0.0.1:7071`
 - **Shared federation network:** `arifos_core_network`
 - **Governance target:** `http://arifosmcp:8080`
@@ -73,6 +76,8 @@ The canonical **A-FORGE bridge runtime** on the VPS is the standalone compose pr
 `/root/compose/docker-compose.yml` remains the **federation base stack** for shared services, but it is **not** the runtime owner of the A-FORGE bridge container. If the bridge is moved into `/root/compose` later, update this section and `RUNTIME_SOT.md` in the same change.
 
 A-FORGE prefers **HTTP governance through arifOS** when `ARIFOS_GOVERNANCE_URL` is set. If that variable is absent, the CLI falls back to in-process `LocalGovernanceClient`; treat that as a degraded or local-development path, not the default VPS contract.
+
+**Current live state:** the compose definition exists, but `af-bridge-prod` is not present/running at the 2026-05-11 audit, so `/health` on `127.0.0.1:7071` does not answer.
 
 ---
 
