@@ -137,3 +137,14 @@ Human / Agent request
 
 *arifOS may judge. A-FORGE executes. The seal is earned, not assumed.*
 *DITEMPA BUKAN DIBERI — Execution is forged through disciplined orchestration.*
+
+## Repo + MCP Stabilization
+
+Operational stabilization policy and weekly hygiene protocol:
+`docs/operations/repo-mcp-stabilization.md`
+
+Install severity-based pre-push guard:
+
+```bash
+bash scripts/hooks/install_hooks.sh
+```
