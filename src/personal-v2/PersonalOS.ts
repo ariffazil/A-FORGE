@@ -42,7 +42,7 @@ export interface HumanIntent {
 
 export interface HumanResponse {
   /** Action badge */
-  badge: "🔍 Observe" | "💡 Advise" | "📋 Ready" | "✋ Needs Yes" | "✅ Executed" | "❌ Rejected";
+  badge: "🔍 Observe" | "💡 Advise" | "📋 Ready" | "✋ Needs Yes" | "🤖 AFK-Auto" | "✅ Executed" | "❌ Rejected";
   
   /** System state */
   state: "thinking" | "drafting" | "holding" | "ready" | "approved" | "executing" | "executed" | "rejected" | "expired";

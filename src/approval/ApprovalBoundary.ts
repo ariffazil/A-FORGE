@@ -24,6 +24,7 @@ export type ActionBadge =
   | "💡 Advise"       // System has a suggestion
   | "📋 Ready"        // Draft prepared, waiting for human
   | "✋ Needs Yes"    // Explicit approval required
+  | "🤖 AFK-Auto"     // Auto-approved while sovereign AFK
   | "✅ Executed"     // Done, with record
   | "❌ Rejected";    // Human declined
 

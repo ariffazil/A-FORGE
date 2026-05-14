@@ -26,6 +26,7 @@ import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "../esca
 import { WEALTH_TOOLS } from "../tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../tools/MiniMaxTools.js";
 import { getMiniMaxClient } from "../tools/MiniMaxMcpClient.js";
+import { AgentZeroDelegateTool, AgentZeroBrowserTool, AgentZeroDocumentTool } from "../tools/AgentZeroTool.js";
 
 export const server = new McpServer({
   name: "A-FORGE",
