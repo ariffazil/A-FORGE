@@ -32,8 +32,8 @@ status_data = {
             "docker": get_container_status("arifosmcp"),
             "api": get_api_health("https://arifosmcp.arif-fazil.com/health")
         },
-        "GEOX_eic": {
-            "docker": get_container_status("GEOX_eic"),
+        "geox_eic": {
+            "docker": get_container_status("geox_eic"),
             "api": get_api_health("https://GEOX.arif-fazil.com/health")
         }
     },

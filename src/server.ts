@@ -28,6 +28,7 @@ import { getPostgresVaultClient, type FloorRule, MerkleV3Service } from "./vault
 import { LocalGovernanceClient } from "./governance/index.js";
 import { getAdaptiveThresholds } from "./governance/thresholds.js";
 import { SealService } from "./governance/SealService.js";
+import { getCoolingGate } from "./governance/CoolingGate.js";
 import { PlanValidator } from "./planner/PlanValidator.js";
 import { createOperatorAuthMiddleware } from "./middleware/operatorAuth.js";
 import { AAAgent } from "./agents/AAAgent.js";
@@ -500,6 +501,20 @@ app.get("/ready", (_req: Request, res: Response) => {
       judge: true,
       contract: true,
     },
+  });
+});
+
+/**
+ * GET /sabar/cooldown
+ * SABAR Cooldown Protocol vitals — machine cooling state
+ */
+app.get("/sabar/cooldown", (_req: Request, res: Response) => {
+  const gate = getCoolingGate();
+  const vitals = gate.vitals();
+  res.json({
+    protocol: "SABAR",
+    window_hours: 72,
+    vitals,
   });
 });
 
