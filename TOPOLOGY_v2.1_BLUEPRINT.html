@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arifOS Canonical Topology v2.1</title>
+<style>
+:root {
+  --bg: #050505;
+  --panel-bg: #111;
+  --border: #333;
+  --text: #eee;
+  --primary: #4f98a3;
+  --secondary: #7a39bb;
+  --accent: #e8af34;
+  --danger: #dd6974;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 40px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 800px;
+  width: 100%;
+}
+.layer {
+  background: var(--panel-bg);
+  border: 2px solid var(--border);
+  padding: 20px;
+  border-radius: 8px;
+  position: relative;
+  transition: transform 0.2s;
+}
+.layer:hover {
+  transform: scale(1.02);
+  border-color: var(--primary);
+}
+.layer-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--primary);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.layer-tech {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 10px;
+}
+.layer-content {
+  font-size: 14px;
+  line-height: 1.6;
+}
+.connector {
+  height: 20px;
+  width: 2px;
+  background: var(--primary);
+  margin: 0 auto;
+  position: relative;
+}
+.connector::after {
+  content: '▲';
+  position: absolute;
+  top: -10px;
+  left: -6px;
+  font-size: 10px;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background: rgba(79, 152, 163, 0.1);
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  font-size: 10px;
+  margin-right: 5px;
+}
+.gen-intel { border-color: var(--secondary); }
+.gen-intel .layer-title { color: var(--secondary); }
+.truth { border-color: var(--accent); }
+.truth .layer-title { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="stack">
+  <div class="layer">
+    <div class="layer-title">AAA Governance Cockpit</div>
+    <div class="layer-tech">TypeScript • npm • WebMCP • UI Safety</div>
+    <div class="layer-content">
+      <span class="tag">Architect</span> <span class="tag">Auditor</span> <span class="tag">Agent</span>
+      <p>Human-in-the-loop • Oversight • Receipts • Lineage</p>
+    </div>
+  </div>
+  <div class="connector"></div>
+  <div class="layer">
+    <div class="layer-title">arifOS Kernel</div>
+    <div class="layer-tech">YAML • Protobuf • JSON • SSCT Registry</div>
+    <div class="layer-content">
+      <span class="tag">Δ Clarity</span> <span class="tag">Ω Humility</span> <span class="tag">Ψ Vitality</span>
+      <p>Constitutional Floors • 888_HOLD • Reversibility • Truth Tests</p>
+    </div>
+  </div>
+  <div class="connector"></div>
+  <div class="layer">
+    <div class="layer-title">Metabolic Pipeline 000→999</div>
+    <div class="layer-tech">Python • Dag-Enforced Runtime</div>
+    <div class="layer-content">
+      <p>000 Ingest → 111 Clean → 222 Normalize → 333 FeatEng → 444 Embed → 555 RAG → 666 Invoke → 777 Judge → 888 HOLD → 999 Ledger</p>
+    </div>
+  </div>
+  <div class="connector"></div>
+  <div class="layer truth">
+    <div class="layer-title">Truth & Data Foundations</div>
+    <div class="layer-tech">SQL • ACID • Parquet • Lineage</div>
+    <div class="layer-content">
+      <p>Structured Storage • Feature Stores • Grounding • Immutable Audit Trail</p>
+    </div>
+  </div>
+  <div class="connector"></div>
+  <div class="layer gen-intel">
+    <div class="layer-title">Generative Intelligence</div>
+    <div class="layer-tech">Transformers • Embeddings • Self-Attention</div>
+    <div class="layer-content">
+      <p>Raw Semantics • Probability • Forward Pass • Hallucination Risk</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

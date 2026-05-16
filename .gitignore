@@ -1,0 +1,100 @@
+# Dependencies
+node_modules/
+*.log
+*.pid
+*.seed
+*.pid.lock
+.npm
+.bun
+
+# Build outputs
+dist/
+*.tsbuildinfo
+*.js.map
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+.secrets/
+*.pem
+*.key
+
+# Runtime data
+.agent-workbench/
+.arifos/
+*.jsonl
+metrics/
+!src/metrics/
+!src/metrics/*.ts
+scoreboard.json
+memory.json
+
+# Python / misc caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.cache/
+.mypy_cache/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.bak
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sibling projects (tracked via submodules or external means)
+# !arifOS/
+# !GEOX/
+
+control_plane/
+execution_plane/
+ARCHIVE_*/
+.archive/
+
+# Agent / tool caches
+.aider/
+.aider.tags.cache.v4/
+.claude/
+.codex/
+.copilot/
+.gemini/
+.kimi/
+.mcp-auth/
+.openclaw/
+.opencode/
+.playwright-mcp/
+
+# Infrastructure secrets
+.acme.sh/
+.ssh/
+.pki/
+.docker/
+.config/
+.local/
+.secrets/
+
+# Misc archives
+*.tar.gz
+*.zip
+*.tgz
+
+.supabase/
+GE OX/
+GEOX/
+
+# VAULT999 — runtime receipt cache. Supabase is primary ledger.
+# Resolved: 2026-04-19 — F1 Amanah compliance
+VAULT999/
+.coverage
+htmlcov/
+coverage.xml
+*.cover

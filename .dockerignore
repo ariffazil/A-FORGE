@@ -1,0 +1,14 @@
+**
+!package.json
+!package-lock.json
+!tsconfig.json
+!Dockerfile
+!src/
+!src/**
+!examples/
+!examples/**
+!test/
+!test/**
+!WELL/
+!WELL/**
+!pyproject.toml

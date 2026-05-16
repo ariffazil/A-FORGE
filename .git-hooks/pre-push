@@ -1,0 +1,11 @@
+#!/bin/bash
+# Seal main branch - block all pushes
+protected_branch="main"
+current_branch=$(git symbolic-ref --short HEAD 2>/dev/null)
+
+if [ "$current_branch" = "$protected_branch" ]; then
+    echo "❌ DENIED: Pushing directly to $protected_branch is sealed."
+    echo "   Create a feature branch, then submit a PR."
+    exit 1
+fi
+exit 0

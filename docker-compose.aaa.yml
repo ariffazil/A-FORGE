@@ -1,0 +1,89 @@
+# GEOX Large Earth Model — AAA Grade Deployment
+# DITEMPA BUKAN DIBERI
+# Version: v2026.04.10-AAA
+
+version: '3.8'
+
+services:
+  # Main GEOX MCP Server — AAA Grade
+  GEOX-server-aaa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: GEOX_lem_server
+    ports:
+      - "8000:8000"
+    environment:
+      - GEOX_VERSION=v2026.04.10-AAA
+      - GEOX_MODE=large_earth_model
+      - GEOX_TIER=AAA
+      - MCP_TRANSPORT=sse
+      - PYTHONPATH=/app
+      - ARIFOS_CONFIG=/app/arifos/GEOX/config_GEOX.yaml
+    volumes:
+      - ./arifos:/app/arifos:ro
+      - ./data:/app/data:ro
+      - GEOX_memory:/app/memory
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - GEOX_network
+
+  # MCP Apps Static Server
+  GEOX-apps:
+    image: nginx:alpine
+    container_name: GEOX_lem_apps
+    ports:
+      - "8080:80"
+    volumes:
+      - ./arifos/GEOX/apps/ac_risk_console:/usr/share/nginx/html/apps/ac_risk_console:ro
+      - ./arifos/GEOX/apps/basin_explorer:/usr/share/nginx/html/apps/basin_explorer:ro
+      - ./arifos/GEOX/apps/seismic_viewer:/usr/share/nginx/html/apps/seismic_viewer:ro
+      - ./arifos/GEOX/apps/well_context_desk:/usr/share/nginx/html/apps/well_context_desk:ro
+      - ./apps/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
+    networks:
+      - GEOX_network
+
+  # GEOX GUI (React App)
+  GEOX-gui:
+    build:
+      context: ./GEOX-gui
+      dockerfile: Dockerfile
+    container_name: GEOX_lem_gui
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_GEOX_API_URL=http://localhost:8000
+      - REACT_APP_VERSION=v2026.04.10-AAA
+    restart: unless-stopped
+    networks:
+      - GEOX_network
+    depends_on:
+      - GEOX-server-aaa
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: GEOX_lem_cache
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - GEOX_network
+
+volumes:
+  GEOX_memory:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  GEOX_network:
+    driver: bridge
+

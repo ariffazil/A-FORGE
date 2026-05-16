@@ -1,0 +1,80 @@
+x-default-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "5m"
+    max-file: "2"
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - A-FORGE-internal
+      - arifosmcp_arifos_trinity
+    logging: *default-logging
+    extra_hosts:
+      - "host.docker.internal:172.17.0.1"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    volumes:
+      - ./grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - A-FORGE-internal
+    logging: *default-logging
+    depends_on:
+      - prometheus
+
+  notifier:
+    build:
+      context: ./notifier
+      dockerfile: Dockerfile
+    container_name: notifier
+    restart: unless-stopped
+    environment:
+      - PORT=9001
+      - NOTIFIER_LOG_PATH=/data/notifier.jsonl
+      - NOTIFIER_DELAY_SECONDS=2
+      - NOTIFIER_DEFAULT_DECISION=APPROVE
+    volumes:
+      - notifier-data:/data
+    ports:
+      - "127.0.0.1:9001:9001"
+    networks:
+      - A-FORGE-internal
+    logging: *default-logging
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  notifier-data:
+
+networks:
+  A-FORGE-internal:
+    external: true
+  arifosmcp_arifos_trinity:
+    external: true
+
+

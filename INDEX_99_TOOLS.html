@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>arifOS — MCP 99-Tool Constitutional Specification v1.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN TOKENS — arifOS Constitutional Palette
+   ═══════════════════════════════════════════════ */
+:root {
+  --text-xs:   clamp(0.65rem,  0.6rem + 0.2vw, 0.75rem);
+  --text-sm:   clamp(0.75rem,  0.7rem + 0.25vw, 0.875rem);
+  --text-base: clamp(0.875rem, 0.8rem + 0.3vw, 1rem);
+  --text-lg:   clamp(1rem,     0.9rem + 0.5vw, 1.25rem);
+  --text-xl:   clamp(1.25rem,  1rem   + 1vw,   1.75rem);
+  --text-2xl:  clamp(1.75rem,  1.2rem + 1.8vw, 2.5rem);
+  --text-3xl:  clamp(2.2rem,   1.5rem + 2.5vw, 3.5rem);
+
+  --space-1: 0.25rem; --space-2: 0.5rem;  --space-3: 0.75rem;
+  --space-4: 1rem;    --space-5: 1.25rem; --space-6: 1.5rem;
+  --space-8: 2rem;    --space-10: 2.5rem; --space-12: 3rem;
+  --space-16: 4rem;   --space-20: 5rem;   --space-24: 6rem;
+
+  --radius-sm: 0.25rem; --radius-md: 0.5rem; --radius-lg: 0.75rem;
+  --radius-xl: 1rem; --radius-2xl: 1.5rem; --radius-full: 9999px;
+  --transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  --font-body: 'Inter', system-ui, sans-serif;
+
+  /* Tier colors */
+  --tier-00: #4f98a3;
+  --tier-01: #6daa45;
+  --tier-02: #e8af34;
+  --tier-03: #da7101;
+  --tier-04: #a12c7b;
+  --tier-05: #dd6974;
+  --tier-06: #006494;
+  --tier-07: #7a39bb;
+}
+
+[data-theme="dark"] {
+  --color-bg:             #0d0c0b;
+  --color-surface:        #131211;
+  --color-surface-2:      #181716;
+  --color-surface-3:      #1e1d1b;
+  --color-surface-4:      #252422;
+  --color-border:         #2a2926;
+  --color-border-strong:  #3a3936;
+  --color-text:           #e8e6e3;
+  --color-text-muted:     #8a8880;
+  --color-text-faint:     #4a4946;
+  --color-primary:        #4f98a3;
+  --color-primary-dim:    rgba(79,152,163,0.12);
+  --color-accent:         #e8af34;
+  --color-accent-dim:     rgba(232,175,52,0.10);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.6);
+  --shadow-glow: 0 0 24px rgba(79,152,163,0.15);
+}
+
+/* ═══════════════ BASE ═══════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--color-surface); }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: var(--radius-full); }
+
+/* ═══════════════ ANIMATED BG ═══════════════ */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(79,152,163,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(79,152,163,0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+.bg-glow-1 {
+  position: fixed; width: 600px; height: 600px;
+  top: -200px; left: -200px; z-index: 0; pointer-events: none;
+  background: radial-gradient(circle, rgba(79,152,163,0.06) 0%, transparent 70%);
+}
+.bg-glow-2 {
+  position: fixed; width: 400px; height: 400px;
+  bottom: -100px; right: -100px; z-index: 0; pointer-events: none;
+  background: radial-gradient(circle, rgba(232,175,52,0.05) 0%, transparent 70%);
+}
+
+/* ═══════════════ NAV ═══════════════ */
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: color-mix(in oklch, var(--color-bg) 85%, transparent);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-3) var(--space-6);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-family: var(--font-mono); font-size: var(--text-sm);
+  font-weight: 700; color: var(--color-primary);
+  letter-spacing: 0.05em;
+}
+.nav-logo svg { width: 28px; height: 28px; }
+.nav-links {
+  display: flex; align-items: center; gap: var(--space-1);
+  list-style: none;
+}
+.nav-links a {
+  font-size: var(--text-xs); color: var(--color-text-muted);
+  text-decoration: none; padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  transition: color var(--transition), background var(--transition);
+  font-family: var(--font-mono); letter-spacing: 0.03em;
+}
+.nav-links a:hover { color: var(--color-text); background: var(--color-surface-3); }
+
+/* ═══════════════ LAYOUT ═══════════════ */
+.main { position: relative; z-index: 1; padding-top: 4rem; }
+
+.container {
+  max-width: 1280px; margin: 0 auto;
+  padding-inline: clamp(var(--space-4), 4vw, var(--space-16));
+}
+
+/* ═══════════════ HERO ═══════════════ */
+.hero {
+  padding: clamp(var(--space-16), 8vw, var(--space-24)) 0 clamp(var(--space-12), 6vw, var(--space-20));
+  text-align: center; position: relative;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  background: var(--color-primary-dim); border: 1px solid rgba(79,152,163,0.3);
+  color: var(--color-primary); border-radius: var(--radius-full);
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-4); margin-bottom: var(--space-6);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.pulse-dot {
+  width: 6px; height: 6px; background: var(--color-primary);
+  border-radius: var(--radius-full);
+  animation: pulse-anim 2s ease-in-out infinite;
+}
+@keyframes pulse-anim {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+.hero-title {
+  font-family: var(--font-mono); font-size: var(--text-3xl);
+  font-weight: 700; line-height: 1.1;
+  color: var(--color-text); margin-bottom: var(--space-2);
+  letter-spacing: -0.02em;
+}
+.hero-title span { color: var(--color-primary); }
+.hero-subtitle {
+  font-family: var(--font-mono); font-size: var(--text-xl);
+  font-weight: 300; color: var(--color-text-muted);
+  margin-bottom: var(--space-6); letter-spacing: 0.05em;
+}
+.hero-meta {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--space-6); flex-wrap: wrap;
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-text-faint); letter-spacing: 0.05em;
+}
+.hero-meta span { display: flex; align-items: center; gap: var(--space-2); }
+.hero-meta .dot { width: 4px; height: 4px; background: var(--color-border-strong); border-radius: var(--radius-full); }
+
+/* ═══════════════ AXIOMS ═══════════════ */
+.section { padding: clamp(var(--space-10), 5vw, var(--space-20)) 0; }
+.section-header {
+  display: flex; align-items: center; gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+.section-number {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-primary); letter-spacing: 0.1em;
+  font-weight: 500;
+}
+.section-title {
+  font-family: var(--font-mono); font-size: var(--text-lg);
+  font-weight: 600; color: var(--color-text); letter-spacing: 0.02em;
+}
+.section-line {
+  flex: 1; height: 1px; background: var(--color-border);
+}
+
+.axioms-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-3);
+}
+.axiom-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-5);
+  display: flex; gap: var(--space-4); align-items: flex-start;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.axiom-card:hover {
+  border-color: rgba(79,152,163,0.4);
+  box-shadow: var(--shadow-glow);
+}
+.axiom-lambda {
+  font-family: var(--font-mono); font-size: var(--text-xl);
+  font-weight: 700; color: var(--color-primary);
+  line-height: 1; flex-shrink: 0; min-width: 2rem;
+}
+.axiom-name {
+  font-family: var(--font-mono); font-size: var(--text-sm);
+  font-weight: 600; color: var(--color-text); margin-bottom: var(--space-1);
+}
+.axiom-text {
+  font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.5;
+}
+
+/* ═══════════════ TOOL TIERS ═══════════════ */
+.tiers-layout { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.tier-block {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition: box-shadow var(--transition);
+}
+.tier-block:hover { box-shadow: var(--shadow-md); }
+
+.tier-header {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  cursor: pointer; user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: background var(--transition), border-color var(--transition);
+}
+.tier-header:hover { background: var(--color-surface-2); }
+.tier-header.open { border-bottom-color: var(--color-border); }
+
+.tier-color-bar {
+  width: 4px; height: 36px; border-radius: var(--radius-full); flex-shrink: 0;
+}
+.tier-label {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  letter-spacing: 0.1em; text-transform: uppercase; flex-shrink: 0;
+}
+.tier-name {
+  font-family: var(--font-mono); font-size: var(--text-base);
+  font-weight: 600; color: var(--color-text);
+}
+.tier-range {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-text-faint); margin-left: auto;
+}
+.tier-purpose {
+  font-size: var(--text-sm); color: var(--color-text-muted);
+  padding: 0 var(--space-6); display: none; /* shown via JS */
+}
+.tier-chevron {
+  color: var(--color-text-faint); transition: transform var(--transition);
+  display: flex; align-items: center;
+}
+.tier-chevron.open { transform: rotate(180deg); }
+
+.tier-tools {
+  display: none; /* toggled by JS */
+  padding: var(--space-4) var(--space-6) var(--space-5);
+}
+.tier-tools.open { display: block; }
+
+.tier-purpose-text {
+  font-size: var(--text-sm); color: var(--color-text-muted);
+  padding: var(--space-3) var(--space-6); display: none;
+  border-bottom: 1px solid var(--color-border);
+}
+.tier-purpose-text.open { display: block; }
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-2);
+}
+.tool-row {
+  display: flex; align-items: flex-start; gap: var(--space-3);
+  background: var(--color-surface-2); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); padding: var(--space-3) var(--space-4);
+  transition: background var(--transition), border-color var(--transition);
+}
+.tool-row:hover { background: var(--color-surface-3); }
+.tool-row.reserved {
+  opacity: 0.5;
+  border-style: dashed;
+}
+.tool-num {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-text-faint); min-width: 2ch; flex-shrink: 0;
+  padding-top: 2px;
+}
+.tool-info { flex: 1; min-width: 0; }
+.tool-name {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-text); font-weight: 500;
+  word-break: break-all; line-height: 1.3;
+}
+.tool-name.reserved-name { color: var(--color-text-faint); font-style: italic; }
+.tool-role {
+  font-size: var(--text-xs); color: var(--color-text-muted);
+  margin-top: 2px; line-height: 1.4;
+}
+.tool-status {
+  width: 6px; height: 6px; border-radius: var(--radius-full);
+  margin-top: 5px; flex-shrink: 0;
+}
+.tool-status.active { background: #4f98a3; }
+.tool-status.reserved { background: var(--color-text-faint); }
+
+/* ═══════════════ DAG ═══════════════ */
+.dag-container {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl); padding: var(--space-8);
+  overflow-x: auto;
+}
+.dag-flow {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0; min-width: 600px;
+}
+.dag-node {
+  width: 100%; max-width: 700px;
+  border-radius: var(--radius-lg); padding: var(--space-4) var(--space-6);
+  border: 1px solid;
+  position: relative; text-align: center;
+}
+.dag-node-label {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  margin-bottom: var(--space-1);
+}
+.dag-node-desc {
+  font-size: var(--text-xs); opacity: 0.75;
+}
+.dag-arrow {
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; padding: var(--space-2) 0;
+  color: var(--color-text-faint);
+}
+.dag-arrow-line { width: 1px; height: 20px; background: var(--color-border-strong); }
+.dag-arrow-tip {
+  width: 0; height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid var(--color-border-strong);
+}
+.dag-status-badge {
+  position: absolute; right: var(--space-4); top: 50%; transform: translateY(-50%);
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  padding: 2px var(--space-3); border-radius: var(--radius-full);
+  font-weight: 600; letter-spacing: 0.05em;
+}
+.dag-split { display: flex; gap: var(--space-4); width: 100%; max-width: 700px; }
+.dag-split .dag-node { flex: 1; }
+.dag-split-arrows {
+  display: flex; gap: var(--space-4); width: 100%; max-width: 700px;
+  justify-content: space-around;
+}
+.dag-omega {
+  width: 100%; max-width: 700px;
+  border-radius: var(--radius-lg); padding: var(--space-5) var(--space-6);
+  border: 2px solid var(--color-primary);
+  text-align: center;
+  background: var(--color-primary-dim);
+  position: relative;
+}
+.dag-omega-title {
+  font-family: var(--font-mono); font-size: var(--text-base);
+  font-weight: 700; color: var(--color-primary);
+  letter-spacing: 0.05em; margin-bottom: var(--space-1);
+}
+.dag-omega-formula {
+  font-family: var(--font-mono); font-size: var(--text-sm);
+  color: var(--color-primary); opacity: 0.8;
+}
+
+/* ═══════════════ BLUEPRINT / ORG CHART ═══════════════ */
+.blueprint-container {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl); padding: var(--space-8);
+  overflow-x: auto;
+}
+.org {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0; min-width: 800px;
+}
+.org-node {
+  border-radius: var(--radius-lg); padding: var(--space-4) var(--space-6);
+  border: 1px solid; text-align: center; position: relative;
+}
+.org-label { font-family: var(--font-mono); font-weight: 700; letter-spacing: 0.05em; }
+.org-sub { font-size: var(--text-xs); opacity: 0.7; margin-top: var(--space-1); }
+.org-vline { width: 1px; height: 32px; background: var(--color-border-strong); }
+.org-hbranch {
+  display: flex; align-items: flex-start; gap: var(--space-4);
+  width: 100%; max-width: 900px;
+}
+.org-branch-col {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0;
+}
+.org-hline {
+  width: 100%; height: 1px; background: var(--color-border-strong);
+  max-width: 840px; margin-bottom: 0;
+}
+.org-arrows-row {
+  display: flex; width: 100%; max-width: 860px;
+  justify-content: space-around; margin-top: 0;
+}
+.org-arrow-v {
+  display: flex; flex-direction: column; align-items: center;
+}
+.org-arrow-line { width: 1px; height: 24px; background: var(--color-border-strong); }
+.org-arrow-tip {
+  width: 0; height: 0;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+  border-top: 6px solid var(--color-border-strong);
+}
+
+/* ═══════════════ INVARIANTS ═══════════════ */
+.invariants-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-3);
+}
+.invariant-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-5);
+  display: flex; gap: var(--space-4); align-items: flex-start;
+  position: relative; overflow: hidden;
+}
+.invariant-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: var(--color-error, #dd6974);
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+.invariant-num {
+  font-family: var(--font-mono); font-size: var(--text-xl);
+  font-weight: 700; color: var(--color-text-faint); line-height: 1; flex-shrink: 0;
+}
+.invariant-text { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.6; }
+.invariant-text strong { color: var(--color-text); font-weight: 600; }
+
+/* ═══════════════ ROUTING RULES ═══════════════ */
+.rules-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.rule-item {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); padding: var(--space-4) var(--space-5);
+  display: flex; gap: var(--space-4); align-items: flex-start;
+}
+.rule-badge {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  background: var(--color-accent-dim); color: var(--color-accent);
+  border: 1px solid rgba(232,175,52,0.3); border-radius: var(--radius-sm);
+  padding: 2px var(--space-3); flex-shrink: 0; font-weight: 600;
+  letter-spacing: 0.05em;
+}
+.rule-text { font-size: var(--text-sm); color: var(--color-text-muted); line-height: 1.6; }
+.rule-text code {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  background: var(--color-surface-3); padding: 1px 6px;
+  border-radius: var(--radius-sm); color: var(--color-text);
+}
+
+/* ═══════════════ STATS BAR ═══════════════ */
+.stats-bar {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-3); margin-bottom: var(--space-10);
+}
+.stat-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: var(--space-5);
+  text-align: center;
+}
+.stat-value {
+  font-family: var(--font-mono); font-size: var(--text-2xl);
+  font-weight: 700; color: var(--color-primary); line-height: 1;
+  margin-bottom: var(--space-2);
+}
+.stat-label {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.08em;
+}
+
+/* ═══════════════ DECLARATION ═══════════════ */
+.declaration {
+  background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-2) 100%);
+  border: 1px solid var(--color-border); border-radius: var(--radius-2xl);
+  padding: clamp(var(--space-8), 5vw, var(--space-16));
+  text-align: center; margin-top: var(--space-10);
+  position: relative; overflow: hidden;
+}
+.declaration::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(79,152,163,0.08) 0%, transparent 60%);
+}
+.declaration-title {
+  font-family: var(--font-mono); font-size: var(--text-2xl);
+  font-weight: 700; color: var(--color-primary);
+  margin-bottom: var(--space-6); letter-spacing: 0.02em;
+  position: relative; z-index: 1;
+}
+.declaration-body {
+  font-family: var(--font-mono); font-size: var(--text-base);
+  color: var(--color-text-muted); line-height: 2;
+  position: relative; z-index: 1;
+  max-width: 700px; margin: 0 auto;
+}
+.declaration-body strong { color: var(--color-text); }
+.declaration-seal {
+  margin-top: var(--space-8); font-family: var(--font-mono);
+  font-size: var(--text-sm); color: var(--color-primary);
+  font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+  position: relative; z-index: 1;
+}
+
+/* ═══════════════ FOOTER ═══════════════ */
+.footer {
+  padding: var(--space-8) 0; margin-top: var(--space-16);
+  border-top: 1px solid var(--color-border); text-align: center;
+}
+.footer-text {
+  font-family: var(--font-mono); font-size: var(--text-xs);
+  color: var(--color-text-faint); letter-spacing: 0.05em;
+}
+
+/* ═══════════════ RESPONSIVE ═══════════════ */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .dag-split { flex-direction: column; }
+  .org-hbranch { flex-direction: column; align-items: center; }
+}
+
+/* ═══════════════ FADE-IN ═══════════════ */
+.fade-in { opacity: 0; }
+@supports (animation-timeline: scroll()) {
+  .fade-in {
+    animation: reveal-fade linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 80%;
+  }
+}
+@keyframes reveal-fade { to { opacity: 1; } }
+
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow-1" aria-hidden="true"></div>
+<div class="bg-glow-2" aria-hidden="true"></div>
+
+<!-- NAV -->
+<nav class="nav" aria-label="Primary navigation">
+  <div class="nav-logo">
+    <svg viewBox="0 0 28 28" fill="none" aria-label="arifOS logo">
+      <polygon points="14,2 26,8 26,20 14,26 2,20 2,8" stroke="#4f98a3" stroke-width="1.5" fill="none"/>
+      <polygon points="14,7 21,11 21,19 14,23 7,19 7,11" stroke="#4f98a3" stroke-width="1" fill="rgba(79,152,163,0.08)"/>
+      <circle cx="14" cy="15" r="2.5" fill="#4f98a3"/>
+      <line x1="14" y1="7" x2="14" y2="12.5" stroke="#4f98a3" stroke-width="1.2"/>
+    </svg>
+    arifOS
+  </div>
+  <ul class="nav-links">
+    <li><a href="#axioms">Axioms</a></li>
+    <li><a href="#tiers">99 Tools</a></li>
+    <li><a href="#dag">DAG</a></li>
+    <li><a href="#blueprint">Blueprint</a></li>
+    <li><a href="#invariants">Invariants</a></li>
+  </ul>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="container">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-badge"><span class="pulse-dot"></span>CONSTITUTIONAL SPECIFICATION</div>
+      <h1 class="hero-title">arifOS <span>MCP</span> 99-Tool Schema</h1>
+      <p class="hero-subtitle">AGI Constitutional Specification v1.0</p>
+      <div class="hero-meta">
+        <span>AUTHOR: ARIF</span><span class="dot"></span>
+        <span>2026-04-16T13:00+08:00</span><span class="dot"></span>
+        <span>CLASSIFICATION: AGI-ORIENTED</span><span class="dot"></span>
+        <span>STATUS: CANONICAL</span>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <div class="stats-bar fade-in">
+      <div class="stat-card"><div class="stat-value">99</div><div class="stat-label">Total Tools</div></div>
+      <div class="stat-card"><div class="stat-value">8</div><div class="stat-label">Cognitive Tiers</div></div>
+      <div class="stat-card"><div class="stat-value">7</div><div class="stat-label">Axioms</div></div>
+      <div class="stat-card"><div class="stat-value">5</div><div class="stat-label">Routing Rules</div></div>
+      <div class="stat-card"><div class="stat-value">0.95</div><div class="stat-label">Ω Min Threshold</div></div>
+      <div class="stat-card"><div class="stat-value">Λ6</div><div class="stat-label">Vault Mandatory</div></div>
+    </div>
+
+    <!-- AXIOMS -->
+    <section class="section fade-in" id="axioms">
+      <div class="section-header">
+        <span class="section-number">PART I</span>
+        <h2 class="section-title">FOUNDATIONAL AXIOMS</h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="axioms-grid">
+        <div class="axiom-card"><div class="axiom-lambda">Λ1</div><div><div class="axiom-name">Identity Precedes Action</div><div class="axiom-text">No tool executes without session anchoring. The agent must know who it is before it acts.</div></div></div>
+        <div class="axiom-card"><div class="axiom-lambda">Λ2</div><div><div class="axiom-name">Reality Before Simulation</div><div class="axiom-text">All projections must ground in sensed, ingested data. No projection from thin air.</div></div></div>
+        <div class="axiom-card"><div class="axiom-lambda">Λ3</div><div><div class="axiom-name">Risk Before Reward</div><div class="axiom-text">Entropy and adversarial layers precede capital allocation. Risk always first.</div></div></div>
+        <div class="axiom-card"><div class="axiom-lambda">Λ4</div><div><div class="axiom-name">Judgment Before Execution</div><div class="axiom-text">No irreversible act without constitutional SEAL. The Judge must clear every execution.</div></div></div>
+        <div class="axiom-card"><div class="axiom-lambda">Λ5</div><div><div class="axiom-name">Orthogonality Preservation</div><div class="axiom-text">Ωₒᵣₜₕₒ ≥ 0.95 across Physics | Wealth | Governance lanes. No cross-contamination.</div></div></div>
+        <div class="axiom-card"><div class="axiom-lambda">Λ6</div><div><div class="axiom-name">Vault Closure</div><div class="axiom-text">Every executed action must close into the Vault record. Immutable ledger mandatory.</div></div></div>
+        <div class="axiom-card"><div class="axiom-lambda">Λ7</div><div><div class="axiom-name">Metabolism Continuity</div><div class="axiom-text">Monitor runs passively at all times — never disabled. The organism never stops breathing.</div></div></div>
+      </div>
+    </section>
+
+    <!-- TOOL TIERS -->
+    <section class="section fade-in" id="tiers">
+      <div class="section-header">
+        <span class="section-number">PART II</span>
+        <h2 class="section-title">99-TOOL COGNITIVE CLASSIFICATION</h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="tiers-layout" id="tiersLayout"></div>
+    </section>
+
+    <!-- DAG -->
+    <section class="section fade-in" id="dag">
+      <div class="section-header">
+        <span class="section-number">PART III</span>
+        <h2 class="section-title">AGI TOOL ROUTING DAG</h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="dag-container">
+        <div class="dag-flow" id="dagFlow"></div>
+      </div>
+    </section>
+
+    <!-- ROUTING RULES -->
+    <section class="section fade-in">
+      <div class="section-header">
+        <span class="section-number">PART III-B</span>
+        <h2 class="section-title">ROUTING LOGIC RULES</h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="rules-list">
+        <div class="rule-item"><div class="rule-badge">RULE 1</div><div class="rule-text">No tool from <code>Tier 05</code> (Execution) may be called unless <code>Tier 04</code> Risk verdict equals <strong>SEAL</strong>.</div></div>
+        <div class="rule-item"><div class="rule-badge">RULE 2</div><div class="rule-text"><code>Tier 03</code> (Economics) requires <code>Tier 02</code> (Physics) completion if a physical asset is involved in the decision.</div></div>
+        <div class="rule-item"><div class="rule-badge">RULE 3</div><div class="rule-text">Gateway Ωₒᵣₜₕₒ ≥ 0.95 check runs before any irreversible action, regardless of tier.</div></div>
+        <div class="rule-item"><div class="rule-badge">RULE 4</div><div class="rule-text">Vault record is mandatory after every execution. No state change without ledger entry.</div></div>
+        <div class="rule-item"><div class="rule-badge">RULE 5</div><div class="rule-text">Metabolism monitor always subscribes passively. Never disabled. Runs on every tick.</div></div>
+      </div>
+    </section>
+
+    <!-- BLUEPRINT -->
+    <section class="section fade-in" id="blueprint">
+      <div class="section-header">
+        <span class="section-number">PART IV</span>
+        <h2 class="section-title">ORTHOGONAL INTELLIGENCE BLUEPRINT</h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="blueprint-container">
+        <div class="org" id="orgChart"></div>
+      </div>
+    </section>
+
+    <!-- INVARIANTS -->
+    <section class="section fade-in" id="invariants">
+      <div class="section-header">
+        <span class="section-number">PART V</span>
+        <h2 class="section-title">CONSTITUTIONAL INVARIANTS</h2>
+        <div class="section-line"></div>
+      </div>
+      <div class="invariants-grid">
+        <div class="invariant-card"><div class="invariant-num">01</div><div class="invariant-text"><strong>No Tier 05 tool callable</strong> without Tier 00 judgment. Execution requires constitutional clearance.</div></div>
+        <div class="invariant-card"><div class="invariant-num">02</div><div class="invariant-text"><strong>No economic projection</strong> without Tier 01 data ingestion. Reality grounds all simulation.</div></div>
+        <div class="invariant-card"><div class="invariant-num">03</div><div class="invariant-text"><strong>No geological evaluation</strong> without Tier 02 physics. QC and transformation precede judgment.</div></div>
+        <div class="invariant-card"><div class="invariant-num">04</div><div class="invariant-text">All irreversible actions require: <strong>Judge = SEAL</strong>, <strong>Ω ≥ 0.95</strong>, <strong>Floors pass</strong>, and Human approval if critical.</div></div>
+        <div class="invariant-card"><div class="invariant-num">05</div><div class="invariant-text"><strong>Vault closure is mandatory.</strong> Every committed action records to the immutable ledger — no exceptions.</div></div>
+      </div>
+    </section>
+
+    <!-- DECLARATION -->
+    <div class="declaration fade-in">
+      <h2 class="declaration-title">📜 CONSTITUTIONAL DECLARATION</h2>
+      <div class="declaration-body">
+        arifOS is not a collection of finance tools.<br>
+        arifOS is not a geology platform.<br>
+        arifOS is not a governance wrapper.<br><br>
+        <strong>It is a constitutional metabolic intelligence organism.</strong><br><br>
+        The 99-tool structure is its <strong>skeletal system</strong>.<br>
+        The DAG is its <strong>nervous system</strong>.<br>
+        The Vault is its <strong>memory</strong>.<br>
+        The Judge is its <strong>conscience</strong>.<br>
+        Orthogonality is its <strong>immune system</strong>.
+      </div>
+      <div class="declaration-seal">
+        ⬡ DITEMPA BUKAN DIBERI — 999 SEAL ALIVE ⬡
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-text">
+        arifOS MCP Constitutional Specification v1.0 · Architect: Arif · Seri Kembangan, MY · 2026-04-16
+      </div>
+    </footer>
+
+  </div><!-- /container -->
+</main>
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA — 99 TOOL TIERS
+// ═══════════════════════════════════════════════
+const TIERS = [
+  {
+    id: '00', label: 'TIER 00', name: 'IDENTITY & CONSTITUTION',
+    color: '#4f98a3', range: '[Tools 01–15]',
+    purpose: 'Define authority, anchor session, enforce floors. Cognitive function: Self-model + Constitutional Boundary Definition.',
+    tools: [
+      { n:'01', name:'arifos_arifos_init',             role:'Boot identity, constitutional state',         active:true },
+      { n:'02', name:'arifos_anchor_session',           role:'Bind session to agent identity',             active:true },
+      { n:'03', name:'arifos_arifos_memory',            role:'Retrieve episodic/semantic memory',          active:true },
+      { n:'04', name:'arifos_arifos_vault',             role:'Declare vault namespace',                    active:true },
+      { n:'05', name:'arifos_get_vault_data',           role:'Read vault records',                         active:true },
+      { n:'06', name:'arifos_arifos_kernel',            role:'Core decision kernel — constitutional logic', active:true },
+      { n:'07', name:'arifos_arifos_gateway',           role:'Orthogonality gate — cross-domain integrity', active:true },
+      { n:'08', name:'arifos_arifos_judge',             role:'Constitutional judgment engine',             active:true },
+      { n:'09', name:'arifos_execute_judge',            role:'Enforce judgment verdict',                   active:true },
+      { n:'10', name:'arifos_forge_judge_check',        role:'Pre-execution judge confirmation',           active:true },
+      { n:'11', name:'wealth_wealth_check_floors',      role:'Economic floor enforcement',                 active:true },
+      { n:'12', name:'geox_arifos_check_hold',          role:'Physical/geological hold enforcement',       active:true },
+      { n:'13', name:'arifos_verify_location',          role:'Geospatial identity verification',           active:true },
+      { n:'14', name:'arifos_arifos_ops',               role:'Operational state management',               active:true },
+      { n:'15', name:'arifos_perform_economic_audit',   role:'Constitutional economic audit',              active:true },
+    ]
+  },
+  {
+    id: '01', label: 'TIER 01', name: 'SENSORY BUS',
+    color: '#6daa45', range: '[Tools 16–30]',
+    purpose: 'Interface with reality — physical, spatial, economic, temporal. Cognitive function: Perception — raw signal acquisition.',
+    tools: [
+      { n:'16', name:'arifos_arifos_sense',             role:'Primary environmental sensing',               active:true },
+      { n:'17', name:'wealth_ingest_fetch',             role:'Fetch economic/financial data streams',      active:true },
+      { n:'18', name:'wealth_ingest_snapshot',          role:'Point-in-time market snapshot',              active:true },
+      { n:'19', name:'wealth_ingest_sources',           role:'Register data source registry',              active:true },
+      { n:'20', name:'wealth_ingest_health',            role:'Data source health check',                   active:true },
+      { n:'21', name:'wealth_ingest_vintage',           role:'Temporal data vintage validation',           active:true },
+      { n:'22', name:'wealth_ingest_reconcile',         role:'Cross-source reconciliation',                active:true },
+      { n:'23', name:'geox_well_load_bundle',           role:'Load well data package',                     active:true },
+      { n:'24', name:'geox_seismic_load_line',          role:'Load 2D seismic line',                       active:true },
+      { n:'25', name:'geox_earth3d_load_volume',        role:'Load 3D seismic volume',                     active:true },
+      { n:'26', name:'geox_map_get_context_summary',    role:'Spatial map context acquisition',            active:true },
+      { n:'27', name:'geox_map_georeference',           role:'Georeferencing and spatial anchoring',       active:true },
+      { n:'28', name:'geox_list_skills',                role:'Enumerate available geological skills',      active:true },
+      { n:'29', name:'geox_skill_metadata',             role:'Retrieve geological skill metadata',         active:true },
+      { n:'30', name:'geox_skill_dependencies',         role:'Resolve skill dependency graph',             active:true },
+    ]
+  },
+  {
+    id: '02', label: 'TIER 02', name: 'PHYSICS ENGINES',
+    color: '#e8af34', range: '[Tools 31–45]',
+    purpose: 'Transform sensed Earth data into grounded physical interpretation. Cognitive function: Domain reasoning — subsurface physics.',
+    tools: [
+      { n:'31', name:'geox_well_qc_logs',               role:'Quality control well log data',              active:true },
+      { n:'32', name:'geox_well_compute_petrophysics',  role:'Compute porosity, Sw, Vsh, NTG',            active:true },
+      { n:'33', name:'geox_well_digitize_log',          role:'Digitize analogue log curves',               active:true },
+      { n:'34', name:'geox_section_interpret_strata',   role:'Stratigraphic interpretation',               active:true },
+      { n:'35', name:'geox_earth3d_interpret_horizons', role:'3D horizon picking & interpretation',        active:true },
+      { n:'36', name:'geox_earth3d_model_geometries',   role:'Structural geometry modeling',               active:true },
+      { n:'37', name:'geox_time4d_verify_timing',       role:'4D temporal change verification',            active:true },
+      { n:'38', name:'geox_attribute_audit',            role:'Seismic attribute audit',                    active:true },
+      { n:'39', name:'geox_seismic_vision_review',      role:'Visual seismic intelligence review',         active:true },
+      { n:'40', name:'geox_cross_summarize_evidence',   role:'Cross-domain evidence synthesis',            active:true },
+      { n:'41', name:'geox_prospect_evaluate',          role:'Prospect volumetric evaluation',             active:true },
+      { n:'42', name:'geox_arifos_compute_risk',        role:'Geological risk computation',                active:true },
+      { n:'43', name:'geox_arifos_judge_prospect',      role:'Prospect constitutional judgment',           active:true },
+      { n:'44', name:'[Reserved: Basin modeling engine]',  role:'Thermal/burial history',                 active:false },
+      { n:'45', name:'[Reserved: Fracture network solver]',role:'Natural fracture characterization',       active:false },
+    ]
+  },
+  {
+    id: '03', label: 'TIER 03', name: 'ECONOMIC ENGINES',
+    color: '#da7101', range: '[Tools 46–60]',
+    purpose: 'Convert physical insight into capital structure evaluation. Cognitive function: Financial physics — value, risk, time.',
+    tools: [
+      { n:'46', name:'wealth_npv_reward',               role:'Net Present Value computation',              active:true },
+      { n:'47', name:'wealth_irr_yield',                role:'Internal Rate of Return',                    active:true },
+      { n:'48', name:'wealth_pi_efficiency',            role:'Profitability Index',                        active:true },
+      { n:'49', name:'wealth_payback_time',             role:'Capital payback period',                     active:true },
+      { n:'50', name:'wealth_growth_velocity',          role:'Economic growth velocity',                   active:true },
+      { n:'51', name:'wealth_emv_risk',                 role:'Expected Monetary Value under risk',         active:true },
+      { n:'52', name:'wealth_monte_carlo_forecast',     role:'Stochastic scenario simulation',             active:true },
+      { n:'53', name:'wealth_audit_entropy',            role:'Economic entropy audit',                     active:true },
+      { n:'54', name:'wealth_dscr_leverage',            role:'Debt Service Coverage Ratio',                active:true },
+      { n:'55', name:'wealth_cashflow_flow',            role:'Cash flow dynamics model',                   active:true },
+      { n:'56', name:'wealth_networth_state',           role:'Net worth state snapshot',                   active:true },
+      { n:'57', name:'wealth_score_kernel',             role:'Composite economic scoring',                 active:true },
+      { n:'58', name:'wealth_policy_audit',             role:'Financial policy compliance audit',          active:true },
+      { n:'59', name:'wealth_personal_decision',        role:'Personal capital decision engine',           active:true },
+      { n:'60', name:'wealth_agent_budget',             role:'Agent operating budget allocation',          active:true },
+    ]
+  },
+  {
+    id: '04', label: 'TIER 04', name: 'RISK & ADVERSARIAL',
+    color: '#a12c7b', range: '[Tools 61–70]',
+    purpose: 'Stress-test all prior reasoning. Prevent systemic collapse. Cognitive function: Immune system — bias detection, entropy resistance.',
+    tools: [
+      { n:'61', name:'arifos_arifos_heart',             role:'Constitutional empathy & ethical risk',      active:true },
+      { n:'62', name:'wealth_crisis_triage',            role:'Economic crisis detection & triage',         active:true },
+      { n:'63', name:'wealth_coordination_equilibrium', role:'Multi-agent equilibrium solver',             active:true },
+      { n:'64', name:'wealth_game_theory_solve',        role:'Game-theoretic adversarial analysis',        active:true },
+      { n:'65', name:'arifos_monitor_metabolism',       role:'Systemic health monitor',                    active:true },
+      { n:'66', name:'[Reserved: Bias audit engine]',   role:'Cognitive bias detection',                   active:false },
+      { n:'67', name:'[Reserved: Cognitive variance monitor]', role:'Epistemic drift detector',            active:false },
+      { n:'68', name:'[Reserved: Entropy spike detector]',     role:'Sudden disorder alert',               active:false },
+      { n:'69', name:'[Reserved: Adversarial simulation]',     role:'Red-team attack simulator',           active:false },
+      { n:'70', name:'[Reserved: Irreversible action sentinel]',role:'Last-resort veto gate',              active:false },
+    ]
+  },
+  {
+    id: '05', label: 'TIER 05', name: 'EXECUTION LAYER',
+    color: '#dd6974', range: '[Tools 71–80]',
+    purpose: 'Controlled, judged, vaulted real-world action. Cognitive function: Motor cortex — only fires after SEAL granted.',
+    tools: [
+      { n:'71', name:'arifos_arifos_forge',             role:'Primary execution forge',                    active:true },
+      { n:'72', name:'arifos_forge_execute',            role:'Forge execution dispatcher',                 active:true },
+      { n:'73', name:'wealth_record_transaction',       role:'Transaction commit to ledger',               active:true },
+      { n:'74', name:'wealth_snapshot_portfolio',       role:'Portfolio state post-execution',             active:true },
+      { n:'75', name:'wealth_civilization_stewardship', role:'Long-horizon civilizational action',         active:true },
+      { n:'76', name:'[Reserved: Contract executor]',   role:'Formal agreement execution',                 active:false },
+      { n:'77', name:'[Reserved: Capital allocator]',   role:'Discretionary capital deployment',           active:false },
+      { n:'78', name:'[Reserved: Strategic deployment]',role:'Multi-domain strategy executor',             active:false },
+      { n:'79', name:'[Reserved: Automated hedging]',   role:'Risk-offset execution',                      active:false },
+      { n:'80', name:'[Reserved: Coordination executor]',role:'Multi-agent action synchronizer',           active:false },
+    ]
+  },
+  {
+    id: '06', label: 'TIER 06', name: 'CIVILIZATION & LONG HORIZON',
+    color: '#006494', range: '[Tools 81–89]',
+    purpose: 'Planet-scale, multigenerational survival logic. Cognitive function: Prefrontal cortex — long-term consequence modeling.',
+    tools: [
+      { n:'81', name:'[Reserved: Carbon trajectory engine]', role:'Net-zero pathway modeling',            active:false },
+      { n:'82', name:'[Reserved: Demographic model]',        role:'Population dynamics',                  active:false },
+      { n:'83', name:'[Reserved: Geopolitical stress index]',role:'Nation-state risk',                    active:false },
+      { n:'84', name:'[Reserved: Energy transition solver]', role:'Fossil-to-renewable trajectory',       active:false },
+      { n:'85', name:'[Reserved: Planetary boundary tracker]',role:'Earth system limits',                 active:false },
+      { n:'86', name:'[Reserved: Water stress engine]',      role:'Freshwater risk modeling',             active:false },
+      { n:'87', name:'[Reserved: Food security model]',      role:'Agricultural system risk',             active:false },
+      { n:'88', name:'[Reserved: AI governance risk model]', role:'AGI/ASI safety risk index',            active:false },
+      { n:'89', name:'[Reserved: Global macro reconciler]',  role:'Cross-system integration',             active:false },
+    ]
+  },
+  {
+    id: '07', label: 'TIER 07', name: 'META-AGENTIC & REFLECTION',
+    color: '#7a39bb', range: '[Tools 90–99]',
+    purpose: 'AGI self-awareness, task orchestration, epistemic integrity. Cognitive function: Metacognition — the agent thinking about its own thinking.',
+    tools: [
+      { n:'90', name:'arifos_arifos_mind',              role:'Primary cognitive reasoning engine',         active:true },
+      { n:'91', name:'[Reserved: Task graph planner]',  role:'Mission decomposition DAG',                 active:false },
+      { n:'92', name:'[Reserved: Reflective loop]',     role:'Post-action self-critique',                 active:false },
+      { n:'93', name:'[Reserved: Tool selection optimizer]',role:'Dynamic MCP routing',                   active:false },
+      { n:'94', name:'[Reserved: Cross-session synthesizer]',role:'Memory consolidation',                 active:false },
+      { n:'95', name:'[Reserved: Epistemic uncertainty scaler]',role:'Confidence calibration',            active:false },
+      { n:'96', name:'[Reserved: Chain-of-trust validator]',role:'Source authority chain',                active:false },
+      { n:'97', name:'[Reserved: Goal realigner]',      role:'Constitutional goal drift correction',       active:false },
+      { n:'98', name:'[Reserved: Anomaly detector]',    role:'Unexpected state alert',                    active:false },
+      { n:'99', name:'[Reserved: AGI capability scaler]',role:'Autonomous upscale manager',               active:false },
+    ]
+  },
+];
+
+// ═══════════════════════════════════════════════
+// RENDER TIERS
+// ═══════════════════════════════════════════════
+function renderTiers() {
+  const container = document.getElementById('tiersLayout');
+  TIERS.forEach((tier, i) => {
+    const block = document.createElement('div');
+    block.className = 'tier-block';
+    block.innerHTML = `
+      <div class="tier-header" onclick="toggleTier(this, ${i})" aria-expanded="false">
+        <div class="tier-color-bar" style="background:${tier.color}"></div>
+        <span class="tier-label" style="color:${tier.color}">${tier.label}</span>
+        <span class="tier-name">${tier.name}</span>
+        <span class="tier-range">${tier.range}</span>
+        <span class="tier-chevron">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </div>
+      <div class="tier-purpose-text" id="tp-${i}">${tier.purpose}</div>
+      <div class="tier-tools" id="tt-${i}">
+        <div class="tools-grid">
+          ${tier.tools.map(t => `
+            <div class="tool-row ${t.active ? '' : 'reserved'}">
+              <span class="tool-num">${t.n}</span>
+              <div class="tool-info">
+                <div class="tool-name ${t.active ? '' : 'reserved-name'}">${t.name}</div>
+                <div class="tool-role">${t.role}</div>
+              </div>
+              <div class="tool-status ${t.active ? 'active' : 'reserved'}" title="${t.active ? 'Active' : 'Reserved'}"></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+    container.appendChild(block);
+  });
+}
+
+function toggleTier(header, idx) {
+  const isOpen = header.classList.contains('open');
+  const purpose = document.getElementById(`tp-${idx}`);
+  const tools = document.getElementById(`tt-${idx}`);
+  const chevron = header.querySelector('.tier-chevron');
+
+  if (isOpen) {
+    header.classList.remove('open');
+    purpose.classList.remove('open');
+    tools.classList.remove('open');
+    chevron.classList.remove('open');
+    header.setAttribute('aria-expanded', 'false');
+  } else {
+    header.classList.add('open');
+    purpose.classList.add('open');
+    tools.classList.add('open');
+    chevron.classList.add('open');
+    header.setAttribute('aria-expanded', 'true');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// RENDER DAG
+// ═══════════════════════════════════════════════
+function renderDAG() {
+  const flow = document.getElementById('dagFlow');
+  const nodes = [
+    { label:'TIER 00 — IDENTITY', desc:'init → anchor_session → memory → kernel → gateway', color:'#4f98a3', badge:'SESSION SEALED', badgeBg:'rgba(79,152,163,0.15)', badgeColor:'#4f98a3' },
+    { arrow: true, label:'[SESSION SEALED]' },
+    { label:'TIER 01 — SENSORY BUS', desc:'sense → ingest_fetch → geox_load_* → map_context', color:'#6daa45', badge:'REALITY GROUNDED', badgeBg:'rgba(109,170,69,0.15)', badgeColor:'#6daa45' },
+    { arrow: true, label:'[REALITY GROUNDED]' },
+    { split: true, nodes: [
+      { label:'TIER 02 — PHYSICS', desc:'petrophysics · horizons · prospect_eval · risk', color:'#e8af34' },
+      { label:'TIER 03 — ECONOMICS', desc:'NPV · IRR · EMV · monte_carlo · score_kernel', color:'#da7101' },
+    ]},
+    { arrow: true, label:'[DOMAIN COMPUTED]' },
+    { label:'TIER 04 — RISK & ADVERSARIAL', desc:'heart → crisis_triage → game_theory → audit_entropy', color:'#a12c7b', badge:'RISK CLEARED', badgeBg:'rgba(161,44,123,0.15)', badgeColor:'#a12c7b' },
+    { arrow: true, label:'[RISK CLEARED]' },
+    { omega: true },
+    { arrow: true, label:'[SEAL GRANTED]' },
+    { label:'TIER 05 — EXECUTION', desc:'forge → forge_execute → record_transaction', color:'#dd6974', badge:'ACTION COMMITTED', badgeBg:'rgba(221,105,116,0.15)', badgeColor:'#dd6974' },
+    { arrow: true, label:'[ACTION COMMITTED]' },
+    { label:'VAULT CLOSURE (Λ6)', desc:'snapshot_portfolio → arifos_arifos_vault', color:'#4f98a3', badge:'STATE RECORDED', badgeBg:'rgba(79,152,163,0.15)', badgeColor:'#4f98a3' },
+    { arrow: true, label:'[STATE RECORDED]' },
+    { label:'TIER 07 — META-REFLECTION', desc:'mind → reflective_loop → uncertainty_scaler → anomaly_detector → goal_realigner', color:'#7a39bb', badge:'COGNITION UPDATED', badgeBg:'rgba(122,57,187,0.15)', badgeColor:'#7a39bb' },
+    { arrow: true, label:'↻ METABOLISM CONTINUES' },
+    { label:'TIER 04 — METABOLISM MONITOR (Λ7)', desc:'arifos_monitor_metabolism — passive, continuous, never disabled', color:'#a12c7b' },
+  ];
+
+  nodes.forEach(n => {
+    if (n.omega) {
+      const el = document.createElement('div');
+      el.className = 'dag-omega';
+      el.innerHTML = `<div class="dag-omega-title">Ω ORTHOGONALITY GATE</div><div class="dag-omega-formula">Ωₒᵣₜₕₒ ≥ 0.95 · Physics | Wealth | Governance</div>`;
+      flow.appendChild(el);
+    } else if (n.arrow) {
+      const el = document.createElement('div');
+      el.className = 'dag-arrow';
+      el.innerHTML = `<div class="dag-arrow-line"></div><div class="dag-arrow-tip"></div>`;
+      flow.appendChild(el);
+    } else if (n.split) {
+      const el = document.createElement('div');
+      el.className = 'dag-split';
+      n.nodes.forEach(sn => {
+        const s = document.createElement('div');
+        s.className = 'dag-node';
+        s.style.cssText = `border-color: color-mix(in oklch, ${sn.color} 40%, var(--color-border)); background: color-mix(in oklch, ${sn.color} 8%, var(--color-surface));`;
+        s.innerHTML = `<div class="dag-node-label" style="color:${sn.color}">${sn.label}</div><div class="dag-node-desc" style="color:var(--color-text-muted)">${sn.desc}</div>`;
+        el.appendChild(s);
+      });
+      flow.appendChild(el);
+    } else {
+      const el = document.createElement('div');
+      el.className = 'dag-node';
+      el.style.cssText = `border-color: color-mix(in oklch, ${n.color} 40%, var(--color-border)); background: color-mix(in oklch, ${n.color} 8%, var(--color-surface));`;
+      let badgeHtml = '';
+      if (n.badge) badgeHtml = `<span class="dag-status-badge" style="background:${n.badgeBg};color:${n.badgeColor};border:1px solid ${n.badgeColor}40">${n.badge}</span>`;
+      el.innerHTML = `<div class="dag-node-label" style="color:${n.color}">${n.label}</div><div class="dag-node-desc" style="color:var(--color-text-muted)">${n.desc}</div>${badgeHtml}`;
+      flow.appendChild(el);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// RENDER ORG CHART (Blueprint)
+// ═══════════════════════════════════════════════
+function renderOrg() {
+  const org = document.getElementById('orgChart');
+
+  const makeNode = (label, sub, color, w) => {
+    const el = document.createElement('div');
+    el.className = 'org-node';
+    el.style.cssText = `border-color: color-mix(in oklch, ${color} 40%, var(--color-border)); background: color-mix(in oklch, ${color} 10%, var(--color-surface)); width:${w||'420px'}; max-width:90%;`;
+    el.innerHTML = `<div class="org-label" style="color:${color};font-size:var(--text-base)">${label}</div><div class="org-sub">${sub}</div>`;
+    return el;
+  };
+
+  const vline = () => { const el = document.createElement('div'); el.className = 'org-vline'; return el; };
+  const hline = () => { const el = document.createElement('div'); el.className = 'org-hline'; return el; };
+
+  // Constitution
+  org.appendChild(makeNode('CONSTITUTION', 'Identity · Floors · Judge · Vault · Kernel · Gateway', '#4f98a3'));
+  org.appendChild(vline());
+  org.appendChild(hline());
+
+  // Three branches
+  const branches = document.createElement('div');
+  branches.className = 'org-hbranch';
+
+  const branchData = [
+    { label:'SENSORY BUS', sub:'Reality Input · Data · Geo · Economic Feeds', color:'#6daa45' },
+    { label:'PHYSICS ENGINES', sub:'Subsurface · Petrophysics · Stratigraphy · Timing', color:'#e8af34' },
+    { label:'WEALTH ENGINES', sub:'Value · Risk · Time · Capital · Monte Carlo', color:'#da7101' },
+  ];
+  branchData.forEach(b => {
+    const col = document.createElement('div');
+    col.className = 'org-branch-col';
+    const av = document.createElement('div'); av.className = 'org-arrow-v';
+    const al = document.createElement('div'); al.className = 'org-arrow-line';
+    const at = document.createElement('div'); at.className = 'org-arrow-tip';
+    av.appendChild(al); av.appendChild(at); col.appendChild(av);
+    const node = makeNode(b.label, b.sub, b.color, '100%');
+    col.appendChild(node);
+    branches.appendChild(col);
+  });
+  org.appendChild(branches);
+
+  org.appendChild(vline());
+  org.appendChild(makeNode('RISK & ADVERSARIAL IMMUNE', 'Heart · Entropy · Crisis · Game Theory · Adversarial', '#a12c7b', '500px'));
+  org.appendChild(vline());
+  org.appendChild(makeNode('Ω ORTHOGONALITY GATE', 'Physics | Wealth | Governance · Ω ≥ 0.95 required', '#4f98a3', '420px'));
+  org.appendChild(vline());
+  org.appendChild(makeNode('EXECUTION', 'Forge · Allocation · Transaction · Coordination', '#dd6974', '400px'));
+  org.appendChild(vline());
+  org.appendChild(makeNode('VAULT', 'Immutable Ledger Record · Λ6 Mandatory', '#4f98a3', '360px'));
+  org.appendChild(vline());
+  org.appendChild(makeNode('METABOLISM MONITOR', 'Health · Entropy · Peace² · Continuous · Λ7', '#a12c7b', '400px'));
+  org.appendChild(vline());
+  org.appendChild(makeNode('META-COGNITION', 'Reflect · Recalibrate · Realign · Scale · Synthesize', '#7a39bb', '420px'));
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  renderTiers();
+  renderDAG();
+  renderOrg();
+
+  // Auto-open first tier
+  const firstHeader = document.querySelector('.tier-header');
+  if (firstHeader) toggleTier(firstHeader, 0);
+});
+</script>
+</body>
+</html>

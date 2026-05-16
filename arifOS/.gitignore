@@ -1,0 +1,81 @@
+# arifOS — FHS-Aligned Gitignore
+# Constitutional governance: runtime state must never be in git.
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VAULT999 — Runtime Ledger State (NEVER in git)
+# Primary ledger: Supabase. Local JSONL is receipt cache only.
+VAULT999/
+
+# ── FHS Runtime Paths (never in git) ───────────────────────────────
+# Git tracks source. Container enforces FHS. Runtime state is outside git.
+/var/lib/arifOS/
+/var/lib/arifOS/**
+/run/arifOS/
+/run/arifOS/**
+/tmp/arifOS/
+/tmp/arifOS/**
+
+# ── Runtime Artifacts ────────────────────────────────────────────────
+*.jsonl
+*.db
+SEALED_EVENTS.jsonl
+benchmark_report.json
+
+# Memory artifacts
+memory/
+*.bin
+*.jsonl
+
+# Logs and telemetry
+logs/
+*.log
+telemetry/
+*.benchmark_report.json
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Import Linter
+.importlinter_cache/

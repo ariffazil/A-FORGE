@@ -1,0 +1,69 @@
+# AF FORGE — Caddy Reverse Proxy
+# Public entrypoint: only Caddy faces the internet. All backend services are internal.
+
+:80 {
+	bind 0.0.0.0
+
+	# Health check for gateway itself
+	respond /healthz "OK" 200
+
+	# arifOS MCP governance kernel
+	handle /mcp {
+		reverse_proxy arifos-mcp:8080
+	}
+	handle /arifos/* {
+		reverse_proxy arifos-mcp:8080
+	}
+
+	# AF FORGE bridge server — operator, sense, metrics, human escalation
+	handle /operator/* {
+		reverse_proxy AF-FORGE-bridge:7071
+	}
+	handle /metrics {
+		reverse_proxy AF-FORGE-bridge:7071
+	}
+	handle /sense {
+		reverse_proxy AF-FORGE-bridge:7071
+	}
+	handle /human-expert/* {
+		reverse_proxy AF-FORGE-bridge:7071
+	}
+	handle /health {
+		reverse_proxy AF-FORGE-bridge:7071
+	}
+	handle /ready {
+		reverse_proxy AF-FORGE-bridge:7071
+	}
+
+	# Default respond
+	handle {
+		respond "AF FORGE Gateway" 200
+	}
+}
+
+# MCP Hub — mcp.arif-fazil.com
+# All MCP servers under one subdomain with automatic TLS
+mcp.arif-fazil.com {
+	bind 0.0.0.0
+
+	# arifOS MCP
+	handle_path /arifos/* {
+		reverse_proxy arifos-mcp:8080
+	}
+
+	# GEOX MCP
+	handle_path /geox/* {
+		reverse_proxy geox-mcp:8765
+	}
+
+	# Root MCP endpoint → arifOS MCP (default)
+	handle /* {
+		reverse_proxy arifos-mcp:8080
+	}
+
+	# Auto TLS via Let's Encrypt
+	tls {
+		protocols tls1.2 tls1.3
+	}
+}
+

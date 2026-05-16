@@ -1,0 +1,19 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'A-FORGE-bridge'
+    static_configs:
+      - targets: ['172.21.0.1:7071']
+    metrics_path: /metrics
+
+  # NOTE: arifOS MCP metrics endpoint (/metrics/json or /metrics) is not yet
+  # implemented in the current container image. Re-enable once the endpoint
+  # serves Prometheus-compatible exposition format or a json-exporter is added.
+
+
