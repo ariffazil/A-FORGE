@@ -1,155 +1,25 @@
-# A-FORGE — The Metabolic Shell
+﻿# A-FORGE — Infrastructure & Deployment Shell
 
-> **Intelligence is forged, not given.**
-> **DITEMPA BUKAN DIBERI — 999 SEAL ALIVE**
+> **Status:** OPERATIONAL | **Organ:** FORGE (A) | **Authority:** arifOS
 
-[![A-FORGE](https://img.shields.io/badge/A--FORGE-v2026.05.10-FF6B35?style=flat-square)](https://github.com/ariffazil/A-FORGE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square)](https://github.com/ariffazil/A-FORGE)
-[![arifOS](https://img.shields.io/badge/arifOS-F1%E2%80%93F13_Governed-FF6B00?style=flat-square)](https://github.com/ariffazil/arifOS)
-[![License](https://img.shields.io/badge/License-AGPL_V3-4EAF0C?style=flat-square)](./LICENSE)
+## 🏛️ Current Role
+The centralized deployment and infrastructure orchestration shell for the entire federation. It owns the Docker stack and the Caddy routing layer.
 
----
+## 🏗️ Federation Placement
+- **Upstream:** AAA, arifOS
+- **Downstream:** arif-sites, well, GEOX (via managed containers)
 
-## What A-FORGE Is
+## 📂 Current Topology
+- deploy/: Centralized Docker Compose and Caddy manifests.
+- infra/: System-level configurations and Prometheus/Grafana assets.
+- docs/: Infrastructure map and topology specs.
 
-A-FORGE is the **Security Enforcement Shell** — the execution engine, orchestration surface, and operator observability layer of the arifOS organism.
+## 🚀 Entrypoints
+- docker-compose up: Launch the federation substrate.
 
-Its role:
-- **Enforce Security Policy**: Validate agent identity (L2) and federation scope (L3) before tool execution.
-- **Metabolic Execution**: Translate constitutional verdicts into actual system modifications.
-- **Orchestration**: Route tool calls and coordinate between domain organs (GEOX, WEALTH, WELL).
-- **Audit Logging**: Bridge terminal outcomes to VAULT999.
-
-### Position in 000–999 Pipeline
-A-FORGE primarily spans stages **333–777** in the metabolic loop. It executes planned actions, routes tool calls, and exposes observability, while arifOS handles the upstream **888 JUDGE** and downstream **999 SEAL**.
+## 🔄 Federation Loop
+- [arifOS](https://github.com/ariffazil/arifOS) (Kernel)
+- [AAA](https://github.com/ariffazil/AAA) (Body)
 
 ---
-
-## Position in the Sovereign Flow
-
-```
-SOUL (Human Δ) → MIND (arifOS Ω) → BODY (AAA/A-FORGE Ψ) → VAULT999 (Seal)
-                     ↓               ↑
-               Constitutional   Security Enforcement
-                Translation     & Execution
-```
-
-A-FORGE is the **execution shell** — it does not adjudicate. It receives verdicts from arifOS and translates them into action.
-
----
-
-## Current Source of Truth
-
-| Field | Value |
-|-------|-------|
-| Role | **Security Enforcement** |
-| Governing kernel | `arifOS MIND (Ω)` |
-| Enforcement Level | `F1-F13 Always-On` |
-| Repo head audited | `1f73d8a` |
-| Tools | 11 callable tools + ToolRegistry (internal) |
-| Position | Stages 333-777 |
-| Runtime SOT | [`RUNTIME_SOT.md`](./RUNTIME_SOT.md) |
-| Bridge status | `127.0.0.1:7071` currently unreachable |
-
----
-
-## What Changed (2026-05-11)
-
-- arifOS embodiment contracts now gate execution plans before downstream tool invocation.
-- The runtime source of truth still points at the standalone A-FORGE bridge on `127.0.0.1:7071`, not the federation base compose file.
-- At audit time, that bridge container was not running, so any doc claiming a healthy local bridge is stale until `af-bridge-prod` is recreated.
-- The remaining frontier is restoring the standalone bridge runtime while preserving arifOS-first governance.
-
----
-
-## Runtime Source of Truth
-
-The canonical **A-FORGE bridge runtime** on the VPS is the standalone compose project in this repo:
-
-- **Compose owner:** `/root/A-FORGE/docker-compose.yml`
-- **Expected container:** `af-bridge-prod`
-- **Bind:** `127.0.0.1:7071`
-- **Shared federation network:** `arifos_core_network`
-- **Governance target:** `http://arifosmcp:8080`
-- **Data plane targets:** `postgres`, `redis`, `qdrant`, `ollama`
-
-`/root/compose/docker-compose.yml` remains the **federation base stack** for shared services, but it is **not** the runtime owner of the A-FORGE bridge container. If the bridge is moved into `/root/compose` later, update this section and `RUNTIME_SOT.md` in the same change.
-
-A-FORGE prefers **HTTP governance through arifOS** when `ARIFOS_GOVERNANCE_URL` is set. If that variable is absent, the CLI falls back to in-process `LocalGovernanceClient`; treat that as a degraded or local-development path, not the default VPS contract.
-
-**Current live state:** the compose definition exists, but `af-bridge-prod` is not present/running at the 2026-05-11 audit, so `/health` on `127.0.0.1:7071` does not answer.
-
----
-
-## Constitutional Policy Gates
-
-A-FORGE operates under all 13 arifOS floors (F1–F13), with this README highlighting the **most visible execution-time gates**:
-
-- **F3 WITNESS** — Evidence required before execution
-- **F4 CLARITY** — Intent must be transparent (ΔS ≤ 0)
-- **F6 EMPATHY** — **Maruah-first**: stakeholder dignity preserved
-- **F7 HUMILITY** — Epistemic limits acknowledged
-- **F8 GENIUS** — Elegant execution (G ≥ 0.80)
-- **F9 ANTIHANTU** — Zero hallucination or deception
-- **F11 AUTH/AUDIT** — Identity verified and Entscheidung logged
-- **OPS/777** — Operational telemetry and cost measurement
-
----
-
-## arifOS Federation
-
-arifOS is part of a federated AI governance system. Each organ has a narrow responsibility so no single agent becomes uncontrolled, unaccountable, or self-authorizing.
-
-| Organ | Human Meaning | System Role | Docs |
-|---|---|---|---|
-| **ARIF / APEX** | Final human authority | F13 sovereign veto, approval, override, terminal judgment | [arif-fazil.com](https://arif-fazil.com) |
-| **AAA** | Operator cockpit | Identity, A2A federation gateway, session control, agent supervision | [README](https://github.com/ariffazil/AAA) |
-| **A-FORGE** | Execution shell | Runs tools, performs dry-runs, executes approved actions, reports outcomes | [README](https://github.com/ariffazil/A-FORGE) |
-| **arifOS** | Governance kernel | Checks evidence, risk, authority, verdicts, and auditability before action | [README](https://github.com/ariffazil/arifOS) |
-| **GEOX** | Earth intelligence | Seismic, petrophysics, basin, subsurface, and physics-grounded evidence | [README](https://github.com/ariffazil/geox) |
-| **WEALTH** | Capital intelligence | NPV, IRR, EMV, risk scoring, crisis triage, economic judgment | [README](https://github.com/ariffazil/wealth) |
-| **WELL** | Human readiness mirror | Operator pressure, biological state, cognitive load, human-system safety | [README](https://github.com/ariffazil/well) |
-| **Ω-Wiki** | Knowledge base | Persistent compiled knowledge, doctrine, references, and memory surfaces | [wiki.arif-fazil.com](https://wiki.arif-fazil.com) |
-
-### How the organs work together
-
-A governed action should not move directly from prompt to execution.
-
-```
-Human / Agent request
-→ AAA identifies the session
-→ arifOS judges the request
-→ GEOX / WEALTH / WELL provide domain evidence when needed
-→ A-FORGE executes only approved actions
-→ VAULT999 records the receipt
-→ APEX / Human can veto at any time
-```
-
-> **AAA controls the session. arifOS judges. Domain organs provide evidence. A-FORGE executes. VAULT999 records. The human remains sovereign.**
-
----
-
-## Live Surfaces (as of 2026-05-02)
-
-| Surface | URL |
-|---------|-----|
-| Human (SOUL) | https://arif-fazil.com/ |
-| arifOS (MIND) | https://arifos.arif-fazil.com/ |
-| Cockpit (BODY) | https://aaa.arif-fazil.com/ |
-| MCP Machine | https://mcp.arif-fazil.com/ |
-
-> **Note:** `https://arifosmcp.arif-fazil.com/` is a legacy 301 redirect to the canonical `mcp.arif-fazil.com` endpoint.
-
-*arifOS may judge. A-FORGE executes. The seal is earned, not assumed.*
-*DITEMPA BUKAN DIBERI — Execution is forged through disciplined orchestration.*
-
-## Repo + MCP Stabilization
-
-Operational stabilization policy and weekly hygiene protocol:
-`docs/operations/repo-mcp-stabilization.md`
-
-Install severity-based pre-push guard:
-
-```bash
-bash scripts/hooks/install_hooks.sh
-```
+*Ditempa Bukan Diberi — 999 SEAL ALIVE*
