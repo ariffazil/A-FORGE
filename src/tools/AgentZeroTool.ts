@@ -47,7 +47,7 @@ export class AgentZeroDelegateTool extends BaseTool {
         headers["X-API-KEY"] = AGENT_ZERO_API_KEY;
       }
 
-      const response = await fetch(`${AGENT_ZERO_URL}/api_message`, {
+      const response = await fetch(`${AGENT_ZERO_URL}/api/api_message`, {
         method: "POST",
         headers,
         body: JSON.stringify(body),
@@ -114,7 +114,7 @@ export class AgentZeroBrowserTool extends BaseTool {
         headers["X-API-KEY"] = AGENT_ZERO_API_KEY;
       }
 
-      const response = await fetch(`${AGENT_ZERO_URL}/api_message`, {
+      const response = await fetch(`${AGENT_ZERO_URL}/api/api_message`, {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -186,7 +186,7 @@ export class AgentZeroDocumentTool extends BaseTool {
         headers["X-API-KEY"] = AGENT_ZERO_API_KEY;
       }
 
-      const response = await fetch(`${AGENT_ZERO_URL}/api_message`, {
+      const response = await fetch(`${AGENT_ZERO_URL}/api/api_message`, {
         method: "POST",
         headers,
         body: JSON.stringify({
