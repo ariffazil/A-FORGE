@@ -29,13 +29,17 @@ async function getEmbedding(text: string): Promise<number[]> {
 
 async function federationUpsert(id: string, vector: number[], payload: Record<string, unknown>): Promise<void> {
   try {
-    await fetch(`${QDRANT_URL}/collections/${FEDERATION_COLLECTION}/points`, {
+    const response = await fetch(`${QDRANT_URL}/collections/${FEDERATION_COLLECTION}/points`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         points: [{ id, vector, payload }],
       }),
     });
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      console.warn(`[LongTermMemory] Federation upsert failed (non-fatal): HTTP ${response.status} — ${body}`);
+    }
   } catch (e) {
     console.warn("[LongTermMemory] Federation upsert failed (non-fatal):", e);
   }
