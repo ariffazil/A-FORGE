@@ -1,0 +1,37 @@
+schema_version: 1
+kind: arifos.mcp_surface
+owner_repo: A-FORGE
+status: contract
+last_verified: "2026-05-19"
+runtime_surface:
+  primary_role: execution_substrate
+  primary_port: 7071
+  public_surface: ops_and_release_only
+authority:
+  owns:
+    - build_release
+    - deploy_health
+    - rollback_plan
+    - ops_cost
+    - execution_receipts
+  excludes:
+    - final_verdict
+    - constitutional_law
+    - domain_truth
+    - cockpit_ui
+expected_tools_or_routes:
+  - plan_validate
+  - execution_preview
+  - deployment_health
+  - release_provenance
+  - rollback_prepare
+  - vault_receipt_append
+artifact_policy:
+  machine_readable: required
+  human_readable: required_for_deploy
+  rollback_note: required_for_production
+hold_conditions:
+  - deploy_without_build_test_health
+  - missing_rollback_path
+  - secret_or_env_change
+  - irreversible_host_mutation

@@ -3,7 +3,7 @@
 # SOURCE: git arifosmcp/ → BUILD → container /etc/arifOS/ (this file)
 # Agents: read this before reasoning about file placement. This is the law.
 
-version: "v2026.04.19"
+version: "v2026.05.19"
 constitution: "F1-F13"
 anti_proliferation: true
 
@@ -181,10 +181,10 @@ verdict:
 # Update this file, re-seal, rebuild.
 
 manifest_accuracy: "LIVE"
-last_verified: "2026-04-19T05:52:00Z"
+last_verified: "2026-05-19T00:00:00Z"
 
 # ============================================================
-# Forged by Arif Fazil · Seri Kembangan, MY · April 2026
+# Forged by Arif Fazil · Seri Kembangan, MY · May 2026
 # Architecture: 13 Tools · 13 Floors · FHS Runtime · Trinity ΔΩΨ
 # DITEMPA BUKAN DIBERI — 999 SEAL ALIVE
 # ============================================================

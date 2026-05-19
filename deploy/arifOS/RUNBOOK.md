@@ -1,8 +1,8 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-05-05
-valid_from: 2026-05-05
-valid_until: 2026-05-12
+last_verified: 2026-05-19
+valid_from: 2026-05-19
+valid_until: 2026-06-19
 confidence: medium
 scope: /root
 -->
@@ -259,7 +259,7 @@ curl -s https://well.arif-fazil.com/.well-known/mcp/server.json | python3 -m jso
 |-------|-------|
 | Repo | `/root/AAA` |
 | Compose services | `aaa`, `aaa-a2a` |
-| Containers | `aaa-a2a`, `hermes-agent` |
+| Containers | `aaa-a2a`, `apex-prime` |
 
 ### Restart
 ```bash

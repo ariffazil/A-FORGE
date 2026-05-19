@@ -23,6 +23,11 @@
       "type": "http",
       "url": "https://mcp.exa.ai/mcp",
       "description": "Exa MCP — web search + code search + content extraction (OAuth)"
+    },
+    "meyhem": {
+      "type": "streamable-http",
+      "url": "https://api.rhdxm.com/mcp/",
+      "description": "Meyhem — MCP server discovery (6,700+) + outcome-ranked web search. No API key. Tools: find_server, search, select, outcome"
     }
   }
 }

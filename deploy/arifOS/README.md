@@ -54,7 +54,7 @@ docker compose restart <svc># restart a service
 | GEOX | http://localhost:8081/health |
 | WEALTH | http://localhost:8082/health |
 | vault999 | http://localhost:8100/health |
-| hermes-agent | http://localhost:3002/health |
+| apex-prime | http://localhost:3002/health |
 | A-FORGE | http://localhost:7071/health |
 
 ## Agent Guidelines
