@@ -373,7 +373,7 @@ services:
       interval: 60s
       start_period: 10s
 # ── APEX PRIME: ASI Deliberative Server ────────────────────────────────────
-  hermes-agent:
+  apex-prime:
     image: apex-prime:v1.0.5
     container_name: apex-prime
     init: true

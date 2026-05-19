@@ -140,9 +140,6 @@ def compute_chain_hash(prev_seal_hash: str, seal_hash: str) -> str:
     if _HAS_BLAKE3:
         return blake3.blake3(chain_input.encode("utf-8")).hexdigest(32)
     return hashlib.sha256(chain_input.encode("utf-8")).hexdigest()
-    if _HAS_BLAKE3:
-        return blake3.blake3(chain_input.encode("utf-8")).hexdigest(32)
-    return hashlib.sha256(chain_input.encode("utf-8")).hexdigest()
 
 
 # ============================================================
@@ -177,7 +174,6 @@ class VaultDB:
             )
             prev_seal_id = prev_row["id"] if prev_row else None
             prev_seal_hash = prev_row["seal_hash"] if prev_row else None
-            from datetime import datetime
 
             epoch_val = (
                 datetime.fromisoformat(req.epoch) if isinstance(req.epoch, str) else req.epoch

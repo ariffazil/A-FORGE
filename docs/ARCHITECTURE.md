@@ -30,7 +30,7 @@ GEOX operates in **3 planes**:
 └─────────────────────────────┬───────────────────────────────────┘
                               │ JSON-RPC (Streamable HTTP)
 ┌─────────────────────────────▼───────────────────────────────────┐
-│  PLANE 2: MCP SERVER (Authority Layer)                          │
+│  PLANE 2: GOVERNED SERVER (Constitutional Authority Layer)      │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  • 7 essential tools                                    │   │
 │  │  • AC_Risk calculation (ToAC)                           │   │
