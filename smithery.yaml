@@ -1,191 +1,273 @@
-# smithery.yaml — GEOX Smithery MCP Registry Configuration
+# A-FORGE — Smithery MCP Registry Configuration
+# Public manifest for Smithery marketplace
 # DITEMPA BUKAN DIBERI
 #
-# Smithery is a marketplace for MCP servers
+# THIS FILE IS THE A-FORGE public-facing manifest.
+# A-FORGE is the TypeScript execution substrate for the arifOS federation.
+# It provides build, deploy, release, rollback, and health tools.
+#
 # Registry: https://smithery.ai
+# Homepage: https://arif-fazil.com
 
-name: GEOX-earth-witness
-version: "0.5.0"
-display_name: "GEOX — Geological Intelligence Coprocessor"
+name: A-FORGE-execution-substrate
+version: "2026.05.19"
+display_name: "A-FORGE — Governed Execution Substrate"
 description: |
-  GEOX is a governed, agentic geological intelligence coprocessor for arifOS.
-  Provides physically-grounded geological prospect evaluation using Large Earth Models,
-  seismic VLM interpretation, basin simulation, and geospatial verification.
-  
-  Key capabilities:
-  - Prospect evaluation with constitutional floor enforcement
-  - Structural validation (fault mechanics, shortening calculations)
-  - Geological memory RAG over past evaluations
-  - Tri-app architecture: Map + Cross Section + Seismic Section
-  
-  Verdict outcomes: SEAL (high confidence), PARTIAL (supported with caveats),
-  SABAR (wait/gather more), VOID (contradictions detected)
+  A-FORGE is the constitutional execution engine for the arifOS federation.
+  Provides build, deploy, release, rollback, and operational health tools.
+  All execution is gated by 888_JUDGE verdict and requires sovereign ack.
+  arifOS owns final judgment. A-FORGE executes only after SEAL.
 
-category: science
-subcategory: geology
+category: devops
+subcategory: deployment
 
 # MCP protocol
 mcp_version: "2024-11-05"
 transport: stdio
-command: python
-args: ["/full/path/to/server.py"]
+command: node
+args: ["dist/src/mcp/server.js"]
 
 # Installation
 install:
-  method: pip
-  package: arifos-GEOX
-  source: https://github.com/ariffazil/GEOX
-  python_version: ">=3.10"
+  method: npm
+  package: a-forge
+  source: https://github.com/ariffazil/A-FORGE
+  node_version: ">=22.0.0"
 
-# Tools exposed
+# A-FORGE execution tools
+# These are the MCP tools exposed via stdio transport
 tools:
-  - id: GEOX_load_seismic_line
-    name: GEOX_load_seismic_line
-    description: Load seismic line data and ignite visual mode (Earth Witness Ignition). Returns QC badges, contrast warnings, and governance floor status.
+  - id: forge_check_governance
+    name: forge_check_governance
+    description: |
+      Run F3/F6/F9 constitutional checks before execution.
+      Returns PASS/HOLD/VOID per floor.
     input_schema:
       type: object
       properties:
-        line_id: { type: string }
-        survey_path: { type: string, default: default_survey }
-        generate_views: { type: boolean, default: true }
-      required: [line_id]
+        intent:
+          type: string
+        domain:
+          type: string
+      required: [intent]
 
-  - id: GEOX_build_structural_candidates
-    name: GEOX_build_structural_candidates
-    description: Build structural model candidate ensemble (Inverse Modelling Constraints). Prevents narrative collapse — returns multiple plausible models.
-    input_schema:
-      type: object
-      properties:
-        line_id: { type: string }
-        focus_area: { type: string }
-      required: [line_id]
-
-  - id: GEOX_feasibility_check
-    name: GEOX_feasibility_check
-    description: Constitutional Firewall — check if a proposed plan is physically possible against world-state and Earth physics (F4, F9).
-    input_schema:
-      type: object
-      properties:
-        plan_id: { type: string }
-        constraints: { type: array, items: { type: string } }
-      required: [plan_id, constraints]
-
-  - id: GEOX_verify_geospatial
-    name: GEOX_verify_geospatial
-    description: Verify coordinates, geological province, and jurisdictional boundaries. Anchors all reasoning in verified CRS per F4 Clarity.
-    input_schema:
-      type: object
-      properties:
-        lat: { type: number }
-        lon: { type: number }
-        radius_m: { type: number, default: 1000.0 }
-      required: [lat, lon]
-
-  - id: GEOX_evaluate_prospect
-    name: GEOX_evaluate_prospect
-    description: Full GEOX geological prospect evaluation pipeline
-    input_schema:
-      type: object
-      properties:
-        query: { type: string }
-        prospect_name: { type: string }
-        latitude: { type: number }
-        longitude: { type: number }
-        basin: { type: string }
-        play_type: { type: string, enum: [stratigraphic, structural, combination] }
-        risk_tolerance: { type: string, enum: [low, medium, high] }
-        requester_id: { type: string }
-      required: [query, prospect_name, latitude, longitude, basin, play_type, risk_tolerance, requester_id]
-
-  - id: GEOX_query_memory
-    name: GEOX_query_memory
-    description: Query the GEOX geological memory store
-    input_schema:
-      type: object
-      properties:
-        query: { type: string }
-        basin: { type: string }
-        limit: { type: integer, default: 5 }
-      required: [query]
-
-  - id: GEOX_health
-    name: GEOX_health
-    description: GEOX server health check
+  - id: forge_health
+    name: forge_health
+    description: |
+      Server health check — returns floor implementation status,
+      service uptime, and governance surface state.
     input_schema:
       type: object
       properties: {}
 
-  # Petrophysics Phase B (4 tools)
-  - id: GEOX_select_sw_model
-    name: GEOX_select_sw_model
-    description: Evaluate Archie vs shaly-sand saturation models against shale conductivity, mineralogy, and calibration support. Returns admissible models with confidence scores.
+  - id: forge_run
+    name: forge_run
+    description: |
+      Execute a governed agent task (explore profile).
+      Requires prior 888_JUDGE SEAL. Dry-run mode available.
     input_schema:
       type: object
       properties:
-        interval_uri: { type: string, description: "GEOX://well/{id}/interval/{top}-{base}/rock-state" }
-        candidate_models: { type: array, items: { type: string }, default: ["archie", "simandoux", "indonesia", "dual_water"] }
-      required: [interval_uri]
+        goal:
+          type: string
+        mode:
+          type: string
+          enum: [internal, external]
+          default: external
+        cwd:
+          type: string
+        intent_model:
+          type: string
+          enum: [informational, advisory, execution, speculative]
+        risk_level:
+          type: string
+          enum: [low, medium, high, critical]
+      required: [goal]
 
-  - id: GEOX_compute_petrophysics
-    name: GEOX_compute_petrophysics
-    description: Compute Vsh, phi_t, phi_e, Sw, BVW, net, pay, RQI/FZI/HFU with uncertainty envelopes. Constitutional computation pipeline.
+  - id: forge_hold
+    name: forge_hold
+    description: |
+      Stage an action for 888_HOLD approval.
+      Returns ticket ID for tracking.
     input_schema:
       type: object
       properties:
-        interval_uri: { type: string, description: "GEOX://well/{id}/interval/{top}-{base}/rock-state" }
-        model_id: { type: string, description: "Saturation model to use (e.g., archie, simandoux)" }
-        model_params: { type: object, description: "Model parameters {a, m, n, rw, ...}" }
-        compute_uncertainty: { type: boolean, default: true }
-      required: [interval_uri, model_id]
+        action:
+          type: string
+        intent:
+          type: string
+        risk_level:
+          type: string
+          enum: [low, medium, high, critical]
+      required: [action, intent]
 
-  - id: GEOX_validate_cutoffs
-    name: GEOX_validate_cutoffs
-    description: Apply economic/operational cutoffs as governed policy objects. Distinguishes physics from policy per F4 Clarity.
+  - id: forge_approve
+    name: forge_approve
+    description: |
+      Approve a held action by ticket ID.
+      Only sovereign (Arif) or authorized operator can approve.
     input_schema:
       type: object
       properties:
-        interval_uri: { type: string, description: "GEOX://well/{id}/interval/{top}-{base}/rock-state" }
-        cutoff_policy_id: { type: string, description: "Policy identifier to apply" }
-      required: [interval_uri, cutoff_policy_id]
+        ticket_id:
+          type: string
+      required: [ticket_id]
 
-  - id: GEOX_petrophysical_hold_check
-    name: GEOX_petrophysical_hold_check
-    description: Automatic 888_HOLD trigger detection for petrophysics. Checks Rw calibration, shale model support, environmental corrections, invasion handling, depth matching, and cutoff basis.
+  - id: forge_route_approval
+    name: forge_route_approval
+    description: |
+      Route a PlannerOutput through policy gates.
+      Returns AUTO_APPLIED, WAITING_FOR_HUMAN, or REJECTED.
     input_schema:
       type: object
       properties:
-        interval_uri: { type: string, description: "GEOX://well/{id}/interval/{top}-{base}/rock-state" }
-      required: [interval_uri]
+        planner_output:
+          type: object
+      required: [planner_output]
+
+  - id: forge_apply_patches
+    name: forge_apply_patches
+    description: |
+      Apply unified diffs/patches directly.
+      Requires prior SEAL. No autonomous execution.
+    input_schema:
+      type: object
+      properties:
+        patches:
+          type: array
+          items: { type: string }
+      required: [patches]
+
+  - id: forge_remember
+    name: forge_remember
+    description: |
+      Store a memory in the MemoryContract (5-tier governed memory).
+      Tier: ephemeral | working | canon | sacred | quarantine.
+    input_schema:
+      type: object
+      properties:
+        content:
+          type: string
+        tier:
+          type: string
+          enum: [ephemeral, working, canon, sacred, quarantine]
+        pin:
+          type: boolean
+          default: false
+      required: [content, tier]
+
+  - id: forge_recall
+    name: forge_recall
+    description: |
+      Query memories from the MemoryContract.
+      Supports full-text search within tier.
+    input_schema:
+      type: object
+      properties:
+        query:
+          type: string
+        tier:
+          type: string
+          enum: [ephemeral, working, canon, sacred, quarantine]
+        limit:
+          type: integer
+          default: 10
+      required: [query]
+
+  - id: forge_ticket_status
+    name: forge_ticket_status
+    description: |
+      Query an approval ticket by ID.
+      Returns current status: PENDING | APPROVED | REJECTED | EXPIRED.
+    input_schema:
+      type: object
+      properties:
+        ticket_id:
+          type: string
+      required: [ticket_id]
+
+  - id: forge_seal_service
+    name: forge_seal_service
+    description: |
+      VAULT999 plan-level validation on PlanDAG nodes.
+      Append-only seal for terminal verdicts.
+    input_schema:
+      type: object
+      properties:
+        verdict:
+          type: string
+          enum: [SEAL, HOLD, SABAR, VOID]
+        session_id:
+          type: string
+        plan_dag:
+          type: object
+      required: [verdict]
 
 # Constitutional governance
 governance:
   floors:
-    - id: F1; name: Amanah; description: Reversibility
-    - id: F2; name: Truth; description: All claims Earth-verified
-    - id: F4; name: Clarity; description: Units + coordinates required
-    - id: F7; name: Humility; description: Uncertainty calibrated
-    - id: F9; name: Anti-Hantu; description: No hallucinated geology
-    - id: F11; name: Authority; description: Provenance mandatory
-    - id: F13; name: Sovereign; description: Human veto hook active
+    - id: F1
+      name: Amanah
+      description: Reversibility — rollback plan required for all deploys
+    - id: F3
+      name: Input Clarity
+      description: Intent must be explicit before execution
+    - id: F4
+      name: Entropy
+      description: Operational entropy must decrease
+    - id: F6
+      name: Harm Dignity
+      description: Dignity impact assessed before deploy
+    - id: F7
+      name: Confidence
+      description: Confidence band honest — no overclaiming
+    - id: F8
+      name: Grounding
+      description: Evidence grounding required
+    - id: F9
+      name: Anti-Hantu
+      description: No consciousness or emotion claims
+    - id: F11
+      name: Coherence
+      description: Response coherence validated
+    - id: F13
+      name: Sovereign
+      description: Human veto active — 888_HOLD circuit breaker
 
-# Verdict system
-verdicts:
-  SEAL: { confidence_min: 0.80, action: auto_proceed }
-  PARTIAL: { confidence_min: 0.50, action: proceed_with_caveats }
-  SABAR: { confidence_min: 0.25, action: hold_wait_data }
-  VOID: { confidence_min: 0.00, action: block_stop }
+# Authority exclusions
+authority:
+  owns:
+    - build_release
+    - deploy_health
+    - rollback_plan
+    - ops_cost
+    - execution_receipts
+  excludes:
+    - constitutional_judgment
+    - domain_truth
+    - geological_evidence
+    - capital_allocation
+    - biological_diagnosis
+    - final_seal
+  human_sovereign: Muhammad Arif bin Fazil
+  final_verdict: arifOS 888_JUDGE
+
+# Hold conditions
+hold_conditions:
+  - deploy_without_build_test_health
+  - missing_rollback_path
+  - secret_or_env_change
+  - irreversible_host_mutation
+  - high_critical_risk_unacknowledged
 
 # Author
 author:
   name: Muhammad Arif bin Fazil
   email: ariffazil@gmail.com
-  org: PETRONAS Exploration
   github: https://github.com/ariffazil
 
 license: AGPL-3.0
 links:
-  github: https://github.com/ariffazil/GEOX
-  documentation: https://github.com/ariffazil/GEOX#readme
+  github: https://github.com/ariffazil/A-FORGE
 
 seal: DITEMPA BUKAN DIBERI
-
