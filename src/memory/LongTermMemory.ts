@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { TaskMemoryRecord } from "../types/memory.js";
 
@@ -6,6 +6,9 @@ const QDRANT_URL = process.env.QDRANT_URL ?? "http://qdrant:6333";
 const OLLAMA_URL = process.env.OLLAMA_URL ?? "http://localhost:11434";
 const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL ?? "bge-m3";
 const FEDERATION_COLLECTION = "federation_shared";
+const QDRANT_FAILURE_LOG_PATH =
+  process.env.QDRANT_FAILURE_LOG_PATH ?? "/tmp/a-forge-federation-qdrant-failures.jsonl";
+const QDRANT_WRITE_STRICT = process.env.QDRANT_WRITE_STRICT === "true";
 
 interface FederationRecord {
   id: string;
@@ -27,6 +30,18 @@ async function getEmbedding(text: string): Promise<number[]> {
   return data.embedding;
 }
 
+async function logFederationFailure(
+  reason: string,
+  details: Record<string, unknown>,
+): Promise<void> {
+  const entry = {
+    ts: new Date().toISOString(),
+    reason,
+    details,
+  };
+  await appendFile(QDRANT_FAILURE_LOG_PATH, `${JSON.stringify(entry)}\n`, "utf8");
+}
+
 async function federationUpsert(id: string, vector: number[], payload: Record<string, unknown>): Promise<void> {
   try {
     const response = await fetch(`${QDRANT_URL}/collections/${FEDERATION_COLLECTION}/points`, {
@@ -38,10 +53,34 @@ async function federationUpsert(id: string, vector: number[], payload: Record<st
     });
     if (!response.ok) {
       const body = await response.text().catch(() => "");
-      console.warn(`[LongTermMemory] Federation upsert failed (non-fatal): HTTP ${response.status} — ${body}`);
+      await logFederationFailure("upsert_http_error", {
+        id,
+        status: response.status,
+        body,
+        collection: FEDERATION_COLLECTION,
+        qdrantUrl: QDRANT_URL,
+      });
+      const msg = `[LongTermMemory] Federation upsert failed: HTTP ${response.status} — ${body}`;
+      if (QDRANT_WRITE_STRICT) {
+        throw new Error(msg);
+      }
+      console.warn(`${msg} (recorded in ${QDRANT_FAILURE_LOG_PATH})`);
     }
   } catch (e) {
-    console.warn("[LongTermMemory] Federation upsert failed (non-fatal):", e);
+    await logFederationFailure("upsert_exception", {
+      id,
+      error: e instanceof Error ? e.message : String(e),
+      collection: FEDERATION_COLLECTION,
+      qdrantUrl: QDRANT_URL,
+    });
+    if (QDRANT_WRITE_STRICT) {
+      throw e;
+    }
+    console.warn(
+      `[LongTermMemory] Federation upsert failed: ${
+        e instanceof Error ? e.message : String(e)
+      } (recorded in ${QDRANT_FAILURE_LOG_PATH})`,
+    );
   }
 }
 
