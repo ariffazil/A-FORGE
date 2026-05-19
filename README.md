@@ -1,4 +1,14 @@
-﻿# A-FORGE — Infrastructure & Deployment Shell
+﻿<!-- SOT-MANIFEST
+owner: Arif
+last_verified: 2026-05-19
+valid_from: 2026-05-19
+valid_until: 2026-06-19
+confidence: high
+scope: /root/A-FORGE
+epistemic_status: CLAIM
+-->
+
+# A-FORGE — Infrastructure & Deployment Shell
 
 > **Status:** OPERATIONAL | **Organ:** FORGE (A) | **Authority:** arifOS
 
