@@ -12,7 +12,6 @@
 import express from "express";
 import type { Request, Response } from "express";
 import { fileURLToPath } from "node:url";
-import { randomUUID } from "node:crypto";
 import { runSense } from "./policy/sense.js";
 import {
   calculateConfidenceEstimate,
@@ -20,11 +19,10 @@ import {
   classifyUncertaintyBand,
 } from "./policy/confidence.js";
 import { register } from "prom-client";
-import { runStage, recordHumanDecision, recordEscalationLatency, setOpenHolds, recordBridgeContractMismatch } from "./metrics/prometheus.js";
+import { runStage, setOpenHolds, recordBridgeContractMismatch } from "./metrics/prometheus.js";
 import type { MetabolicStage } from "./types/aki.js";
 import { getTicketStore } from "./approval/index.js";
-import { FileVaultClient } from "./vault/index.js";
-import { getPostgresVaultClient, type FloorRule, MerkleV3Service } from "./vault/index.js";
+import { getPostgresVaultClient, type FloorRule } from "./vault/index.js";
 import { LocalGovernanceClient } from "./governance/index.js";
 import { getAdaptiveThresholds } from "./governance/thresholds.js";
 import { SealService } from "./governance/SealService.js";
@@ -40,6 +38,11 @@ import { AgentEngine } from "./engine/AgentEngine.js";
 import { ToolRegistry } from "./tools/ToolRegistry.js";
 import { LongTermMemory } from "./memory/LongTermMemory.js";
 import { createA2ARouter } from "./a2a/index.js";
+import {
+  createHumanExpertRouter,
+  createOperatorRouter,
+} from "./routes/approvalOperatorRoutes.js";
+import { createVaultMerkleRouter } from "./routes/vaultMerkleRoutes.js";
 
 let cachedConstitution: FloorRule[] = [];
 
@@ -518,298 +521,11 @@ app.get("/sabar/cooldown", (_req: Request, res: Response) => {
   });
 });
 
-/**
- * GET /human-expert/tickets
- * List approval tickets with optional filtering
- */
-app.get("/human-expert/tickets", async (req: Request, res: Response) => {
-  try {
-    const store = getTicketStore();
-    await store.initialize();
-    const status = req.query.status as string | undefined;
-    const sessionId = req.query.sessionId as string | undefined;
-    const riskLevel = req.query.riskLevel as string | undefined;
-    const tickets = await store.query({
-      status: status as any,
-      sessionId,
-      riskLevel: riskLevel as any,
-    });
-    res.json({ ok: true, count: tickets.length, tickets });
-  } catch (error) {
-    console.error("[A-FORGE] /human-expert/tickets error:", error);
-    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
-
-/**
- * GET /human-expert/tickets/:ticketId
- * Get a single approval ticket
- */
-app.get("/human-expert/tickets/:ticketId", async (req: Request, res: Response) => {
-  try {
-    const store = getTicketStore();
-    await store.initialize();
-    const ticket = await store.findById(req.params.ticketId);
-    if (!ticket) {
-      res.status(404).json({ ok: false, error: { type: "not_found", message: "Ticket not found" } });
-      return;
-    }
-    res.json({ ok: true, ticket });
-  } catch (error) {
-    console.error("[A-FORGE] /human-expert/tickets/:ticketId error:", error);
-    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
-
-/**
- * POST /human-expert/decision
- * Submit a human decision for a ticket and seal it to VAULT999
- */
-app.post("/human-expert/decision", async (req: Request, res: Response) => {
-  try {
-    const { ticketId, decision, notes, humanId, signature } = req.body;
-    if (!ticketId || !decision) {
-      res.status(400).json({ ok: false, error: { type: "invalid_request", message: "ticketId and decision are required" } });
-      return;
-    }
-
-    const store = getTicketStore();
-    await store.initialize();
-    const ticket = await store.findById(ticketId);
-    if (!ticket) {
-      res.status(404).json({ ok: false, error: { type: "not_found", message: "Ticket not found" } });
-      return;
-    }
-
-    const validDecisions = ["APPROVE", "REJECT", "MODIFY", "ASK_MORE"] as const;
-    if (!validDecisions.includes(decision)) {
-      res.status(400).json({ ok: false, error: { type: "invalid_request", message: `decision must be one of ${validDecisions.join(", ")}` } });
-      return;
-    }
-
-    const statusMap = {
-      APPROVE: "APPROVED",
-      REJECT: "REJECTED",
-      MODIFY: "MODIFY_REQUIRED",
-      ASK_MORE: "ACKED",
-    } as const;
-
-    const updated = await store.updateTicket(ticketId, {
-      status: statusMap[decision as keyof typeof statusMap],
-      decision,
-      decisionNotes: notes,
-      humanId,
-      signature,
-      decidedAt: new Date().toISOString(),
-    });
-
-    recordHumanDecision(decision, ticket.domain ?? "unspecified", ticket.riskLevel);
-    if (ticket.dispatchedAt && updated?.decidedAt) {
-      const latencySec = (new Date(updated.decidedAt).getTime() - new Date(ticket.dispatchedAt).getTime()) / 1000;
-      recordEscalationLatency(latencySec, ticket.domain ?? "unspecified");
-    }
-
-    // Best-effort VAULT999 seal of the decision
-    const vaultClient = new FileVaultClient();
-    await vaultClient
-      .seal({
-        sealId: randomUUID(),
-        sessionId: ticket.sessionId,
-        verdict: decision === "APPROVE" ? "SEAL" : "HOLD",
-        hashofinput: "",
-        telemetrysnapshot: ticket.telemetrySnapshot,
-        floors_triggered: ticket.floorsTriggered,
-        irreversibilityacknowledged: false,
-        timestamp: new Date().toISOString(),
-        task: ticket.prompt,
-        finalText: `Human decision: ${decision}. Notes: ${notes ?? ""}`,
-        turnCount: 0,
-        profileName: "human-expert",
-        escalation: {
-          escalated: true,
-          humanEndpoint: "webhook",
-          humanDecision: decision as any,
-          humanId,
-          ticketId,
-        },
-      })
-      .catch(() => {});
-
-    res.json({ ok: true, ticket: updated });
-  } catch (error) {
-    console.error("[A-FORGE] /human-expert/decision error:", error);
-    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
-
-/**
- * POST /human-expert/tickets/:ticketId/replay
- * Mark an approved ticket as replayed and return a replay token
- */
-app.post("/human-expert/tickets/:ticketId/replay", async (req: Request, res: Response) => {
-  try {
-    const store = getTicketStore();
-    await store.initialize();
-    const ticket = await store.findById(req.params.ticketId);
-    if (!ticket) {
-      res.status(404).json({ ok: false, error: { type: "not_found", message: "Ticket not found" } });
-      return;
-    }
-    if (ticket.status !== "APPROVED") {
-      res.status(409).json({ ok: false, error: { type: "conflict", message: `Ticket status is ${ticket.status}, only APPROVED tickets can be replayed` } });
-      return;
-    }
-
-    const replayToken = `replay_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-    const updated = await store.updateTicket(req.params.ticketId, {
-      status: "REPLAYED",
-      replayToken,
-      replayedAt: new Date().toISOString(),
-    });
-
-    res.json({ ok: true, ticket: updated, replayToken });
-  } catch (error) {
-    console.error("[A-FORGE] /human-expert/tickets/:ticketId/replay error:", error);
-    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
-
-/**
- * GET /operator/approvals
- * List approval tickets with optional filtering
- */
-app.get("/operator/approvals", async (req: Request, res: Response) => {
-  try {
-    const store = getTicketStore();
-    await store.initialize();
-    const status = req.query.status as string | undefined;
-    const sessionId = req.query.sessionId as string | undefined;
-    const riskLevel = req.query.riskLevel as string | undefined;
-    const tickets = await store.query({
-      status: status as any,
-      sessionId,
-      riskLevel: riskLevel as any,
-    });
-    res.json({ ok: true, count: tickets.length, tickets });
-  } catch (error) {
-    console.error("[A-FORGE] /operator/approvals error:", error);
-    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
-
-/**
- * GET /operator/approvals/:ticketId
- * Get a single approval ticket
- */
-app.get("/operator/approvals/:ticketId", async (req: Request, res: Response) => {
-  try {
-    const store = getTicketStore();
-    await store.initialize();
-    const ticket = await store.findById(req.params.ticketId);
-    if (!ticket) {
-      res.status(404).json({ ok: false, error: { type: "not_found", message: "Ticket not found" } });
-      return;
-    }
-    res.json({ ok: true, ticket });
-  } catch (error) {
-    console.error("[A-FORGE] /operator/approvals/:ticketId error:", error);
-    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
-
-/**
- * GET /operator/vault
- * Search vault seals with optional filtering
- */
-app.get("/operator/vault", async (req: Request, res: Response) => {
-  try {
-    const vaultClient = new FileVaultClient();
-    const sessionId = req.query.sessionId as string | undefined;
-    const verdict = req.query.verdict as string | undefined;
-    const since = req.query.since as string | undefined;
-    const until = req.query.until as string | undefined;
-    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
-    const records = await vaultClient.query({
-      sessionId,
-      verdict: verdict as any,
-      since,
-      until,
-      limit: Number.isFinite(limit as number) ? limit : undefined,
-    });
-    res.json({ ok: true, count: records.length, records });
-  } catch (error) {
-    console.error("[A-FORGE] /operator/vault error:", error);
-    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
-
-/**
- * GET /operator/vault/:sealId
- * Get a single vault seal record
- */
-app.get("/operator/vault/:sealId", async (req: Request, res: Response) => {
-  try {
-    const vaultClient = new FileVaultClient();
-    const record = await vaultClient.findById(req.params.sealId);
-    if (!record) {
-      res.status(404).json({ ok: false, error: { type: "not_found", message: "Seal not found" } });
-      return;
-    }
-    res.json({ ok: true, record });
-  } catch (error) {
-    console.error("[A-FORGE] /operator/vault/:sealId error:", error);
-    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
-
-/**
- * GET /vault/merkle/verify
- * Verify the Merkle v3 chain for a given date (defaults to today).
- * Returns: { valid, brokenAt, storedRoot, computedRoot, rowCount }
- */
-app.get("/vault/merkle/verify", async (req: Request, res: Response) => {
-  try {
-    const dateStr = req.query.date as string | undefined;
-    const date = dateStr ? new Date(dateStr) : new Date();
-    const postgresUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
-    if (!postgresUrl) {
-      res.status(503).json({ ok: false, error: { type: "unavailable", message: "No database connection" } });
-      return;
-    }
-    const vault = getPostgresVaultClient(postgresUrl);
-    const merkle = new MerkleV3Service(vault);
-    const result = await merkle.verifyChain(date);
-    res.json({ ok: true, ...result, date: date.toISOString().split("T")[0] });
-  } catch (error) {
-    console.error("[A-FORGE] /vault/merkle/verify error:", error);
-    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
-
-/**
- * POST /vault/merkle/seal
- * Run daily Merkle seal: build chain + anchor root + verify.
- * Triggers F1/F11 tamper-evidence checkpoint.
- */
-app.post("/vault/merkle/seal", async (req: Request, res: Response) => {
-  try {
-    const dateStr = (req.body as { date?: string }).date;
-    const date = dateStr ? new Date(dateStr) : new Date();
-    const postgresUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL;
-    if (!postgresUrl) {
-      res.status(503).json({ ok: false, error: { type: "unavailable", message: "No database connection" } });
-      return;
-    }
-    const vault = getPostgresVaultClient(postgresUrl);
-    const merkle = new MerkleV3Service(vault);
-    const result = await merkle.dailySeal(date);
-    console.error(`[MerkleV3] dailySeal ${date.toISOString().split("T")[0]}: valid=${result.valid} rows=${result.rowCount}`);
-    res.json({ ok: true, ...result, date: date.toISOString().split("T")[0] });
-  } catch (error) {
-    console.error("[A-FORGE] /vault/merkle/seal error:", error);
-    res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
+// Extracted approval and operator surfaces into dedicated routers
+// to keep server.ts focused on composition and core routes.
+app.use("/human-expert", createHumanExpertRouter());
+app.use("/operator", createOperatorRouter());
+app.use("/vault/merkle", createVaultMerkleRouter());
 
 // Error handling
 app.use((err: Error, _req: Request, res: Response, _next: express.NextFunction) => {
@@ -851,6 +567,3 @@ export async function startServer(): Promise<void> {
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   void startServer();
 }
-
-
-

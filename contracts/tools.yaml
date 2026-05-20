@@ -1,0 +1,173 @@
+# A-FORGE Execution Intelligence Tool Registry
+# SOT: ariffazil/A-FORGE — Forge Engine / Runtime Bridge
+# Last verified: 2026-05-19
+
+schema_version: "2026.05.19"
+organ: A-FORGE
+authority: ariffazil/A-FORGE
+mcp_transport: stdio + http_bridge
+mcp_endpoint: http://localhost:7071/mcp
+health_endpoint: http://localhost:7071/health
+
+# A-FORGE exposes TypeScript tools through its MCP core, not Python
+runtime: nodejs_22
+build_target: dist/src/
+
+ tools:
+  ReadFileTool:
+    category: file_system
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/FileTools.ts
+    tests_present: true
+    status: sealed
+    description: Read file contents with optional offset/limit
+
+  WriteFileTool:
+    category: file_system
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/FileTools.ts
+    tests_present: true
+    status: sealed
+    description: Write or overwrite file contents
+
+  ListFilesTool:
+    category: file_system
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/FileTools.ts
+    tests_present: true
+    status: sealed
+    description: List directory contents
+
+  GrepTextTool:
+    category: search
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/SearchTools.ts
+    tests_present: true
+    status: sealed
+    description: Search text across files using ripgrep
+
+  RunCommandTool:
+    category: shell
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/ShellTools.ts
+    tests_present: true
+    status: sealed
+    description: Execute shell commands in sandboxed environment
+
+  RunTestsTool:
+    category: shell
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/ShellTools.ts
+    tests_present: true
+    status: sealed
+    description: Run project test suite
+
+  ApplyPatchesTool:
+    category: editor
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/EditorTools.ts
+    tests_present: true
+    status: sealed
+    description: Apply code patches using unified diff format
+
+  AgentZeroDelegateTool:
+    category: agent
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/AgentZeroTool.ts
+    tests_present: true
+    status: sealed
+    description: Delegate task to AgentZero browser automation
+
+  AgentZeroBrowserTool:
+    category: agent
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/AgentZeroTool.ts
+    tests_present: true
+    status: sealed
+    description: Browser automation via AgentZero
+
+  AgentZeroDocumentTool:
+    category: agent
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/AgentZeroTool.ts
+    tests_present: true
+    status: sealed
+    description: Document processing via AgentZero
+
+  MiniMaxWebSearchTool:
+    category: search
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/MiniMaxTools.ts
+    tests_present: true
+    status: sealed
+    description: Web search via MiniMax API
+
+  MiniMaxUnderstandImageTool:
+    category: vision
+    owner_repo: ariffazil/A-FORGE
+    runtime_surface: src/tools/MiniMaxTools.ts
+    tests_present: true
+    status: sealed
+    description: Image analysis via MiniMax vision API
+
+  # DELEGATED tools — A-FORGE re-exports via MCP mesh, not native implementation
+  WealthEvaluateROITool:
+    category: delegated
+    owner_repo: ariffazil/wealth
+    runtime_surface: src/tools/WealthTools.ts
+    tests_present: false
+    status: sealed
+    description: Delegate to WEALTH MCP — ROI evaluation
+    # NOTE: Reimplementation in A-FORGE should be replaced with pure delegation
+
+  WealthComputeEMVTool:
+    category: delegated
+    owner_repo: ariffazil/wealth
+    runtime_surface: src/tools/WealthTools.ts
+    tests_present: false
+    status: sealed
+    description: Delegate to WEALTH MCP — EMV computation
+
+  WealthThermodynamicScanTool:
+    category: delegated
+    owner_repo: ariffazil/wealth
+    runtime_surface: src/tools/WealthTools.ts
+    tests_present: false
+    status: sealed
+    description: Delegate to WEALTH MCP — thermodynamic scan
+
+  WealthPortfolioOptimizeTool:
+    category: delegated
+    owner_repo: ariffazil/wealth
+    runtime_surface: src/tools/WealthTools.ts
+    tests_present: false
+    status: sealed
+    description: Delegate to WEALTH MCP — portfolio optimization
+
+  WealthEntropyBudgetTool:
+    category: delegated
+    owner_repo: ariffazil/wealth
+    runtime_surface: src/tools/WealthTools.ts
+    tests_present: false
+    status: sealed
+    description: Delegate to WEALTH MCP — entropy budget
+
+  WealthObjectiveComputeTool:
+    category: delegated
+    owner_repo: ariffazil/wealth
+    runtime_surface: src/tools/WealthTools.ts
+    tests_present: false
+    status: sealed
+    description: Delegate to WEALTH MCP — objective computation
+
+# Deploy surfaces
+surfaces:
+  http_bridge:
+    port: 7071
+    entry: dist/src/server.js
+    description: Express HTTP bridge for tool execution
+
+  mcp_stdio:
+    entry: dist/src/mcp/cli.js
+    transport: stdio
+    description: MCP stdio server for IDE integration
