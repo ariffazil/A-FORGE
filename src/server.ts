@@ -23,8 +23,6 @@ import { runStage, setOpenHolds, recordBridgeContractMismatch } from "./metrics/
 import type { MetabolicStage } from "./types/aki.js";
 import { getTicketStore } from "./approval/index.js";
 import { getPostgresVaultClient, type FloorRule } from "./vault/index.js";
-import { LocalGovernanceClient } from "./governance/index.js";
-import { getAdaptiveThresholds } from "./governance/thresholds.js";
 import { SealService } from "./governance/SealService.js";
 import { getCoolingGate } from "./governance/CoolingGate.js";
 import { PlanValidator } from "./planner/PlanValidator.js";
@@ -42,6 +40,7 @@ import {
   createHumanExpertRouter,
   createOperatorRouter,
 } from "./routes/approvalOperatorRoutes.js";
+import { createGovernanceRouter } from "./routes/governanceRoutes.js";
 import { createVaultMerkleRouter } from "./routes/vaultMerkleRoutes.js";
 
 let cachedConstitution: FloorRule[] = [];
@@ -246,49 +245,6 @@ app.post("/route", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("[A-FORGE] /route error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
-  }
-});
-
-/**
- * POST /governance/evaluate
- * Constitutional evaluation endpoint — can be called by AgentEngine
- * or by external clients to get a SEAL/HOLD/SABAR/VOID verdict.
- */
-app.post("/governance/evaluate", async (req: Request, res: Response) => {
-  try {
-    const { task, sessionId, intentModel, riskLevel } = req.body;
-    if (!task || typeof task !== "string") {
-      res.status(400).json({
-        ok: false,
-        error: { type: "invalid_request", message: "task is required and must be a string" },
-      });
-      return;
-    }
-
-    const riskLevelMap: Record<string, string> = {
-      low: "low", medium: "medium", high: "high", critical: "critical",
-      dangerous: "high", safe: "low",
-    };
-    const risk = riskLevelMap[riskLevel ?? "medium"] ?? "medium";
-    const adaptive = getAdaptiveThresholds(intentModel ?? "advisory", risk as any);
-    const client = new LocalGovernanceClient({ f3: adaptive.f3 });
-    const result = await client.evaluate({
-      task,
-      sessionId: sessionId ?? "anon",
-      intentModel,
-      riskLevel,
-    });
-
-    res.json({ ok: true, ...result });
-  } catch (error) {
-    console.error("[A-FORGE] /governance/evaluate error:", error);
-    res.status(500).json({
-      ok: false,
-      error: {
-        type: "internal_error",
-        message: error instanceof Error ? error.message : String(error),
-      },
-    });
   }
 });
 
@@ -526,6 +482,7 @@ app.get("/sabar/cooldown", (_req: Request, res: Response) => {
 app.use("/human-expert", createHumanExpertRouter());
 app.use("/operator", createOperatorRouter());
 app.use("/vault/merkle", createVaultMerkleRouter());
+app.use(createGovernanceRouter());
 
 // Error handling
 app.use((err: Error, _req: Request, res: Response, _next: express.NextFunction) => {

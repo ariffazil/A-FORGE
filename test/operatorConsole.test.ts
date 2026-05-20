@@ -9,6 +9,7 @@ import { runCliCommand } from "../src/cli/commands.js";
 import type { AgentProfile } from "../src/types/agent.js";
 import type { LlmProvider } from "../src/llm/LlmProvider.js";
 import type { RuntimeConfig } from "../src/config/RuntimeConfig.js";
+import type { AgentEngine } from "../src/engine/AgentEngine.js";
 
 async function withTempDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
   const dir = resolve(tmpdir(), `operator-console-test-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);
@@ -36,11 +37,11 @@ function mockRuntimeConfig(): RuntimeConfig {
 }
 
 function mockEngineFactory(_profile: AgentProfile) {
-  return {} as any;
+  return {} as unknown as AgentEngine;
 }
 
 function mockProviderFactory() {
-  return {} as any;
+  return {} as unknown as LlmProvider;
 }
 
 test("FileVaultClient query filters by sessionId, verdict, since, until, limit", async () => {

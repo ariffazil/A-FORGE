@@ -4,6 +4,20 @@ import type { ToolResult, ToolExecutionContext } from "../types/tool.js";
 const AGENT_ZERO_URL = process.env.AGENT_ZERO_URL || "http://agent-zero:80";
 const AGENT_ZERO_API_KEY = process.env.AGENT_ZERO_API_KEY || "";
 
+interface AgentZeroApiResponse {
+  response?: unknown;
+  context_id?: unknown;
+  [key: string]: unknown;
+}
+
+function toAgentZeroOutput(data: AgentZeroApiResponse): string {
+  return typeof data.response === "string" ? data.response : JSON.stringify(data);
+}
+
+function toContextId(data: AgentZeroApiResponse): string | undefined {
+  return typeof data.context_id === "string" ? data.context_id : undefined;
+}
+
 export class AgentZeroDelegateTool extends BaseTool {
   readonly name = "agent_zero_delegate";
   readonly description = "Delegate a task to Agent Zero (browser automation, document creation, web research, multi-agent workflows) and return its response.";
@@ -61,13 +75,13 @@ export class AgentZeroDelegateTool extends BaseTool {
         };
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as AgentZeroApiResponse;
       return {
         ok: true,
-        output: data.response || JSON.stringify(data),
+        output: toAgentZeroOutput(data),
         metadata: {
           delegated: true,
-          context_id: data.context_id,
+          context_id: toContextId(data),
           agent: "agent-zero",
         },
       };
@@ -131,10 +145,10 @@ export class AgentZeroBrowserTool extends BaseTool {
         };
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as AgentZeroApiResponse;
       return {
         ok: true,
-        output: data.response || JSON.stringify(data),
+        output: toAgentZeroOutput(data),
         metadata: { delegated: true, agent: "agent-zero-browser" },
       };
     } catch (error) {
@@ -203,10 +217,10 @@ export class AgentZeroDocumentTool extends BaseTool {
         };
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as AgentZeroApiResponse;
       return {
         ok: true,
-        output: data.response || JSON.stringify(data),
+        output: toAgentZeroOutput(data),
         metadata: { delegated: true, format, title, agent: "agent-zero-doc" },
       };
     } catch (error) {

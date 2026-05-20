@@ -27,6 +27,7 @@ import { WEALTH_TOOLS } from "../tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../tools/MiniMaxTools.js";
 import { getMiniMaxClient } from "../tools/MiniMaxMcpClient.js";
 import { AgentZeroDelegateTool, AgentZeroBrowserTool, AgentZeroDocumentTool } from "../tools/AgentZeroTool.js";
+import { registerCoreResources } from "./resources.js";
 
 export const server = new McpServer({
   name: "A-FORGE",
@@ -71,7 +72,7 @@ async function telemetryFailure(
   });
 }
 
-function resultAsJson(output: any): string {
+function resultAsJson(output: unknown): string {
   if (typeof output === "string") {
     try { return JSON.stringify(JSON.parse(output), null, 2); }
     catch { return output; }
@@ -666,26 +667,7 @@ server.registerTool("forge_well_anchor", {
 }, wellAnchorHandler);
 
 // ── Resources ────────────────────────────────────────────────────────────────
-
-server.resource("forge://governance/floors", "forge://governance/floors", { mimeType: "application/json" }, async () => ({
-  contents: [{ uri: "forge://governance/floors", mimeType: "application/json", text: JSON.stringify({ floors: ["F1-F13"] }, null, 2) }]
-}));
-
-server.resource("forge://approvals/pending", "forge://approvals/pending", { mimeType: "application/json" }, async () => {
-  const pending = Array.from((approvalBoundary as any).holdQueue?.values?.() ?? []);
-  return { contents: [{ uri: "forge://approvals/pending", mimeType: "application/json", text: JSON.stringify({ pending }, null, 2) }] };
-});
-
-server.resource("forge://memory/working", "forge://memory/working", { mimeType: "application/json" }, async () => {
-  const result = memoryContract.query({ query: "", tiers: ["working"] });
-  return {
-    contents: [{
-      uri: "forge://memory/working",
-      mimeType: "application/json",
-      text: JSON.stringify({ count: result.total, memories: result.memories }, null, 2)
-    }]
-  };
-});
+registerCoreResources(server, approvalBoundary, memoryContract);
 
 // ── Tier 01 Amanah (SERI_KEMBANGAN_ACCORDS) ────────────────────────────────────
 
@@ -792,5 +774,4 @@ server.resource("forge://well/state", "forge://well/state", { mimeType: "applica
     }]
   };
 });
-
 
