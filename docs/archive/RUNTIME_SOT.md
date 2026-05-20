@@ -1,4 +1,8 @@
-# A-FORGE Runtime SOT
+# A-FORGE Runtime SOT (Archived Snapshot)
+
+> ⚠️ Historical snapshot captured on 2026-05-11.  
+> Do not treat this file as live runtime truth.  
+> Current canonical SOT: `docs/SOT_2026-05-20_CANONICAL.md`.
 
 > Audited against the live VPS on **2026-05-11**.
 
