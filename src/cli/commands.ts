@@ -16,6 +16,11 @@ import { RunMetricsLogger } from "../scoreboard/RunMetricsLogger.js";
 import type { ForgeTaskRecord } from "../types/scoreboard.js";
 import { getTicketStore } from "../approval/index.js";
 import { FileVaultClient } from "../vault/index.js";
+import {
+  parseRiskLevel,
+  parseTicketStatus,
+  parseVaultVerdict,
+} from "../approval/filterParsing.js";
 
 function getMode(
   options: Record<string, string | boolean>,
@@ -219,26 +224,28 @@ export async function runCliCommand(
     if (subcommand === "approvals") {
       const store = getTicketStore();
       await store.initialize();
-      const status = typeof options.status === "string" ? options.status : undefined;
+      const status = parseTicketStatus(typeof options.status === "string" ? options.status : undefined);
       const sessionId = typeof options.sessionId === "string" ? options.sessionId : undefined;
-      const riskLevel = typeof options.riskLevel === "string" ? options.riskLevel : undefined;
+      const riskLevel = parseRiskLevel(typeof options.riskLevel === "string" ? options.riskLevel : undefined);
       const tickets = await store.query({
-        status: status as any,
+        status,
         sessionId,
-        riskLevel: riskLevel as any,
+        riskLevel,
       });
       return JSON.stringify({ ok: true, count: tickets.length, tickets }, null, 2);
     }
     if (subcommand === "vault") {
       const vaultClient = new FileVaultClient();
       const sessionId = typeof options.sessionId === "string" ? options.sessionId : undefined;
-      const verdict = typeof options.verdict === "string" ? options.verdict : undefined;
+      const verdict = parseVaultVerdict(
+        typeof options.verdict === "string" ? options.verdict : undefined,
+      );
       const since = typeof options.since === "string" ? options.since : undefined;
       const until = typeof options.until === "string" ? options.until : undefined;
       const limit = toNumberOption(options.limit);
       const records = await vaultClient.query({
         sessionId,
-        verdict: verdict as any,
+        verdict,
         since,
         until,
         limit,
