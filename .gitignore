@@ -98,3 +98,4 @@ VAULT999/
 htmlcov/
 coverage.xml
 *.cover
+data/amanah_locks.jsonl
