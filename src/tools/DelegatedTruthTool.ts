@@ -10,6 +10,27 @@
 import { BaseTool } from "./base.js";
 import type { ToolResult, ToolExecutionContext } from "../types/tool.js";
 
+interface JsonRpcError {
+  message?: unknown;
+  [key: string]: unknown;
+}
+
+interface JsonRpcResult {
+  content?: Array<{ text?: unknown }>;
+}
+
+interface JsonRpcToolResponse {
+  error?: JsonRpcError;
+  result?: JsonRpcResult;
+}
+
+function parseJsonRpcResponse(payload: unknown): JsonRpcToolResponse {
+  if (!payload || typeof payload !== "object") {
+    return {};
+  }
+  return payload as JsonRpcToolResponse;
+}
+
 export abstract class DelegatedTruthTool extends BaseTool {
   /**
    * The base URL of the remote truth lane MCP server (e.g. GEOX or WEALTH).
@@ -44,17 +65,24 @@ export abstract class DelegatedTruthTool extends BaseTool {
         };
       }
 
-      const body = (await response.json()) as any;
+      const body = parseJsonRpcResponse(await response.json());
       if (body.error) {
+         const message =
+          typeof body.error.message === "string"
+            ? body.error.message
+            : JSON.stringify(body.error);
          return {
-           ok: false,
-           output: `[TRUTH_ERROR] ${body.error.message || JSON.stringify(body.error)}`,
+          ok: false,
+          output: `[TRUTH_ERROR] ${message}`,
          };
       }
 
+      const text = body.result?.content?.[0]?.text;
+      const output = typeof text === "string" ? text : JSON.stringify(body.result ?? {});
+
       return {
         ok: true,
-        output: body.result.content[0].text,
+        output,
         metadata: { delegated: true, lane: this.laneBaseUrl }
       };
     } catch (error) {
@@ -66,6 +94,5 @@ export abstract class DelegatedTruthTool extends BaseTool {
     }
   }
 }
-
 
 
