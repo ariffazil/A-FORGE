@@ -1,4 +1,6 @@
-# SOT: AAA Federation Runtime Mapping
+# SOT: AAA Federation Runtime Mapping (Archived Snapshot)
+> ⚠️ Historical cross-repo snapshot from 2026-05-11.
+> Keep for audit lineage only; verify live state independently.
 **Timestamp:** 2026-05-11
 **Status:** LIVE_WITH_ONE_EXECUTION_GAP
 **Seal:** PARTIAL — execution bridge absent, federation surfaces otherwise healthy
