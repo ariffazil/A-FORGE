@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { Pool, type PoolConfig } from "pg";
-import type { VaultClient, VaultSealRecord, VaultVerdict } from "./VaultClient.js";
+import type { VaultClient, VaultSealRecord, VaultVerdict, VaultWriterMode } from "./VaultClient.js";
 
 export interface FloorRule {
   floor_id: string;
@@ -38,6 +38,7 @@ export interface ToolCallRecord {
 }
 
 export class PostgresVaultClient implements VaultClient {
+  readonly writerMode: VaultWriterMode = 'write'; // FIX Issue 4: CANONICAL WRITER
   private pool: Pool;
   private initialized = false;
   private readonly actorId: string;

@@ -13,7 +13,7 @@
  */
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { VaultClient, VaultSealRecord, VaultVerdict } from "./VaultClient.js";
+import type { VaultClient, VaultSealRecord, VaultVerdict, VaultWriterMode } from "./VaultClient.js";
 
 export interface VaultRecord {
   name: string;
@@ -49,6 +49,7 @@ export function getSupabaseClient(): SupabaseClient {
 }
 
 export class SupabaseVaultClient implements VaultClient {
+  readonly writerMode: VaultWriterMode = 'fanout'; // FIX Issue 4: READ-ONLY fan-out reader
   private readonly category?: string;
 
   constructor(category?: string) {

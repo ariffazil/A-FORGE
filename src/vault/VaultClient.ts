@@ -46,7 +46,27 @@ export interface VaultSealRecord {
   };
 }
 
+/**
+ * VAULT999 Canonical Writer Policy (FIX Issue 4 — VAULT999 multi-writer problem)
+ *
+ * There are three VAULT999 clients:
+ *   PostgresVaultClient  — CANONICAL WRITER (production). Writes via asyncpg + MerkleV3 hash chain.
+ *                          Use this for ALL seal() calls in production.
+ *   SupabaseVaultClient  — READ-ONLY (fan-out reader). Wraps Supabase REST API for cross-repo reads.
+ *                          seal() is DELEGATED to PostgresVaultClient via Supabase RPC.
+ *   FileVaultClient      — READ-ONLY (local fallback). For CLI / dev / air-gapped only.
+ *                          seal() throws in production; use PostgresVaultClient instead.
+ *
+ * Cross-repo atomic transactions are NOT supported between PostgresVaultClient and SupabaseVaultClient.
+ * If both must be updated, use a saga pattern with PostgresVaultClient as the primary writer
+ * and SupabaseVaultClient as a best-effort fan-out (accept eventual consistency).
+ *
+ * Canonical writer: ALWAYS PostgresVaultClient.
+ */
+export type VaultWriterMode = 'read' | 'write' | 'fanout';
+
 export interface VaultClient {
+  readonly writerMode: VaultWriterMode;
   seal(record: VaultSealRecord): Promise<void>;
   query?(options?: {
     sessionId?: string;
@@ -63,6 +83,7 @@ export interface VaultClient {
  * is handled externally.
  */
 export class NoOpVaultClient implements VaultClient {
+  readonly writerMode: VaultWriterMode = 'read';
   async seal(_record: VaultSealRecord): Promise<void> {
     // Intentionally empty
   }
@@ -79,21 +100,38 @@ export class NoOpVaultClient implements VaultClient {
 /**
  * File-backed VAULT999 client writing append-only JSONL.
  * Default path: ~/.agent-workbench/vault999.jsonl
+ *
+ * @deprecated FileVaultClient is READ-ONLY. Use PostgresVaultClient as the canonical writer.
+ *            FileVaultClient.seal() throws in production (non-CLI) environments.
+ *            This client is only suitable for: CLI commands, air-gapped dev, emergency read access.
  */
 export class FileVaultClient implements VaultClient {
+  readonly writerMode: VaultWriterMode;
   private readonly filePath: string;
   private initialized = false;
   private lastHash: string = "0".repeat(64); // Chain seed (Genesis)
+  private readonly isProduction: boolean;
 
   constructor(filePath?: string) {
     this.filePath =
       filePath ??
       resolve(homedir(), ".agent-workbench", "vault999.jsonl");
+    this.isProduction = process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'prod';
+    this.writerMode = this.isProduction ? 'read' : 'write';
   }
 
   async seal(record: VaultSealRecord): Promise<void> {
+    // FIX Issue 4: FileVaultClient is no longer a production writer.
+    // Redirect all production writes to PostgresVaultClient.
+    if (this.isProduction) {
+      throw new Error(
+        '[VAULT999] FileVaultClient.seal() called in production. ' +
+        'Canonical writer is PostgresVaultClient. ' +
+        'See VAULT999 Canonical Writer Policy in VaultClient.ts.'
+      );
+    }
     await this.initialize();
-    
+
     // 1. Link to previous record
     record.prev_hash = this.lastHash;
     

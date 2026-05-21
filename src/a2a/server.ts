@@ -63,11 +63,24 @@ function jsonRpcError(
 function getRequestedVersion(req: Request): string {
   const headerVersion = req.get("A2A-Version");
   const queryVersion = typeof req.query["A2A-Version"] === "string" ? req.query["A2A-Version"] : undefined;
-  return headerVersion || queryVersion || "0.3";
+  // FIX Issue 3: No implicit default. External clients MUST send explicit A2A-Version header.
+  // Defaulting to "0.3" silently masks version drift from APEXMax and other external callers.
+  if (!headerVersion && !queryVersion) {
+    return ''; // signals missing version
+  }
+  return headerVersion || queryVersion || '';
 }
 
 function validateVersion(req: Request): JsonRpcError | null {
   const version = getRequestedVersion(req);
+  // FIX Issue 3: Reject requests without explicit A2A-Version header.
+  // All federation agents (APEXMax, OPENCLAW, Hermes) must declare protocol version.
+  if (!version) {
+    return jsonRpcError(null, VERSION_NOT_SUPPORTED_ERROR, "A2A-Version header is required. No implicit default.", {
+      code: "VersionRequiredError",
+      supportedVersions: Array.from(SUPPORTED_A2A_VERSIONS),
+    });
+  }
   if (SUPPORTED_A2A_VERSIONS.has(version)) {
     return null;
   }
