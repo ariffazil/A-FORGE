@@ -1,106 +1,123 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-05-20
-valid_from: 2026-05-20
-valid_until: 2026-06-20
+last_verified: 2026-05-21
+valid_from: 2026-05-21
+valid_until: 2026-06-21
 confidence: high
 scope: /root/A-FORGE
 epistemic_status: CLAIM
 -->
 
-# A-FORGE — Governed Execution Shell
+# A-FORGE - Governed Execution Runtime
 
-> **Status:** ACTIVE  
-> **Role:** Execution/runtime organ in the arifOS federation  
-> **Surfaces:** CLI + MCP + HTTP bridge
+> A-FORGE executes agent workloads under arifOS governance.
+>
+> **Federation role:** EXECUTION / FORGE
+> **Primary runtime:** TypeScript + Node.js
+> **Surfaces:** CLI, MCP, HTTP bridge
+> **Authority:** arifOS policy gates, Arif final judgment
+> **Status:** Active
 
-## What this repo is
+## What This Repo Is
 
-A-FORGE is the execution engine that runs agent workloads under constitutional governance.  
-It is **not only deployment infra** and **not only MCP** — it is a dual-surface runtime with:
+A-FORGE is the execution shell of the arifOS federation. It runs governed agent workflows, exposes CLI/MCP/HTTP surfaces, applies policy gates, and records execution outcomes for audit.
 
-1. **CLI execution loop** (`src/cli.ts`, `src/cli/*`)
-2. **MCP server surface** (`src/mcp/*`)
-3. **HTTP bridge + operator APIs** (`src/server.ts`, `src/routes/*`)
+This repo answers one question:
 
-## Current source-of-truth layout
+> How does a governed action get executed safely and verifiably?
 
-```text
-A-FORGE/
-├── src/
-│   ├── server.ts                 # HTTP composition root (Express, port 7071)
-│   ├── routes/
-│   │   ├── approvalOperatorRoutes.ts
-│   │   ├── vaultMerkleRoutes.ts
-│   │   └── governanceRoutes.ts   # extracted from server.ts
-│   ├── mcp/
-│   │   ├── core.ts               # MCP tool registry (resources extracted)
-│   │   └── resources.ts          # MCP resource registration
-│   ├── approval/filterParsing.ts # typed boundary for filter/query parsing
-│   ├── engine/                   # AgentEngine, BudgetManager, RunReporter
-│   ├── governance/               # F1-F13 floor checks, CoolingGate, AmanahLock
-│   ├── tools/                    # Tool implementations
-│   ├── vault/                    # VAULT999 clients + MerkleV3
-│   └── components/diagrams/      # React substrate diagrams
-├── test/                         # node:test suite
-├── deploy/                       # A-FORGE deploy surface
-│   ├── af-forge/                 # A-FORGE container + compose
-│   ├── agent-plane/              # Job queue, notifier, backup cron
-│   ├── caddy/                    # Reverse proxy config
-│   ├── grafana/                  # Observability datasource
-│   ├── prometheus/               # Metrics scraping
-│   └── systemd/                  # Host service units
-├── extensions/                   # MCP bridge generator (Python)
-├── scripts/                      # Ops scripts + pre-push governance hooks
-├── contracts/                    # MCP surface contracts (YAML)
-├── examples/                     # TypeScript usage examples
-├── WORKFLOWS/                    # Constitutional workflow definitions
-├── shared/                       # Shared schema packs
-├── docs/
-│   ├── api/                      # API specs (A2A, MCP, reserved tools)
-│   ├── deployment/               # Deployment seals + status
-│   ├── governance/               # Governance docs
-│   ├── archive/                  # Historical audit-time records
-│   └── SOT_2026-05-20_CANONICAL.md
-└── .AGENTS.md                    # Onboarding truth surface for coding agents
-```
+## What This Repo Is Not
 
-## Verified local commands
+A-FORGE is not the constitutional law kernel, not the human cockpit, not the Earth evidence engine, and not the capital evidence engine. It executes under governance; it does not grant itself final authority.
+
+## What It Owns
+
+| Owns | Does not own |
+| --- | --- |
+| CLI execution loop | Constitutional law itself |
+| MCP execution tools and resources | Frontend/operator cockpit |
+| HTTP operator bridge | Geoscience interpretation |
+| Approval boundary mechanics | Capital modeling |
+| Runtime policy enforcement | Final human judgment |
+| VAULT999 client integration | arifOS floor definitions |
+
+## Federation Map
+
+| Repo | Role | Plain-English purpose |
+| --- | --- | --- |
+| `arifos` | LAW | Decides whether actions are allowed, held, or void |
+| `AAA` | INTERFACE | Lets the human operator see and steer sessions |
+| `A-FORGE` | EXECUTION | Runs governed actions and agent workflows |
+| `geox` | FIELD | Produces governed earth-science evidence |
+| `wealth` | CAPITAL | Produces governed capital and resource evidence |
+
+## Quick Start
 
 ```bash
+# install
 npm install
+
+# build
 npm run build
+
+# test
 npm test
+
+# start HTTP bridge
+node dist/src/server.js
+
+# start MCP stdio server
+node dist/src/mcp/cli.js serve --transport stdio
 ```
 
-## 2026-05-20 entropy reduction seals
+## Repository Map
 
-- **`b619eb1`** — Root-doc entropy cleanup (`docs/api|deployment|governance|archive` + `.AGENTS.md`)
-- **`7a6afba`** — Code entropy cleanup
-  - `as any` reduced to **0** across `src/` + `test/`
-  - `/governance/evaluate` extracted to `src/routes/governanceRoutes.ts`
-  - MCP resources extracted to `src/mcp/resources.ts`
-- **`be5cbe1`** — Evicted 276 GEOX artifacts, dead code, and foreign deploy configs
-- **`f827cad`** — Relocated arifOS/arif-sites/AAA deploy configs to canonical repos
-- **`d006ca1`** — Final entropy sweep: removed disguised GEOX files (`legacy` = server.py, `stash` = fastmcp.json), GEOX deploy scripts, entrypoints, and data dumps
-- **`3196ca8`** — Evicted 15 GEOX documentation files to `/root/geox/docs/`
-- **`2033a85`** — Removed GEOX `app.json` manifest and copy-pasted GEOX `SECURITY.md`
+```txt
+A-FORGE/
+├── src/                 # TypeScript runtime source
+├── test/                # node:test verification suite
+├── scripts/             # ops scripts and pre-push governance hooks
+├── deploy/              # deployment source for A-FORGE surfaces
+├── contracts/           # MCP and governance contracts
+├── governance/          # policy docs and governance artifacts
+├── extensions/          # MCP bridge generator and extension bridges
+├── docs/                # architecture, operations, archive, API docs
+└── .AGENTS.md           # coding-agent onboarding surface
+```
 
-**Result:** Repo reduced from 190M → 33M. A-FORGE now contains only A-FORGE + arifOS federation concerns. GEOX lives in `/root/geox`.
+## Important Files
 
-## Runtime truth note
+| File | Purpose |
+| --- | --- |
+| `src/server.ts` | HTTP bridge composition root |
+| `src/cli.ts` | CLI entrypoint |
+| `src/mcp/` | MCP server and tool/resource registration |
+| `src/engine/` | agent engine, budget, reporting, intent routing |
+| `src/governance/` | runtime governance gates and policy enforcement |
+| `src/tools/` | executable tool implementations |
+| `src/vault/` | VAULT999 clients and Merkle service |
+| `scripts/hooks/pre-push/repo_guard.py` | repo-boundary and commit trailer guard |
+| `docs/AGENT_LAYOUT_CONTRACT.md` | federation root/layout policy |
+| `docs/archive/ENTROPY_REDUCTION_2026-05-20.md` | historical cleanup record |
 
-Historical runtime snapshots in `docs/archive/*SOT*.md` are **audit-time records**, not live status assertions.  
-Use current health checks and compose state before making runtime claims.
+## Operating Boundaries
 
-## Federation links
+- Keep `src/` as the canonical execution source.
+- Preserve `test/` singular; this repo intentionally uses Node's built-in `node:test` runner.
+- Do not reintroduce GEOX, arifOS deploy copies, field data, root `server.py`, or sibling-repo artifacts.
+- Do not change deployment files, package manager, lockfile, public contracts, or policy gates without explicit approval and verification.
+- A-FORGE may execute governed actions, but it may not adjudicate constitutional verdicts or override Arif.
 
-- [arifOS](https://github.com/ariffazil/arifos)
-- [AAA](https://github.com/ariffazil/AAA)
-- [geox](https://github.com/ariffazil/geox)
-- [WEALTH](https://github.com/ariffazil/wealth)
-- [WELL](https://github.com/ariffazil/well)
+## Deeper Documentation
 
----
+- [Architecture](docs/ARCHITECTURE.md)
+- [Agent layout contract](docs/AGENT_LAYOUT_CONTRACT.md)
+- [API specs](docs/api/)
+- [Deployment docs](docs/deployment/)
+- [Governance docs](docs/governance/)
+- [Operations notes](docs/operations/)
+- [Historical archive](docs/archive/)
 
-**DITEMPA BUKAN DIBERI — 999 SEAL ALIVE**
+## Seal
+
+Ditempa Bukan Diberi.
