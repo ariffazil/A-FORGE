@@ -30,6 +30,15 @@ SECRET_PATTERNS = [
     re.compile(r"AKIA[0-9A-Z]{16}"),
     re.compile(r"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----"),
 ]
+BOUNDARY_PATTERNS = [
+    re.compile(r"^(?:geox|GEOX)(?:/|$)"),
+    re.compile(r"^geox_.*\.py$"),
+    re.compile(r"^server\.py$"),
+    re.compile(r"^Dockerfile\.(?:geox|GEOX|unified|local)$"),
+    re.compile(r"^docker-compose\.(?:geox|GEOX|unified|local).*\.ya?ml$"),
+    re.compile(r"^ops/reports/.*\.csv$"),
+    re.compile(r".*\.(?:las|LAS|dlis|DLIS)$"),
+]
 
 
 @dataclass
@@ -140,6 +149,14 @@ def validate_changed_json(paths: list[str]) -> list[str]:
     return bad
 
 
+def boundary_violations(paths: list[str]) -> list[str]:
+    bad: list[str] = []
+    for p in paths:
+        if any(pattern.match(p) for pattern in BOUNDARY_PATTERNS):
+            bad.append(p)
+    return bad
+
+
 def is_safety_test(path: str) -> bool:
     if not path.endswith(".py"):
         return False
@@ -229,6 +246,15 @@ def main() -> int:
     if bad_json:
         findings.append(
             Finding("BLOCK", "Malformed governance JSON detected: " + ", ".join(bad_json))
+        )
+
+    boundary_hits = boundary_violations(changed_paths)
+    if boundary_hits:
+        findings.append(
+            Finding(
+                "BLOCK",
+                "A-FORGE boundary violation detected: " + ", ".join(boundary_hits),
+            )
         )
 
     secret_hits = scan_for_secrets(changed_paths)
