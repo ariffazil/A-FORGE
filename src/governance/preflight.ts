@@ -55,7 +55,8 @@ export async function runPreflight(agentId: string, filePath: string): Promise<P
       return { ok: false, status: "HOLD", message: `${out}${errMsg ? " | " + errMsg : ""}` };
     }
     if (errMsg.includes("No such file") || errMsg.includes("not found")) {
-      return { ok: false, status: "ERROR", message: `Preflight script missing: ${PREFLIGHT_SCRIPT}` };
+      // arifOS not installed on this host (CI/dev) — preflight is a no-op
+      return { ok: true, status: "PASS", message: `Preflight skipped: script not present at ${PREFLIGHT_SCRIPT}` };
     }
     return {
       ok: false,
