@@ -45,8 +45,9 @@ export interface EpistemicThresholds {
 export class SealService {
   private readonly validator: PlanValidator;
   private readonly thresholds: EpistemicThresholds;
+  private readonly arifOSBaseUrl: string;
 
-  constructor(validator: PlanValidator, thresholds?: Partial<EpistemicThresholds>) {
+  constructor(validator: PlanValidator, thresholds?: Partial<EpistemicThresholds>, arifOSBaseUrl?: string) {
     this.validator = validator;
     this.thresholds = {
       confidence: {
@@ -62,6 +63,8 @@ export class SealService {
       },
       ...thresholds
     };
+    // Default: Docker network DNS. Override via env ARIFOS_MCP_URL for host-machine testing.
+    this.arifOSBaseUrl = arifOSBaseUrl ?? process.env.ARIFOS_MCP_URL ?? 'http://arifosmcp:8080';
   }
 
   /**
@@ -99,28 +102,109 @@ export class SealService {
 
   /**
    * Hardened Authorization Loop
-   * Delegates to arifOS Kernel for constitutional verdict.
+   * Delegates to arifOS Kernel via arif_judge_deliberate JSON-RPC call.
+   *
+   * arifOS Architectural Law: A-FORGE NEVER computes constitutional verdicts.
+   * This method is the sole wired call-site — do not add fallbacks that bypass arifOS.
    */
   public async authorizeNode(context: SealContext): Promise<SealVerdict> {
     const sealId = this.computeSealId(context);
 
-    // Architectural Law: A-FORGE NEVER computes constitutional verdicts.
-    // In this foundation phase, we assume the need for arifOS authorization.
     console.log(`[A-FORGE] Requesting arifOS Kernel authorization for node: ${context.node.id}`);
-    
-    // Placeholder for arifOS MCP call
-    const arifOSVerdict = { 
-        status: 'HOLD' as SealStatus, 
-        message: 'Pending arifOS Kernel adjudication (Architectural Law)' 
-    };
+
+    // Build candidate description from PlanNode
+    const candidate = [
+      `goal: ${context.node.goal}`,
+      `dependencies: [${context.node.dependencies.join(', ')}]`,
+      `epistemic state: ${JSON.stringify(context.node.epistemic)}`,
+      `metadata: ${JSON.stringify(context.node.metadata ?? {})}`,
+    ].join('\n');
+
+    let arifOSVerdict: { status: SealStatus; message: string; riskScore?: number };
+
+    try {
+      const rpcId = `seal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      const response = await fetch(`${this.arifOSBaseUrl}/mcp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'A2A-Version': '1.0',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: rpcId,
+          method: 'tools/call',
+          params: {
+            name: 'arif_judge_deliberate',
+            arguments: {
+              mode: 'judge',
+              candidate,
+              actor_id: 'a-forge::seal-service',
+            },
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`arifOS MCP HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json() as { result?: { content?: Array<{ type: string; text: string }>; isError?: boolean }; error?: { message?: string } };
+
+      if (data.error) {
+        throw new Error(`arifOS JSON-RPC error: ${data.error.message}`);
+      }
+
+      const result = data.result;
+      const rawText = result?.content?.[0]?.text ?? '';
+      const isError = result?.isError ?? false;
+
+      // Map arifOS verdict text to SealStatus
+      // Expected text patterns: "SEAL", "SABAR", "HOLD", "VOID"
+      const normalized = rawText.toUpperCase().trim();
+      let status: SealStatus;
+      let riskScore = 0.5;
+
+      if (normalized.startsWith('SEAL')) {
+        status = 'PASS';
+        riskScore = 0.1;
+      } else if (normalized.startsWith('SABAR')) {
+        status = 'SABAR';
+        riskScore = 0.6;
+      } else if (normalized.startsWith('HOLD') || normalized.startsWith('888_HOLD')) {
+        status = 'HOLD';
+        riskScore = 0.85;
+      } else if (normalized.startsWith('VOID') || isError) {
+        status = 'VOID';
+        riskScore = 1.0;
+      } else {
+        // Unexpected format — treat as HOLD, not as PASS
+        status = 'HOLD';
+        riskScore = 0.85;
+        console.warn(`[A-FORGE] Unexpected arifOS verdict format: "${rawText.slice(0, 100)}"`);
+      }
+
+      arifOSVerdict = { status, message: rawText || 'arifOS Kernel adjudicated', riskScore };
+
+    } catch (err) {
+      // Network or parse failure — Architectural Law: A-FORGE must not auto-approve on error.
+      // Default to HOLD; do NOT fall back to local heuristics.
+      console.error(`[A-FORGE] arifOS MCP call failed: ${err}`);
+      arifOSVerdict = {
+        status: 'HOLD',
+        message: `arifOS unreachable (${err instanceof Error ? err.message : String(err)}). Node ${context.node.id} awaiting manual adjudication.`,
+        riskScore: 1.0,
+      };
+    }
 
     return this.createVerdict(
-        arifOSVerdict.status, 
-        sealId, 
-        context.node.id, 
-        1.0, 
-        { structural: { isValid: true, errors: [] }, epistemic: { status: 'HOLD' } },
-        arifOSVerdict.message
+      arifOSVerdict.status,
+      sealId,
+      context.node.id,
+      arifOSVerdict.riskScore ?? 1.0,
+      { structural: { isValid: true, errors: [] }, epistemic: { status: arifOSVerdict.status === 'PASS' ? 'PASS' : 'HOLD' } },
+      arifOSVerdict.message
     );
   }
 
