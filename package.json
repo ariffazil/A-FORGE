@@ -1,6 +1,6 @@
 {
   "name": "A-FORGE",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
   "type": "module",
   "bin": {
