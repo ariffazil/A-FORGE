@@ -69,7 +69,7 @@ services:
 
       # Memory engine (Postgres + Qdrant + Ollama)
       DATABASE_URL: postgresql://arifos_admin:ArifPostgresVault2026!@postgres:5432/vault999
-      QDRANT_URL: http://qdrant:6333
+      QDRANT_URL: http://host.docker.internal:6333
       OLLAMA_URL: http://ollama:11434
       EMBEDDING_MODEL: bge-m3
 
