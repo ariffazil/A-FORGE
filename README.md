@@ -1,62 +1,289 @@
-<!-- SOT-MANIFEST
-owner: Arif
-last_verified: 2026-05-23
-valid_from: 2026-05-23
-valid_until: 2026-06-23
-confidence: high
-scope: /root/A-FORGE
-epistemic_status: CLAIM
--->
-
-# A-FORGE — Governed Execution Runtime
-
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8%2B-3178C6?style=flat-square)](https://www.typescriptlang.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933?style=flat-square)](https://nodejs.org/)
-[![arifOS](https://img.shields.io/badge/arifOS-F1%E2%80%93F13_Governed-FF6B00?style=flat-square)](https://github.com/ariffazil/arifos)
-
-> **In one sentence:** A-FORGE is the engine — when arifOS says "SEAL," A-FORGE is what actually runs the code, builds the artifact, or executes the task on the VPS.
-
-**Status:** EXECUTION (Current L3 State) | **Organ:** FORGE (Ξ)
-**Target State:** [AAA² Execution Substrate](../AAA/docs/architecture/AAA2_Kernel_UAA_PSP_v2026.05.md)
+# A-FORGE — Vision Execution Shell
+> **SEAL:** 333_MIND-DITEMPA-BUKAN-DIBERI-20260523
+> **Repository:** https://github.com/ariffazil/A-FORGE
+> **Purpose:** arifOS Federation Vision Forge + GEOX Manifest
 
 ---
 
-## 🏛️ What this repo IS
-- The **Execution runtime** for governed agents.
-- The **AgentEngine** that orchestrates tools, plans, and budget.
-- The **Enforcement bridge** that physically gates execution based on arifOS verdicts.
+## What is A-FORGE?
 
-## 🚫 What this repo is NOT
-- **The Law:** A-FORGE executes under governance. It does not grant itself authority.
-- **The Cockpit:** A-FORGE is headless. Interfaces live in [AAA](../AAA).
+A-FORGE is the **vision execution shell** of the arifOS Federation. Where arifOS
+is the constitutional kernel (the "why" and "what not to do"), A-FORGE is the
+execution layer (the "how" and "what to build").
 
-*Important:* We run the code upon SEAL. We do not claim judgment or law authority.
+A-FORGE was forged through the REFORGE operation (2026-05-23), consuming 23
+archive documents and producing canonical target documents across all three
+repositories.
 
----
-
-## 🔄 Execution Flow
-
-```mermaid
-graph TD
-    A[Human / Agent Request] --> B[CLI / MCP / HTTP Bridge]
-    B --> C[AgentEngine - Budget / Routing]
-    C --> D[Governance Gates F3-F13]
-    D -->|Request Verdict| E((arifOS Kernel))
-    E -->|SEAL| F[Tool Execution]
-    E -->|HOLD| G[Approval Boundary]
-    F --> H[(VAULT999)]
+```
+┌─────────────────────────────────────────────────────────┐
+│  A-FORGE — Vision Shell                                 │
+│                                                         │
+│  SOVEREIGN_INTELLIGENCE.md   — Trinity organ network    │
+│  REPO_ROADMAP.md             — GEOX + WEALTH manifest   │
+│  REPO_CONSTITUTION.md        — Federation constitution  │
+│  DEPLOYMENT.md               — Deployment playbook      │
+│  DOC_FAMILY_MAP.md           — Document lineage map     │
+└─────────────────────────────────────────────────────────┘
+                        ↓ reforged from
+┌─────────────────────────────────────────────────────────┐
+│  docs/archive/  (23 consumed files — SEALED, not deleted)│
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🗺️ Canonical Repo Contents
+## Directory Structure
 
-- **`src/`**: The ONLY canonical TypeScript source. Contains `engine/`, `mcp/`, `governance/`, `tools/`.
-- **`dist/`**: Compiled NodeNext ESM resolution builds. Never edit directly.
-- **`test/`**: Node.js built-in `node:test` suite.
-
-### 📌 The AAA² Target State
-*In the AAA² roadmap, A-FORGE will evolve into the Execution Substrate (Ξ), abstracting Docker/Process/WASM environments to execute governed actions passed via the Portable State Protocol.*
+```
+A-FORGE/
+│
+├── docs/
+│   ├── architecture/
+│   │   ├── SOVEREIGN_INTELLIGENCE.md   # Trinity organ network (MERGED +6 appendix)
+│   │   │   ├── Appendix A: TRINITY_NETWORK_MAP.md
+│   │   │   ├── Appendix B: TRINITY_ECOSYSTEM_MAP.md
+│   │   │   ├── Appendix C: VISION_INTELLIGENCE_IMPLEMENTATION.md
+│   │   │   ├── Appendix D: FORGE_HARDENED_VISION.md
+│   │   │   ├── Appendix E: TOOL_CONSOLIDATION_MAP.md
+│   │   │   └── Appendix F: 99_LEVEL_MISSING_MAP.md
+│   │   ├── INTEGRATIONS.md
+│   │   └── INFRASTRUCTURE.md
+│   │
+│   ├── REPO_ROADMAP.md               # GEOX + WEALTH manifest (MERGED +6 sections)
+│   │   ├── Section A: ZERO_LOOPHOLE_V1_IMPLEMENTATION.md
+│   │   ├── Section B: GEOX_SIMPLIFIED_MANIFEST.md
+│   │   ├── Section C: GEOX_DESIGN_FORGE_SEAL.md
+│   │   ├── Section D: EXTERNAL_INTEGRATION_GUIDE.md
+│   │   ├── Section E: WIKI_UPDATE_SUMMARY.md
+│   │   └── Section F: ROADMAP.md
+│   │
+│   ├── DEPLOYMENT.md                  # Deployment playbook (MERGED +7 appendices)
+│   │   ├── Appendix A: AAA_GRADE_SEAL.md
+│   │   ├── Appendix B: SITE_DEPLOYMENT_PLAN.md
+│   │   ├── Appendix C: SITE_GEOK_ARIF_FAZIL_COM.md
+│   │   ├── Appendix D: MCP_APPS_AUDIT.md
+│   │   ├── Appendix E: SITE_MAP_VISUAL.md
+│   │   ├── Appendix F: 888_HOLD_RELEASE_SUMMARY.md
+│   │   └── Appendix G: GEOX_STATUS_AND_FOCUS.md
+│   │
+│   ├── REPO_CONSTITUTION.md          # Federation constitution (MERGED +2 appendix)
+│   │   ├── Appendix: SOT_AAA_FEDERATION_MAPPING.md
+│   │   └── Appendix: ALIGNMENT.md
+│   │
+│   ├── DOC_FAMILY_MAP.md             # Cross-repo document lineage (NEW)
+│   │
+│   ├── 00_META/
+│   │   ├── GEOX_INVARIANTS.md         # GEOX 5-plane constitution (REFORGED)
+│   │   └── WEALTH_INVARIANTS.md       # WEALTH 8-plane constitution (REFORGED)
+│   │
+│   ├── archive/                       # CONSUMED — 23 REFORGE source files
+│   │   ├── TRINITY_NETWORK_MAP.md
+│   │   ├── TRINITY_ECOSYSTEM_MAP.md
+│   │   ├── VISION_INTELLIGENCE_IMPLEMENTATION.md
+│   │   ├── FORGE_HARDENED_VISION.md
+│   │   ├── TOOL_CONSOLIDATION_MAP.md
+│   │   ├── 99_LEVEL_MISSING_MAP.md
+│   │   ├── AAA_GRADE_SEAL.md
+│   │   ├── SITE_DEPLOYMENT_PLAN.md
+│   │   ├── SITE_GEOK_ARIF_FAZIL_COM.md
+│   │   ├── MCP_APPS_AUDIT.md
+│   │   ├── SITE_MAP_VISUAL.md
+│   │   ├── 888_HOLD_RELEASE_SUMMARY.md
+│   │   ├── GEOX_STATUS_AND_FOCUS.md
+│   │   ├── ZERO_LOOPHOLE_V1_IMPLEMENTATION.md
+│   │   ├── GEOX_SIMPLIFIED_MANIFEST.md
+│   │   ├── GEOX_DESIGN_FORGE_SEAL.md
+│   │   ├── EXTERNAL_INTEGRATION_GUIDE.md
+│   │   ├── WIKI_UPDATE_SUMMARY.md
+│   │   ├── ROADMAP.md
+│   │   ├── GEOX_INVARIANTS.md
+│   │   ├── WEALTH_INVARIANTS.md
+│   │   ├── SOT_AAA_FEDERATION_MAPPING.md
+│   │   └── ALIGNMENT.md
+│   └── archive/_CONSUME_MANIFEST.md   # Source → target lineage log
+│
+├── agent/                            # Agent workspace
+│   ├── agent.go                      # OpenClaw agent (port 18789)
+│   └── ...
+│
+├── _forge/                           # Forge workspace
+│   ├── ...
+│   └── _00_META/                     # Forge-level meta
+│
+└── _00_META/                         # Root meta
+    └── FORGE.md                      # Forge manifest
+```
 
 ---
-*Last Verified: 2026-05-23 | 999 SEAL ALIVE*
+
+## Core Documents
+
+### SOVEREIGN_INTELLIGENCE.md
+
+The canonical vision document for the Trinity organ network (Δ AGI / Ω ASI / Ψ APEX).
+Merged from 6 archive sources. Contains:
+- Trinity architecture diagram
+- Agent binding protocols
+- Tool consolidation matrix
+- 99-level governance map
+
+**Reference:** For arifOS kernel implementation, see `arifOS/core/`
+
+### REPO_ROADMAP.md
+
+The GEOX + WEALTH production manifest:
+- **GEOX:** 5-plane geoscience domain (Subsurface, Seismic, Petrophysics, Basin, Drilling)
+- **WEALTH:** 8-plane financial domain (Risk, Compliance, Valuation, Portfolio, Derivatives, Regulatory, Reporting, Audit)
+- Zero-loophole implementation plan
+- External integration guide
+
+**Reference:** Domain invariants at `docs/00_META/GEOX_INVARIANTS.md` and `WEALTH_INVARIANTS.md`
+
+### DEPLOYMENT.md
+
+The deployment playbook for:
+- VPS deployment (72.62.71.199:18789)
+- MCP deployment (port 8080)
+- APEX PRIME deployment (port 3002)
+- GEOX.arif-fazil.com site
+- AAA grade verification
+
+**Reference:** For live deployment configs, see `arifOS/deploy/`
+
+### REPO_CONSTITUTION.md
+
+The federation constitution defining:
+- SOT (Source of Truth) AAA Federation mapping
+- AAA² agent-agnostic architecture alignment
+- Governance protocols
+
+---
+
+## Current State vs Target State
+
+### CURRENT_STATE (as of 2026-05-23)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| SOVEREIGN_INTELLIGENCE.md | REFORGED | 6 archives merged |
+| REPO_ROADMAP.md | REFORGED | 6 archives merged |
+| DEPLOYMENT.md | REFORGED | 7 archives merged |
+| REPO_CONSTITUTION.md | REFORGED | 2 archives merged |
+| GEOX_INVARIANTS.md | REFORGED | Cross-repo (also in arifOS) |
+| WEALTH_INVARIANTS.md | REFORGED | Cross-repo (also in arifOS) |
+| DOC_FAMILY_MAP.md | ACTIVE | Full cross-repo lineage |
+| docs/archive/ | SEALED | 23 consumed files preserved |
+
+### TARGET_STATE (planned)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| arifOS integration | PENDING | arifOS reads A-FORGE docs as SOT |
+| GEOX.arif-fazil.com | PENDING | Public site deployment |
+| WEALTH domain implementation | PENDING | 8-plane financial pipeline |
+| AAA integration | PENDING | See AAA/ repository |
+
+---
+
+## Federation Map
+
+```
+A-FORGE (Vision Shell)
+    ├── arifOS (Constitutional Kernel) ← reads + executes
+    │       ├── root core/ (Legacy Constitutional Engine)
+    │       ├── arifosmcp/ (MCP Shell)
+    │       ├── commands/ (Canonical entrypoint)
+    │       ├── APEX/ (Tool registry)
+    │       └── deploy/ (VPS configs)
+    │
+    └── AAA (Agent Cockpit)
+            ├── KERNELPLAN.md + AAA² appendix
+            ├── federated_a2a_protocol.md
+            ├── agent-cards/ (4 agents)
+            └── a2a/registry/agent-cards.json
+```
+
+---
+
+## GEOX Domain (Geoscience)
+
+GEOX is the 5-plane geoscience inference layer:
+
+```
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│  Subsurface  │ → │   Seismic     │ → │ Petrophysics │
+│  Plane       │   │  Plane        │   │   Plane      │
+└──────────────┘   └──────────────┘   └──────────────┘
+         ↓                   ↓                  ↓
+┌──────────────┐   ┌──────────────┐
+│    Basin     │ → │   Drilling   │
+│  Plane       │   │   Plane      │
+└──────────────┘   └──────────────┘
+```
+
+Each plane has:
+- F2 ground truth protocols (PETRONAS insider data)
+- Invariant constraints (physical laws)
+- W_scar consequence surface (thermodynamic budget)
+- 888_JUDGE human override gate
+
+**Reference:** `docs/00_META/GEOX_INVARIANTS.md`
+
+---
+
+## WEALTH Domain (Financial)
+
+WEALTH is the 8-plane financial governance layer:
+
+```
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│   Risk   │ │Compliance│ │Valuation │ │Portfolio │
+└──────────┘ └──────────┘ └──────────┘ └──────────┘
+     ↓           ↓           ↓           ↓
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│Derivatives│ │Regulatory│ │Reporting │ │  Audit   │
+└──────────┘ └──────────┘ └──────────┘ └──────────┘
+```
+
+Each plane governed by:
+- EU AI Act high-risk classification
+- APEX PRIME judgment protocol
+- 888_JUDGE atomic operation gate
+
+**Reference:** `docs/00_META/WEALTH_INVARIANTS.md`
+
+---
+
+## REFORGE Operation Log
+
+| Source File | Target | Action | Date |
+|-------------|--------|--------|------|
+| 6× Trinity maps | SOVEREIGN_INTELLIGENCE.md | MERGE +6 appendix | 2026-05-23 |
+| 6× roadmap files | REPO_ROADMAP.md | MERGE +6 sections | 2026-05-23 |
+| 7× deployment docs | DEPLOYMENT.md | MERGE +7 appendix | 2026-05-23 |
+| 2× constitution docs | REPO_CONSTITUTION.md | MERGE +2 appendix | 2026-05-23 |
+| GEOX_INVARIANTS.md | arifOS/ + A-FORGE/ | REFROGE (2x) | 2026-05-23 |
+| WEALTH_INVARIANTS.md | arifOS/ + A-FORGE/ | REFROGE (2x) | 2026-05-23 |
+| 23 archive files | docs/archive/ | CONSUMED (SEALED) | 2026-05-23 |
+
+Full lineage: `docs/DOC_FAMILY_MAP.md`
+
+---
+
+## Cross-Reference
+
+| Document | Purpose |
+|----------|---------|
+| `docs/DOC_FAMILY_MAP.md` | Full cross-repo document lineage |
+| `docs/00_META/GEOX_INVARIANTS.md` | GEOX 5-plane constitution |
+| `docs/00_META/WEALTH_INVARIANTS.md` | WEALTH 8-plane constitution |
+| `docs/REPO_ROADMAP.md` | GEOX + WEALTH manifest |
+| `docs/DEPLOYMENT.md` | Deployment playbook |
+
+For kernel implementation, see: **arifOS/**
+For agent architecture, see: **AAA/**
+
+---
+
+**DITEMPA BUKAN DIBERI — A-FORGE is the shell that executes the vision.**
