@@ -44,6 +44,24 @@ npm test
 make test
 ```
 
+## A-FORGE Boundary Contract (Zero-Entropy Guard)
+
+A-FORGE is a **transport bridge and execution shell**, not a domain organ.
+
+- ✅ Routes intent to arifOS / GEOX / WEALTH / WELL MCP servers
+- ✅ Handles orchestration, retries, escalation
+- ✅ Runs advisory checks only (non-binding)
+- ✅ Build, deploy, and artifact execution under governance
+
+- ❌ NEVER performs geoscience computation (Vsh, PHIE, Sw, etc.) — GEOX only
+- ❌ NEVER runs economic evaluation logic — WEALTH only
+- ❌ NEVER issues constitutional verdicts (SEAL / VOID / HOLD) — arifOS only
+- ❌ NEVER imports NumPy, Pandas, SciPy, lasio, welly, or matplotlib
+
+Authoritative logic lives in the Python MCP organs.
+
+**Rule:** If your code needs NumPy / Pandas / reservoir physics → wrong layer
+
 ## Escalation Rules
 
 - **888_HOLD:** Irreversible actions, git mutations, secret exposure, cross-repo architecture changes

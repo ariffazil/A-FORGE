@@ -1,3 +1,10 @@
+> ⚠️ **NOT CURRENT AUTHORITY** — This document is archived.
+> 
+> It was demoted to `INTERNAL REFERENCE` in the 2026-05-25 PHOENIX-73E cleanup.
+> **Do not cite as current policy.** Current policy: `FEDERATION_STATUS.md` + `REPO_ROLE_MAP.md`.
+>
+> ---
+> 
 # A-FORGE 2.0 BLUE MAP — CANONICAL RELEASE
 **Status:** FROZEN | **Epoch:** 2026-04-17 | **Authority:** Human Architect
 

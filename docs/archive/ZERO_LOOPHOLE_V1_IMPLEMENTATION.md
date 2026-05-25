@@ -1,3 +1,10 @@
+> ⚠️ **NOT CURRENT AUTHORITY** — This document is archived.
+> 
+> It was demoted to `INTERNAL REFERENCE` in the 2026-05-25 PHOENIX-73E cleanup.
+> **Do not cite as current policy.** Current policy: `FEDERATION_STATUS.md` + `REPO_ROLE_MAP.md`.
+>
+> ---
+> 
 # Zero-Loophole Architecture v1 — Implementation Plan
 
 This document outlines the strict PR-by-PR sequence to implement the 5-Plane Zero-Loophole Architecture in `arifosmcp`, transitioning from open-access/shadow modes to full cryptographic enforcement without breaking existing `WEALTH` or `GEOX` pipelines.
