@@ -28,6 +28,10 @@ metrics/
 !src/metrics/
 !src/metrics/*.ts
 scoreboard.json
+
+# Backup files (any pattern)
+*.bak*
+*.backup*
 memory.json
 
 # Python / misc caches
