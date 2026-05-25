@@ -1,7 +1,12 @@
-# GEOX Vision Intelligence Implementation Summary
+# GEOX Vision Intelligence Implementation Summary — ARCHIVED
 
-> **Status:** FOUNDATION COMPLETE  
-> **Date:** 2026-04-10  
+> ⚠️ **ARCHIVED / NOT CURRENT AUTHORITY**
+> This document describes a historical implementation phase. Do not use for
+> current GEOX operations or routing decisions.
+> **Canonical source:** `ariffazil/geox`
+
+> **Status:** FOUNDATION COMPLETE
+> **Date:** 2026-04-10
 > **Seal:** DITEMPA BUKAN DIBERI  
 
 ---

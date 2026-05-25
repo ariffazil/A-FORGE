@@ -1,7 +1,15 @@
-# 🏛 arifOS v2.0 — CONSTITUTION
+# 🏛 arifOS v2.0 — CONSTITUTION (ARCHIVED COPY)
 ## AGI Constitutional Schema v1.0
 
-**Status:** CANONICAL  
+> ⚠️ **ARCHIVED COPY — NOT CURRENT CANONICAL CONSTITUTION**
+> This file is a historical copy of the arifOS constitution.
+> **Do not use this file as current authority.**
+>
+> **Canonical source of constitutional truth:** `ariffazil/arifOS`
+> The arifOS repo holds the live, versioned, SEALED constitution.
+> For live federation status, see: `ariffazil/arifOS/FEDERATION_STATUS.md`
+
+**Status:** ARCHIVED COPY (not canonical)
 **Architect:** Arif  
 **Logic:** Cognitive-Layered Metabolism  
 **Omega Orthogonality:** Ωₒᵣₜₕₒ ≥ 0.95
