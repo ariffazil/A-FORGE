@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildDefaultGEOXScenarios } from "../src/engine/defaultGEOXScenarios.js";
-import { WealthEngine } from "../src/engine/WealthEngine.js";
+import { buildDefaultGEOXScenarios } from "../src/engine/defaultGEOXScenarios.legacy.js";
+import { WealthEngine } from "../src/engine/WealthEngine.legacy.js";
 
 const GEOXScenarios = buildDefaultGEOXScenarios("primary");
 

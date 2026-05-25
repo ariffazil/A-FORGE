@@ -314,12 +314,12 @@ app.get("/GEOX/contract", (_req: Request, res: Response) => {
     tools: [
       {
         name: "GEOX_log_interpreter",
-        description: "Interpret triple-combo wireline logs (GR, RT, RHOB, NPHI, SP, DT, CAL) → Vsh, PHIE, SW, fluid type, lithology. Anomalous contrast theory.",
+        description: "Bridge to GEOX organ for wireline log interpretation. Routes to geox_mcp.well_compute_petrophysics.",
         domain: "geophysics",
         pipeline_stage: "333_MIND",
         required_logs: ["GR", "RHOB", "NPHI"],
         optional_logs: ["RT", "SP", "DT", "CAL", "depth"],
-        output: ["Vsh", "PHIE", "SW", "BVW", "anomalyScore", "fluidFlag", "lithology", "quality", "anomalyContrast"],
+        output: ["estimates", "anomalyScore", "fluidFlag", "lithology", "quality", "anomalyContrast"],
         uncertainty_tag: ["ESTIMATE", "HYPOTHESIS", "UNKNOWN"],
         risk_level: "guarded",
         gates: ["F8_Grounding", "F7_Confidence"],
@@ -416,8 +416,8 @@ app.get("/GEOX/contract", (_req: Request, res: Response) => {
 app.post("/GEOX/log_interpreter", async (req: Request, res: Response) => {
   try {
     return await runStage("333_MIND" as MetabolicStage, async () => {
-      const { GEOXLogInterpreterTool } = await import("./domains/geophysics/logInterpreter.js");
-      const tool = new GEOXLogInterpreterTool();
+      const { GEOXLogInterpreterBridge } = await import("./bridges/geoxBridge.js");
+      const tool = new GEOXLogInterpreterBridge();
       const result = await tool.run(req.body, { sessionId: "GEOX-bridge", workingDirectory: "/tmp", modeName: "internal_mode" });
       if (!result.ok) {
         res.status(400).json({ ok: false, error: result.output });

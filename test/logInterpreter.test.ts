@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { GEOXLogInterpreterTool } from "../src/domains/geophysics/logInterpreter.js";
+import { GEOXLogInterpreterTool } from "../src/domains/geophysics/logInterpreter.legacy.js";
 import type { ToolExecutionContext } from "../src/types/tool.js";
 
 const ctx: ToolExecutionContext = { sessionId: "test", workingDirectory: "/tmp", modeName: "internal_mode" };
