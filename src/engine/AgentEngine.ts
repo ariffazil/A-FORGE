@@ -24,22 +24,22 @@ import {
   checkWitness,
   checkEmpathy,
   checkAntiHantu,
-  checkAuth,
+  checkCoherence,
   checkHumility,
   checkGenius,
   checkClarity,
   checkToolHarm,
   countEvidence,
-  checkTruth,
-  checkPrivacy,
-  checkStewardship,
-  type GovernanceCheck,
+  adviseTruth,
+  advisePrivacy,
+  adviseStewardship,
   LocalGovernanceClient,
   type GovernanceClient,
   SealService,
   calculateGeniusFromFloors,
   type FloorScores13,
 } from "../governance/index.js";
+import { callMCP } from "../mcp/client.js";
 import { getAdaptiveThresholds } from "../governance/thresholds.js";
 import type { VaultClient, VaultSealRecord, VaultTelemetrySnapshot } from "../vault/index.js";
 import { computeInputHash, generateSealId, MerkleV3Service } from "../vault/index.js";
@@ -53,9 +53,9 @@ import type { MemoryContract } from "../memory-contract/index.js";
 import { getMemoryContract } from "../memory-contract/index.js";
 import { ThermodynamicCostEstimator } from "../ops/ThermodynamicCostEstimator.js";
 import { routeIntent, type RoutingDecision } from "./IntentRouter.js";
-import { WealthEngine } from "./WealthEngine.js";
+import { WealthEngineBridge } from "../bridges/wealthBridge.js";
 import type { ToolAction, TokenBudget, StressState } from "../types/wealth.js";
-import { buildDefaultGEOXScenarios } from "./defaultGEOXScenarios.js";
+import { getScenarios } from "../bridges/geoxBridge.js";
 import { evaluateWithConfidence, calculateConfidenceEstimate } from "../policy/confidence.js";
 import { ArifOSKernel } from "./ArifOSKernel.js";
 
@@ -213,59 +213,66 @@ export class AgentEngine {
     }
 
     // === F10: Privacy Check (pre-execution) ===
-    const privacyCheck = checkPrivacy(options.task);
-    if (privacyCheck.verdict === "VOID") {
-      floorsTriggered.push("F10");
-      const privacyDetail = JSON.stringify({
-        patterns: privacyCheck.patternsFound,
-        secretClasses: privacyCheck.secretClasses,
-        quarantine: privacyCheck.quarantineRecommended,
+    const privacyAdvisory = advisePrivacy(options.task);
+    if (privacyAdvisory.recommendation === "ROUTE_TO_KERNEL") {
+      const verdict = await callMCP("arifos_mcp.apex_judge", {
+        concern: privacyAdvisory.concern,
+        findings: privacyAdvisory.findings,
+        riskLevel: privacyAdvisory.riskLevel,
       });
-      const { finalText: sealedText, sealError } = await this.sealTerminal(
-        options,
-        sessionId,
-        `VOID: ${privacyCheck.message} | detail=${privacyDetail}`,
-        0,
-        this.profile.name,
-        floorsTriggered,
-        permissionContext,
-        1,
-        startedAt,
-      );
-      return {
-        sessionId,
-        finalText: sealedText,
-        turnCount: 0,
-        totalEstimatedTokens: 0,
-        transcript: [],
-        metrics: this.buildEmptyMetrics(
+      const decision = (verdict as Record<string, unknown>).decision;
+      if (decision === "HOLD" || decision === "VOID") {
+        floorsTriggered.push("F10");
+        const privacyDetail = JSON.stringify({
+          findings: privacyAdvisory.findings,
+          riskLevel: privacyAdvisory.riskLevel,
+        });
+        const { finalText: sealedText, sealError } = await this.sealTerminal(
           options,
+          sessionId,
+          `${String(decision)}: ${privacyAdvisory.concern} | detail=${privacyDetail}`,
+          0,
+          this.profile.name,
+          floorsTriggered,
+          permissionContext,
+          1,
           startedAt,
-          "F10",
-          privacyCheck.message ?? "Privacy violation detected",
-          sealError,
-        ),
-      };
+        );
+        return {
+          sessionId,
+          finalText: sealedText,
+          turnCount: 0,
+          totalEstimatedTokens: 0,
+          transcript: [],
+          metrics: this.buildEmptyMetrics(
+            options,
+            startedAt,
+            "F10",
+            privacyAdvisory.concern,
+            sealError,
+          ),
+        };
+      }
     }
 
     // === 222_THINK: Intent Routing ===
     const routing: RoutingDecision = routeIntent(options.task);
 
     // === 333_MIND: GEOX + WEALTH Organ Activation ===
-    const wealthEngine = new WealthEngine();
+    const wealthEngine = new WealthEngineBridge();
 
     if (routing.primaryOrgan === "GEOX" || routing.secondaryOrgans.includes("GEOX")) {
-      this._GEOXScenarios = buildDefaultGEOXScenarios(
+      this._GEOXScenarios = await getScenarios(
         routing.primaryOrgan === "GEOX" ? "primary" : "secondary",
-      );
+      ) as Array<{ id: string; name: string; physicalConstraints: { environmentalImpact: number }; tag: string; groundingEvidence: string[] }>;
     }
 
     if (routing.primaryOrgan === "WEALTH" || routing.secondaryOrgans.includes("WEALTH")) {
       const GEOXScenarios = this._GEOXScenarios.length > 0
         ? this._GEOXScenarios
-        : buildDefaultGEOXScenarios("secondary");
-      const allocations = await wealthEngine.allocate(GEOXScenarios as import("../types/arifos.js").GEOXScenarioContract[]);
-      this._wealthAllocations = allocations.map((a: { id: string; maruahScore: number }) => ({ id: a.id, maruahScore: a.maruahScore }));
+        : await getScenarios("secondary") as Array<{ id: string; name: string; physicalConstraints: { environmentalImpact: number }; tag: string; groundingEvidence: string[] }>;
+      const allocations = await wealthEngine.allocate(GEOXScenarios as import("../types/arifos.js").GEOXScenarioContract[]) as Array<{ id: string; maruahScore: number }>;
+      this._wealthAllocations = allocations.map((a) => ({ id: a.id, maruahScore: a.maruahScore }));
       const budgetStatus = wealthEngine.getBudgetStatus();
       shortTermMemory.pin({
         role: "system",
@@ -434,10 +441,10 @@ export class AgentEngine {
           this.estimateToolAction(call.toolName, call.args),
         );
         const budgetStatus = budgetManager.getStatus();
-        const wealthAdvice = wealthEngine.evaluatePlan(plannedActions, {
+        const wealthAdvice = await wealthEngine.evaluatePlan(plannedActions, {
           remainingTokens: Math.max(0, budgetStatus.totalTokensUsed - this.profile.budget.tokenCeiling) * -1,
           remainingTurns: budgetStatus.turnsRemaining,
-        });
+        }) as { deferred: unknown[]; reason: string };
         if (wealthAdvice.deferred.length > 0) {
           console.warn(`[WEALTH-ADVISORY] Deferred ${wealthAdvice.deferred.length} actions: ${wealthAdvice.reason}`);
         }
@@ -467,7 +474,7 @@ export class AgentEngine {
             (toolExecution.timeoutEvents * 0.3) +
             (budgetManager.usagePercent() > 0.8 ? 0.8 : 0),
         };
-        const continueAdvice = wealthEngine.shouldContinue(stressState);
+        const continueAdvice = await wealthEngine.shouldContinue(stressState) as { verdict: string; reason: string };
         if (continueAdvice.verdict === "VOID") {
           finalResponse = `[WEALTH-ADVISORY] ${continueAdvice.reason}`;
           floorsTriggered.push("WEALTH_VOID");
@@ -561,29 +568,45 @@ export class AgentEngine {
     }
 
     // === F2: Truth Check (end of session) ===
-    const truthCheck = checkTruth(finalResponse, toolCallCount);
-    if (truthCheck.verdict === "HOLD" && !errorMessage) {
-      floorsTriggered.push("F2");
-      const truthDetail = JSON.stringify({
-        ungroundedClaims: truthCheck.ungroundedClaims,
-        evidenceMarkers: truthCheck.evidenceMarkers,
-        claimReferences: truthCheck.claimReferences,
+    const truthAdvisory = adviseTruth(finalResponse, toolCallCount);
+    if (truthAdvisory.recommendation === "ROUTE_TO_KERNEL") {
+      const verdict = await callMCP("arifos_mcp.apex_judge", {
+        concern: truthAdvisory.concern,
+        findings: truthAdvisory.findings,
+        riskLevel: truthAdvisory.riskLevel,
       });
-      finalResponse += `\n\n[TRUTH: ${truthCheck.message} | detail=${truthDetail}]`;
+      const decision = (verdict as Record<string, unknown>).decision;
+      if ((decision === "HOLD" || decision === "VOID") && !errorMessage) {
+        floorsTriggered.push("F2");
+        const truthDetail = JSON.stringify({ findings: truthAdvisory.findings });
+        finalResponse += `\n\n[TRUTH: ${truthAdvisory.concern} | detail=${truthDetail}]`;
+      }
+    } else if (truthAdvisory.recommendation === "FLAG_FOR_HUMAN") {
+      console.log(`[ADVISORY] ${truthAdvisory.concern}: ${truthAdvisory.riskLevel}`);
     }
 
     // === F12: Stewardship Check (end of session) ===
-    const stewardshipCheck = checkStewardship(
+    const stewardshipAdvisory = adviseStewardship(
       turnCount,
       toolCallCount,
       this.profile.budget.maxTurns,
       blockedCommands,
       errorMessage,
     );
-    if (stewardshipCheck.verdict === "HOLD") {
-      floorsTriggered.push("F12");
-      const stewardshipDetail = JSON.stringify(stewardshipCheck.metrics);
-      finalResponse += `\n\n[STEWARDSHIP: ${stewardshipCheck.message} | detail=${stewardshipDetail}]`;
+    if (stewardshipAdvisory.recommendation === "ROUTE_TO_KERNEL") {
+      const verdict = await callMCP("arifos_mcp.apex_judge", {
+        concern: stewardshipAdvisory.concern,
+        findings: stewardshipAdvisory.findings,
+        riskLevel: stewardshipAdvisory.riskLevel,
+      });
+      const decision = (verdict as Record<string, unknown>).decision;
+      if (decision === "HOLD" || decision === "VOID") {
+        floorsTriggered.push("F12");
+        const stewardshipDetail = JSON.stringify({ findings: stewardshipAdvisory.findings });
+        finalResponse += `\n\n[STEWARDSHIP: ${stewardshipAdvisory.concern} | detail=${stewardshipDetail}]`;
+      }
+    } else if (stewardshipAdvisory.recommendation === "FLAG_FOR_HUMAN") {
+      console.log(`[ADVISORY] ${stewardshipAdvisory.concern}: ${stewardshipAdvisory.riskLevel}`);
     }
 
     // === 888_JUDGE APEX: Compute G via eigendecomposition from 13 floors ===
@@ -594,10 +617,10 @@ export class AgentEngine {
       const confidenceValue = this._routing && this._routing.primaryOrgan !== "CODE" ? 0.82 : 0.70;
       const floorsProxy: FloorScores13 = {
         f1_amanah: permissionContext.holdEnabled ? 1.0 : (blockedDangerousActions > 0 ? 0.6 : 0.98),
-        f2_truth: truthCheck.verdict === "PASS" ? 0.98 : (truthCheck.ungroundedClaims > 0 ? 0.8 : 0.9),
+        f2_truth: truthAdvisory.recommendation === "PROCEED" ? 0.98 : (truthAdvisory.recommendation === "FLAG_FOR_HUMAN" ? 0.9 : 0.8),
         f3_tri_witness: this._GEOXScenarios.length > 0 || this._wealthAllocations.length > 0 ? 0.98 : 0.95,
         f4_clarity: 0.98,
-        f5_peace: stewardshipCheck.verdict === "PASS" ? 0.98 : 0.85,
+        f5_peace: stewardshipAdvisory.recommendation === "PROCEED" ? 0.98 : 0.85,
         f6_empathy: heartViolations.length === 0 ? 0.98 : 0.80,
         f7_humility: 0.98,
         f8_genius: this._GEOXScenarios.length > 0 ? 0.98 : 0.95,
@@ -900,25 +923,32 @@ export class AgentEngine {
         toolResults.push({ ok: toolResult.ok, output: toolResult.output });
 
         // === F10: Privacy Check (per-tool output) ===
-        const toolPrivacyCheck = checkPrivacy(toolResult.output ?? "");
-        if (toolPrivacyCheck.verdict === "VOID") {
-          floorsTriggered.push("F10");
-          const toolPrivacyDetail = JSON.stringify({
-            patterns: toolPrivacyCheck.patternsFound,
-            secretClasses: toolPrivacyCheck.secretClasses,
-            quarantine: toolPrivacyCheck.quarantineRecommended,
+        const toolPrivacyAdvisory = advisePrivacy(toolResult.output ?? "");
+        if (toolPrivacyAdvisory.recommendation === "ROUTE_TO_KERNEL") {
+          const verdict = await callMCP("arifos_mcp.apex_judge", {
+            concern: toolPrivacyAdvisory.concern,
+            findings: toolPrivacyAdvisory.findings,
+            riskLevel: toolPrivacyAdvisory.riskLevel,
           });
-          toolMessage = {
-            role: "tool",
-            toolCallId: call.id,
-            toolName: call.toolName,
-            content: `VOID: ${toolPrivacyCheck.message} | detail=${toolPrivacyDetail}`,
-          };
-          shortTermMemory.append(toolMessage);
-          toolMessages.push(toolMessage);
-          blockedDangerousActions += 1;
-          callIndex++;
-          continue;
+          const decision = (verdict as Record<string, unknown>).decision;
+          if (decision === "HOLD" || decision === "VOID") {
+            floorsTriggered.push("F10");
+            const toolPrivacyDetail = JSON.stringify({
+              findings: toolPrivacyAdvisory.findings,
+              riskLevel: toolPrivacyAdvisory.riskLevel,
+            });
+            toolMessage = {
+              role: "tool",
+              toolCallId: call.id,
+              toolName: call.toolName,
+              content: `${String(decision)}: ${toolPrivacyAdvisory.concern} | detail=${toolPrivacyDetail}`,
+            };
+            shortTermMemory.append(toolMessage);
+            toolMessages.push(toolMessage);
+            blockedDangerousActions += 1;
+            callIndex++;
+            continue;
+          }
         }
 
         // === F8: Grounding Check ===
@@ -1014,7 +1044,7 @@ export class AgentEngine {
     }
 
     // === F11: Coherence Check ===
-    const coherenceCheck = checkAuth(messageTexts);
+    const coherenceCheck = checkCoherence(messageTexts);
     if (coherenceCheck.verdict === "HOLD" && toolMessages.length > 0) {
       floorsTriggered.push("F11");
       // Append coherence warning to last message

@@ -9,7 +9,7 @@ import { RunCommandTool, RunTestsTool } from "./tools/ShellTools.js";
 import { WEALTH_TOOLS } from "./tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "./tools/MiniMaxTools.js";
 import { AgentZeroDelegateTool, AgentZeroBrowserTool, AgentZeroDocumentTool } from "./tools/AgentZeroTool.js";
-import { GEOXLogInterpreterTool } from "./domains/geophysics/logInterpreter.js";
+import { GEOXLogInterpreterBridge } from "./bridges/geoxBridge.js";
 import { LongTermMemory } from "./memory/LongTermMemory.js";
 import { createLlmProvider } from "./llm/providerFactory.js";
 import { AgentEngine } from "./engine/AgentEngine.js";
@@ -34,7 +34,7 @@ function buildToolRegistry(): ToolRegistry {
   registry.register(new GrepTextTool());
   registry.register(new RunTestsTool());
   registry.register(new RunCommandTool());
-  registry.register(new GEOXLogInterpreterTool());
+  registry.register(new GEOXLogInterpreterBridge());
   for (const ToolClass of WEALTH_TOOLS) registry.register(new ToolClass());
   registry.register(new MiniMaxWebSearchTool());
   registry.register(new MiniMaxUnderstandImageTool());

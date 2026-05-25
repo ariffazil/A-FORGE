@@ -39,17 +39,18 @@ import {
   checkWitness,
   checkEmpathy,
   checkAntiHantu,
-  checkAuth,
+  checkCoherence,
   checkHumility,
   checkGenius,
   checkToolHarm,
   countEvidence,
-  checkTruth,
-  checkPrivacy,
-  checkStewardship,
+  adviseTruth,
+  advisePrivacy,
+  adviseStewardship,
   LocalGovernanceClient,
   SealService,
 } from "../governance/index.js";
+import { callMCP } from "../mcp/client.js";
 import { getAdaptiveThresholds } from "../governance/thresholds.js";
 import { computeInputHash, generateSealId } from "../vault/index.js";
 import { getTicketStore } from "../approval/index.js";
@@ -59,8 +60,8 @@ import { recordHumanEscalation, recordFloorViolation, runStage } from "../metric
 
 import { routeIntent, type RoutingDecision, type IntentDomain } from "./IntentRouter.js";
 import { ArifOSKernel } from "./ArifOSKernel.js";
-import { WealthEngine } from "./WealthEngine.js";
-import { buildDefaultGEOXScenarios } from "./defaultGEOXScenarios.js";
+import { WealthEngineBridge } from "../bridges/wealthBridge.js";
+import { getScenarios } from "../bridges/geoxBridge.js";
 import type { GEOXScenarioContract, WealthAllocationContract } from "../types/arifos.js";
 
 export type PipelineDependencies = {
@@ -204,9 +205,17 @@ export class PipelineCoordinator {
     const result = await govClient.evaluate({ task: options.task, sessionId, intentModel, riskLevel });
     if (result.verdict !== "SEAL") return result;
 
-    const privacy = checkPrivacy(options.task);
-    if (privacy.verdict === "VOID") {
-      return { verdict: "VOID", floorsTriggered: ["F10"], message: privacy.message };
+    const privacyAdvisory = advisePrivacy(options.task);
+    if (privacyAdvisory.recommendation === "ROUTE_TO_KERNEL") {
+      const verdict = await callMCP("arifos_mcp.apex_judge", {
+        concern: privacyAdvisory.concern,
+        findings: privacyAdvisory.findings,
+        riskLevel: privacyAdvisory.riskLevel,
+      });
+      const decision = (verdict as Record<string, unknown>).decision;
+      if (decision === "HOLD" || decision === "VOID") {
+        return { verdict: String(decision) as import("../governance/GovernanceClient.js").GovernanceVerdict, floorsTriggered: ["F10"], message: privacyAdvisory.concern };
+      }
     }
     return result;
   }
@@ -221,22 +230,22 @@ export class PipelineCoordinator {
     GEOXScenarios: GEOXScenarioContract[];
     wealthAllocations: WealthAllocationContract[];
   }> {
-    const wealth = new WealthEngine();
+    const wealth = new WealthEngineBridge();
 
     let GEOXScenarios: GEOXScenarioContract[] = [];
     if (routing.primaryOrgan === "GEOX" || routing.secondaryOrgans.includes("GEOX")) {
-      GEOXScenarios = buildDefaultGEOXScenarios(
+      GEOXScenarios = await getScenarios(
         routing.primaryOrgan === "GEOX" ? "primary" : "secondary",
-      );
+      ) as GEOXScenarioContract[];
     }
 
     let wealthAllocations: WealthAllocationContract[] = [];
     if (routing.primaryOrgan === "WEALTH" || routing.secondaryOrgans.includes("WEALTH")) {
       wealthAllocations = await wealth.allocate(
         GEOXScenarios.length > 0 ? GEOXScenarios : [
-          ...buildDefaultGEOXScenarios("secondary"),
+          ...(await getScenarios("secondary") as GEOXScenarioContract[]),
         ],
-      );
+      ) as WealthAllocationContract[];
     }
     return { GEOXScenarios, wealthAllocations };
   }
@@ -472,17 +481,37 @@ export class PipelineCoordinator {
     }
 
     // F2 truth
-    const f2 = checkTruth(finalResponse, toolCallCount);
-    if (f2.verdict === "HOLD" && !errorMessage) {
-      floorsTriggered.push("F2");
-      finalResponse += `\n\n[TRUTH: ${f2.message}]`;
+    const f2Advisory = adviseTruth(finalResponse, toolCallCount);
+    if (f2Advisory.recommendation === "ROUTE_TO_KERNEL") {
+      const verdict = await callMCP("arifos_mcp.apex_judge", {
+        concern: f2Advisory.concern,
+        findings: f2Advisory.findings,
+        riskLevel: f2Advisory.riskLevel,
+      });
+      const decision = (verdict as Record<string, unknown>).decision;
+      if ((decision === "HOLD" || decision === "VOID") && !errorMessage) {
+        floorsTriggered.push("F2");
+        finalResponse += `\n\n[TRUTH: ${f2Advisory.concern}]`;
+      }
+    } else if (f2Advisory.recommendation === "FLAG_FOR_HUMAN") {
+      console.log(`[ADVISORY] ${f2Advisory.concern}: ${f2Advisory.riskLevel}`);
     }
 
     // F12 stewardship
-    const f12 = checkStewardship(turnCount, toolCallCount, this.profile.budget.maxTurns, blockedCommands, errorMessage);
-    if (f12.verdict === "HOLD") {
-      floorsTriggered.push("F12");
-      finalResponse += `\n\n[STEWARDSHIP: ${f12.message}]`;
+    const f12Advisory = adviseStewardship(turnCount, toolCallCount, this.profile.budget.maxTurns, blockedCommands, errorMessage);
+    if (f12Advisory.recommendation === "ROUTE_TO_KERNEL") {
+      const verdict = await callMCP("arifos_mcp.apex_judge", {
+        concern: f12Advisory.concern,
+        findings: f12Advisory.findings,
+        riskLevel: f12Advisory.riskLevel,
+      });
+      const decision = (verdict as Record<string, unknown>).decision;
+      if (decision === "HOLD" || decision === "VOID") {
+        floorsTriggered.push("F12");
+        finalResponse += `\n\n[STEWARDSHIP: ${f12Advisory.concern}]`;
+      }
+    } else if (f12Advisory.recommendation === "FLAG_FOR_HUMAN") {
+      console.log(`[ADVISORY] ${f12Advisory.concern}: ${f12Advisory.riskLevel}`);
     }
 
     await this.deps.longTermMemory.store({
@@ -606,15 +635,23 @@ export class PipelineCoordinator {
         toolResults.push({ ok: toolResult.ok, output: toolResult.output });
 
         // F10 privacy on output
-        const f10Check = checkPrivacy(toolResult.output ?? "");
-        if (f10Check.verdict === "VOID") {
-          floorsTriggered.push("F10");
-          toolMessage = { role: "tool", toolCallId: call.id, toolName: call.toolName, content: `VOID: ${f10Check.message}` };
-          shortTermMemory.append(toolMessage);
-          toolMessages.push(toolMessage);
-          blockedDangerousActions++;
-          callIndex++;
-          continue;
+        const f10Advisory = advisePrivacy(toolResult.output ?? "");
+        if (f10Advisory.recommendation === "ROUTE_TO_KERNEL") {
+          const verdict = await callMCP("arifos_mcp.apex_judge", {
+            concern: f10Advisory.concern,
+            findings: f10Advisory.findings,
+            riskLevel: f10Advisory.riskLevel,
+          });
+          const decision = (verdict as Record<string, unknown>).decision;
+          if (decision === "HOLD" || decision === "VOID") {
+            floorsTriggered.push("F10");
+            toolMessage = { role: "tool", toolCallId: call.id, toolName: call.toolName, content: `${String(decision)}: ${f10Advisory.concern}` };
+            shortTermMemory.append(toolMessage);
+            toolMessages.push(toolMessage);
+            blockedDangerousActions++;
+            callIndex++;
+            continue;
+          }
         }
 
         // F8 grounding
@@ -648,7 +685,7 @@ export class PipelineCoordinator {
     }
 
     // F11 coherence
-    const f11Check = checkAuth(messageTexts);
+    const f11Check = checkCoherence(messageTexts);
     if (f11Check.verdict === "HOLD" && toolMessages.length > 0) {
       floorsTriggered.push("F11");
       toolMessages[toolMessages.length - 1].content += `\n[WARNING: ${f11Check.message}]`;
