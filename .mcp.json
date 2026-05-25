@@ -2,32 +2,58 @@
   "mcpServers": {
     "arifOS": {
       "type": "http",
-      "url": "http://localhost:8080/mcp",
-      "description": "arifOS v2026.05.11-EMBODY — 13 canonical tools, F1-F13 floors, VAULT999, federation gateway"
+      "url": "http://127.0.0.1:8088/mcp",
+      "description": "arifOS AAA MCP Server — 13 constitutional kernel tools, F1-F13 floors, VAULT999. PHOENIX-72 canonical."
     },
     "supabase": {
       "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=utbmmjmbolmuahwixjqc"
+      "url": "https://mcp.supabase.com/mcp?project_ref=utbmmjmbolmuahwixjqc",
+      "description": "Supabase MCP — DB, auth, edge functions."
     },
     "playwright": {
       "command": "npx",
-      "args": ["@playwright/mcp"],
-      "cwd": "/root"
+      "args": ["-y", "@playwright/mcp"],
+      "cwd": "/root",
+      "description": "Playwright browser automation — web scraping, UI testing."
     },
-    "tavily-remote-mcp": {
-      "type": "http",
-      "url": "https://mcp.tavily.com/mcp/?tavilyApiKey=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",
-      "description": "Tavily MCP — web search + URL extraction (F2/F3 grounded)"
+    "tavily": {
+      "command": "sh",
+      "args": [
+        "-lc",
+        "set -a; . /root/.env; set +a; export TAVILY_API_KEY; exec npx -y tavily-mcp"
+      ],
+      "description": "Tavily MCP — web search, URL extraction. Key from /root/.env TAVILY_API_KEY."
     },
     "exa": {
-      "type": "http",
-      "url": "https://mcp.exa.ai/mcp",
-      "description": "Exa MCP — web search + code search + content extraction (OAuth)"
+      "command": "sh",
+      "args": [
+        "-lc",
+        "set -a; . /root/.env; set +a; exec npx -y exa-mcp-server"
+      ],
+      "description": "Exa semantic web search — results + content extraction. No key."
     },
     "meyhem": {
-      "type": "streamable-http",
-      "url": "https://api.rhdxm.com/mcp/",
-      "description": "Meyhem — MCP server discovery (6,700+) + outcome-ranked web search. No API key. Tools: find_server, search, select, outcome"
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://api.rhdxm.com/mcp/"],
+      "description": "Meyhem MCP discovery — finds 6,700+ MCP servers. No API key."
+    },
+    "filesystem": {
+      "command": "/usr/bin/mcp-server-filesystem",
+      "args": ["/root"],
+      "description": "Local filesystem access for A-FORGE operations. Allowed: /root."
+    },
+    "github": {
+      "command": "sh",
+      "args": [
+        "-lc",
+        "set -a; . /root/.env; . /root/.secrets/all-secrets.md 2>/dev/null; set +a; export GITHUB_PERSONAL_ACCESS_TOKEN=\"${GITHUB_TOKEN:-}\"; exec npx -y @modelcontextprotocol/server-github"
+      ],
+      "description": "GitHub API — repos, issues, PRs, search. Auth via GITHUB_TOKEN (gh CLI) aliased to GITHUB_PERSONAL_ACCESS_TOKEN."
+    },
+    "docker": {
+      "command": "npx",
+      "args": ["-y", "docker-mcp-server"],
+      "description": "Docker container management — build, run, logs, images."
     }
   }
 }
