@@ -117,6 +117,47 @@ A-FORGE/
 
 ---
 
+## Canonical Context Index — Read in This Order
+
+This repo is the **agent entry point** for the arifOS federation. Read in this order:
+
+| Priority | File | Purpose |
+|----------|------|---------|
+| 000 | `README.md` | This file — human and agent orientation |
+| 001 | `AGENTS.md` | Mandatory agent behavior, repo hygiene, execution rules |
+| 002 | `INVARIANTS.md` | Live ports, public URLs, forbidden stale assumptions |
+| 003 | `.mcp.json` | Active MCP endpoint configuration |
+| 004 | `AGENT_KERNEL_START.md` | Estate-wide entry ritual and truth hierarchy |
+
+## Live Routing Invariants (VERIFIED 2026-05-25)
+
+| Service | Public host | Local target | Status |
+|---------|-----------|-------------|--------|
+| **arifOS** | `arifos.arif-fazil.com` | `127.0.0.1:8088` | ✅ LIVE |
+| **GEOX** | `geox.arif-fazil.com` | `127.0.0.1:18081` | ✅ LIVE |
+| **WEALTH** | `wealth.arif-fazil.com` | `127.0.0.1:18082` | ✅ LIVE |
+| **WELL** | `well.arif-fazil.com` | disabled | ⛔ 404 intentional |
+
+## Forbidden Stale Assumptions
+
+- ❌ arifOS MCP at `localhost:8080` — correct is `8088`
+- ❌ GEOX MCP at `localhost:8081` — correct is `18081`
+- ❌ WEALTH disabled — it is LIVE on `18082`
+- ❌ WELL live — it is NOT DEPLOYED
+- ❌ APEX not archived — it is read-only
+
+## Required Pre-Flight Check
+
+```bash
+# MCP endpoint invariant check (fails if stale ports detected)
+./scripts/preflight-check-mcp.sh
+
+# Estate-wide invariant check
+bash /root/arifOS/scripts/check-estate-invariants.sh
+```
+
+---
+
 ## Core Documents
 
 ### SOVEREIGN_INTELLIGENCE.md
@@ -302,4 +343,4 @@ This repository is a core organ of the **arifOS Federation**:
 *   **Biological Substrate (WELL):** [C:\ariffazil\well](file:///C:/Users/User/../ariffazil/well)
 *   **Informational Surfaces (arif-sites):** [C:\ariffazil\arif-sites](file:///C:/Users/User/../ariffazil/arif-sites)
 
-*Unified under the arifOS Sovereign Constitution (F1�F13).*
+*Unified under the arifOS Sovereign Constitution (F1�F13).*
