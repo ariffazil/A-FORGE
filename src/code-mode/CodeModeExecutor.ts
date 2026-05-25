@@ -36,7 +36,7 @@ export interface CodeModeExecutorOptions {
   defaultMemoryLimitMb?: number;
   /** Network hosts the sandbox may reach (empty = none) */
   allowedNetworkHosts?: string[];
-  /** arifOS governance bridge base URL (e.g., http://localhost:8080) */
+  /** arifOS governance bridge base URL (e.g., http://localhost:8088) — live VPS port; use 8080 for Docker dev */
   governanceBridgeUrl?: string;
   /** If true, T3 actions require an explicit hold flag to proceed */
   holdEnabled?: boolean;

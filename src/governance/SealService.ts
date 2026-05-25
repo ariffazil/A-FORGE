@@ -63,8 +63,8 @@ export class SealService {
       },
       ...thresholds
     };
-    // Default: Docker network DNS. Override via env ARIFOS_MCP_URL for host-machine testing.
-    this.arifOSBaseUrl = arifOSBaseUrl ?? process.env.ARIFOS_MCP_URL ?? 'http://arifosmcp:8080';
+    // Default: live VPS localhost. Override via env ARIFOS_MCP_URL for Docker (http://arifosmcp:8080).
+    this.arifOSBaseUrl = arifOSBaseUrl ?? process.env.ARIFOS_MCP_URL ?? 'http://127.0.0.1:8088';
   }
 
   /**

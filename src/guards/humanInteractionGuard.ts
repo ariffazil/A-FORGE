@@ -52,7 +52,7 @@ export class HumanInteractionGuard {
   private readonly timeoutMs: number;
 
   constructor(options: HumanInteractionGuardOptions) {
-    this.baseUrl = (options.arifOSBaseUrl ?? "http://localhost:8080").replace(/\/$/, "");
+    this.baseUrl = (options.arifOSBaseUrl ?? "http://localhost:8088").replace(/\/$/, "");  // live VPS port; override for Docker dev on 8080
     this.sessionId = options.sessionId;
     this.actorId = options.actorId ?? "a-forge";
     this.timeoutMs = options.timeoutMs ?? 5000;
