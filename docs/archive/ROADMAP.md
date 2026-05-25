@@ -1,7 +1,11 @@
-# A-FORGE — Roadmap: Next Horizon (180-Day)
+# A-FORGE — Roadmap: Next Horizon (180-Day) — ARCHIVED
 
-> **Roadmap Name:** ARIFOS_NEXT_HORIZON_2026  
-> **Strategic Verdict:** APPROVED FOR PLANNING  
+> ⚠️ **ARCHIVED / NOT CURRENT AUTHORITY**
+> This roadmap is historical. Do not use for current planning or routing decisions.
+> **Canonical source:** `ariffazil/A-FORGE` (current README and plans/)
+
+> **Roadmap Name:** ARIFOS_NEXT_HORIZON_2026
+> **Strategic Verdict:** APPROVED FOR PLANNING
 > **Execution Verdict:** HOLD until repo contracts and schemas are frozen  
 > **Role:** Execution shell, sandbox, state machine, deployment bridge  
 > **Seal:** DITEMPA BUKAN DIBERI

@@ -3,6 +3,12 @@
 > **Repository:** https://github.com/ariffazil/A-FORGE
 > **Purpose:** arifOS Federation Vision Forge + GEOX Manifest
 
+> ⚠️ **CANONICAL AUTHORITY NOTICE:**
+> A-FORGE is the **execution shell**, not a constitutional authority.
+> The sovereign constitution and F1-F13 floors live in `ariffazil/arifOS`.
+> For live federation status, see `ariffazil/arifOS/FEDERATION_STATUS.md`.
+> See also `REPO_ROLE_MAP.md` for canonical organ roles.
+
 ---
 
 ## What is A-FORGE?
@@ -21,7 +27,7 @@ repositories.
 │                                                         │
 │  SOVEREIGN_INTELLIGENCE.md   — Trinity organ network    │
 │  REPO_ROADMAP.md             — GEOX + WEALTH manifest   │
-│  REPO_CONSTITUTION.md        — Federation constitution  │
+│  REPO_CONSTITUTION.md        — GEOX internal reference (subordinate) │
 │  DEPLOYMENT.md               — Deployment playbook      │
 │  DOC_FAMILY_MAP.md           — Document lineage map     │
 └─────────────────────────────────────────────────────────┘

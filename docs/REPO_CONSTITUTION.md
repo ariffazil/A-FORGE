@@ -1,8 +1,15 @@
-# GEOX Repository Constitution 🔩
+# GEOX Repository Constitution 🔩 — INTERNAL REFERENCE ONLY
+
+> ⚠️ **SUBORDINATE DOCUMENT — NOT SOVEREIGN CONSTITUTIONAL AUTHORITY**
+> This file describes GEOX's internal organizational structure. It is not a
+> sovereign constitution and does not grant or define constitutional authority.
+>
+> **Canonical constitutional authority lives in:** `ariffazil/arifOS`
+> For live federation status, see: `ariffazil/arifOS/FEDERATION_STATUS.md`
 
 **Version:** 1.0.0
 **Date:** 2026-04-12
-**Status:** Canonical Law
+**Status:** INTERNAL REFERENCE (not canonical law)
 
 ---
 
