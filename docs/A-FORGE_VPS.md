@@ -50,7 +50,7 @@ These components are **not containerized** — they are the substrate everything
 Run the following inside Docker Compose. They form the **always-on backbone** of AF Forge. [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/collection_a8372f00-fa6d-4dab-afd4-7a4b5ddb9b3d/e94f47ae-33fb-4371-a788-4cb16f121162/A-FORGE_VPS.md)
 ### 2.1 Governance Kernel — arifOS MCP Server
 - **What:** FastAPI/Uvicorn ASGI server exposing MCP tools via Streamable HTTP at `/mcp`, SSE fallback. [hostim](https://hostim.dev/blog/reverse-proxy-showdown/)
-- **Port:** 8080 (internal only, routed via reverse proxy). [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/collection_a8372f00-fa6d-4dab-afd4-7a4b5ddb9b3d/e94f47ae-33fb-4371-a788-4cb16f121162/A-FORGE_VPS.md)
+- **Port:** 8088 (live VPS; Docker internal default is 8080). [ppl-ai-file-upload.s3.amazonaws](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/collection_a8372f00-fa6d-4dab-afd4-7a4b5ddb9b3d/e94f47ae-33fb-4371-a788-4cb16f121162/A-FORGE_VPS.md)
 - **Tools exposed:** `anchor_session` (000 INIT), `reason_mind` (AGI), `recall_memory`, `simulate_heart`, `critique_thought`, `VAULT_999`. [github](https://github.com/ollama/ollama/issues/10883)
 - **Trinity servers** internally: VAULT (9000), AGI (9001), ASI (9002), APEX (9003). [hostim](https://hostim.dev/blog/reverse-proxy-showdown/)
 - **Image:** Python 3.11-slim + uv; official Dockerfile from `github.com/ariffazil/arifOS`. [discourse.ubuntu](https://discourse.ubuntu.com/t/ubuntu-24-04-4-lts-released/76854)
@@ -130,7 +130,7 @@ INTERNET
     ▼
 [Reverse Proxy — Caddy/Traefik] ← TLS termination, routing, auth headers
     │
-    ├──► [arifOS MCP Server :8080] ← Constitutional governance kernel
+    ├──► [arifOS MCP Server :8088] ← Constitutional governance kernel (live VPS; Docker: 8080)
     │         │
     │         ├── VAULT :9000   (audit, seal, VAULT_999)
     │         ├── AGI   :9001   (reasoning, reason_mind)

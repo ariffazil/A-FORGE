@@ -31,7 +31,7 @@ export class SABARHaltError extends Error {
 }
 
 export interface GovernanceBridgeOptions {
-  /** Base URL of the arifOS MCP runtime (e.g., http://localhost:8080) */
+  /** Base URL of the arifOS MCP runtime (e.g., http://localhost:8088) — live VPS port; use http://localhost:8080 for Docker dev */
   baseUrl: string;
   /** Request timeout in ms */
   timeoutMs?: number;

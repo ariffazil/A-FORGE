@@ -31,7 +31,7 @@ authority: ARIF_SOVEREIGN
 
 **Role:** Sovereign truth engine, vault authority, constitutional gate
 **Runtime:** Python / FastMCP
-**Container:** `A-FORGE-arifos-mcp` (port 8080)
+**Container:** `A-FORGE-arifos-mcp` (port 8080 Docker internal; live VPS: 8088)
 **Vault path:** `public.vault_events` + `public.vault_seals`
 
 ### INIT

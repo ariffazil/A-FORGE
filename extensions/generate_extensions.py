@@ -2,7 +2,7 @@ import os
 import json
 
 EXTENSIONS = {
-    "arifosmcp": "http://localhost:8080/mcp",
+    "arifosmcp": "http://localhost:8088/mcp",  # live VPS port; use 8080 for Docker dev
     "filesystem": "http://localhost:8002/mcp",
     "git": "http://localhost:8003/mcp",
     "fetch": "http://localhost:8005/mcp",
