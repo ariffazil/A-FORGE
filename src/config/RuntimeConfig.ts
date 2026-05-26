@@ -37,6 +37,9 @@ export type RuntimeConfig = {
   postgresUrl?: string;
   redisUrl?: string;
   arifosGovernanceUrl?: string;
+  arifosMcpUrl?: string;
+  wealthMcpUrl?: string;
+  geoxMcpUrl?: string;
   operatorApiToken?: string;
   actorId: string;
 };
@@ -170,6 +173,9 @@ export function readRuntimeConfig(): RuntimeConfig {
     postgresUrl: process.env.POSTGRES_URL || process.env.DATABASE_URL,
     redisUrl: process.env.REDIS_URL,
     arifosGovernanceUrl: process.env.ARIFOS_GOVERNANCE_URL,
+    arifosMcpUrl: process.env.ARIFOS_MCP_URL,
+    wealthMcpUrl: process.env.WEALTH_MCP_URL,
+    geoxMcpUrl: process.env.GEOX_MCP_URL,
     operatorApiToken: process.env.OPERATOR_API_TOKEN,
     actorId: process.env.ACTOR_ID ?? "ariffazil::agent-civ",
     fallbackProvider,

@@ -42,6 +42,7 @@ import {
 } from "./routes/approvalOperatorRoutes.js";
 import { createGovernanceRouter } from "./routes/governanceRoutes.js";
 import { createVaultMerkleRouter } from "./routes/vaultMerkleRoutes.js";
+import { callMCP } from "./mcp/client.js";
 
 let cachedConstitution: FloorRule[] = [];
 
@@ -245,6 +246,43 @@ app.post("/route", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("[A-FORGE] /route error:", error);
     res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
+  }
+});
+
+/**
+ * POST /execute
+ * Federation MCP proxy — execute any MCP tool on any kernel.
+ * Body: { tool: string, args: object, session_id?: string, actor_id?: string }
+ */
+app.post("/execute", async (req: Request, res: Response) => {
+  try {
+    const { tool, args, session_id, actor_id } = req.body;
+    if (!tool || typeof tool !== "string") {
+      res.status(400).json({ ok: false, error: "tool is required and must be a string" });
+      return;
+    }
+
+    const mergedArgs = { ...(args ?? {}), session_id, actor_id };
+    const result = await callMCP(tool, mergedArgs);
+
+    res.json({
+      ok: true,
+      tool,
+      result,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("[A-FORGE] /execute error:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    // If error message contains 888_HOLD, surface it as a governance hold
+    const isHold = message.includes("888_HOLD") || message.includes("HOLD");
+    res.status(isHold ? 423 : 500).json({
+      ok: false,
+      error: {
+        type: isHold ? "governance_hold" : "execution_error",
+        message,
+      },
+    });
   }
 });
 
@@ -510,10 +548,12 @@ export async function startServer(): Promise<void> {
     console.error(`  A-FORGE Sense Bridge Server`);
     console.error(`  Listening on 0.0.0.0:${port}`);
     console.error(`  Endpoints:`);
-    console.error(`    POST /sense  - Sense + Judge evaluation`);
-    console.error(`    POST /a2a    - A2A JSON-RPC gateway`);
-    console.error(`    GET  /health - Health check`);
-    console.error(`    GET  /ready  - Readiness probe`);
+    console.error(`    POST /sense    - Sense + Judge evaluation`);
+    console.error(`    POST /route    - Federal Coordinator Routing`);
+    console.error(`    POST /execute  - Federation MCP proxy`);
+    console.error(`    POST /a2a      - A2A JSON-RPC gateway`);
+    console.error(`    GET  /health   - Health check`);
+    console.error(`    GET  /ready    - Readiness probe`);
     console.error(`    GET  /.well-known/agent-card.json - A2A Agent Card`);
     console.error(`    GET  /operator/approvals - List approval tickets`);
     console.error(`    GET  /operator/vault      - Search vault seals`);
