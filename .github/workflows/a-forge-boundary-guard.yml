@@ -9,6 +9,15 @@ on:
     paths:
       - "src/**"
       - "test/**"
+  merge_group:
+
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   boundary-guard:
