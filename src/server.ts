@@ -481,6 +481,8 @@ app.get("/health", (_req: Request, res: Response) => {
     identityHash = readFileSync("/root/A-FORGE/.identity_hash", "utf8").trim();
   } catch (e) {}
 
+  const now = new Date().toISOString();
+
   res.json({
     ok: true,
     service: "A-FORGE-sense",
@@ -488,7 +490,24 @@ app.get("/health", (_req: Request, res: Response) => {
     version: "0.1.0",
     identity_hash: identityHash,
     contract_url: "/contract",
-    timestamp: new Date().toISOString(),
+    timestamp: now,
+    // Phase 2 hardening: freshness + owner summary
+    freshness: {
+      status: "fresh", // A-FORGE is stateless; always fresh when healthy
+      checked_at_utc: now,
+      source_timestamp_utc: now,
+      age_seconds: 0,
+      max_fresh_age_seconds: 60,
+      stale_after_seconds: 300,
+      expired_after_seconds: 3600,
+    },
+    owner_summary: {
+      color: identityHash !== "UNAVAILABLE" ? "GREEN" : "YELLOW",
+      reasons:
+        identityHash !== "UNAVAILABLE"
+          ? ["identity_present", "service_healthy"]
+          : ["identity_missing"],
+    },
   });
 });
 
