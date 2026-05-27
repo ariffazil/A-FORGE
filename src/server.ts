@@ -12,6 +12,8 @@
 import express from "express";
 import type { Request, Response } from "express";
 import { fileURLToPath } from "node:url";
+import { readFileSync } from "fs";
+import { createHash } from "crypto";
 import { runSense } from "./policy/sense.js";
 import {
   calculateConfidenceEstimate,
@@ -474,11 +476,17 @@ app.post("/GEOX/log_interpreter", async (req: Request, res: Response) => {
  * Service health check
  */
 app.get("/health", (_req: Request, res: Response) => {
+  let identityHash = "UNAVAILABLE";
+  try {
+    identityHash = readFileSync("/root/A-FORGE/.identity_hash", "utf8").trim();
+  } catch (e) {}
+
   res.json({
     ok: true,
     service: "A-FORGE-sense",
     status: "healthy",
     version: "0.1.0",
+    identity_hash: identityHash,
     contract_url: "/contract",
     timestamp: new Date().toISOString(),
   });
