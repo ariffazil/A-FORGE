@@ -459,7 +459,7 @@ export function createA2ARouter(): express.Router {
   router.get("/a2a/tasks/:id", (req: Request, res: Response) => {
     try {
       const task = handleGetTask({
-        id: req.params.id,
+        id: String(req.params.id),
         historyLength: typeof req.query.historyLength === "string" ? parseInt(req.query.historyLength, 10) : undefined,
       });
       res.json(task);
@@ -475,7 +475,7 @@ export function createA2ARouter(): express.Router {
   router.post("/a2a/tasks/:id/cancel", (req: Request, res: Response) => {
     try {
       const task = handleCancelTask({
-        id: req.params.id,
+        id: String(req.params.id),
         metadata: isObject(req.body) ? req.body : undefined,
       });
       res.json(task);
