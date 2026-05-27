@@ -2,7 +2,7 @@
 
 # AF FORGE — Makefile for local dev and VPS ops
 
-build:
+build: security-audit
 	npm run build
 
 up:
@@ -14,7 +14,7 @@ down:
 logs:
 	docker compose logs -f A-FORGE-bridge
 
-test:
+test: security-audit
 	npm run build
 	npm test
 	node dist/test/PlanValidator.test.js
