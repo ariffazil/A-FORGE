@@ -1,7 +1,7 @@
 {
   "name": "A-FORGE",
   "version": "0.1.4",
-  "description": "A-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
+  "description": "A-FORGE \u2014 Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
   "type": "module",
   "bin": {
     "agent": "./dist/src/cli.js",
@@ -17,18 +17,18 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@supabase/supabase-js": "^2.49.0",
-    "express": "^4.18.2",
-    "pg": "^8.20.0",
+    "@supabase/supabase-js": "^2.106.2",
+    "express": "^5.2.1",
+    "pg": "^8.21.0",
     "prom-client": "^15.1.3",
-    "zod": "^4.3.6"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/node": "^22.15.30",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.9.1",
     "@types/pg": "^8.20.0",
     "pyright": "^1.1.409",
-    "typescript": "^5.8.3",
-    "yaml-language-server": "^1.21.0"
+    "typescript": "^6.0.3",
+    "yaml-language-server": "^1.23.0"
   }
 }

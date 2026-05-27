@@ -37,7 +37,7 @@ export function createHumanExpertRouter(): Router {
     try {
       const store = getTicketStore();
       await store.initialize();
-      const ticket = await store.findById(req.params.ticketId);
+      const ticket = await store.findById(String(req.params.ticketId));
       if (!ticket) {
         res.status(404).json({ ok: false, error: { type: "not_found", message: "Ticket not found" } });
         return;
@@ -131,7 +131,7 @@ export function createHumanExpertRouter(): Router {
     try {
       const store = getTicketStore();
       await store.initialize();
-      const ticket = await store.findById(req.params.ticketId);
+      const ticket = await store.findById(String(req.params.ticketId));
       if (!ticket) {
         res.status(404).json({ ok: false, error: { type: "not_found", message: "Ticket not found" } });
         return;
@@ -142,7 +142,7 @@ export function createHumanExpertRouter(): Router {
       }
 
       const replayToken = `replay_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const updated = await store.updateTicket(req.params.ticketId, {
+      const updated = await store.updateTicket(String(req.params.ticketId), {
         status: "REPLAYED",
         replayToken,
         replayedAt: new Date().toISOString(),
@@ -184,7 +184,7 @@ export function createOperatorRouter(): Router {
     try {
       const store = getTicketStore();
       await store.initialize();
-      const ticket = await store.findById(req.params.ticketId);
+      const ticket = await store.findById(String(req.params.ticketId));
       if (!ticket) {
         res.status(404).json({ ok: false, error: { type: "not_found", message: "Ticket not found" } });
         return;
@@ -222,7 +222,7 @@ export function createOperatorRouter(): Router {
   router.get("/vault/:sealId", async (req: Request, res: Response) => {
     try {
       const vaultClient = new FileVaultClient();
-      const record = await vaultClient.findById(req.params.sealId);
+      const record = await vaultClient.findById(String(req.params.sealId));
       if (!record) {
         res.status(404).json({ ok: false, error: { type: "not_found", message: "Seal not found" } });
         return;
