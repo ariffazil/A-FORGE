@@ -39,3 +39,4 @@ install:
 	npm install
 
 
+include /root/arifOS/scripts/security_audit.mk
