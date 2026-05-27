@@ -1,24 +1,22 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-05-25
-valid_from: 2026-05-25
-valid_until: 2026-06-25
+last_verified: 2026-05-26
+valid_from: 2026-05-26
+valid_until: 2026-06-26
 confidence: high
 scope: /root/A-FORGE
 -->
 
-# AGENTS.md — A-FORGE
+# AGENTS.md — A-FORGE | arifOS Federation
+
+> **MANDATORY BOOT SEQUENCE**
+> 1. Read `/root/AGENTS.md` (Global Federation Rules & Identity)
+> 2. Read `/root/CONTEXT.md` (Live Machine State & Ports)
+> 3. Read this file (Repo-Specific Build/Test/Run rules)
 
 > **Execution Intelligence / Forge Engine**
 >
 > A-FORGE orchestrates and executes within bounded tools. It does NOT adjudicate, SEAL, or issue constitutional verdicts.
-
-## Mandatory Boot Sequence
-
-1. Read `INVARIANTS.md`
-2. Read `README.md`
-3. Install: `npm install`
-4. Build: `npm run build`
 
 ## Allowed Actions
 
