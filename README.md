@@ -135,7 +135,7 @@ This repo is the **agent entry point** for the arifOS federation. Read in this o
 | 003 | `.mcp.json` | Active MCP endpoint configuration |
 | 004 | `AGENT_KERNEL_START.md` | Estate-wide entry ritual and truth hierarchy |
 
-## Live Routing Invariants (VERIFIED 2026-05-25)
+## Live Routing Invariants (VERIFIED 2026-06-02)
 
 | Service | Public host | Local target | Status |
 |---------|-----------|-------------|--------|
@@ -190,8 +190,9 @@ The GEOX + WEALTH production manifest:
 ### DEPLOYMENT.md
 
 The deployment playbook for:
-- VPS deployment (72.62.71.199:18789)
-- MCP deployment (port 8080)
+- VPS deployment (72.62.71.199 — `af-forge`)
+- A-FORGE service (port **7071** per `identity.toml`; OpenClaw relay at 18789)
+- arifOS MCP deployment (port **8088** — see Forbidden Stale above)
 - APEX PRIME deployment (port 3002)
 - GEOX.arif-fazil.com site
 - AAA grade verification
@@ -209,7 +210,7 @@ The federation constitution defining:
 
 ## Current State vs Target State
 
-### CURRENT_STATE (as of 2026-05-23)
+### CURRENT_STATE (as of 2026-06-02)
 
 | Item | Status | Notes |
 |------|--------|-------|
@@ -354,15 +355,20 @@ A-FORGE executes approved work only. A-FORGE must not treat **AAA-Cockpit** as c
 
 ---
 
-## ??? Federated Architecture
+## Federated Architecture
 
-This repository is a core organ of the **arifOS Federation**:
-*   **Operator Cockpit (AAA):** [C:\ariffazil\AAA](file:///C:/Users/User/../ariffazil/AAA)
-*   **Constitutional Kernel (arifOS):** [C:\ariffazil\arifOS](file:///C:/Users/User/../ariffazil/arifOS)
-*   **Vision Shell (A-FORGE):** [C:\ariffazil\A-FORGE](file:///C:/Users/User/../ariffazil/A-FORGE)
-*   **Geological Engine (GEOX):** [C:\ariffazil\geox](file:///C:/Users/User/../ariffazil/geox)
-*   **Capital Engine (WEALTH):** [C:\ariffazil\wealth](file:///C:/Users/User/../ariffazil/wealth)
-*   **Biological Substrate (WELL):** [C:\ariffazil\well](file:///C:/Users/User/../ariffazil/well)
-*   **Informational Surfaces (arif-sites):** [C:\ariffazil\arif-sites](file:///C:/Users/User/../ariffazil/arif-sites)
+This repository is a core organ of the **arifOS Federation**, running on VPS `af-forge` (72.62.71.199) at `/root/`:
 
-*Unified under the arifOS Sovereign Constitution (F1�F13).*
+| Role | Path (canonical on this VPS) | GitHub |
+|------|------------------------------|--------|
+| **Operator Cockpit (AAA)** | `/root/AAA` | [`ariffazil/AAA`](https://github.com/ariffazil/AAA) |
+| **Constitutional Kernel (arifOS)** | `/root/arifOS` | [`ariffazil/arifOS`](https://github.com/ariffazil/arifOS) |
+| **Vision Shell (A-FORGE)** | `/root/A-FORGE` | [`ariffazil/A-FORGE`](https://github.com/ariffazil/A-FORGE) |
+| **Geological Engine (GEOX)** | `/root/geox` | [`ariffazil/geox`](https://github.com/ariffazil/geox) |
+| **Capital Engine (WEALTH)** | `/root/WEALTH` | [`ariffazil/wealth`](https://github.com/ariffazil/wealth) |
+| **Biological Substrate (WELL)** | `/root/WELL` | [`ariffazil/well`](https://github.com/ariffazil/well) |
+| **Informational Surfaces (arif-sites)** | external | [`ariffazil/arif-sites`](https://github.com/ariffazil/arif-sites) |
+
+> Note: legacy Windows path references (`C:\ariffazil\...`) appeared in earlier drafts of this section and have been replaced with the canonical Linux VPS paths.
+
+*Unified under the arifOS Sovereign Constitution (F1–F13). For F11 audit, see `arifOS/VAULT999/outcomes.jsonl`.*
