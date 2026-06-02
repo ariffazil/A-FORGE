@@ -77,12 +77,24 @@ export async function sealVault(record: {
   };
 
   const fullData = record.data ?? payload;
+  const hash = record.hashofinput ?? "00000000";
 
   const { error } = await sb
-    .from("arifosmcp_vault_seals")
+    .from("vault_sealed_events")
     .insert({
-      ...payload,
-      data: fullData,
+      event_type: "A-FORGE_SEAL",
+      session_id: record.sessionId,
+      actor_id: record.profileName ?? "A-FORGE",
+      stage: record.task ?? "execution",
+      verdict: record.verdict,
+      risk_tier: record.verdict === "SEAL" ? 1 : 0,
+      payload: fullData,
+      source_ledger: "A-FORGE:typescript:client",
+      prev_leaf: record.prevHash ?? "GENESIS",
+      merkle_leaf: hash,
+      signature: record.sealId,
+      signed_by: record.profileName ?? "A-FORGE",
+      sealed_at: record.timestamp || new Date().toISOString()
     });
 
   if (error) throw error;
@@ -98,14 +110,14 @@ export async function queryVaultSeals(options?: {
 }): Promise<Record<string, unknown>[]> {
   const sb = createSupabaseClient();
   let q = sb
-    .from("arifosmcp_vault_seals")
+    .from("vault_sealed_events")
     .select("*")
-    .order("timestamp", { ascending: false });
+    .order("sealed_at", { ascending: false });
 
   if (options?.sessionId) q = q.eq("session_id", options.sessionId);
   if (options?.verdict) q = q.eq("verdict", options.verdict);
-  if (options?.since) q = q.gte("timestamp", options.since);
-  if (options?.until) q = q.lte("timestamp", options.until);
+  if (options?.since) q = q.gte("sealed_at", options.since);
+  if (options?.until) q = q.lte("sealed_at", options.until);
   if (options?.limit) q = q.limit(options.limit);
 
   const { data, error } = await q;
@@ -167,16 +179,25 @@ export async function logToolCall(record: {
   verdict: string;
 }): Promise<void> {
   const sb = createSupabaseClient();
+  const argsJson = JSON.stringify(record.toolArgs ?? {});
+  const inputHash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(argsJson))))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 16);
+
   const { error } = await sb.from("arifosmcp_tool_calls").insert({
-    run_id: record.runId ?? null,
     session_id: record.sessionId,
     tool_name: record.toolName,
-    organ: record.organ ?? null,
-    tool_args: record.toolArgs ?? null,
-    tool_result: record.toolResult ?? null,
-    duration_ms: record.durationMs,
-    floor_triggered: record.floorTriggered,
+    organ: record.organ ?? "A-FORGE",
+    agent_id: "A-FORGE:typescript:client",
+    input_hash: inputHash,
     verdict: record.verdict,
+    floor_triggered: record.floorTriggered.join(","),
+    duration_ms: record.durationMs,
+    epoch: new Date().toISOString(),
+    result_code: record.verdict === "SEAL" ? "SUCCESS" : "ERROR",
+    peace2: 1.0,
+    error_msg: record.verdict !== "SEAL" ? record.toolResult : null,
   });
   if (error) throw error;
 }
