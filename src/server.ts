@@ -532,7 +532,7 @@ app.get("/ready", (_req: Request, res: Response) => {
 
 /**
  * GET /api/federation-probe
- * Pings all 6 core federation organs (arifOS, arifosd, WEALTH, WELL, GEOX, A-FORGE)
+ * Pings all 9 federation organs (arifOS, arifosd, WEALTH, WELL, GEOX, A-FORGE, APEX, OpenClaw, cn-organ)
  * and returns per-organ status, latency, and overall verdict.
  *
  * Returns 200 always (verdict encoded in body). Pure read-only observation.
@@ -549,12 +549,15 @@ app.get("/api/federation-probe", (_req: Request, res: Response) => {
     sample: string;
   }
   const organs: Record<string, OrganStatus & { url: string }> = {
-    arifOS:   { url: "http://127.0.0.1:8088/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
-    arifosd:  { url: "http://127.0.0.1:18081/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
-    WEALTH:   { url: "http://127.0.0.1:18082/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
-    WELL:     { url: "http://127.0.0.1:18083/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
-    GEOX:     { url: "http://127.0.0.1:8081/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
-    "A-FORGE":{ url: "http://127.0.0.1:7071/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    arifOS:    { url: "http://127.0.0.1:8088/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    arifosd:   { url: "http://127.0.0.1:18081/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    WEALTH:    { url: "http://127.0.0.1:18082/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    WELL:      { url: "http://127.0.0.1:18083/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    GEOX:      { url: "http://127.0.0.1:8081/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    "A-FORGE": { url: "http://127.0.0.1:7071/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    APEX:      { url: "http://127.0.0.1:3002/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    OpenClaw:  { url: "http://127.0.0.1:18789/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    "cn-organ":{ url: "http://127.0.0.1:18790/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
   };
 
   const probe = (name: keyof typeof organs): Promise<void> =>
