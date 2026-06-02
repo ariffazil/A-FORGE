@@ -1,5 +1,12 @@
 name: AF-FORGE CI
-on: [push, pull_request]
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  merge_group:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -26,4 +33,10 @@ jobs:
       - run: node dist/test/governanceViolation.test.js
       - run: node dist/test/ticketStore.test.js
       - run: node dist/test/operatorConsole.test.js
+
+  secrets-gate:
+    name: F11 — Secrets Gate
+    uses: ariffazil/arifos/.github/workflows/_shared-secrets-gate.yml@main
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
