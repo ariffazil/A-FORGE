@@ -1,0 +1,155 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# A-FORGE Sentinel Pre-Merge Gate
+# Binary PASS / BLOCK for every PR to main.
+# Q1: Did execution-critical paths change?
+# Q2: Boundary violated (geophysics/finance leaking into execution shell)?
+# Q3: Build + tests pass?
+# ═══════════════════════════════════════════════════════════════════════════
+name: "🛡️ A-FORGE Sentinel"
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  merge_group:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Q1: Critical path changes? ────────────────────────────────────────
+  q1-critical-paths:
+    name: "Q1 — Critical Paths"
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.scan.outputs.critical_changed }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed critical paths
+        id: scan
+        run: |
+          CRITICAL_PATHS=(
+            "src/cli.ts"
+            "src/server.ts"
+            "src/AgentEngine.ts"
+            "src/governance/"
+            "tsconfig.json"
+            "package.json"
+          )
+
+          CRITICAL_CHANGED="no"
+          CRITICAL_FILES=""
+
+          for path in "${CRITICAL_PATHS[@]}"; do
+            if ! git diff --exit-code "origin/main...HEAD" -- "$path" > /dev/null 2>&1; then
+              CRITICAL_CHANGED="yes"
+              CRITICAL_FILES="${CRITICAL_FILES}  - ${path} (MODIFIED)\n"
+            fi
+          done
+
+          echo "critical_changed=$CRITICAL_CHANGED" >> "$GITHUB_OUTPUT"
+
+          if [[ "$CRITICAL_CHANGED" == "yes" ]]; then
+            echo "::notice::Q1 ALERT: Execution-critical paths modified"
+            printf "$CRITICAL_FILES"
+          else
+            echo "::notice::Q1 PASS: No execution-critical paths modified"
+          fi
+
+  # ─── Q2: Organ boundary violated? ──────────────────────────────────────
+  q2-boundary:
+    name: "Q2 — Organ Boundary"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check organ boundary (no geophysics/finance in execution shell)
+        id: boundary
+        run: |
+          VIOLATIONS=""
+
+          # Geophysics leak (GEOX concern, not A-FORGE)
+          GEO_HITS=$(git diff origin/main...HEAD -- 'src/**' | grep '^+' | grep -iE "Archie|PHIE|Vsh|MATRIX_DENSITY|porosity_fraction|sw_calculat" | grep -v "^++" || true)
+          if [[ -n "$GEO_HITS" ]]; then
+            VIOLATIONS="${VIOLATIONS}\n  - Geophysics compute leaking into A-FORGE src/ (delegate to GEOX)"
+          fi
+
+          # Finance/capital leak (WEALTH concern, not A-FORGE)
+          FIN_HITS=$(git diff origin/main...HEAD -- 'src/**' | grep '^+' | grep -iE "NPV|IRR|EMV|discount_rate|cashflow|capex\b|opex\b" | grep -v "^++" || true)
+          if [[ -n "$FIN_HITS" ]]; then
+            VIOLATIONS="${VIOLATIONS}\n  - Financial compute leaking into A-FORGE src/ (delegate to WEALTH)"
+          fi
+
+          # Constitutional judgment leak (arifOS concern, not A-FORGE)
+          JUDGE_HITS=$(git diff origin/main...HEAD -- 'src/**' | grep '^+' | grep -iE "floor_attribution|VAULT999|888_JUDGE|verdict_issued" | grep -v "^++" || true)
+          if [[ -n "$JUDGE_HITS" ]]; then
+            VIOLATIONS="${VIOLATIONS}\n  - Constitutional judgment logic leaking into A-FORGE (belongs in arifOS)"
+          fi
+
+          if [[ -n "$VIOLATIONS" ]]; then
+            echo "::error::Q2 BOUNDARY VIOLATION:$VIOLATIONS"
+            printf "Violations:$VIOLATIONS\n"
+            exit 1
+          else
+            echo "::notice::Q2 PASS: Organ boundary intact"
+          fi
+
+  # ─── Q3: Build + tests pass? ───────────────────────────────────────────
+  q3-build-test:
+    name: "Q3 — Build + Test"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+  # ─── Final gate ────────────────────────────────────────────────────────
+  sentinel-gate:
+    name: "✅ Sentinel Gate"
+    needs: [q1-critical-paths, q2-boundary, q3-build-test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Gate verdict
+        run: |
+          Q1="${{ needs.q1-critical-paths.result }}"
+          Q2="${{ needs.q2-boundary.result }}"
+          Q3="${{ needs.q3-build-test.result }}"
+
+          echo "Q1 (critical paths): $Q1"
+          echo "Q2 (boundary guard): $Q2"
+          echo "Q3 (build + test):   $Q3"
+
+          if [[ "$Q2" != "success" || "$Q3" != "success" ]]; then
+            echo "::error::SENTINEL BLOCK — PR cannot merge"
+            exit 1
+          fi
+
+          if [[ "$Q1" == "success" && "${{ needs.q1-critical-paths.outputs.changed }}" == "yes" ]]; then
+            echo "::warning::SENTINEL PASS WITH ALERT — critical paths changed, review carefully"
+          fi
+
+          echo "✅ SENTINEL PASS"
