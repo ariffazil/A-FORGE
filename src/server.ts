@@ -13,6 +13,7 @@ import express from "express";
 import type { Request, Response } from "express";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "fs";
+import * as http from "http";
 import { createHash } from "crypto";
 import { runSense } from "./policy/sense.js";
 import {
@@ -335,6 +336,7 @@ app.get("/contract", (_req: Request, res: Response) => {
       a2a_agent_card: "GET /.well-known/agent-card.json",
       python_mcp: "GEOX-mcp:8081",
       bridge: "A-FORGE-bridge:7071",
+      federation_probe: "GET /api/federation-probe",
     },
     timestamp: new Date().toISOString(),
   });
@@ -525,6 +527,78 @@ app.get("/ready", (_req: Request, res: Response) => {
       judge: true,
       contract: true,
     },
+  });
+});
+
+/**
+ * GET /api/federation-probe
+ * Pings all 6 core federation organs (arifOS, arifosd, WEALTH, WELL, GEOX, A-FORGE)
+ * and returns per-organ status, latency, and overall verdict.
+ *
+ * Returns 200 always (verdict encoded in body). Pure read-only observation.
+ * Used by cn-organ /audit, A-FORGE self-monitoring, and federation dashboards.
+ */
+app.get("/api/federation-probe", (_req: Request, res: Response) => {
+  const TIMEOUT_MS = 3000;
+  const SAMPLE_LEN = 200;
+
+  interface OrganStatus {
+    status: "up" | "down";
+    http_status: number;
+    latency_ms: number;
+    sample: string;
+  }
+  const organs: Record<string, OrganStatus & { url: string }> = {
+    arifOS:   { url: "http://127.0.0.1:8088/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    arifosd:  { url: "http://127.0.0.1:18081/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    WEALTH:   { url: "http://127.0.0.1:18082/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    WELL:     { url: "http://127.0.0.1:18083/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    GEOX:     { url: "http://127.0.0.1:8081/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    "A-FORGE":{ url: "http://127.0.0.1:7071/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
+  };
+
+  const probe = (name: keyof typeof organs): Promise<void> =>
+    new Promise<void>((resolve) => {
+      const target = organs[name];
+      const start = Date.now();
+      let settled = false;
+      const finish = (status: "up" | "down", code: number, body: string) => {
+        if (settled) return;
+        settled = true;
+        target.status = status;
+        target.http_status = code;
+        target.latency_ms = Date.now() - start;
+        target.sample = body.slice(0, SAMPLE_LEN);
+        resolve();
+      };
+      try {
+        const req = http.get(target.url, { timeout: TIMEOUT_MS }, (r) => {
+          let buf = "";
+          r.setEncoding("utf8");
+          r.on("data", (c) => (buf += c));
+          r.on("end", () => finish(r.statusCode && r.statusCode < 500 ? "up" : "down", r.statusCode ?? 0, buf));
+        });
+        req.on("timeout", () => { req.destroy(new Error("timeout")); });
+        req.on("error", () => finish("down", 0, ""));
+        req.setTimeout(TIMEOUT_MS);
+      } catch {
+        finish("down", 0, "");
+      }
+    });
+
+  const names = Object.keys(organs) as (keyof typeof organs)[];
+  Promise.all(names.map((n) => probe(n))).then(() => {
+    const up = names.filter((n) => organs[n].status === "up").length;
+    const total = names.length;
+    const down = total - up;
+    const verdict = down >= 2 ? "RED" : down === 1 ? "YELLOW" : "GREEN";
+    res.json({
+      ok: up === total,
+      service: "A-FORGE",
+      timestamp: new Date().toISOString(),
+      organs,
+      summary: { up, total, verdict },
+    });
   });
 });
 
