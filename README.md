@@ -328,8 +328,24 @@ Full lineage: `docs/DOC_FAMILY_MAP.md`
 | `docs/REPO_ROADMAP.md` | GEOX + WEALTH manifest |
 | `docs/DEPLOYMENT.md` | Deployment playbook |
 
-For kernel implementation, see: **arifOS/**
-For agent architecture, see: **AAA/**
+For kernel implementation, see: **arifOS/**  
+For agent architecture, see: **AAA-Cockpit** (`ariffazil/AAA`)
+
+---
+
+## AAA Terminology Note
+
+AAA is a polymorphic acronym. When reading A-FORGE docs that mention AAA:
+
+| Term | Surface | Role |
+|------|---------|------|
+| **AAA-HF** | Hugging Face dataset | Doctrine, floors, verdicts, schemas, evals |
+| **AAA-Cockpit** | GitHub `ariffazil/AAA` | Control plane, A2A, dashboard, agent registry |
+| **AAA-Doctrine** | Conceptual layer | Constitutional alignment principle |
+
+A-FORGE executes approved work only. A-FORGE must not treat **AAA-Cockpit** as constitutional authority. Constitutional judgment lives in **arifOS** (F1–F13, 888_JUDGE).
+
+> "AAA is polymorphic by design. When precision matters, qualify the surface."
 
 ---
 
