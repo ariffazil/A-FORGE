@@ -1,0 +1,26 @@
+[identity]
+canonical_name = "A-FORGE Agent Runtime"
+short_name = "A-FORGE"
+service_id = "a-forge-mcp"
+version = "kanon-1.0.0"
+authority = "F13_SOVEREIGN"
+
+[network]
+default_port = 7071
+caddy_domain = "a-forge.arif-fazil.com"
+a2a_enabled = true
+
+[capabilities]
+roles = ["Forge", "Execution", "Agent Runtime"]
+floors_enforced = ["F1", "F13"]
+
+[security]
+vault999_attestation_required = true
+openclaw_routed = true
+
+
+[identity_hash]
+algorithm = "BLAKE3"
+source = "identity.toml"
+embedded_in_health = true
+chain_upstream = "arifOS"
