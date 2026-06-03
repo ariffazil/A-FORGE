@@ -24,7 +24,7 @@
 import { logFederationFailure } from "./LongTermMemoryFailureLog.js";
 
 const ARIFOS_MCP_URL = process.env.ARIFOS_MCP_URL ?? "http://localhost:8088";
-const ACTOR_ID = "a-forge";
+const ACTOR_ID = "kimi";  // sovereign actor (kimi drives A-FORGE)
 const EMBED_TIMEOUT_MS = 5_000;
 const CALL_TIMEOUT_MS = 30_000;
 
