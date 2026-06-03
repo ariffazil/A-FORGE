@@ -444,6 +444,9 @@ export class AgentEngine {
         const wealthAdvice = await wealthEngine.evaluatePlan(plannedActions, {
           remainingTokens: Math.max(0, budgetStatus.totalTokensUsed - this.profile.budget.tokenCeiling) * -1,
           remainingTurns: budgetStatus.turnsRemaining,
+        }).catch((e: Error) => {
+          console.warn(`[WEALTH-ADVISORY] Failed to evaluate plan: ${e.message}`);
+          return { deferred: [], reason: "WEALTH unavailable" };
         }) as { deferred: unknown[]; reason: string };
         if (wealthAdvice.deferred.length > 0) {
           console.warn(`[WEALTH-ADVISORY] Deferred ${wealthAdvice.deferred.length} actions: ${wealthAdvice.reason}`);
@@ -474,7 +477,10 @@ export class AgentEngine {
             (toolExecution.timeoutEvents * 0.3) +
             (budgetManager.usagePercent() > 0.8 ? 0.8 : 0),
         };
-        const continueAdvice = await wealthEngine.shouldContinue(stressState) as { verdict: string; reason: string };
+        const continueAdvice = await wealthEngine.shouldContinue(stressState).catch((e: Error) => {
+          console.warn(`[WEALTH-ADVISORY] Failed to check continuation: ${e.message}`);
+          return { verdict: "continue", reason: "WEALTH unavailable" };
+        }) as { verdict: string; reason: string };
         if (continueAdvice.verdict === "VOID") {
           finalResponse = `[WEALTH-ADVISORY] ${continueAdvice.reason}`;
           floorsTriggered.push("WEALTH_VOID");

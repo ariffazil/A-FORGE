@@ -92,7 +92,7 @@ export class NoOpVaultClient implements VaultClient {
     return [];
   }
 
-  async findById(): Promise<VaultSealRecord | undefined> {
+  async findById(_sealId?: string): Promise<VaultSealRecord | undefined> {
     return undefined;
   }
 }
