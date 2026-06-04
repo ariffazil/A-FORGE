@@ -1,7 +1,21 @@
 # A-FORGE — Vision Execution Shell
+
+<!-- SOT-MANIFEST
+owner: Arif
+last_verified: 2026-06-04
+valid_from: 2026-06-04
+valid_until: 2026-09-04
+confidence: high
+scope: /root/A-FORGE
+-->
+
+[![Node](https://img.shields.io/badge/node-22-339933?logo=node.js&logoColor=white)](package.json)
+[![TypeScript](https://img.shields.io/badge/typescript-6.0-3178C6?logo=typescript&logoColor=white)](package.json)
+[![Port](https://img.shields.io/badge/port-7071-64748b?logo=express&logoColor=white)](deploy/Caddyfile)
+
 > **SEAL:** 333_MIND-DITEMPA-BUKAN-DIBERI-20260523
 > **Repository:** https://github.com/ariffazil/A-FORGE
-> **Purpose:** arifOS Federation Vision Forge + GEOX Manifest
+> **Purpose:** arifOS Federation Execution Shell — build, deploy, forge
 
 > ⚠️ **CANONICAL AUTHORITY NOTICE:**
 > A-FORGE is the **execution shell**, not a constitutional authority.
@@ -122,6 +136,17 @@ A-FORGE/
 ```
 
 ---
+
+## Quick Start
+
+```bash
+cd /root/A-FORGE
+npm install
+npm run build
+make test                           # All 15 test suites
+systemctl restart a-forge          # Deploy to port 7071
+curl http://localhost:7071/health | python3 -m json.tool
+```
 
 ## Canonical Context Index — Read in This Order
 
@@ -372,3 +397,7 @@ This repository is a core organ of the **arifOS Federation**, running on VPS `af
 > Note: legacy Windows path references (`C:\ariffazil\...`) appeared in earlier drafts of this section and have been replaced with the canonical Linux VPS paths.
 
 *Unified under the arifOS Sovereign Constitution (F1–F13). For F11 audit, see `arifOS/VAULT999/outcomes.jsonl`.*
+
+## License
+
+AGPL-3.0. See [LICENSE](LICENSE).
