@@ -140,16 +140,16 @@ This repo is the **agent entry point** for the arifOS federation. Read in this o
 | Service | Public host | Local target | Status |
 |---------|-----------|-------------|--------|
 | **arifOS** | `arifos.arif-fazil.com` | `127.0.0.1:8088` | ✅ LIVE |
-| **GEOX** | `geox.arif-fazil.com` | `127.0.0.1:18081` | ✅ LIVE |
+| **GEOX** | `geox.arif-fazil.com` | `127.0.0.1:8081` | ✅ LIVE |
 | **WEALTH** | `wealth.arif-fazil.com` | `127.0.0.1:18082` | ✅ LIVE |
 | **WELL** | `well.arif-fazil.com` | disabled | ⛔ 404 intentional |
 
 ## Forbidden Stale Assumptions
 
 - ❌ arifOS MCP at `localhost:8080` — correct is `8088`
-- ❌ GEOX MCP at `localhost:8081` — correct is `18081`
+- ❌ GEOX MCP at `localhost:8081` — correct is `8081` (18081 is arifosd, NOT GEOX)
 - ❌ WEALTH disabled — it is LIVE on `18082`
-- ❌ WELL live — it is NOT DEPLOYED
+- ❌ WELL "NOT DEPLOYED" — it IS deployed, live on `18083`
 - ❌ APEX not archived — it is read-only
 
 ## Required Pre-Flight Check
