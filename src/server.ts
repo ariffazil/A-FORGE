@@ -647,10 +647,10 @@ const port = process.env.AF_FORGE_PORT ? parseInt(process.env.AF_FORGE_PORT, 10)
 
 export async function startServer(): Promise<void> {
   await loadConstitution();
-  app.listen(port, "0.0.0.0", async () => {
+  app.listen(port, "127.0.0.1", async () => {
     console.error(`═══════════════════════════════════════════════════════════`);
     console.error(`  A-FORGE Sense Bridge Server`);
-    console.error(`  Listening on 0.0.0.0:${port}`);
+    console.error(`  Listening on 127.0.0.1:${port}`);
     console.error(`  Endpoints:`);
     console.error(`    POST /sense    - Sense + Judge evaluation`);
     console.error(`    POST /route    - Federal Coordinator Routing`);
