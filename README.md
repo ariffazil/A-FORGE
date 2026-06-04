@@ -259,23 +259,6 @@ The federation constitution defining:
 
 ---
 
-## Federation Map
-
-```
-A-FORGE (Vision Shell)
-    ├── arifOS (Constitutional Kernel) ← reads + executes
-    │       ├── root core/ (Legacy Constitutional Engine)
-    │       ├── arifosmcp/ (MCP Shell)
-    │       ├── commands/ (Canonical entrypoint)
-    │       ├── APEX/ (Tool registry)
-    │       └── deploy/ (VPS configs)
-    │
-    └── AAA (Agent Cockpit)
-            ├── KERNELPLAN.md + AAA² appendix
-            ├── federated_a2a_protocol.md
-            ├── agent-cards/ (4 agents)
-            └── a2a/registry/agent-cards.json
-```
 
 ---
 
@@ -344,18 +327,6 @@ Full lineage: `docs/DOC_FAMILY_MAP.md`
 
 ---
 
-## Cross-Reference
-
-| Document | Purpose |
-|----------|---------|
-| `docs/DOC_FAMILY_MAP.md` | Full cross-repo document lineage |
-| `docs/00_META/GEOX_INVARIANTS.md` | GEOX 5-plane constitution |
-| `docs/00_META/WEALTH_INVARIANTS.md` | WEALTH 8-plane constitution |
-| `docs/REPO_ROADMAP.md` | GEOX + WEALTH manifest |
-| `docs/DEPLOYMENT.md` | Deployment playbook |
-
-For kernel implementation, see: **arifOS/**  
-For agent architecture, see: **AAA-Cockpit** (`ariffazil/AAA`)
 
 ---
 
@@ -372,10 +343,6 @@ AAA is a polymorphic acronym. When reading A-FORGE docs that mention AAA:
 A-FORGE executes approved work only. A-FORGE must not treat **AAA-Cockpit** as constitutional authority. Constitutional judgment lives in **arifOS** (F1–F13, 888_JUDGE).
 
 > "AAA is polymorphic by design. When precision matters, qualify the surface."
-
----
-
-**DITEMPA BUKAN DIBERI — A-FORGE is the shell that executes the vision.**
 
 
 ---
@@ -396,8 +363,29 @@ This repository is a core organ of the **arifOS Federation**, running on VPS `af
 
 > Note: legacy Windows path references (`C:\ariffazil\...`) appeared in earlier drafts of this section and have been replaced with the canonical Linux VPS paths.
 
-*Unified under the arifOS Sovereign Constitution (F1–F13). For F11 audit, see `arifOS/VAULT999/outcomes.jsonl`.*
+## 🏛️ Federation
 
-## License
+| Organ | Repository | Role | Port |
+|-------|-----------|------|------|
+| **arifOS** | [ariffazil/arifOS](https://github.com/ariffazil/arifOS) | Constitutional Kernel · F1-F13 | 8088 |
+| **AAA** | [ariffazil/AAA](https://github.com/ariffazil/AAA) | Reality Console · A2A Gateway | 3001 |
+| **A-FORGE** | [ariffazil/A-FORGE](https://github.com/ariffazil/A-FORGE) | Execution Shell | 7071 |
+| **GEOX** | [ariffazil/geox](https://github.com/ariffazil/geox) | Earth Intelligence | 8081 |
+| **WEALTH** | [ariffazil/wealth](https://github.com/ariffazil/wealth) | Capital Intelligence | 18082 |
+| **WELL** | [ariffazil/well](https://github.com/ariffazil/well) | Human Readiness | 18083 |
+| **arif-sites** | [ariffazil/arif-sites](https://github.com/ariffazil/arif-sites) | Public Surfaces | 443 |
+
+> **Constitutional authority:** F1-F13 floors, 888_JUDGE, and VAULT999 live in `ariffazil/arifOS`.  
+> **Live federation status:** See `ariffazil/arifOS/FEDERATION_STATUS.md`.
+## 📄 Contributing
+
+This repository operates under the arifOS Federation constitution (F1–F13).  
+See [AGENTS.md](AGENTS.md) for the canonical boot sequence and agent operating rules.
+
+## 📜 License
 
 AGPL-3.0. See [LICENSE](LICENSE).
+
+---
+
+**DITEMPA BUKAN DIBERI** — Forged, Not Given.
