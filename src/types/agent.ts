@@ -81,6 +81,10 @@ export type EngineRunOptions = {
   testsPassed?: boolean;
   intentModel?: "informational" | "advisory" | "execution" | "speculative";
   riskLevel?: "low" | "medium" | "high" | "critical";
+  /** Explicit human acknowledgment that this operation is irreversible.
+   *  When the task triggers F1 (irreversible) and ackIrreversible is not true,
+   *  execution is blocked with HOLD verdict. */
+  ackIrreversible?: boolean;
   humanApprovedTicketId?: string;
   metadata?: Record<string, unknown>;
   planDAG?: import("./plan.js").PlanDAG;

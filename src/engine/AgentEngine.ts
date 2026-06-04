@@ -150,6 +150,31 @@ export class AgentEngine {
       riskLevel,
     };
 
+    // === Irreversibility pre-execution gate (F1 AMANAH) ===
+    // When the task is classified as irreversible, explicit human acknowledgment
+    // is required before execution proceeds. Without it, execution is blocked.
+    const isIrreversible = (
+      riskLevel === "critical" ||
+      options.intentModel === "execution" ||
+      this.profile.modeName === "internal_mode"
+    );
+    if (isIrreversible && !options.ackIrreversible) {
+      process.stderr.write(
+        `[F1 AMANAH] Irreversible task blocked: ackIrreversible not set. ` +
+        `Risk=${riskLevel} Intent=${intentModel} Mode=${this.profile.modeName}\n`
+      );
+      return {
+        sessionId,
+        finalText: `HOLD: This operation is classified as irreversible (risk=${riskLevel}, intent=${intentModel}). ` +
+          `F1 AMANAH requires explicit human acknowledgment before proceeding. ` +
+          `Set ackIrreversible: true in your execution manifest to proceed.`,
+        turnCount: 0,
+        totalEstimatedTokens: 0,
+        transcript: [],
+        metrics: this.buildEmptyMetrics(options, startedAt, "F1", "ackIrreversible not set"),
+      };
+    }
+
     // === Human override replay path ===
     if (options.humanApprovedTicketId) {
       const ticketStore = this.dependencies.ticketStore ?? getTicketStore();

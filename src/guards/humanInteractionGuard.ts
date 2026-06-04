@@ -85,10 +85,11 @@ export class HumanInteractionGuard {
     // DS-333: Generate hypotheses
     const encodedHyps: ShadowHypothesis[] = [];
     for (const hyp of hypotheses) {
+      const planId = crypto.randomUUID();
       const result = await this._callTool("arif_mind_reason", {
         mode: "deepnshadow",
         query: hyp.text,
-        plan_id: "unknown",
+        plan_id: planId,
         session_id: this.sessionId,
         actor_id: this.actorId,
       });
