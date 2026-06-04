@@ -103,3 +103,4 @@ htmlcov/
 coverage.xml
 *.cover
 data/amanah_locks.jsonl
+coverage/
