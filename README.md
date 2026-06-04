@@ -1,5 +1,7 @@
 # A-FORGE — Vision Execution Shell
 
+> **A-FORGE is a governed execution engine for AI agents.** It builds, deploys, and runs approved plans — but only after the constitutional kernel (arifOS) has issued a SEAL verdict. Without that verdict, the forge stays locked. It is the hands of the arifOS federation: capable, precise, and constitutionally bound.
+
 <!-- SOT-MANIFEST
 owner: Arif
 last_verified: 2026-06-04
