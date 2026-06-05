@@ -471,3 +471,11 @@ export async function createPersonalOS(): Promise<PersonalOS> {
   }
   return globalOS;
 }
+
+export async function shutdownPersonalOS(): Promise<void> {
+  if (globalOS) {
+    await globalOS.shutdown();
+    globalOS = null;
+  }
+}
+
