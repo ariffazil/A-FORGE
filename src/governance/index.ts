@@ -78,4 +78,7 @@ export {
   advisePrivacy,
   adviseStewardship,
   type AdvisoryResult,
-} from "../governance/governanceAdvisory.js";
+} from "./governanceAdvisory.js";
+
+// F11: Auth (migrated from legacy index)
+export { checkAuth, checkResponseAuth, type AuthResult, type AuthVerdict } from "./f11Auth.js";
