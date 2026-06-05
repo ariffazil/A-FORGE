@@ -78,4 +78,4 @@ export {
   advisePrivacy,
   adviseStewardship,
   type AdvisoryResult,
-} from "../advisory/governanceAdvisory.js";
+} from "../governance/governanceAdvisory.js";

@@ -22,7 +22,7 @@ import { telemetry } from "./telemetry.js";
 import { runStage, recordFloorViolation } from "../metrics/prometheus.js";
 import type { MetabolicStage } from "../types/aki.js";
 import { FileVaultClient, SupabaseVaultClient, type VaultVerdict } from "../vault/index.js";
-import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "../escalation/index.js";
+import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "../approval/HumanEscalationClient.js";
 import { WEALTH_TOOLS } from "../tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../tools/MiniMaxTools.js";
 import { getMiniMaxClient } from "../tools/MiniMaxMcpClient.js";

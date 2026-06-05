@@ -19,7 +19,7 @@ import { ForgeScoreboard } from "./scoreboard/ForgeScoreboard.js";
 import { RunMetricsLogger } from "./scoreboard/RunMetricsLogger.js";
 import { RunReporter } from "./engine/RunReporter.js";
 import { FileVaultClient, PostgresVaultClient } from "./vault/index.js";
-import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "./escalation/index.js";
+import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "./approval/HumanEscalationClient.js";
 import { FileTicketStore, PostgresTicketStore } from "./approval/index.js";
 import { LocalGovernanceClient, HttpGovernanceClient } from "./governance/index.js";
 import { SealService } from "./governance/SealService.js";

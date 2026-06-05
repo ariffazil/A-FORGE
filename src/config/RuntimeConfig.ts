@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { resolve } from "node:path";
-import { readFeatureFlags, type FeatureFlags } from "../flags/featureFlags.js";
+import { readFeatureFlags, type FeatureFlags } from "../config/featureFlags.js";
 
 export type LlmProviderConfig = {
   kind: "mock" | "openai_responses" | "ollama" | "sea_lion";

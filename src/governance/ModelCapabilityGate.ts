@@ -109,7 +109,36 @@ print(json.dumps(json.load(open(RUNTIME_PATH / 'vps_main_arifos.json'))))
       model_cascade: spine.model_cascade,
     };
   } catch {
-    return null;
+  // No spine — check for terminal override (env var)
+  // In terminal mode, the human IS the gate — no registry needed
+  if (process.env.AFORGE_TERMINAL_MODE === "1") {
+    return {
+      model_anchor: {
+        provider_key: "aforge",
+        family_key: "terminal",
+        model_variant: "operator",
+        identity_verified: false,
+      },
+      runtime_truth: {
+        tools: ["read", "write", "edit", "shell", "search"],
+        execution_mode: "governed",
+        side_effects_allowed: false,
+      },
+      risk_leash: {
+        risk_tier: "bounded",
+        requires_human_ack_for: ["irreversible_delete", "git_push", "vault_seal"],
+      },
+      drift_state: "GREEN",
+      capabilities: {
+        supports_tools: true,
+        supports_web: false,
+        supports_files: true,
+        has_memory: false,
+      },
+    };
+  }
+
+  return null;
   }
 }
 

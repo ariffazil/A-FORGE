@@ -131,6 +131,9 @@ function buildProfile(mode: TerminalConfig["agent"], workdir: string): AgentProf
 
 // ── Main ────────────────────────────────────────────────────────────
 async function main() {
+  // Enable terminal governance mode — the human IS the gate
+  process.env.AFORGE_TERMINAL_MODE = "1";
+  
   const config = loadConfig();
 
   console.log(`
@@ -182,10 +185,14 @@ ${c.dim}Floors:${c.reset}   F1-F13 active — constitutional governance enforced
   });
 
   let sessionCount = 0;
+  const isTTY = process.stdin.isTTY;
+  let taskRunning = false;
+  let shouldExit = false;
 
   const runTask = async (task: string) => {
     if (!task.trim()) return;
 
+    taskRunning = true;
     const startTime = Date.now();
     console.log(`\n${c.dim}▸ Processing...${c.reset}`);
 
@@ -207,10 +214,19 @@ ${c.dim}Floors:${c.reset}   F1-F13 active — constitutional governance enforced
       }
     } catch (err) {
       console.error(`${c.red}✕ Engine error:${c.reset} ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      taskRunning = false;
+      if (shouldExit) {
+        console.log(`\n${c.dim}999 SEAL — A-FORGE Terminal closed.${c.reset}`);
+        process.exit(0);
+      }
     }
   };
 
-  console.log(`${c.dim}Type a task or /help for commands. /quit to exit.${c.reset}\n`);
+  if (isTTY) {
+    console.log(`${c.dim}Type a task or /help for commands. /quit to exit.${c.reset}\n`);
+    rl.prompt();
+  }
 
   // Command handling
   const commands: Record<string, (args: string) => Promise<void>> = {
@@ -264,23 +280,26 @@ ${c.bold}Session Status:${c.reset}
       } else {
         console.log(`${c.yellow}Unknown command: /${cmd}. Type /help for commands.${c.reset}`);
       }
-      rl.prompt();
+      if (isTTY) rl.prompt();
       return;
     }
 
     if (input === "") {
-      rl.prompt();
+      if (isTTY) rl.prompt();
       return;
     }
 
     await runTask(input);
     sessionCount++;
-    rl.prompt();
+    if (isTTY) rl.prompt();
   });
 
   rl.on("close", () => {
-    console.log(`\n${c.dim}DITEMPA BUKAN DIBERI${c.reset}`);
-    process.exit(0);
+    if (!taskRunning) {
+      console.log(`\n${c.dim}DITEMPA BUKAN DIBERI${c.reset}`);
+      process.exit(0);
+    }
+    shouldExit = true;
   });
 
   rl.prompt();
