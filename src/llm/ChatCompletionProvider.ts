@@ -66,7 +66,26 @@ function serializeMessages(messages: AgentMessage[], systemPrompt: string): Open
     result.push({ role: "system", content: systemPrompt });
   }
 
-  for (const msg of messages) {
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    
+    // Skip empty assistant messages — they had tool_calls that aren't stored
+    if (msg.role === "assistant" && !msg.content) continue;
+    
+    // Before a tool result, insert synthetic assistant tool_calls
+    // (AgentMessage doesn't store tool_calls, so we reconstruct them from the tool response)
+    if (msg.role === "tool" && msg.toolCallId && msg.toolName) {
+      result.push({
+        role: "assistant",
+        content: null,
+        tool_calls: [{
+          id: msg.toolCallId,
+          type: "function" as const,
+          function: { name: msg.toolName, arguments: "{}" },
+        }],
+      });
+    }
+    
     const oai: OpenAIMessage = {
       role: msg.role as OpenAIMessage["role"],
       content: msg.content || null,
@@ -120,6 +139,7 @@ function estimateTokens(messages: AgentMessage[]): number {
 
 export class ChatCompletionProvider implements LlmProvider {
   readonly name: string;
+  readonly supportsStreaming = false;
 
   private readonly apiKey: string;
   private readonly model: string;
@@ -136,7 +156,11 @@ export class ChatCompletionProvider implements LlmProvider {
     this.endpoint = `${base}/chat/completions`;
   }
 
-  async completeTurn(request: LlmTurnRequest): Promise<LlmTurnResponse> {
+  async completeTurn(request: LlmTurnRequest, _callbacks?: unknown): Promise<LlmTurnResponse> {
+    return this.completeTurnNonStreaming(request);
+  }
+
+  private async completeTurnNonStreaming(request: LlmTurnRequest): Promise<LlmTurnResponse> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
@@ -204,5 +228,5 @@ export class ChatCompletionProvider implements LlmProvider {
     } finally {
       clearTimeout(timeout);
     }
-  }
+}
 }
