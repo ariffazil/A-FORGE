@@ -33,18 +33,19 @@ export function checkWitness(
   thresholds: WitnessThresholds = {},
 ): WitnessResult {
   const { minLength = 3, minWords = 1 } = thresholds;
-  const trimmed = task?.trim() ?? "";
+  const trimmed = task.trim();
 
-  // Check empty
   if (!trimmed) {
-    return {
-      verdict: "SABAR",
-      reason: "INPUT_EMPTY",
-      message: "Task is empty. Please provide an intent.",
-    };
+    return { verdict: "SABAR", message: "Empty input received." };
   }
 
-  // Check extremely short
+  // Simple greetings and very short conversational turns bypass length check.
+  // The LLM is capable of handling "hi" — we don't need to gate casual chat.
+  const greetingPattern = /^(hi|hey|hello|yo|sup|ok|thanks|thx|bye|good|yes|no|y|n|hmm|ah|oh|wtf|lol)[!.]*$/i;
+  if (greetingPattern.test(trimmed)) {
+    return { verdict: "PASS" };
+  }
+
   if (trimmed.length < minLength) {
     return {
       verdict: "SABAR",
@@ -53,7 +54,6 @@ export function checkWitness(
     };
   }
 
-  // Check minimum word count
   const words = trimmed.split(/\s+/).filter((w) => w.length > 0);
   if (words.length < minWords) {
     return {
