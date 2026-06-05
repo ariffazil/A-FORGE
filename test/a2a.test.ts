@@ -13,7 +13,12 @@ function listenOnce(app: express.Express): Promise<{ url: string; close: () => P
       const port = typeof addr === "object" && addr ? addr.port : 0;
       resolve({
         url: `http://127.0.0.1:${port}`,
-        close: () => new Promise<void>((res) => server.close(() => res())),
+        close: () => new Promise<void>((res) => {
+          if (typeof server.closeAllConnections === "function") {
+            server.closeAllConnections();
+          }
+          server.close(() => res());
+        }),
       });
     });
   });
