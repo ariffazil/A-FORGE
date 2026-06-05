@@ -206,6 +206,75 @@ export class AgentEngine {
       );
     }
 
+    // === Plan Governance Card Gate (Spine-Gated Plan Validation) ===
+    // Validates the plan DAG against the model's governance card from the
+    // arifOS spine: registry presence, risk leash, self-claim boundaries,
+    // and shadow profile. This is the TERTIARY gate — plan-level, not just
+    // action-level. Executes BEFORE any plan step touches tools.
+    if (options.planDAG) {
+      try {
+        const { verifyGovernanceCard } = await import("../planner/PlanValidator.js");
+        const modelId = this.profile.name;
+        const planVerdict = verifyGovernanceCard(modelId, options.planDAG, {
+          ackIrreversible: options.ackIrreversible,
+        });
+        if (planVerdict.verdict === "BLOCK") {
+          process.stderr.write(
+            `[PLAN GOVERNANCE GATE] BLOCK: ${planVerdict.reasons.join(" | ")}\n`
+          );
+          return {
+            sessionId,
+            finalText: `BLOCK: Plan governance card rejected execution.\nReasons:\n${planVerdict.reasons.map((r) => `  • ${r}`).join("\n")}`,
+            turnCount: 0,
+            totalEstimatedTokens: 0,
+            transcript: [],
+            metrics: this.buildEmptyMetrics(options, startedAt, "PLAN_GOVERNANCE", planVerdict.reasons[0] ?? "blocked"),
+          };
+        }
+        if (planVerdict.verdict === "HOLD") {
+          process.stderr.write(
+            `[PLAN GOVERNANCE GATE] HOLD: ${planVerdict.reasons.join(" | ")}\n`
+          );
+          // Route to ApprovalBoundary for human review
+          const ticketStore = this.dependencies.ticketStore ?? getTicketStore();
+          await ticketStore.initialize();
+          const ticket: import("../approval/index.js").ApprovalTicket = {
+            ticketId: `ticket_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            sessionId,
+            status: "PENDING",
+            riskLevel,
+            intentModel: options.intentModel ?? "advisory",
+            domain: (options.metadata?.domain as string | undefined) ?? "unspecified",
+            prompt: options.task,
+            planSummary: `Governance card HOLD for model ${modelId}: ${planVerdict.reasons.join("; ")}`,
+            floorsTriggered: ["PLAN_GOVERNANCE_HOLD"],
+            telemetrySnapshot: { dS: 0.1, peace2: 0.95, psi_le: 1.0, W3: 0.9, G: 0.8 },
+            createdAt: new Date().toISOString(),
+          };
+          await ticketStore.createTicket(ticket);
+          return {
+            sessionId,
+            finalText: `HOLD: Plan governance card requires human review (ticket ${ticket.ticketId}).\nReasons:\n${planVerdict.reasons.map((r) => `  • ${r}`).join("\n")}`,
+            turnCount: 0,
+            totalEstimatedTokens: 0,
+            transcript: [],
+            metrics: this.buildEmptyMetrics(options, startedAt, "PLAN_GOVERNANCE_HOLD", `ticket=${ticket.ticketId}`),
+          };
+        }
+        // ALLOW: log and proceed
+        if (planVerdict.reasons.length > 0) {
+          process.stderr.write(
+            `[PLAN GOVERNANCE GATE] ALLOW: ${planVerdict.reasons[0]}\n`
+          );
+        }
+      } catch (planGateErr) {
+        // Plan gate failure is advisory — log and proceed
+        process.stderr.write(
+          `[PLAN GOVERNANCE GATE] Gate check failed (non-fatal): ${planGateErr instanceof Error ? planGateErr.message : String(planGateErr)}\n`
+        );
+      }
+    }
+
     // === Human override replay path ===
     if (options.humanApprovedTicketId) {
       const ticketStore = this.dependencies.ticketStore ?? getTicketStore();

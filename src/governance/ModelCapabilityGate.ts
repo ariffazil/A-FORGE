@@ -72,7 +72,7 @@ const HUMAN_ACK_TRIGGERS = [
 
 // ── Spine reader ─────────────────────────────────────────────────────────────
 
-function readGovernanceCard(): ModelGovernanceCard | null {
+export function readGovernanceCard(): ModelGovernanceCard | null {
   try {
     const json = execSync(
       `python3 -c "
