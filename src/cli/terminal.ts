@@ -235,34 +235,20 @@ async function main() {
   const cfg = loadConfig();
   const sid = randomUUID().slice(0, 8);
 
-  console.log(`${D}Discovering federation tools...${R}`);
   const fedTools = await discoverTools();
 
-  // ── FIRE PALETTE ──────────────────────────────────────────────────
-  const F = {
-    r: "\x1b[38;5;196m",   // red
-    o: "\x1b[38;5;208m",   // orange
-    g: "\x1b[38;5;220m",   // gold
-    y: "\x1b[38;5;226m",   // yellow
-    w: "\x1b[38;5;231m",   // white
-    d: "\x1b[38;5;240m",   // dark
-  };
-
   console.log(`
-${F.r}${B}   ▄▀▀▄ ▄▀▀▄   ${F.o}▄▀▀▀▀▄  ▄▀▀▄ ▄▀▀▄  ▄▀▀▀▀▄  ▄▀▀▀▀▄ ${F.g}${B}▄▀▀▀▀▄${R}
-${F.r}${B}   █  █ █  █   ${F.o}█ ▄▄  █  █ █  █  █ ▄▄  █     ${F.g}${B}█${R}
-${F.r}${B}   █▀▀█ █▀▀▀   ${F.o}█ ██  █▀▀█ █▀▀▀  █ ██  █▀▀▀  ${F.g}${B}█▀▀▀▀${R}
-${F.r}${B}   █  █ █      ${F.o}█▄▄█  █  █ █     █▄▄█  █▄▄▄▄ ${F.g}${B}█▄▄▄▄${R}
-${F.r}${B}   ▀  ▀ ▀      ${F.o}▀▀▀▀  ▀  ▀ ▀     ▀▀▀▀  ▀▀▀▀▀ ${F.g}${B}▀▀▀▀▀${R}
+\x1b[38;5;196m${B}          ▲
+         ▲ ▲
+        ▲ ▲ ▲
+       ▲ ▲ ▲ ▲
+      ▲ ▲ ▲ ▲ ▲
 
-${F.y}${B}   ═══════════════  TERMINAL v0.5.0  ═══════════════${R}
-${F.o}   │${R}  ${F.w}${B}DITEMPA BUKAN DIBERI${R}  ${F.o}—${R}  ${F.y}FORGED, NOT GIVEN${R}  ${F.o}│${R}
-${F.r}   ═══════════════════════════════════════════════════${R}
+  DITEMPA BUKAN DIBERI
+    FORGED, NOT GIVEN${R}
 
-${F.d}Provider${R}    ${cfg.provider} · ${cfg.model}
-${F.d}Mode${R}        ${cfg.agent}${fedTools.length > 0 ? `  │  ${F.d}Federation${R}  ${fedTools.length} tools · ${FED_ORGANS.length} organs` : ''}
-${F.d}Workdir${R}     ${cfg.workdir}
-${F.d}Floors${R}      F1-F13 ${F.r}active${R}  │  ${F.d}Session${R}  ${sid}
+\x1b[38;5;240m${cfg.provider} · ${cfg.model}  │  ${cfg.agent}  │  ${fedTools.length} tools · ${FED_ORGANS.length} organs
+${cfg.workdir}  │  F1-F13 \x1b[38;5;196mactive${R}\x1b[38;5;240m  │  ${sid}${R}
 `);
 
   // ── Engine ───────────────────────────────────────────────────────
@@ -471,7 +457,7 @@ ${B}Tips:${R}
     if (tty) rl.prompt();
   });
 
-  rl.on("close", () => { unspin(); if (!taskRunning) { saveSession(sid, history); console.log(`\n${D}DITEMPA BUKAN DIBERI${R}`); process.exit(0); } shouldExit = true; });
+  rl.on("close", () => { unspin(); if (!taskRunning) { saveSession(sid, history); process.exit(0); } shouldExit = true; });
   rl.prompt();
 }
 
