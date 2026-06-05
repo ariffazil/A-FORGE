@@ -18,6 +18,7 @@ test: security-audit
 	npm run build
 	npm test
 	node dist/test/PlanValidator.test.js
+	node dist/test/GovernanceCardGate.test.js
 	node dist/test/ParallelPlannerContract.test.js
 	node dist/test/confidence.test.js
 	node dist/test/sense.test.js
