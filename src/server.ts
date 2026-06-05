@@ -557,7 +557,7 @@ app.get("/api/federation-probe", (_req: Request, res: Response) => {
     "A-FORGE": { url: "http://127.0.0.1:7071/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
     APEX:      { url: "http://127.0.0.1:3002/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
     OpenClaw:  { url: "http://127.0.0.1:18789/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
-    "cn-organ":{ url: "http://127.0.0.1:18790/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    "cn-organ":{ url: "http://127.0.0.1:18795/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
   };
 
   const probe = (name: keyof typeof organs): Promise<void> =>
