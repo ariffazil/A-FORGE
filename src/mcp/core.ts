@@ -28,6 +28,7 @@ import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../tools/MiniM
 import { getMiniMaxClient } from "../tools/MiniMaxMcpClient.js";
 import { AgentZeroDelegateTool, AgentZeroBrowserTool, AgentZeroDocumentTool } from "../tools/AgentZeroTool.js";
 import { registerCoreResources } from "./resources.js";
+import { callMCP } from "./client.js";
 
 export const server = new McpServer({
   name: "A-FORGE",
@@ -342,17 +343,53 @@ server.registerTool(
 
 const judgeHandler = async ({ holdId, reason }: { holdId: string, reason?: string }) => {
   const startedAt = Date.now();
-  await telemetryInvoke("arif_judge_deliberate");
+  await telemetryInvoke("forge_approve");
   return runStage("888_JUDGE" as MetabolicStage, async () => {
   try {
     const item = approvalBoundary.approve(holdId, reason);
-    return { content: [{ type: "text" as const, text: JSON.stringify({ holdId: item.holdId, state: item.state, badge: item.badge }, null, 2) }] };
-  } catch (err) { await telemetryFailure("arif_judge_deliberate", startedAt, err); throw err; }
+    const result = { content: [{ type: "text" as const, text: JSON.stringify({ holdId: item.holdId, state: item.state, badge: item.badge }, null, 2) }] };
+    await telemetrySuccess("forge_approve", startedAt);
+    return result;
+  } catch (err) { await telemetryFailure("forge_approve", startedAt, err); throw err; }
   });
 };
 
-server.tool("arif_judge_deliberate", "Verdict (Stage 888 JUDGE).", { holdId: z.string(), reason: z.string().optional() }, judgeHandler);
+const judgeProxyHandler = async (args: Record<string, unknown>) => {
+  const startedAt = Date.now();
+  await telemetryInvoke("forge_judge_proxy");
+  return runStage("888_JUDGE" as MetabolicStage, async () => {
+    try {
+      const res = await callMCP("arifos.arif_judge_deliberate", args);
+      const result = { content: [{ type: "text" as const, text: resultAsJson(res) }] };
+      await telemetrySuccess("forge_judge_proxy", startedAt);
+      return result;
+    } catch (err) {
+      await telemetryFailure("forge_judge_proxy", startedAt, err);
+      throw err;
+    }
+  });
+};
+
 server.tool("forge_approve", "Approve action.", { holdId: z.string(), reason: z.string().optional() }, judgeHandler);
+
+server.tool(
+  "forge_judge_proxy",
+  "Proxy forwarder to canonical arifOS constitutional judge.",
+  {
+    mode: z.string().optional().describe("Adjudication mode (e.g. judge)"),
+    candidate: z.string().optional().describe("Description of candidate action/proposal"),
+    session_id: z.string().optional().describe("Session context"),
+    actor_id: z.string().optional().describe("Actor ID"),
+    constitutional_chain_id: z.string().optional().describe("Constitutional chain ID"),
+    vault_entry_id: z.string().optional().describe("Vault entry ID"),
+    cooldown_entry_id: z.string().optional().describe("Cooldown entry ID"),
+    action_tier: z.string().optional().describe("Action risk tier"),
+    heart_critique: z.record(z.string(), z.unknown()).optional().describe("Heart critique payload"),
+    niat_params: z.record(z.string(), z.unknown()).optional().describe("Niat parameters"),
+    context_source: z.string().optional().describe("Context source"),
+  },
+  judgeProxyHandler
+);
 
 // ── Tier 06 Stewardship (Vault) ──────────────────────────────────────────────
 
