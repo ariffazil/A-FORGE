@@ -223,7 +223,23 @@ export async function runCliCommand(
     const subcommand = String(options.cmd ?? "");
     if (subcommand === "approvals") {
       const store = getTicketStore();
-      await store.initialize();
+      try {
+        await store.initialize();
+      } catch (err) {
+        // Postgres unreachable — fall back to file-based store
+        process.stderr.write(
+          `[WARN] Ticket store initialize failed (${err instanceof Error ? err.message : String(err)}), ` +
+          `falling back to FileTicketStore\n`
+        );
+        const { FileTicketStore } = await import("../approval/TicketStore.js");
+        const fileStore = new FileTicketStore();
+        await fileStore.initialize();
+        const status = parseTicketStatus(typeof options.status === "string" ? options.status : undefined);
+        const sessionId = typeof options.sessionId === "string" ? options.sessionId : undefined;
+        const riskLevel = parseRiskLevel(typeof options.riskLevel === "string" ? options.riskLevel : undefined);
+        const tickets = await fileStore.query({ status, sessionId, riskLevel });
+        return JSON.stringify({ ok: true, count: tickets.length, tickets }, null, 2);
+      }
       const status = parseTicketStatus(typeof options.status === "string" ? options.status : undefined);
       const sessionId = typeof options.sessionId === "string" ? options.sessionId : undefined;
       const riskLevel = parseRiskLevel(typeof options.riskLevel === "string" ? options.riskLevel : undefined);
