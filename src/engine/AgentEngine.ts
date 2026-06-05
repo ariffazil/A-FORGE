@@ -175,6 +175,37 @@ export class AgentEngine {
       };
     }
 
+    // === Model Capability Gate (Governance Spine — Execution Layer) ===
+    // Reads the live model_governance_card from the arifOS-model-registry spine.
+    // This is the SECONDARY gate: thin, fast, non-deliberative.
+    // Constitutional enforcement (primary) happens in arifOS MCP / 888_JUDGE.
+    try {
+      const { checkModelCapability } = await import("../governance/ModelCapabilityGate.js");
+      const capabilityResult = checkModelCapability(options.task, {
+        riskLevel,
+        ackIrreversible: options.ackIrreversible,
+        intentModel,
+      });
+      if (!capabilityResult.allowed) {
+        process.stderr.write(
+          `[MODEL GATE] ${capabilityResult.verdict}: ${capabilityResult.reason}\n`
+        );
+        return {
+          sessionId,
+          finalText: `${capabilityResult.verdict}: ${capabilityResult.reason}`,
+          turnCount: 0,
+          totalEstimatedTokens: 0,
+          transcript: [],
+          metrics: this.buildEmptyMetrics(options, startedAt, "MODEL_CAPABILITY", capabilityResult.reason ?? "blocked"),
+        };
+      }
+    } catch (gateErr) {
+      // Gate failure must never block execution — this is defense-in-depth, not defense-to-death
+      process.stderr.write(
+        `[MODEL GATE] Gate check failed (non-fatal): ${gateErr instanceof Error ? gateErr.message : String(gateErr)}\n`
+      );
+    }
+
     // === Human override replay path ===
     if (options.humanApprovedTicketId) {
       const ticketStore = this.dependencies.ticketStore ?? getTicketStore();
