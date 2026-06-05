@@ -201,6 +201,8 @@ async function discoverTools(): Promise<FedTool[]> {
 function buildProfile(mode: TerminalConfig["agent"], workdir: string, fedTools: FedTool[]): AgentProfile {
   if (mode === "explore") return buildExploreProfile("external_safe_mode");
   const p = buildFixProfile("external_safe_mode");
+  // Terminal mode: higher budget since human is in the loop paying attention
+  p.budget = { tokenCeiling: 100_000, maxTurns: 50 };
   const tl = fedTools.length > 0
     ? fedTools.map(t => `  - ${t.name} (${t.organ})`).join("\n")
     : "  (no federation tools — local only)";
@@ -236,17 +238,31 @@ async function main() {
   console.log(`${D}Discovering federation tools...${R}`);
   const fedTools = await discoverTools();
 
+  // ── FIRE PALETTE ──────────────────────────────────────────────────
+  const F = {
+    r: "\x1b[38;5;196m",   // red
+    o: "\x1b[38;5;208m",   // orange
+    g: "\x1b[38;5;220m",   // gold
+    y: "\x1b[38;5;226m",   // yellow
+    w: "\x1b[38;5;231m",   // white
+    d: "\x1b[38;5;240m",   // dark
+  };
+
   console.log(`
-${c.cyan}${B}╔══════════════════════════════════════════╗${R}
-${c.cyan}${B}║       A-FORGE TERMINAL — v0.4.0          ║${R}
-${c.cyan}${B}║  Constitutional Coding Agent · Forged     ║${R}
-${c.cyan}${B}╚══════════════════════════════════════════╝${R}
-${D}Provider:${R}   ${cfg.provider} (${cfg.model})
-${D}Mode:${R}       ${cfg.agent}
-${D}Workdir:${R}    ${cfg.workdir}
-${D}Federation:${R} ${fedTools.length} tools · ${FED_ORGANS.length} organs
-${D}Floors:${R}     F1-F13 enforced
-${D}Session:${R}    ${sid}
+${F.r}${B}   ▄▀▀▄ ▄▀▀▄   ${F.o}▄▀▀▀▀▄  ▄▀▀▄ ▄▀▀▄  ▄▀▀▀▀▄  ▄▀▀▀▀▄ ${F.g}${B}▄▀▀▀▀▄${R}
+${F.r}${B}   █  █ █  █   ${F.o}█ ▄▄  █  █ █  █  █ ▄▄  █     ${F.g}${B}█${R}
+${F.r}${B}   █▀▀█ █▀▀▀   ${F.o}█ ██  █▀▀█ █▀▀▀  █ ██  █▀▀▀  ${F.g}${B}█▀▀▀▀${R}
+${F.r}${B}   █  █ █      ${F.o}█▄▄█  █  █ █     █▄▄█  █▄▄▄▄ ${F.g}${B}█▄▄▄▄${R}
+${F.r}${B}   ▀  ▀ ▀      ${F.o}▀▀▀▀  ▀  ▀ ▀     ▀▀▀▀  ▀▀▀▀▀ ${F.g}${B}▀▀▀▀▀${R}
+
+${F.y}${B}   ═══════════════  TERMINAL v0.5.0  ═══════════════${R}
+${F.o}   │${R}  ${F.w}${B}DITEMPA BUKAN DIBERI${R}  ${F.o}—${R}  ${F.y}FORGED, NOT GIVEN${R}  ${F.o}│${R}
+${F.r}   ═══════════════════════════════════════════════════${R}
+
+${F.d}Provider${R}    ${cfg.provider} · ${cfg.model}
+${F.d}Mode${R}        ${cfg.agent}${fedTools.length > 0 ? `  │  ${F.d}Federation${R}  ${fedTools.length} tools · ${FED_ORGANS.length} organs` : ''}
+${F.d}Workdir${R}     ${cfg.workdir}
+${F.d}Floors${R}      F1-F13 ${F.r}active${R}  │  ${F.d}Session${R}  ${sid}
 `);
 
   // ── Engine ───────────────────────────────────────────────────────
@@ -263,7 +279,7 @@ ${D}Session:${R}    ${sid}
   const engine = new AgentEngine(profile, { llmProvider: llm, toolRegistry: registry, longTermMemory: new LongTermMemory(resolve(homedir(), ".aforge", "terminal-memory.json")), vaultClient: new NoOpVaultClient() });
 
   // ── REPL ─────────────────────────────────────────────────────────
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: `${c.green}A-FORGE ›${R} `, terminal: true, historySize: 500 });
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout, prompt: `\x1b[38;5;208m${B}⟐${R} `, terminal: true, historySize: 500 });
   const history: string[] = [];
   const tty = process.stdin.isTTY;
   let taskRunning = false, shouldExit = false, taskCount = 0;
@@ -293,15 +309,33 @@ ${D}Session:${R}    ${sid}
     };
 
     try {
+      // Suppress known non-critical stderr noise from federation bridges
+      const originalStderrWrite = process.stderr.write.bind(process.stderr);
+      const noiseFilter = (chunk: string | Uint8Array) => {
+        const msg = typeof chunk === "string" ? chunk : new TextDecoder().decode(chunk);
+        if (msg.includes("MemoryEngine is deprecated") ||
+            msg.includes("Federation upsert failed") ||
+            msg.includes("LangfuseTrace disabled") ||
+            msg.includes("qdrant-failures")) {
+          return true; // silent
+        }
+        originalStderrWrite(chunk);
+        return true;
+      };
+      process.stderr.write = noiseFilter as any;
+
       const result = await withRetry(() => engine.run({ task, workingDirectory: cfg.workdir, streamCallbacks: cb }));
 
+      // Restore stderr
+      process.stderr.write = originalStderrWrite;
+
       const ms = ((Date.now() - t0) / 1000).toFixed(1);
-      if (!streamed) { console.log(`\n${D}── Response (${result.turnCount}T · ${ms}s · ~${result.totalEstimatedTokens}tk) ──${R}`); console.log(result.finalText); }
+      if (!streamed) { console.log(`\n\x1b[38;5;240m━━━ Response (${result.turnCount}T · ${ms}s · ~${result.totalEstimatedTokens}tk) ━━━${R}`); console.log(result.finalText); }
       console.log(`${D}── ${result.turnCount}T · ${ms}s · ~${result.totalEstimatedTokens}tk${R}`);
 
-      if (result.metrics.toolCalls > 0) console.log(`${D}⚡ ${result.metrics.toolCalls} tool calls through F1-F13${R}`);
-      const v = result.metrics.taskSuccess ? `${c.green}SEAL${R}` : `${c.yellow}HOLD${R}`;
-      console.log(`${D}🔒 ${v}${R}`);
+      if (result.metrics.toolCalls > 0) console.log(`\x1b[38;5;240m⚡ ${result.metrics.toolCalls} tool calls through F1-F13${R}`);
+      const v = result.metrics.taskSuccess ? `\x1b[38;5;220m◇ SEAL${R}` : `\x1b[38;5;208m◇ HOLD${R}`;
+      console.log(`${D}${v}${R}`);
     } catch (err) {
       unspin();
       const msg = err instanceof Error ? err.message : String(err);
@@ -310,12 +344,12 @@ ${D}Session:${R}    ${sid}
       else console.error(`\n${c.red}✕ ${msg.slice(0, 200)}${R}`);
     } finally {
       unspin(); taskRunning = false;
-      if (shouldExit) { console.log(`\n${D}999 SEAL — closed.${R}`); process.exit(0); }
+      if (shouldExit) { console.log(`\n\x1b[38;5;208m◇ SABAR — session closed${R}`); process.exit(0); }
     }
   };
 
   // Clean exit
-  const exit = () => { unspin(); if (taskRunning) { shouldExit = true; console.log(`\n${D}Finishing... (Ctrl+C again to force)${R}`); return; } saveSession(sid, history); console.log(`\n${D}999 SEAL · ${sid} saved · DITEMPA BUKAN DIBERI${R}`); process.exit(0); };
+  const exit = () => { unspin(); if (taskRunning) { shouldExit = true; console.log(`\n${D}Finishing... (Ctrl+C again to force)${R}`); return; } saveSession(sid, history); console.log(`\n\x1b[38;5;208m◇ \x1b[38;5;220mDITEMPA BUKAN DIBERI${R} \x1b[38;5;240m· ${sid} saved${R}`); process.exit(0); };
   process.on("SIGINT", exit);
 
   if (tty) console.log(`${D}Enter to send · \\ at end to continue · /multi for multi-line · /help${R}\n`);
@@ -344,7 +378,7 @@ ${B}Tips:${R}
   Ctrl+C to save & quit
 `);
     },
-    async quit() { saveSession(sid, history); console.log(`\n${D}999 SEAL · ${sid} saved.${R}`); rl.close(); process.exit(0); },
+    async quit() { saveSession(sid, history); console.log(`\n\x1b[38;5;208m◇ \x1b[38;5;220mDITEMPA BUKAN DIBERI${R} \x1b[38;5;240m· ${sid} saved${R}`); rl.close(); process.exit(0); },
     async clear() { console.clear(); },
     async status() {
       const mp = resolve(homedir(), ".aforge", "terminal-memory.json");
