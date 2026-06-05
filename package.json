@@ -13,7 +13,9 @@
     "test": "node dist/test/AgentEngine.test.js",
     "example:explore": "node dist/examples/runExploreExample.js",
     "mcp:stdio": "node dist/src/mcp/cli.js serve --transport stdio",
-    "mcp:http": "node dist/src/mcp/cli.js serve --transport http --port 3000"
+    "mcp:http": "node dist/src/mcp/cli.js serve --transport http --port 3000",
+    "terminal": "node dist/src/cli/terminal.js",
+    "terminal:dev": "npx tsx src/cli/terminal.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
