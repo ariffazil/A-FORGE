@@ -19,10 +19,10 @@ import type { AgentMessage, AgentProfile, AgentRunResult, EngineRunOptions, LlmT
 import type { ToolPermissionContext } from "../types/tool.js";
 import type { LlmProvider } from "../llm/LlmProvider.js";
 import type { VaultClient, VaultSealRecord, VaultTelemetrySnapshot } from "../vault/index.js";
-import type { HumanEscalationClient } from "../escalation/index.js";
+import type { HumanEscalationClient } from "../approval/HumanEscalationClient.js";
 import type { TicketStore, ApprovalTicket } from "../approval/index.js";
 import type { MemoryContract } from "../memory-contract/index.js";
-import type { FeatureFlags } from "../flags/featureFlags.js";
+import type { FeatureFlags } from "../config/featureFlags.js";
 import type { ToolPolicyConfig } from "../config/RuntimeConfig.js";
 import type { MetabolicStage } from "../types/aki.js";
 import type { GovernanceResponse } from "../governance/GovernanceClient.js";
@@ -32,7 +32,7 @@ import { ShortTermMemory } from "../memory/ShortTermMemory.js";
 import { LongTermMemory } from "../memory/LongTermMemory.js";
 import { resolveWorkingDirectory } from "../utils/paths.js";
 import { redactForExternalMode } from "./redact.js";
-import { buildModeSettings } from "../flags/modes.js";
+import { buildModeSettings } from "../config/modes.js";
 import { ToolRegistry } from "../tools/ToolRegistry.js";
 import { RunReporter } from "./RunReporter.js";
 import {

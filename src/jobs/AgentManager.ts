@@ -14,7 +14,7 @@
 
 import { randomUUID } from "node:crypto";
 import { getPostgresVaultClient, PostgresVaultClient } from "../vault/index.js";
-import type { HumanEscalationClient } from "../escalation/index.js";
+import type { HumanEscalationClient } from "../approval/HumanEscalationClient.js";
 
 export type JobStatus = "PENDING" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
 export type JobPriority = "low" | "medium" | "high" | "critical";

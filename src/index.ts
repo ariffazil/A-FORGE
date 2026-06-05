@@ -107,9 +107,9 @@ export { createA2ARouter } from "./a2a/index.js";
 export type { A2ATask, A2AMessage, JsonRpcRequest } from "./a2a/index.js";
 
 // Flags
-export type { FeatureFlags } from "./flags/featureFlags.js";
-export { readFeatureFlags } from "./flags/featureFlags.js";
-export type { ModeSettings } from "./flags/modes.js";
-export { buildModeSettings } from "./flags/modes.js";
+export type { FeatureFlags } from "./config/featureFlags.js";
+export { readFeatureFlags } from "./config/featureFlags.js";
+export type { ModeSettings } from "./config/modes.js";
+export { buildModeSettings } from "./config/modes.js";
 
 
