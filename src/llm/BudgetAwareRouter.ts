@@ -2,7 +2,7 @@
 // real-time token consumption. Implements LlmProvider transparently.
 // 2026-05-05
 
-import type { LlmProvider } from "./LlmProvider.js";
+import type { LlmProvider, LlmStreamCallbacks } from "./LlmProvider.js";
 import type { LlmTurnRequest, LlmTurnResponse } from "../types/agent.js";
 import type { BudgetManager } from "../engine/BudgetManager.js";
 
@@ -17,7 +17,7 @@ export class BudgetAwareRouter implements LlmProvider {
 
   constructor(private readonly options: BudgetAwareRouterOptions) {}
 
-  async completeTurn(request: LlmTurnRequest): Promise<LlmTurnResponse> {
+  async completeTurn(request: LlmTurnRequest, callbacks?: LlmStreamCallbacks): Promise<LlmTurnResponse> {
     const percent = this.options.budgetManager.usagePercent();
 
     if (percent >= 0.95) {
@@ -41,7 +41,7 @@ export class BudgetAwareRouter implements LlmProvider {
       console.warn(
         `[BUDGET] Router downshifted to fallback provider "${this.options.fallback.name}" at ${(percent * 100).toFixed(1)}% budget`,
       );
-      return this.options.fallback.completeTurn(request);
+      return this.options.fallback.completeTurn(request, callbacks);
     }
 
     if (percent >= 0.8) {
@@ -50,6 +50,6 @@ export class BudgetAwareRouter implements LlmProvider {
       );
     }
 
-    return this.options.primary.completeTurn(request);
+    return this.options.primary.completeTurn(request, callbacks);
   }
 }

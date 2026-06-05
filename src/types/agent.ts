@@ -88,6 +88,12 @@ export type EngineRunOptions = {
   humanApprovedTicketId?: string;
   metadata?: Record<string, unknown>;
   planDAG?: import("./plan.js").PlanDAG;
+  /** Streaming callbacks for real-time token output */
+  streamCallbacks?: {
+    onToken?: (token: string) => void;
+    onThinking?: () => void;
+    onComplete?: () => void;
+  };
 };
 
 export type AgentRunResult = {

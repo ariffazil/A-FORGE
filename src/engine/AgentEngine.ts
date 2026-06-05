@@ -393,16 +393,20 @@ export class AgentEngine {
     }
 
     if (routing.primaryOrgan === "WEALTH" || routing.secondaryOrgans.includes("WEALTH")) {
-      const GEOXScenarios = this._GEOXScenarios.length > 0
-        ? this._GEOXScenarios
-        : await getScenarios("secondary") as Array<{ id: string; name: string; physicalConstraints: { environmentalImpact: number }; tag: string; groundingEvidence: string[] }>;
-      const allocations = await wealthEngine.allocate(GEOXScenarios as import("../types/arifos.js").GEOXScenarioContract[]) as Array<{ id: string; maruahScore: number }>;
-      this._wealthAllocations = allocations.map((a) => ({ id: a.id, maruahScore: a.maruahScore }));
-      const budgetStatus = wealthEngine.getBudgetStatus();
-      shortTermMemory.pin({
-        role: "system",
-        content: `[333_MIND] Thermodynamic budget: joules=${budgetStatus.utilization * 100 | 0}% utilized, ${budgetStatus.remaining.toLocaleString()} remaining`,
-      });
+      try {
+        const GEOXScenarios = this._GEOXScenarios.length > 0
+          ? this._GEOXScenarios
+          : await getScenarios("secondary") as Array<{ id: string; name: string; physicalConstraints: { environmentalImpact: number }; tag: string; groundingEvidence: string[] }>;
+        const allocations = await wealthEngine.allocate(GEOXScenarios as import("../types/arifos.js").GEOXScenarioContract[]) as Array<{ id: string; maruahScore: number }>;
+        this._wealthAllocations = allocations.map((a) => ({ id: a.id, maruahScore: a.maruahScore }));
+        const budgetStatus = wealthEngine.getBudgetStatus();
+        shortTermMemory.pin({
+          role: "system",
+          content: `[333_MIND] Thermodynamic budget: joules=${budgetStatus.utilization * 100 | 0}% utilized, ${budgetStatus.remaining.toLocaleString()} remaining`,
+        });
+      } catch {
+        // WEALTH unreachable — skip allocation advisory
+      }
     }
 
     // === 444_ROUTE: Context Injection into shortTermMemory ===
@@ -562,14 +566,20 @@ export class AgentEngine {
         }
 
         // [Q2] WEALTH advisory: evaluate planned tool chain before execution
+        // Fail-soft: if WEALTH is unreachable, skip advisory and proceed
         const plannedActions: ToolAction[] = turnResponse.toolCalls.map((call) =>
           this.estimateToolAction(call.toolName, call.args),
         );
-        const budgetStatus = budgetManager.getStatus();
-        const wealthAdvice = await wealthEngine.evaluatePlan(plannedActions, {
-          remainingTokens: Math.max(0, budgetStatus.totalTokensUsed - this.profile.budget.tokenCeiling) * -1,
-          remainingTurns: budgetStatus.turnsRemaining,
-        }) as { deferred: unknown[]; reason: string };
+        let wealthAdvice: { deferred: unknown[]; reason: string } = { deferred: [], reason: "" };
+        try {
+          const budgetStatus = budgetManager.getStatus();
+          wealthAdvice = await wealthEngine.evaluatePlan(plannedActions, {
+            remainingTokens: Math.max(0, budgetStatus.totalTokensUsed - this.profile.budget.tokenCeiling) * -1,
+            remainingTurns: budgetStatus.turnsRemaining,
+          }) as { deferred: unknown[]; reason: string };
+        } catch {
+          // WEALTH unreachable — skip advisory, proceed with governance-only gating
+        }
         if (wealthAdvice.deferred.length > 0) {
           console.warn(`[WEALTH-ADVISORY] Deferred ${wealthAdvice.deferred.length} actions: ${wealthAdvice.reason}`);
         }
@@ -599,7 +609,12 @@ export class AgentEngine {
             (toolExecution.timeoutEvents * 0.3) +
             (budgetManager.usagePercent() > 0.8 ? 0.8 : 0),
         };
-        const continueAdvice = await wealthEngine.shouldContinue(stressState) as { verdict: string; reason: string };
+        let continueAdvice: { verdict: string; reason: string } = { verdict: "SEAL", reason: "" };
+        try {
+          continueAdvice = await wealthEngine.shouldContinue(stressState) as { verdict: string; reason: string };
+        } catch {
+          // WEALTH unreachable — skip stress check, proceed
+        }
         if (continueAdvice.verdict === "VOID") {
           finalResponse = `[WEALTH-ADVISORY] ${continueAdvice.reason}`;
           floorsTriggered.push("WEALTH_VOID");

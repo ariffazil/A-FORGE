@@ -33,9 +33,9 @@ export const TOOL_NAME_MAP: Record<string, string> = {
 
 /** Namespace routing map: which env var / default URL per namespace */
 export const NAMESPACE_DEFAULTS: Record<MCPNamespace, { env: string; default: string }> = {
-  arifos: { env: "ARIFOS_MCP_URL", default: "http://arifosmcp:8080" },
-  wealth: { env: "WEALTH_MCP_URL", default: "http://wealth:8082" },
-  geox: { env: "GEOX_MCP_URL", default: "http://geox:8081" },
+  arifos: { env: "ARIFOS_MCP_URL", default: "http://localhost:8088" },
+  wealth: { env: "WEALTH_MCP_URL", default: "http://localhost:18082" },
+  geox: { env: "GEOX_MCP_URL", default: "http://localhost:8081" },
 };
 
 /**
