@@ -1,4 +1,4 @@
-export { PersonalOS, createPersonalOS } from "./PersonalOS.js";
+export { PersonalOS, createPersonalOS, shutdownPersonalOS } from "./PersonalOS.js";
 export type {
   HumanCommand,
   HumanIntent,

@@ -463,5 +463,9 @@ export function getContinuityStore(): ContinuityStore {
 }
 
 export function resetContinuityStore(): void {
+  if (globalStore) {
+    globalStore.shutdown();
+  }
   globalStore = null;
 }
+
