@@ -238,20 +238,25 @@ async function main() {
   const fedTools = await discoverTools();
 
   console.log(`
-\x1b[38;5;196m${B}          ▲
-         ▲ ▲
-        ▲ ▲ ▲
-       ▲ ▲ ▲ ▲
-      ▲ ▲ ▲ ▲ ▲
-
-  DITEMPA BUKAN DIBERI
-    FORGED, NOT GIVEN${R}
-
-\x1b[38;5;240mConstitutional coding agent. Type a task — the engine plans, executes, and reports.
-F1-F13 govern every action. /help for commands. Ctrl+C to exit.${R}
-
-\x1b[38;5;196m▸${R} ${cfg.provider} · ${cfg.model}    \x1b[38;5;240m│${R}  \x1b[38;5;196m▸${R} ${cfg.agent} mode    \x1b[38;5;240m│${R}  \x1b[38;5;196m▸${R} ${fedTools.length} tools · ${FED_ORGANS.length} organs
-\x1b[38;5;196m▸${R} ${cfg.workdir}    \x1b[38;5;240m│${R}  \x1b[38;5;196m▸${R} F1-F13 enforced    \x1b[38;5;240m│${R}  \x1b[38;5;196m▸${R} ${sid}
+\x1b[38;5;240m┌──────────────────────────────────────────────────────┐\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}      ▲${R}                                          \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}     ▲ ▲${R}                                         \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}    ▲ ▲ ▲${R}                                        \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}   ▲ ▲ ▲ ▲${R}                                       \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}  ▲ ▲ ▲ ▲ ▲${R}                                      \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m                                                     \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}DITEMPA BUKAN DIBERI${R}                             \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;240mFORGED, NOT GIVEN${R}                                \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m                                                     \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;240mConstitutional coding agent — type a task,${R}         \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;240mthe engine plans, executes, and reports.${R}            \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;240mF1-F13 govern every action. Ctrl+C to exit.${R}         \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m                                                     \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m▸${R} ${cfg.provider} · ${cfg.model}\x1b[38;5;240m           │\x1b[0m  \x1b[38;5;196m▸${R} ${cfg.agent} mode                \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m▸${R} ${cfg.workdir}\x1b[38;5;240m  │\x1b[0m  \x1b[38;5;196m▸${R} F1-F13 enforced                \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m▸${R} ${fedTools.length} tools · ${FED_ORGANS.length} organs\x1b[38;5;240m           │\x1b[0m  \x1b[38;5;196m▸${R} ${sid}          \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m│\x1b[0m                                                     \x1b[38;5;240m│\x1b[0m
+\x1b[38;5;240m└──────────────────────────────────────────────────────┘${R}
 `);
 
   // ── Engine ───────────────────────────────────────────────────────
