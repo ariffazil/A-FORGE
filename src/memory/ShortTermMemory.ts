@@ -20,8 +20,8 @@ export class ShortTermMemory {
   private readonly archivePath?: string;
 
   constructor(options?: ShortTermMemoryOptions) {
-    this.maxMessages = options?.maxMessages ?? 5;
-    this.maxTokens = options?.maxTokens ?? 4096;
+    this.maxMessages = options?.maxMessages ?? 20;
+    this.maxTokens = options?.maxTokens ?? 16384;
     this.onEvict = options?.onEvict;
     this.archivePath = options?.archivePath;
   }

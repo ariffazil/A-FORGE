@@ -332,8 +332,8 @@ export class PipelineCoordinator {
   }> {
     const workingDirectory = resolveWorkingDirectory(options.workingDirectory);
     const shortTermMemory = new ShortTermMemory({
-      maxMessages: 5,
-      maxTokens: 4096,
+      maxMessages: 20,
+      maxTokens: 16384,
       archivePath: join(workingDirectory, ".arifos", "archive.jsonl"),
       onEvict: async (summary) => {
         try {

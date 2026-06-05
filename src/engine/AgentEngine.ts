@@ -100,8 +100,8 @@ export class AgentEngine {
     const workingDirectory = resolveWorkingDirectory(options.workingDirectory);
     // [P0] ShortTermMemory with sliding window and eviction bridge to LongTermMemory — 2026-05-05
     const shortTermMemory = new ShortTermMemory({
-      maxMessages: 5,
-      maxTokens: 4096,
+      maxMessages: 20,
+      maxTokens: 16384,
       archivePath: join(workingDirectory, ".arifos", "archive.jsonl"),
       onEvict: async (summary) => {
         try {
@@ -149,6 +149,51 @@ export class AgentEngine {
         (this.dependencies.featureFlags?.ENABLE_DANGEROUS_TOOLS ?? false),
       riskLevel,
     };
+
+    const floorsTriggered: string[] = [];
+
+    // === Pre-execution Governance Check (F3/F6/F9) ===
+    // Ask the Governance plane for permission before executing.
+    // If no external governance client is wired, fall back to local floors.
+    const governanceClient =
+      this.dependencies.governanceClient ??
+      new LocalGovernanceClient({ f3: adaptiveThresholds.f3 });
+
+    const governanceResult = await governanceClient.evaluate({
+      task: options.task,
+      sessionId,
+      intentModel,
+      riskLevel,
+    });
+
+    if (governanceResult.verdict !== "SEAL") {
+      floorsTriggered.push(...governanceResult.floorsTriggered);
+      const { finalText: sealedText, sealError } = await this.sealTerminal(
+        options,
+        sessionId,
+        `${governanceResult.verdict}: ${governanceResult.message ?? "Governance check blocked execution"}`,
+        0,
+        this.profile.name,
+        floorsTriggered,
+        permissionContext,
+        1,
+        startedAt,
+      );
+      return {
+        sessionId,
+        finalText: sealedText,
+        turnCount: 0,
+        totalEstimatedTokens: 0,
+        transcript: [],
+        metrics: this.buildEmptyMetrics(
+          options,
+          startedAt,
+          governanceResult.floorsTriggered[0] ?? "F1",
+          governanceResult.message ?? "Blocked by governance",
+          sealError,
+        ),
+      };
+    }
 
     // === Irreversibility pre-execution gate (F1 AMANAH) ===
     // When the task is classified as irreversible (CRITICAL risk or execution
@@ -293,51 +338,6 @@ export class AgentEngine {
           });
         }
       }
-    }
-
-    const floorsTriggered: string[] = [];
-
-    // === Pre-execution Governance Check (F3/F6/F9) ===
-    // Ask the Governance plane for permission before executing.
-    // If no external governance client is wired, fall back to local floors.
-    const governanceClient =
-      this.dependencies.governanceClient ??
-      new LocalGovernanceClient({ f3: adaptiveThresholds.f3 });
-
-    const governanceResult = await governanceClient.evaluate({
-      task: options.task,
-      sessionId,
-      intentModel,
-      riskLevel,
-    });
-
-    if (governanceResult.verdict !== "SEAL") {
-      floorsTriggered.push(...governanceResult.floorsTriggered);
-      const { finalText: sealedText, sealError } = await this.sealTerminal(
-        options,
-        sessionId,
-        `${governanceResult.verdict}: ${governanceResult.message ?? "Governance check blocked execution"}`,
-        0,
-        this.profile.name,
-        floorsTriggered,
-        permissionContext,
-        1,
-        startedAt,
-      );
-      return {
-        sessionId,
-        finalText: sealedText,
-        turnCount: 0,
-        totalEstimatedTokens: 0,
-        transcript: [],
-        metrics: this.buildEmptyMetrics(
-          options,
-          startedAt,
-          governanceResult.floorsTriggered[0] ?? "F1",
-          governanceResult.message ?? "Blocked by governance",
-          sealError,
-        ),
-      };
     }
 
     // === F10: Privacy Check (pre-execution) ===
