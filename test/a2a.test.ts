@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import type express from "express";
 import { createApp } from "../src/server.js";
+import { shutdownPersonalOS } from "../src/personal-v2/index.js";
+
 
 function listenOnce(app: express.Express): Promise<{ url: string; close: () => Promise<void> }> {
   return new Promise((resolve, reject) => {
@@ -43,6 +45,7 @@ test("A2A agent card exposes official 1.0 JSON-RPC interface", async () => {
     assert.equal(body.capabilities.pushNotifications, false);
   } finally {
     await close();
+    await shutdownPersonalOS();
   }
 });
 
@@ -127,6 +130,7 @@ test("A2A SendMessage returns a completed task and GetTask can retrieve it", asy
     assert.equal(getBody.result.history?.[0]?.role, "ROLE_AGENT");
   } finally {
     await close();
+    await shutdownPersonalOS();
   }
 });
 
@@ -187,5 +191,6 @@ test("A2A text requests default to think and completed tasks are not cancelable"
     assert.equal(cancelBody.error.data?.code, "TaskNotCancelableError");
   } finally {
     await close();
+    await shutdownPersonalOS();
   }
 });

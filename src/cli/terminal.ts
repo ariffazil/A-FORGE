@@ -206,14 +206,30 @@ async function discoverTools(): Promise<FedTool[]> {
 }
 
 // ── Profile builder ─────────────────────────────────────────────────
+function groupFedTools(fedTools: FedTool[]): string {
+  if (fedTools.length === 0) return "  (no federation tools — local only)";
+  const organs: Record<string, string[]> = {};
+  for (const t of fedTools) {
+    if (!organs[t.organ]) organs[t.organ] = [];
+    organs[t.organ].push(t.name);
+  }
+  return Object.entries(organs)
+    .map(([organ, names]) => {
+      const limit = 5;
+      const displayed = names.slice(0, limit).join(", ");
+      const extra = names.length > limit ? `, +${names.length - limit} more` : "";
+      return `  - ${organ} (${names.length} tools): ${displayed}${extra}`;
+    })
+    .join("\n");
+}
+
 function buildProfile(mode: TerminalConfig["agent"], workdir: string, fedTools: FedTool[]): AgentProfile {
   if (mode === "explore") return buildExploreProfile("external_safe_mode");
   const p = buildFixProfile("external_safe_mode");
   // Terminal mode: higher budget since human is in the loop paying attention
   p.budget = { tokenCeiling: 100_000, maxTurns: 50 };
-  const tl = fedTools.length > 0
-    ? fedTools.map(t => `  - ${t.name} (${t.organ})`).join("\n")
-    : "  (no federation tools — local only)";
+  const tl = groupFedTools(fedTools);
+
 
   p.systemPrompt = [
     p.systemPrompt, "",
