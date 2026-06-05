@@ -32,6 +32,14 @@
 **Polish (1 commit):**
 - Fire-palette ◬ pyramid terminal banner
 
+**Late-Session Repackage (4 commits):**
+- ShortTermMemory defaults: 5→20 messages, 4096→16384 tokens (practical headroom)
+- Full repo repackage: professional README, accurate ARCHITECTURE (150 files/16 modules), binding CONSTITUTION (4-layer forge gate), corrected INVARIANTS (8 live ports)
+- cn-organ port fix: 18790→18795, federation probe now 9/9 GREEN
+- Graceful shutdown: ContinuityStore.reset() + shutdownPersonalOS()
+- Terminal UX: groupFedTools() organ-grouped display (5 per organ + overflow)
+- Test hardening: shutdownPersonalOS() in all a2a test teardowns
+
 ---
 
 ## [v0.1.4] — 2026-05-22
