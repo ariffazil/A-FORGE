@@ -202,6 +202,7 @@ export class PersonalOS {
    */
   async shutdown(): Promise<void> {
     await this.continuity.shutdown();
+    this.approval.shutdown();
   }
 
   // ==========================================================================

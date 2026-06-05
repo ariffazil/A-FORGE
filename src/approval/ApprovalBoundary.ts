@@ -167,6 +167,7 @@ export class ApprovalBoundary {
   private executionHistory: ExecutionRecord[] = [];
   private storePath: string;
   private defaultExpiryHours = 24;
+  private expiryTimer: NodeJS.Timeout | null = null;
 
   constructor(options?: { storePath?: string; defaultExpiryHours?: number }) {
     this.storePath = options?.storePath ?? `${homedir()}/.arifos/approvals.json`;
@@ -510,7 +511,7 @@ export class ApprovalBoundary {
 
   private startExpiryCheck(): void {
     // Check for expired items every 5 minutes
-    setInterval(() => {
+    this.expiryTimer = setInterval(() => {
       const now = new Date().toISOString();
       let changed = false;
       
@@ -527,6 +528,13 @@ export class ApprovalBoundary {
         this.persistState();
       }
     }, 5 * 60 * 1000);
+  }
+
+  shutdown(): void {
+    if (this.expiryTimer) {
+      clearInterval(this.expiryTimer);
+      this.expiryTimer = null;
+    }
   }
 
   private assessRisk(preview: Omit<ActionPreview, "riskAssessment">): ActionPreview["riskAssessment"]["level"] {
