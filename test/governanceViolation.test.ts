@@ -47,6 +47,7 @@ test("F3: Input Clarity floor blocks empty input", async () => {
     workingDirectory: root,
   });
 
-  assert.match(result.finalText, /SABAR: Task is empty/);
+  // F3 witness check fires before F3 clarity — both block empty input
+  assert.match(result.finalText, /SABAR: (Task is empty|Empty input received)/);
   assert.match(result.metrics.errorMessage ?? "", /Blocked by F3/);
 });
