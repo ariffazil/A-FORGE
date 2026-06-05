@@ -12,6 +12,7 @@
  */
 
 import { execSync } from "node:child_process";
+import { readFileSync, existsSync } from "node:fs";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -72,7 +73,51 @@ const HUMAN_ACK_TRIGGERS = [
 
 // ── Spine reader ─────────────────────────────────────────────────────────────
 
+let cachedCard: ModelGovernanceCard | null = null;
+
 export function readGovernanceCard(): ModelGovernanceCard | null {
+  if (cachedCard) {
+    return cachedCard;
+  }
+
+  // 1. Fast path: Direct read from the canonical registry path
+  const canonicalPath = "/root/arifos-model-registry/runtime_profiles/vps_main_arifos.json";
+  if (existsSync(canonicalPath)) {
+    try {
+      const raw = readFileSync(canonicalPath, "utf-8");
+      const spine = JSON.parse(raw);
+      cachedCard = {
+        model_anchor: {
+          provider_key: spine.provider_key,
+          family_key: spine.family_key,
+          model_variant: spine.model_id,
+          identity_verified: true,
+        },
+        runtime_truth: {
+          tools: spine.tools_live || [],
+          execution_mode: spine.execution_mode,
+          side_effects_allowed: spine.side_effects_allowed,
+        },
+        risk_leash: {
+          risk_tier: "bounded",
+          requires_human_ack_for: [
+            "irreversible_delete",
+            "git_push",
+            "external_relay",
+            "vault_seal",
+          ],
+        },
+        drift_state: "GREEN",
+        capabilities: spine.capabilities,
+        model_cascade: spine.model_cascade,
+      };
+      return cachedCard;
+    } catch (e) {
+      // Direct read failed (e.g. malformed JSON), fall back to python call
+    }
+  }
+
+  // 2. Fallback path: Python execSync with increased timeout (10s)
   try {
     const json = execSync(
       `python3 -c "
@@ -80,10 +125,10 @@ import json
 from arifosmcp.runtime.registry import RUNTIME_PATH
 print(json.dumps(json.load(open(RUNTIME_PATH / 'vps_main_arifos.json'))))
 "`,
-      { encoding: "utf-8", timeout: 3000, cwd: "/root/arifOS" }
+      { encoding: "utf-8", timeout: 10000, cwd: "/root/arifOS" }
     );
     const spine = JSON.parse(json);
-    return {
+    cachedCard = {
       model_anchor: {
         provider_key: spine.provider_key,
         family_key: spine.family_key,
@@ -108,37 +153,38 @@ print(json.dumps(json.load(open(RUNTIME_PATH / 'vps_main_arifos.json'))))
       capabilities: spine.capabilities,
       model_cascade: spine.model_cascade,
     };
+    return cachedCard;
   } catch {
-  // No spine — check for terminal override (env var)
-  // In terminal mode, the human IS the gate — no registry needed
-  if (process.env.AFORGE_TERMINAL_MODE === "1") {
-    return {
-      model_anchor: {
-        provider_key: "aforge",
-        family_key: "terminal",
-        model_variant: "operator",
-        identity_verified: false,
-      },
-      runtime_truth: {
-        tools: ["read", "write", "edit", "shell", "search"],
-        execution_mode: "governed",
-        side_effects_allowed: false,
-      },
-      risk_leash: {
-        risk_tier: "bounded",
-        requires_human_ack_for: ["irreversible_delete", "git_push", "vault_seal"],
-      },
-      drift_state: "GREEN",
-      capabilities: {
-        supports_tools: true,
-        supports_web: false,
-        supports_files: true,
-        has_memory: false,
-      },
-    };
-  }
-
-  return null;
+    // No spine — check for terminal override (env var)
+    // In terminal mode, the human IS the gate — no registry needed
+    if (process.env.AFORGE_TERMINAL_MODE === "1") {
+      cachedCard = {
+        model_anchor: {
+          provider_key: "aforge",
+          family_key: "terminal",
+          model_variant: "operator",
+          identity_verified: false,
+        },
+        runtime_truth: {
+          tools: ["read", "write", "edit", "shell", "search"],
+          execution_mode: "governed",
+          side_effects_allowed: false,
+        },
+        risk_leash: {
+          risk_tier: "bounded",
+          requires_human_ack_for: ["irreversible_delete", "git_push", "vault_seal"],
+        },
+        drift_state: "GREEN",
+        capabilities: {
+          supports_tools: true,
+          supports_web: false,
+          supports_files: true,
+          has_memory: false,
+        },
+      };
+      return cachedCard;
+    }
+    return null;
   }
 }
 

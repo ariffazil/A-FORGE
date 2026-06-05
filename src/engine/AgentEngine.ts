@@ -151,12 +151,15 @@ export class AgentEngine {
     };
 
     // === Irreversibility pre-execution gate (F1 AMANAH) ===
-    // When the task is classified as irreversible, explicit human acknowledgment
-    // is required before execution proceeds. Without it, execution is blocked.
+    // When the task is classified as irreversible (CRITICAL risk or execution
+    // intent), explicit human acknowledgment is required before execution
+    // proceeds. Domain floors (F3 clarity, F6 empathy, F9 anti-hantu) run
+    // AFTER F1 so they can produce specific error messages.
+    // Advisory/internal_mode tasks are NOT classified as irreversible;
+    // they pass through to domain-floor checks.
     const isIrreversible = (
       riskLevel === "critical" ||
-      options.intentModel === "execution" ||
-      this.profile.modeName === "internal_mode"
+      options.intentModel === "execution"
     );
     if (isIrreversible && !options.ackIrreversible) {
       process.stderr.write(

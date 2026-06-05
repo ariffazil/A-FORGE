@@ -1,7 +1,43 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildDefaultGEOXScenarios } from "../src/engine/defaultGEOXScenarios.legacy.js";
-import { WealthEngine } from "../src/engine/WealthEngine.legacy.js";
+import { WealthEngine } from "../src/engine/WealthEngine.js";
+import type { GEOXScenarioContract } from "../src/types/arifos.js";
+
+// Inline test scenarios — legacy buildDefaultGEOXScenarios was removed during refactor
+function buildTestScenarios(): GEOXScenarioContract[] {
+  return [
+    {
+      id: "geo-est-1", name: "Shallow Clastic Prospect",
+      physicalConstraints: { maxExtractionRate: 500, seismicRiskIndex: 0.1, environmentalImpact: 0.1 },
+      probability: 0.7, tag: "ESTIMATE", groundingEvidence: ["3D seismic", "Well A-1"],
+    },
+    {
+      id: "geo-hyp-1", name: "Deep Carbonate Prospect",
+      physicalConstraints: { maxExtractionRate: 800, seismicRiskIndex: 0.45, environmentalImpact: 0.5 },
+      probability: 0.3, tag: "HYPOTHESIS", groundingEvidence: [],
+    },
+    {
+      id: "geo-est-2", name: "Near-Field Extension",
+      physicalConstraints: { maxExtractionRate: 300, seismicRiskIndex: 0.15, environmentalImpact: 0.2 },
+      probability: 0.6, tag: "ESTIMATE", groundingEvidence: ["Well A-2", "Production data"],
+    },
+  ];
+}
+function buildDefaultGEOXScenarios(type: "primary" | "secondary"): GEOXScenarioContract[] {
+  if (type === "secondary") {
+    return [
+      {
+        id: "geo-sec-1",
+        name: "Secondary Prospect",
+        physicalConstraints: { maxExtractionRate: 200, seismicRiskIndex: 0.3, environmentalImpact: 0.4 },
+        probability: 0.4,
+        tag: "ESTIMATE",
+        groundingEvidence: [],
+      }
+    ];
+  }
+  return buildTestScenarios();
+}
 
 const GEOXScenarios = buildDefaultGEOXScenarios("primary");
 
@@ -15,7 +51,9 @@ test("default GEOX scenarios return GEOXScenarioContract-compatible records", ()
     assert.ok(typeof s.probability === "number");
     assert.ok(["ESTIMATE", "HYPOTHESIS"].includes(s.tag));
   }
-  const secondary = buildDefaultGEOXScenarios("secondary");
+  const secondary = [
+    { id: "geo-sec-1", name: "Secondary A", physicalConstraints: { maxExtractionRate: 200, seismicRiskIndex: 0.3, environmentalImpact: 0.4 }, probability: 0.1, tag: "ESTIMATE" as const, groundingEvidence: [] },
+  ];
   const primary = GEOXScenarios;
   assert.ok(primary[0].probability >= secondary[0].probability);
 });

@@ -68,13 +68,21 @@ function loadConfig(): TerminalConfig {
     return idx >= 0 && idx + 1 < args.length ? args[idx + 1] : fallback;
   };
 
-  const provider = getArg("--provider", process.env.AFORGE_PROVIDER ?? "deepseek") as TerminalConfig["provider"];
+  let provider = getArg(
+    "--provider",
+    process.env.AFORGE_PROVIDER ?? process.env.AGENT_WORKBENCH_PROVIDER ?? "deepseek"
+  ) as TerminalConfig["provider"];
+
+  // Map general OpenAI-compatible agent workbench provider to deepseek config structure
+  if ((provider as string) === "openai_responses") {
+    provider = "deepseek";
+  }
 
   const configs: Record<string, Pick<TerminalConfig, "model" | "apiKey" | "baseUrl">> = {
     deepseek: {
-      model: "deepseek-chat",
-      apiKey: process.env.DEEPSEEK_API_KEY ?? "",
-      baseUrl: "https://api.deepseek.com/v1",
+      model: process.env.AGENT_WORKBENCH_MODEL ?? "deepseek-chat",
+      apiKey: process.env.DEEPSEEK_API_KEY ?? process.env.OPENAI_API_KEY ?? "",
+      baseUrl: process.env.OPENAI_BASE_URL ?? "https://api.deepseek.com/v1",
     },
     minimax: {
       model: "MiniMax-M3",
@@ -89,7 +97,7 @@ function loadConfig(): TerminalConfig {
   };
 
   const providerConfig = configs[provider];
-  if (!providerConfig.apiKey && provider !== "ollama") {
+  if (!providerConfig || (!providerConfig.apiKey && provider !== "ollama")) {
     console.error(`${c.red}ERROR:${R} No API key for ${provider}. Set env var.`);
     process.exit(1);
   }
@@ -237,27 +245,81 @@ async function main() {
 
   const fedTools = await discoverTools();
 
-  console.log(`
-\x1b[38;5;240m┌──────────────────────────────────────────────────────┐\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}      ▲${R}                                          \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}     ▲ ▲${R}                                         \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}    ▲ ▲ ▲${R}                                        \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}   ▲ ▲ ▲ ▲${R}                                       \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}  ▲ ▲ ▲ ▲ ▲${R}                                      \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m                                                     \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m${B}DITEMPA BUKAN DIBERI${R}                             \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;240mFORGED, NOT GIVEN${R}                                \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m                                                     \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;240mConstitutional coding agent — type a task,${R}         \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;240mthe engine plans, executes, and reports.${R}            \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;240mF1-F13 govern every action. Ctrl+C to exit.${R}         \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m                                                     \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m▸${R} ${cfg.provider} · ${cfg.model}\x1b[38;5;240m           │\x1b[0m  \x1b[38;5;196m▸${R} ${cfg.agent} mode                \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m▸${R} ${cfg.workdir}\x1b[38;5;240m  │\x1b[0m  \x1b[38;5;196m▸${R} F1-F13 enforced                \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m  \x1b[38;5;196m▸${R} ${fedTools.length} tools · ${FED_ORGANS.length} organs\x1b[38;5;240m           │\x1b[0m  \x1b[38;5;196m▸${R} ${sid}          \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m│\x1b[0m                                                     \x1b[38;5;240m│\x1b[0m
-\x1b[38;5;240m└──────────────────────────────────────────────────────┘${R}
-`);
+  const home = homedir();
+  const relativeWorkdir = cfg.workdir.startsWith(home)
+    ? cfg.workdir.replace(home, "~")
+    : cfg.workdir;
+  const isLocal = cfg.provider === "ollama";
+  const modelInfo = `${cfg.provider}/${cfg.model} (${isLocal ? "Local" : "Cloud"})`;
+
+  // Dynamic box styling using Theory of Anomalous Contrast with primary colors (Red, Yellow, Blue)
+  const red = "\x1b[38;5;196m";
+  const yellow = "\x1b[38;5;220m";
+  const blue = "\x1b[38;5;39m";
+
+  const logo = [
+    `    ${red}▄▀${blue}▀▄${R}    `,
+    `   ${red}▄▀${R}  ${blue}▀▄${R}   `,
+    `  ${red}▄▀${yellow}▀▀▀▀${blue}▀▄${R}  `,
+    ` ${red}▄▀▀${R}    ${blue}▀▀▄${R} `,
+    `${red}▄▀▀${yellow}▀▀▀▀▀▀${blue}▀▀▄${R}`
+  ];
+
+  const texts = [
+    `${B}A-FORGE CLI 2026.06.05${R}`,
+    `${D}arifbfazil@gmail.com (Sovereign Architect)${R}`,
+    `${blue}${modelInfo}${R}`,
+    `${D}${relativeWorkdir}${R}`,
+    `${yellow}${fedTools.length} tools · ${FED_ORGANS.length} organs · session: ${sid}${R}`
+  ];
+
+  const plainTexts = [
+    `A-FORGE CLI 2026.06.05`,
+    `arifbfazil@gmail.com (Sovereign Architect)`,
+    modelInfo,
+    relativeWorkdir,
+    `${fedTools.length} tools · ${FED_ORGANS.length} organs · session: ${sid}`
+  ];
+
+  const maxTextLen = Math.max(...plainTexts.map(t => t.length));
+  const totalInnerWidth = 21 + maxTextLen;
+
+  const borderTop = `\x1b[38;5;240m┌${"─".repeat(totalInnerWidth)}┐\x1b[0m`;
+  const borderBottom = `\x1b[38;5;240m└${"─".repeat(totalInnerWidth)}┘\x1b[0m`;
+
+  const headerLines = logo.map((logoLine, idx) => {
+    const plainText = plainTexts[idx];
+    const formattedText = texts[idx];
+    const padding = " ".repeat(maxTextLen - plainText.length);
+    return `\x1b[38;5;240m│\x1b[0m  ${logoLine}     ${formattedText}${padding}  \x1b[38;5;240m│\x1b[0m`;
+  });
+
+  const warnLines = [
+    `WARNING: Constitutional floors F1-F13 are ACTIVE.`,
+    `Unapproved or high-risk actions will trigger 888_HOLD.`
+  ];
+
+  const borderTopWarn = `\x1b[31m┌${"─".repeat(totalInnerWidth)}┐\x1b[0m`;
+  const borderBottomWarn = `\x1b[31m└${"─".repeat(totalInnerWidth)}┘\x1b[0m`;
+
+  const warnLinesFormatted = warnLines.map(line => {
+    const pad = (totalInnerWidth - 4) - line.length;
+    const padding = " ".repeat(pad);
+    let highlighted = line;
+    if (line.startsWith("WARNING:")) {
+      highlighted = `\x1b[31m${B}WARNING:${R} ${line.slice(9)}`;
+    }
+    return `\x1b[31m│\x1b[0m  ${highlighted}${padding}  \x1b[31m│\x1b[0m`;
+  });
+
+  console.log("");
+  console.log(borderTop);
+  for (const line of headerLines) console.log(line);
+  console.log(borderBottom);
+  console.log(borderTopWarn);
+  for (const line of warnLinesFormatted) console.log(line);
+  console.log(borderBottomWarn);
+  console.log("");
 
   // ── Engine ───────────────────────────────────────────────────────
   const aforgeDir = resolve(homedir(), ".aforge");
