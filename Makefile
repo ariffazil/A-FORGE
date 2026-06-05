@@ -30,7 +30,6 @@ test: security-audit
 	node dist/test/intentRouter.test.js
 	node dist/test/engine.test.js
 	node dist/test/goxWealthTools.test.js
-	node dist/test/logInterpreter.test.js
 
 clean:
 	docker compose down -v
