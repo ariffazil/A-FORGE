@@ -8,7 +8,6 @@ import { GrepTextTool } from "./tools/SearchTools.js";
 import { RunCommandTool, RunTestsTool } from "./tools/ShellTools.js";
 import { WEALTH_TOOLS } from "./tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "./tools/MiniMaxTools.js";
-import { AgentZeroDelegateTool, AgentZeroBrowserTool, AgentZeroDocumentTool } from "./tools/AgentZeroTool.js";
 import { GEOXLogInterpreterBridge } from "./bridges/geoxBridge.js";
 import { LongTermMemory } from "./memory/LongTermMemory.js";
 import { createLlmProvider } from "./llm/providerFactory.js";
@@ -38,9 +37,6 @@ function buildToolRegistry(): ToolRegistry {
   for (const ToolClass of WEALTH_TOOLS) registry.register(new ToolClass());
   registry.register(new MiniMaxWebSearchTool());
   registry.register(new MiniMaxUnderstandImageTool());
-  registry.register(new AgentZeroDelegateTool());
-  registry.register(new AgentZeroBrowserTool());
-  registry.register(new AgentZeroDocumentTool());
   return registry;
 }
 
