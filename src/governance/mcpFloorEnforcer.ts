@@ -17,7 +17,7 @@
 
 import { randomUUID } from "node:crypto";
 import { checkAll, type Verdict } from "./FloorEnforcer.js";
-import type { ActionRequest, FloorContext, ActionCategory } from "../types/action-request.js";
+import type { ActionRequest, FloorContext, ActionCategory, EpistemicTier } from "../types/action-request.js";
 
 // ─── Action category classifier (tool_name → category) ────────────────
 
@@ -103,7 +103,7 @@ export function buildActionRequest(
   const a = args as Record<string, unknown>;
   const actor = (typeof a.actor_id === "string" && a.actor_id) || callerActor;
   const session = (typeof a.session_id === "string" && a.session_id) || callerSession;
-  const tier = tierOverride ?? (typeof a.tier === "number" ? a.tier : 3);
+  const tier = (tierOverride ?? (typeof a.tier === "number" ? a.tier : 3)) as EpistemicTier;
 
   return {
     action_id: randomUUID(),
