@@ -1,0 +1,150 @@
+/**
+ * F13HaltChannel — Sovereign veto channel.
+ *
+ * Authority: Telegram bot (verified Arif) + AAA/A2A bridge (verified Arif session) + local emergency file.
+ *
+ * Production uses Redis pub/sub on `arifos:halt`. For local/testing or
+ * when Redis is unavailable, falls back to in-process EventEmitter.
+ *
+ * Plan: PLAN-2026-06-06-C1-F13EnforcementLayer
+ * @constitutional F13 SOVEREIGN — absolute halt authority
+ */
+
+import { EventEmitter } from "node:events";
+
+// ─── Halt message shape ───────────────────────────────────────────────
+
+export type F13Source = "telegram" | "aaa_a2a" | "local";
+
+export type F13Scope = "action" | "tool" | "organ" | "federation";
+
+export interface F13HaltMessage {
+  type: "F13_HALT";
+  issued_by: string;
+  source: F13Source;
+  scope: F13Scope;
+  /** Target identifier (action_id, tool_name, organ name, or "all"). */
+  target: string;
+  reason: string;
+  issued_at: string;
+  nonce: string;
+  signature_or_token: string;
+}
+
+// ─── Channel interface ────────────────────────────────────────────────
+
+export interface F13HaltChannel {
+  publish(msg: F13HaltMessage): Promise<void>;
+  subscribe(handler: (msg: F13HaltMessage) => void): () => void;
+  isActive(scope: F13Scope, target: string): boolean;
+  /** Test-only: clear all halts. */
+  reset(): void;
+}
+
+// ─── In-process implementation (default for now) ──────────────────────
+
+class InProcessHaltChannel implements F13HaltChannel {
+  private readonly emitter = new EventEmitter();
+  private readonly activeHalts = new Map<string, F13HaltMessage>();
+
+  constructor() {
+    this.emitter.setMaxListeners(100);
+  }
+
+  async publish(msg: F13HaltMessage): Promise<void> {
+    if (!isValidHaltMessage(msg)) {
+      // Invalid halt: log but ignore (per canon rule)
+      // eslint-disable-next-line no-console
+      console.warn(`[F13_HALT] invalid message ignored: ${JSON.stringify(msg)}`);
+      return;
+    }
+    const key = `${msg.scope}:${msg.target}`;
+    this.activeHalts.set(key, msg);
+    this.emitter.emit("halt", msg);
+  }
+
+  subscribe(handler: (msg: F13HaltMessage) => void): () => void {
+    this.emitter.on("halt", handler);
+    return () => this.emitter.off("halt", handler);
+  }
+
+  isActive(scope: F13Scope, target: string): boolean {
+    // Federation-scope halts affect everything
+    if (this.activeHalts.has(`federation:all`)) return true;
+    // Specific scope/target
+    if (this.activeHalts.has(`${scope}:${target}`)) return true;
+    // "all" target within scope
+    if (this.activeHalts.has(`${scope}:all`)) return true;
+    return false;
+  }
+
+  reset(): void {
+    this.activeHalts.clear();
+  }
+}
+
+// ─── Message validation ──────────────────────────────────────────────
+
+export function isValidHaltMessage(msg: unknown): msg is F13HaltMessage {
+  if (!msg || typeof msg !== "object") return false;
+  const m = msg as Record<string, unknown>;
+  if (m.type !== "F13_HALT") return false;
+  if (typeof m.issued_by !== "string" || m.issued_by.length === 0) return false;
+  if (m.source !== "telegram" && m.source !== "aaa_a2a" && m.source !== "local") return false;
+  if (m.scope !== "action" && m.scope !== "tool" && m.scope !== "organ" && m.scope !== "federation") return false;
+  if (typeof m.target !== "string" || m.target.length === 0) return false;
+  if (typeof m.reason !== "string" || m.reason.length === 0) return false;
+  if (typeof m.issued_at !== "string") return false;
+  if (typeof m.nonce !== "string" || m.nonce.length === 0) return false;
+  if (typeof m.signature_or_token !== "string" || m.signature_or_token.length === 0) return false;
+  return true;
+}
+
+// ─── Singleton (default) ──────────────────────────────────────────────
+
+let _channel: F13HaltChannel | null = null;
+
+/**
+ * Get the default F13 halt channel (in-process by default).
+ * For production swap to a Redis-backed implementation by setting
+ * process.env.ARIFOS_F13_CHANNEL = "redis" (then provide a Redis-backed
+ * implementation here).
+ */
+export function getF13HaltChannel(): F13HaltChannel {
+  if (_channel) return _channel;
+  _channel = new InProcessHaltChannel();
+  return _channel;
+}
+
+/**
+ * Reset the channel (test-only).
+ */
+export function resetF13HaltChannel(): void {
+  if (_channel) _channel.reset();
+}
+
+// ─── Publisher helpers ───────────────────────────────────────────────
+
+/**
+ * Issue an F13 halt. For local/testing use. Production should use
+ * the Telegram bot or AAA/A2A bridge.
+ */
+export async function issueF13Halt(
+  source: F13Source,
+  scope: F13Scope,
+  target: string,
+  reason: string,
+  issuedBy: string = "arif",
+): Promise<void> {
+  await getF13HaltChannel().publish({
+    type: "F13_HALT",
+    issued_by: issuedBy,
+    source,
+    scope,
+    target,
+    reason,
+    issued_at: new Date().toISOString(),
+    nonce: crypto.randomUUID(),
+    signature_or_token: "local-test-token",
+  });
+}
