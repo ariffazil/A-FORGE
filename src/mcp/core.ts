@@ -26,7 +26,6 @@ import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "../appr
 import { WEALTH_TOOLS } from "../tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../tools/MiniMaxTools.js";
 import { getMiniMaxClient } from "../tools/MiniMaxMcpClient.js";
-import { AgentZeroDelegateTool, AgentZeroBrowserTool, AgentZeroDocumentTool } from "../tools/AgentZeroTool.js";
 import { registerCoreResources } from "./resources.js";
 import { callMCP } from "./client.js";
 
