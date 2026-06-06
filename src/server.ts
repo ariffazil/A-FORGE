@@ -510,6 +510,9 @@ app.get("/health", (_req: Request, res: Response) => {
           ? ["identity_present", "service_healthy"]
           : ["identity_missing"],
     },
+    // Canonical 7-field health schema (federation convention).
+    // A-FORGE does not adjudicate; final authority is always ARIF.
+    final_authority: "ARIF",
   });
 });
 
