@@ -15,13 +15,24 @@
 
 ## What Is A-FORGE?
 
-A-FORGE is the **execution body** of the [arifOS Federation](https://github.com/ariffazil/arifOS). It is not a general-purpose agent framework. It is a governed runtime that applies constitutional law (F1–F13) at every execution boundary.
+A-FORGE is the **execution body** of the [arifOS Federation](https://github.com/ariffazil/arifOS). It is not a general-purpose agent framework. It is a governed runtime that applies constitutional law (L1–L13) at every execution boundary.
 
 ```
 arifOS  = constitutional kernel  → can it be done?
 AAA     = control plane          → what should be done?  
 A-FORGE = execution shell        → do it, safely, with evidence
 ```
+
+### Constitutional Boundary (Critical)
+
+> **A-FORGE NEVER computes constitutional verdicts.** It ONLY verifies the cryptographic proof of a verdict issued by arifOS.
+
+- The constitutional judge lives in  (port 8088).
+- A-FORGE has a  middleware that verifies, never invents.
+-  calls from A-FORGE are proxied to arifOS kernel (see commit `18b6187`).
+- No  enum exists in A-FORGE `src/`. If you need a verdict, ask arifOS.
+
+**Do not add verdict logic to A-FORGE.** Doing so creates a second constitutional kernel and breaks the doctrine (one kernel, one constitution).
 
 ### The Forge Gate
 
@@ -43,7 +54,7 @@ A-FORGE cannot self-authorize. Every forge requires `JUDGE_SEAL_AUTHORIZATION` f
 ```
 ┌────────────────────────────────────────────┐
 │                arifOS (judge)              │
-│    F1–F13 · SEAL/SABAR/VOID · VAULT999     │
+│    L1–L13 · SEAL/SABAR/VOID · VAULT999     │
 └────────────────┬───────────────────────────┘
                  │ JUDGE_SEAL_AUTHORIZATION
                  ▼
@@ -158,7 +169,7 @@ A-FORGE is one of **7 organs** in the arifOS Federation, running on VPS `af-forg
 
 | Organ | Repository | Role | Port |
 |-------|-----------|------|------|
-| **arifOS** | [ariffazil/arifOS](https://github.com/ariffazil/arifOS) | Constitutional Kernel · F1–F13 | 8088 |
+| **arifOS** | [ariffazil/arifOS](https://github.com/ariffazil/arifOS) | Constitutional Kernel · L1–L13 | 8088 |
 | **A-FORGE** | [ariffazil/A-FORGE](https://github.com/ariffazil/A-FORGE) | Execution Shell | 7071 |
 | **AAA** | [ariffazil/AAA](https://github.com/ariffazil/AAA) | Control Plane · Cockpit | 3001 |
 | **GEOX** | [ariffazil/geox](https://github.com/ariffazil/geox) | Earth Intelligence | 8081 |
@@ -166,7 +177,7 @@ A-FORGE is one of **7 organs** in the arifOS Federation, running on VPS `af-forg
 | **WELL** | [ariffazil/well](https://github.com/ariffazil/well) | Human Readiness | 18083 |
 | **arif-sites** | [ariffazil/arif-sites](https://github.com/ariffazil/arif-sites) | Public Surfaces | 443 |
 
-> **Constitutional authority:** F1–F13 floors, 888_JUDGE, and VAULT999 live in [ariffazil/arifOS](https://github.com/ariffazil/arifOS).
+> **Constitutional authority:** L1–L13 floors, 888_JUDGE, and VAULT999 live in [ariffazil/arifOS](https://github.com/ariffazil/arifOS).
 > **Live status:** See [FEDERATION_STATUS.md](https://github.com/ariffazil/arifOS/blob/main/FEDERATION_STATUS.md).
 
 ---
