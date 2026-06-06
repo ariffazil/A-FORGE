@@ -6,6 +6,33 @@
 
 ---
 
+## Naming Bridge (Floors ≡ Laws)
+
+Per A-FORGE/AGENTS.md and arifOS canon, F1–F13 in A-FORGE code = L01–L13 in arifOS constitution.
+
+| A-FORGE code | arifOS canon | Meaning |
+|---|---|---|
+| F1 AMANAH | L01 | Integrity, reversibility, blast radius, stewardship |
+| F2 TRUTH | L02 | Uncertainty, evidence, epistemic tier |
+| F3 WITNESS | L03 | Consensus / composite |
+| F4 CLARITY | L04 | Intent + expected outcome |
+| F5 PEACE² | L05 | Non-destructive stability |
+| F6 EMPATHY | L06 | Stakeholder impact |
+| F7 HUMILITY | L07 | Uncertainty declaration |
+| F8 GENIUS | L08 | Composite correctness |
+| F9 ANTIHANTU | L09 | Refuse sentience/consciousness claim |
+| F10 ONTOLOGY | L10 | Schema and category integrity |
+| F11 AUTH | L11 | Actor/session authority |
+| F12 INJECTION | L12 | Refuse poisoned input |
+| F13 SOVEREIGN | L13 | Absolute halt authority |
+
+**Operator one-liner for agents:**
+> "13 Constitutional Floors (Laws F1–F13) must pass before any serious action."
+
+The arifOS PyPI package and constitution doc use L01–L13 (the post-rename canonical name). A-FORGE code keeps F1–F13 to avoid forced rename of 100+ files (drift avoidance). When communicating with agents, paraphrase as either "floors" or "laws" — both refer to the same canon.
+
+---
+
 ## TL;DR
 
 Every consequential action in arifOS now passes through **one** dispatcher: `FloorEnforcer.checkAll(action, context)`. It runs F1–F13 in priority order, composes the verdict, and returns `SEAL | CAUTION | HOLD | VOID`. The verdict is final — no parallel gates, no overrides.
