@@ -3,8 +3,13 @@
  *
  * Single source of truth for all MCP components.
  *
+ * Every tool call passes through FloorEnforcer.checkAll() before reaching
+ * the handler. Tools cannot be registered without being wrapped. This makes
+ * F1–F13 enforcement constitutionally unavoidable at the MCP ingress.
+ *
  * @module mcp/core
  * @constitutional F1 Amanah — no irreversible action without VAULT999 seal
+ * @constitutional C1 — FloorEnforcer wrapper makes F1-F13 gating unavoidable
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -28,11 +33,56 @@ import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../tools/MiniM
 import { getMiniMaxClient } from "../tools/MiniMaxMcpClient.js";
 import { registerCoreResources } from "./resources.js";
 import { callMCP } from "./client.js";
+import { enforceMcpFloor, floorErrorResponse } from "../governance/mcpFloorEnforcer.js";
 
 export const server = new McpServer({
   name: "A-FORGE",
   version: "0.1.0",
 });
+
+// ── C1 Phase 1: Wrap server.tool so every registration is auto-gated ─
+//
+// Every call to server.tool(name, desc, schema, handler) is intercepted
+// and the handler is replaced with a FloorEnforcer-gated version.
+// New tools added later are automatically wrapped — no bypass possible.
+// This is the F1–F13 enforcement chokepoint for MCP ingress.
+
+const _originalTool = server.tool.bind(server);
+(server as any).tool = function (
+  name: string,
+  description: string,
+  schema: any,
+  handler: (args: any, ctx: any) => Promise<any>,
+) {
+  const wrappedHandler = async (args: any, ctx: any) => {
+    const argsObj = (args && typeof args === "object") ? args : {};
+    const verdict = enforceMcpFloor(name, argsObj);
+    if (!verdict.allowed) {
+      // FloorEnforcer refused: return MCP error response, do NOT call handler
+      return floorErrorResponse(verdict);
+    }
+    // FloorEnforcer approved (SEAL or CAUTION): call the original handler
+    return await handler(args, ctx);
+  };
+  return _originalTool(name, description, schema, wrappedHandler);
+};
+// Also wrap server.registerTool (used by some tool registrations)
+const _originalRegisterTool = server.registerTool.bind(server);
+(server as any).registerTool = function (
+  name: string,
+  options: any,
+  handler: (args: any, ctx: any) => Promise<any>,
+) {
+  const wrappedHandler = async (args: any, ctx: any) => {
+    const argsObj = (args && typeof args === "object") ? args : {};
+    const verdict = enforceMcpFloor(name, argsObj);
+    if (!verdict.allowed) {
+      return floorErrorResponse(verdict);
+    }
+    return await handler(args, ctx);
+  };
+  return _originalRegisterTool(name, options, wrappedHandler);
+};
 
 const approvalBoundary = getApprovalBoundary();
 const memoryContract = getMemoryContract();
