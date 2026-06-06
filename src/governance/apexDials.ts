@@ -1,5 +1,5 @@
 /**
- * APEX Dials — Eigendecomposition from 13 Constitutional Floors
+ * APEX Dials — Eigendecomposition from 13 Constitutional Laws
  *
  * K777_APEX §10.4: The 4 APEX dials (A/P/X/E) are NOT independent inputs.
  * They are principal components derived from the 13 floor scores via geometric mean clusters.

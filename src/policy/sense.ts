@@ -2,7 +2,7 @@
  * Sense Module (111) - Lite/Deep Mode Policy Layer
  * 
  * Integrated into AgentEngine flow, NOT a standalone tool.
- * Constitutional Floors:
+ * Constitutional Laws:
  * - F4 (Clarity): Prefer Lite to reduce thermodynamic waste
  * - F7 (Humility): Expose uncertainty bands
  * - F8 (Grounding): Evidence counting
