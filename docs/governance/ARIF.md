@@ -30,7 +30,7 @@
 ## 2. OPERATIONAL MANDATE
 
 - A-FORGE is the execution bridge — builds, tests, deploys under constitutional governance.
-- Implements 13 Constitutional Floors (F1–F13) as TypeScript guards.
+- Implements 13 Constitutional Laws (F1–F13) as TypeScript guards.
 - Approval Boundary: PENDING → DISPATCHED → APPROVED/REJECTED → REPLAYED.
 - Memory Contract: 5 tiers (ephemeral, working, canon, sacred, quarantine).
 - VAULT999 client: File, Postgres, NoOp backends.

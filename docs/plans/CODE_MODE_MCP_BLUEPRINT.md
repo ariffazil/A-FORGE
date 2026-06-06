@@ -211,7 +211,7 @@ if (call.toolName === "execute_code_mode") {
 5. **Resource Caps**: 30s timeout, 128MB RAM, 1 vCPU
 6. **F12 Injection Check**: Scan script for prompt injection patterns before execution
 
-### 4.2 Constitutional Floors for Code Mode
+### 4.2 Constitutional Laws for Code Mode
 
 | Floor | Enforcement Point |
 |-------|------------------|
