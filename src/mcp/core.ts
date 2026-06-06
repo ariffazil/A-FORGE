@@ -81,7 +81,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
     }
     return await handler(args, ctx);
   };
-  return _originalRegisterTool(name, options, wrappedHandler);
+  return _originalRegisterTool(name, options, wrappedHandler as any);
 };
 
 const approvalBoundary = getApprovalBoundary();
