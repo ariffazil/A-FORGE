@@ -16,7 +16,7 @@ This map defines the canonical hierarchy and metabolic links between all arifOS 
 **Path:** `/root/arifOS`  
 **Role:** The Sovereign Heart (Stage 888_JUDGE / 999_SEAL).  
 **Primary Engine:** FastMCP Unified Server (`server.py`).  
-**Law:** F1-F13 Constitutional Floors (`core/floors.py`).  
+**Law:** F1-F13 Constitutional Laws (`core/floors.py`).  
 **Registry:** Multi-organ tool aggregator (`arifosmcp/runtime/tools.py`).
 
 ---
