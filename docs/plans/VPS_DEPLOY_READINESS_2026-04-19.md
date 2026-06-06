@@ -186,7 +186,7 @@ curl -sf https://arif-fazil.com/health
 
 **Approval Method:**
 1. Check all boxes above
-2. Reply: `F13_APPROVED deploy 0f8698e to VPS`
+2. Reply: `L13_APPROVED deploy 0f8698e to VPS`
 3. Optionally provide: `--restart-container` flag if container restart is also authorized
 
 **Without F13 Approval:** Deployment is on **888_HOLD**. No action will be taken.
