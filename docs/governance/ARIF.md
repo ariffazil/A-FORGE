@@ -14,17 +14,18 @@
 - CONTAINER_ID: 2026-05-15
 - DOMAIN_ROLE: Execution Intelligence / Forge Engine — TypeScript agent runtime with constitutional governance, Planner/Executor/Verifier triad, governed memory, 888_HOLD sovereignty controls
 - STABILITY_CLASS: ACTIVE
-- VERSION: v2026.05.15-FORGED
+- VERSION: v2026.06.07-W3-EPOCH-ARCHITECTURE
 
 
 ## 1. CURRENT FOCUS (INSTRUCTION POINTER)
 
-- SABAR cooldown protocol deployed: `CoolingGate.ts` (12KB) with tri-witness, resource budgets, 72h default window. `/sabar/cooldown` endpoint live in `server.ts`.
-- DeepnShadow protocol: `HumanInteractionGuard.ts` + `protocols/deepnshadow.ts` — dignity-gated routing.
-- Personal OS v2: 6-verb human interface (remember, recall, track, think, hold, execute).
-- MCP server: 19 tool classes. HTTP bridge on port 7071. Prometheus metrics.
-- Container running `ghcr.io/ariffazil/a-forge:3159d22` — behind HEAD. Rebuild pending.
-- Tests: 7/7 pass (node:test). Build clean (TypeScript 5.8+, NodeNext).
+- **W3 Epoch Architecture forged** (FIQH Sprint 2): `src/types/epoch.ts` (Epoch, EpochEvent, EpochCheckpoint) + `src/governance/epochEngine.ts` (pure engine, 14 methods, hash-chained events) + `src/mcp/tools/arifos-epoch.ts` (8 internal MCP tools) + 10/10 tests + `docs/governance/W3_EPOCH_BLUEPRINT.md`. Branch `forge/w3-epoch-architecture-2026-06-07`.
+- **W11 spec delivered in parallel**: `docs/governance/W11_TEMPORAL_M3_LONG_HORIZON.md` — governed 12-hour M3 mission charter.
+- W2 still uncommitted on `forge/w2-planning-organ-2026-06-07` (NOT committed, NOT pushed).
+- W1 FloorEnforcer (C1) on `forge/c1-floor-enforcer-2026-06-06`: full verdict composition, awaiting main merge.
+- arifOS Python WorkflowEngine v0.1: forged 2026-06-07, 11/11 tests, plan-compatible with W2.
+- Internal `arifos_` tool count: 12 (workflow_compile, workflow_execute, plan_build, 8 epoch_*). Public 13 unchanged.
+
 
 
 ## 2. OPERATIONAL MANDATE
@@ -41,75 +42,73 @@
 
 ## 3. THE 999 SEAL (SESSION LOG)
 
-- 2026-05-15 | Omega + Claude | SABAR cooldown protocol (CoolingGate + tests + endpoint). DeepnShadow guard. Personal OS v2. Pushed to main. Container not yet rebuilt.
-- 2026-05-13 | OpenCode | DeepnShadow protocol migrated from standalone skill to internal routing. HumanInteractionGuard forged. ActionBadge TS errors fixed.
-- 2026-05-12 | OpenCode | GEOX artifacts cleaned from A-FORGE root (geox_*.py, pyproject, Dockerfile.unified). Causal Scene v2 extracted to geox.
-- 2026-04-23 | arifOS_bot | ARIF.md scaffolded — first metabolic kernel instance for A-FORGE. Gold Seal v1.0 published.
+- 2026-06-07 | Omega | W3 Epoch Architecture forged. 14-method EpochEngine, hash-chained event log, F13 halt machinery, checkpoints, 10/10 tests. W11 spec delivered. Build clean.
+- 2026-06-07 | Omega | W2 Planning Organ forged. Plan schema + PlanFactory + arifos_plan_build + 10/10 tests + blueprint. Build clean. Awaiting F13 to wire live.
+- 2026-05-15 | Omega + Claude | SABAR cooldown protocol. DeepnShadow guard. Personal OS v2. Pushed to main.
+- 2026-05-13 | OpenCode | DeepnShadow protocol migrated. HumanInteractionGuard forged.
+- 2026-05-12 | OpenCode | GEOX artifacts cleaned from A-FORGE root.
 
 
 ## 4. ACTIVE TOPOLOGY (MEMORY MAP)
 
 - CRITICAL_FILES:
-  - `src/server.ts` → HTTP Bridge (Express, port 7071). /sabar/cooldown, /sense, /governance/evaluate
-  - `src/engine/AgentEngine.ts` → Core execution loop with governance gates
-  - `src/governance/CoolingGate.ts` → SABAR cooldown protocol (tri-witness, resource budgets)
-  - `src/governance/` → F1-F13 floor implementations (f3InputClarity, f4Entropy, f6HarmDignity, f7Confidence, f9Injection, f11Coherence)
-  - `src/approval/` → Approval Boundary (TicketStore, ApprovalRouter)
+  - `src/server.ts` → HTTP Bridge (port 7071)
+  - `src/engine/AgentEngine.ts` → Core execution loop
+  - `src/governance/CoolingGate.ts` → SABAR cooldown
+  - `src/governance/FloorEnforcer.ts` → F1-F13 (on C1 branch)
+  - `src/governance/planFactory.ts` → **W2 Planning Organ** (this forge)
+  - `src/types/plan.ts` → **W2 Plan/Task/Edge/VetoPoint schemas** (this forge)
+  - `src/mcp/tools/arifos-plan-build.ts` → **W2 internal MCP tool** (this forge)
+  - `src/governance/epochEngine.ts` → **W3 Epoch Engine** (this forge)
+  - `src/types/epoch.ts` → **W3 Epoch/EpochEvent/EpochCheckpoint schemas** (this forge)
+  - `src/mcp/tools/arifos-epoch.ts` → **W3 internal MCP tools** (8 epoch_*, this forge)
+  - `src/approval/` → Approval Boundary
   - `src/memory-contract/` → 5-tier governed memory
   - `src/vault/` → VAULT999 client
   - `src/mcp/server.ts` → MCP stdio server (19 tool classes)
-  - `src/tools/` → BaseTool, ToolRegistry, File/Search/Shell/Editor tools
-
-- ENTRYPOINTS:
-  - `npm run build && node dist/src/server.js` → HTTP bridge
-  - `node dist/src/mcp/server.js` → MCP stdio server
-  - `make up` → Docker Compose stack
-
-- DATA_FLOWS:
-  - CLI → AgentEngine → LLM Provider → Tool Execution → Memory → Vault999
-  - arifOS JUDGE → A-FORGE forge_precheck → WELL coupled readiness → execute
 
 
 ## 5. INTERRUPTS & FAULTS (BLOCKERS)
 
-- SOFT_FRICTION: Container image behind HEAD. SABAR cooldown not in running container.
-- HARD_BLOCK: None. Build clean. 7/7 tests pass.
+- SOFT_FRICTION: W2 not yet merged to main; W1 FloorEnforcer (C1) not yet merged to main. arifOS WorkflowEngine v0.1 on feature branch.
+- HARD_BLOCK: None. Build clean. W2 10/10 tests pass. Pre-existing PlanValidator rot (uses deprecated PlanDAG/PlanNode) preserved with compat shims.
 
 
 ## 6. RECENT SCARS (W_scar)
 
-- [2026-05-15] → [SABAR cooldown protocol forged] → [CoolingGate.ts + tests + endpoint deployed to git, not yet in container]
-- [2026-05-12] → [GEOX artifacts co-located in A-FORGE root] → [Cleaned. Moved to geox repo. Root decluttered.]
-- [2026-04-21] → [A-FORGE not audited] → [Topology audit done 2026-05-15. All critical files mapped.]
+- [2026-06-07] → [W2 Planning Organ scaffolded on feature branch] → [Awaiting F13 ratify + merge]
+- [2026-05-15] → [SABAR cooldown protocol forged] → [Code in git, not yet in container]
+- [2026-05-12] → [GEOX artifacts co-located in A-FORGE root] → [Cleaned. Moved to geox.]
 
 
 ## 7. EXECUTION BUFFER (COMMANDS)
 
 | Command | Status | Context |
 |---------|--------|---------|
-| `npm run build` | ✅ | TypeScript → dist/ |
-| `npm test` | ✅ | 7/7 pass |
+| `npm run build` | ✅ | TypeScript → dist/ (clean with W2) |
+| `npm test` | ✅ | 7/7 pre-existing pass; W2 10/10 pass via `node --test dist/test/plan-factory.test.js` |
 | `make up` | ✅ | Docker Compose stack |
 | `node dist/src/server.js` | ✅ | HTTP bridge on 7071 |
 
 
 ## 8. PRIVILEGE ESCALATION (888 HOLD)
 
-- [Q]: Rebuild A-FORGE container to activate SABAR cooldown in production?
-- [CONTEXT]: Code committed + pushed. Container runs old image. Ω₀ = 0.2 (low uncertainty).
-- [Q]: Full 13-floor governance audit — are all stubs implemented?
-- [CONTEXT]: F2 (Truth), F10 (Privacy), F12 (Stewardship) are stubs. F1 enforced via gate, F5 outside governance dir. Ω₀ = 0.4 (medium — audit needed).
+- [Q]: Wire `arifos_plan_build` (W2) + `arifos_epoch_*` (W3) into live A-FORGE MCP? Requires F13 ratify + service reload.
+- [Q]: Merge W1 FloorEnforcer (C1) to main? Currently on `forge/c1-floor-enforcer-2026-06-06` branch.
+- [Q]: W2 + W3 state machine enforcement at runtime gate? F13 territory.
+- [Q]: F13 sovereign key generation for EpochEngine.f13_halt signature? F13 territory.
+- [Q]: W11 Temporal worker deployment (systemd vs Temporal vs cron)? Spec at `W11_TEMPORAL_M3_LONG_HORIZON.md`.
 
 
 ## 9. PIPELINE PREFETCH (NEXT MOVES)
 
-- [ ] Rebuild + push A-FORGE container → `docker compose up -d`
-- [ ] Implement F2, F10, F12 stubs
-- [ ] Wire SealService into AgentEngine (currently only plan-level validation)
-- [ ] Full topology audit of all 19 tool classes
-
+- [ ] F13 ratify + merge W2 + W3 branches to main
+- [ ] Wire 9 `arifos_*` tools (3 W2 + 6 W3 epoch_*) into live A-FORGE FastMCP
+- [ ] Merge C1 FloorEnforcer to main (foundational W1)
+- [ ] Begin Sprint 3: W6, W8, W10, W11 (per FIQH sprint order)
+- [ ] Generate F13 sovereign key for EpochEngine.f13_halt signature
+- [ ] W2 v0.2: LLM-backed intent decomposer (replaces passThroughDecomposer)
 
 ---
 
 *🪙 GOLD SEAL | METABOLIC KERNEL v1.0 | arifOS AAA | 888 JUDGE VETO | DITEMPA BUKAN DIBERI*
-*Readable by: single human · couple · company · institution · AI agent · machine · team · civilisation intelligence*
