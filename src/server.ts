@@ -338,6 +338,7 @@ app.get("/contract", (_req: Request, res: Response) => {
       python_mcp: "GEOX-mcp:8081",
       bridge: "A-FORGE-bridge:7071",
       federation_probe: "GET /api/federation-probe",
+      repo_steward: "GET /api/repo-steward/{sot-validator,registry-trinity,repo-entropy,steward-suggest}",
     },
     timestamp: new Date().toISOString(),
   });
