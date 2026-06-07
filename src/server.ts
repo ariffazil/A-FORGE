@@ -45,6 +45,7 @@ import {
 } from "./routes/approvalOperatorRoutes.js";
 import { createGovernanceRouter } from "./routes/governanceRoutes.js";
 import { createVaultMerkleRouter } from "./routes/vaultMerkleRoutes.js";
+import { createRepoStewardRouter } from "./routes/repoStewardRoutes.js";
 import { callMCP } from "./mcp/client.js";
 
 let cachedConstitution: FloorRule[] = [];
@@ -627,6 +628,9 @@ app.get("/sabar/cooldown", (_req: Request, res: Response) => {
 app.use("/human-expert", createHumanExpertRouter());
 app.use("/operator", createOperatorRouter());
 app.use("/vault/merkle", createVaultMerkleRouter());
+// Repo steward (4 read-only endpoints: sot-validator, registry-trinity, repo-entropy, steward-suggest)
+// Forged 2026-06-07 by Ω — observes only, never adjudicates.
+app.use("/api/repo-steward", createRepoStewardRouter());
 app.use(createGovernanceRouter());
 
 // Error handling
