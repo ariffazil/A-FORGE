@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { PlanDAG, PlanNode, StructuralValidationResult, RiskTier } from '../types/plan.js';
+import type { PlanDAG, PlanNode, StructuralValidationResult, RiskTier, LegacyRiskTier } from '../types/plan.js';
 import { PlanValidator } from '../planner/PlanValidator.js';
 
 export type SealStatus = 'PASS' | 'HOLD' | 'VOID' | 'SABAR';
@@ -37,9 +37,13 @@ export interface SealVerdict {
 }
 
 export interface EpistemicThresholds {
-  confidence: Record<RiskTier, number>;
+  // NOTE: pre-W2 SealService used { safe, guarded, dangerous }.
+  // We reference LegacyRiskTier here (defined in src/types/plan.ts) so the
+  // pre-existing confidence/minEvidence shape continues to compile under
+  // the W2 canonical RiskTier (LOW | MEDIUM | HIGH | CRITICAL).
+  confidence: Record<LegacyRiskTier, number>;
   maxUnknowns: number;
-  minEvidence: Record<RiskTier, number>;
+  minEvidence: Record<LegacyRiskTier, number>;
 }
 
 export class SealService {
