@@ -27,9 +27,9 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
-    "@types/node": "^25.9.1",
+    "@types/node": "^25.9.2",
     "@types/pg": "^8.20.0",
-    "pyright": "^1.1.409",
+    "pyright": "^1.1.410",
     "typescript": "^6.0.3",
     "yaml-language-server": "^1.23.0"
   }
