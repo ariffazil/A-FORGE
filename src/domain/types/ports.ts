@@ -86,6 +86,18 @@ export interface IVaultClient {
     limit?: number;
   }): Promise<IVaultSealRecord[]>;
   findById?(sealId: string): Promise<IVaultSealRecord | undefined>;
+  /** Log a tool call for audit trail (optional, PostgresVaultClient-specific) */
+  logToolCall?(params: {
+    run_id: string;
+    session_id: string;
+    tool_name: string;
+    tool_args: Record<string, unknown>;
+    tool_result: string;
+    verdict: string;
+    latency_ms: number;
+    floors_triggered: string[];
+    called_at: string;
+  }): Promise<void>;
 }
 
 // ── Organ Bridge Port ─────────────────────────────────────────────

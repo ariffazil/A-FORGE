@@ -45,10 +45,8 @@ import { callMCP } from "../../interfaces/mcp/client.js";
 import { getAdaptiveThresholds } from "../governance/thresholds.js";
 // @fixme Phase3: inject VaultClient via deps; import type { IVaultClient, IVaultSealRecord, IVaultTelemetrySnapshot } from "../types/ports.js"
 import type { VaultClient, VaultSealRecord, VaultTelemetrySnapshot } from "../../infrastructure/vault/index.js";
-// @fixme Phase3: inject vault hashing via deps
+// @fixme Phase3b: inject vault hashing + metrics via deps (remaining infra deps)
 import { computeInputHash, generateSealId, MerkleV3Service } from "../../infrastructure/vault/index.js";
-// @fixme Phase3: PostgresVaultClient instantiation should happen in composition root
-import { PostgresVaultClient } from "../../infrastructure/vault/PostgresVaultClient.js";
 import type { HumanEscalationClient } from "../../application/approval/HumanEscalationClient.js";
 // @fixme Phase3: inject metrics via deps (IMetricsClient port)
 import { recordHumanEscalation, recordFloorViolation, runStage } from "../../infrastructure/metrics/prometheus.js";
@@ -88,6 +86,10 @@ export type AgentEngineDependencies = {
   };
   /** Fallback LLM provider for automatic downshifting at 80% budget (e.g. Ollama/Sea-Lion) */
   fallbackProvider?: ILlmProvider;
+  /** Pre-constructed Wealth engine bridge (Phase 3 hexagonal) */
+  wealthBridge?: WealthEngineBridge;
+  /** GEOX scenario loader (Phase 3 hexagonal) */
+  geoxScenarioLoader?: typeof getScenarios;
 };
 
 export class AgentEngine {
@@ -121,8 +123,8 @@ export class AgentEngine {
     });
     const budgetManager = new BudgetManager(this.profile.budget, this.dependencies.apiPricing);
 
-    // [Q2] Wrap LLM provider with budget-aware router for transparent
-    // downshifting / refusal based on real-time consumption.
+    // [Q2] Wrap LLM provider with budget-aware router
+    // @fixme Phase3b: inject pre-constructed BudgetAwareRouter via deps
     const llmProvider = new BudgetAwareRouter({
       primary: this.dependencies.llmProvider,
       budgetManager,
@@ -395,10 +397,10 @@ export class AgentEngine {
     const routing: RoutingDecision = routeIntent(options.task);
 
     // === 333_MIND: GEOX + WEALTH Organ Activation ===
-    const wealthEngine = new WealthEngineBridge();
+    const wealthEngine = this.dependencies.wealthBridge ?? new WealthEngineBridge();
 
     if (routing.primaryOrgan === "GEOX" || routing.secondaryOrgans.includes("GEOX")) {
-      this._GEOXScenarios = await getScenarios(
+      this._GEOXScenarios = await (this.dependencies.geoxScenarioLoader ?? getScenarios)(
         routing.primaryOrgan === "GEOX" ? "primary" : "secondary",
       ) as Array<{ id: string; name: string; physicalConstraints: { environmentalImpact: number }; tag: string; groundingEvidence: string[] }>;
     }
@@ -407,7 +409,7 @@ export class AgentEngine {
       try {
         const GEOXScenarios = this._GEOXScenarios.length > 0
           ? this._GEOXScenarios
-          : await getScenarios("secondary") as Array<{ id: string; name: string; physicalConstraints: { environmentalImpact: number }; tag: string; groundingEvidence: string[] }>;
+          : await (this.dependencies.geoxScenarioLoader ?? getScenarios)("secondary") as Array<{ id: string; name: string; physicalConstraints: { environmentalImpact: number }; tag: string; groundingEvidence: string[] }>;
         const allocations = await wealthEngine.allocate(GEOXScenarios as import("../types/arifos.js").GEOXScenarioContract[]) as Array<{ id: string; maruahScore: number }>;
         this._wealthAllocations = allocations.map((a) => ({ id: a.id, maruahScore: a.maruahScore }));
         const budgetStatus = wealthEngine.getBudgetStatus();
@@ -1169,9 +1171,8 @@ export class AgentEngine {
       if (toolFloors.includes("VOID")) toolVerdict = "VOID";
       else if (toolFloors.includes("HOLD")) toolVerdict = "HOLD";
 
-      if (this.dependencies.vaultClient && "logToolCall" in this.dependencies.vaultClient) {
-        const vault = this.dependencies.vaultClient as unknown as PostgresVaultClient;
-        vault.logToolCall({
+      if (this.dependencies.vaultClient?.logToolCall) {
+        this.dependencies.vaultClient.logToolCall({
           run_id: runId,
           session_id: sessionId,
           tool_name: call.toolName,
