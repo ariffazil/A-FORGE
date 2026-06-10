@@ -84,3 +84,4 @@ export class ToolRegistry {
     return tool.run(args, executionContext);
   }
 }
+export function createToolRegistry(): ToolRegistry { return new ToolRegistry(); }
