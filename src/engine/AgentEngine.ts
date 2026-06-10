@@ -8,14 +8,16 @@ import type {
   LlmTurnResponse,
 } from "../types/agent.js";
 import type { ToolPermissionContext } from "../types/tool.js";
-import type { LlmProvider } from "../llm/LlmProvider.js";
+import type { ILlmProvider, IVaultClient, IVaultSealRecord, IVaultTelemetrySnapshot } from "../types/ports.js";
 import { BudgetManager } from "./BudgetManager.js";
+// @fixme Phase3: inject BudgetAwareRouter via deps instead of direct infra import
 import { BudgetAwareRouter } from "../llm/BudgetAwareRouter.js";
 import { ShortTermMemory } from "../memory/ShortTermMemory.js";
 import { LongTermMemory } from "../memory/LongTermMemory.js";
 import { resolveWorkingDirectory } from "../utils/paths.js";
 import { redactForExternalMode } from "./redact.js";
 import { buildModeSettings } from "../config/modes.js";
+// @fixme Phase3: inject ToolRegistry via deps; import type { IToolRegistry } from "../types/ports.js"
 import { ToolRegistry } from "../tools/ToolRegistry.js";
 import type { FeatureFlags } from "../config/featureFlags.js";
 import type { ToolPolicyConfig } from "../config/RuntimeConfig.js";
@@ -41,10 +43,14 @@ import {
 } from "../governance/index.js";
 import { callMCP } from "../mcp/client.js";
 import { getAdaptiveThresholds } from "../governance/thresholds.js";
+// @fixme Phase3: inject VaultClient via deps; import type { IVaultClient, IVaultSealRecord, IVaultTelemetrySnapshot } from "../types/ports.js"
 import type { VaultClient, VaultSealRecord, VaultTelemetrySnapshot } from "../vault/index.js";
+// @fixme Phase3: inject vault hashing via deps
 import { computeInputHash, generateSealId, MerkleV3Service } from "../vault/index.js";
+// @fixme Phase3: PostgresVaultClient instantiation should happen in composition root
 import { PostgresVaultClient } from "../vault/PostgresVaultClient.js";
 import type { HumanEscalationClient } from "../approval/HumanEscalationClient.js";
+// @fixme Phase3: inject metrics via deps (IMetricsClient port)
 import { recordHumanEscalation, recordFloorViolation, runStage } from "../metrics/prometheus.js";
 import type { MetabolicStage } from "../types/aki.js";
 import type { TicketStore, ApprovalTicket } from "../approval/index.js";
@@ -53,21 +59,23 @@ import type { MemoryContract } from "../memory-contract/index.js";
 import { getMemoryContract } from "../memory-contract/index.js";
 import { ThermodynamicCostEstimator } from "../ops/ThermodynamicCostEstimator.js";
 import { routeIntent, type RoutingDecision } from "./IntentRouter.js";
+// @fixme Phase3: inject organ bridges via deps (IWealthBridge port)
 import { WealthEngineBridge } from "../bridges/wealthBridge.js";
 import type { ToolAction, TokenBudget, StressState } from "../types/wealth.js";
+// @fixme Phase3: inject geox bridge via deps
 import { getScenarios } from "../bridges/geoxBridge.js";
 import { evaluateWithConfidence, calculateConfidenceEstimate } from "../policy/confidence.js";
 import { ArifOSKernel } from "./ArifOSKernel.js";
 
 export type AgentEngineDependencies = {
-  llmProvider: LlmProvider;
+  llmProvider: ILlmProvider;
   toolRegistry: ToolRegistry;
   longTermMemory: LongTermMemory;
   memoryContract?: MemoryContract;
   featureFlags?: FeatureFlags;
   toolPolicy?: ToolPolicyConfig;
   runReporter?: RunReporter;
-  vaultClient?: VaultClient;
+  vaultClient?: IVaultClient;
   escalationClient?: HumanEscalationClient;
   ticketStore?: TicketStore;
   governanceClient?: GovernanceClient;
@@ -79,7 +87,7 @@ export type AgentEngineDependencies = {
     outputCostPerMillionTokens: number;
   };
   /** Fallback LLM provider for automatic downshifting at 80% budget (e.g. Ollama/Sea-Lion) */
-  fallbackProvider?: LlmProvider;
+  fallbackProvider?: ILlmProvider;
 };
 
 export class AgentEngine {
@@ -1204,7 +1212,7 @@ export class AgentEngine {
     };
   }
 
-  private inferVerdict(finalText: string): VaultSealRecord["verdict"] {
+  private inferVerdict(finalText: string): IVaultSealRecord["verdict"] {
     if (finalText.startsWith("VOID")) return "VOID";
     if (finalText.startsWith("SABAR")) return "SABAR";
     if (finalText.startsWith("HOLD")) return "HOLD";
@@ -1217,7 +1225,7 @@ export class AgentEngine {
     floorsTriggered: string[],
     intentModel?: string,
     riskLevel?: string,
-  ): VaultTelemetrySnapshot {
+  ): IVaultTelemetrySnapshot {
     const blocked = floorsTriggered.length > 0;
     const failed = finalText.startsWith("Run failed");
     const strict = riskLevel === "high" || riskLevel === "critical" || intentModel === "execution";
@@ -1333,7 +1341,7 @@ export class AgentEngine {
     const escalation = await this.maybeEscalate(options, sessionId, finalText, floorsTriggered);
     const sealedFinalText = escalation.finalText;
 
-    const record: VaultSealRecord = {
+    const record: IVaultSealRecord = {
       sealId: generateSealId(),
       sessionId,
       verdict,

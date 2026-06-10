@@ -1,7 +1,7 @@
 import { CoordinatorAgent } from "./CoordinatorAgent.js";
 import type { AgentProfile } from "../types/agent.js";
 import type { WorkerAgent } from "./WorkerAgent.js";
-import type { LlmProvider } from "../llm/LlmProvider.js";
+import type { ILlmProvider } from "../types/ports.js";
 import type { ParallelPlannerContract } from "../planner/ParallelPlannerContract.js";
 
 /**
@@ -16,7 +16,7 @@ export class AAAgent extends CoordinatorAgent {
   constructor(
     profile: AgentProfile,
     workerAgent: WorkerAgent,
-    llmProvider: LlmProvider,
+    llmProvider: ILlmProvider,
     plannerContract?: ParallelPlannerContract,
   ) {
     super(profile, workerAgent, llmProvider, plannerContract);

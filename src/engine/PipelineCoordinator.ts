@@ -17,7 +17,8 @@ import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import type { AgentMessage, AgentProfile, AgentRunResult, EngineRunOptions, LlmTurnResponse } from "../types/agent.js";
 import type { ToolPermissionContext } from "../types/tool.js";
-import type { LlmProvider } from "../llm/LlmProvider.js";
+import type { ILlmProvider, IVaultClient, IVaultSealRecord, IVaultTelemetrySnapshot } from "../types/ports.js";
+// @fixme Phase3: inject VaultClient via deps; import type { IVaultClient, IVaultSealRecord, IVaultTelemetrySnapshot } from "../types/ports.js"
 import type { VaultClient, VaultSealRecord, VaultTelemetrySnapshot } from "../vault/index.js";
 import type { HumanEscalationClient } from "../approval/HumanEscalationClient.js";
 import type { TicketStore, ApprovalTicket } from "../approval/index.js";
@@ -33,6 +34,7 @@ import { LongTermMemory } from "../memory/LongTermMemory.js";
 import { resolveWorkingDirectory } from "../utils/paths.js";
 import { redactForExternalMode } from "./redact.js";
 import { buildModeSettings } from "../config/modes.js";
+// @fixme Phase3: inject ToolRegistry via deps
 import { ToolRegistry } from "../tools/ToolRegistry.js";
 import { RunReporter } from "./RunReporter.js";
 import {
@@ -52,27 +54,31 @@ import {
 } from "../governance/index.js";
 import { callMCP } from "../mcp/client.js";
 import { getAdaptiveThresholds } from "../governance/thresholds.js";
+// @fixme Phase3: inject vault hashing via deps
 import { computeInputHash, generateSealId } from "../vault/index.js";
 import { getTicketStore } from "../approval/index.js";
 import { getMemoryContract } from "../memory-contract/index.js";
 import { ThermodynamicCostEstimator } from "../ops/ThermodynamicCostEstimator.js";
+// @fixme Phase3: inject metrics via deps
 import { recordHumanEscalation, recordFloorViolation, runStage } from "../metrics/prometheus.js";
 
 import { routeIntent, type RoutingDecision, type IntentDomain } from "./IntentRouter.js";
 import { ArifOSKernel } from "./ArifOSKernel.js";
+// @fixme Phase3: inject organ bridges via deps
 import { WealthEngineBridge } from "../bridges/wealthBridge.js";
+// @fixme Phase3: inject geox bridge via deps
 import { getScenarios } from "../bridges/geoxBridge.js";
 import type { GEOXScenarioContract, WealthAllocationContract } from "../types/arifos.js";
 
 export type PipelineDependencies = {
-  llmProvider: LlmProvider;
+  llmProvider: ILlmProvider;
   toolRegistry: ToolRegistry;
   longTermMemory: LongTermMemory;
   memoryContract?: MemoryContract;
   featureFlags?: FeatureFlags;
   toolPolicy?: ToolPolicyConfig;
   runReporter?: RunReporter;
-  vaultClient?: VaultClient;
+  vaultClient?: IVaultClient;
   escalationClient?: HumanEscalationClient;
   ticketStore?: TicketStore;
   sealService?: SealService;

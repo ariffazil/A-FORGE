@@ -10,8 +10,10 @@ import { createHash, randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 import { resolve, dirname } from "node:path";
 import { appendFile, readFile, mkdir } from "node:fs/promises";
+import type { VaultVerdict } from "../types/sovereign.js";
 
-export type VaultVerdict = "SEAL" | "HOLD" | "SABAR" | "VOID";
+// Re-export for backward compatibility
+export type { VaultVerdict };
 
 export type VaultTelemetrySnapshot = {
   dS: number;
