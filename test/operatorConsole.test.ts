@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { mkdir, rm } from "node:fs/promises";
-import { FileVaultClient, type VaultSealRecord } from "../src/vault/VaultClient.js";
-import { FileTicketStore, resetTicketStore } from "../src/approval/TicketStore.js";
-import { runCliCommand } from "../src/cli/commands.js";
-import type { AgentProfile } from "../src/types/agent.js";
-import type { LlmProvider } from "../src/llm/LlmProvider.js";
-import type { RuntimeConfig } from "../src/config/RuntimeConfig.js";
-import type { AgentEngine } from "../src/engine/AgentEngine.js";
+import { FileVaultClient, type VaultSealRecord } from "../src/infrastructure/vault/VaultClient.js";
+import { FileTicketStore, resetTicketStore } from "../src/application/approval/TicketStore.js";
+import { runCliCommand } from "../src/infrastructure/cli/commands.js";
+import type { AgentProfile } from "../src/domain/types/agent.js";
+import type { LlmProvider } from "../src/infrastructure/llm/LlmProvider.js";
+import type { RuntimeConfig } from "../src/interfaces/config/RuntimeConfig.js";
+import type { AgentEngine } from "../src/domain/engine/AgentEngine.js";
 
 async function withTempDir<T>(fn: (dir: string) => Promise<T>): Promise<T> {
   const dir = resolve(tmpdir(), `operator-console-test-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`);

@@ -6,10 +6,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { checkAll, isAllowed, requiresF13Ack } from "../src/governance/FloorEnforcer.js";
-import type { ActionRequest, FloorContext } from "../src/types/action-request.js";
-import { resetF13HaltChannel, issueF13Halt, getF13HaltChannel } from "../src/governance/F13HaltChannel.js";
-import type { Mission } from "../src/types/outcome-spec.js";
+import { checkAll, isAllowed, requiresF13Ack } from "../src/domain/governance/FloorEnforcer.js";
+import type { ActionRequest, FloorContext } from "../src/domain/types/action-request.js";
+import { resetF13HaltChannel, issueF13Halt, getF13HaltChannel } from "../src/domain/governance/F13HaltChannel.js";
+import type { Mission } from "../src/domain/types/outcome-spec.js";
 
 // ─── Helper builders ─────────────────────────────────────────────────
 

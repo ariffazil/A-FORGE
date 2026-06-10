@@ -1,7 +1,7 @@
 import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { PlanValidator } from '../src/planner/PlanValidator.js';
-import type { PlanDAG, PlanNode } from '../src/types/plan.js';
+import { PlanValidator } from '../src/domain/planner/PlanValidator.js';
+import type { PlanDAG, PlanNode } from '../src/domain/types/plan.js';
 
 describe('PlanValidator Structural Invariants', () => {
   const validator = new PlanValidator({

@@ -2,8 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import type express from "express";
-import { createApp } from "../src/server.js";
-import { shutdownPersonalOS } from "../src/personal-v2/index.js";
+import { createApp } from "../src/interfaces/server.js";
+import { shutdownPersonalOS } from "../src/application/personal-v2/index.js";
 
 
 function listenOnce(app: express.Express): Promise<{ url: string; close: () => Promise<void> }> {

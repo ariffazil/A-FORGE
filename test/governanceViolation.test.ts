@@ -1,14 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { AgentEngine } from "../src/engine/AgentEngine.js";
-import { MockLlmProvider } from "../src/llm/MockLlmProvider.js";
-import { LongTermMemory } from "../src/memory/LongTermMemory.js";
-import { buildFixProfile } from "../src/agents/profiles.js";
-import { ToolRegistry } from "../src/tools/ToolRegistry.js";
+import { AgentEngine } from "../src/domain/engine/AgentEngine.js";
+import { MockLlmProvider } from "../src/infrastructure/llm/MockLlmProvider.js";
+import { LongTermMemory } from "../src/application/memory/LongTermMemory.js";
+import { buildFixProfile } from "../src/domain/agents/profiles.js";
+import { ToolRegistry } from "../src/infrastructure/tools/ToolRegistry.js";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { mkdir } from "node:fs/promises";
-import { NoOpVaultClient } from "../src/vault/index.js";
+import { NoOpVaultClient } from "../src/infrastructure/vault/index.js";
 
 test("F6: Harm/Dignity floor blocks harmful input", async () => {
   const root = resolve(tmpdir(), `agent-governance-f6-${Date.now()}`);

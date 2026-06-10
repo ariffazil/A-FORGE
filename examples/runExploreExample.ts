@@ -1,10 +1,10 @@
-import { AgentEngine } from "../src/engine/AgentEngine.js";
-import { MockLlmProvider } from "../src/llm/MockLlmProvider.js";
-import { LongTermMemory } from "../src/memory/LongTermMemory.js";
-import { buildExploreProfile } from "../src/agents/profiles.js";
-import { ToolRegistry } from "../src/tools/ToolRegistry.js";
-import { ReadFileTool, ListFilesTool } from "../src/tools/FileTools.js";
-import { GrepTextTool } from "../src/tools/SearchTools.js";
+import { AgentEngine } from "../src/domain/engine/AgentEngine.js";
+import { MockLlmProvider } from "../src/infrastructure/llm/MockLlmProvider.js";
+import { LongTermMemory } from "../src/application/memory/LongTermMemory.js";
+import { buildExploreProfile } from "../src/domain/agents/profiles.js";
+import { ToolRegistry } from "../src/infrastructure/tools/ToolRegistry.js";
+import { ReadFileTool, ListFilesTool } from "../src/infrastructure/tools/FileTools.js";
+import { GrepTextTool } from "../src/infrastructure/tools/SearchTools.js";
 import { defaultMemoryPath } from "../src/utils/paths.js";
 
 const registry = new ToolRegistry();

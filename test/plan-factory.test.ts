@@ -24,11 +24,11 @@ import {
   passThroughDecomposer,
   F1_SURFACE_TOOLS,
   type TaskTemplate,
-} from "../src/governance/planFactory.js";
-import type { Mission } from "../src/types/outcome-spec.js";
-import type { Plan } from "../src/types/plan.js";
-import { arifos_plan_build, PLAN_BUILDER_TOOL_REGISTRY } from "../src/mcp/tools/arifos-plan-build.js";
-import { aggregateReversibility, aggregateRisk } from "../src/types/plan.js";
+} from "../src/domain/governance/planFactory.js";
+import type { Mission } from "../src/domain/types/outcome-spec.js";
+import type { Plan } from "../src/domain/types/plan.js";
+import { arifos_plan_build, PLAN_BUILDER_TOOL_REGISTRY } from "../src/interfaces/mcp/tools/arifos-plan-build.js";
+import { aggregateReversibility, aggregateRisk } from "../src/domain/types/plan.js";
 
 // ─── Helpers ────────────────────────────────────────────────────────────
 

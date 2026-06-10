@@ -17,7 +17,7 @@ import {
   computeLiteHeuristics,
   extractTopics,
   RISK_KEYWORDS,
-} from "../src/policy/sense.js";
+} from "../src/domain/policy/sense.js";
 
 test("computeLiteHeuristics - short benign query has low complexity", () => {
   const query = "Hello, how are you?";
@@ -228,7 +228,7 @@ test("Integration - Lite then Deep escalation flow", () => {
 });
 
 test("Integration - Sense result feeds into Confidence", async () => {
-  const { calculateConfidenceEstimate, evaluateWithConfidence } = await import("../src/policy/confidence.js");
+  const { calculateConfidenceEstimate, evaluateWithConfidence } = await import("../src/domain/policy/confidence.js");
   
   const query = "Fix the authentication bug in login.ts";
   const senseResult = senseDeep(query);

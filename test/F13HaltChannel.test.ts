@@ -14,7 +14,7 @@ import {
   type F13HaltMessage,
   type F13Source,
   type F13Scope,
-} from "../src/governance/F13HaltChannel.js";
+} from "../src/domain/governance/F13HaltChannel.js";
 
 // ─── 1. Valid halt message accepted ─────────────────────────────────
 

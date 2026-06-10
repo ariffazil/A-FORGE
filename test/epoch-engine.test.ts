@@ -18,9 +18,9 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { EpochEngine, EpochError, EpochF1Error, EpochF13Error } from "../src/governance/epochEngine.js";
-import type { Plan } from "../src/types/plan.js";
-import type { Epoch, EpochEvent } from "../src/types/epoch.js";
+import { EpochEngine, EpochError, EpochF1Error, EpochF13Error } from "../src/domain/governance/epochEngine.js";
+import type { Plan } from "../src/domain/types/plan.js";
+import type { Epoch, EpochEvent } from "../src/domain/types/epoch.js";
 
 // ─── Fixtures ────────────────────────────────────────────────────────────
 

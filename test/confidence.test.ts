@@ -17,7 +17,7 @@ import {
   formatConfidenceDisplay,
   CONFIDENCE_THRESHOLDS,
   UNCERTAINTY_THRESHOLDS,
-} from "../src/policy/confidence.js";
+} from "../src/domain/policy/confidence.js";
 
 test("calculateConfidenceEstimate - returns bounded value [0,1]", () => {
   // Test with various inputs

@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { LlmProvider } from "../src/llm/LlmProvider.js";
-import type { LlmTurnRequest, LlmTurnResponse } from "../src/types/agent.js";
+import type { LlmProvider } from "../src/infrastructure/llm/LlmProvider.js";
+import type { LlmTurnRequest, LlmTurnResponse } from "../src/domain/types/agent.js";
 import {
   ParallelPlannerContract,
   DEFAULT_STRATEGIES,
-} from "../src/planner/ParallelPlannerContract.js";
-import { buildCoordinatorProfile } from "../src/agents/profiles.js";
+} from "../src/domain/planner/ParallelPlannerContract.js";
+import { buildCoordinatorProfile } from "../src/domain/agents/profiles.js";
 
 class ScriptedProvider implements LlmProvider {
   readonly name = "scripted";

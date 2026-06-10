@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { WealthEvaluateROITool } from "../src/tools/WealthTools.js";
-import type { ToolExecutionContext } from "../src/types/tool.js";
+import { WealthEvaluateROITool } from "../src/infrastructure/tools/WealthTools.js";
+import type { ToolExecutionContext } from "../src/domain/types/tool.js";
 
 const roiTool = new WealthEvaluateROITool();
 const ctx: ToolExecutionContext = { sessionId: "test", workingDirectory: "/tmp", modeName: "internal_mode" };
