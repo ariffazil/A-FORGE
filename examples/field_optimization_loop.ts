@@ -1,6 +1,6 @@
-import { ArifOSKernel } from "../src/engine/ArifOSKernel.js";
-import { WealthEngine } from "../src/engine/WealthEngine.legacy.js";
-import { buildDefaultGEOXScenarios } from "../src/engine/defaultGEOXScenarios.legacy.js";
+import { ArifOSKernel } from "../src/domain/engine/ArifOSKernel.js";
+import { WealthEngine } from "../src/domain/engine/WealthEngine.legacy.js";
+import { buildDefaultGEOXScenarios } from "../src/domain/engine/defaultGEOXScenarios.legacy.js";
 
 /**
  * Example: Field Optimization Loop (000-999)

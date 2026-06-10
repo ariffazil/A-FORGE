@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ThermodynamicCostEstimator } from "../src/ops/ThermodynamicCostEstimator.js";
+import { ThermodynamicCostEstimator } from "../src/domain/ops/ThermodynamicCostEstimator.js";
 import {
   KAPPA_R_THRESHOLD,
   BLAST_RADIUS_THRESHOLD,
-} from "../src/types/wealth.js";
+} from "../src/domain/types/wealth.js";
 
 const estimator = new ThermodynamicCostEstimator();
 
@@ -142,7 +142,7 @@ test("ThermodynamicCostEstimator — estimateWithWealth enriches with EMV/NPV wh
 });
 
 test("ThermodynamicCostEstimator — getThermodynamicEstimator returns instance", async () => {
-  const { getThermodynamicEstimator } = await import("../src/ops/ThermodynamicCostEstimator.js");
+  const { getThermodynamicEstimator } = await import("../src/domain/ops/ThermodynamicCostEstimator.js");
   const instance = getThermodynamicEstimator();
   assert.ok(instance instanceof ThermodynamicCostEstimator);
 });

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import express from "express";
 import type { Request, Response } from "express";
 import { createServer } from "node:http";
-import { createOperatorAuthMiddleware } from "../src/middleware/operatorAuth.js";
+import { createOperatorAuthMiddleware } from "../src/interfaces/middleware/operatorAuth.js";
 
 function listenOnce(app: express.Express): Promise<{ url: string; close: () => Promise<void> }> {
   return new Promise((resolve, reject) => {

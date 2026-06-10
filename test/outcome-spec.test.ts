@@ -15,14 +15,14 @@ import {
   type SensitivityLevel,
   type OutcomeSpec,
   type RunConfig,
-} from "../src/types/outcome-spec.js";
+} from "../src/domain/types/outcome-spec.js";
 
 import {
   validateMission,
   quickVerdict,
   specHash,
   missionActionRequiresHold,
-} from "../src/governance/outcomeSpecValidator.js";
+} from "../src/domain/governance/outcomeSpecValidator.js";
 
 // ─── Helper builders ─────────────────────────────────────────────────
 

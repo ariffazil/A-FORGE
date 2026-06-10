@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { routeIntent, buildRoutingContext, type RoutingDecision } from "../src/engine/IntentRouter.js";
+import { routeIntent, buildRoutingContext, type RoutingDecision } from "../src/domain/engine/IntentRouter.js";
 
 test("IntentRouter — GEOX intent routes to GEOX", () => {
   const r = routeIntent("What is the seismic risk for the field in Sumatra?");

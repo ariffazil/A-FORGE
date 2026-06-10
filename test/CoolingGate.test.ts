@@ -4,7 +4,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CoolingGate, getCoolingGate, resetCoolingGate } from "../src/governance/CoolingGate.js";
+import { CoolingGate, getCoolingGate, resetCoolingGate } from "../src/domain/governance/CoolingGate.js";
 
 test("CoolingGate: propose creates SABAR entry with default 72h", () => {
   const gate = new CoolingGate();

@@ -13,8 +13,8 @@ import {
   extractTarget,
   buildActionRequest,
   floorErrorResponse,
-} from "../src/governance/mcpFloorEnforcer.js";
-import { resetF13HaltChannel, issueF13Halt } from "../src/governance/F13HaltChannel.js";
+} from "../src/domain/governance/mcpFloorEnforcer.js";
+import { resetF13HaltChannel, issueF13Halt } from "../src/domain/governance/F13HaltChannel.js";
 
 // ─── 1. classifyAction patterns ──────────────────────────────────────
 

@@ -7,8 +7,8 @@
  * Usage: node dist/scripts/ingest-eureka-capsule.js
  */
 
-import { getMemoryContract } from "../src/memory-contract/MemoryContract.js";
-import type { MemoryEntry } from "../src/memory-contract/MemoryContract.js";
+import { getMemoryContract } from "../src/domain/memory-contract/MemoryContract.js";
+import type { MemoryEntry } from "../src/domain/memory-contract/MemoryContract.js";
 
 const RUNTIME_LAWS = [
   {
