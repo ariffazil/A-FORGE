@@ -1,5 +1,5 @@
 import type { AgentProfile, WorkerTask } from "../types/agent.js";
-import type { LlmProvider } from "../llm/LlmProvider.js";
+import type { ILlmProvider } from "../types/ports.js";
 import { buildWorkerProfile } from "../agents/profiles.js";
 import type {
   PlanCandidate,
@@ -32,7 +32,7 @@ const HOLD_DIVERGENCE_THRESHOLD = 0.6;
 export class ParallelPlannerContract {
   constructor(
     private readonly profile: AgentProfile,
-    private readonly llmProvider: LlmProvider,
+    private readonly llmProvider: ILlmProvider,
     private readonly strategies: PlanningStrategy[] = DEFAULT_STRATEGIES,
     private readonly w3Threshold: number = W3_CONSENSUS_DEFAULT,
   ) {}

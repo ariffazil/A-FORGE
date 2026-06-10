@@ -1,5 +1,5 @@
 import type { AgentProfile, ToolDefinitionForModel, WorkerReport, WorkerTask } from "../types/agent.js";
-import type { LlmProvider } from "../llm/LlmProvider.js";
+import type { ILlmProvider } from "../types/ports.js";
 import { WorkerAgent } from "./WorkerAgent.js";
 import { buildWorkerProfile } from "./profiles.js";
 import type { ParallelPlannerContract } from "../planner/ParallelPlannerContract.js";
@@ -8,7 +8,7 @@ export class CoordinatorAgent {
   constructor(
     protected readonly profile: AgentProfile,
     protected readonly workerAgent: WorkerAgent,
-    protected readonly llmProvider: LlmProvider,
+    protected readonly llmProvider: ILlmProvider,
     protected readonly plannerContract?: ParallelPlannerContract,
   ) {}
 

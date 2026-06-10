@@ -13,6 +13,9 @@ export type GEOXDimension =
 export type OperationType = 
   | "observe" | "interpret" | "compute" | "verify" | "judge" | "audit";
 
+/** Constitutional verdict types used across all organs */
+export type VaultVerdict = "SEAL" | "HOLD" | "SABAR" | "VOID";
+
 export interface SovereignAgentEnvelope {
   agentId: string;
   dimension: GEOXDimension;
