@@ -44,6 +44,12 @@ venv/
 .cache/
 .mypy_cache/
 
+# Test coverage
+coverage/
+.coverage
+coverage.xml
+htmlcov/
+
 # IDEs
 .vscode/
 .idea/

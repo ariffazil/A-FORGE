@@ -1,14 +1,26 @@
-import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
+/**
+ * LongTermMemory — A-FORGE internal memory store.
+ *
+ * FEDERATION MEMORY ADOPTION — 2026-06-03
+ * Per FEDERATION_MEMORY_CONTRACT.md R1:
+ *   "All organs write memory through arif_memory_recall(mode='store').
+ *    No organ writes directly to Qdrant, Supabase, or Graphiti."
+ *
+ * This module USED TO write directly to Qdrant collection `federation_shared`.
+ * That is now FORBIDDEN. All cross-organ memory writes route through
+ * arifOS MCP via ArifOSMemoryClient.
+ *
+ * L5 Graphiti status: ADVISORY ONLY (worker neutralized; 888 injects Cypher).
+ * Local file write retained as A-FORGE internal cache (non-federation).
+ *
+ * DITEMPA BUKAN DIBERI — Forged, Not Given
+ */
+
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { TaskMemoryRecord } from "../../domain/types/memory.js";
-
-const QDRANT_URL = process.env.QDRANT_URL ?? "http://qdrant:6333";
-const OLLAMA_URL = process.env.OLLAMA_URL ?? "http://localhost:11434";
-const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL ?? "bge-m3";
-const FEDERATION_COLLECTION = "federation_shared";
-const QDRANT_FAILURE_LOG_PATH =
-  process.env.QDRANT_FAILURE_LOG_PATH ?? "/tmp/a-forge-federation-qdrant-failures.jsonl";
-const QDRANT_WRITE_STRICT = process.env.QDRANT_WRITE_STRICT === "true";
+import { arifosStore, arifosSearch } from "./ArifOSMemoryClient.js";
+import { logFederationFailure } from "./LongTermMemoryFailureLog.js";
 
 interface FederationRecord {
   id: string;
@@ -19,104 +31,14 @@ interface FederationRecord {
   writer_bot: string;
 }
 
-async function getEmbedding(text: string): Promise<number[]> {
-  const response = await fetch(`${OLLAMA_URL}/api/embeddings`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: EMBEDDING_MODEL, prompt: text }),
-  });
-  if (!response.ok) throw new Error(`Ollama embedding failed: ${response.statusText}`);
-  const data = (await response.json()) as { embedding: number[] };
-  return data.embedding;
-}
-
-async function logFederationFailure(
-  reason: string,
-  details: Record<string, unknown>,
-): Promise<void> {
-  const entry = {
-    ts: new Date().toISOString(),
-    reason,
-    details,
-  };
-  await appendFile(QDRANT_FAILURE_LOG_PATH, `${JSON.stringify(entry)}\n`, "utf8");
-}
-
-async function federationUpsert(id: string, vector: number[], payload: Record<string, unknown>): Promise<void> {
-  try {
-    const response = await fetch(`${QDRANT_URL}/collections/${FEDERATION_COLLECTION}/points`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        points: [{ id, vector, payload }],
-      }),
-    });
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
-      await logFederationFailure("upsert_http_error", {
-        id,
-        status: response.status,
-        body,
-        collection: FEDERATION_COLLECTION,
-        qdrantUrl: QDRANT_URL,
-      });
-      const msg = `[LongTermMemory] Federation upsert failed: HTTP ${response.status} — ${body}`;
-      if (QDRANT_WRITE_STRICT) {
-        throw new Error(msg);
-      }
-      console.warn(`${msg} (recorded in ${QDRANT_FAILURE_LOG_PATH})`);
-    }
-  } catch (e) {
-    await logFederationFailure("upsert_exception", {
-      id,
-      error: e instanceof Error ? e.message : String(e),
-      collection: FEDERATION_COLLECTION,
-      qdrantUrl: QDRANT_URL,
-    });
-    if (QDRANT_WRITE_STRICT) {
-      throw e;
-    }
-    console.warn(
-      `[LongTermMemory] Federation upsert failed: ${
-        e instanceof Error ? e.message : String(e)
-      } (recorded in ${QDRANT_FAILURE_LOG_PATH})`,
-    );
-  }
-}
-
-async function federationSearch(queryVector: number[], limit = 5): Promise<FederationRecord[]> {
-  try {
-    const response = await fetch(`${QDRANT_URL}/collections/${FEDERATION_COLLECTION}/points/query`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: queryVector,
-        limit,
-        with_payload: true,
-      }),
-    });
-    if (!response.ok) return [];
-    const data = (await response.json()) as { result: { id: string; payload: Record<string, unknown>; score: number }[] };
-    return data.result.map((p) => ({
-      id: p.id,
-      summary: (p.payload.summary as string) ?? (p.payload.text as string) ?? "",
-      keywords: (p.payload.keywords as string[]) ?? [],
-      createdAt: (p.payload.createdAt as string) ?? new Date().toISOString(),
-      metadata: p.payload.metadata as Record<string, unknown> | undefined,
-      writer_bot: (p.payload.writer_bot as string) ?? "unknown",
-    }));
-  } catch (e) {
-    console.warn("[LongTermMemory] Federation search failed (non-fatal):", e);
-    return [];
-  }
-}
-
 export class LongTermMemory {
   constructor(private readonly filePath: string) {}
 
   /**
    * Append a summary fragment to the running summary log.
    * [P0|Q2] Sliding window eviction bridge with token cap — 2026-05-05
+   *
+   * FEDERATION: local file write retained; cross-organ upsert via arifOS MCP.
    */
   async appendRunningSummary(summary: string, maxSummaryTokens = 2048): Promise<void> {
     const records = await this.readAll();
@@ -135,7 +57,7 @@ export class LongTermMemory {
       });
     }
 
-    // [Q2-CORRECTION] Gap 4: Cap running summary to prevent unbounded growth
+    // [Q2-CORRECTION] Cap running summary to prevent unbounded growth
     const running = records[existingIndex >= 0 ? existingIndex : records.length - 1];
     const fragments = running.summary.split("\n---\n");
     while (
@@ -148,19 +70,29 @@ export class LongTermMemory {
 
     await this.writeAll(records);
 
-    // Dual-write to federation
-    try {
-      const record = records.find((r) => r.id === "running-summary")!;
-      const vector = await getEmbedding(record.summary.slice(-500)); // embed latest chunk only
-      await federationUpsert(record.id, vector, {
-        summary: record.summary,
-        keywords: record.keywords,
-        createdAt: record.createdAt,
-        metadata: record.metadata,
+    // FEDERATION: write through arifOS (L3 + L4 + L5 advisory).
+    // Local file write above is the A-FORGE internal cache.
+    // arifOS is the canonical cross-organ substrate.
+    const latestChunk = running.summary.slice(-500);
+    const arifosResult = await arifosStore({
+      content: `[A-FORGE running-summary] ${latestChunk}`,
+      tags: ["a-forge", "running-summary", "context", "federation_adoption"],
+      tier: "session",
+      session_id: "a-forge-running-summary",
+      summary: "A-FORGE running summary eviction",
+      context: "normal",
+      metadata: {
         writer_bot: "A-FORGE",
+        federation_leg: "via_arifos_mcp",
+        record_id: "running-summary",
+      },
+    });
+    if (!arifosResult.stored) {
+      logFederationFailure("arifos_running_summary_not_stored", {
+        verdict: arifosResult.verdict,
+        error: arifosResult.error,
+        degraded: arifosResult._degraded,
       });
-    } catch (e) {
-      console.warn("[LongTermMemory] Federation upsert for running-summary failed (non-fatal):", e);
     }
   }
 
@@ -173,24 +105,38 @@ export class LongTermMemory {
     return record?.summary;
   }
 
+  /**
+   * Persist a task memory record. Local file is internal cache;
+   * cross-organ substrate is arifOS MCP.
+   */
   async store(record: TaskMemoryRecord): Promise<void> {
-    // Keep local file write for A-FORGE internal use
+    // Local file write — A-FORGE internal cache
     const records = await this.readAll();
     records.push(record);
     await this.writeAll(records);
 
-    // Dual-write to federation_shared so the other bot can read it
-    try {
-      const vector = await getEmbedding(record.summary);
-      await federationUpsert(record.id, vector, {
-        summary: record.summary,
-        keywords: record.keywords,
-        createdAt: record.createdAt,
-        metadata: record.metadata,
+    // FEDERATION: write through arifOS MCP (L3 + L4 + L5 advisory)
+    const arifosResult = await arifosStore({
+      content: `[A-FORGE:${record.id}] ${record.summary}`,
+      tags: ["a-forge", ...(record.keywords ?? []), "federation_adoption"],
+      tier: "canon",
+      session_id: `a-forge-store-${record.id}`,
+      summary: record.summary,
+      context: "normal",
+      metadata: {
         writer_bot: "A-FORGE",
+        federation_leg: "via_arifos_mcp",
+        record_id: record.id,
+        record_metadata: record.metadata ?? {},
+      },
+    });
+    if (!arifosResult.stored) {
+      logFederationFailure("arifos_store_not_stored", {
+        verdict: arifosResult.verdict,
+        error: arifosResult.error,
+        degraded: arifosResult._degraded,
+        record_id: record.id,
       });
-    } catch (e) {
-      console.warn("[LongTermMemory] Federation store failed (non-fatal):", e);
     }
   }
 
@@ -219,27 +165,51 @@ export class LongTermMemory {
       }
     }
 
-    // Federation semantic search — also retrieve cross-bot memory
+    // FEDERATION: cross-organ semantic search via arifOS MCP
     try {
-      const queryVector = await getEmbedding(task);
-      const fedRecords = await federationSearch(queryVector, limit);
-      for (const fed of fedRecords) {
-        // Skip A-FORGE's own records (already in local file)
-        if (fed.writer_bot === "A-FORGE") continue;
-        const taskRecord: TaskMemoryRecord = {
-          id: fed.id,
-          summary: fed.summary,
-          keywords: fed.keywords,
-          createdAt: fed.createdAt,
-          metadata: { ...fed.metadata, writer_bot: fed.writer_bot, source: "federation_shared" },
-        };
-        // Don't double-count if already in local
-        if (!scored.has(fed.id)) {
-          scored.set(fed.id, { score: fed.keywords.length * 0.5, record: taskRecord, fromFederation: true });
+      const fedResp = await arifosSearch({
+        query: task,
+        session_id: "a-forge-search",
+        limit,
+        context: "normal",
+      });
+      if (fedResp.status === "ok" && Array.isArray(fedResp.results)) {
+        for (const r of fedResp.results) {
+          const fed = r as Record<string, unknown>;
+          const fedWriter = (fed.tags as string[] | undefined)?.includes("a-forge")
+            ? "A-FORGE"
+            : "other-organ";
+          // Skip A-FORGE's own records (already in local file)
+          if (fedWriter === "A-FORGE") continue;
+          const taskRecord: TaskMemoryRecord = {
+            id: (fed.memory_id as string) ?? (fed.id as string) ?? "federation-unknown",
+            summary: (fed.summary as string) ?? "",
+            keywords: (fed.tags as string[]) ?? [],
+            createdAt: (fed.created_at as string) ?? new Date().toISOString(),
+            metadata: {
+              ...((fed.metadata as Record<string, unknown>) ?? {}),
+              writer_bot: fedWriter,
+              source: "arifos_mcp",
+            },
+          };
+          if (!scored.has(taskRecord.id)) {
+            scored.set(taskRecord.id, {
+              score: taskRecord.keywords.length * 0.5,
+              record: taskRecord,
+              fromFederation: true,
+            });
+          }
         }
+      } else {
+        logFederationFailure("arifos_search_not_ok", {
+          status: fedResp.status,
+          degraded: fedResp._degraded,
+        });
       }
     } catch (e) {
-      console.warn("[LongTermMemory] Federation search failed (non-fatal):", e);
+      logFederationFailure("arifos_search_exception", {
+        error: e instanceof Error ? e.message : String(e),
+      });
     }
 
     const scoredKeys = Array.from(scored.keys());
