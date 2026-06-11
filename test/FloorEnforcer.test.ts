@@ -160,7 +160,7 @@ test("FloorEnforcer: 'delete files' in intent, no rollback → HOLD (F5)", () =>
 
 // ─── 12. Destructive with rollback → CAUTION ────────────────────────
 
-test("FloorEnforcer: destructive with rollback plan → HOLD (F5)", () => {
+test("FloorEnforcer: destructive with rollback plan → CAUTION (F5)", () => {
   resetF13HaltChannel();
   const action = makeAction({
     action_type: "DELETE",
@@ -169,9 +169,10 @@ test("FloorEnforcer: destructive with rollback plan → HOLD (F5)", () => {
     rollback_plan: "git checkout HEAD@{1} -- /tmp/old",
   });
   const v = checkAll(makeContext(action));
-  // F5 returns HOLD for destructive DELETE even with rollback plan.
-  assert.equal(v.final, "HOLD");
-  assert.equal(v.allowed, false);
+  // CAUTION means: passes the HARD check (F1 has rollback), still allowed
+  // with caution. Should be CAUTION, not HOLD.
+  assert.equal(v.final, "CAUTION");
+  assert.equal(v.allowed, true);
 });
 
 // ─── 13. High blast + low reversibility (F1) → HOLD ─────────────────
@@ -301,7 +302,7 @@ test("FloorEnforcer: intent < 5 chars → HOLD (F4)", () => {
 
 // ─── 23. Verdict composition: VOID beats HOLD ───────────────────────
 
-test("FloorEnforcer: VOID + HOLD in reasons → final HOLD", () => {
+test("FloorEnforcer: VOID + HOLD in reasons → final VOID", () => {
   resetF13HaltChannel();
   // Shell metachar (VOID) + low tier (HOLD)
   const action = makeAction({
@@ -310,14 +311,12 @@ test("FloorEnforcer: VOID + HOLD in reasons → final HOLD", () => {
     tier: 1,
   });
   const v = checkAll(makeContext(action));
-  // Both VOID (F12 shell metachar) and HOLD (F2 low tier) fire;
-  // the reducer returns HOLD when both are present due to floor priority.
-  assert.equal(v.final, "HOLD");
+  assert.equal(v.final, "VOID");
 });
 
 // ─── 24. Verdict composition: HOLD beats CAUTION ───────────────────
 
-test("FloorEnforcer: HOLD + CAUTION in reasons → final VOID", () => {
+test("FloorEnforcer: HOLD + CAUTION in reasons → final HOLD", () => {
   resetF13HaltChannel();
   // High blast (F1 HOLD) + destructive verb with rollback (F5 CAUTION)
   const action = makeAction({
@@ -329,9 +328,7 @@ test("FloorEnforcer: HOLD + CAUTION in reasons → final VOID", () => {
     rollback_plan: "git restore /etc/something",
   });
   const v = checkAll(makeContext(action));
-  // F1 returns HOLD, F5 may return CAUTION; combined verdict resolves to VOID
-  // due to blast_radius=vps + low reversibility triggering stricter floor.
-  assert.equal(v.final, "VOID");
+  assert.equal(v.final, "HOLD");
 });
 
 // ─── 25. F11 AUTH catches anonymous actor on SEAL session ─────────────
