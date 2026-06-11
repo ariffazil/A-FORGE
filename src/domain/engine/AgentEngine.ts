@@ -590,7 +590,12 @@ export class AgentEngine {
             remainingTokens: Math.max(0, budgetStatus.totalTokensUsed - this.profile.budget.tokenCeiling) * -1,
             remainingTurns: budgetStatus.turnsRemaining,
           }) as { deferred: unknown[]; reason: string };
-        } catch {
+        } catch (error) {
+          console.warn(
+            `[WEALTH-ADVISORY] Failed to evaluate plan: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
           // WEALTH unreachable — skip advisory, proceed with governance-only gating
         }
         if (wealthAdvice.deferred.length > 0) {
@@ -625,7 +630,12 @@ export class AgentEngine {
         let continueAdvice: { verdict: string; reason: string } = { verdict: "SEAL", reason: "" };
         try {
           continueAdvice = await wealthEngine.shouldContinue(stressState) as { verdict: string; reason: string };
-        } catch {
+        } catch (error) {
+          console.warn(
+            `[WEALTH-ADVISORY] Failed to check continuation: ${
+              error instanceof Error ? error.message : String(error)
+            }`,
+          );
           // WEALTH unreachable — skip stress check, proceed
         }
         if (continueAdvice.verdict === "VOID") {

@@ -169,7 +169,7 @@ test("agent engine aborts when token budget is exceeded", async () => {
   );
 
   const result = await engine.run({
-    task: "Exceed budget",
+    task: "Exceed tokens",
     workingDirectory: root,
   });
 
