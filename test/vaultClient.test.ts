@@ -2,7 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
-import { FileVaultClient, NoOpVaultClient, computeInputHash, generateSealId, type VaultSealRecord } from "../src/vault/VaultClient.js";
+import {
+  FileVaultClient,
+  NoOpVaultClient,
+  computeInputHash,
+  generateSealId,
+  type VaultSealRecord,
+} from "../src/infrastructure/vault/index.js";
 
 test("VaultClient: NoOpVaultClient", async () => {
   const client = new NoOpVaultClient();
@@ -20,7 +26,7 @@ test("VaultClient: FileVaultClient lifecycle", async () => {
   
   // Note: FileVaultClient normally throws in production, but tests run with NODE_ENV="test" typically.
   
-  const record: import("../src/vault/VaultClient.js").VaultSealRecord = {
+  const record: VaultSealRecord = {
     sessionId: "test-session",
     verdict: "SEAL" as const,
     hashofinput: computeInputHash("task", "text", "test-session", 1),
