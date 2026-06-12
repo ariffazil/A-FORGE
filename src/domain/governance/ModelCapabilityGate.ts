@@ -11,6 +11,7 @@
  * DITEMPA BUKAN DIBERI — Forged, Not Given
  */
 
+import os
 import { execSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 
@@ -125,7 +126,7 @@ import json
 from arifosmcp.runtime.registry import RUNTIME_PATH
 print(json.dumps(json.load(open(RUNTIME_PATH / 'vps_main_arifos.json'))))
 "`,
-      { encoding: "utf-8", timeout: 10000, cwd: "/root/arifOS" }
+      { encoding: "utf-8", timeout: 10000, cwd: (process.env.ARIFOS_HOME || "/root") + "/arifOS" }
     );
     const spine = JSON.parse(json);
     cachedCard = {
