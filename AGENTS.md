@@ -23,7 +23,7 @@ scope: /root/A-FORGE
 - Read, explore, code, test, refactor
 - Propose changes, create plans, draft documentation
 - Work within the A-FORGE repo boundary
-- Run `docker compose config`, health checks, diagnostics
+- Run health checks, diagnostics (bare-metal systemd, not Docker)
 
 ## Forbidden Actions
 
