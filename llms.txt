@@ -1,0 +1,53 @@
+# A-FORGE — Constitutional Execution Shell
+> Event-sourced agent runtime. Planner/Executor/Verifier triad, policy engine, governed memory.
+> Port: 7071. License: AGPL-3.0. Status: OPERATIONAL. Version: 2026.06.06.
+
+## Quick Context
+- **What:** Execution shell — builds, deploys, runs as systemd service
+- **Role:** EXECUTES approved plans. Hard-gated by judge + APEX. Never autonomous.
+- **Federation:** A-FORGE executes. arifOS authorizes. Arif commands.
+- **Runtime:** TypeScript, Node 22+, Express, bare-metal systemd
+
+## Key Files
+- README.md — Full human-readable narrative (842 lines)
+- AGENTS.md — Agent rules, build/test commands
+- GENESIS/012_AFORGE_MANDATE.md — Constitutional mandate
+- CONTEXT.md — Live organ state
+
+## Entry Points
+- src/ — TypeScript source (~130 files, ~24K lines)
+- src/engine/ — AgentEngine, PlanValidator, execution runtime
+- src/planner/ — ParallelPlanner, dependency resolution
+- src/memory/ — Governed memory, context compression
+- src/governance/ — Policy engine, 888_HOLD gates
+- src/bridges/ — Federation organ bridges (MCP, A2A)
+- src/a2a/ — Agent-to-Agent protocol
+- src/ops/ — Health, federation probe, telemetry
+- src/cli/ — CLI interface
+
+## Build & Test
+- Install:  npm install
+- Build:   npm run build   (tsc -p tsconfig.json)
+- Test:    make test        (security-audit + build + all 17 test suites)
+- Start:   systemctl start a-forge
+- Health:  curl http://127.0.0.1:7071/health
+- Probe:   curl http://127.0.0.1:7071/api/federation-probe
+- Deploy:  make build && systemctl restart a-forge
+
+## API Endpoints
+GET  /health                  — Liveness probe
+GET  /api/federation-probe    — 6-organ parallel health scan
+GET  /.well-known/agent-card.json — A2A agent card
+POST /tasks                   — A2A task submission
+
+## Architecture (W2/W3 hexagonal ports)
+Domain layer    — Pure business logic, no I/O
+Infrastructure  — Systemd, filesystem, Docker, network
+Interfaces      — Express routes, MCP bridges, A2A handlers
+
+## Boundaries (NEVER)
+- NEVER execute without JUDGE_SEAL_AUTHORIZATION + APEX approval
+- NEVER legislate (A-FORGE executes, arifOS legislates)
+- NEVER self-authorize a forge gate
+- NEVER bypass the reversibility scoring
+- NEVER auto-deploy to production without human 888
