@@ -13,6 +13,7 @@
  * 7 sovereign repos (not a monorepo): arifOS, A-FORGE, AAA, geox, WEALTH, WELL, APEX.
  */
 
+import os
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { readFileSync, existsSync, statSync } from "fs";
@@ -30,12 +31,12 @@ interface RepoEntry {
 }
 
 const REPO_ATLAS: RepoEntry[] = [
-  { name: "arifOS",  path: "/root/arifOS", remote: "ariffazil/arifos",  primary_branch: "main" },
+  { name: "arifOS",  path: (process.env.ARIFOS_HOME || "/root") + "/arifOS", remote: "ariffazil/arifos",  primary_branch: "main" },
   { name: "A-FORGE", path: "/root/A-FORGE", remote: "ariffazil/a-forge", primary_branch: "main" },
-  { name: "AAA",     path: "/root/AAA",     remote: "ariffazil/aaa",     primary_branch: "main" },
-  { name: "geox",    path: "/root/geox",    remote: "ariffazil/geox",    primary_branch: "main" },
-  { name: "WEALTH",  path: "/root/WEALTH",  remote: "ariffazil/wealth",  primary_branch: "main" },
-  { name: "WELL",    path: "/root/WELL",    remote: "ariffazil/well",    primary_branch: "main" },
+  { name: "AAA",     path: (process.env.ARIFOS_HOME || "/root") + "/AAA",     remote: "ariffazil/aaa",     primary_branch: "main" },
+  { name: "geox",    path: (process.env.ARIFOS_HOME || "/root") + "/geox",    remote: "ariffazil/geox",    primary_branch: "main" },
+  { name: "WEALTH",  path: (process.env.ARIFOS_HOME || "/root") + "/WEALTH",  remote: "ariffazil/wealth",  primary_branch: "main" },
+  { name: "WELL",    path: (process.env.ARIFOS_HOME || "/root") + "/WELL",    remote: "ariffazil/well",    primary_branch: "main" },
   { name: "APEX",    path: "/root/APEX",    remote: "ariffazil/apex",    primary_branch: "apex" },
 ];
 
