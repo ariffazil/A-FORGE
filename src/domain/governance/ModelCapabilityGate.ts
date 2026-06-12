@@ -11,7 +11,6 @@
  * DITEMPA BUKAN DIBERI — Forged, Not Given
  */
 
-import os
 import { execSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 

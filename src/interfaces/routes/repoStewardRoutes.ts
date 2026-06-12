@@ -13,7 +13,6 @@
  * 7 sovereign repos (not a monorepo): arifOS, A-FORGE, AAA, geox, WEALTH, WELL, APEX.
  */
 
-import os
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { readFileSync, existsSync, statSync } from "fs";
