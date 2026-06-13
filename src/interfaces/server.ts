@@ -492,6 +492,10 @@ app.get("/health", (_req: Request, res: Response) => {
     service: "A-FORGE-sense",
     status: "healthy",
     version: "0.1.0",
+    // P5 (2026-06-13): Substrate doctrine — A-FORGE is the substrate engineering organ.
+    // Profile bounded by F13; options: enterprise | agentic | sovereign | civilization.
+    profile: "enterprise",
+    authority_ceiling: "777_FORGE", // A-FORGE may forge; never seal nor adjudicate
     identity_hash: identityHash,
     contract_url: "/contract",
     timestamp: now,
