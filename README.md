@@ -19,7 +19,7 @@
 ```
 
 [![Organ](https://img.shields.io/badge/organ-A--FORGE-8B5CF6)](https://github.com/ariffazil/A-FORGE)
-[![Status](https://img.shields.io/badge/status-LIVE-brightgreen)](http://127.0.0.1:7071/health)
+[![Status](https://img.shields.io/badge/status-LIVE-brightgreen)](CONTEXT.md)
 [![Node](https://img.shields.io/badge/node-22+-339933?logo=node.js&logoColor=white)](package.json)
 [![TypeScript](https://img.shields.io/badge/typescript-6.0-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
