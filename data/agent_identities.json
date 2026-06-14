@@ -1,0 +1,23 @@
+{
+  "seal-agent": {
+    "agent_id": "seal-agent",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "never",
+      "shell_exec": "never",
+      "git_commit": "never",
+      "deploy": "never",
+      "vault_seal": "never"
+    },
+    "identity_proof": "pending",
+    "registered_at": "2026-06-14T13:06:01.228Z",
+    "last_seen": "2026-06-14T13:06:01.229Z",
+    "lease_ids": [
+      "4ebd539b-4e4b-4480-8aa3-4c88616ca1fa"
+    ]
+  }
+}
