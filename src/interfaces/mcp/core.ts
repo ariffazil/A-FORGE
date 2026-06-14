@@ -34,6 +34,14 @@ import { getMiniMaxClient } from "../../infrastructure/tools/MiniMaxMcpClient.js
 import { registerCoreResources } from "./resources.js";
 import { callMCP } from "./client.js";
 import { enforceMcpFloor, floorErrorResponse } from "../../domain/governance/mcpFloorEnforcer.js";
+import {
+  registerFilesystemTools,
+  registerPostgresTools,
+  registerMemoryTools,
+  registerGitTools,
+  registerGitHubTools,
+  registerDockerTools,
+} from "./proxyTools.js";
 
 export const server = new McpServer({
   name: "A-FORGE",
@@ -751,6 +759,17 @@ server.registerTool("forge_well_anchor", {
     agentId: z.string().optional().describe("Agent ID"),
   }),
 }, wellAnchorHandler);
+
+// ── Tier 1 Proxy Tools (forge_filesystem, forge_postgres, forge_memory, forge_git, forge_github, forge_docker) ──
+// Each group registers 4-6 tools under the forge_* namespace.
+// F8 LAW: All filesystem ops scoped to /root, /tmp, /data.
+// F11 AUTH: git push and docker destructive ops require 888_HOLD.
+registerFilesystemTools(server);
+registerPostgresTools(server);
+registerMemoryTools(server);
+registerGitTools(server);
+registerGitHubTools(server);
+registerDockerTools(server);
 
 // ── Resources ────────────────────────────────────────────────────────────────
 registerCoreResources(server, approvalBoundary, memoryContract);
