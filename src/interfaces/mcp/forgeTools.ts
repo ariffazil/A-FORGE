@@ -19,6 +19,8 @@ import { execSync } from "node:child_process";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
+import { callMCP } from "./client.js";
+import { registerSession } from "../../domain/session/sessionGate.js";
 
 // ── In-memory stores ──────────────────────────────────────────────────────────
 
@@ -32,7 +34,7 @@ const registeredAgents = new Map<string, {
   lease_ids: string[];
 }>();
 
-const activeLeases = new Map<string, {
+export type LeaseRecord = {
   lease_id: string;
   agent_id: string;
   scope: string[];
@@ -42,7 +44,59 @@ const activeLeases = new Map<string, {
   expires_at: number;
   forbidden: string[];
   revoked: boolean;
-}>();
+};
+
+const activeLeases = new Map<string, LeaseRecord>();
+
+const CLASS_RANK: Record<string, number> = {
+  OBSERVE: 1,
+  PROPOSE: 2,
+  MUTATE: 3,
+  ATOMIC: 4,
+};
+
+/**
+ * Validate a lease against the requested tool and action class.
+ * Returns ok=true if the lease exists, is active, grants sufficient class,
+ * covers the tool in scope, and does not explicitly forbid it.
+ */
+export function validateLeaseForTool(
+  lease_id: string | undefined,
+  tool: string,
+  actionClass: "OBSERVE" | "MUTATE" | "ATOMIC"
+): { ok: true; lease: LeaseRecord } | { ok: false; gate: string; reason: string } {
+  if (!lease_id) {
+    return { ok: false, gate: "LEASE_REQUIRED", reason: "lease_id is required for non-OBSERVE actions" };
+  }
+  const lease = activeLeases.get(lease_id);
+  if (!lease) {
+    return { ok: false, gate: "LEASE_UNKNOWN", reason: `Lease '${lease_id}' not found` };
+  }
+  if (lease.revoked) {
+    return { ok: false, gate: "LEASE_REVOKED", reason: "Lease has been revoked" };
+  }
+  if (Date.now() > lease.expires_at) {
+    const remaining = Math.max(0, Math.floor((lease.expires_at - Date.now()) / 1000));
+    return { ok: false, gate: "LEASE_EXPIRED", reason: `Lease expired ${Math.abs(remaining)}s ago` };
+  }
+  const requestedRank = CLASS_RANK[actionClass] ?? 0;
+  const leaseRank = CLASS_RANK[lease.max_action_class] ?? 0;
+  if (requestedRank > leaseRank) {
+    return {
+      ok: false,
+      gate: "LEASE_CLASS_EXCEEDED",
+      reason: `Lease permits up to '${lease.max_action_class}', but '${tool}' is class ${actionClass}`,
+    };
+  }
+  const wildcard = lease.scope.includes("*");
+  if (!wildcard && !lease.scope.includes(tool)) {
+    return { ok: false, gate: "LEASE_SCOPE_DENIED", reason: `Tool '${tool}' is not in lease scope` };
+  }
+  if (lease.forbidden.includes(tool)) {
+    return { ok: false, gate: "LEASE_FORBIDDEN", reason: `Tool '${tool}' is explicitly forbidden by lease` };
+  }
+  return { ok: true, lease };
+}
 
 const jobStore = new Map<string, {
   job_id: string;

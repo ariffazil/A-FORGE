@@ -51,6 +51,8 @@ import { createVaultMerkleRouter } from "./routes/vaultMerkleRoutes.js";
 import { createRepoStewardRouter } from "./routes/repoStewardRoutes.js";
 import { callMCP } from "./mcp/client.js";
 import { server as mcpServer } from "./mcp/core.js";
+import { validateLeaseForTool } from "./mcp/forgeTools.js";
+import { validateSession } from "../domain/session/sessionGate.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
 import { getApprovalBoundary } from "../application/approval/index.js";
@@ -296,7 +298,12 @@ app.post("/route", async (req: Request, res: Response) => {
  */
 app.post("/execute", async (req: Request, res: Response) => {
   try {
-    const { tool, args, session_id, actor_id } = req.body;
+    // Resolve identity from body OR headers (Gateway passes headers; direct callers use body)
+    const session_id = req.body.session_id || req.headers["x-arifos-session-id"] as string || undefined;
+    const actor_id = req.body.actor_id || req.headers["x-arifos-actor-id"] as string || undefined;
+    const lease_id = req.body.lease_id || req.headers["x-arifos-lease-id"] as string || undefined;
+    const { tool, args } = req.body;
+
     if (!tool || typeof tool !== "string") {
       res.status(400).json({ ok: false, error: "tool is required and must be a string" });
       return;
@@ -317,6 +324,54 @@ app.post("/execute", async (req: Request, res: Response) => {
       "git_push", "git_commit",
     ]);
     const actionClass = ATOMIC_TOOLS.has(tool) ? "ATOMIC" : MUTATE_TOOLS.has(tool) ? "MUTATE" : "OBSERVE";
+
+    // ── FORGE 2-B: Kernel Session Gate (MUTATE + ATOMIC require session + lease) ──
+    if (actionClass !== "OBSERVE") {
+      if (!session_id) {
+        res.status(423).json({
+          ok: false,
+          error: {
+            type: "governance_hold",
+            message: `SESSION_GATE: Tool "${tool}" is ${actionClass}. Requires valid session_id from arif_session_init. Call the kernel first.`,
+          },
+          action_class: actionClass,
+          adat_gate: "SESSION_REQUIRED",
+        });
+        return;
+      }
+
+      // ── Kernel Session Origin Gate — verify session came from kernel ──
+      const originCheck = validateSession(session_id);
+      if (!originCheck.valid) {
+        res.status(423).json({
+          ok: false,
+          error: {
+            type: "governance_hold",
+            message: `SESSION_ORIGIN: ${originCheck.reason}`,
+          },
+          action_class: actionClass,
+          adat_gate: originCheck.reason.split(":")[0],
+        });
+        return;
+      }
+      // Attach verified actor to request context
+      (req as any).verified_actor = originCheck.actor_id;
+      console.error(`[FORGE-2B] ${actionClass} ${tool} session=${session_id?.slice(0,12)} lease=${lease_id?.slice(0,12)} actor=${originCheck.actor_id}`);
+
+      const leaseCheck = validateLeaseForTool(lease_id, tool, actionClass);
+      if (!leaseCheck.ok) {
+        res.status(423).json({
+          ok: false,
+          error: {
+            type: "governance_hold",
+            message: `LEASE_GATE: Tool "${tool}" is ${actionClass}. ${leaseCheck.gate}: ${leaseCheck.reason}`,
+          },
+          action_class: actionClass,
+          adat_gate: leaseCheck.gate,
+        });
+        return;
+      }
+    }
 
     // ATOMIC gate: require F13 888_HOLD
     if (actionClass === "ATOMIC") {
