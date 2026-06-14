@@ -497,7 +497,10 @@ export class PipelineCoordinator {
       const decision = (verdict as Record<string, unknown>).decision;
       if ((decision === "HOLD" || decision === "VOID") && !errorMessage) {
         floorsTriggered.push("F2");
-        finalResponse += `\n\n[TRUTH: ${f2Advisory.concern}]`;
+        // F2 TRUTH: Kernel issued HOLD/VOID — halt, do not persist contaminated output
+        const haltText = `[F2_TRUTH_KERNEL_HOLD] ${f2Advisory.concern} | detail=${JSON.stringify(f2Advisory.findings)} | kernel_verdict=${String(decision)}`;
+        finalResponse = haltText;
+        errorMessage = haltText;
       }
     } else if (f2Advisory.recommendation === "FLAG_FOR_HUMAN") {
       console.log(`[ADVISORY] ${f2Advisory.concern}: ${f2Advisory.riskLevel}`);
@@ -514,7 +517,12 @@ export class PipelineCoordinator {
       const decision = (verdict as Record<string, unknown>).decision;
       if (decision === "HOLD" || decision === "VOID") {
         floorsTriggered.push("F12");
-        finalResponse += `\n\n[STEWARDSHIP: ${f12Advisory.concern}]`;
+        // F12 STEWARDSHIP: Kernel issued HOLD/VOID — halt, do not persist contaminated output
+        const haltText = `[F12_STEWARDSHIP_KERNEL_HOLD] ${f12Advisory.concern} | detail=${JSON.stringify(f12Advisory.findings)} | kernel_verdict=${String(decision)}`;
+        if (!errorMessage) {
+          finalResponse = haltText;
+          errorMessage = haltText;
+        }
       }
     } else if (f12Advisory.recommendation === "FLAG_FOR_HUMAN") {
       console.log(`[ADVISORY] ${f12Advisory.concern}: ${f12Advisory.riskLevel}`);
