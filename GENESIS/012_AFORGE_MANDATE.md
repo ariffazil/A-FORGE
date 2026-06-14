@@ -1,7 +1,7 @@
 # GENESIS/012 — A-FORGE Mandate
 
 > **Number:** 012 | **Owner:** A-FORGE (Execution Shell)
-> **Root canon:** `ariffazil/arifOS/GENESIS/000_KERNEL_CANON.md`
+> **Root canon:** `ariffazil/arifos/GENESIS/000_KERNEL_CANON.md`
 > **Status:** STUB — full canon pending sovereign F13 ratification
 > **Forged:** 2026-06-12
 

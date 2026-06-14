@@ -26,4 +26,4 @@ COPY --from=builder --chown=arifos:arifos /app/dist ./dist
 USER arifos
 
 EXPOSE 7071
-CMD ["node", "dist/src/server.js"]
+CMD ["node", "dist/src/interfaces/server.js"]

@@ -172,7 +172,7 @@ Result → RunReporter → Prometheus + Supabase + VAULT999
 
 ## Federation Discovery
 
-On startup, A-FORGE discovers all connected organs via A2A agent cards:
+On startup, A-FORGE discovers connected federation surfaces via A2A agent cards. The arifOS Federation has **7 organs** (arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL, APEX legacy); A-FORGE also hosts the MIND:51001 and MEMORY:51002 **services**, which are not organs.
 
 ```
 A-FORGE startup
@@ -182,10 +182,10 @@ A-FORGE startup
   ├── Probe WELL    at 127.0.0.1:18083 → 45 tools registered
   └── Probe AAA     at 127.0.0.1:3001  → A2A gateway active
   ─────────────────────────────────────
-  TOTAL: 62+ tools across 5 organs
+  TOTAL: 62+ tools across 5 MCP surfaces
 ```
 
-The `/api/federation-probe` endpoint returns live status of all connected organs.
+The `/api/federation-probe` endpoint returns live status of connected surfaces.
 
 ---
 

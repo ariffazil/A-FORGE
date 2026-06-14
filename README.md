@@ -24,9 +24,9 @@
 [![TypeScript](https://img.shields.io/badge/typescript-6.0-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 [![Port](https://img.shields.io/badge/port-7071-64748b?logo=express&logoColor=white)](deploy/Caddyfile)
-[![Federation](https://img.shields.io/badge/federation-arifOS-8B5CF6)](https://github.com/ariffazil/arifOS)
-[![Systemd](https://img.shields.io/badge/systemd-a--forge.service-orange)](deploy/a-forge.service)
-[![Tests](https://img.shields.io/badge/tests-25_suites-success)](test/)
+[![Federation](https://img.shields.io/badge/federation-arifOS-8B5CF6)](https://github.com/ariffazil/arifos)
+[![Systemd](https://img.shields.io/badge/systemd-A--FORGE.service-orange)](deploy/systemd/A-FORGE.service)
+[![Tests](https://img.shields.io/badge/tests-26_suites-success)](test/)
 [![Tools](https://img.shields.io/badge/discovered-62%2B_tools-8B5CF6)](docs/)
 
 ---
@@ -34,10 +34,10 @@
 ## Federation Position
 
 > **This organ operates under the arifOS Constitutional Federation.**
-> **Canonical contract:** [ariffazil/arifOS/FEDERATION_CONTRACT.md](https://github.com/ariffazil/arifOS/blob/main/FEDERATION_CONTRACT.md)
-> **Kernel canon:** [ariffazil/arifOS/GENESIS/000_KERNEL_CANON.md](https://github.com/ariffazil/arifOS/blob/main/GENESIS/000_KERNEL_CANON.md)
+> **Canonical contract:** [ariffazil/arifos/FEDERATION_CONTRACT.md](https://github.com/ariffazil/arifos/blob/main/FEDERATION_CONTRACT.md)
+> **Kernel canon:** [ariffazil/arifos/GENESIS/000_KERNEL_CANON.md](https://github.com/ariffazil/arifos/blob/main/GENESIS/000_KERNEL_CANON.md)
 
-A-FORGE is the **governed execution shell** of the arifOS Federation — one of 7 sovereign organs running bare-metal on VPS `af-forge` (72.62.71.199). It does not judge. It does not compute domain logic. It **executes** — within bounded constitutional gates, with full audit trail, and never without upstream authorization.
+A-FORGE is the **governed execution shell** of the arifOS Federation — one of 7 sovereign organs running bare-metal on VPS `af-forge` (72.62.71.199). It also hosts the MIND:51001 and MEMORY:51002 federated intelligence **services**, which are not separate organs. A-FORGE does not judge, does not compute domain logic, and **executes** only within bounded constitutional gates, with full audit trail, and never without upstream authorization.
 
 ---
 
@@ -87,7 +87,7 @@ A-FORGE is the **governed execution shell** of the arifOS Federation — one of 
       │  │ :8081    │           │  :18082  │           │  :18083  │       │
       │  └──────────┘           └──────────┘           └──────────┘       │
       │                                                                   │
-      └───────────  MCP federation bridge · 5 organs · all on 127.0.0.1 ──┘
+      └───────────  MCP federation bridge · 5 MCP surfaces · all on 127.0.0.1 ──┘
 ```
 
 ---
@@ -103,7 +103,7 @@ A-FORGE is the **governed execution shell** of the arifOS Federation — one of 
 | Domain | Description |
 |--------|-------------|
 | **Execution body** | Receives `JUDGE_SEAL_AUTHORIZATION` from arifOS, then gates and runs the plan |
-| **MCP federation bridge** | Auto-discovers 62+ tools across 5 organs on startup |
+| **MCP federation bridge** | Auto-discovers 62+ tools across 5 MCP surfaces on startup (7 federation organs total) |
 | **Constitutional gatekeeper** | 4-layer forge gate inline on every execution path |
 | **Telemetry producer** | Every execution → Prometheus + Supabase + VAULT999 + Langfuse |
 | **Orchestration engine** | Routes intents, retries failures, handles escalation |
@@ -221,7 +221,7 @@ Every execution path in A-FORGE passes through four constitutional gates **in or
   ║   │ Irreversibility gate — the final lock:                    │  ║
   ║   │   · reversibility_score calculation                       │  ║
   ║   │   · If ack_irreversible required but missing → 888_HOLD   │  ║
-  ║   │   · Routes to human (Telegram/Webhook) or APEX judge      │  ║
+  ║   │   · Routes to human (Telegram/Webhook) or AAA a2a-server  │  ║
   ║   │   · Postgres-backed approval ticket with TTL              │  ║
   ║   │                                                          │  ║
   ║   │ Verdict: APPROVED → EXECUTE                               │  ║
@@ -671,7 +671,7 @@ A-FORGE is built for institutions that need **execution with constitutional guar
 | **No self-authorization** | A-FORGE cannot approve its own execution. The `JUDGE_SEAL_AUTHORIZATION` must come from arifOS. No employee, no agent, no bypass. |
 | **Separation of powers** | arifOS judges. AAA routes. A-FORGE executes. No single organ holds all three. |
 | **Reversibility gates** | Irreversible actions require explicit approval. 888_HOLD escalation with human-verifiable tickets. |
-| **Defense in depth** | 4-layer gate chain. Even if Layer 2 is bypassed, Layers 1 and 3 remain. Even if all software gates are bypassed, F14 (the physical kill switch) stands. |
+| **Defense in depth** | 4-layer gate chain. Even if Layer 2 is bypassed, Layers 1 and 3 remain. F14 is dead as a constitutional floor (Sovereign Ruling 2026-06-13); physical-kill-switch claims are reframed as F2 TRUTH + F3 TRI-WITNESS cross-verify protocol. |
 | **Observability** | Prometheus dashboards. Supabase tool call receipts. Langfuse trace sessions. No execution is invisible. |
 | **AGPL-3.0 copyleft** | The governed execution runtime is free software. Any modification that runs on a network server must release its source. The constitutional authority (arifOS) remains the sole arbiter of lawful use. |
 
@@ -704,19 +704,19 @@ AGPL-3.0 was chosen deliberately. Governed execution is meaningless if the gover
 
 ## Federation Cross-Reference
 
-A-FORGE is one of **7 organs** in the arifOS Federation. Every organ has its own repository, port, and constitutional role.
+A-FORGE is one of **7 organs** in the arifOS Federation. Every organ has its own repository, port, and constitutional role. MIND:51001 and MEMORY:51002 are federated intelligence **services** hosted by A-FORGE, not separate organs. `arif-sites` is a public surface, not an organ.
 
 | Organ | Repository | Role | Port | License |
 |-------|-----------|------|------|---------|
-| **arifOS** | [ariffazil/arifOS](https://github.com/ariffazil/arifOS) | Constitutional Kernel · Judge | 8088 | AGPL-3.0 |
-| **A-FORGE** | [ariffazil/A-FORGE](https://github.com/ariffazil/A-FORGE) | Execution Shell · Forge | 7071 | AGPL-3.0 |
-| **AAA** | [ariffazil/AAA](https://github.com/ariffazil/AAA) | Control Plane · Cockpit | 3001 | AGPL-3.0 |
+| **arifOS** | [ariffazil/arifos](https://github.com/ariffazil/arifos) | Constitutional Kernel · Judge | 8088 | AGPL-3.0 |
+| **A-FORGE** | [ariffazil/A-FORGE](https://github.com/ariffazil/A-FORGE) | Execution Shell · Forge · MIND/MEMORY host | 7071 | AGPL-3.0 |
+| **AAA** | [ariffazil/aaa](https://github.com/ariffazil/aaa) | Control Plane · Cockpit | 3001 | AGPL-3.0 |
 | **GEOX** | [ariffazil/geox](https://github.com/ariffazil/geox) | Earth Intelligence | 8081 | AGPL-3.0 |
 | **WEALTH** | [ariffazil/wealth](https://github.com/ariffazil/wealth) | Capital Intelligence | 18082 | AGPL-3.0 |
 | **WELL** | [ariffazil/well](https://github.com/ariffazil/well) | Human Readiness | 18083 | AGPL-3.0 |
-| **arif-sites** | [ariffazil/arif-sites](https://github.com/ariffazil/arif-sites) | Public Surfaces | 443 | AGPL-3.0 |
+| **APEX** | [ariffazil/apex](https://github.com/ariffazil/apex) | 888 JUDGE (legacy health probe) | 3002 | AGPL-3.0 |
 
-**Live federation status:** [FEDERATION_STATUS.md](https://github.com/ariffazil/arifOS/blob/main/FEDERATION_STATUS.md)
+**Live federation status:** [FEDERATION_STATUS.md](https://github.com/ariffazil/arifos/blob/main/FEDERATION_STATUS.md)
 **Federation topology:** `/root/CONTEXT.md` on the VPS (live state)
 
 ---
@@ -732,7 +732,7 @@ npm install
 # Build TypeScript → dist/
 npm run build
 
-# Run test suites (25 suites, ~4,700 lines)
+# Run test suites (26 suites, ~4,700 lines)
 make test
 # → security-audit + build + all test suites
 
@@ -770,7 +770,7 @@ journalctl -u a-forge -f
 | Target | Description |
 |--------|-------------|
 | `make build` | Security audit (`security-audit.mk`) then TypeScript build |
-| `make test` | Security audit + build + 25 test suites |
+| `make test` | Security audit + build + 26 test suites |
 | `make install` | `npm install` |
 | `make clean` | Remove `dist/` and `node_modules/` |
 

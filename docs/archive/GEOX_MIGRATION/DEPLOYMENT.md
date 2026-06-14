@@ -1,3 +1,13 @@
+# TOMBSTONE — Migrated GEOX Document
+
+> **Status:** ARCHIVED / NOT CANONICAL IN A-FORGE  
+> **Origin:** GEOX repo (ariffazil/geox)  
+> **Migrated to:** A-FORGE/docs/archive/GEOX_MIGRATION/  
+> **Reason:** These documents were copied into A-FORGE during earlier federation consolidation. They belong to the GEOX (Earth Intelligence) or WEALTH (Capital Intelligence) sibling repos, not the A-FORGE execution shell. Keep them here for audit lineage only; do not treat them as A-FORGE canonical truth.  
+> **Canonical SoT:** ariffazil/arifos/FEDERATION_CONTRACT.md and ariffazil/arifos/FEDERATION_STATUS.md
+
+---
+
 # GEOX Deployment Guide — Earth Intelligence Core
 ## Version: v2026.04.10-EIC | Seal: DITEMPA BUKAN DIBERI
 
