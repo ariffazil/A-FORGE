@@ -53,6 +53,7 @@ import { callMCP } from "./mcp/client.js";
 import { server as mcpServer } from "./mcp/core.js";
 import { validateLeaseForTool } from "./mcp/forgeTools.js";
 import { validateSession } from "../domain/session/sessionGate.js";
+import { classifyTool, requiresGovernance } from "../domain/governance/actionClassifier.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
 import { getApprovalBoundary } from "../application/approval/index.js";
@@ -310,23 +311,10 @@ app.post("/execute", async (req: Request, res: Response) => {
     }
 
     // ── ADAT AGENTIC: Classify action before execution ──
-    const ATOMIC_TOOLS = new Set([
-      "arif_vault_seal", "forge_approve", "arif_forge_execute",
-      "docker_container_remove", "docker_volume_remove",
-      "systemctl_stop", "systemctl_restart",
-      "git_push_force", "git_hard_reset",
-      "hostinger_vps_restart", "hostinger_vps_stop",
-    ]);
-    const MUTATE_TOOLS = new Set([
-      "forge_dry_run", "arif_systemctl", "arif_sudo", "arif_run",
-      "write", "edit", "bash",
-      "docker_container_start", "docker_container_restart",
-      "git_push", "git_commit",
-    ]);
-    const actionClass = ATOMIC_TOOLS.has(tool) ? "ATOMIC" : MUTATE_TOOLS.has(tool) ? "MUTATE" : "OBSERVE";
+    const actionClass = classifyTool(tool);
 
     // ── FORGE 2-B: Kernel Session Gate (MUTATE + ATOMIC require session + lease) ──
-    if (actionClass !== "OBSERVE") {
+    if (requiresGovernance(actionClass)) {
       if (!session_id) {
         res.status(423).json({
           ok: false,
@@ -485,6 +473,7 @@ app.get("/contract", (_req: Request, res: Response) => {
       python_mcp: "GEOX-mcp:8081",
       bridge: "A-FORGE-bridge:7071",
       federation_probe: "GET /api/federation-probe",
+      governance_status: "GET /api/governance-status",
       repo_steward: "GET /api/repo-steward/{sot-validator,registry-trinity,repo-entropy,steward-suggest}",
     },
     timestamp: new Date().toISOString(),
@@ -865,7 +854,10 @@ async function initMcpTransport(): Promise<StreamableHTTPServerTransport | null>
     await memoryContract.initialize();
     await telemetry.initialize();
     const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => randomUUID(),
+      // Fixed session ID: A-FORGE runs on localhost behind the authenticated
+      // gateway; a stable session lets the gateway and direct callers share
+      // the same transport session without re-initialization races.
+      sessionIdGenerator: () => "a-forge-gateway-session",
       enableJsonResponse: true, // Direct JSON (not SSE) — arifOS parity. Required for OpenCode MCP client compat.
     });
     await mcpServer.connect(transport);

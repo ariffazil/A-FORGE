@@ -275,6 +275,10 @@ async function main() {
       if (data.metrics) {
         model = update(model, { type: "METRICS_UPDATED", metrics: data.metrics });
       }
+      // F2 TRUTH: dispatch live governance data if the endpoint returned floors
+      if (data.governance && data.governance.length > 0) {
+        model = update(model, { type: "GOVERNANCE_UPDATED", governance: data.governance });
+      }
       model = update(model, { type: "TICK", timestamp: data.timestamp });
       model = update(model, { type: "CONNECTED", connected: true });
       model = update(model, { type: "ERROR", error: null });
