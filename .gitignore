@@ -110,3 +110,10 @@ coverage.xml
 *.cover
 data/amanah_locks.jsonl
 coverage/
+
+# ── RSI / Forge ephemeral artifacts — regenerated on every entropy pass ──
+# The measure_entropy.py script writes this. It is derived data, not source.
+entropy-report.json
+
+# ── TypeScript build outputs ──
+build/

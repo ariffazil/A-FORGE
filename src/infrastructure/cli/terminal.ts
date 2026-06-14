@@ -53,13 +53,53 @@ const R = c.reset;
 
 // ── Config ──────────────────────────────────────────────────────────
 interface TerminalConfig {
-  provider: "deepseek" | "minimax" | "ollama";
+  provider: "deepseek" | "deepseek-reasoner" | "minimax" | "ollama";
   model: string;
   apiKey: string;
   baseUrl: string;
   agent: "forge" | "explore";
   workdir: string;
 }
+
+// ── Provider Fallback Chain (ordered: first reachable wins) ──────────
+interface ProviderSlot {
+  name: TerminalConfig["provider"];
+  model: string;
+  apiKeyEnv: string;
+  baseUrl: string;
+  status: "active" | "rate_limited" | "dead" | "local";
+}
+
+const PROVIDER_FALLBACK_CHAIN: ProviderSlot[] = [
+  {
+    name: "deepseek",
+    model: "deepseek-chat",
+    apiKeyEnv: "DEEPSEEK_API_KEY",
+    baseUrl: "https://api.deepseek.com/v1",
+    status: "active",
+  },
+  {
+    name: "deepseek-reasoner",
+    model: "deepseek-reasoner",
+    apiKeyEnv: "DEEPSEEK_API_KEY",
+    baseUrl: "https://api.deepseek.com/v1",
+    status: "active",
+  },
+  {
+    name: "minimax",
+    model: "MiniMax-M3",
+    apiKeyEnv: "MINIMAX_API_KEY",
+    baseUrl: "https://api.minimax.io/v1",
+    status: "rate_limited", // 2026-06-13: Token Plan limit reached (429)
+  },
+  {
+    name: "ollama",
+    model: "qwen2.5:7b",
+    apiKeyEnv: "",
+    baseUrl: "http://localhost:11434/v1",
+    status: "local",
+  },
+];
 
 function loadConfig(): TerminalConfig {
   const args = process.argv.slice(2);
@@ -68,45 +108,55 @@ function loadConfig(): TerminalConfig {
     return idx >= 0 && idx + 1 < args.length ? args[idx + 1] : fallback;
   };
 
-  let provider = getArg(
-    "--provider",
-    process.env.AFORGE_PROVIDER ?? process.env.AGENT_WORKBENCH_PROVIDER ?? "deepseek"
-  ) as TerminalConfig["provider"];
-
-  // Map general OpenAI-compatible agent workbench provider to deepseek config structure
-  if ((provider as string) === "openai_responses") {
-    provider = "deepseek";
+  // If user explicitly requested a provider, use it directly (no fallback chain)
+  const explicitProvider = getArg("--provider", "");
+  if (explicitProvider) {
+    const slot = PROVIDER_FALLBACK_CHAIN.find(s => s.name === explicitProvider);
+    if (!slot) {
+      console.error(`${c.red}Unknown provider:${R} ${explicitProvider}. Valid: ${PROVIDER_FALLBACK_CHAIN.map(s => s.name).join(", ")}`);
+      process.exit(1);
+    }
+    const apiKey = slot.apiKeyEnv ? (process.env[slot.apiKeyEnv] ?? "") : "ollama";
+    if (!apiKey && slot.name !== "ollama") {
+      console.error(`${c.red}No API key:${R} ${slot.apiKeyEnv} not set.`);
+      process.exit(1);
+    }
+    return {
+      provider: slot.name,
+      model: getArg("--model", slot.model),
+      apiKey,
+      baseUrl: slot.baseUrl,
+      agent: getArg("--agent", "forge") as "forge" | "explore",
+      workdir: getArg("--workdir", process.cwd()),
+    };
   }
 
-  const configs: Record<string, Pick<TerminalConfig, "model" | "apiKey" | "baseUrl">> = {
-    deepseek: {
-      model: process.env.AGENT_WORKBENCH_MODEL ?? "deepseek-chat",
-      apiKey: process.env.DEEPSEEK_API_KEY ?? process.env.OPENAI_API_KEY ?? "",
-      baseUrl: process.env.OPENAI_BASE_URL ?? "https://api.deepseek.com/v1",
-    },
-    minimax: {
-      model: "MiniMax-M3",
-      apiKey: process.env.MINIMAX_API_KEY ?? "",
-      baseUrl: "https://api.minimax.io/v1",
-    },
-    ollama: {
-      model: "qwen2.5:7b",
-      apiKey: "ollama",
-      baseUrl: "http://localhost:11434/v1",
-    },
-  };
+  // Auto-select: walk fallback chain, pick first reachable active provider
+  let selectedSlot: ProviderSlot | null = null;
+  for (const slot of PROVIDER_FALLBACK_CHAIN) {
+    if (slot.status === "dead") continue;
+    const apiKey = slot.apiKeyEnv ? (process.env[slot.apiKeyEnv] ?? "") : "ollama";
+    if (!apiKey && slot.name !== "ollama") continue; // skip if no key
+    if (slot.status === "rate_limited") {
+      console.log(`${c.yellow}⚠ ${slot.name} is rate-limited, skipping...${R}`);
+      continue;
+    }
+    selectedSlot = slot;
+    break;
+  }
 
-  const providerConfig = configs[provider];
-  if (!providerConfig || (!providerConfig.apiKey && provider !== "ollama")) {
-    console.error(`${c.red}ERROR:${R} No API key for ${provider}. Set env var.`);
+  if (!selectedSlot) {
+    console.error(`${c.red}FATAL:${R} No reachable provider. Check API keys and quota.\n  Chain: ${PROVIDER_FALLBACK_CHAIN.map(s => `${s.name}(${s.status})`).join(" → ")}`);
     process.exit(1);
   }
 
+  console.log(`${c.dim}Provider: ${selectedSlot.name} (${selectedSlot.model}) [${selectedSlot.status}]${R}`);
+
   return {
-    provider,
-    model: getArg("--model", providerConfig.model),
-    apiKey: providerConfig.apiKey,
-    baseUrl: providerConfig.baseUrl,
+    provider: selectedSlot.name,
+    model: getArg("--model", selectedSlot.model),
+    apiKey: selectedSlot.apiKeyEnv ? (process.env[selectedSlot.apiKeyEnv] ?? "") : "ollama",
+    baseUrl: selectedSlot.baseUrl,
     agent: getArg("--agent", "forge") as "forge" | "explore",
     workdir: getArg("--workdir", process.cwd()),
   };
@@ -180,8 +230,32 @@ const FED_ORGANS = [
   { name: "WEALTH", port: 18082 }, { name: "WELL", port: 18083 },
   { name: "A-FORGE", port: 7071 },
 ];
+const TOOL_CACHE_FILE = resolve(homedir(), ".aforge", "tool-cache.json");
+const TOOL_CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+function loadToolCache(): FedTool[] | null {
+  try {
+    if (!existsSync(TOOL_CACHE_FILE)) return null;
+    const raw = JSON.parse(readFileSync(TOOL_CACHE_FILE, "utf8"));
+    if (Date.now() - raw.cachedAt > TOOL_CACHE_TTL) return null; // expired
+    return raw.tools as FedTool[];
+  } catch { return null; }
+}
+
+function saveToolCache(tools: FedTool[]) {
+  try {
+    const dir = resolve(homedir(), ".aforge");
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+    writeFileSync(TOOL_CACHE_FILE, JSON.stringify({ tools, cachedAt: Date.now() }, null, 2));
+  } catch { /* best-effort cache */ }
+}
 
 async function discoverTools(): Promise<FedTool[]> {
+  // Try cache first (fast path — saves ~10s on repeated launches)
+  const cached = loadToolCache();
+  if (cached && cached.length > 0) return cached;
+
+  // Live discovery (slow path — probes 5 organs sequentially)
   const tools: FedTool[] = [];
   for (const o of FED_ORGANS) {
     try {
@@ -202,6 +276,8 @@ async function discoverTools(): Promise<FedTool[]> {
       } catch { /* no /tools endpoint */ }
     } catch { /* organ down */ }
   }
+  // Cache for next launch
+  if (tools.length > 0) saveToolCache(tools);
   return tools;
 }
 

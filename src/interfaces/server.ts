@@ -47,6 +47,12 @@ import { createGovernanceRouter } from "./routes/governanceRoutes.js";
 import { createVaultMerkleRouter } from "./routes/vaultMerkleRoutes.js";
 import { createRepoStewardRouter } from "./routes/repoStewardRoutes.js";
 import { callMCP } from "./mcp/client.js";
+import { server as mcpServer } from "./mcp/core.js";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { randomUUID } from "node:crypto";
+import { getApprovalBoundary } from "../application/approval/index.js";
+import { getMemoryContract } from "../domain/memory-contract/index.js";
+import { telemetry } from "./mcp/telemetry.js";
 
 let cachedConstitution: FloorRule[] = [];
 
@@ -97,6 +103,29 @@ export function createApp(): express.Express {
     next();
   });
 
+  // ── MCP Routes: Streamable HTTP transport on /mcp ──
+  // req.body already parsed by app.use(express.json()) above.
+  const mcpRouter = express.Router();
+  const mcpHandler = async (req: Request, res: Response) => {
+    if (!mcpTransport) {
+      res.status(503).json({ error: "MCP transport not initialized" });
+      return;
+    }
+    try {
+      await mcpTransport.handleRequest(req, res, req.body);
+    } catch (err) {
+      console.error("[A-FORGE] MCP transport error:", err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: "MCP transport error" });
+      }
+    }
+  };
+  mcpRouter.all("/mcp", mcpHandler);
+  mcpRouter.all("/GEOX/mcp", mcpHandler);
+  mcpRouter.all("/wealth/mcp", mcpHandler);
+  app.use(mcpRouter);
+
+  // Rest of Express app (existing routes)
   app.use(createA2ARouter());
 
   const requireOperatorAuth = createOperatorAuthMiddleware(ensureOperatorTokenPolicy());
@@ -257,6 +286,10 @@ app.post("/route", async (req: Request, res: Response) => {
  * POST /execute
  * Federation MCP proxy — execute any MCP tool on any kernel.
  * Body: { tool: string, args: object, session_id?: string, actor_id?: string }
+ *
+ * 🔒 ADAT AGENTIC PreToolUse Enforcer (forged 2026-06-14):
+ *   Before every tool call, classifies action → gates ATOMIC → auto-seals MUTATE.
+ *   F1-F13 enforcement is architectural, not prompt-based.
  */
 app.post("/execute", async (req: Request, res: Response) => {
   try {
@@ -266,26 +299,82 @@ app.post("/execute", async (req: Request, res: Response) => {
       return;
     }
 
+    // ── ADAT AGENTIC: Classify action before execution ──
+    const ATOMIC_TOOLS = new Set([
+      "arif_vault_seal", "forge_approve", "arif_forge_execute",
+      "docker_container_remove", "docker_volume_remove",
+      "systemctl_stop", "systemctl_restart",
+      "git_push_force", "git_hard_reset",
+      "hostinger_vps_restart", "hostinger_vps_stop",
+    ]);
+    const MUTATE_TOOLS = new Set([
+      "forge_dry_run", "arif_systemctl", "arif_sudo", "arif_run",
+      "write", "edit", "bash",
+      "docker_container_start", "docker_container_restart",
+      "git_push", "git_commit",
+    ]);
+    const actionClass = ATOMIC_TOOLS.has(tool) ? "ATOMIC" : MUTATE_TOOLS.has(tool) ? "MUTATE" : "OBSERVE";
+
+    // ATOMIC gate: require F13 888_HOLD
+    if (actionClass === "ATOMIC") {
+      const holdId = req.body.hold_id;
+      if (!holdId) {
+        res.status(423).json({
+          ok: false,
+          error: {
+            type: "governance_hold",
+            message: `888_HOLD: Tool "${tool}" is classified ATOMIC. Requires hold_id from arif_judge_deliberate SEAL verdict.`,
+          },
+          action_class: "ATOMIC",
+          adat_gate: "888_HOLD",
+        });
+        return;
+      }
+      console.error(`[ADAT] ATOMIC ${tool} authorized with hold_id=${holdId}`);
+    }
+
     const mergedArgs = { ...(args ?? {}), session_id, actor_id };
     const result = await callMCP(tool, mergedArgs);
+
+    // ── ADAT AGENTIC: Auto-seal MUTATE/ATOMIC actions ──
+    if (actionClass === "MUTATE" || actionClass === "ATOMIC") {
+      try {
+        const sealResult = await callMCP("arif_vault_seal", {
+          content: JSON.stringify({ tool, actionClass, session_id, timestamp: new Date().toISOString() }),
+          reason: `auto-seal: ${tool}`,
+          tier: actionClass === "ATOMIC" ? "CRITICAL" : "STANDARD",
+        });
+        console.error(`[ADAT] Auto-sealed ${tool} (${actionClass}) → vault`);
+      } catch (sealErr) {
+        console.error(`[ADAT] Auto-seal failed (non-blocking): ${sealErr}`);
+        // Non-blocking: action succeeded, seal failure is logged but doesn't roll back
+      }
+    }
 
     res.json({
       ok: true,
       tool,
       result,
+      action_class: actionClass,
+      adat_enforced: true,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
     console.error("[A-FORGE] /execute error:", error);
     const message = error instanceof Error ? error.message : String(error);
-    // If error message contains 888_HOLD, surface it as a governance hold
     const isHold = message.includes("888_HOLD") || message.includes("HOLD");
+    // Determine action class from tool name in error context
+    const toolForError = req.body?.tool ?? "unknown";
+    const isAtomicErr = ["arif_vault_seal","forge_approve","arif_forge_execute","hostinger_vps_restart"].some(t => toolForError.includes(t));
+    const actionClassErr = isAtomicErr ? "ATOMIC" : "MUTATE";
     res.status(isHold ? 423 : 500).json({
       ok: false,
       error: {
         type: isHold ? "governance_hold" : "execution_error",
         message,
       },
+      action_class: actionClassErr,
+      adat_enforced: true,
     });
   }
 });
@@ -657,19 +746,43 @@ export const app = createApp();
 
 const port = process.env.AF_FORGE_PORT ? parseInt(process.env.AF_FORGE_PORT, 10) : 7071;
 
+let mcpTransport: StreamableHTTPServerTransport | null = null;
+
+async function initMcpTransport(): Promise<StreamableHTTPServerTransport | null> {
+  try {
+    const approvalBoundary = getApprovalBoundary();
+    const memoryContract = getMemoryContract();
+    await approvalBoundary.initialize();
+    await memoryContract.initialize();
+    await telemetry.initialize();
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+    });
+    await mcpServer.connect(transport);
+    console.error("[A-FORGE] MCP transport initialized — tools exposed on /mcp");
+    return transport;
+  } catch (err) {
+    console.error("[A-FORGE] MCP init failed (non-fatal):", err);
+    return null;
+  }
+}
+
 export async function startServer(): Promise<void> {
   await loadConstitution();
-  app.listen(port, "127.0.0.1", async () => {
+  mcpTransport = await initMcpTransport();
+
+  app.listen(port, "127.0.0.1", () => {
     console.error(`═══════════════════════════════════════════════════════════`);
-    console.error(`  A-FORGE Sense Bridge Server`);
+    console.error(`  A-FORGE Bridge + MCP Server`);
     console.error(`  Listening on 127.0.0.1:${port}`);
     console.error(`  Endpoints:`);
-    console.error(`    POST /sense    - Sense + Judge evaluation`);
-    console.error(`    POST /route    - Federal Coordinator Routing`);
-    console.error(`    POST /execute  - Federation MCP proxy`);
-    console.error(`    POST /a2a      - A2A JSON-RPC gateway`);
-    console.error(`    GET  /health   - Health check`);
-    console.error(`    GET  /ready    - Readiness probe`);
+    console.error(`    MCP  /mcp           - MCP Streamable HTTP (OpenCode/Claude) 🆕`);
+    console.error(`    POST /sense          - Sense + Judge evaluation`);
+    console.error(`    POST /route          - Federal Coordinator Routing`);
+    console.error(`    POST /execute        - Federation MCP proxy`);
+    console.error(`    POST /a2a            - A2A JSON-RPC gateway`);
+    console.error(`    GET  /health         - Health check`);
+    console.error(`    GET  /ready          - Readiness probe`);
     console.error(`    GET  /.well-known/agent-card.json - A2A Agent Card`);
     console.error(`    GET  /operator/approvals - List approval tickets`);
     console.error(`    GET  /operator/vault      - Search vault seals`);
