@@ -1,0 +1,1 @@
+/root/arifOS/GENESIS/001_MUHAMMAD_MODE_ASI.md

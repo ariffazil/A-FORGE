@@ -16,13 +16,12 @@
 
 ## Current Focus
 - Operational. CONSTITUTION.md ratified 2026-06-05. 4-layer forge gate active.
-- GENESIS/ still missing (pending 011+ allocation)
+- GENESIS/ linked from arifOS kernel canon
 - TUI production gaps sealed 2026-06-14: governance panel live, CI fixed, tui:start renamed
 
 ## Known Issues
-- No GENESIS/ — kernel canon unlinked
 - Pre-existing CI rot SEALED 2026-06-14 (checkout/setup-node @v6 → @v4)
 - F2/F12 post-execution judge now halting (was annotation-only)
 - GEOX/WEALTH bridge calls: advisory-only (graceful degradation by design for phase 1)
 - F3 Tri-Witness: still linguistic detection (distributed consensus: phase 2 backlog)
-- Ed25519 sovereign signature: pynacl present, wire-up pending (phase 2 backlog)
+- Ed25519 sovereign signature: fully automated via local key injection (sealed 2026-06-14)

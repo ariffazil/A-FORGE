@@ -1,10 +1,11 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-05-26
-valid_from: 2026-05-26
-valid_until: 2026-06-26
+last_verified: 2026-06-14
+valid_from: 2026-06-14
+valid_until: 2026-07-14
 confidence: high
 scope: /root/A-FORGE
+epistemic_status: SOURCE_OF_TRUTH
 -->
 
 # AGENTS.md — A-FORGE | arifOS Federation
@@ -14,16 +15,55 @@ scope: /root/A-FORGE
 > 2. Read `/root/CONTEXT.md` (Live Machine State & Ports)
 > 3. Read this file (Repo-Specific Build/Test/Run rules)
 
-> **Execution Intelligence / Forge Engine**
+> **DITEMPA BUKAN DIBERI** — Execution is forged, not given.
 >
-> A-FORGE orchestrates and executes within bounded tools. It does NOT adjudicate, SEAL, or issue constitutional verdicts.
+> **Execution Intelligence / Forge Engine** — A-FORGE orchestrates and executes within bounded tools. It does NOT adjudicate, SEAL, or issue constitutional verdicts.
+
+## What This Repo Is
+
+The governed execution shell of the arifOS Federation. A-FORGE builds, deploys, forges, and runs code under constitutional gates. It also hosts MIND:51001 and MEMORY:51002 federated intelligence services.
+
+- **Port:** 7071 (Express server, Docker Compose via systemd)
+- **Runtime:** Node.js 22+, TypeScript ~6.0
+- **Architecture:** Hexagonal / layered (domain → application → infrastructure → interfaces)
+- **Tool surface:** 20+ forge tools (forge_plan, forge_dry_run, forge_approve, arif_vault_seal)
+
+### Repository Structure
+
+```
+A-FORGE/
+├── src/
+│   ├── domain/          # Pure business logic: engine, governance, planner, agents, policy
+│   ├── application/     # Use cases: services, approval, memory, a2a, jobs
+│   ├── infrastructure/  # External adapters: llm, tools, vault, bridges, cli, code-mode
+│   └── interfaces/      # Delivery: server.ts (Express 7071), routes, mcp, config
+├── test/                # 25 TypeScript test files (Node --test)
+├── deploy/              # af-forge VPS configs, systemd, Caddy, Grafana, Prometheus
+├── GENESIS/             # Constitutional doctrine: kernel canon, MCP boundary, adat agentic, etc.
+└── AGENTS.md            # This file — agent governance
+```
+
+## A-FORGE Boundary Contract (Zero-Entropy Guard)
+
+A-FORGE is a **governed execution shell**, not a domain organ.
+
+| Boundary | Rule |
+|----------|------|
+| ✅ Routes intent | arifOS / GEOX / WEALTH / WELL MCP servers via A2A |
+| ✅ Orchestrates | Retries, escalation, tool chaining |
+| ✅ Forges | Build, deploy, artifact execution under governance |
+| ❌ NEVER geoscience | Vsh, PHIE, Sw, porosity — GEOX only |
+| ❌ NEVER economics | NPV, IRR, capital allocation — WEALTH only |
+| ❌ NEVER verdicts | SEAL, VOID, HOLD — arifOS only |
+| ❌ NEVER NumPy/Pandas | Authoritative logic lives in Python MCP organs |
+
+**Rule:** If your code needs NumPy / reservoir physics → wrong layer.
 
 ## Allowed Actions
 
-- Read, explore, code, test, refactor
-- Propose changes, create plans, draft documentation
-- Work within the A-FORGE repo boundary
-- Run health checks, diagnostics (bare-metal systemd, not Docker)
+- Read, explore, code, test, refactor in A-FORGE boundary
+- Run forge_plan, forge_dry_run, forge_execute under governance
+- Orchestrate cross-organ work via A2A mesh
 
 ## Forbidden Actions
 
@@ -31,39 +71,36 @@ scope: /root/A-FORGE
 - Issue SEAL / SABAR / VOID
 - Force push, reset hard, overwrite unknown local changes
 - Drop databases or delete data directories
-- Mutate archived/read-only repos
 - Perform broad formatting churn
 
-## Verification Commands
+## Build & Test
 
 ```bash
+cd /root/A-FORGE
+
+# Install
+npm install
+
+# Build
+npm run build                     # tsc -p tsconfig.json
+
+# Test
+npm test                          # node dist/test/*.test.js
+make test                         # security-audit + build + all suites
+
+# Deploy
 npm run build
-npm test
-make test
+systemctl restart a-forge
+curl -s http://localhost:7071/health | python3 -m json.tool
 ```
-
-## A-FORGE Boundary Contract (Zero-Entropy Guard)
-
-A-FORGE is a **transport bridge and execution shell**, not a domain organ.
-
-- ✅ Routes intent to arifOS / GEOX / WEALTH / WELL MCP servers
-- ✅ Handles orchestration, retries, escalation
-- ✅ Runs advisory checks only (non-binding)
-- ✅ Build, deploy, and artifact execution under governance
-
-- ❌ NEVER performs geoscience computation (Vsh, PHIE, Sw, etc.) — GEOX only
-- ❌ NEVER runs economic evaluation logic — WEALTH only
-- ❌ NEVER issues constitutional verdicts (SEAL / VOID / HOLD) — arifOS only
-- ❌ NEVER imports NumPy, Pandas, SciPy, lasio, welly, or matplotlib
-
-Authoritative logic lives in the Python MCP organs.
-
-**Rule:** If your code needs NumPy / Pandas / reservoir physics → wrong layer
 
 ## Escalation Rules
 
-- **888_HOLD:** Irreversible actions, git mutations, secret exposure, cross-repo architecture changes
-- **F13 SOVEREIGN (Arif):** Constitutional floor changes, new repo creation, external communications
+| Action | Escalation |
+|--------|-----------|
+| Irreversible git ops, secret exposure | 888_HOLD |
+| Constitutional floor changes, new repos | F13 SOVEREIGN (Arif) |
+| Cross-repo architecture changes | 888_HOLD |
 
 ---
 

@@ -1,0 +1,1 @@
+/root/arifOS/GENESIS/006_PETRONAS_PARADOX.md
