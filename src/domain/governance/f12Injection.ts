@@ -80,23 +80,35 @@ export function checkF12Injection(ctx: FloorContext): FloorReason[] {
   }
 
   // Rule 3: Absolute sensitive paths
-  for (const p of SENSITIVE_PATHS) {
-    if (a.target.startsWith(p) || haystack.includes(p)) {
+  // EXCEPTION: forge_filesystem_*, forge_git_*, forge_postgres_* tools are
+  // authorized proxies with their own path scoping (checkPathAllowed).
+  // They operate on /root, /tmp, /data which are valid work directories.
+  const isAuthorizedProxy =
+    a.tool_name.startsWith("forge_filesystem_") ||
+    a.tool_name.startsWith("forge_git_") ||
+    a.tool_name.startsWith("forge_postgres_") ||
+    a.tool_name.startsWith("forge_docker_") ||
+    a.tool_name.startsWith("forge_github_") ||
+    a.tool_name.startsWith("forge_memory_");
+  if (!isAuthorizedProxy) {
+    for (const p of SENSITIVE_PATHS) {
+      if (a.target.startsWith(p) || haystack.includes(p)) {
+        reasons.push({
+          floor: "F12",
+          code: "SENSITIVE_PATH",
+          message: `F12 INJECTION: target references sensitive path '${p}'`,
+          severity: "VOID",
+        });
+      }
+    }
+    if (F12_THREAT_PATTERNS.ABSOLUTE_SENSITIVE.test(a.target)) {
       reasons.push({
         floor: "F12",
-        code: "SENSITIVE_PATH",
-        message: `F12 INJECTION: target references sensitive path '${p}'`,
+        code: "ABSOLUTE_SENSITIVE_PATH",
+        message: `F12 INJECTION: target='${a.target}' is in absolute sensitive path range`,
         severity: "VOID",
       });
     }
-  }
-  if (F12_THREAT_PATTERNS.ABSOLUTE_SENSITIVE.test(a.target)) {
-    reasons.push({
-      floor: "F12",
-      code: "ABSOLUTE_SENSITIVE_PATH",
-      message: `F12 INJECTION: target='${a.target}' is in absolute sensitive path range`,
-      severity: "VOID",
-    });
   }
 
   // Rule 4: Prompt injection phrases
