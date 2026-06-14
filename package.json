@@ -4,12 +4,12 @@
   "description": "A-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
   "type": "module",
   "bin": {
-    "agent": "./dist/src/cli.js",
-    "arifos-mcp": "./dist/src/mcp/cli.js"
+    "agent": "./dist/src/interfaces/cli.js",
+    "arifos-mcp": "./dist/src/interfaces/mcp/cli.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/src/server.js",
+    "start": "node dist/src/interfaces/server.js",
     "test": "node dist/test/AgentEngine.test.js",
     "example:explore": "node dist/examples/runExploreExample.js",
     "mcp:stdio": "node dist/src/mcp/cli.js serve --transport stdio",

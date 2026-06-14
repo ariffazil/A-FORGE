@@ -38,7 +38,7 @@ node dist/src/server.js
 # Health check
 curl http://localhost:7071/health | python3 -m json.tool
 
-# Expected: {"ok": true, "service": "A-FORGE", "version": "0.1.4"}
+# Expected: {"ok": true, "service": "A-FORGE", "version": "2026.06.06"}
 
 # Federation probe (pings all connected organs)
 curl http://localhost:7071/api/federation-probe | python3 -m json.tool
@@ -93,11 +93,11 @@ npm run build && npm test
 
 ## Next Steps
 
-- Read the [arifOS Constitution](https://github.com/ariffazil/arifOS/blob/main/docs/CONSTITUTION.md)
+- Read the [arifOS Constitution](https://github.com/ariffazil/arifos/blob/main/docs/CONSTITUTION.md)
 - Set up [GEOX](https://github.com/ariffazil/geox) for Earth intelligence
 - Set up [WEALTH](https://github.com/ariffazil/wealth) for capital intelligence
 - Set up [WELL](https://github.com/ariffazil/well) for human readiness
-- Read the [Glossary](https://github.com/ariffazil/arifOS/blob/main/docs/GLOSSARY.md)
+- Read the [Glossary](https://github.com/ariffazil/arifos/blob/main/docs/GLOSSARY.md)
 
 ---
 

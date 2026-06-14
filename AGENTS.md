@@ -108,9 +108,9 @@ A tiny helper script (`audit_parser.py`) reads the scanner output. If it detects
 
 ## Constitution
 
-The 13 Constitutional Laws (L01–L13) live in **one canonical file**:
+The 13 Constitutional Floors (F1–F13) live in **one canonical file**:
 
 → [arifOS/static/arifos/theory/000/000_CONSTITUTION.md](../../arifOS/static/arifos/theory/000/000_CONSTITUTION.md)
 
-This organ emits the **Evidence Contract** (see Appendix B of the constitution) and does **not** self-judge. arifOS alone reads the envelope and applies L01–L13.
+This organ emits the **Evidence Contract** (see Appendix B of the constitution) and does **not** self-judge. arifOS alone reads the envelope and applies F1–F13.
 

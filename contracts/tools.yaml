@@ -164,10 +164,10 @@ build_target: dist/src/
 surfaces:
   http_bridge:
     port: 7071
-    entry: dist/src/server.js
+    entry: dist/src/interfaces/server.js
     description: Express HTTP bridge for tool execution
 
   mcp_stdio:
-    entry: dist/src/mcp/cli.js
+    entry: dist/src/interfaces/mcp/cli.js
     transport: stdio
     description: MCP stdio server for IDE integration
