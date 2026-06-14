@@ -757,6 +757,7 @@ async function initMcpTransport(): Promise<StreamableHTTPServerTransport | null>
     await telemetry.initialize();
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
+      enableJsonResponse: true, // Direct JSON (not SSE) — arifOS parity. Required for OpenCode MCP client compat.
     });
     await mcpServer.connect(transport);
     console.error("[A-FORGE] MCP transport initialized — tools exposed on /mcp");
