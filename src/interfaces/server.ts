@@ -44,6 +44,9 @@ import {
   createOperatorRouter,
 } from "./routes/approvalOperatorRoutes.js";
 import { createGovernanceRouter } from "./routes/governanceRoutes.js";
+import { createJobsRouter } from "./routes/jobsRoutes.js";
+import { subscribe, type SseEvent } from "../infrastructure/tui/adapters/event-bus.js";
+import { getTuiHealth } from "../infrastructure/tui/adapters/tui-health.js";
 import { createVaultMerkleRouter } from "./routes/vaultMerkleRoutes.js";
 import { createRepoStewardRouter } from "./routes/repoStewardRoutes.js";
 import { callMCP } from "./mcp/client.js";
@@ -727,6 +730,57 @@ app.use("/vault/merkle", createVaultMerkleRouter());
 app.use("/api/repo-steward", createRepoStewardRouter());
 app.use(createGovernanceRouter());
 
+// ── Jobs Routes (read-only, TUI-facing) ──
+app.use("/jobs", createJobsRouter());
+
+// ── SSE Events Route (for live TUI updates) ──
+// Uses event-bus pub/sub — AgentManager publishes, SSE subscribers receive.
+
+app.get("/events", (_req: Request, res: Response) => {
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+    "X-Accel-Buffering": "no",
+  });
+
+  // Send initial heartbeat
+  res.write(`data: ${JSON.stringify({ type: "connected", timestamp: new Date().toISOString() })}\n\n`);
+
+  // Subscribe to event bus — forward all events as SSE data frames
+  const unsubscribe = subscribe((event: SseEvent) => {
+    try {
+      res.write(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
+    } catch {
+      unsubscribe();
+    }
+  });
+
+  // Keepalive every 30s
+  const keepalive = setInterval(() => {
+    try {
+      res.write(`:keepalive ${Date.now()}\n\n`);
+    } catch {
+      clearInterval(keepalive);
+    }
+  }, 30000);
+
+  _req.on("close", () => {
+    clearInterval(keepalive);
+    unsubscribe();
+  });
+});
+
+// ── TUI Health Endpoint (AAA cockpit / ARIF Cell can poll this) ──
+
+app.get("/tui-health", (_req: Request, res: Response) => {
+  res.json({
+    ok: true,
+    tui: getTuiHealth(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // Error handling
 app.use((err: Error, _req: Request, res: Response, _next: express.NextFunction) => {
   console.error("[A-FORGE] Unhandled error:", err);
@@ -787,6 +841,13 @@ export async function startServer(): Promise<void> {
     console.error(`    GET  /.well-known/agent-card.json - A2A Agent Card`);
     console.error(`    GET  /operator/approvals - List approval tickets`);
     console.error(`    GET  /operator/vault      - Search vault seals`);
+    console.error(`    GET  /jobs               - List all jobs 🆕`);
+    console.error(`    GET  /jobs/queue         - Queued jobs 🆕`);
+    console.error(`    GET  /jobs/running       - Running jobs 🆕`);
+    console.error(`    GET  /jobs/metrics       - Job metrics 🆕`);
+    console.error(`    GET  /jobs/:id           - Job detail 🆕`);
+    console.error(`    GET  /events             - SSE events stream 🆕`);
+    console.error(`    TUI forge-tui           - Terminal UI (npm run tui) 🆕`);
     console.error(`═══════════════════════════════════════════════════════════`);
   });
 }

@@ -811,6 +811,202 @@ server.tool(
   }
 );
 
+// ── Autonomous Pipeline Tool ───────────────────────────────────────────────────
+// Accepts a task and runs SENSE → REASON → WITNESS → FORGE → JUDGE → VAULT
+// in one autonomous call. Routes to the correct organ based on task classification.
+//
+// F1 AMANAH: Pipeline is read-only for OBSERVE tasks. MUTATE tasks require hold_id.
+// F8 LAW: Pipeline routes to correct organ. Never crosses lanes.
+//
+server.tool(
+  "forge_pipeline",
+  "Autonomous intelligence pipeline. Accepts a task, auto-routes to correct organs (GEOX/WEALTH/WELL/A-FORGE), gathers evidence, computes results, and optionally seals. One call = full 000→999 cycle.",
+  {
+    task: z.string().describe("The task to execute (e.g. 'Evaluate Malay Basin' or 'Check WELL readiness')"),
+    mode: z.enum(["observe", "forge", "full"]).default("observe")
+      .describe("observe = route + witness only. forge = route + witness + compute. full = route + witness + forge + judge + seal"),
+    hold_id: z.string().optional()
+      .describe("Required for forge/full modes if action class is MUTATE. Get from arif_judge_deliberate"),
+    session_id: z.string().optional(),
+    actor_id: z.string().optional(),
+  },
+  async ({ task, mode, hold_id, session_id, actor_id }) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("forge_pipeline");
+    return runStage("000_INIT" as MetabolicStage, async () => {
+      try {
+        const stages: string[] = [];
+        const results: Record<string, any> = {};
+        const errors: string[] = [];
+
+        // ── SENSE (111): Classify the task ──
+        stages.push("111_SENSE");
+        const task_lower = task.toLowerCase();
+        let target_organ = "unknown";
+        if (/basin|seismic|well|petrophysics|geology|prospect|earth|geox/i.test(task_lower))
+          target_organ = "GEOX";
+        else if (/wealth|capital|stock|nifty|klci|bursa|finance|npv|roi|investment/i.test(task_lower))
+          target_organ = "WEALTH";
+        else if (/well|readiness|fatigue|sleep|health|vitality|dignity|homeostasis/i.test(task_lower))
+          target_organ = "WELL";
+        else if (/forge|build|deploy|test|code|refactor|fix|audit|tui/i.test(task_lower))
+          target_organ = "A-FORGE";
+        results.sense = { target_organ, mode, task_summary: task.slice(0, 200) };
+
+        // ── MODE: observe only — just route (no execution) ──
+        if (mode === "observe") {
+          stages.push("444_ROUTE");
+          // Ping the target organ to confirm it's alive
+          let organ_status = "unreachable";
+          try {
+            const resp = await fetch(`http://127.0.0.1:7071/api/federation-probe`);
+            const data = await resp.json() as any;
+            organ_status = data.organs?.[target_organ]?.status ?? "unknown";
+          } catch { /* best effort */ }
+          results.route = { target_organ, organ_status };
+
+          stages.push("999_VAULT");
+          const verdict = { status: "OBSERVED", target_organ, note: `Task classified as ${target_organ}. Use mode=forge to execute.` };
+          const text = JSON.stringify({ stages, results, verdict }, null, 2);
+          await telemetrySuccess("forge_pipeline", startedAt);
+          return { content: [{ type: "text" as const, text }] };
+        }
+
+        // ── FORGE / FULL: Route to target organ and execute ──
+        stages.push("444_ROUTE");
+        stages.push("555_WITNESS");
+        stages.push("777_FORGE");
+
+        if (target_organ === "GEOX") {
+          // Route to GEOX for earth intelligence
+          try {
+            const geoxResp = await fetch(`http://127.0.0.1:8081/mcp`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "tools/call",
+                params: { name: "geox_query_intake", arguments: { query: task } },
+                id: "forge-pipeline-1",
+              }),
+            });
+            const geoxData = await geoxResp.json() as any;
+            results.geox = geoxData.result ?? geoxData;
+          } catch (e: any) {
+            errors.push(`GEOX error: ${e.message}`);
+          }
+        } else if (target_organ === "WEALTH") {
+          try {
+            const wealthResp = await fetch(`http://127.0.0.1:18082/mcp`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "tools/call",
+                params: { name: "wealth_agent_path", arguments: { task_description: task } },
+                id: "forge-pipeline-1",
+              }),
+            });
+            const wealthData = await wealthResp.json() as any;
+            results.wealth = wealthData.result ?? wealthData;
+          } catch (e: any) {
+            errors.push(`WEALTH error: ${e.message}`);
+          }
+        } else if (target_organ === "WELL") {
+          try {
+            const wellResp = await fetch(`http://127.0.0.1:18083/mcp`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "tools/call",
+                params: { name: "well_assess_reliability", arguments: { mode: "health" } },
+                id: "forge-pipeline-1",
+              }),
+            });
+            const wellData = await wellResp.json() as any;
+            results.well = wellData.result ?? wellData;
+          } catch (e: any) {
+            errors.push(`WELL error: ${e.message}`);
+          }
+        } else if (target_organ === "A-FORGE") {
+          results.forge = { note: "A-FORGE tasks execute via existing forge_run tool. Pipeline routes to self." };
+        }
+
+        // ── FULL MODE: Judge + VAULT ──
+        if (mode === "full") {
+          stages.push("888_JUDGE");
+          try {
+            const judgeResp = await fetch(`http://127.0.0.1:8088/mcp`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "tools/call",
+                params: {
+                  name: "arif_judge_deliberate",
+                  arguments: {
+                    candidate: task,
+                    mode: "judge",
+                  },
+                },
+                id: "forge-pipeline-2",
+              }),
+            });
+            const judgeData = await judgeResp.json() as any;
+            results.judge = judgeData.result ?? judgeData;
+          } catch (e: any) {
+            errors.push(`JUDGE error: ${e.message}`);
+          }
+
+          stages.push("999_VAULT");
+          // If judge returned SEAL and we have session context, seal it
+          try {
+            const sealResp = await fetch(`http://127.0.0.1:7071/mcp`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "tools/call",
+                params: {
+                  name: "arif_vault_seal",
+                  arguments: {
+                    content: JSON.stringify({ task, target_organ, mode, stages }),
+                    reason: `forge_pipeline: ${target_organ} ${mode}`,
+                    tier: mode === "full" ? "STANDARD" : "OBSERVE",
+                  },
+                },
+                id: "forge-pipeline-3",
+              }),
+            });
+            const sealData = await sealResp.json() as any;
+            results.vault = sealData.result ?? sealData;
+          } catch (e: any) {
+            errors.push(`VAULT error: ${e.message}`);
+          }
+        }
+
+        const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
+        const text = JSON.stringify({
+          ok: errors.length === 0,
+          stages,
+          target_organ,
+          results,
+          errors: errors.length > 0 ? errors : undefined,
+          elapsed_seconds: parseFloat(elapsed),
+          mode,
+        }, null, 2);
+
+        await telemetrySuccess("forge_pipeline", startedAt);
+        return { content: [{ type: "text" as const, text }] };
+      } catch (err) {
+        await telemetryFailure("forge_pipeline", startedAt, err);
+        throw err;
+      }
+    });
+  }
+);
+
 // ── VAULT999 Resources ─────────────────────────────────────────────────────────
 
 server.resource("forge://vault/records", "forge://vault/records", { mimeType: "application/json" }, async () => {

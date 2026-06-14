@@ -1,7 +1,7 @@
 {
   "name": "A-FORGE",
   "version": "2026.06.06",
-  "description": "A-FORGE \u2014 Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
+  "description": "A-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
   "type": "module",
   "bin": {
     "agent": "./dist/src/cli.js",
@@ -15,17 +15,22 @@
     "mcp:stdio": "node dist/src/mcp/cli.js serve --transport stdio",
     "mcp:http": "node dist/src/mcp/cli.js serve --transport http --port 3000",
     "terminal": "node dist/src/cli/terminal.js",
-    "terminal:dev": "npx tsx src/cli/terminal.ts"
+    "terminal:dev": "npx tsx src/cli/terminal.ts",
+    "tui": "npx tsx src/infrastructure/tui/forge-tui.ts",
+    "tui:build": "node dist/src/infrastructure/tui/forge-tui.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@supabase/supabase-js": "^2.107.0",
+    "blessed": "^0.1.81",
+    "blessed-contrib": "^4.11.0",
     "express": "^5.2.1",
     "pg": "^8.21.0",
     "prom-client": "^15.1.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/blessed": "^0.1.27",
     "@types/express": "^5.0.6",
     "@types/node": "^25.9.2",
     "@types/pg": "^8.20.0",
