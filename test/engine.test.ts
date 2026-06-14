@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { WealthEngine } from "../src/domain/engine/WealthEngine.js";
+import { WealthEngine } from "../src/domain/engine/WealthEngine.js.LEGACY";
 import type { GEOXScenarioContract } from "../src/domain/types/arifos.js";
 
 // Inline test scenarios — legacy buildDefaultGEOXScenarios was removed during refactor

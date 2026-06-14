@@ -137,6 +137,27 @@ async function main() {
     align: "left",
   });
 
+  // ── HOLD Prompt Panel ──────────────────────────────────────────────
+  const holdBox = blessed.box({
+    parent: screen,
+    top: 'center',
+    left: 'center',
+    width: '60%',
+    height: 7,
+    tags: true,
+    hidden: true,
+    border: 'line',
+    style: {
+      fg: 'white',
+      bg: 'black',
+      border: { fg: 'red' },
+      hover: { bg: 'red' }
+    },
+    label: " {red-fg}{bold} SOVEREIGN HOLD {/bold}{/red-fg} ",
+    content: "\n {yellow-fg}This action is R3. Floor F7 requires human brake.{/yellow-fg}\n\n {bold}[A]{/bold}pprove, {bold}[D]{/bold}eny, or {bold}[E]{/bold}scalate?",
+    align: 'center'
+  });
+
   // ── Helper: Render from model ──────────────────────────────────────
 
   function renderHeader() {
@@ -236,6 +257,13 @@ async function main() {
 
   function fullRender() {
     try {
+      if (model.metrics.openHolds > 0) {
+        holdBox.show();
+        holdBox.setFront();
+      } else {
+        holdBox.hide();
+      }
+
       renderHeader();
       renderJobs();
       renderGovernance();
@@ -315,6 +343,34 @@ async function main() {
     process.exit(0);
   });
 
+  screen.key(["a", "A"], () => {
+    if (model.metrics.openHolds > 0) {
+      log("info", "Sovereign Override: Approved Hold");
+      model.metrics.openHolds = 0; // Optimistic update
+      fullRender();
+    } else {
+      autoScroll = !autoScroll;
+      log("info", autoScroll ? "Auto-scroll: ON" : "Auto-scroll: OFF");
+      fullRender();
+    }
+  });
+
+  screen.key(["d", "D"], () => {
+    if (model.metrics.openHolds > 0) {
+      log("warn", "Sovereign Override: Denied Hold");
+      model.metrics.openHolds = 0;
+      fullRender();
+    }
+  });
+
+  screen.key(["e", "E"], () => {
+    if (model.metrics.openHolds > 0) {
+      log("warn", "Sovereign Override: Escalated Hold to F13");
+      model.metrics.openHolds = 0;
+      fullRender();
+    }
+  });
+
   screen.key(["p"], () => {
     model = update(model, { type: "PAUSE_TOGGLE" });
     log("info", model.paused ? "Paused" : "Resumed");
@@ -371,13 +427,6 @@ async function main() {
       screen.render();
     }
     // log panel scrolls natively via blessed-contrib
-  });
-
-  // ── Auto-scroll log toggle ─────────────────────────────────────────
-  screen.key(["a"], () => {
-    autoScroll = !autoScroll;
-    log("info", autoScroll ? "Auto-scroll: ON" : "Auto-scroll: OFF");
-    fullRender();
   });
 
   // ── Start ──────────────────────────────────────────────────────────
