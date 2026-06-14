@@ -1,6 +1,6 @@
 {
-  "name": "A-FORGE",
-  "version": "2026.06.06",
+  "name": "@ariffazil/a-forge",
+  "version": "2026.06.14",
   "description": "A-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
   "type": "module",
   "bin": {
@@ -20,20 +20,20 @@
     "tui:start": "node dist/src/infrastructure/tui/forge-tui.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.9.0",
     "@supabase/supabase-js": "^2.107.0",
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
-    "express": "^5.2.1",
-    "glob": "^13.0.6",
+    "express": "^5.1.0",
+    "glob": "^11.0.2",
     "pg": "^8.21.0",
     "prom-client": "^15.1.3",
-    "zod": "^4.4.3"
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@types/blessed": "^0.1.27",
     "@types/express": "^5.0.6",
-    "@types/node": "^25.9.2",
+    "@types/node": "^22.15.0",
     "@types/pg": "^8.20.0",
     "pyright": "^1.1.410",
     "typescript": "^6.0.3",

@@ -151,3 +151,27 @@ The 13 Constitutional Floors (F1–F13) live in **one canonical file**:
 
 This organ emits the **Evidence Contract** (see Appendix B of the constitution) and does **not** self-judge. arifOS alone reads the envelope and applies F1–F13.
 
+---
+
+## 🪞 SELF-AUDIT & HARDENING — Binding Prompt
+
+> **Added 2026-06-14 — Every A-FORGE agent MUST read before forging.**
+
+The canonical self-audit and hardening prompt for A-FORGE lives at:
+
+→ [`SELF_AUDIT_PROMPT.md`](./SELF_AUDIT_PROMPT.md)
+
+This prompt enforces the **Reflexion Loop** (000→111→333→555→777→888→999) before ANY forge execution. It contains:
+- Live A-FORGE state baseline from 2026-06-14
+- P0–P4 hardening priorities: pre-flight critic required, action class enforcement, post-exec verification, cross-organ leak detection, failed plan memory store
+- Hard 888_HOLD triggers: any forge_execute without critic, any action class mismatch, any boundary leak
+- Post-exec verification with auto-rollback on drift
+
+**Loading instruction:** When an A-FORGE agent receives a forge task, it MUST:
+1. Read `SELF_AUDIT_PROMPT.md`
+2. Run the full Reflexion Loop
+3. **Do NOT execute** if the critic step fails
+4. Store forge receipt + critic output in `src/domain/memory/failed_plans/`
+
+**Explicit override:** `OBSERVE` or `READ` operations may skip steps 333–777 but must complete 000 (clarify), 111 (gather evidence), and 888 (log).
+

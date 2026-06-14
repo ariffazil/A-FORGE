@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
+import { getRealityLedgerClient } from "../../infrastructure/vault/RealityLedgerClient.js";
 import type {
   AgentMessage,
   AgentProfile,
@@ -935,6 +936,22 @@ export class AgentEngine {
         startedAt,
         metrics.llmCost,
       );
+    }
+
+    // ── Reality Ledger: Record execution ──────────────────────────────────────
+    try {
+      const ledger = getRealityLedgerClient();
+      ledger.recordAforgeExecution({
+        task: options.task ?? "unknown",
+        files: [],
+        verdict: {
+          verdict: metrics.completion ? "SEAL" : "HOLD",
+          floors_triggered: floorsTriggered,
+        },
+        actor: this.profile.name,
+      });
+    } catch {
+      // Non-fatal — ledger failure must not break agent execution
     }
 
     return result;

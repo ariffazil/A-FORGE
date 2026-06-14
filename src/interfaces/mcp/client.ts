@@ -4,6 +4,9 @@
  * Routes tool calls from A-FORGE TypeScript runtime to arifOS / WEALTH / GEOX
  * Python MCP kernels via HTTP REST surfaces.
  *
+ * Includes verdict precondition check: MUTATE/ATOMIC actions require a
+ * valid SEAL verdict before execution (APEX Unified Theory integration).
+ *
  * Previously a placeholder (888_HOLD). Now forged.
  *
  * DITEMPA BUKAN DIBERI — Forged, Not Given
@@ -16,8 +19,32 @@ import {
   transformArgs,
   transformResponse,
 } from "../../domain/types/mcp-bridge.js";
+import {
+  checkVerdictPrecondition,
+  requiresVerdictCheck,
+  type SessionVerdictState,
+} from "../../domain/forge/check_verdict.js";
 import * as fs from "node:fs";
 import * as crypto from "node:crypto";
+
+/**
+ * Map MCP tool names to action classes for verdict precondition checking.
+ * MUTATE tools modify state. ATOMIC tools are irreversible.
+ */
+const MUTATE_TOOLS = new Set([
+  'forge_execute', 'forge_approve', 'arif_vault_seal',
+  'forge_dry_run', // dry run is safe but still MUTATE-adjacent
+]);
+
+const ATOMIC_TOOLS = new Set([
+  'arif_forge_execute',
+]);
+
+function classifyToolAction(toolName: string): 'OBSERVE' | 'DERIVE' | 'MUTATE' | 'ATOMIC' {
+  if (ATOMIC_TOOLS.has(toolName)) return 'ATOMIC';
+  if (MUTATE_TOOLS.has(toolName)) return 'MUTATE';
+  return 'OBSERVE';
+}
 
 function parseToolName(tool: string): { namespace: MCPNamespace; toolName: string } {
   const dotIndex = tool.indexOf(".");
@@ -27,7 +54,6 @@ function parseToolName(tool: string): { namespace: MCPNamespace; toolName: strin
   }
   const ns = tool.slice(0, dotIndex);
   const name = tool.slice(dotIndex + 1);
-
   // Handle "_mcp" suffix in namespace (e.g., "arifos_mcp.apex_judge")
   const cleanNs = ns.replace(/_mcp$/, "") as MCPNamespace;
   if (!NAMESPACE_DEFAULTS[cleanNs]) {
@@ -93,6 +119,66 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
   >;
   
   injectSovereignSignature(canonicalTool, argsRecord);
+
+  // ── Verdict precondition check (APEX Unified Theory) ─────────────────────
+  // Before calling MUTATE/ATOMIC tools, check if a SEAL verdict exists.
+  // This prevents execution without constitutional approval.
+  const actionClass = classifyToolAction(canonicalTool);
+  if (requiresVerdictCheck(0.5) && (actionClass === 'MUTATE' || actionClass === 'ATOMIC')) {
+    // Check for session_id in args — if present, check session verdict state
+    const sessionId = argsRecord.session_id as string | undefined;
+    if (!sessionId) {
+      throw new Error(
+        `MCP Bridge: ${actionClass} tool "${canonicalTool}" requires a governed session. ` +
+        `888_HOLD: No session_id provided. Call arif_session_init first.`
+      );
+    }
+
+    // Attempt to read session verdict from arifOS
+    try {
+      const vitalsUrl = `${getMcpUrl('arifos')}/tools/arif_ops_measure`;
+      const vitalsResponse = await fetch(vitalsUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'vitals', session_id: sessionId }),
+      });
+      const vitalsPayload = await vitalsResponse.json() as Record<string, unknown>;
+      
+      const sessionVerdict = (vitalsPayload.verdict as string) ?? null;
+      const acRisk = (vitalsPayload.ac_risk as number) ?? 0.50;
+      const circuitBreakers = (vitalsPayload.circuit_breakers as string[]) ?? [];
+      const simulationIndex = (vitalsPayload.simulation_index as number) ?? 0.0;
+
+      const sessionState: SessionVerdictState = {
+        actionClass,
+        verdict: sessionVerdict as SessionVerdictState['verdict'],
+        confidence: (vitalsPayload.confidence as number) ?? 0.0,
+        acRisk,
+        simulationIndex,
+        circuitBreakers,
+        timestamp: Date.now(),
+      };
+
+      const precondition = checkVerdictPrecondition(actionClass, sessionState);
+      if (!precondition.permitted) {
+        throw new Error(
+          `MCP Bridge: Verdict precondition failed for "${canonicalTool}". ` +
+          `${precondition.reason} ` +
+          `AC_Risk: ${acRisk.toFixed(2)} | Breakers: [${circuitBreakers.join(', ')}]`
+        );
+      }
+    } catch (err) {
+      // If we can't reach arifOS for verdict check, block conservatively
+      if (err instanceof Error && err.message.includes('Verdict precondition failed')) {
+        throw err; // Re-throw precondition failures
+      }
+      // Network errors = cautious block
+      throw new Error(
+        `MCP Bridge: Cannot verify verdict precondition for "${canonicalTool}". ` +
+        `888_HOLD: Kernel unreachable for verdict query. Action requires SEAL.`
+      );
+    }
+  }
   
   const body = transformArgs(toolName, argsRecord);
 
