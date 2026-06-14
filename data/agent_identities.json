@@ -19,5 +19,100 @@
     "lease_ids": [
       "4ebd539b-4e4b-4480-8aa3-4c88616ca1fa"
     ]
+  },
+  "test-agent-002": {
+    "agent_id": "test-agent-002",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "pending",
+    "registered_at": "2026-06-14T14:28:44.336Z",
+    "last_seen": "2026-06-14T14:28:44.336Z",
+    "lease_ids": []
+  },
+  "test-agent-003": {
+    "agent_id": "test-agent-003",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "pending",
+    "registered_at": "2026-06-14T14:29:19.875Z",
+    "last_seen": "2026-06-14T14:29:19.875Z",
+    "lease_ids": []
+  },
+  "test-agent-005": {
+    "agent_id": "test-agent-005",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "pending",
+    "registered_at": "2026-06-14T14:34:13.891Z",
+    "last_seen": "2026-06-14T14:34:13.891Z",
+    "lease_ids": []
+  },
+  "test-agent-mcp": {
+    "agent_id": "test-agent-mcp",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "pending",
+    "registered_at": "2026-06-14T14:45:22.524Z",
+    "last_seen": "2026-06-14T14:45:22.524Z",
+    "lease_ids": []
+  },
+  "gateway-e2e-agent": {
+    "agent_id": "gateway-e2e-agent",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "pending",
+    "registered_at": "2026-06-14T14:57:39.530Z",
+    "last_seen": "2026-06-14T14:57:39.530Z",
+    "lease_ids": []
   }
 }

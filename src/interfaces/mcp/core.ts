@@ -51,6 +51,9 @@ import {
   registerJobTools,
   initializeForgeTools,
 } from "./forgeTools.js";
+import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
+import { validateLeaseForTool } from "./forgeTools.js";
+import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 
 export const server = new McpServer({
   name: "A-FORGE",
@@ -64,6 +67,39 @@ export const server = new McpServer({
 // New tools added later are automatically wrapped — no bypass possible.
 // This is the F1–F13 enforcement chokepoint for MCP ingress.
 
+const GOVERNANCE_FIELDS = {
+  session_id: z.string().optional().describe("Kernel-born session ID (FORGE 2-B)"),
+  actor_id: z.string().optional().describe("Actor ID (FORGE 2-B)"),
+  lease_id: z.string().optional().describe("Governed lease ID (FORGE 2-B)"),
+};
+
+function extendZodSchema(schema: any): any {
+  if (schema && typeof schema.extend === "function") {
+    try { return schema.extend(GOVERNANCE_FIELDS); } catch { /* fall through */ }
+  }
+  return schema;
+}
+
+function extendInputSchema(schema: any): any {
+  // Zod object passed to registerTool
+  if (schema && typeof schema.extend === "function") {
+    try { return schema.extend(GOVERNANCE_FIELDS); } catch { /* fall through */ }
+  }
+  // Plain JSON schema object
+  if (schema && typeof schema === "object" && !schema._def) {
+    return {
+      ...schema,
+      properties: {
+        ...(schema.properties || {}),
+        session_id: { type: "string", description: "Kernel-born session ID (FORGE 2-B)" },
+        actor_id: { type: "string", description: "Actor ID (FORGE 2-B)" },
+        lease_id: { type: "string", description: "Governed lease ID (FORGE 2-B)" },
+      },
+    };
+  }
+  return schema;
+}
+
 const _originalTool = server.tool.bind(server);
 (server as any).tool = function (
   name: string,
@@ -71,9 +107,36 @@ const _originalTool = server.tool.bind(server);
   schema: any,
   handler: (args: any, ctx: any) => Promise<any>,
 ) {
+  const gatedSchema = extendZodSchema(schema);
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
-    const verdict = enforceMcpFloor(name, argsObj);
+    const actionClass = classifyTool(name);
+
+    // ── FORGE 2-B: Kernel session + lease gating for MUTATE/ATOMIC tools ──
+    if (requiresGovernance(actionClass)) {
+      const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+      const sessionCheck = callerSession ? validateSession(callerSession) : { valid: false, reason: "SESSION_REQUIRED: No session_id provided" } as const;
+      if (!sessionCheck.valid) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: `SESSION_GATE: Tool "${name}" is ${actionClass}. ${sessionCheck.reason}`, action_class: actionClass, adat_gate: "SESSION_REQUIRED" }, null, 2) }],
+          isError: true,
+        };
+      }
+      const lease_id = (typeof argsObj.lease_id === "string") ? argsObj.lease_id : undefined;
+      const leaseCheck = validateLeaseForTool(lease_id, name, actionClass);
+      if (!leaseCheck.ok) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: `LEASE_GATE: Tool "${name}" is ${actionClass}. ${leaseCheck.gate}: ${leaseCheck.reason}`, action_class: actionClass, adat_gate: leaseCheck.gate }, null, 2) }],
+          isError: true,
+        };
+      }
+    }
+
+    // Inject verified session context into FloorEnforcer
+    const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+    const sessionCheck = callerSession ? validateSession(callerSession) : null;
+    const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : "mcp-anonymous";
+    const verdict = enforceMcpFloor(name, argsObj, callerActor);
     if (!verdict.allowed) {
       // FloorEnforcer refused: return MCP error response, do NOT call handler
       return floorErrorResponse(verdict);
@@ -81,7 +144,7 @@ const _originalTool = server.tool.bind(server);
     // FloorEnforcer approved (SEAL or CAUTION): call the original handler
     return await handler(args, ctx);
   };
-  return _originalTool(name, description, schema, wrappedHandler);
+  return _originalTool(name, description, gatedSchema, wrappedHandler);
 };
 // Also wrap server.registerTool (used by some tool registrations)
 const _originalRegisterTool = server.registerTool.bind(server);
@@ -90,15 +153,44 @@ const _originalRegisterTool = server.registerTool.bind(server);
   options: any,
   handler: (args: any, ctx: any) => Promise<any>,
 ) {
+  const gatedOptions = options && typeof options === "object"
+    ? { ...options, inputSchema: extendInputSchema(options.inputSchema) }
+    : options;
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
-    const verdict = enforceMcpFloor(name, argsObj);
+    const actionClass = classifyTool(name);
+
+    // ── FORGE 2-B: Kernel session + lease gating for MUTATE/ATOMIC tools ──
+    if (requiresGovernance(actionClass)) {
+      const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+      const sessionCheck = callerSession ? validateSession(callerSession) : { valid: false, reason: "SESSION_REQUIRED: No session_id provided" } as const;
+      if (!sessionCheck.valid) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: `SESSION_GATE: Tool "${name}" is ${actionClass}. ${sessionCheck.reason}`, action_class: actionClass, adat_gate: "SESSION_REQUIRED" }, null, 2) }],
+          isError: true,
+        };
+      }
+      const lease_id = (typeof argsObj.lease_id === "string") ? argsObj.lease_id : undefined;
+      const leaseCheck = validateLeaseForTool(lease_id, name, actionClass);
+      if (!leaseCheck.ok) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: `LEASE_GATE: Tool "${name}" is ${actionClass}. ${leaseCheck.gate}: ${leaseCheck.reason}`, action_class: actionClass, adat_gate: leaseCheck.gate }, null, 2) }],
+          isError: true,
+        };
+      }
+    }
+
+    // Inject verified session context into FloorEnforcer
+    const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+    const sessionCheck = callerSession ? validateSession(callerSession) : null;
+    const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : "mcp-anonymous";
+    const verdict = enforceMcpFloor(name, argsObj, callerActor);
     if (!verdict.allowed) {
       return floorErrorResponse(verdict);
     }
     return await handler(args, ctx);
   };
-  return _originalRegisterTool(name, options, wrappedHandler as any);
+  return _originalRegisterTool(name, gatedOptions, wrappedHandler as any);
 };
 
 const approvalBoundary = getApprovalBoundary();
@@ -151,7 +243,7 @@ function resultAsJson(output: unknown): string {
 
 server.tool(
   "arif_session_init",
-  "Constitutional session ignition. (Stage 000 INIT)",
+  "Constitutional session ignition. Proxies to arifOS kernel — A-FORGE no longer mints independent sessions. (Stage 000 INIT)",
   {
     actor_id: z.string().describe("Identifier for the human architect or agent"),
     intent: z.string().optional().describe("Primary intent for this session"),
@@ -162,13 +254,63 @@ server.tool(
     await telemetryInvoke("arif_session_init");
     return runStage("000_INIT" as MetabolicStage, async () => {
       try {
-        const sessionId = Math.random().toString(16).slice(2, 10);
+        // Proxy to kernel's arif_session_init (mode=light for fast bootstrap)
+        const kernelResponse = await callMCP("arifos.arif_session_init", {
+          actor_id,
+          intent: intent ?? "aforge session",
+          mode: "light",
+        });
+        const response = kernelResponse as Record<string, unknown>;
+        // Extract session_id from kernel response (nested in session object or result object)
+        const sessionObj = response.session as Record<string, unknown> | undefined;
+        const resultObj = response.result as Record<string, unknown> | undefined;
+        const session_id =
+          (sessionObj?.session_id as string | undefined) ??
+          (resultObj?.session_id as string | undefined) ??
+          (response.session_id as string | undefined);
+        if (!session_id) {
+          const errorText = JSON.stringify({
+            status: "ERROR",
+            error: "Kernel did not return a session_id",
+            kernel_response: response,
+          }, null, 2);
+          await telemetryFailure("arif_session_init", startedAt, new Error(errorText));
+          return { content: [{ type: "text" as const, text: errorText }], isError: true };
+        }
+        // Register the kernel-born session locally
+        const session = registerSession(session_id, actor_id);
         const result = {
-          content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", session_id: sessionId, epoch: new Date().toISOString().split("T")[0], actor_id, intent: intent ?? "general session", mode, verdict: "SEAL" }, null, 2) }],
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "SEAL",
+              session_id,
+              kernel_origin: true,
+              epoch: new Date().toISOString().split("T")[0],
+              actor_id,
+              intent: intent ?? "general session",
+              mode: mode ?? "external",
+              expires_at: session.expires_at,
+              verdict: "SEAL",
+            }, null, 2),
+          }],
         };
         await telemetrySuccess("arif_session_init", startedAt);
         return result;
-      } catch (err) { await telemetryFailure("arif_session_init", startedAt, err); throw err; }
+      } catch (err) {
+        await telemetryFailure("arif_session_init", startedAt, err);
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "ERROR",
+              error: `Kernel unreachable: ${err instanceof Error ? err.message : String(err)}`,
+              suggestion: "Ensure arifOS kernel is running on port 8088 and reachable at ARIFOS_MCP_URL",
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
     });
   }
 );

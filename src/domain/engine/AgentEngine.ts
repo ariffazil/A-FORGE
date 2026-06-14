@@ -742,7 +742,18 @@ export class AgentEngine {
       if ((decision === "HOLD" || decision === "VOID") && !errorMessage) {
         floorsTriggered.push("F2");
         const truthDetail = JSON.stringify({ findings: truthAdvisory.findings });
-        finalResponse += `\n\n[TRUTH: ${truthAdvisory.concern} | detail=${truthDetail}]`;
+        // F2 TRUTH: Kernel issued HOLD/VOID — seal and halt, do not return contaminated output
+        const haltText = `[F2_TRUTH_KERNEL_HOLD] ${truthAdvisory.concern} | detail=${truthDetail} | kernel_verdict=${String(decision)}`;
+        const { finalText: sealedText, sealError } = await this.sealTerminal(
+          options, sessionId, haltText, turnCount, this.profile.name,
+          floorsTriggered, permissionContext, blockedDangerousActions, startedAt,
+        );
+        return {
+          sessionId, finalText: sealedText, turnCount,
+          totalEstimatedTokens: budgetManager.getTotalEstimatedTokens(),
+          transcript: shortTermMemory.getMessages(),
+          metrics: this.buildEmptyMetrics(options, startedAt, "F2", truthAdvisory.concern, sealError),
+        };
       }
     } else if (truthAdvisory.recommendation === "FLAG_FOR_HUMAN") {
       console.log(`[ADVISORY] ${truthAdvisory.concern}: ${truthAdvisory.riskLevel}`);
@@ -766,7 +777,18 @@ export class AgentEngine {
       if (decision === "HOLD" || decision === "VOID") {
         floorsTriggered.push("F12");
         const stewardshipDetail = JSON.stringify({ findings: stewardshipAdvisory.findings });
-        finalResponse += `\n\n[STEWARDSHIP: ${stewardshipAdvisory.concern} | detail=${stewardshipDetail}]`;
+        // F12 STEWARDSHIP: Kernel issued HOLD/VOID — seal and halt
+        const haltText = `[F12_STEWARDSHIP_KERNEL_HOLD] ${stewardshipAdvisory.concern} | detail=${stewardshipDetail} | kernel_verdict=${String(decision)}`;
+        const { finalText: sealedText, sealError } = await this.sealTerminal(
+          options, sessionId, haltText, turnCount, this.profile.name,
+          floorsTriggered, permissionContext, blockedDangerousActions, startedAt,
+        );
+        return {
+          sessionId, finalText: sealedText, turnCount,
+          totalEstimatedTokens: budgetManager.getTotalEstimatedTokens(),
+          transcript: shortTermMemory.getMessages(),
+          metrics: this.buildEmptyMetrics(options, startedAt, "F12", stewardshipAdvisory.concern, sealError),
+        };
       }
     } else if (stewardshipAdvisory.recommendation === "FLAG_FOR_HUMAN") {
       console.log(`[ADVISORY] ${stewardshipAdvisory.concern}: ${stewardshipAdvisory.riskLevel}`);

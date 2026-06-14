@@ -42,6 +42,7 @@ export type RuntimeConfig = {
   geoxMcpUrl?: string;
   operatorApiToken?: string;
   actorId: string;
+  judgeBlocking: boolean;
 };
 
 function parseCsvEnv(name: string, fallback: string[]): string[] {
@@ -178,6 +179,10 @@ export function readRuntimeConfig(): RuntimeConfig {
     geoxMcpUrl: process.env.GEOX_MCP_URL,
     operatorApiToken: process.env.OPERATOR_API_TOKEN,
     actorId: process.env.ACTOR_ID ?? "ariffazil::agent-civ",
+    judgeBlocking:
+      process.env.FORGE_JUDGE_BLOCKING === "1" ||
+      process.env.FORGE_JUDGE_BLOCKING === "true" ||
+      process.env.NODE_ENV === "production",
     fallbackProvider,
   };
 

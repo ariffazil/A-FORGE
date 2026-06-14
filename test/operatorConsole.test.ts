@@ -33,6 +33,7 @@ function mockRuntimeConfig(): RuntimeConfig {
     trustLocalVps: false,
     defaultMode: "external_safe_mode",
     actorId: "ariffazil::agent-civ",
+    judgeBlocking: false,
   };
 }
 
