@@ -35,7 +35,7 @@ export async function startMcpServer(transport: "stdio" | "sse" | "streamable-ht
   } else {
     if (!port) port = 3000;
     const { createServer } = await import("node:http");
-    const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() });
+    const t = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID(), enableJsonResponse: true });
     const httpServer = createServer(async (req, res) => {
       if (req.url === "/GEOX/mcp" || req.url === "/wealth/mcp" || req.url === "/mcp") {
         await t.handleRequest(req, res, { sessionIdGenerator: () => randomUUID() });
