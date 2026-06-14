@@ -43,4 +43,5 @@ install:
 	npm install
 
 
+include /root/arifOS/scripts/forge.mk
 include /root/arifOS/scripts/security_audit.mk

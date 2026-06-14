@@ -1,0 +1,1 @@
+/root/arifOS/GENESIS/010_ADAT_AGENTIC.md
