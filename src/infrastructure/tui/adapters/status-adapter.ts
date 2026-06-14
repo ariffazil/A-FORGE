@@ -6,9 +6,10 @@
  *
  * F1 AMANAH: Read-only polling. Never writes.
  * F8 LAW: Respects endpoint boundaries.
+ * F2 TRUTH: Governance panel must show live data, not static initialisation.
  */
 
-import type { TuiModel, TuiJob, OrganHealth, MetricsSnapshot, LogEntry } from "../model.js";
+import type { TuiModel, TuiJob, OrganHealth, MetricsSnapshot, LogEntry, GovernanceState } from "../model.js";
 
 const BASE = "http://127.0.0.1:7071";
 const POLL_TIMEOUT = 5000;
@@ -89,24 +90,53 @@ export async function pollMetrics(): Promise<MetricsSnapshot | null> {
 }
 
 /**
+ * Poll /api/governance-status — returns live constitutional floor state
+ */
+export async function pollGovernance(): Promise<GovernanceState[]> {
+  const data = await fetchJson<{
+    ok: boolean;
+    floors: any[];
+    source: string;
+    epoch_id: string;
+    timestamp: string;
+  }>(`${BASE}/api/governance-status`);
+  if (!data?.ok || !data.floors) return [];
+  const polledAt = Date.now();
+  return data.floors.map((f: any) => ({
+    floor: f.floor ?? "??",
+    name: f.name ?? "",
+    status: (f.status === "clear" || f.status === "violation" || f.status === "unknown")
+      ? f.status
+      : "unknown",
+    severity: f.severity,
+    source: f.source ?? "a-forge-advisory",
+    staleness_seconds: 0,
+    epoch_id: f.epoch_id ?? data.epoch_id,
+  }));
+}
+
+/**
  * Full poll cycle — returns partial model update
  */
 export async function pollAll(): Promise<{
   jobs: TuiJob[];
   organs: Record<string, OrganHealth>;
   metrics: MetricsSnapshot | null;
+  governance: GovernanceState[];
   timestamp: string;
 }> {
-  const [jobs, organs, metrics] = await Promise.all([
+  const [jobs, organs, metrics, governance] = await Promise.all([
     pollJobs(),
     pollOrgans(),
     pollMetrics(),
+    pollGovernance(),
   ]);
 
   return {
     jobs,
     organs,
     metrics,
+    governance,
     timestamp: new Date().toISOString(),
   };
 }
