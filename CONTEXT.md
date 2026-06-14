@@ -1,7 +1,7 @@
 # CONTEXT.md — A-FORGE (Execution Shell)
 
 > **Organ:** A-FORGE | **Port:** 7071 | **Repo:** `ariffazil/A-FORGE`
-> **Kernel SoT:** `ariffazil/arifOS` (FEDERATION_CONTRACT.md + GENESIS/000)
+> **Kernel SoT:** `ariffazil/arifos` (FEDERATION_CONTRACT.md + GENESIS/000)
 > **Last Updated:** 2026-06-12
 
 ## Live State
