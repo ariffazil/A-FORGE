@@ -26,8 +26,8 @@
 [![Port](https://img.shields.io/badge/port-7071-64748b?logo=express&logoColor=white)](deploy/Caddyfile)
 [![Federation](https://img.shields.io/badge/federation-arifOS-8B5CF6)](https://github.com/ariffazil/arifos)
 [![Systemd](https://img.shields.io/badge/systemd-A--FORGE.service-orange)](deploy/systemd/A-FORGE.service)
-[![Tests](https://img.shields.io/badge/tests-26_suites-success)](test/)
-[![Tools](https://img.shields.io/badge/discovered-62%2B_tools-8B5CF6)](docs/)
+[![Tests](https://img.shields.io/badge/tests-26%20suites-success)](test/)
+[![Tools](https://img.shields.io/badge/discovered-62%2B%20tools-8B5CF6)](docs/)
 
 ---
 
