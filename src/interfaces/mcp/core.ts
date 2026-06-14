@@ -42,6 +42,15 @@ import {
   registerGitHubTools,
   registerDockerTools,
 } from "./proxyTools.js";
+import {
+  registerIdentityTools,
+  registerLeaseTools,
+  registerRegistryTools,
+  registerShellTools,
+  registerLogTools,
+  registerJobTools,
+  initializeForgeTools,
+} from "./forgeTools.js";
 
 export const server = new McpServer({
   name: "A-FORGE",
@@ -770,6 +779,19 @@ registerMemoryTools(server);
 registerGitTools(server);
 registerGitHubTools(server);
 registerDockerTools(server);
+
+// ── Phase 1: Identity, Lease, Registry, Shell, Logs, Jobs ──────────────────
+registerIdentityTools(server);
+registerLeaseTools(server);
+registerRegistryTools(server);
+registerShellTools(server);
+registerLogTools(server);
+registerJobTools(server);
+
+// Initialize identity store
+initializeForgeTools().catch(err => {
+  process.stderr.write(`[forgeTools] Init error: ${err}\n`);
+});
 
 // ── Resources ────────────────────────────────────────────────────────────────
 registerCoreResources(server, approvalBoundary, memoryContract);
