@@ -54,6 +54,7 @@ import { server as mcpServer } from "./mcp/core.js";
 import { validateLeaseForTool } from "./mcp/forgeTools.js";
 import { validateSession } from "../domain/session/sessionGate.js";
 import { classifyTool, requiresGovernance } from "../domain/governance/actionClassifier.js";
+import { preForgeCheck, PreForgeGateBlockedError, registerEarthMeasurement } from "../domain/governance/PreForgeGateClient.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
 import { getApprovalBoundary } from "../application/approval/index.js";
@@ -379,8 +380,84 @@ app.post("/execute", async (req: Request, res: Response) => {
       console.error(`[ADAT] ATOMIC ${tool} authorized with hold_id=${holdId}`);
     }
 
+    // ── PRE-FORGE CONSTITUTIONAL GATE (F2+F3+F9) ──
+    // Forged 2026-06-14: Citation provenance + witness diversity + shadow audit
+    // before any EXECUTE_REVERSIBLE/EXECUTE_HIGH_IMPACT/IRREVERSIBLE action.
+    // Fails closed on gate error.
+    if (requiresGovernance(actionClass)) {
+      const auditText = JSON.stringify({ tool, args, session_id });
+      // Map A-FORGE action class → pre-forge gate action class
+      const pfActionClass = actionClass === "IRREVERSIBLE" ? "allocate"
+        : actionClass === "EXECUTE_HIGH_IMPACT" ? "deploy"
+        : actionClass === "EXECUTE_REVERSIBLE" ? "mutate"
+        : actionClass === "QUEUE" ? "mutate"
+        : "propose";
+      try {
+        const gate = await preForgeCheck({
+          text: auditText,
+          actionClass: pfActionClass,
+          sessionId: session_id,
+          modelId: (req as any).verified_actor || "a-forge-caller",
+        });
+
+        if (!gate.allowed && gate.verdict === "VOID") {
+          res.status(423).json({
+            ok: false,
+            error: {
+              type: "governance_hold",
+              message: `PRE_FORGE_VOID: ${gate.verdict} — ${gate.required_actions.join("; ")}`,
+              gate_result: gate,
+            },
+            action_class: actionClass,
+            adat_gate: "PRE_FORGE_VOID",
+          });
+          return;
+        }
+
+        if (!gate.allowed) {
+          console.error(`[PRE-FORGE] ${tool} → ${gate.verdict} (shadow: ${gate.shadow_summary?.classification || "N/A"}, citations: ${gate.citation_summary?.decorative || 0} decorative)`);
+          res.status(423).json({
+            ok: false,
+            error: {
+              type: "governance_hold",
+              message: `PRE_FORGE_HOLD: ${gate.verdict} — ${gate.violations.map(v => v.step || v.violation || "?").join(", ")}`,
+              gate_result: gate,
+            },
+            action_class: actionClass,
+            adat_gate: "PRE_FORGE_HOLD",
+            required_actions: gate.required_actions,
+          });
+          return;
+        }
+
+        if (gate.verdict === "CAUTION" || gate.verdict === "DOWNGRADE") {
+          console.error(`[PRE-FORGE] ${tool} → CAUTION (citations: ${gate.citation_summary?.decorative || 0} decorative, shadow: ${gate.shadow_summary?.classification || "clear"})`);
+        }
+      } catch (err) {
+        if (err instanceof PreForgeGateBlockedError) {
+          res.status(423).json({
+            ok: false,
+            error: {
+              type: "governance_hold",
+              message: `PRE_FORGE_BLOCKED: ${err.message}`,
+              gate_result: err.gateResult,
+            },
+            action_class: actionClass,
+            adat_gate: "PRE_FORGE_BLOCKED",
+          });
+          return;
+        }
+        console.error(`[PRE-FORGE] Gate error for ${tool}: ${err}. Failing open with CAUTION.`);
+      }
+    }
+
     const mergedArgs = { ...(args ?? {}), session_id, actor_id };
     const result = await callMCP(tool, mergedArgs);
+
+    // ── Register Earth measurement witness after successful tool call ──
+    if (session_id && actionClass !== "OBSERVE" && actionClass !== "SUGGEST") {
+      registerEarthMeasurement(session_id, tool, `result:${tool}`).catch(() => {});
+    }
 
     // ── ADAT AGENTIC: Auto-seal MUTATE/ATOMIC actions ──
     if (actionClass === "MUTATE" || actionClass === "ATOMIC") {
