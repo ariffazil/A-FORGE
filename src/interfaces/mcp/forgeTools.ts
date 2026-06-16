@@ -48,11 +48,24 @@ export type LeaseRecord = {
 
 const activeLeases = new Map<string, LeaseRecord>();
 
+// ── Action Class Priority ─────────────────────────────────────────────────────
+// Lower rank = higher severity. Lease must meet or exceed requested severity.
+// Includes both 8-value taxonomy (actionClassifier.ts) and legacy values
+// (PROPOSE, MUTATE, ATOMIC) for backward compatibility with existing leases.
 const CLASS_RANK: Record<string, number> = {
-  OBSERVE: 1,
-  PROPOSE: 2,
-  MUTATE: 3,
-  ATOMIC: 4,
+  // 8-value taxonomy (primary)
+  IRREVERSIBLE:          0,  // rm -rf, DROP TABLE, vault seal — 888_HOLD required
+  EXECUTE_HIGH_IMPACT:   1,  // deploy, billing, data mutation — governance required
+  EXECUTE_REVERSIBLE:   2,  // git commit, file write, service restart — reversible
+  QUEUE:                 3,  // schedule, defer, enqueue — async, no immediate effect
+  DRAFT:                 4,  // write unsent, compose draft — not committed
+  SIMULATE:              5,  // dry run, forward model, preview — no side effects
+  SUGGEST:               6,  // recommend, propose — no commitment
+  OBSERVE:               7,  // read-only — no side effects
+  // Legacy values (for existing leases that may still use these)
+  PROPOSE:               5,  // maps to SIMULATE priority
+  MUTATE:                2,  // maps to EXECUTE_REVERSIBLE priority
+  ATOMIC:                0,  // maps to IRREVERSIBLE priority
 };
 
 /**
@@ -63,7 +76,7 @@ const CLASS_RANK: Record<string, number> = {
 export function validateLeaseForTool(
   lease_id: string | undefined,
   tool: string,
-  actionClass: "OBSERVE" | "MUTATE" | "ATOMIC"
+  actionClass: string
 ): { ok: true; lease: LeaseRecord } | { ok: false; gate: string; reason: string } {
   if (!lease_id) {
     return { ok: false, gate: "LEASE_REQUIRED", reason: "lease_id is required for non-OBSERVE actions" };
@@ -233,7 +246,12 @@ export function registerLeaseTools(server: McpServer): void {
     {
       agent_id: z.string().describe("Registered agent ID"),
       scope: z.array(z.string()).describe("Tools to include in lease scope"),
-      max_action_class: z.enum(["OBSERVE", "PROPOSE", "MUTATE", "ATOMIC"]).default("MUTATE").describe("Maximum action class permitted"),
+      max_action_class: z.enum([
+        "OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE",
+        "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE",
+        // Legacy values for backward compat
+        "PROPOSE", "MUTATE", "ATOMIC",
+      ]).default("EXECUTE_REVERSIBLE").describe("Maximum action class permitted (8-value taxonomy + legacy aliases)"),
       ttl_seconds: z.number().default(300).describe("Lease TTL in seconds (default 5 min, max 1 hour)"),
       forbidden: z.array(z.string()).optional().describe("Tools explicitly forbidden"),
     },

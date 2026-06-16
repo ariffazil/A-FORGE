@@ -10,11 +10,12 @@
  */
 
 import express from "express";
-import type { Request, Response } from "express";
+import type { Request, Response, NextFunction } from "express";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "fs";
 import * as http from "http";
 import { createHash } from "crypto";
+import { modelGateway } from "../infrastructure/llm/ModelGateway.js";
 import { runSense } from "../domain/policy/sense.js";
 import {
   calculateConfidenceEstimate,
@@ -53,7 +54,7 @@ import { callMCP } from "./mcp/client.js";
 import { server as mcpServer } from "./mcp/core.js";
 import { validateLeaseForTool } from "./mcp/forgeTools.js";
 import { validateSession } from "../domain/session/sessionGate.js";
-import { classifyTool, requiresGovernance } from "../domain/governance/actionClassifier.js";
+import { classifyTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
 import { preForgeCheck, PreForgeGateBlockedError, registerEarthMeasurement } from "../domain/governance/PreForgeGateClient.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
@@ -113,6 +114,35 @@ export function createApp(): express.Express {
   // ── MCP Routes: Streamable HTTP transport on /mcp ──
   // req.body already parsed by app.use(express.json()) above.
   const mcpRouter = express.Router();
+
+  // GET /mcp — server info (OpenCode MCP client probes GET before POST)
+  // Returns 200 so the client proceeds to POST for actual MCP protocol.
+  mcpRouter.get("/mcp", (_req: Request, res: Response) => {
+    res.json({
+      service: "A-FORGE",
+      version: "0.1.0",
+      protocol_version: "2025-03-26",
+      mcp_endpoint: "/mcp",
+      health_endpoint: "/health",
+      contract_url: "/contract",
+      tool_count: 59,
+    });
+  });
+
+  // ── Accept header fix for OpenCode MCP client ──
+  // The TypeScript MCP SDK requires BOTH Accept: application/json AND text/event-stream.
+  // OpenCode's MCP client may send only one. Middleware patches Accept to include both.
+  mcpRouter.use("/mcp", (req: Request, _res: Response, next: NextFunction) => {
+    const accept = req.headers["accept"] || "";
+    if (accept && !accept.includes("application/json")) {
+      req.headers["accept"] = accept + ", application/json";
+    }
+    if (accept && !accept.includes("text/event-stream")) {
+      req.headers["accept"] = (req.headers["accept"] || accept) + ", text/event-stream";
+    }
+    next();
+  });
+
   const mcpHandler = async (req: Request, res: Response) => {
     if (!mcpTransport) {
       res.status(503).json({ error: "MCP transport not initialized" });
@@ -362,17 +392,17 @@ app.post("/execute", async (req: Request, res: Response) => {
       }
     }
 
-    // ATOMIC gate: require F13 888_HOLD
-    if (actionClass === "ATOMIC") {
+    // 888_HOLD gate: require F13 SOVEREIGN verdict for high-severity actions
+    if (requires888Hold(actionClass)) {
       const holdId = req.body.hold_id;
       if (!holdId) {
         res.status(423).json({
           ok: false,
           error: {
             type: "governance_hold",
-            message: `888_HOLD: Tool "${tool}" is classified ATOMIC. Requires hold_id from arif_judge_deliberate SEAL verdict.`,
+            message: `888_HOLD: Tool "${tool}" is classified ${actionClass}. Requires hold_id from arif_judge_deliberate SEAL verdict.`,
           },
-          action_class: "ATOMIC",
+          action_class: actionClass,
           adat_gate: "888_HOLD",
         });
         return;
@@ -459,13 +489,13 @@ app.post("/execute", async (req: Request, res: Response) => {
       registerEarthMeasurement(session_id, tool, `result:${tool}`).catch(() => {});
     }
 
-    // ── ADAT AGENTIC: Auto-seal MUTATE/ATOMIC actions ──
-    if (actionClass === "MUTATE" || actionClass === "ATOMIC") {
+    // ── ADAT AGENTIC: Auto-seal governance-required actions ──
+    if (requiresGovernance(actionClass)) {
       try {
         const sealResult = await callMCP("arif_vault_seal", {
           content: JSON.stringify({ tool, actionClass, session_id, timestamp: new Date().toISOString() }),
           reason: `auto-seal: ${tool}`,
-          tier: actionClass === "ATOMIC" ? "CRITICAL" : "STANDARD",
+          tier: requires888Hold(actionClass) ? "CRITICAL" : "STANDARD",
         });
         console.error(`[ADAT] Auto-sealed ${tool} (${actionClass}) → vault`);
       } catch (sealErr) {
@@ -975,6 +1005,17 @@ export async function startServer(): Promise<void> {
     console.error(`═══════════════════════════════════════════════════════════`);
   });
 }
+
+// DEP-1 (2026-06-15): SIGHUP handler — reload ModelGateway without restart
+// Sends SIGHUP after a providers.yml swap so A-FORGE picks up the new default.
+process.on("SIGHUP", () => {
+  try {
+    modelGateway.reload();
+    console.error("[SIGHUP] ModelGateway reloaded from providers.yml");
+  } catch (err) {
+    console.error(`[SIGHUP] reload failed: ${err instanceof Error ? err.message : err}`);
+  }
+});
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   void startServer();
