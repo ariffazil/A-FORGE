@@ -21,7 +21,7 @@ import { checkAntiHantu } from "../../domain/governance/f9AntiHantu.js";
 import { checkWellReadiness, AmanahLockManager } from "../../domain/governance/index.js";
 import { readRuntimeConfig } from "../../interfaces/config/RuntimeConfig.js";
 import { createLlmProvider } from "../../infrastructure/llm/providerFactory.js";
-import { getApprovalBoundary, routeApproval } from "../../application/approval/index.js";
+import { getApprovalBoundary } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
 import { runStage, recordFloorViolation } from "../../infrastructure/metrics/prometheus.js";
@@ -123,7 +123,7 @@ const _originalTool = server.tool.bind(server);
         };
       }
       const lease_id = (typeof argsObj.lease_id === "string") ? argsObj.lease_id : undefined;
-      const leaseCheck = validateLeaseForTool(lease_id, name, actionClass);
+      const leaseCheck = await validateLeaseForTool(lease_id, name, actionClass);
       if (!leaseCheck.ok) {
         return {
           content: [{ type: "text" as const, text: JSON.stringify({ error: `LEASE_GATE: Tool "${name}" is ${actionClass}. ${leaseCheck.gate}: ${leaseCheck.reason}`, action_class: actionClass, adat_gate: leaseCheck.gate }, null, 2) }],
@@ -171,7 +171,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
         };
       }
       const lease_id = (typeof argsObj.lease_id === "string") ? argsObj.lease_id : undefined;
-      const leaseCheck = validateLeaseForTool(lease_id, name, actionClass);
+      const leaseCheck = await validateLeaseForTool(lease_id, name, actionClass);
       if (!leaseCheck.ok) {
         return {
           content: [{ type: "text" as const, text: JSON.stringify({ error: `LEASE_GATE: Tool "${name}" is ${actionClass}. ${leaseCheck.gate}: ${leaseCheck.reason}`, action_class: actionClass, adat_gate: leaseCheck.gate }, null, 2) }],
@@ -475,11 +475,50 @@ server.registerTool(
 
 // ── Tier 05 Execution ────────────────────────────────────────────────────────
 
-const forgeHandler = async ({ task, mode }: { task: string, mode?: "internal_mode" | "external_safe_mode" }) => {
+const forgeHandler = async (args: any, toolName: string) => {
+  const { task, mode, session_id, actor_id, lease_id, evidence_receipt } = args;
   const startedAt = Date.now();
   await telemetryInvoke("arif_forge_execute");
   return runStage("777_FORGE" as MetabolicStage, async () => {
   try {
+    // ── FORGE 2-B: arifOS judge SEAL required before any execution ──
+    const candidate = JSON.stringify({
+      tool: toolName,
+      task,
+      mode: mode ?? "external_safe_mode",
+      lease_id,
+      actor_id: actor_id ?? "mcp-anonymous",
+    });
+    const judgeBody: any = {
+      mode: "judge",
+      candidate,
+      session_id,
+      actor_id: actor_id ?? "mcp-anonymous",
+      lease_id,
+    };
+    if (evidence_receipt) {
+      judgeBody.evidence_receipt = evidence_receipt;
+    }
+    const judgeResult = await callMCP("arifos.arif_judge_deliberate", judgeBody) as any;
+    const judgeVerdict = judgeResult?.verdict ?? judgeResult?.decision ?? "HOLD";
+    if (judgeVerdict !== "SEAL") {
+      const holdResult = {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "HOLD",
+            gate: "JUDGE_GATE",
+            tool: toolName,
+            reason: `arifOS judge returned '${judgeVerdict}' for this execution. No SEAL, no mutation.`,
+            judge_state: judgeResult,
+          }, null, 2),
+        }],
+        isError: true,
+      };
+      await telemetryFailure("arif_forge_execute", startedAt, new Error(`JUDGE_GATE: ${judgeVerdict}`));
+      return holdResult;
+    }
+
     const { AgentEngine } = await import("../../domain/engine/AgentEngine.js");
     const { LongTermMemory } = await import("../../application/memory/LongTermMemory.js");
     const { ToolRegistry } = await import("../../infrastructure/tools/ToolRegistry.js");
@@ -512,11 +551,11 @@ const forgeHandler = async ({ task, mode }: { task: string, mode?: "internal_mod
       });
       const res = await engine.run({ task });
       const blocked = res.finalText.includes("VOID") || res.finalText.includes("SABAR");
-      const result = { 
-        content: [{ type: "text" as const, text: JSON.stringify({ finalText: res.finalText, turns: res.turnCount, blocked }, null, 2) }],
+      const result = {
+        content: [{ type: "text" as const, text: JSON.stringify({ finalText: res.finalText, turns: res.turnCount, blocked, judge_verdict: judgeVerdict }, null, 2) }],
         isError: blocked
       };
-      await telemetrySuccess("arif_forge_execute", startedAt);
+      await telemetrySuccess("arif_forge_execute", startedAt, undefined, { judge_verdict: judgeVerdict });
       return result;
     } finally { await rm(root, { recursive: true, force: true }); }
   } catch (err) { await telemetryFailure("arif_forge_execute", startedAt, err); throw err; }
@@ -529,11 +568,12 @@ server.registerTool(
     description: "Execution and motor cortex (Stage 777 FORGE). Use this to execute an action plan.",
     inputSchema: z.object({
       task: z.string().describe("The task to execute"),
-      mode: z.enum(["internal_mode", "external_safe_mode"]).optional()
+      mode: z.enum(["internal_mode", "external_safe_mode"]).optional(),
+      evidence_receipt: z.record(z.string(), z.unknown()).optional().describe("Optional F-WEB evidence receipt to support a SEAL verdict"),
     }),
     annotations: { title: "777 FORGE", destructiveHint: true }
   },
-  forgeHandler
+  (args) => forgeHandler(args, "arif_forge_execute")
 );
 
 server.registerTool(
@@ -542,11 +582,12 @@ server.registerTool(
     description: "Run a full agent task with governance floors.",
     inputSchema: z.object({
       task: z.string().describe("The task to execute"),
-      mode: z.enum(["internal_mode", "external_safe_mode"]).optional()
+      mode: z.enum(["internal_mode", "external_safe_mode"]).optional(),
+      evidence_receipt: z.record(z.string(), z.unknown()).optional().describe("Optional F-WEB evidence receipt to support a SEAL verdict"),
     }),
     annotations: { title: "Agent Run", destructiveHint: true }
   },
-  forgeHandler
+  (args) => forgeHandler(args, "forge_run")
 );
 
 const judgeHandler = async ({ holdId, reason }: { holdId: string, reason?: string }) => {
@@ -554,9 +595,21 @@ const judgeHandler = async ({ holdId, reason }: { holdId: string, reason?: strin
   await telemetryInvoke("forge_approve");
   return runStage("888_JUDGE" as MetabolicStage, async () => {
   try {
-    const item = approvalBoundary.approve(holdId, reason);
-    const result = { content: [{ type: "text" as const, text: JSON.stringify({ holdId: item.holdId, state: item.state, badge: item.badge }, null, 2) }] };
-    await telemetrySuccess("forge_approve", startedAt);
+    // FORGE 2-B: A-FORGE cannot issue verdicts. All approvals must come from arifOS.
+    const result = {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          status: "HOLD",
+          gate: "SELF_AUTHORIZE_REFUSED",
+          holdId,
+          reason: reason ?? "none given",
+          message: "A-FORGE no longer issues approvals. Route to arifOS arif_judge_deliberate (via forge_judge_proxy) instead.",
+        }, null, 2),
+      }],
+      isError: true,
+    };
+    await telemetrySuccess("forge_approve", startedAt, undefined, { gate: "SELF_AUTHORIZE_REFUSED" });
     return result;
   } catch (err) { await telemetryFailure("forge_approve", startedAt, err); throw err; }
   });

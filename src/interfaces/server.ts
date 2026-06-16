@@ -377,7 +377,7 @@ app.post("/execute", async (req: Request, res: Response) => {
       (req as any).verified_actor = originCheck.actor_id;
       console.error(`[FORGE-2B] ${actionClass} ${tool} session=${session_id?.slice(0,12)} lease=${lease_id?.slice(0,12)} actor=${originCheck.actor_id}`);
 
-      const leaseCheck = validateLeaseForTool(lease_id, tool, actionClass);
+      const leaseCheck = await validateLeaseForTool(lease_id, tool, actionClass);
       if (!leaseCheck.ok) {
         res.status(423).json({
           ok: false,

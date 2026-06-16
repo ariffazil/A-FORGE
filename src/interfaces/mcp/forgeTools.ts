@@ -68,49 +68,6 @@ const CLASS_RANK: Record<string, number> = {
   ATOMIC:                0,  // maps to IRREVERSIBLE priority
 };
 
-/**
- * Validate a lease against the requested tool and action class.
- * Returns ok=true if the lease exists, is active, grants sufficient class,
- * covers the tool in scope, and does not explicitly forbid it.
- */
-export function validateLeaseForTool(
-  lease_id: string | undefined,
-  tool: string,
-  actionClass: string
-): { ok: true; lease: LeaseRecord } | { ok: false; gate: string; reason: string } {
-  if (!lease_id) {
-    return { ok: false, gate: "LEASE_REQUIRED", reason: "lease_id is required for non-OBSERVE actions" };
-  }
-  const lease = activeLeases.get(lease_id);
-  if (!lease) {
-    return { ok: false, gate: "LEASE_UNKNOWN", reason: `Lease '${lease_id}' not found` };
-  }
-  if (lease.revoked) {
-    return { ok: false, gate: "LEASE_REVOKED", reason: "Lease has been revoked" };
-  }
-  if (Date.now() > lease.expires_at) {
-    const remaining = Math.max(0, Math.floor((lease.expires_at - Date.now()) / 1000));
-    return { ok: false, gate: "LEASE_EXPIRED", reason: `Lease expired ${Math.abs(remaining)}s ago` };
-  }
-  const requestedRank = CLASS_RANK[actionClass] ?? 0;
-  const leaseRank = CLASS_RANK[lease.max_action_class] ?? 0;
-  if (requestedRank > leaseRank) {
-    return {
-      ok: false,
-      gate: "LEASE_CLASS_EXCEEDED",
-      reason: `Lease permits up to '${lease.max_action_class}', but '${tool}' is class ${actionClass}`,
-    };
-  }
-  const wildcard = lease.scope.includes("*");
-  if (!wildcard && !lease.scope.includes(tool)) {
-    return { ok: false, gate: "LEASE_SCOPE_DENIED", reason: `Tool '${tool}' is not in lease scope` };
-  }
-  if (lease.forbidden.includes(tool)) {
-    return { ok: false, gate: "LEASE_FORBIDDEN", reason: `Tool '${tool}' is explicitly forbidden by lease` };
-  }
-  return { ok: true, lease };
-}
-
 const jobStore = new Map<string, {
   job_id: string;
   agent_id: string;
@@ -236,13 +193,186 @@ export function registerIdentityTools(server: McpServer): void {
   );
 }
 
-// ── 2. forge_lease_* — Lease Lifecycle ─────────────────────────────────────
+// ── 2. forge_lease_* — Lease Lifecycle (FORGE 2-B) ──────────────────────────
+//
+// A-FORGE no longer self-authorizes leases. Every lease is minted by arifOS.
+// The local `activeLeases` Map is a read-through cache for fast status checks.
+
+const AFORGE_TO_ARIFOS_CLASS: Record<string, string> = {
+  OBSERVE: "OBSERVE",
+  SUGGEST: "REASON",
+  SIMULATE: "DRY_RUN",
+  DRAFT: "DRY_RUN",
+  QUEUE: "DRY_RUN",
+  EXECUTE_REVERSIBLE: "MUTATE",
+  EXECUTE_HIGH_IMPACT: "EXTERNAL",
+  IRREVERSIBLE: "IRREVERSIBLE",
+  // Legacy aliases
+  PROPOSE: "DRY_RUN",
+  MUTATE: "MUTATE",
+  ATOMIC: "IRREVERSIBLE",
+};
+
+function toArifosActionClass(cls: string): string {
+  return AFORGE_TO_ARIFOS_CLASS[cls] ?? "OBSERVE";
+}
+
+function requiresLiveLeaseCheck(actionClass: string): boolean {
+  // For high-impact and irreversible tools, always verify the lease live
+  // against arifOS before allowing mutation.
+  return ["EXECUTE_HIGH_IMPACT", "IRREVERSIBLE", "MUTATE", "ATOMIC"].includes(actionClass);
+}
+
+function arifosLeaseToLocal(lease: any): LeaseRecord {
+  const issuedAt = lease.issued_at ? new Date(lease.issued_at).getTime() : Date.now();
+  const expiresAt = lease.expires_at ? new Date(lease.expires_at).getTime() : Date.now() + 300_000;
+  return {
+    lease_id: lease.lease_id,
+    agent_id: lease.actor_id ?? lease.agent_id ?? "unknown",
+    scope: Array.isArray(lease.scope) ? lease.scope : [],
+    max_action_class: lease.max_action_class,
+    ttl_seconds: Math.max(1, Math.floor((expiresAt - issuedAt) / 1000)),
+    issued_at: issuedAt,
+    expires_at: expiresAt,
+    forbidden: Array.isArray(lease.forbidden) ? lease.forbidden : [],
+    revoked: lease.revoked === true,
+  };
+}
+
+async function issueLeaseViaKernel(args: {
+  agent_id: string;
+  scope: string[];
+  max_action_class: string;
+  ttl_seconds: number;
+  forbidden: string[];
+  session_id?: string;
+}): Promise<{ ok: true; lease: LeaseRecord } | { ok: false; reason: string }> {
+  try {
+    const result = await callMCP("arifos.arif_lease_issue", {
+      organ_id: "A-FORGE",
+      actor_id: args.agent_id,
+      scope: args.scope,
+      max_action_class: toArifosActionClass(args.max_action_class),
+      ttl_seconds: args.ttl_seconds,
+      forbidden: args.forbidden,
+      session_id: args.session_id,
+    }) as any;
+
+    const lease = result?.lease ?? result?.result?.lease;
+    if (!lease || !lease.lease_id) {
+      return { ok: false, reason: `Kernel issued lease without lease_id: ${JSON.stringify(result)}` };
+    }
+    return { ok: true, lease: arifosLeaseToLocal(lease) };
+  } catch (err: any) {
+    return { ok: false, reason: err?.message ?? String(err) };
+  }
+}
+
+async function inspectLeaseViaKernel(lease_id: string): Promise<any> {
+  return callMCP("arifos.arif_lease_inspect", { lease_id });
+}
+
+async function revokeLeaseViaKernel(args: {
+  lease_id: string;
+  agent_id: string;
+  reason?: string;
+  session_id?: string;
+}): Promise<{ ok: true; lease: LeaseRecord } | { ok: false; reason: string }> {
+  try {
+    const result = await callMCP("arifos.arif_lease_revoke", {
+      lease_id: args.lease_id,
+      actor_id: args.agent_id,
+      reason: args.reason ?? "a-forge-revoke",
+      session_id: args.session_id,
+    }) as any;
+
+    const lease = result?.lease ?? result?.result?.lease;
+    if (!lease || !lease.lease_id) {
+      return { ok: false, reason: `Kernel revoke returned no lease: ${JSON.stringify(result)}` };
+    }
+    return { ok: true, lease: arifosLeaseToLocal(lease) };
+  } catch (err: any) {
+    return { ok: false, reason: err?.message ?? String(err) };
+  }
+}
+
+/**
+ * Validate a lease against the requested tool and action class.
+ * For execution-class tools, this performs a live arifOS lease_inspect call.
+ */
+export async function validateLeaseForTool(
+  lease_id: string | undefined,
+  tool: string,
+  actionClass: string,
+): Promise<{ ok: true; lease: LeaseRecord } | { ok: false; gate: string; reason: string }> {
+  if (!lease_id) {
+    return { ok: false, gate: "LEASE_REQUIRED", reason: "lease_id is required for non-OBSERVE actions" };
+  }
+
+  let lease: LeaseRecord | undefined;
+
+  if (requiresLiveLeaseCheck(actionClass)) {
+    try {
+      const inspect = await inspectLeaseViaKernel(lease_id);
+      const kernelLease = inspect?.lease ?? inspect?.result?.lease;
+      if (!kernelLease || !kernelLease.lease_id) {
+        return { ok: false, gate: "LEASE_KERNEL_UNKNOWN", reason: `arifOS does not recognise lease '${lease_id}'` };
+      }
+      if (kernelLease.revoked === true) {
+        return { ok: false, gate: "LEASE_REVOKED", reason: "Lease revoked by kernel" };
+      }
+      const expiresAt = new Date(kernelLease.expires_at).getTime();
+      if (Date.now() > expiresAt) {
+        return { ok: false, gate: "LEASE_EXPIRED", reason: "Lease expired according to kernel" };
+      }
+      lease = arifosLeaseToLocal(kernelLease);
+      // Keep local cache in sync
+      activeLeases.set(lease_id, lease);
+    } catch (err: any) {
+      return {
+        ok: false,
+        gate: "LEASE_KERNEL_UNREACHABLE",
+        reason: `Cannot verify lease with arifOS: ${err?.message ?? String(err)}`,
+      };
+    }
+  } else {
+    lease = activeLeases.get(lease_id);
+    if (!lease) {
+      return { ok: false, gate: "LEASE_UNKNOWN", reason: `Lease '${lease_id}' not found` };
+    }
+    if (lease.revoked) {
+      return { ok: false, gate: "LEASE_REVOKED", reason: "Lease has been revoked" };
+    }
+    if (Date.now() > lease.expires_at) {
+      const remaining = Math.max(0, Math.floor((lease.expires_at - Date.now()) / 1000));
+      return { ok: false, gate: "LEASE_EXPIRED", reason: `Lease expired ${Math.abs(remaining)}s ago` };
+    }
+  }
+
+  const requestedRank = CLASS_RANK[actionClass] ?? 0;
+  const leaseRank = CLASS_RANK[lease.max_action_class] ?? 0;
+  if (requestedRank > leaseRank) {
+    return {
+      ok: false,
+      gate: "LEASE_CLASS_EXCEEDED",
+      reason: `Lease permits up to '${lease.max_action_class}', but '${tool}' is class ${actionClass}`,
+    };
+  }
+  const wildcard = lease.scope.includes("*");
+  if (!wildcard && !lease.scope.includes(tool)) {
+    return { ok: false, gate: "LEASE_SCOPE_DENIED", reason: `Tool '${tool}' is not in lease scope` };
+  }
+  if (lease.forbidden.includes(tool)) {
+    return { ok: false, gate: "LEASE_FORBIDDEN", reason: `Tool '${tool}' is explicitly forbidden by lease` };
+  }
+  return { ok: true, lease };
+}
 
 export function registerLeaseTools(server: McpServer): void {
   // forge_lease_request
   server.tool(
     "forge_lease_request",
-    "Request a bounded authority lease. F1 AMANAH: lease expires automatically after TTL.",
+    "Request a bounded authority lease from arifOS. F1 AMANAH: lease expires automatically after TTL. A-FORGE does not self-issue leases.",
     {
       agent_id: z.string().describe("Registered agent ID"),
       scope: z.array(z.string()).describe("Tools to include in lease scope"),
@@ -255,42 +385,45 @@ export function registerLeaseTools(server: McpServer): void {
       ttl_seconds: z.number().default(300).describe("Lease TTL in seconds (default 5 min, max 1 hour)"),
       forbidden: z.array(z.string()).optional().describe("Tools explicitly forbidden"),
     },
-    async ({ agent_id, scope, max_action_class, ttl_seconds, forbidden }) => {
+    async (args: any) => {
+      const { agent_id, scope, max_action_class, ttl_seconds, forbidden, session_id } = args;
       // Verify agent exists
       if (!registeredAgents.has(agent_id)) {
         return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Agent '${agent_id}' not registered. Use forge_agent_register first.` }, null, 2) }], isError: true };
       }
 
-      const now = Date.now();
-      const lease_id = randomUUID();
-      const effective_ttl = Math.min(ttl_seconds, 3600); // Max 1 hour
-      const lease = {
-        lease_id,
+      const effective_ttl = Math.min(ttl_seconds ?? 300, 3600); // Max 1 hour
+      const issue = await issueLeaseViaKernel({
         agent_id,
         scope,
         max_action_class,
         ttl_seconds: effective_ttl,
-        issued_at: now,
-        expires_at: now + (effective_ttl * 1000),
         forbidden: forbidden ?? [],
-        revoked: false,
-      };
-      activeLeases.set(lease_id, lease);
+        session_id,
+      });
+
+      if (!issue.ok) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", gate: "LEASE_ISSUE_FAILED", reason: issue.reason }, null, 2) }], isError: true };
+      }
+
+      const lease = issue.lease;
+      activeLeases.set(lease.lease_id, lease);
 
       // Link to agent
       const agent = registeredAgents.get(agent_id)!;
-      agent.lease_ids.push(lease_id);
+      agent.lease_ids.push(lease.lease_id);
 
       return {
         content: [{
           type: "text" as const,
           text: JSON.stringify({
             status: "SEAL",
-            lease_id,
+            source: "arifOS",
+            lease_id: lease.lease_id,
             agent_id,
-            scope,
+            scope: lease.scope,
             max_action_class,
-            ttl_seconds: effective_ttl,
+            ttl_seconds: lease.ttl_seconds,
             expires_at: new Date(lease.expires_at).toISOString(),
           }, null, 2),
         }],
@@ -301,31 +434,57 @@ export function registerLeaseTools(server: McpServer): void {
   // forge_lease_status
   server.tool(
     "forge_lease_status",
-    "Check current lease state, remaining TTL, and scope.",
+    "Check current lease state, remaining TTL, and scope. Queries arifOS and falls back to local cache.",
     {
       lease_id: z.string().describe("Lease ID to query"),
     },
-    async ({ lease_id }) => {
-      const lease = activeLeases.get(lease_id);
-      if (!lease) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Lease '${lease_id}' not found` }, null, 2) }], isError: true };
+    async (args: any) => {
+      const { lease_id } = args;
+      try {
+        const inspect = await inspectLeaseViaKernel(lease_id);
+        const kernelLease = inspect?.lease ?? inspect?.result?.lease;
+        if (kernelLease) {
+          const lease = arifosLeaseToLocal(kernelLease);
+          activeLeases.set(lease_id, lease);
+          const remaining_s = Math.max(0, Math.floor((lease.expires_at - Date.now()) / 1000));
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: lease.revoked ? "REVOKED" : remaining_s === 0 ? "EXPIRED" : "ACTIVE",
+                source: "arifOS",
+                lease_id: lease.lease_id,
+                agent_id: lease.agent_id,
+                scope: lease.scope,
+                max_action_class: lease.max_action_class,
+                remaining_seconds: remaining_s,
+                revoked: lease.revoked,
+                expires_at: new Date(lease.expires_at).toISOString(),
+              }, null, 2),
+            }],
+          };
+        }
+      } catch (err) {
+        // fall through to local cache
       }
 
-      const now = Date.now();
-      const expired = now > lease.expires_at;
-      const remaining_s = Math.max(0, Math.floor((lease.expires_at - now) / 1000));
+      const lease = activeLeases.get(lease_id);
+      if (!lease) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Lease '${lease_id}' not found in kernel or local cache` }, null, 2) }], isError: true };
+      }
 
+      const remaining_s = Math.max(0, Math.floor((lease.expires_at - Date.now()) / 1000));
       return {
         content: [{
           type: "text" as const,
           text: JSON.stringify({
-            status: expired ? "EXPIRED" : lease.revoked ? "REVOKED" : "ACTIVE",
+            status: lease.revoked ? "REVOKED" : remaining_s === 0 ? "EXPIRED" : "ACTIVE",
+            source: "local_cache",
             lease_id: lease.lease_id,
             agent_id: lease.agent_id,
             scope: lease.scope,
             max_action_class: lease.max_action_class,
             remaining_seconds: remaining_s,
-            expired,
             revoked: lease.revoked,
             expires_at: new Date(lease.expires_at).toISOString(),
           }, null, 2),
@@ -337,26 +496,26 @@ export function registerLeaseTools(server: McpServer): void {
   // forge_lease_revoke
   server.tool(
     "forge_lease_revoke",
-    "Revoke a lease early. F1 AMANAH: only the issuing agent or root can revoke.",
+    "Revoke a lease early. F1 AMANAH: revocation is routed to arifOS; local cache is updated on success.",
     {
       lease_id: z.string().describe("Lease ID to revoke"),
       agent_id: z.string().describe("Agent requesting revocation"),
       reason: z.string().optional().describe("Reason for revocation"),
     },
-    async ({ lease_id, agent_id, reason }) => {
-      const lease = activeLeases.get(lease_id);
-      if (!lease) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Lease '${lease_id}' not found` }, null, 2) }], isError: true };
-      }
-      if (lease.agent_id !== agent_id && agent_id !== "root") {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Agent '${agent_id}' does not own lease '${lease_id}'. Only lease owner or 'root' can revoke.` }, null, 2) }], isError: true };
+    async (args: any) => {
+      const { lease_id, agent_id, reason, session_id } = args;
+      const revoke = await revokeLeaseViaKernel({ lease_id, agent_id, reason, session_id });
+      if (!revoke.ok) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", gate: "LEASE_REVOKE_FAILED", reason: revoke.reason }, null, 2) }], isError: true };
       }
 
-      lease.revoked = true;
+      const lease = revoke.lease;
+      activeLeases.set(lease_id, lease);
+
       return {
         content: [{
           type: "text" as const,
-          text: JSON.stringify({ status: "REVOKED", lease_id, agent_id, reason: reason ?? "no reason given", revoked_at: new Date().toISOString() }, null, 2),
+          text: JSON.stringify({ status: "REVOKED", source: "arifOS", lease_id, agent_id, reason: reason ?? "no reason given", revoked_at: new Date().toISOString() }, null, 2),
         }],
       };
     }
