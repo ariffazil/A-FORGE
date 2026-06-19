@@ -115,3 +115,8 @@ entropy-report.json
 
 # ── TypeScript build outputs ──
 build/
+
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
