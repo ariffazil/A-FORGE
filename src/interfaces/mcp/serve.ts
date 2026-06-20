@@ -40,10 +40,10 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
     if (!port) port = 7072;
     const { createServer } = await import("node:http");
 
-    // Stateless transport — no persistent sessions. Each POST is an independent
-    // MCP message. Prevents "Server already initialized" 400 errors on reconnect.
+    // Stateful transport with dynamic session IDs — each fresh POST /mcp
+    // without a session header creates a new session via sessionIdGenerator.
     const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
+      sessionIdGenerator: () => randomUUID(),
       enableJsonResponse: true,
     });
 
@@ -61,7 +61,9 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
         return;
       }
 
-      // MCP — delegate to SDK transport (handles GET for SSE, POST for JSON-RPC)
+      // MCP — delegate to SDK transport.
+      // The SDK internally converts the Node.js IncomingMessage to a Web
+      // Standard Request via getRequestListener, which handles body reading.
       if (req.url === "/mcp") {
         await transport.handleRequest(req, res);
         return;
