@@ -23,10 +23,12 @@ epistemic_status: SOURCE_OF_TRUTH
 
 The governed execution shell of the arifOS Federation. A-FORGE builds, deploys, forges, and runs code under constitutional gates. It also hosts MIND:51001 and MEMORY:51002 federated intelligence services.
 
-- **Port:** 7071 (Express server, Docker Compose via systemd)
+- **API Port:** 7071 (Express server, Docker Compose via systemd)
+- **MCP Port:** 7072 (`a-forge-mcp.service`, streamable-http, single session)
+- **stdio:** `npm run mcp:stdio` — **preferred agent ingress** (Kimi, Claude Code, etc.)
 - **Runtime:** Node.js 22+, TypeScript ~6.0
 - **Architecture:** Hexagonal / layered (domain → application → infrastructure → interfaces)
-- **Tool surface:** 20+ forge tools (forge_plan, forge_dry_run, forge_approve, arif_vault_seal)
+- **Tool surface:** 77 forge tools under `forge_*` namespace
 
 ### Repository Structure
 
@@ -88,10 +90,14 @@ npm run build                     # tsc -p tsconfig.json
 npm test                          # node dist/test/*.test.js
 make test                         # security-audit + build + all suites
 
-# Deploy
+# Deploy API
 npm run build
 systemctl restart a-forge
 curl -s http://localhost:7071/health | python3 -m json.tool
+
+# Deploy / restart MCP gateway
+systemctl restart a-forge-mcp.service
+curl -s http://localhost:7072/health | python3 -m json.tool
 ```
 
 ## Escalation Rules
