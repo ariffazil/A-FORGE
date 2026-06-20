@@ -51,6 +51,7 @@ import {
   registerJobTools,
   initializeForgeTools,
 } from "./forgeTools.js";
+import { registerGatewayTools } from "./gatewayTools.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
@@ -476,7 +477,7 @@ server.registerTool(
 // ── Tier 05 Execution ────────────────────────────────────────────────────────
 
 const forgeHandler = async (args: any, toolName: string) => {
-  const { task, mode, session_id, actor_id, lease_id, evidence_receipt } = args;
+  const { task, mode, session_id, actor_id, lease_id, evidence_receipt, peer_contract_id } = args;
   const startedAt = Date.now();
   await telemetryInvoke("arif_forge_execute");
   return runStage("777_FORGE" as MetabolicStage, async () => {
@@ -498,6 +499,9 @@ const forgeHandler = async (args: any, toolName: string) => {
     };
     if (evidence_receipt) {
       judgeBody.evidence_receipt = evidence_receipt;
+    }
+    if (peer_contract_id) {
+      judgeBody.peer_contract_id = peer_contract_id;
     }
     const judgeResult = await callMCP("arifos.arif_judge_deliberate", judgeBody) as any;
     const judgeVerdict = judgeResult?.verdict ?? judgeResult?.decision ?? "HOLD";
@@ -570,6 +574,7 @@ server.registerTool(
       task: z.string().describe("The task to execute"),
       mode: z.enum(["internal_mode", "external_safe_mode"]).optional(),
       evidence_receipt: z.record(z.string(), z.unknown()).optional().describe("Optional F-WEB evidence receipt to support a SEAL verdict"),
+      peer_contract_id: z.string().optional().describe("Optional Peer Federation Contract v1 ID for audit continuity"),
     }),
     annotations: { title: "777 FORGE", destructiveHint: true }
   },
@@ -584,6 +589,7 @@ server.registerTool(
       task: z.string().describe("The task to execute"),
       mode: z.enum(["internal_mode", "external_safe_mode"]).optional(),
       evidence_receipt: z.record(z.string(), z.unknown()).optional().describe("Optional F-WEB evidence receipt to support a SEAL verdict"),
+      peer_contract_id: z.string().optional().describe("Optional Peer Federation Contract v1 ID for audit continuity"),
     }),
     annotations: { title: "Agent Run", destructiveHint: true }
   },
@@ -648,6 +654,7 @@ server.tool(
     heart_critique: z.record(z.string(), z.unknown()).optional().describe("Heart critique payload"),
     niat_params: z.record(z.string(), z.unknown()).optional().describe("Niat parameters"),
     context_source: z.string().optional().describe("Context source"),
+    peer_contract_id: z.string().optional().describe("Peer Federation Contract v1 ID for audit continuity"),
   },
   judgeProxyHandler
 );
@@ -982,6 +989,9 @@ registerRegistryTools(server);
 registerShellTools(server);
 registerLogTools(server);
 registerJobTools(server);
+
+// ── P1 Gateway Tools: external MCP internalization ───────────────────────────
+registerGatewayTools(server);
 
 // Initialize identity store
 initializeForgeTools().catch(err => {

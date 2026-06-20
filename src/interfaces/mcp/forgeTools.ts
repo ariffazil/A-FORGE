@@ -217,10 +217,22 @@ function toArifosActionClass(cls: string): string {
   return AFORGE_TO_ARIFOS_CLASS[cls] ?? "OBSERVE";
 }
 
-function requiresLiveLeaseCheck(actionClass: string): boolean {
-  // For high-impact and irreversible tools, always verify the lease live
-  // against arifOS before allowing mutation.
-  return ["EXECUTE_HIGH_IMPACT", "IRREVERSIBLE", "MUTATE", "ATOMIC"].includes(actionClass);
+function isObserveClass(actionClass: string): boolean {
+  return actionClass === "OBSERVE";
+}
+
+function logLeaseDecision(
+  lease_id: string | undefined,
+  tool: string,
+  actionClass: string,
+  outcome: { ok: true; lease: LeaseRecord } | { ok: false; gate: string; reason: string },
+): void {
+  const status = outcome.ok ? "SEAL" : outcome.gate;
+  const leaseId = lease_id ?? "<none>";
+  process.stderr.write(
+    `[LEASE_GATE] tool=${tool} class=${actionClass} lease_id=${leaseId} verdict=${status}` +
+    (outcome.ok ? "" : ` reason=${outcome.reason}`) + "\n",
+  );
 }
 
 function arifosLeaseToLocal(lease: any): LeaseRecord {
@@ -305,67 +317,89 @@ export async function validateLeaseForTool(
   tool: string,
   actionClass: string,
 ): Promise<{ ok: true; lease: LeaseRecord } | { ok: false; gate: string; reason: string }> {
+  // OBSERVE actions do not require a lease, but if a lease_id is supplied we
+  // still verify it exists with the kernel (read-only identity check).
   if (!lease_id) {
-    return { ok: false, gate: "LEASE_REQUIRED", reason: "lease_id is required for non-OBSERVE actions" };
+    if (isObserveClass(actionClass)) {
+      const ok = { ok: true as const, lease: undefined as unknown as LeaseRecord };
+      logLeaseDecision(lease_id, tool, actionClass, ok);
+      return ok;
+    }
+    const fail = { ok: false as const, gate: "LEASE_REQUIRED", reason: "lease_id is required for non-OBSERVE actions" };
+    logLeaseDecision(lease_id, tool, actionClass, fail);
+    return fail;
   }
 
   let lease: LeaseRecord | undefined;
 
-  if (requiresLiveLeaseCheck(actionClass)) {
-    try {
-      const inspect = await inspectLeaseViaKernel(lease_id);
-      const kernelLease = inspect?.lease ?? inspect?.result?.lease;
-      if (!kernelLease || !kernelLease.lease_id) {
-        return { ok: false, gate: "LEASE_KERNEL_UNKNOWN", reason: `arifOS does not recognise lease '${lease_id}'` };
-      }
-      if (kernelLease.revoked === true) {
-        return { ok: false, gate: "LEASE_REVOKED", reason: "Lease revoked by kernel" };
-      }
-      const expiresAt = new Date(kernelLease.expires_at).getTime();
-      if (Date.now() > expiresAt) {
-        return { ok: false, gate: "LEASE_EXPIRED", reason: "Lease expired according to kernel" };
-      }
-      lease = arifosLeaseToLocal(kernelLease);
-      // Keep local cache in sync
-      activeLeases.set(lease_id, lease);
-    } catch (err: any) {
-      return {
-        ok: false,
-        gate: "LEASE_KERNEL_UNREACHABLE",
-        reason: `Cannot verify lease with arifOS: ${err?.message ?? String(err)}`,
-      };
+  try {
+    const inspect = await inspectLeaseViaKernel(lease_id);
+    const kernelLease = inspect?.lease ?? inspect?.result?.lease;
+    if (!kernelLease || !kernelLease.lease_id) {
+      const fail = { ok: false as const, gate: "LEASE_KERNEL_UNKNOWN", reason: `arifOS does not recognise lease '${lease_id}'` };
+      logLeaseDecision(lease_id, tool, actionClass, fail);
+      return fail;
     }
-  } else {
-    lease = activeLeases.get(lease_id);
-    if (!lease) {
-      return { ok: false, gate: "LEASE_UNKNOWN", reason: `Lease '${lease_id}' not found` };
+    if (kernelLease.revoked === true) {
+      const fail = { ok: false as const, gate: "LEASE_REVOKED", reason: "Lease revoked by kernel" };
+      logLeaseDecision(lease_id, tool, actionClass, fail);
+      return fail;
     }
-    if (lease.revoked) {
-      return { ok: false, gate: "LEASE_REVOKED", reason: "Lease has been revoked" };
+    const expiresAt = new Date(kernelLease.expires_at).getTime();
+    if (Date.now() > expiresAt) {
+      const fail = { ok: false as const, gate: "LEASE_EXPIRED", reason: "Lease expired according to kernel" };
+      logLeaseDecision(lease_id, tool, actionClass, fail);
+      return fail;
     }
-    if (Date.now() > lease.expires_at) {
-      const remaining = Math.max(0, Math.floor((lease.expires_at - Date.now()) / 1000));
-      return { ok: false, gate: "LEASE_EXPIRED", reason: `Lease expired ${Math.abs(remaining)}s ago` };
-    }
+    lease = arifosLeaseToLocal(kernelLease);
+    // Keep local cache in sync as a read-only diagnostic cache only.
+    // Authorization never comes from this cache.
+    activeLeases.set(lease_id, lease);
+  } catch (err: any) {
+    const fail = {
+      ok: false as const,
+      gate: "LEASE_KERNEL_UNREACHABLE",
+      reason: `Cannot verify lease with arifOS: ${err?.message ?? String(err)}`,
+    };
+    logLeaseDecision(lease_id, tool, actionClass, fail);
+    return fail;
+  }
+
+  // For OBSERVE actions with an explicit lease_id, we only verify existence
+  // above. Scope/class matching is required for non-OBSERVE actions.
+  if (isObserveClass(actionClass)) {
+    const ok = { ok: true as const, lease };
+    logLeaseDecision(lease_id, tool, actionClass, ok);
+    return ok;
   }
 
   const requestedRank = CLASS_RANK[actionClass] ?? 0;
   const leaseRank = CLASS_RANK[lease.max_action_class] ?? 0;
-  if (requestedRank > leaseRank) {
-    return {
-      ok: false,
+  // Lower rank = higher severity. A lease can authorize actions at or below
+  // its own severity, never above it.
+  if (requestedRank < leaseRank) {
+    const fail = {
+      ok: false as const,
       gate: "LEASE_CLASS_EXCEEDED",
       reason: `Lease permits up to '${lease.max_action_class}', but '${tool}' is class ${actionClass}`,
     };
+    logLeaseDecision(lease_id, tool, actionClass, fail);
+    return fail;
   }
   const wildcard = lease.scope.includes("*");
   if (!wildcard && !lease.scope.includes(tool)) {
-    return { ok: false, gate: "LEASE_SCOPE_DENIED", reason: `Tool '${tool}' is not in lease scope` };
+    const fail = { ok: false as const, gate: "LEASE_SCOPE_DENIED", reason: `Tool '${tool}' is not in lease scope` };
+    logLeaseDecision(lease_id, tool, actionClass, fail);
+    return fail;
   }
   if (lease.forbidden.includes(tool)) {
-    return { ok: false, gate: "LEASE_FORBIDDEN", reason: `Tool '${tool}' is explicitly forbidden by lease` };
+    const fail = { ok: false as const, gate: "LEASE_FORBIDDEN", reason: `Tool '${tool}' is explicitly forbidden by lease` };
+    logLeaseDecision(lease_id, tool, actionClass, fail);
+    return fail;
   }
-  return { ok: true, lease };
+  const ok = { ok: true as const, lease };
+  logLeaseDecision(lease_id, tool, actionClass, ok);
+  return ok;
 }
 
 export function registerLeaseTools(server: McpServer): void {

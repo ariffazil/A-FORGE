@@ -129,7 +129,11 @@ export function buildActionRequest(
       : (a.mission && typeof (a.mission as any).outcome?.sensitivity === "string"
           ? ((a.mission as any).outcome.sensitivity as any)
           : undefined),
-    metadata: { source: "mcp" },
+    metadata: {
+      source: "mcp",
+      task_context: a.task_context,
+      page_context: a.page_context,
+    },
   };
 }
 
