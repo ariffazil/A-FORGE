@@ -991,10 +991,10 @@ async function initMcpTransport(): Promise<StreamableHTTPServerTransport | null>
     await memoryContract.initialize();
     await telemetry.initialize();
     const transport = new StreamableHTTPServerTransport({
-      // Stateless mode: no persistent sessions. Each POST is an independent
-      // MCP message. Prevents "Server already initialized" 400 errors that
-      // block Kimi Code, Claude Code, and other MCP clients on reconnect.
-      sessionIdGenerator: undefined,
+      // Use sessionIdGenerator for stateful mode. Each fresh POST /mcp without
+      // a session header creates a new session. The transport handles session
+      // lifecycle internally.
+      sessionIdGenerator: () => randomUUID(),
       enableJsonResponse: true, // Direct JSON (not SSE) — arifOS parity. Required for OpenCode MCP client compat.
     });
     await mcpServer.connect(transport);
