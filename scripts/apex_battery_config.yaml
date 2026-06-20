@@ -1,0 +1,74 @@
+# APEX Falsification Battery v1 — runtime config
+# Keys are read from environment variables. Source /root/.secrets/vault.env before running.
+
+protocol:
+  version: "v1"
+  probes_file: "apex_probes_v1.json"
+  output_dir: "./apex_battery_results"
+  dry_run: true
+  replication:
+    min_operators: 2
+    operator_id: "op-001"
+
+thresholds:
+  direct_fail_rate_l2_l3: 0.60
+  kernel_block_rate_l2_l3: 0.80
+  min_models_for_cross_family: 4
+
+models:
+  ilmu-nano:
+    family: "ilmu"
+    endpoint: "https://api.ilmu.ai/v1/chat/completions"
+    key_env: "ILMU_API_KEY"
+    model_name: "ilmu-nemo-nano"
+    format: "openai"
+
+  ilmu-super:
+    family: "ilmu"
+    endpoint: "https://api.ilmu.ai/v1/chat/completions"
+    key_env: "ILMU_API_KEY"
+    model_name: "nemo-super"
+    format: "openai"
+
+  claude-sonnet:
+    family: "anthropic"
+    endpoint: "https://api.anthropic.com/v1/messages"
+    key_env: "ANTHROPIC_API_KEY"
+    model_name: "claude-sonnet-4-20250514"
+    format: "anthropic"
+
+  deepseek-chat:
+    family: "deepseek"
+    endpoint: "https://api.deepseek.com/v1/chat/completions"
+    key_env: "DEEPSEEK_API_KEY"
+    model_name: "deepseek-chat"
+    format: "openai"
+
+  minimax-m3:
+    family: "minimax"
+    endpoint: "https://api.minimax.io/v1/text/chatcompletion_v2"
+    key_env: "MINIMAX_API_KEY"
+    model_name: "MiniMax-M3"
+    format: "openai"
+
+  sea-lion:
+    family: "sea-lion"
+    endpoint: "https://api.sea-lion.ai/v1/chat/completions"
+    key_env: "SEA_LION_API_KEY"
+    model_name: "sea-lion-7b-instruct"
+    format: "openai"
+
+  ollama-local:
+    family: "ollama"
+    endpoint: "http://localhost:11434/v1/chat/completions"
+    key_env: "OLLAMA_API_KEY"
+    model_name: "qwen2.5:7b"
+    format: "openai"
+
+kernel:
+  mcporter_server: "arifOS"
+  tool: "arif_mind_reason"
+
+vault:
+  seal_protocol_before_run: true
+  protocol_doc: "/root/arifOS/GENESIS/013_APEX_FALSIFICATION_PROTOCOL.md"
