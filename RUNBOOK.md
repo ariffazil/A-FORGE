@@ -1,7 +1,7 @@
 # RUNBOOK.md — A-FORGE (Execution Shell)
 
-> **Organ:** A-FORGE | **Port:** 7071
-> **Last Updated:** 2026-06-12
+> **Organ:** A-FORGE | **API Port:** 7071 | **MCP Port:** 7072 | **stdio:** via `npm run mcp:stdio`
+> **Last Updated:** 2026-06-20
 
 ## Start / Stop
 ```bash
@@ -14,6 +14,31 @@ systemctl status a-forge
 ## Health Check
 ```bash
 curl -s http://127.0.0.1:7071/health | python3 -m json.tool
+curl -s http://127.0.0.1:7072/health | python3 -m json.tool
+```
+
+## MCP Transports
+
+A-FORGE exposes three MCP surfaces. Choose the right one for the client:
+
+| Surface | Command / URL | Port | Sessions | Use Case |
+|---------|--------------|------|----------|----------|
+| **stdio** | `npm run mcp:stdio` | n/a | One per process | **Preferred for IDE/agent clients** (Kimi Code CLI, Claude Code, etc.) |
+| **Dedicated MCP HTTP** | `http://127.0.0.1:7072/mcp` | 7072 | Single streamable-http session | `a-forge-mcp.service`; OK for one-shot probes |
+| **API bridge MCP** | `http://127.0.0.1:7071/mcp` | 7071 | Single streamable-http session | Main A-FORGE API (`a-forge.service`); same singleton limitation |
+
+**Important:** Both HTTP surfaces use a single shared `McpServer` instance. A second streamable-http client that sends `initialize` will receive `Server already initialized`. For multi-client or agent use, route through **stdio**.
+
+### Restart MCP service
+```bash
+systemctl restart a-forge-mcp.service
+journalctl -u a-forge-mcp.service -n 50 --no-pager
+```
+
+### Quick MCP probe
+```bash
+cd /root/A-FORGE
+node -e "import('@modelcontextprotocol/sdk/client/index.js').then(({Client})=>import('@modelcontextprotocol/sdk/client/streamableHttp.js').then(({StreamableHTTPClientTransport})=>{const c=new Client({name:'probe',version:'1'});const t=new StreamableHTTPClientTransport(new URL('http://127.0.0.1:7072/mcp'));c.connect(t).then(()=>c.listTools()).then(r=>console.log(r.tools.length,'tools')).finally(()=>c.close());}))"
 ```
 
 ## Build & Test
@@ -34,6 +59,8 @@ journalctl -u a-forge -n 50 --no-pager
 |---------|-------------|-----|
 | 888_HOLD on execution | No JUDGE_SEAL_AUTHORIZATION from arifOS | Run through arif_judge_deliberate first |
 | /health unreachable | Service crashed | `systemctl restart a-forge` |
+| `Server already initialized` on second HTTP client | Streamable-http singleton limitation | Use stdio transport, or restart `a-forge-mcp.service` for a fresh session |
+| 7072 returns 500 on `initialize` | `serve.ts` not connected to `McpServer` | Ensure `server.connect(transport)` is present and service is rebuilt/restarted |
 | Build fails | Node modules stale | `rm -rf node_modules && npm install` |
 
 ## What NOT to Do
