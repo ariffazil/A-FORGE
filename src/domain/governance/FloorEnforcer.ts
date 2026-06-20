@@ -55,6 +55,8 @@ export interface Verdict {
   void: boolean;
   /** True iff any reason is SABAR (and none are HOLD/VOID). */
   sabar: boolean;
+  /** Advisory caution flag: true if any reason has severity "CAUTION". */
+  caution: boolean;
   /** All reasons from all 13 floors. */
   reasons: FloorReason[];
   /** The action that was checked. */
@@ -241,17 +243,23 @@ function composeFinal(reasons: FloorReason[]): {
   hold_required: boolean;
   void: boolean;
   sabar: boolean;
+  caution: boolean;
 } {
-  if (reasons.some((r) => r.severity === "VOID")) {
-    return { final: "VOID", allowed: false, hold_required: true, void: true, sabar: false };
+  const hasVoid = reasons.some((r) => r.severity === "VOID");
+  const hasHold = reasons.some((r) => r.severity === "HOLD");
+  const hasSabar = reasons.some((r) => r.severity === "SABAR");
+  const hasCaution = reasons.some((r) => r.severity === "CAUTION");
+
+  if (hasVoid) {
+    return { final: "VOID", allowed: false, hold_required: true, void: true, sabar: false, caution: hasCaution };
   }
-  if (reasons.some((r) => r.severity === "HOLD")) {
-    return { final: "HOLD", allowed: false, hold_required: true, void: false, sabar: false };
+  if (hasHold) {
+    return { final: "HOLD", allowed: false, hold_required: true, void: false, sabar: false, caution: hasCaution };
   }
-  if (reasons.some((r) => r.severity === "SABAR" || r.severity === "CAUTION")) {
-    return { final: "SABAR", allowed: true, hold_required: false, void: false, sabar: true };
+  if (hasSabar || hasCaution) {
+    return { final: "SABAR", allowed: true, hold_required: false, void: false, sabar: true, caution: hasCaution };
   }
-  return { final: "SEAL", allowed: true, hold_required: false, void: false, sabar: false };
+  return { final: "SEAL", allowed: true, hold_required: false, void: false, sabar: false, caution: false };
 }
 
 // ─── Main dispatcher ────────────────────────────────────────────────
