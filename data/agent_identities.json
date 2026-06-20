@@ -114,5 +114,24 @@
     "registered_at": "2026-06-14T14:57:39.530Z",
     "last_seen": "2026-06-14T14:57:39.530Z",
     "lease_ids": []
+  },
+  "kimi-cli-forge": {
+    "agent_id": "kimi-cli-forge",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "kimi-cli-forge-session-SEAL-ff2eb2a3dd00405b",
+    "registered_at": "2026-06-20T14:57:44.310Z",
+    "last_seen": "2026-06-20T14:57:44.310Z",
+    "lease_ids": []
   }
 }
