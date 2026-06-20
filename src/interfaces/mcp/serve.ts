@@ -47,6 +47,14 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
       enableJsonResponse: true,
     });
 
+    // Connect the shared tool server to the transport BEFORE handling requests.
+    // Without this, the transport has no onmessage handler and every POST /mcp
+    // returns 500. A-FORGE exposes a single shared server instance here; this
+    // transport supports one MCP session at a time. For multi-client/agent use,
+    // prefer the stdio transport (npm run mcp:stdio), which is stateless per
+    // process and is what Kimi Code CLI uses.
+    await server.connect(transport);
+
     const httpServer = createServer(async (req, res) => {
       // CORS
       res.setHeader("Access-Control-Allow-Origin", "*");
@@ -57,7 +65,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
       // Health — bypasses transport
       if (req.url === "/health" || (req.url === "/" && req.method === "GET")) {
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ ok: true, service: "A-FORGE-MCP", status: "healthy", version: "0.1.0" }));
+        res.end(JSON.stringify({ ok: true, service: "A-FORGE-MCP", status: "healthy", version: "0.1.0", transport: "streamable-http", sessions: "single" }));
         return;
       }
 
