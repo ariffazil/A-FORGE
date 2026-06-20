@@ -5,9 +5,9 @@
  *  consequential action passes through checkAll() before execution."
  *
  * Verdict composition (per C1 spec):
- * - VOID > HOLD > CAUTION > SEAL
+ * - VOID > HOLD > SABAR > SEAL
  * - HARD floors (F1, F2, F4, F7, F9, F10, F11, F12, F13) → HOLD or VOID
- * - SOFT floors (F5, F6) → CAUTION or HOLD
+ * - SOFT floors (F5, F6) → SABAR or HOLD
  * - DERIVED floors (F3, F8) → diagnostic
  *
  * Floor priority order (per C1 spec):
@@ -36,6 +36,7 @@ import type { FloorReason, FloorName, Severity } from "./floor-types.js";
 import { checkF1Amanah } from "./f1Amanah.js";
 import { checkF2Truth } from "./f2Truth.js";
 import { checkF5Peace2 } from "./f5Peace2.js";
+import { checkF6Empathy } from "./f6Empathy.js";
 import { checkF10Ontology } from "./f10Ontology.js";
 import { checkF12Injection } from "./f12Injection.js";
 import { getF13HaltChannel } from "./F13HaltChannel.js";
@@ -52,8 +53,8 @@ export interface Verdict {
   hold_required: boolean;
   /** True iff any reason is VOID. */
   void: boolean;
-  /** True iff any reason is CAUTION (and none are HOLD/VOID). */
-  caution: boolean;
+  /** True iff any reason is SABAR (and none are HOLD/VOID). */
+  sabar: boolean;
   /** All reasons from all 13 floors. */
   reasons: FloorReason[];
   /** The action that was checked. */
@@ -95,9 +96,30 @@ function checkF4Clarity(ctx: FloorContext): FloorReason[] {
   return reasons;
 }
 
-/** F6 EMPATHY — stakeholder impact. SOFT floor. */
-function checkF6Empathy(ctx: FloorContext): FloorReason[] {
-  return [];  // Placeholder — no rules yet
+/** F6 EMPATHY — stakeholder impact. SOFT floor.
+ *  Enforces κᵣ ≥ 0.10 for OPS, κᵣ ≥ 0.70 for HUMAN.
+ *  Returns SABAR (not HOLD/VOID) for SOFT floor tension. */
+function checkF6EmpathyFloor(ctx: FloorContext): FloorReason[] {
+  const reasons: FloorReason[] = [];
+  const a = ctx.action;
+  const input = `${a.intent || ""} ${a.expected_outcome || ""}`;
+
+  const result = checkF6Empathy(input, a.tool_name);
+  if (result.verdict !== "PASS") {
+    // Map empathy verdict to floor severity
+    // VOID → "HOLD" (SOFT floors can't VOID directly, escalate to HOLD)
+    // HOLD → "SABAR" (SOFT floor tension is advisory)
+    // CAUTION → "SABAR"
+    const severity: Severity = result.verdict === "VOID" ? "SABAR" : "SABAR";
+    reasons.push({
+      floor: "F6",
+      code: result.reason || "EMPATHY_ADVISORY",
+      message: result.message || `F6 EMPATHY: κᵣ=${(result.kappa_r ?? "?").toString()} — stakeholder impact advisory`,
+      severity,
+    });
+  }
+
+  return reasons;
 }
 
 /** F7 HUMILITY — uncertainty declaration. */
@@ -211,25 +233,25 @@ function checkUnknownAction(ctx: FloorContext): FloorReason[] {
   return reasons;
 }
 
-// ─── Composition (VOID > HOLD > CAUTION > SEAL) ───────────────────────
+// ─── Composition (VOID > HOLD > SABAR > SEAL) ───────────────────────
 
 function composeFinal(reasons: FloorReason[]): {
   final: Severity;
   allowed: boolean;
   hold_required: boolean;
   void: boolean;
-  caution: boolean;
+  sabar: boolean;
 } {
   if (reasons.some((r) => r.severity === "VOID")) {
-    return { final: "VOID", allowed: false, hold_required: true, void: true, caution: false };
+    return { final: "VOID", allowed: false, hold_required: true, void: true, sabar: false };
   }
   if (reasons.some((r) => r.severity === "HOLD")) {
-    return { final: "HOLD", allowed: false, hold_required: true, void: false, caution: false };
+    return { final: "HOLD", allowed: false, hold_required: true, void: false, sabar: false };
   }
-  if (reasons.some((r) => r.severity === "CAUTION")) {
-    return { final: "CAUTION", allowed: true, hold_required: false, void: false, caution: true };
+  if (reasons.some((r) => r.severity === "SABAR" || r.severity === "CAUTION")) {
+    return { final: "SABAR", allowed: true, hold_required: false, void: false, sabar: true };
   }
-  return { final: "SEAL", allowed: true, hold_required: false, void: false, caution: false };
+  return { final: "SEAL", allowed: true, hold_required: false, void: false, sabar: false };
 }
 
 // ─── Main dispatcher ────────────────────────────────────────────────
@@ -274,7 +296,7 @@ export function checkAll(ctx: FloorContext): Verdict {
   allReasons.push(...checkF5Peace2(ctx));
 
   // F6 EMPATHY (soft — no rules yet)
-  allReasons.push(...checkF6Empathy(ctx));
+  allReasons.push(...checkF6EmpathyFloor(ctx));
 
   // F3 WITNESS (derived)
   allReasons.push(...checkF3Witness(ctx));
