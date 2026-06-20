@@ -40,9 +40,10 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
     if (!port) port = 7072;
     const { createServer } = await import("node:http");
 
-    // Singleton transport — manages sessions internally via SDK
+    // Stateless transport — no persistent sessions. Each POST is an independent
+    // MCP message. Prevents "Server already initialized" 400 errors on reconnect.
     const transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => randomUUID(),
+      sessionIdGenerator: undefined,
       enableJsonResponse: true,
     });
 
