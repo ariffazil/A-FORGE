@@ -67,7 +67,7 @@ const CodexSchema = z
     command: z.string().min(1).default("codex app-server"),
     approval_policy: z.string().optional(),
     thread_sandbox: z.string().optional(),
-    turn_sandbox_policy: z.union([z.string(), z.record(z.unknown())]).optional(),
+    turn_sandbox_policy: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
     turn_timeout_ms: z.number().int().positive().default(3600000),
     read_timeout_ms: z.number().int().positive().default(5000),
     stall_timeout_ms: z.number().int().default(300000),

@@ -63,6 +63,8 @@ const IRREVERSIBLE_TOOLS = new Set([
   "git_hard_reset",
   "hostinger_vps_restart",
   "hostinger_vps_stop",
+  "forge_github_create_or_update_file",
+  "forge_github_create_pull_request",
 ]);
 
 // Tools that execute high-impact operations (deploy, data mutation, billing)
@@ -78,6 +80,7 @@ const HIGH_IMPACT_TOOLS = new Set([
   "forge_github_pr",
   "forge_vault_write",
   "forge_vault_delete",
+  "forge_github_create_issue",
 ]);
 
 // Tools that execute reversible operations

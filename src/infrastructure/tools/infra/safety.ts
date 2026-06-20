@@ -1,17 +1,9 @@
 import { execFile } from "node:child_process";
 import * as path from "node:path";
 import { promisify } from "node:util";
+import { callMCP } from "../../../interfaces/mcp/client.js";
 
 export const execFileAsync = promisify(execFile);
-
-export interface ApprovalLease {
-  leaseId?: string;
-  approvalId?: string;
-  approved?: boolean;
-  verdict?: "SEAL" | "APPROVED" | "888_HOLD" | "HOLD" | "VOID" | string;
-  expiresAt?: string;
-  scope?: string;
-}
 
 export interface GateResult {
   allowed: boolean;
@@ -21,7 +13,7 @@ export interface GateResult {
 const UNIT_NAME_RE =
   /^[A-Za-z0-9_.@:+-]+\.(service|socket|timer|target|path|mount|automount|slice|scope|device|swap)$/;
 const UNIT_PATTERN_RE =
-  /^[A-Za-z0-9_.@:+*?-]+\.(service|socket|timer|target|path|mount|automount|slice|scope|device|swap)$/;
+  /^[A-Za-z0-9_.@:+\*\?-]+\.(service|socket|timer|target|path|mount|automount|slice|scope|device|swap)$/;
 const DOCKER_REF_RE = /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$/;
 const JOURNAL_SINCE_RE = /^[A-Za-z0-9: T+_.-]{1,64}$/;
 
@@ -58,22 +50,48 @@ export function clampLines(lines: number, max = 500): number {
   return Math.max(1, Math.min(Math.trunc(lines), max));
 }
 
-export function requireMutationApproval(action: string, target: string, lease?: ApprovalLease): GateResult {
-  const approved = lease?.approved === true || lease?.verdict === "SEAL" || lease?.verdict === "APPROVED";
-  const id = lease?.leaseId ?? lease?.approvalId;
-  if (!approved || !id) {
+/**
+ * Verify a mutation against the arifOS canonical lease registry.
+ * A-FORGE never self-authorizes: it only presents kernel-issued leases.
+ * Fail-closed if the kernel is unreachable or the lease is invalid.
+ */
+export async function requireMutationApproval(action: string, target: string, lease_id?: string): Promise<GateResult> {
+  if (!lease_id) {
     return {
       allowed: false,
-      error: `888_HOLD: ${action} on ${target} requires an approved scoped lease. Acknowledgement is not authorization.`,
+      error: `888_HOLD: ${action} on ${target} requires a kernel-issued lease_id. Acknowledgement is not authorization.`,
     };
   }
-  if (lease.expiresAt && Date.parse(lease.expiresAt) <= Date.now()) {
+
+  try {
+    const inspect = await callMCP("arifos.arif_lease_inspect", { lease_id }) as any;
+    const lease = inspect?.lease ?? inspect?.result?.lease;
+    if (!lease || !lease.lease_id) {
+      return {
+        allowed: false,
+        error: `888_HOLD: ${action} on ${target} — lease '${lease_id}' not recognised by arifOS.`,
+      };
+    }
+    if (lease.revoked === true) {
+      return {
+        allowed: false,
+        error: `888_HOLD: ${action} on ${target} — lease '${lease_id}' revoked by kernel.`,
+      };
+    }
+    const expiresAt = new Date(lease.expires_at).getTime();
+    if (Date.now() > expiresAt) {
+      return {
+        allowed: false,
+        error: `888_HOLD: ${action} on ${target} — lease '${lease_id}' expired.`,
+      };
+    }
+    return { allowed: true };
+  } catch (err: any) {
     return {
       allowed: false,
-      error: `888_HOLD: approval lease expired for ${action} on ${target}.`,
+      error: `888_HOLD: cannot verify lease '${lease_id}' with arifOS for ${action} on ${target}. Failing closed: ${err?.message ?? String(err)}`,
     };
   }
-  return { allowed: true };
 }
 
 export function resolveWorkspacePath(filePath: string, workspaceRoot = "/root"): string {
