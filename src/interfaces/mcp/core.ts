@@ -61,6 +61,165 @@ export const server = new McpServer({
   version: "0.1.0",
 });
 
+// ── _epistemic tag injection ──────────────────────────────────────────────
+//
+// Every MCP tool response carries a mandatory _epistemic envelope field
+// classifying the output by origin, authority, and evidence quality.
+// Ratified per arifOS federation doctrine.
+
+interface EpistemicTag {
+  output_class: string;
+  ai_involvement: string;
+  authority_claim: string;
+  evidence_source: string;
+  tagged_by: string;
+  tagged_at: string;
+  schema_version: string;
+}
+
+const DEFAULT_EPISTEMIC: EpistemicTag = {
+  output_class: "DETERMINISTIC",
+  ai_involvement: "NONE",
+  authority_claim: "ADVISORY",
+  evidence_source: "COMPUTED",
+  tagged_by: "aforge-mcp",
+  tagged_at: new Date().toISOString(),
+  schema_version: "1.0.0",
+};
+
+/**
+ * Infer the epistemic tag for a tool based on its name.
+ * Engineering tools → DOMAIN_COMPUTATION/NONE/ADVISORY/COMPUTED
+ * Vault/approval tools → GOVERNANCE_TEMPLATE/NONE/EXECUTIVE/COMPUTED
+ * Execution tools → DETERMINISTIC/NONE/EXECUTIVE/COMPUTED
+ * Default → DETERMINISTIC/NONE/ADVISORY/COMPUTED
+ */
+function epistemicForTool(toolName: string): EpistemicTag {
+  const name = toolName.toLowerCase();
+
+  // Vault / approval / governance tools
+  if (
+    name.includes("vault") ||
+    name.includes("_seal") ||
+    name.includes("approve") ||
+    name.includes("judge") ||
+    name.includes("lease") ||
+    name.includes("agent_register") ||
+    name.includes("agent_status")
+  ) {
+    return {
+      ...DEFAULT_EPISTEMIC,
+      output_class: "GOVERNANCE_TEMPLATE",
+      authority_claim: "EXECUTIVE",
+      evidence_source: "COMPUTED",
+      tagged_at: new Date().toISOString(),
+    };
+  }
+
+  // Engineering / domain computation tools (forge_plan, forge_dry_run, forge_query, etc.)
+  if (
+    name.includes("forge_plan") ||
+    name.includes("forge_dry_run") ||
+    name.includes("forge_query") ||
+    name.includes("forge_filesystem") ||
+    name.includes("forge_postgres") ||
+    name.includes("forge_memory") ||
+    name.includes("forge_git") ||
+    name.includes("forge_docker") ||
+    name.includes("forge_shell") ||
+    name.includes("forge_log") ||
+    name.includes("forge_registry") ||
+    name.includes("forge_job") ||
+    name.includes("forge_pipeline") ||
+    name.includes("forge_well") ||
+    name.includes("forge_research") ||
+    name.includes("forge_search") ||
+    name.includes("forge_docs") ||
+    name.includes("forge_netdata") ||
+    name.includes("forge_minimax") ||
+    name.includes("minimax_") ||
+    name.includes("wealth_") ||
+    name.includes("forge_github") ||
+    name.includes("forge_browser")
+  ) {
+    return {
+      ...DEFAULT_EPISTEMIC,
+      output_class: "DOMAIN_COMPUTATION",
+      authority_claim: "ADVISORY",
+      evidence_source: "COMPUTED",
+      tagged_at: new Date().toISOString(),
+    };
+  }
+
+  // Execution tools
+  if (
+    name.includes("forge_execute") ||
+    name.includes("forge_run") ||
+    name.includes("forge_github_create") ||
+    name.includes("forge_browser_navigate")
+  ) {
+    return {
+      ...DEFAULT_EPISTEMIC,
+      output_class: "DETERMINISTIC",
+      authority_claim: "EXECUTIVE",
+      evidence_source: "COMPUTED",
+      tagged_at: new Date().toISOString(),
+    };
+  }
+
+  // Default
+  return {
+    ...DEFAULT_EPISTEMIC,
+    output_class: "DETERMINISTIC",
+    authority_claim: "ADVISORY",
+    evidence_source: "COMPUTED",
+    tagged_at: new Date().toISOString(),
+  };
+}
+
+/**
+ * Inject _epistemic tag into an MCP content response.
+ * Does NOT overwrite if the handler already injected its own _epistemic.
+ * Never throws — all errors are silently swallowed to avoid crashing the handler.
+ */
+function injectEpistemic(
+  response: { content: Array<{ type: string; text: string }>; isError?: boolean },
+  toolName: string,
+): { content: Array<{ type: string; text: string }>; isError?: boolean } {
+  try {
+    if (!response || !Array.isArray(response.content)) return response;
+
+    for (const item of response.content) {
+      if (item.type !== "text" || typeof item.text !== "string") continue;
+
+      // Try to parse as JSON payload
+      let payload: any;
+      try {
+        payload = JSON.parse(item.text);
+      } catch {
+        // Not JSON — skip (plain text responses don't get _epistemic)
+        continue;
+      }
+
+      // Skip if payload has no real fields (e.g. just a single string key like error)
+      if (typeof payload !== "object" || payload === null) continue;
+
+      // Do NOT overwrite if handler already injected its own _epistemic
+      if (payload._epistemic && typeof payload._epistemic === "object") continue;
+
+      // Inject the tag
+      payload._epistemic = epistemicForTool(toolName);
+
+      // Re-serialize
+      item.text = JSON.stringify(payload, null, 2);
+    }
+  } catch {
+    // Never crash the handler — silently skip epistemic injection
+  }
+
+  return response;
+}
+
 // ── C1 Phase 1: Wrap server.tool so every registration is auto-gated ─
 //
 // Every call to server.tool(name, desc, schema, handler) is intercepted
@@ -143,7 +302,8 @@ const _originalTool = server.tool.bind(server);
       return floorErrorResponse(verdict);
     }
     // FloorEnforcer approved (SEAL or CAUTION): call the original handler
-    return await handler(args, ctx);
+    const result = await handler(args, ctx);
+    return injectEpistemic(result, name) as any;
   };
   return _originalTool(name, description, gatedSchema, wrappedHandler);
 };
@@ -187,9 +347,10 @@ const _originalRegisterTool = server.registerTool.bind(server);
     const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : "mcp-anonymous";
     const verdict = enforceMcpFloor(name, argsObj, callerActor);
     if (!verdict.allowed) {
-      return floorErrorResponse(verdict);
+      return injectEpistemic(floorErrorResponse(verdict), name) as any;
     }
-    return await handler(args, ctx);
+    const result = await handler(args, ctx);
+    return injectEpistemic(result, name) as any;
   };
   return _originalRegisterTool(name, gatedOptions, wrappedHandler as any);
 };

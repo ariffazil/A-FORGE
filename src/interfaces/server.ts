@@ -117,9 +117,18 @@ export function createApp(): express.Express {
   // req.body already parsed by app.use(express.json()) above.
   const mcpRouter = express.Router();
 
-  // GET /mcp — server info (OpenCode MCP client probes GET before POST)
-  // Returns 200 so the client proceeds to POST for actual MCP protocol.
-  mcpRouter.get("/mcp", (_req: Request, res: Response) => {
+  // GET /mcp — conditional routing based on Accept header.
+  // Standards-compliant MCP clients (Claude Code, Claude Desktop) send
+  // Accept: text/event-stream and expect SSE — those MUST reach the MCP SDK.
+  // OpenCode and other clients that probe GET before POST send a plain Accept
+  // header — return static service info so they proceed to POST.
+  mcpRouter.get("/mcp", (req: Request, res: Response, next: NextFunction) => {
+    const accept = (req.headers["accept"] || "").toString();
+    if (accept.includes("text/event-stream")) {
+      // SSE-capable client — let mcpHandler handle it
+      return next();
+    }
+    // OpenCode compat: static server info
     res.json({
       service: "A-FORGE",
       version: "0.1.0",
@@ -132,32 +141,17 @@ export function createApp(): express.Express {
   });
 
   // ── A-FORGE MCP transport middleware ──
-  // Two fixes in one middleware:
-  // 1. Session ID injection: MCP SDK 1.9.0 StreamableHTTPServerTransport requires
-  //    Mcp-Session-Id header on every POST. Claude Code's MCP client doesn't send
-  //    one on first contact. Inject a generated session ID so the transport never
-  //    sees a missing header.
-  // 2. Accept header patch: The SDK also requires both application/json AND
-  //    text/event-stream in Accept. OpenCode's client may send only one.
-  // ── A-FORGE MCP transport middleware ──
-  // Runs on all routes under mcpRouter (/mcp, /GEOX/mcp, /wealth/mcp)
+  // Session ID injection: MCP SDK 1.29.0 StreamableHTTPServerTransport requires
+  // Mcp-Session-Id header on every POST. Claude Code's MCP client doesn't send
+  // one on first contact. Inject a generated session ID so the transport never
+  // sees a missing header.
+  // Accept header patching is done in mcpHandler directly (after the middleware
+  // because the SDK's getRequestListener reads from the raw IncomingMessage).
   mcpRouter.use((req: Request, _res: Response, next: NextFunction) => {
-    // Session ID injection: MCP SDK 1.9.0 StreamableHTTPServerTransport requires
-    // Mcp-Session-Id header on every POST. Inject a generated session ID only if
-    // no session ID is already present in headers or query parameters.
     const hasSessionId = req.headers["mcp-session-id"] || req.query.sessionId || req.query.session_id;
     if (req.method === "POST" && !hasSessionId) {
       const generatedId = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
       req.headers["mcp-session-id"] = generatedId;
-    }
-    // Accept header patch: The SDK also requires both application/json AND
-    // text/event-stream in Accept. OpenCode's client may send only one.
-    const accept = req.headers["accept"] || "";
-    if (accept && !accept.includes("application/json")) {
-      req.headers["accept"] = accept + ", application/json";
-    }
-    if (accept && !accept.includes("text/event-stream")) {
-      req.headers["accept"] = (req.headers["accept"] || accept) + ", text/event-stream";
     }
     next();
   });
@@ -173,6 +167,24 @@ export function createApp(): express.Express {
     if (req.method === "POST" && !hasSessionId) {
       req.headers["mcp-session-id"] = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     }
+    // SDK 1.29.0 StreamableHTTPServerTransport validates Accept header on the Web
+    // Standard Request object created by @hono/node-server's getRequestListener.
+    // That library reads from rawHeaders (raw HTTP array), NOT req.headers (parsed
+    // object). Patching req.headers is invisible to the SDK.
+    // Fix: patch rawHeaders directly so the Web Request sees both required types.
+    const rawAcceptIdx = req.rawHeaders.findIndex(
+      (h: string) => h.toLowerCase() === "accept"
+    );
+    if (rawAcceptIdx >= 0) {
+      let patched = req.rawHeaders[rawAcceptIdx + 1] as string;
+      if (!patched.includes("application/json")) patched += ", application/json";
+      if (!patched.includes("text/event-stream")) patched += ", text/event-stream";
+      req.rawHeaders[rawAcceptIdx + 1] = patched;
+    } else {
+      // No Accept header at all — add both required values
+      req.rawHeaders.push("Accept", "application/json, text/event-stream");
+    }
+    console.error(`[A-FORGE] MCP handler: accept="${req.headers["accept"]}" method=${req.method} url=${req.url}`);
     try {
       await mcpTransport.handleRequest(req, res, req.body);
     } catch (err) {
