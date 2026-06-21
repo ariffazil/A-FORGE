@@ -33,6 +33,7 @@
 import type { FloorContext } from "../types/action-request.js";
 import { ALL_CATEGORIES, ALL_TIERS } from "../types/action-request.js";
 import type { FloorReason, FloorName, Severity } from "./floor-types.js";
+import { canonicalSeverity } from "./floor-types.js";
 import { checkF1Amanah } from "./f1Amanah.js";
 import { checkF2Truth } from "./f2Truth.js";
 import { checkF5Peace2 } from "./f5Peace2.js";
@@ -112,7 +113,7 @@ function checkF6EmpathyFloor(ctx: FloorContext): FloorReason[] {
     // VOID → "HOLD" (SOFT floors can't VOID directly, escalate to HOLD)
     // HOLD → "SABAR" (SOFT floor tension is advisory)
     // CAUTION → "SABAR"
-    const severity: Severity = result.verdict === "VOID" ? "SABAR" : "SABAR";
+    const severity: Severity = result.verdict === "VOID" ? "HOLD" : "SABAR";
     reasons.push({
       floor: "F6",
       code: result.reason || "EMPATHY_ADVISORY",
@@ -256,8 +257,11 @@ function composeFinal(reasons: FloorReason[]): {
   if (hasHold) {
     return { final: "HOLD", allowed: false, hold_required: true, void: false, sabar: false, caution: hasCaution };
   }
-  if (hasSabar || hasCaution) {
+  if (hasSabar) {
     return { final: "SABAR", allowed: true, hold_required: false, void: false, sabar: true, caution: hasCaution };
+  }
+  if (hasCaution) {
+    return { final: canonicalSeverity("CAUTION"), allowed: true, hold_required: false, void: false, sabar: true, caution: true };
   }
   return { final: "SEAL", allowed: true, hold_required: false, void: false, sabar: false, caution: false };
 }
