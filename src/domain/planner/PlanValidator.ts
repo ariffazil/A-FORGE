@@ -299,6 +299,76 @@ export function verifyGovernanceCard(
   return { verdict: 'ALLOW', reasons };
 }
 
+// ── ACT Pattern Integration ──────────────────────────────────────────────────
+// After governance card passes, select and validate the ACT execution pattern.
+
+import { selectPattern, validatePlanAgainstPattern, type ActPattern, type ActStage, ACT_PATTERNS } from "../governance/ActPatterns.js";
+
+export interface ActPatternVerdict {
+  patternId: string;
+  patternName: string;
+  stages: number;
+  confidence: number;
+  warnings: string[];
+  humanRequired: boolean;
+  compensationPlan: string;
+}
+
+/**
+ * Select the best ACT execution pattern for this plan.
+ * Called AFTER verifyGovernanceCard returns ALLOW.
+ *
+ * @param blastRadius — "low" | "medium" | "high" | "unknown"
+ * @param irreversible — does the plan contain irreversible actions?
+ * @param stageCount — number of discrete steps in the plan
+ * @param hasCompensationPlan — does the plan define rollback?
+ * @param humanAvailable — is F13 reachable?
+ * @returns ActPatternVerdict with pattern details and warnings
+ */
+export function selectActPattern(
+  blastRadius: string,
+  irreversible: boolean,
+  stageCount: number,
+  hasCompensationPlan: boolean = false,
+  humanAvailable: boolean = true,
+): ActPatternVerdict {
+  const result = selectPattern({
+    blastRadius: blastRadius as "low" | "medium" | "high" | "unknown",
+    irreversible,
+    stageCount,
+    hasCompensationPlan,
+    humanAvailable,
+  });
+
+  const planErrors = validatePlanAgainstPattern(
+    result.pattern,
+    1,                    // current stage
+    result.pattern.stages.length,  // total stages
+  );
+
+  return {
+    patternId: result.pattern.id,
+    patternName: result.pattern.name,
+    stages: result.pattern.stages.length,
+    confidence: result.confidence,
+    warnings: [...result.warnings, ...planErrors],
+    humanRequired: result.pattern.stages.some((s: ActStage) => s.humanCheckpoint),
+    compensationPlan: result.pattern.compensation.description,
+  };
+}
+
+/**
+ * Return all registered ACT patterns (for discovery / documentation).
+ */
+export function listActPatterns(): Array<{ id: string; name: string; description: string }> {
+  return ACT_PATTERNS.map((p: ActPattern) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+  }));
+}
+
+
 // ── PlanValidator (Structural) ───────────────────────────────────────────────
 
 export class PlanValidator {
