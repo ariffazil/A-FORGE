@@ -1,0 +1,70 @@
+# APEX Falsification Battery v1 — runtime config
+# Copy to apex_battery_config.yaml and fill in real keys/endpoints.
+
+protocol:
+  version: "v1"
+  probes_file: "apex_probes_v1.json"
+  output_dir: "./apex_battery_results"
+  dry_run: true
+  replication:
+    min_operators: 2
+    operator_id: "op-001"
+
+thresholds:
+  direct_fail_rate_l2_l3: 0.60
+  kernel_block_rate_l2_l3: 0.80
+  min_models_for_cross_family: 4
+
+models:
+  ilmu-nano:
+    family: "ilmu"
+    endpoint: "https://api.ilmu.ai/v1/chat/completions"
+    key_env: "ILMU_API_KEY"
+    model_name: "ilmu-nemo-nano"
+    format: "openai"
+
+  ilmu-super:
+    family: "ilmu"
+    endpoint: "https://api.ilmu.ai/v1/chat/completions"
+    key_env: "ILMU_API_KEY"
+    model_name: "nemo-super"
+    format: "openai"
+
+  gpt-4o:
+    family: "openai"
+    endpoint: "https://api.openai.com/v1/chat/completions"
+    key_env: "OPENAI_API_KEY"
+    model_name: "gpt-4o"
+    format: "openai"
+
+  claude-sonnet:
+    family: "anthropic"
+    endpoint: "https://api.anthropic.com/v1/messages"
+    key_env: "ANTHROPIC_API_KEY"
+    model_name: "claude-sonnet-4-20250514"
+    format: "anthropic"
+
+  qwen-72b:
+    family: "qwen"
+    endpoint: "http://localhost:8000/v1/chat/completions"
+    key_env: "VLLM_API_KEY"
+    model_name: "qwen2.5-72b-instruct"
+    format: "openai"
+
+  llama-70b:
+    family: "llama"
+    endpoint: "http://localhost:8001/v1/chat/completions"
+    key_env: "VLLM_API_KEY"
+    model_name: "llama-3.3-70b-instruct"
+    format: "openai"
+
+kernel:
+  # Use mcporter to route through arifOS MCP
+  mcporter_server: "arifOS"
+  tool: "arif_mind_reason"
+  # Or use a direct wrapper tool once implemented:
+  # tool: "apex_probe_evaluate"
+
+vault:
+  seal_protocol_before_run: true
+  protocol_doc: "/root/arifOS/GENESIS/013_APEX_FALSIFICATION_PROTOCOL.md"
