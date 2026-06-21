@@ -57,6 +57,7 @@ import { validateLeaseForTool } from "./mcp/forgeTools.js";
 import { validateSession } from "../domain/session/sessionGate.js";
 import { classifyTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
 import { preForgeCheck, PreForgeGateBlockedError, registerEarthMeasurement } from "../domain/governance/PreForgeGateClient.js";
+import { actCheck, ActGateBlockedError } from "../domain/governance/ActGateClient.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
 import { getApprovalBoundary } from "../application/approval/index.js";
@@ -505,6 +506,80 @@ app.post("/execute", async (req: Request, res: Response) => {
           return;
         }
         console.error(`[PRE-FORGE] Gate error for ${tool}: ${err}. Failing open with CAUTION.`);
+      }
+    }
+
+    // ── A-FORGE ACT GATE (Gate 2.6) ──
+    // Execution craft check: determines if the execution pattern is safe
+    // for this action class + blast radius combination.
+    // Calls the arifOS ACT module via MCP.
+    // Only for non-OBSERVE actions.
+    if (requiresGovernance(actionClass)) {
+      try {
+        // Determine blast radius from action class (ACT gate 2.6)
+        const _actBlastRadius = actionClass === "IRREVERSIBLE" || actionClass === "EXECUTE_HIGH_IMPACT"
+          ? "high"
+          : actionClass === "EXECUTE_REVERSIBLE" || actionClass === "QUEUE"
+            ? "medium"
+            : "low";
+        const _actIsReversible = actionClass !== "IRREVERSIBLE" && actionClass !== "EXECUTE_HIGH_IMPACT";
+
+        const actGateResult = await actCheck({
+          actionClass,
+          blastRadius: _actBlastRadius,
+          isReversible: _actIsReversible,
+          isMultiStep: false, // single tool call
+          stageNumber: 1,
+          totalStages: 1,
+          sessionId: session_id,
+          actorId: actor_id,
+        });
+
+        if (!actGateResult.allowed) {
+          if (actGateResult.verdict === "BLOCK") {
+            res.status(423).json({
+              ok: false,
+              error: {
+                type: "governance_hold",
+                message: `ACT_GATE_BLOCKED: ${actGateResult.verdict} — ${actGateResult.reason}`,
+                recommended_pattern: actGateResult.recommendedPattern,
+              },
+              action_class: actionClass,
+              adat_gate: "ACT_GATE_BLOCKED",
+            });
+            return;
+          }
+
+          // HOLD / DRY_RUN_REQUIRED / CANARY_REQUIRED / COMPENSATION_REQUIRED / HUMAN_REQUIRED
+          res.status(423).json({
+            ok: false,
+            error: {
+              type: "governance_hold",
+              message: `ACT_GATE_HOLD: ${actGateResult.verdict} — ${actGateResult.reason}`,
+              recommended_pattern: actGateResult.recommendedPattern,
+              required_actions: actGateResult.requiredActions,
+            },
+            action_class: actionClass,
+            adat_gate: "ACT_GATE_HOLD",
+            required_actions: actGateResult.requiredActions,
+          });
+          return;
+        }
+      } catch (err) {
+        if (err instanceof ActGateBlockedError) {
+          res.status(423).json({
+            ok: false,
+            error: {
+              type: "governance_hold",
+              message: `ACT_GATE_ERROR: ${err.message}`,
+              gate_result: err.gateResult,
+            },
+            action_class: actionClass,
+            adat_gate: "ACT_GATE_ERROR",
+          });
+          return;
+        }
+        console.error(`[ACT-GATE] Gate error for ${tool}: ${err}. Failing open — continuing.`);
       }
     }
 
