@@ -1,0 +1,29 @@
+[Unit]
+Description=A-FORGE MCP — Governed MCP Gateway (Tools + Identity + Lease)
+Documentation=https://github.com/ariffazil/A-FORGE
+After=network.target arifos.service
+Wants=arifos.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/A-FORGE
+EnvironmentFile=/root/.secrets/vault.flat.env
+Environment=NODE_ENV=production
+Environment=AF_FORGE_MCP_PORT=7072
+ExecStart=/usr/bin/node /root/A-FORGE/dist/src/interfaces/mcp/serve.js --transport=http --port=7072
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+TimeoutStopSec=30
+
+# Hardening
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+NoNewPrivileges=true
+ReadWritePaths=/root/A-FORGE/data
+
+[Install]
+WantedBy=multi-user.target
