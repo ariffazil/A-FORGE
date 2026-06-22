@@ -101,8 +101,8 @@ class SentinelStream {
       res.end();
     });
 
-    this.server.listen(this.port, () => {
-      process.stderr.write(`[SentinelStream] SSE server listening on port ${this.port}\n`);
+    this.server.listen(this.port, "127.0.0.1", () => {
+      process.stderr.write(`[SentinelStream] SSE server listening on 127.0.0.1:${this.port}\n`);
     });
   }
 
