@@ -716,49 +716,7 @@ export function registerShellTools(server: McpServer): void {
 // ── 5. forge_log_tail — System Log Reader ─────────────────────────────────────
 
 export function registerLogTools(server: McpServer): void {
-  server.tool(
-    "forge_log_tail",
-    "Tail recent logs from any federation organ or systemd service. F8 LAW: read-only, no mutation.",
-    {
-      service: z.enum(["arifos", "geox", "wealth", "well", "a-forge", "system", "vault999"]).default("a-forge").describe("Service to tail logs from"),
-      lines: z.number().default(50).describe("Number of lines (default 50, max 200)"),
-      filter: z.string().optional().describe("Optional grep filter"),
-    },
-    async ({ service, lines, filter }) => {
-      const effective_lines = Math.min(lines, 200);
-      const unitMap: Record<string, string> = {
-        arifos: "arifos.service",
-        geox: "geox-mcp.service",
-        wealth: "wealth-organ.service",
-        well: "well.service",
-        "a-forge": "a-forge.service",
-        vault999: "vault999-api.service",
-        system: "",
-      };
-
-      let cmd: string;
-      if (service === "system") {
-        cmd = `journalctl --no-pager -n ${effective_lines} 2>&1`;
-      } else {
-        cmd = `journalctl -u ${unitMap[service]} --no-pager -n ${effective_lines} 2>&1`;
-      }
-      if (filter) {
-        cmd += ` | grep -i "${filter.replace(/"/g, '\\"')}"`;
-      }
-
-      try {
-        const output = execSync(cmd, { encoding: "utf-8", timeout: 10000 });
-        return {
-          content: [{
-            type: "text" as const,
-            text: output || "(no logs)",
-          }],
-        };
-      } catch (err: any) {
-        return { content: [{ type: "text" as const, text: `Error: ${err.message?.slice(0, 500)}` }], isError: true };
-      }
-    }
-  );
+  // NOTE: forge_log_tail REMOVED — use forge_journalctl with mode=tail (merged tool).
 }
 
 // ── 6. forge_job_* — Background Job System ─────────────────────────────────
