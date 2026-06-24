@@ -53,6 +53,7 @@ export function isMoreSevere(a: ActionClass, b: ActionClass): boolean {
 const IRREVERSIBLE_TOOLS = new Set([
   "arif_vault_seal",
   "forge_vault_seal",
+  "forge_vault_delete",   // VAULT999 is append-only — delete is IRREVERSIBLE
   "forge_approve",
   "arif_forge_execute",
   "docker_container_remove",
@@ -79,7 +80,6 @@ const HIGH_IMPACT_TOOLS = new Set([
   "forge_postgres_query",
   "forge_github_pr",
   "forge_vault_write",
-  "forge_vault_delete",
   "forge_github_create_issue",
 ]);
 
@@ -92,12 +92,15 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "arif_sudo",
   "arif_run",
   "forge_memory_store",
-  "forge_git_commit",
   "forge_docker_exec",
   "forge_remember",
   "request_amanah_lock",
   "release_amanah_lock",
   "forge_well_anchor",
+  "forge_agent_register",   // identity mutation — requires session
+  "forge_job_submit",       // async job submission — requires session
+  "forge_lease_request",    // lease issuance — requires session
+  "forge_lease_revoke",     // lease revocation — requires session
 ]);
 
 // Tools that should always be simulated first
@@ -123,10 +126,53 @@ const QUEUE_TOOLS = new Set([
   "jobs_schedule",
 ]);
 
+// Explicit OBSERVE-class tools (documentation + future-proofing)
+// These default to OBSERVE anyway, but listing them makes the contract explicit.
+const OBSERVE_TOOLS = new Set([
+  "forge_pipeline",           // routing tool — no mutation
+  "forge_check_governance",   // governance check — read-only
+  "forge_job_status",         // job status — read-only
+  "forge_job_result",         // job result — read-only
+  "forge_log_tail",           // log read — read-only
+  "forge_registry_status",    // registry read — read-only
+  "forge_lease_status",       // lease status — read-only
+  "forge_agent_list",         // agent list — read-only
+  "forge_agent_status",       // agent status — read-only
+  "forge_health_check",       // health check — read-only
+  "forge_memory_recall",      // memory read — read-only
+  "forge_filesystem_read",    // file read — read-only
+  "forge_filesystem_glob",    // file search — read-only
+  "forge_filesystem_grep",    // content search — read-only
+  "forge_filesystem_stat",    // file metadata — read-only
+  "forge_git_status",         // git status — read-only
+  "forge_git_log",            // git log — read-only
+  "forge_git_diff",           // git diff — read-only
+  "forge_docker_ps",          // docker ps — read-only
+  "forge_docker_images",      // docker images — read-only
+  "forge_docker_logs",        // docker logs — read-only
+  "forge_postgres_schema",    // schema read — read-only
+  "forge_search",             // web search — read-only
+  "forge_minimax_search",     // web search — read-only
+  "forge_research",           // web research — read-only
+  "forge_docs_lookup",        // docs lookup — read-only
+  "forge_browser_navigate",   // browser nav — read-only (observe-class)
+  "forge_browser_click",      // browser click — read-only (observe-class)
+  "forge_browser_type",       // browser type — read-only (observe-class)
+  "forge_browser_screenshot", // browser screenshot — read-only
+  "forge_browser_extract_text", // browser text extract — read-only
+  "forge_browser_evaluate_js",  // browser JS eval — read-only
+  "forge_well_state_read",    // well state — read-only
+  "forge_well_readiness_check", // well readiness — read-only
+  "forge_well_floor_scan",    // well floor scan — read-only
+]);
+
 /**
  * Classify a tool name into one of 7 action classes.
  *
  * Default: OBSERVE (conservative — if we don't know, it's read-only).
+ *
+ * Explicit OBSERVE_TOOLS set documents known read-only tools.
+ * Unknown tools also default to OBSERVE (fail-safe: read-only by default).
  */
 export function classifyTool(toolName: string): ActionClass {
   if (IRREVERSIBLE_TOOLS.has(toolName)) return "IRREVERSIBLE";
@@ -135,6 +181,7 @@ export function classifyTool(toolName: string): ActionClass {
   if (REVERSIBLE_EXEC_TOOLS.has(toolName)) return "EXECUTE_REVERSIBLE";
   if (SUGGEST_TOOLS.has(toolName)) return "SUGGEST";
   if (QUEUE_TOOLS.has(toolName)) return "QUEUE";
+  // OBSERVE_TOOLS and unknown tools both return OBSERVE (fail-safe)
   return "OBSERVE";
 }
 
