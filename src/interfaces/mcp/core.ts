@@ -31,6 +31,9 @@ import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "../../a
 import { WEALTH_TOOLS } from "../../infrastructure/tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../../infrastructure/tools/MiniMaxTools.js";
 import { getMiniMaxClient } from "../../infrastructure/tools/MiniMaxMcpClient.js";
+import { systemctlWrapper } from "../../infrastructure/tools/infra/systemctl_wrapper.js";
+import { dockerWrapper } from "../../infrastructure/tools/infra/docker_wrapper.js";
+import { journalctlWrapper } from "../../infrastructure/tools/infra/journalctl_wrapper.js";
 import { registerCoreResources } from "./resources.js";
 import { callMCP } from "./client.js";
 import { enforceMcpFloor, floorErrorResponse } from "../../domain/governance/mcpFloorEnforcer.js";
@@ -980,22 +983,92 @@ server.registerTool("forge_vault_seal", {
 
 // ── Domain Tools (Tier 03) ───────────────────────────────────────────────────
 
-server.tool("wealth_evaluate_ROI", "Evaluate investment ROI.", { initial_investment: z.number(), scenarios: z.array(z.any()), joules: z.number().optional() }, async (args) => {
+server.tool("wealth_evaluate_ROI", "Evaluate investment ROI (A-FORGE local model; optional WEALTH upstream).", { capitalRequired: z.number(), expectedReturn: z.number().optional(), discountRate: z.number().optional(), scenario: z.string().optional(), domain: z.string().optional(), joulesEstimate: z.number().optional() }, async (args) => {
   const tool = new WEALTH_TOOLS[0]();
   const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
   return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
 });
 
-server.tool("wealth_compute_EMV", "Compute EMV.", { initial_investment: z.number(), scenarios: z.array(z.any()) }, async (args) => {
+server.tool("wealth_compute_EMV", "Compute Expected Monetary Value (A-FORGE local model; optional WEALTH upstream wealth_compute_emv).", { outcomes: z.array(z.number()), probabilities: z.array(z.number()) }, async (args) => {
   const tool = new WEALTH_TOOLS[1]();
   const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
   return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
 });
 
-server.tool("wealth_thermodynamic_scan", "Scan for Landauer cost.", { actions: z.array(z.any()) }, async (args) => {
+server.tool("wealth_thermodynamic_scan", "Scan actions for thermodynamic/entropy cost (A-FORGE local model; optional WEALTH upstream).", { actions: z.array(z.string()) }, async (args) => {
   const tool = new WEALTH_TOOLS[2]();
   const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
   return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
+});
+
+server.tool("wealth_portfolio_optimize", "Optimize capital allocation across assets (A-FORGE local model; optional WEALTH upstream).", { assets: z.array(z.object({ name: z.string().optional(), expectedReturn: z.number().optional(), risk: z.number().optional() })), totalBudget: z.number() }, async (args) => {
+  const tool = new WEALTH_TOOLS[3]();
+  const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
+  return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
+});
+
+server.tool("wealth_entropy_budget", "Track cumulative entropy delta for a session (A-FORGE local model; optional WEALTH upstream).", { sessionId: z.string(), reset: z.boolean().optional() }, async (args) => {
+  const tool = new WEALTH_TOOLS[4]();
+  const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
+  return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
+});
+
+server.tool("wealth_objective_compute", "Compute the WEALTH objective function (A-FORGE local model; optional WEALTH upstream).", { peace: z.number(), deltaKnowledge: z.number(), deltaEntropy: z.number(), deltaCapital: z.number() }, async (args) => {
+  const tool = new WEALTH_TOOLS[5]();
+  const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
+  return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
+});
+
+// ── Infra Tools (Tier 03 — Operational Read-Only) ─────────────────────────────
+// Read-only wrappers for systemd/docker/journalctl. Write variants remain
+// unregistered until the E7 lease executor is wired and tested.
+
+server.tool("forge_systemctl_status", "Check systemd service status (read-only).", { service: z.string() }, async (args) => {
+  const res = await systemctlWrapper.status(args.service);
+  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
+});
+
+server.tool("forge_systemctl_is_active", "Check if a systemd service is active (read-only).", { service: z.string() }, async (args) => {
+  const active = await systemctlWrapper.isActive(args.service);
+  return { content: [{ type: "text" as const, text: JSON.stringify({ service: args.service, active }) }] };
+});
+
+server.tool("forge_systemctl_list_units", "List systemd units matching a pattern (read-only).", { pattern: z.string().optional() }, async (args) => {
+  const res = await systemctlWrapper.listUnits(args.pattern ?? "*");
+  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
+});
+
+// NOTE: forge_docker_ps/logs/exec/images are registered by proxyTools.ts.
+// The dockerWrapper module remains available for future richer variants.
+
+server.tool("forge_docker_inspect", "Inspect a Docker container (read-only).", { container: z.string() }, async (args) => {
+  const res = await dockerWrapper.inspect(args.container);
+  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
+});
+
+server.tool("forge_docker_stats", "Read Docker container stats (read-only).", { container: z.string().optional() }, async (args) => {
+  const res = await dockerWrapper.stats(args.container);
+  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
+});
+
+server.tool("forge_journalctl_logs", "Read systemd journal logs for a service (read-only, PII-redacted).", { service: z.string(), since: z.string().optional(), lines: z.number().optional() }, async (args) => {
+  const res = await journalctlWrapper.logs(args.service, args.since, args.lines);
+  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
+});
+
+server.tool("forge_journalctl_errors", "Read systemd journal errors for a service (read-only, PII-redacted).", { service: z.string(), since: z.string().optional() }, async (args) => {
+  const res = await journalctlWrapper.errors(args.service, args.since);
+  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
+});
+
+server.tool("forge_journalctl_tail", "Tail recent systemd journal logs for a service (read-only, PII-redacted).", { service: z.string(), lines: z.number().optional() }, async (args) => {
+  const res = await journalctlWrapper.tail(args.service, args.lines);
+  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
+});
+
+server.tool("forge_journalctl_grep", "Grep systemd journal logs for a service (read-only, PII-redacted).", { service: z.string(), pattern: z.string() }, async (args) => {
+  const res = await journalctlWrapper.grep(args.service, args.pattern);
+  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
 });
 
 // ── WELL Tools (Tier 03 — Human Substrate) ───────────────────────────────────

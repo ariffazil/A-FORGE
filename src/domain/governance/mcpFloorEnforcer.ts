@@ -51,8 +51,15 @@ export function classifyAction(toolName: string, args: Record<string, unknown>):
   if (n.includes("db_write") || n.includes("database_write")) return "DATABASE_WRITE";
   if (n.includes("postgres_query") && !a.includes("insert") && !a.includes("update") && !a.includes("delete")) return "READ";
 
+  // Wealth / capital analysis tools are pure computation, not transactions.
+  if (n.includes("wealth_") && (
+    n.includes("compute") || n.includes("evaluate") || n.includes("thermodynamic") ||
+    n.includes("portfolio") || n.includes("entropy") || n.includes("objective") ||
+    n.includes("stock") || n.includes("market") || n.includes("omni")
+  )) return "READ";
+
   // Financial / production
-  if (n.includes("financial") || n.includes("emv") || n.includes("roi")) return "FINANCIAL_TRANSACTION";
+  if (n.includes("financial") || n.includes("transaction") || n.includes("payment") || n.includes("trade")) return "FINANCIAL_TRANSACTION";
   if (n.includes("production") || n.includes("deploy")) return "PRODUCTION_DEPLOY";
 
   // Execution — only actual execution tools, not routing or analysis
