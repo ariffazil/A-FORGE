@@ -30,8 +30,10 @@ export function classifyAction(toolName: string, args: Record<string, unknown>):
   const a = JSON.stringify(args || {}).toLowerCase();
 
   // VAULT operations
-  if (n.includes("vault_seal") || n.includes("seal")) return "VAULT_SEAL";
+  if (n.includes("vault_seal")) return "VAULT_SEAL";
+  if (n.includes("vault_delete")) return "DELETE";  // append-only vault — delete is dangerous
   if (n.includes("vault_read") || (n.includes("vault") && a.includes("read"))) return "VAULT_READ";
+  if (n.includes("vault_write")) return "MEMORY_WRITE";
 
   // Memory operations
   if (n.includes("memory_recall") || n.includes("memory_read")) return "MEMORY_READ";
@@ -47,28 +49,46 @@ export function classifyAction(toolName: string, args: Record<string, unknown>):
 
   // Database
   if (n.includes("db_write") || n.includes("database_write")) return "DATABASE_WRITE";
+  if (n.includes("postgres_query") && !a.includes("insert") && !a.includes("update") && !a.includes("delete")) return "READ";
 
   // Financial / production
   if (n.includes("financial") || n.includes("emv") || n.includes("roi")) return "FINANCIAL_TRANSACTION";
   if (n.includes("production") || n.includes("deploy")) return "PRODUCTION_DEPLOY";
 
-  // Executive / compute
-  if (n.includes("forge_execute") || n.includes("execute")) return "EXECUTE";
-  if (n.includes("kernel_route")) return "EXECUTE";
-  if (n.includes("thermodynamic")) return "EXECUTE";
+  // Execution — only actual execution tools, not routing or analysis
+  if (n === "forge_execute" || n === "arif_forge_execute") return "EXECUTE";
+  if (n.includes("forge_run")) return "EXECUTE";
 
-  // Reasoning / analysis — these are OBSERVE-class, not EXECUTE
+  // Reasoning / analysis / routing — OBSERVE-class
   if (n.includes("judge_deliberate") || n.includes("mind_reason")) return "READ";
   if (n.includes("heart_critique")) return "READ";
   if (n.includes("sense_observe")) return "READ";
+  if (n.includes("kernel_route") || n.includes("kernel_status")) return "READ";
+  if (n.includes("thermodynamic")) return "READ";
+  if (n.includes("pipeline")) return "READ";
 
   // Constitution / floor
   if (n.includes("floor") && (a.includes("change") || a.includes("mutate"))) return "CONSTITUTIONAL_FLOOR_CHANGE";
 
-  // Read-only
-  if (n.includes("health_check") || n.includes("measure") || n.includes("ops_measure")) return "READ";
+  // Read-only patterns
+  if (n.includes("health_check") || n.includes("health")) return "READ";
+  if (n.includes("measure") || n.includes("ops_measure")) return "READ";
+  if (n.includes("readiness") || n.includes("wellness")) return "READ";
+  if (n.includes("state_read") || n.includes("get_state")) return "READ";
+  if (n.includes("floor_scan") || n.includes("check_floor")) return "READ";
+  if (n.includes("registry_status") || n.includes("agent_list") || n.includes("agent_status")) return "READ";
+  if (n.includes("log_tail") || n.includes("job_status") || n.includes("job_result")) return "READ";
+  if (n.includes("lease_status")) return "READ";
+  if (n.includes("search") || n.includes("research") || n.includes("docs_lookup")) return "READ";
+  if (n.includes("browser_") && !n.includes("submit")) return "READ";
+  if (n.includes("shell_dryrun")) return "READ";
+  if (n.includes("postgres_schema")) return "READ";
+
+  // Write patterns
   if (n.includes("reply_compose")) return "WRITE";
   if (n.includes("session_init")) return "WRITE";
+
+  // Memory catch-all (must come after specific memory patterns)
   if (n.includes("memory")) return "MEMORY_READ";
 
   return "OTHER";
