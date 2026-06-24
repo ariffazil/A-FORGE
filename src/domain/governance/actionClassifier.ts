@@ -53,7 +53,6 @@ export function isMoreSevere(a: ActionClass, b: ActionClass): boolean {
 const IRREVERSIBLE_TOOLS = new Set([
   "arif_vault_seal",
   "forge_vault_seal",
-  "forge_vault_delete",   // VAULT999 is append-only — delete is IRREVERSIBLE
   "forge_approve",
   "arif_forge_execute",
   "docker_container_remove",
@@ -91,7 +90,6 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "arif_systemctl",
   "arif_sudo",
   "arif_run",
-  "forge_memory_store",
   "forge_docker_exec",
   "forge_remember",
   "request_amanah_lock",

@@ -960,10 +960,8 @@ server.registerTool("forge_vault_write", {
   }),
 }, vaultWriteHandler);
 
-server.registerTool("forge_vault_delete", {
-  description: "Delete a vault record by name from vault999.",
-  inputSchema: z.object({ name: z.string().describe("Record name") }),
-}, vaultDeleteHandler);
+// forge_vault_delete REMOVED — VAULT999 is append-only. Delete violates F1 AMANAH.
+// If you need to invalidate a record, write a new record that supersedes it.
 
 server.registerTool("forge_vault_seal", {
   description: "Seal a terminal verdict to vault999.",
