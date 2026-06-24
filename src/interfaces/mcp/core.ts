@@ -522,79 +522,9 @@ server.tool(
 
 // ── Tier 01 Perception ───────────────────────────────────────────────────────
 
-// MiniMax Web Search — Stage 111 SENSE
-server.tool(
-  "minimax_web_search",
-  "Search the web using MiniMax AI. For Stage 111 SENSE grounding in current information.",
-  { query: z.string() },
-  async ({ query }) => {
-    try {
-      const output = await getMiniMaxClient().webSearch(query);
-      return { content: [{ type: "text" as const, text: output }] };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      return { content: [{ type: "text" as const, text: `ERROR: ${msg}` }], isError: true };
-    }
-  }
-);
-
-// MiniMax Image Understanding — Stage 111 SENSE
-server.tool(
-  "minimax_understand_image",
-  "Analyze an image using MiniMax AI vision. Accepts image URL or local path.",
-  { image_source: z.string(), prompt: z.string().optional().default("") },
-  async ({ image_source, prompt }) => {
-    try {
-      const output = await getMiniMaxClient().understandImage(image_source, prompt);
-      return { content: [{ type: "text" as const, text: output }] };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      return { content: [{ type: "text" as const, text: `ERROR: ${msg}` }], isError: true };
-    }
-  }
-);
-
-server.tool(
-  "arif_sense_observe",
-  "Environmental sensing and reality grounding (Stage 111 SENSE).",
-  { query: z.string(), mode: z.enum(["fast", "deep"]).optional().default("fast") },
-  async ({ query, mode }) => {
-    const startedAt = Date.now();
-    await telemetryInvoke("arif_sense_observe");
-    return runStage("111_SENSE" as MetabolicStage, async () => {
-    try {
-      const result = { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", grounded: true, query, mode, lambda2_vector: [0.99, 0.98, 0.95] }, null, 2) }] };
-      await telemetrySuccess("arif_sense_observe", startedAt);
-      return result;
-    } catch (err) { await telemetryFailure("arif_sense_observe", startedAt, err); throw err; }
-    });
-  }
-);
-
-// ── Tier 07 Reflection ───────────────────────────────────────────────────────
-
-server.tool(
-  "arif_mind_reason",
-  "Synthesised reasoning and epistemic tagging (Stage 333 MIND). Uses client LLM sampling.",
-  { grounded_facts: z.array(z.string()), context: z.string().optional() },
-  async ({ grounded_facts, context }) => {
-    const startedAt = Date.now();
-    await telemetryInvoke("arif_mind_reason");
-    return runStage("333_MIND" as MetabolicStage, async () => {
-    try {
-      const samplingResponse = await server.server.createMessage({
-        messages: [{ role: "user", content: { type: "text", text: `Synthesize these grounded facts into a coherent reasoning path for arifOS v2.0.\n\nFacts:\n${grounded_facts.join("\n")}\n\nContext: ${context ?? "none"}` } }],
-        maxTokens: 500,
-      });
-      const res = { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", synthesis: samplingResponse.content, model: samplingResponse.model }, null, 2) }] };
-      await telemetrySuccess("arif_mind_reason", startedAt);
-      return res;
-    } catch (err) {
-      return { content: [{ type: "text", text: JSON.stringify({ status: "SEAL", synthesis: "Local fallback reasoning." }, null, 2) }] };
-    }
-    });
-  }
-);
+// NOTE: minimax_web_search and minimax_understand_image REMOVED — use forge_minimax_search and forge_minimax_understand_image (HTTP transport).
+// NOTE: arif_sense_observe REMOVED — was a hardcoded stub returning fake data.
+// NOTE: arif_mind_reason REMOVED — was a stub using unwired LLM sampling.
 
 // ── Tier 04 Risk ─────────────────────────────────────────────────────────────
 
@@ -849,371 +779,171 @@ const vaultHandler = async ({ content, reason, tier, tags }: { content: string, 
 };
 
 server.tool("arif_vault_seal", "Ledger closure (Stage 999 VAULT).", { content: z.string(), reason: z.string(), tier: z.string().optional(), tags: z.array(z.string()).optional() }, vaultHandler);
-server.tool("forge_remember", "Store memory.", { content: z.string(), reason: z.string(), tier: z.string().optional(), tags: z.array(z.string()).optional() }, vaultHandler);
+// NOTE: forge_remember REMOVED — duplicate of arif_vault_seal (same handler).
 
-// ── VAULT999 REST Tools ───────────────────────────────────────────────────────
+// Merged: forge_vault — single tool with mode parameter
+// Replaces: forge_vault_read, forge_vault_list, forge_vault_write
+// forge_vault_delete REMOVED — VAULT999 is append-only.
+// forge_vault_seal REMOVED — final sealing belongs to arifOS. Use arif_vault_seal.
 
-const vaultReadHandler = async ({ name }: { name: string }) => {
-  const startedAt = Date.now();
-  await telemetryInvoke("forge_vault_read");
-  return runStage("999_VAULT" as MetabolicStage, async () => {
-  try {
-    const sbClient = new SupabaseVaultClient();
-    const record = await sbClient.read(name);
-    return { content: [{ type: "text" as const, text: JSON.stringify({ found: !!record, record }, null, 2) }] };
-  } catch (err) {
-    await telemetryFailure("forge_vault_read", startedAt, err);
-    return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
-  }
-  });
-};
-
-const vaultListHandler = async ({ category, limit }: { category?: string, limit?: number }) => {
-  const startedAt = Date.now();
-  await telemetryInvoke("forge_vault_list");
-  return runStage("999_VAULT" as MetabolicStage, async () => {
-  try {
-    const sbClient = new SupabaseVaultClient();
-    const records = await sbClient.list(category, limit ?? 100);
-    return { content: [{ type: "text" as const, text: JSON.stringify({ count: records.length, records }, null, 2) }] };
-  } catch (err) {
-    await telemetryFailure("forge_vault_list", startedAt, err);
-    return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
-  }
-  });
-};
-
-const vaultWriteHandler = async ({ name, category, value, metadata }: { name: string, category: string, value: string, metadata?: Record<string, unknown> }) => {
-  const startedAt = Date.now();
-  await telemetryInvoke("forge_vault_write");
-  return runStage("999_VAULT" as MetabolicStage, async () => {
-  try {
-    const sbClient = new SupabaseVaultClient();
-    const record = await sbClient.write({ name, category, value, metadata });
-    return { content: [{ type: "text" as const, text: JSON.stringify({ status: "written", record }, null, 2) }] };
-  } catch (err) {
-    await telemetryFailure("forge_vault_write", startedAt, err);
-    return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
-  }
-  });
-};
-
-const vaultDeleteHandler = async ({ name }: { name: string }) => {
-  const startedAt = Date.now();
-  await telemetryInvoke("forge_vault_delete");
-  return runStage("999_VAULT" as MetabolicStage, async () => {
-  try {
-    const sbClient = new SupabaseVaultClient();
-    await sbClient.delete(name);
-    return { content: [{ type: "text" as const, text: JSON.stringify({ status: "deleted", name }, null, 2) }] };
-  } catch (err) {
-    await telemetryFailure("forge_vault_delete", startedAt, err);
-    return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
-  }
-  });
-};
-
-const vaultSealHandler = async ({ sealId, sessionId, verdict, task, finalText, turnCount, profileName, floorsTriggered, telemetrysnapshot }: {
-  sealId: string, sessionId: string, verdict: VaultVerdict, task: string, finalText: string, turnCount: number, profileName: string, floorsTriggered?: string[], telemetrysnapshot?: any
-}) => {
-  const startedAt = Date.now();
-  await telemetryInvoke("forge_vault_seal");
-  return runStage("999_VAULT" as MetabolicStage, async () => {
-  try {
-    const sbClient = new SupabaseVaultClient();
-    await sbClient.seal({
-      sealId,
-      sessionId,
-      verdict,
-      hashofinput: "",
-      telemetrysnapshot: telemetrysnapshot ?? { dS: 0, peace2: 0, psi_le: 0, W3: 0, G: 0 },
-      floors_triggered: floorsTriggered ?? [],
-      irreversibilityacknowledged: true,
-      timestamp: new Date().toISOString(),
-      task,
-      finalText,
-      turnCount,
-      profileName,
-    });
-    return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", sealId, verdict }, null, 2) }] };
-  } catch (err) {
-    await telemetryFailure("forge_vault_seal", startedAt, err);
-    return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
-  }
-  });
-};
-
-server.registerTool("forge_vault_read", {
-  description: "Read a vault record by name from vault999.",
-  inputSchema: z.object({ name: z.string().describe("Record name") }),
-}, vaultReadHandler);
-
-server.registerTool("forge_vault_list", {
-  description: "List vault records by category from vault999.",
-  inputSchema: z.object({ category: z.string().optional().describe("Category filter"), limit: z.number().optional().describe("Max records (default 100)") }),
-}, vaultListHandler);
-
-server.registerTool("forge_vault_write", {
-  description: "Write a vault record to vault999.",
+server.registerTool("forge_vault", {
+  description: "VAULT999 primitive. Modes: read, list, write.",
   inputSchema: z.object({
-    name: z.string().describe("Record name"),
-    category: z.string().describe("Record category"),
-    value: z.string().describe("Record value (string)"),
-    metadata: z.record(z.string(), z.unknown()).optional().describe("Optional metadata"),
+    mode: z.enum(["read", "list", "write"]).describe("Vault operation"),
+    name: z.string().optional().describe("Record name (read/write)"),
+    category: z.string().optional().describe("Category filter (list) / Record category (write)"),
+    limit: z.number().optional().describe("Max records (list, default 100)"),
+    value: z.string().optional().describe("Record value (write)"),
+    metadata: z.record(z.string(), z.unknown()).optional().describe("Optional metadata (write)"),
   }),
-}, vaultWriteHandler);
-
-// forge_vault_delete REMOVED — VAULT999 is append-only. Delete violates F1 AMANAH.
-// If you need to invalidate a record, write a new record that supersedes it.
-
-server.registerTool("forge_vault_seal", {
-  description: "Seal a terminal verdict to vault999.",
-  inputSchema: z.object({
-    sealId: z.string().describe("Seal ID"),
-    sessionId: z.string().describe("Session ID"),
-    verdict: z.enum(["SEAL", "HOLD", "SABAR", "VOID"]).describe("Verdict type"),
-    task: z.string().describe("Task description"),
-    finalText: z.string().describe("Final agent output"),
-    turnCount: z.number().describe("Number of turns"),
-    profileName: z.string().describe("Agent profile name"),
-    floorsTriggered: z.array(z.string()).optional().describe("Floors triggered"),
-    telemetrysnapshot: z.record(z.string(), z.number()).optional().describe("Telemetry snapshot"),
-  }),
-}, vaultSealHandler);
+}, async ({ mode, name, category, limit, value, metadata }) => {
+  const startedAt = Date.now();
+  await telemetryInvoke(`forge_vault:${mode}`);
+  return runStage("999_VAULT" as MetabolicStage, async () => {
+    try {
+      const sbClient = new SupabaseVaultClient();
+      let result: any;
+      if (mode === "read") {
+        if (!name) return { content: [{ type: "text" as const, text: "name is required for mode=read" }], isError: true };
+        const record = await sbClient.read(name);
+        result = { found: !!record, record };
+      } else if (mode === "list") {
+        const records = await sbClient.list(category, limit ?? 100);
+        result = { count: records.length, records };
+      } else if (mode === "write") {
+        if (!name || !category || !value) return { content: [{ type: "text" as const, text: "name, category, value required for mode=write" }], isError: true };
+        const record = await sbClient.write({ name, category, value, metadata });
+        result = { status: "written", record };
+      }
+      await telemetrySuccess(`forge_vault:${mode}`, startedAt);
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      await telemetryFailure(`forge_vault:${mode}`, startedAt, err);
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
+    }
+  });
+});
 
 // ── Domain Tools (Tier 03) ───────────────────────────────────────────────────
-
-server.tool("wealth_evaluate_ROI", "Evaluate investment ROI (A-FORGE local model; optional WEALTH upstream).", { capitalRequired: z.number(), expectedReturn: z.number().optional(), discountRate: z.number().optional(), scenario: z.string().optional(), domain: z.string().optional(), joulesEstimate: z.number().optional() }, async (args) => {
-  const tool = new WEALTH_TOOLS[0]();
-  const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
-  return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
-});
-
-server.tool("wealth_compute_EMV", "Compute Expected Monetary Value (A-FORGE local model; optional WEALTH upstream wealth_compute_emv).", { outcomes: z.array(z.number()), probabilities: z.array(z.number()) }, async (args) => {
-  const tool = new WEALTH_TOOLS[1]();
-  const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
-  return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
-});
-
-server.tool("wealth_thermodynamic_scan", "Scan actions for thermodynamic/entropy cost (A-FORGE local model; optional WEALTH upstream).", { actions: z.array(z.string()) }, async (args) => {
-  const tool = new WEALTH_TOOLS[2]();
-  const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
-  return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
-});
-
-server.tool("wealth_portfolio_optimize", "Optimize capital allocation across assets (A-FORGE local model; optional WEALTH upstream).", { assets: z.array(z.object({ name: z.string().optional(), expectedReturn: z.number().optional(), risk: z.number().optional() })), totalBudget: z.number() }, async (args) => {
-  const tool = new WEALTH_TOOLS[3]();
-  const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
-  return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
-});
-
-server.tool("wealth_entropy_budget", "Track cumulative entropy delta for a session (A-FORGE local model; optional WEALTH upstream).", { sessionId: z.string(), reset: z.boolean().optional() }, async (args) => {
-  const tool = new WEALTH_TOOLS[4]();
-  const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
-  return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
-});
-
-server.tool("wealth_objective_compute", "Compute the WEALTH objective function (A-FORGE local model; optional WEALTH upstream).", { peace: z.number(), deltaKnowledge: z.number(), deltaEntropy: z.number(), deltaCapital: z.number() }, async (args) => {
-  const tool = new WEALTH_TOOLS[5]();
-  const res = await tool.run(args, { sessionId: "mcp", workingDirectory: "/tmp", modeName: "internal_mode" });
-  return { content: [{ type: "text" as const, text: resultAsJson(res.output) }] };
+// forge_wealth: Domain router to WEALTH organ. No local computation.
+// Routes to WEALTH MCP (port 18082) for all capital intelligence.
+server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: emv, conservation, flow, runway, wisdom.", {
+  mode: z.enum(["emv", "conservation", "flow", "runway", "wisdom"]).describe("WEALTH tool to invoke"),
+  outcomes: z.array(z.number()).optional().describe("EMV outcomes"),
+  probabilities: z.array(z.number()).optional().describe("EMV probabilities"),
+  assets: z.array(z.record(z.string(), z.unknown())).optional().describe("Conservation assets"),
+  liabilities: z.array(z.record(z.string(), z.unknown())).optional().describe("Conservation liabilities"),
+  proposal: z.string().optional().describe("Wisdom proposal"),
+}, async (args) => {
+  try {
+    const toolMap: Record<string, string> = {
+      emv: "wealth_compute_emv",
+      conservation: "wealth_conservation_check",
+      flow: "wealth_flow_check",
+      runway: "wealth_runway_check",
+      wisdom: "wealth_wisdom_evaluate",
+    };
+    const toolName = toolMap[args.mode];
+    const toolArgs: Record<string, unknown> = {};
+    if (args.mode === "emv") { toolArgs.outcomes = args.outcomes; toolArgs.probabilities = args.probabilities; }
+    if (args.mode === "conservation") { toolArgs.assets = args.assets; toolArgs.liabilities = args.liabilities; }
+    if (args.mode === "wisdom") { toolArgs.proposal = args.proposal; }
+    const result = await callMCP(`wealth.${toolName}`, toolArgs);
+    return { content: [{ type: "text" as const, text: resultAsJson(result) }] };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { content: [{ type: "text" as const, text: `WEALTH routing error: ${msg}` }], isError: true };
+  }
 });
 
 // ── Infra Tools (Tier 03 — Operational Read-Only) ─────────────────────────────
 // Read-only wrappers for systemd/docker/journalctl. Write variants remain
 // unregistered until the E7 lease executor is wired and tested.
 
-server.tool("forge_systemctl_status", "Check systemd service status (read-only).", { service: z.string() }, async (args) => {
-  const res = await systemctlWrapper.status(args.service);
+// Merged: forge_systemctl — single tool with mode parameter
+// Replaces: forge_systemctl_status, forge_systemctl_is_active, forge_systemctl_list_units
+server.tool("forge_systemctl", "Query systemd. Modes: status, list_units.", { service: z.string().optional(), mode: z.enum(["status", "list_units"]).default("status"), pattern: z.string().optional() }, async (args) => {
+  if (args.mode === "list_units") {
+    const res = await systemctlWrapper.listUnits(args.pattern ?? "*");
+    return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
+  }
+  const res = await systemctlWrapper.status(args.service ?? "");
   return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
 });
 
-server.tool("forge_systemctl_is_active", "Check if a systemd service is active (read-only).", { service: z.string() }, async (args) => {
-  const active = await systemctlWrapper.isActive(args.service);
-  return { content: [{ type: "text" as const, text: JSON.stringify({ service: args.service, active }) }] };
-});
+// NOTE: forge_docker_ps/logs/exec/images registered by registerDockerTools (proxyTools.ts).
+// forge_docker_inspect and forge_docker_stats REMOVED — use forge_docker with mode or direct CLI.
 
-server.tool("forge_systemctl_list_units", "List systemd units matching a pattern (read-only).", { pattern: z.string().optional() }, async (args) => {
-  const res = await systemctlWrapper.listUnits(args.pattern ?? "*");
-  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
-});
-
-// NOTE: forge_docker_ps/logs/exec/images are registered by proxyTools.ts.
-// The dockerWrapper module remains available for future richer variants.
-
-server.tool("forge_docker_inspect", "Inspect a Docker container (read-only).", { container: z.string() }, async (args) => {
-  const res = await dockerWrapper.inspect(args.container);
-  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
-});
-
-server.tool("forge_docker_stats", "Read Docker container stats (read-only).", { container: z.string().optional() }, async (args) => {
-  const res = await dockerWrapper.stats(args.container);
-  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
-});
-
-server.tool("forge_journalctl_logs", "Read systemd journal logs for a service (read-only, PII-redacted).", { service: z.string(), since: z.string().optional(), lines: z.number().optional() }, async (args) => {
-  const res = await journalctlWrapper.logs(args.service, args.since, args.lines);
-  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
-});
-
-server.tool("forge_journalctl_errors", "Read systemd journal errors for a service (read-only, PII-redacted).", { service: z.string(), since: z.string().optional() }, async (args) => {
-  const res = await journalctlWrapper.errors(args.service, args.since);
-  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
-});
-
-server.tool("forge_journalctl_tail", "Tail recent systemd journal logs for a service (read-only, PII-redacted).", { service: z.string(), lines: z.number().optional() }, async (args) => {
-  const res = await journalctlWrapper.tail(args.service, args.lines);
-  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
-});
-
-server.tool("forge_journalctl_grep", "Grep systemd journal logs for a service (read-only, PII-redacted).", { service: z.string(), pattern: z.string() }, async (args) => {
-  const res = await journalctlWrapper.grep(args.service, args.pattern);
+// Merged: forge_journalctl — single tool with mode parameter
+// Replaces: forge_journalctl_logs, forge_journalctl_errors, forge_journalctl_tail, forge_journalctl_grep
+server.tool("forge_journalctl", "Query systemd journal logs (read-only, PII-redacted). Modes: logs, errors, tail, grep.", { service: z.string(), mode: z.enum(["logs", "errors", "tail", "grep"]).default("logs"), since: z.string().optional(), lines: z.number().optional(), pattern: z.string().optional() }, async (args) => {
+  let res: unknown;
+  switch (args.mode) {
+    case "logs": res = await journalctlWrapper.logs(args.service, args.since, args.lines); break;
+    case "errors": res = await journalctlWrapper.errors(args.service, args.since); break;
+    case "tail": res = await journalctlWrapper.tail(args.service, args.lines); break;
+    case "grep": res = await journalctlWrapper.grep(args.service, args.pattern ?? ""); break;
+  }
   return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
 });
 
 // ── WELL Tools (Tier 03 — Human Substrate) ───────────────────────────────────
+// Merged: forge_well — single tool with mode parameter
+// Replaces: forge_well_state_read, forge_well_readiness_check, forge_well_floor_scan, forge_well_anchor
 
-const wellStateReadHandler = async () => {
-  const startedAt = Date.now();
-  await telemetryInvoke("forge_well_state_read");
-  return runStage("111_SENSE" as MetabolicStage, async () => {
-    try {
-      const { readFile } = await import("node:fs/promises");
-      const { resolve } = await import("node:path");
-      const statePath = resolve(process.cwd(), "WELL", "state.json");
-      let state: any;
-      try {
-        const data = await readFile(statePath, "utf-8");
-        state = JSON.parse(data);
-      } catch {
-        state = { ok: false, well_score: 50, verdict: "UNKNOWN", bandwidth: "NORMAL", floors_violated: [], message: "WELL telemetry offline" };
-      }
-      await telemetrySuccess("forge_well_state_read", startedAt);
-      return { content: [{ type: "text" as const, text: JSON.stringify(state, null, 2) }] };
-    } catch (err) {
-      await telemetryFailure("forge_well_state_read", startedAt, err);
-      return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
-    }
-  });
-};
+async function readWellState(): Promise<any> {
+  const { readFile } = await import("node:fs/promises");
+  const { resolve } = await import("node:path");
+  const statePath = resolve(process.cwd(), "WELL", "state.json");
+  try { return JSON.parse(await readFile(statePath, "utf-8")); }
+  catch { return { ok: false, well_score: 50, verdict: "UNKNOWN", bandwidth: "NORMAL", floors_violated: [], metrics: {} }; }
+}
 
-const wellReadinessCheckHandler = async () => {
-  const startedAt = Date.now();
-  await telemetryInvoke("forge_well_readiness_check");
-  return runStage("111_SENSE" as MetabolicStage, async () => {
-    try {
-      const { readFile } = await import("node:fs/promises");
-      const { resolve } = await import("node:path");
-      const statePath = resolve(process.cwd(), "WELL", "state.json");
-      let state: any;
-      try {
-        const data = await readFile(statePath, "utf-8");
-        state = JSON.parse(data);
-      } catch {
-        state = { ok: false, well_score: 50, verdict: "UNKNOWN", floors_violated: [] };
-      }
-      const score = state.well_score ?? 50;
-      const violations = state.floors_violated ?? [];
-      let verdict: string, bandwidth: string;
-      if (violations.length > 0) {
-        verdict = "DEGRADED";
-        bandwidth = "RESTRICTED";
-      } else if (score >= 80) {
-        verdict = "OPTIMAL";
-        bandwidth = "FULL";
-      } else if (score >= 60) {
-        verdict = "FUNCTIONAL";
-        bandwidth = "NORMAL";
-      } else {
-        verdict = "LOW_CAPACITY";
-        bandwidth = "REDUCED";
-      }
-      await telemetrySuccess("forge_well_readiness_check", startedAt);
-      return { content: [{ type: "text" as const, text: JSON.stringify({ verdict, well_score: score, bandwidth, violations, timestamp: state.timestamp }, null, 2) }] };
-    } catch (err) {
-      await telemetryFailure("forge_well_readiness_check", startedAt, err);
-      return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
-    }
-  });
-};
-
-const wellFloorScanHandler = async () => {
-  const startedAt = Date.now();
-  await telemetryInvoke("forge_well_floor_scan");
-  return runStage("111_SENSE" as MetabolicStage, async () => {
-    try {
-      const { readFile } = await import("node:fs/promises");
-      const { resolve } = await import("node:path");
-      const statePath = resolve(process.cwd(), "WELL", "state.json");
-      let state: any;
-      try {
-        const data = await readFile(statePath, "utf-8");
-        state = JSON.parse(data);
-      } catch {
-        state = { floors_violated: [], metrics: {}, well_score: 0 };
-      }
-      await telemetrySuccess("forge_well_floor_scan", startedAt);
-      return { content: [{ type: "text" as const, text: JSON.stringify({ floors_violated: state.floors_violated ?? [], metrics: state.metrics ?? {}, health_score: state.well_score ?? 0 }, null, 2) }] };
-    } catch (err) {
-      await telemetryFailure("forge_well_floor_scan", startedAt, err);
-      return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
-    }
-  });
-};
-
-const wellAnchorHandler = async ({ sessionId, agentId }: { sessionId?: string, agentId?: string }) => {
-  const startedAt = Date.now();
-  await telemetryInvoke("forge_well_anchor");
-  return runStage("999_VAULT" as MetabolicStage, async () => {
-    try {
-      const { readFile } = await import("node:fs/promises");
-      const { resolve } = await import("node:path");
-      const statePath = resolve(process.cwd(), "WELL", "state.json");
-      let state: any;
-      try {
-        const data = await readFile(statePath, "utf-8");
-        state = JSON.parse(data);
-      } catch {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: "WELL state not found" }, null, 2) }], isError: true };
-      }
-      const sbClient = new SupabaseVaultClient();
-      await sbClient.write({
-        name: `well_anchor_${sessionId ?? "unanchored"}`,
-        category: "well",
-        value: JSON.stringify(state),
-        metadata: { agentId: agentId ?? "A-FORGE", sessionId: sessionId ?? "UNANCHORED", anchored_at: new Date().toISOString() },
-      });
-      await telemetrySuccess("forge_well_anchor", startedAt);
-      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "anchored", well_score: state.well_score, bandwidth: state.bandwidth ?? "NORMAL" }, null, 2) }] };
-    } catch (err) {
-      await telemetryFailure("forge_well_anchor", startedAt, err);
-      return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
-    }
-  });
-};
-
-server.registerTool("forge_well_state_read", {
-  description: "Read current WELL biological telemetry snapshot (well_score, bandwidth, violations).",
-  inputSchema: z.object({}),
-}, wellStateReadHandler);
-
-server.registerTool("forge_well_readiness_check", {
-  description: "Check WELL readiness verdict for constitutional governance (OPTIMAL/FUNCTIONAL/DEGRADED/LOW_CAPACITY).",
-  inputSchema: z.object({}),
-}, wellReadinessCheckHandler);
-
-server.registerTool("forge_well_floor_scan", {
-  description: "Scan all 13 W-Floors (well-being dimensions) for constitutional violations.",
-  inputSchema: z.object({}),
-}, wellFloorScanHandler);
-
-server.registerTool("forge_well_anchor", {
-  description: "Anchor current WELL state to vault999 ledger.",
+server.registerTool("forge_well", {
+  description: "WELL human readiness primitive. Modes: state, readiness, floors, anchor.",
   inputSchema: z.object({
-    sessionId: z.string().optional().describe("Session ID"),
-    agentId: z.string().optional().describe("Agent ID"),
+    mode: z.enum(["state", "readiness", "floors", "anchor"]).default("state"),
+    sessionId: z.string().optional().describe("Session ID (anchor mode)"),
+    agentId: z.string().optional().describe("Agent ID (anchor mode)"),
   }),
-}, wellAnchorHandler);
+}, async ({ mode, sessionId, agentId }) => {
+  const startedAt = Date.now();
+  await telemetryInvoke(`forge_well:${mode}`);
+  return runStage(mode === "anchor" ? "999_VAULT" as MetabolicStage : "111_SENSE" as MetabolicStage, async () => {
+    try {
+      const state = await readWellState();
+      let result: any;
+      if (mode === "state") {
+        result = state;
+      } else if (mode === "readiness") {
+        const score = state.well_score ?? 50;
+        const violations = state.floors_violated ?? [];
+        let verdict: string, bandwidth: string;
+        if (violations.length > 0) { verdict = "DEGRADED"; bandwidth = "RESTRICTED"; }
+        else if (score >= 80) { verdict = "OPTIMAL"; bandwidth = "FULL"; }
+        else if (score >= 60) { verdict = "FUNCTIONAL"; bandwidth = "NORMAL"; }
+        else { verdict = "LOW_CAPACITY"; bandwidth = "REDUCED"; }
+        result = { verdict, well_score: score, bandwidth, violations, timestamp: state.timestamp };
+      } else if (mode === "floors") {
+        result = { floors_violated: state.floors_violated ?? [], metrics: state.metrics ?? {}, health_score: state.well_score ?? 0 };
+      } else if (mode === "anchor") {
+        const sbClient = new SupabaseVaultClient();
+        await sbClient.write({
+          name: `well_anchor_${sessionId ?? "unanchored"}`,
+          category: "well",
+          value: JSON.stringify(state),
+          metadata: { agentId: agentId ?? "A-FORGE", sessionId: sessionId ?? "UNANCHORED", anchored_at: new Date().toISOString() },
+        });
+        result = { status: "anchored", well_score: state.well_score, bandwidth: state.bandwidth ?? "NORMAL" };
+      }
+      await telemetrySuccess(`forge_well:${mode}`, startedAt);
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      await telemetryFailure(`forge_well:${mode}`, startedAt, err);
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
+    }
+  });
+});
 
 // ── Tier 1 Proxy Tools (forge_filesystem, forge_postgres, forge_memory, forge_git, forge_github, forge_docker) ──
 // Each group registers 4-6 tools under the forge_* namespace.
@@ -1249,7 +979,8 @@ registerCoreResources(server, approvalBoundary, memoryContract);
 
 const amanahManager = AmanahLockManager.getInstance();
 
-// Canonical per blueprint C1 (A-FORGE hands): forge_lock_acquire (primary), request_amanah_lock kept as deprecated alias (reversible).
+// Canonical per blueprint C1 (A-FORGE hands): forge_lock_acquire (primary).
+// NOTE: request_amanah_lock REMOVED — deprecated alias. Use forge_lock_acquire.
 server.tool(
   "forge_lock_acquire",
   "Request an Amanah/F1 lock (canonical). Reversible F1 gate before mutation.",
@@ -1283,32 +1014,7 @@ server.tool(
   }
 );
 
-server.tool(
-  "request_amanah_lock",
-  "DEPRECATED alias (will be removed post-migration). Use forge_lock_acquire.",
-  {
-    resource_id: z.string().describe("Canonical path or identifier of the target resource (e.g., file path, container name)"),
-    actor_id: z.string().describe("Agent or human identifier requesting the lock"),
-    justification: z.string().describe("Semantic intent for the lock — what mutation is planned"),
-    session_id: z.string().optional().describe("Session context for re-entrant locks"),
-    ttl_seconds: z.number().optional().default(300).describe("Lock TTL in seconds (default 5 min)"),
-  },
-  async ({ resource_id, actor_id, justification, session_id, ttl_seconds }) => {
-    const startedAt = Date.now();
-    await telemetryInvoke("request_amanah_lock");
-    return runStage("000_INIT" as MetabolicStage, async () => {
-      try {
-        const result = await amanahManager.acquireLock(resource_id, actor_id, justification, session_id, ttl_seconds * 1000);
-        const text = JSON.stringify({ ...result, deprecated: true, use: "forge_lock_acquire" }, null, 2);
-        await telemetrySuccess("request_amanah_lock", startedAt);
-        return { content: [{ type: "text" as const, text }] };
-      } catch (err) {
-        await telemetryFailure("request_amanah_lock", startedAt, err);
-        throw err;
-      }
-    });
-  }
-);
+// NOTE: request_amanah_lock REMOVED — deprecated alias. Use forge_lock_acquire.
 
 server.tool(
   "forge_lock_release",
@@ -1337,39 +1043,10 @@ server.tool(
   }
 );
 
-server.tool(
-  "release_amanah_lock",
-  "DEPRECATED alias. Use forge_lock_release.",
-  {
-    lock_id: z.string().describe("The lock_id returned by request_amanah_lock"),
-    actor_id: z.string().describe("Agent or human identifier that originally acquired the lock"),
-    release_reason: z.string().optional().describe("Why the lock is being released"),
-  },
-  async ({ lock_id, actor_id, release_reason }) => {
-    const startedAt = Date.now();
-    await telemetryInvoke("release_amanah_lock");
-    return runStage("000_INIT" as MetabolicStage, async () => {
-      try {
-        const result = await amanahManager.releaseLock(lock_id, actor_id, release_reason);
-        const text = JSON.stringify({ ...result, deprecated: true, use: "forge_lock_release" }, null, 2);
-        await telemetrySuccess("release_amanah_lock", startedAt);
-        return { content: [{ type: "text" as const, text }] };
-      } catch (err) {
-        await telemetryFailure("release_amanah_lock", startedAt, err);
-        throw err;
-      }
-    });
-  }
-);
+// NOTE: release_amanah_lock REMOVED — deprecated alias. Use forge_lock_release.
 
 // ── Autonomous Pipeline Tool ───────────────────────────────────────────────────
-// Accepts a task and runs SENSE → REASON → WITNESS → FORGE → JUDGE → VAULT
-// in one autonomous call. Routes to the correct organ based on task classification.
-//
-// F1 AMANAH: Pipeline is read-only for OBSERVE tasks. MUTATE tasks require hold_id.
-// F8 LAW: Pipeline routes to correct organ. Never crosses lanes.
-//
-// Canonical per blueprint: forge_pipeline_run (verb-suffixed). forge_pipeline kept as alias (reversible).
+// Canonical: forge_pipeline_run. forge_pipeline alias REMOVED.
 server.tool(
   "forge_pipeline_run",
   "Autonomous intelligence pipeline (canonical). Routes organs, evidence→compute→(optional judge+seal). Requires cc_id/hold for mutate.",
@@ -1400,197 +1077,9 @@ server.tool(
   }
 );
 
-server.tool(
-  "forge_pipeline",
-  "DEPRECATED alias (use forge_pipeline_run). Autonomous pipeline.",
-  {
-    task: z.string().describe("The task to execute (e.g. 'Evaluate Malay Basin' or 'Check WELL readiness')"),
-    mode: z.enum(["observe", "forge", "full"]).default("observe")
-      .describe("observe = route + witness only. forge = route + witness + compute. full = route + witness + forge + judge + seal"),
-    hold_id: z.string().optional()
-      .describe("Required for forge/full modes if action class is MUTATE. Get from arif_judge_deliberate"),
-    session_id: z.string().optional(),
-    actor_id: z.string().optional(),
-  },
-  async ({ task, mode, hold_id, session_id, actor_id }) => {
-    const startedAt = Date.now();
-    await telemetryInvoke("forge_pipeline");
-    return runStage("000_INIT" as MetabolicStage, async () => {
-      try {
-        const stages: string[] = [];
-        const results: Record<string, any> = {};
-        const errors: string[] = [];
-
-        // ── SENSE (111): Classify the task ──
-        stages.push("111_SENSE");
-        const task_lower = task.toLowerCase();
-        let target_organ = "unknown";
-        if (/basin|seismic|well|petrophysics|geology|prospect|earth|geox/i.test(task_lower))
-          target_organ = "GEOX";
-        else if (/wealth|capital|stock|nifty|klci|bursa|finance|npv|roi|investment/i.test(task_lower))
-          target_organ = "WEALTH";
-        else if (/well|readiness|fatigue|sleep|health|vitality|dignity|homeostasis/i.test(task_lower))
-          target_organ = "WELL";
-        else if (/forge|build|deploy|test|code|refactor|fix|audit|tui/i.test(task_lower))
-          target_organ = "A-FORGE";
-        results.sense = { target_organ, mode, task_summary: task.slice(0, 200) };
-
-        // ── MODE: observe only — just route (no execution) ──
-        if (mode === "observe") {
-          stages.push("444_ROUTE");
-          // Ping the target organ to confirm it's alive
-          let organ_status = "unreachable";
-          try {
-            const resp = await fetch(`http://127.0.0.1:7071/api/federation-probe`);
-            const data = await resp.json() as any;
-            organ_status = data.organs?.[target_organ]?.status ?? "unknown";
-          } catch { /* best effort */ }
-          results.route = { target_organ, organ_status };
-
-          stages.push("999_VAULT");
-          const verdict = { status: "OBSERVED", target_organ, note: `Task classified as ${target_organ}. Use mode=forge to execute.` };
-          const text = JSON.stringify({ stages, results, verdict }, null, 2);
-          await telemetrySuccess("forge_pipeline", startedAt);
-          return { content: [{ type: "text" as const, text }] };
-        }
-
-        // ── FORGE / FULL: Route to target organ and execute ──
-        stages.push("444_ROUTE");
-        stages.push("555_WITNESS");
-        stages.push("777_FORGE");
-
-        if (target_organ === "GEOX") {
-          // Route to GEOX for earth intelligence
-          try {
-            const geoxResp = await fetch(`http://127.0.0.1:8081/mcp`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                jsonrpc: "2.0",
-                method: "tools/call",
-                params: { name: "geox_query_intake", arguments: { query: task } },
-                id: "forge-pipeline-1",
-              }),
-            });
-            const geoxData = await geoxResp.json() as any;
-            results.geox = geoxData.result ?? geoxData;
-          } catch (e: any) {
-            errors.push(`GEOX error: ${e.message}`);
-          }
-        } else if (target_organ === "WEALTH") {
-          try {
-            const wealthResp = await fetch(`http://127.0.0.1:18082/mcp`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                jsonrpc: "2.0",
-                method: "tools/call",
-                params: { name: "wealth_agent_path", arguments: { task_description: task } },
-                id: "forge-pipeline-1",
-              }),
-            });
-            const wealthData = await wealthResp.json() as any;
-            results.wealth = wealthData.result ?? wealthData;
-          } catch (e: any) {
-            errors.push(`WEALTH error: ${e.message}`);
-          }
-        } else if (target_organ === "WELL") {
-          try {
-            const wellResp = await fetch(`http://127.0.0.1:18083/mcp`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                jsonrpc: "2.0",
-                method: "tools/call",
-                params: { name: "well_assess_reliability", arguments: { mode: "health" } },
-                id: "forge-pipeline-1",
-              }),
-            });
-            const wellData = await wellResp.json() as any;
-            results.well = wellData.result ?? wellData;
-          } catch (e: any) {
-            errors.push(`WELL error: ${e.message}`);
-          }
-        } else if (target_organ === "A-FORGE") {
-          results.forge = { note: "A-FORGE tasks execute via existing forge_run tool. Pipeline routes to self." };
-        }
-
-        // ── FULL MODE: Judge + VAULT ──
-        if (mode === "full") {
-          stages.push("888_JUDGE");
-          try {
-            const judgeResp = await fetch(`http://127.0.0.1:8088/mcp`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                jsonrpc: "2.0",
-                method: "tools/call",
-                params: {
-                  name: "arif_judge_deliberate",
-                  arguments: {
-                    candidate: task,
-                    mode: "judge",
-                  },
-                },
-                id: "forge-pipeline-2",
-              }),
-            });
-            const judgeData = await judgeResp.json() as any;
-            results.judge = judgeData.result ?? judgeData;
-          } catch (e: any) {
-            errors.push(`JUDGE error: ${e.message}`);
-          }
-
-          stages.push("999_VAULT");
-          // If judge returned SEAL and we have session context, seal it
-          try {
-            const sealResp = await fetch(`http://127.0.0.1:7071/mcp`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                jsonrpc: "2.0",
-                method: "tools/call",
-                params: {
-                  name: "arif_vault_seal",
-                  arguments: {
-                    content: JSON.stringify({ task, target_organ, mode, stages }),
-                    reason: `forge_pipeline: ${target_organ} ${mode}`,
-                    tier: mode === "full" ? "STANDARD" : "OBSERVE",
-                  },
-                },
-                id: "forge-pipeline-3",
-              }),
-            });
-            const sealData = await sealResp.json() as any;
-            results.vault = sealData.result ?? sealData;
-          } catch (e: any) {
-            errors.push(`VAULT error: ${e.message}`);
-          }
-        }
-
-        const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
-        const text = JSON.stringify({
-          ok: errors.length === 0,
-          stages,
-          target_organ,
-          results,
-          errors: errors.length > 0 ? errors : undefined,
-          elapsed_seconds: parseFloat(elapsed),
-          mode,
-        }, null, 2);
-
-        await telemetrySuccess("forge_pipeline", startedAt);
-        return { content: [{ type: "text" as const, text }] };
-      } catch (err) {
-        await telemetryFailure("forge_pipeline", startedAt, err);
-        throw err;
-      }
-    });
-  }
-);
+// NOTE: forge_pipeline deprecated alias implementation REMOVED. Use forge_pipeline_run.
 
 // ── VAULT999 Resources ─────────────────────────────────────────────────────────
-
 server.resource("forge://vault/records", "forge://vault/records", { mimeType: "application/json" }, async () => {
   const sbClient = new SupabaseVaultClient();
   const records = await sbClient.list(undefined, 50);

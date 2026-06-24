@@ -81,7 +81,6 @@ const HIGH_IMPACT_TOOLS = new Set([
 // Tools that execute reversible operations
 const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_docker_exec",
-  "forge_remember",
   "forge_lock_acquire",
   "forge_lock_release",
   "forge_well_anchor",
@@ -117,11 +116,10 @@ const QUEUE_TOOLS = new Set([
 // Explicit OBSERVE-class tools (documentation + future-proofing)
 // These default to OBSERVE anyway, but listing them makes the contract explicit.
 const OBSERVE_TOOLS = new Set([
-  "forge_pipeline",           // routing tool — no mutation
+  "forge_pipeline_run",       // routing tool — no mutation
   "forge_check_governance",   // governance check — read-only
   "forge_job_status",         // job status — read-only
   "forge_job_result",         // job result — read-only
-  "forge_log_tail",           // log read — read-only
   "forge_registry_status",    // registry read — read-only
   "forge_lease_status",       // lease status — read-only
   "forge_agent_list",         // agent list — read-only
@@ -138,18 +136,15 @@ const OBSERVE_TOOLS = new Set([
   "forge_docker_ps",          // docker ps — read-only
   "forge_docker_images",      // docker images — read-only
   "forge_docker_logs",        // docker logs — read-only
-  "forge_docker_inspect",     // docker inspect — read-only
-  "forge_docker_stats",       // docker stats — read-only
   "forge_systemctl_status",   // systemd status — read-only
-  "forge_systemctl_is_active", // systemd is-active — read-only
   "forge_systemctl_list_units", // systemd list-units — read-only
-  "forge_journalctl_logs",    // journal read — read-only
-  "forge_journalctl_errors",  // journal errors — read-only
-  "forge_journalctl_tail",    // journal tail — read-only
-  "forge_journalctl_grep",    // journal grep — read-only
+  "forge_journalctl",         // journal query (merged: logs/errors/tail/grep) — read-only
   "forge_postgres_schema",    // schema read — read-only
-  "forge_search",             // web search — read-only
   "forge_minimax_search",     // web search — read-only
+  "forge_minimax_text_to_image",  // image generation — low risk_tier
+  "forge_minimax_text_to_audio",  // TTS — low risk_tier
+  "forge_minimax_music_generation", // music gen — low risk_tier
+  "forge_minimax_understand_image", // image understanding — low risk_tier
   "forge_research",           // web research — read-only
   "forge_docs_lookup",        // docs lookup — read-only
   "forge_browser_navigate",   // browser nav — read-only (observe-class)
