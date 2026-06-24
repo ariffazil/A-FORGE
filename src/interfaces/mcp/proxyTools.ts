@@ -331,38 +331,6 @@ export function registerMemoryTools(server: McpServer): void {
     }
   });
 
-  // forge_memory_store — writes to VAULT999 via vault999-writer (port 5001)
-  server.registerTool("forge_memory_store", {
-    description: "Store a value in federation memory (VAULT999).",
-    inputSchema: z.object({
-      key: z.string().describe("Memory key / identifier"),
-      value: z.string().describe("Value to store (stringified JSON or text)"),
-      tier: z.enum(["ephemeral", "session", "semantic", "canon"]).default("session").describe("Memory tier"),
-    }),
-  }, async ({ key, value, tier }) => {
-    try {
-      const resp = await fetch("http://127.0.0.1:5001/api/vault/write", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: key, category: tier, value, source: "forge_memory_store" }),
-        signal: AbortSignal.timeout(5000),
-      });
-      const data = await resp.json();
-      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "stored", key, tier, response: data }, null, 2) }] };
-    } catch (err: any) {
-      // Fallback: write to local JSONL
-      try {
-        const entry = { ts: new Date().toISOString(), key, value, tier, source: "forge_memory_store" };
-        const dir = "/root/A-FORGE/data/memory";
-        execSync(`mkdir -p "${dir}"`, { timeout: 3000 });
-        const { appendFileSync } = await import("node:fs");
-        appendFileSync(`${dir}/memory.jsonl`, JSON.stringify(entry) + "\n");
-        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "stored_local", key, tier, note: "vault999-writer unavailable; stored locally" }, null, 2) }] };
-      } catch (fallbackErr: any) {
-        return { content: [{ type: "text" as const, text: `Error: ${err.message}. Fallback also failed: ${fallbackErr.message}` }], isError: true };
-      }
-    }
-  });
 }
 
 // ── 4. forge_git_* ─────────────────────────────────────────────────────────────
