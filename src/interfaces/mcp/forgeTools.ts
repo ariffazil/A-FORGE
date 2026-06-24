@@ -103,14 +103,15 @@ async function saveIdentities(): Promise<void> {
 // ── 1. forge_agent_* — Identity Registration ────────────────────────────────
 
 export function registerIdentityTools(server: McpServer): void {
-  // forge_agent_register
+  // forge_agent — merged: register, status, list
   server.tool(
-    "forge_agent_register",
-    "Register an agent identity with authority profile. F11 AUTH: creates identity binding.",
+    "forge_agent",
+    "Agent identity management. Modes: register, status, list. F11 AUTH.",
     {
-      agent_id: z.string().describe("Unique agent identifier"),
-      agent_type: z.enum(["opencode", "hermes", "chatgpt", "custom"]).describe("Agent origin"),
-      role: z.enum(["governed_coder", "observer", "geoscience_agent", "finance_agent", "wellness_agent", "controller"]).describe("Role profile"),
+      mode: z.enum(["register", "status", "list"]).default("list"),
+      agent_id: z.string().optional().describe("Agent identifier"),
+      agent_type: z.enum(["opencode", "hermes", "chatgpt", "custom"]).optional().describe("Agent origin"),
+      role: z.enum(["governed_coder", "observer", "geoscience_agent", "finance_agent", "wellness_agent", "controller"]).optional().describe("Role profile"),
       authority: z.object({
         observe: z.boolean().default(true),
         dry_run: z.boolean().default(true),
@@ -120,75 +121,31 @@ export function registerIdentityTools(server: McpServer): void {
         git_commit: z.enum(["always", "888_HOLD", "never"]).default("888_HOLD"),
         deploy: z.enum(["always", "888_HOLD", "never"]).default("888_HOLD"),
         vault_seal: z.enum(["always", "888_HOLD", "never"]).default("888_HOLD"),
-      }).describe("Authority ceiling per action class"),
+      }).optional().describe("Authority ceiling per action class"),
       identity_proof: z.string().optional().describe("SHA-256 of agent's public key or session nonce"),
     },
-    async ({ agent_id, agent_type, role, authority, identity_proof }) => {
+    async ({ mode, agent_id, agent_type, role, authority, identity_proof }) => {
+      if (mode === "list") {
+        const agents = Array.from(registeredAgents.values()).map(a => ({
+          agent_id: a.agent_id, role: a.role, agent_type: a.agent_type,
+          registered_at: a.registered_at, last_seen: a.last_seen, active_leases: a.lease_ids.length,
+        }));
+        return { content: [{ type: "text" as const, text: JSON.stringify({ count: agents.length, agents }, null, 2) }] };
+      }
+      if (mode === "status") {
+        if (!agent_id) return { content: [{ type: "text" as const, text: "agent_id required for mode=status" }], isError: true };
+        const agent = registeredAgents.get(agent_id);
+        if (!agent) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Agent '${agent_id}' not registered` }, null, 2) }], isError: true };
+        agent.last_seen = new Date().toISOString();
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", agent, active_leases: agent.lease_ids.map(id => activeLeases.get(id)).filter(Boolean) }, null, 2) }] };
+      }
+      // register
+      if (!agent_id || !agent_type || !role) return { content: [{ type: "text" as const, text: "agent_id, agent_type, role required for mode=register" }], isError: true };
       const now = new Date().toISOString();
-      const agent = {
-        agent_id,
-        agent_type,
-        role,
-        authority: authority as unknown as Record<string, string>,
-        identity_proof: identity_proof ?? "pending",
-        registered_at: now,
-        last_seen: now,
-        lease_ids: [],
-      };
+      const agent = { agent_id, agent_type, role, authority: (authority ?? {}) as Record<string, string>, identity_proof: identity_proof ?? "pending", registered_at: now, last_seen: now, lease_ids: [] };
       registeredAgents.set(agent_id, agent);
       await saveIdentities();
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({ status: "SEAL", agent_id, role, registered_at: now }, null, 2),
-        }],
-      };
-    }
-  );
-
-  // forge_agent_status
-  server.tool(
-    "forge_agent_status",
-    "Get the identity and authority profile of a registered agent.",
-    {
-      agent_id: z.string().describe("Agent identifier to query"),
-    },
-    async ({ agent_id }) => {
-      const agent = registeredAgents.get(agent_id);
-      if (!agent) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Agent '${agent_id}' not registered`, registered_agents: Array.from(registeredAgents.keys()) }, null, 2) }], isError: true };
-      }
-      // Update last_seen
-      agent.last_seen = new Date().toISOString();
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({ status: "SEAL", agent, active_leases: agent.lease_ids.map(id => activeLeases.get(id)).filter(Boolean) }, null, 2),
-        }],
-      };
-    }
-  );
-
-  // forge_agent_list
-  server.tool(
-    "forge_agent_list",
-    "List all registered agents and their roles.",
-    {},
-    async () => {
-      const agents = Array.from(registeredAgents.values()).map(a => ({
-        agent_id: a.agent_id,
-        role: a.role,
-        agent_type: a.agent_type,
-        registered_at: a.registered_at,
-        last_seen: a.last_seen,
-        active_leases: a.lease_ids.length,
-      }));
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({ count: agents.length, agents }, null, 2),
-        }],
-      };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", agent_id, role, registered_at: now }, null, 2) }] };
     }
   );
 }
@@ -458,155 +415,60 @@ export async function validateLeaseForTool(
 }
 
 export function registerLeaseTools(server: McpServer): void {
-  // forge_lease_request
+  // forge_lease — merged: request, status, revoke
   server.tool(
-    "forge_lease_request",
-    "Request a bounded authority lease from arifOS. F1 AMANAH: lease expires automatically after TTL. A-FORGE does not self-issue leases.",
+    "forge_lease",
+    "Lease lifecycle. Modes: request, status, revoke. A-FORGE does not self-issue leases — arifOS mints them.",
     {
-      agent_id: z.string().describe("Registered agent ID"),
-      scope: z.array(z.string()).describe("Tools to include in lease scope"),
-      max_action_class: z.enum([
-        "OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE",
-        "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE",
-        // Legacy values for backward compat
-        "PROPOSE", "MUTATE", "ATOMIC",
-      ]).default("EXECUTE_REVERSIBLE").describe("Maximum action class permitted (8-value taxonomy + legacy aliases)"),
-      ttl_seconds: z.number().default(300).describe("Lease TTL in seconds (default 5 min, max 1 hour)"),
-      forbidden: z.array(z.string()).optional().describe("Tools explicitly forbidden"),
+      mode: z.enum(["request", "status", "revoke"]).describe("Lease operation"),
+      lease_id: z.string().optional().describe("Lease ID (status/revoke)"),
+      agent_id: z.string().optional().describe("Agent ID (request/revoke)"),
+      scope: z.array(z.string()).optional().describe("Tools to include (request)"),
+      max_action_class: z.enum(["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE", "PROPOSE", "MUTATE", "ATOMIC"]).default("EXECUTE_REVERSIBLE").describe("Max action class (request)"),
+      ttl_seconds: z.number().default(300).describe("Lease TTL (request, max 3600)"),
+      forbidden: z.array(z.string()).optional().describe("Forbidden tools (request)"),
+      reason: z.string().optional().describe("Reason (revoke)"),
     },
     async (args: any) => {
-      const { agent_id, scope, max_action_class, ttl_seconds, forbidden, session_id } = args;
-      // Verify agent exists
-      if (!registeredAgents.has(agent_id)) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Agent '${agent_id}' not registered. Use forge_agent_register first.` }, null, 2) }], isError: true };
+      const { mode, lease_id, agent_id, scope, max_action_class, ttl_seconds, forbidden, reason, session_id } = args;
+
+      if (mode === "status") {
+        if (!lease_id) return { content: [{ type: "text" as const, text: "lease_id required for mode=status" }], isError: true };
+        try {
+          const inspect = await inspectLeaseViaKernel(lease_id);
+          const kernelLease = inspect?.lease ?? inspect?.result?.lease;
+          if (kernelLease) {
+            const lease = arifosLeaseToLocal(kernelLease);
+            activeLeases.set(lease_id, lease);
+            const remaining_s = Math.max(0, Math.floor((lease.expires_at - Date.now()) / 1000));
+            return { content: [{ type: "text" as const, text: JSON.stringify({ status: lease.revoked ? "REVOKED" : remaining_s === 0 ? "EXPIRED" : "ACTIVE", source: "arifOS", lease_id, agent_id: lease.agent_id, scope: lease.scope, max_action_class: lease.max_action_class, remaining_seconds: remaining_s, expires_at: new Date(lease.expires_at).toISOString() }, null, 2) }] };
+          }
+        } catch { /* fall through */ }
+        const lease = activeLeases.get(lease_id);
+        if (!lease) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Lease '${lease_id}' not found` }, null, 2) }], isError: true };
+        const remaining_s = Math.max(0, Math.floor((lease.expires_at - Date.now()) / 1000));
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: lease.revoked ? "REVOKED" : remaining_s === 0 ? "EXPIRED" : "ACTIVE", source: "local_cache", lease_id, remaining_seconds: remaining_s, expires_at: new Date(lease.expires_at).toISOString() }, null, 2) }] };
       }
 
-      const effective_ttl = Math.min(ttl_seconds ?? 300, 3600); // Max 1 hour
-      const issue = await issueLeaseViaKernel({
-        agent_id,
-        scope,
-        max_action_class,
-        ttl_seconds: effective_ttl,
-        forbidden: forbidden ?? [],
-        session_id,
-      });
-
-      if (!issue.ok) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", gate: "LEASE_ISSUE_FAILED", reason: issue.reason }, null, 2) }], isError: true };
+      if (mode === "revoke") {
+        if (!lease_id || !agent_id) return { content: [{ type: "text" as const, text: "lease_id and agent_id required for mode=revoke" }], isError: true };
+        const revoke = await revokeLeaseViaKernel({ lease_id, agent_id, reason, session_id });
+        if (!revoke.ok) return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", gate: "LEASE_REVOKE_FAILED", reason: revoke.reason }, null, 2) }], isError: true };
+        activeLeases.set(lease_id, revoke.lease);
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "REVOKED", lease_id, agent_id, reason: reason ?? "no reason given", revoked_at: new Date().toISOString() }, null, 2) }] };
       }
 
+      // request
+      if (!agent_id || !scope) return { content: [{ type: "text" as const, text: "agent_id and scope required for mode=request" }], isError: true };
+      if (!registeredAgents.has(agent_id)) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Agent '${agent_id}' not registered. Use forge_agent mode=register first.` }, null, 2) }], isError: true };
+      const effective_ttl = Math.min(ttl_seconds ?? 300, 3600);
+      const issue = await issueLeaseViaKernel({ agent_id, scope, max_action_class, ttl_seconds: effective_ttl, forbidden: forbidden ?? [], session_id });
+      if (!issue.ok) return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", gate: "LEASE_ISSUE_FAILED", reason: issue.reason }, null, 2) }], isError: true };
       const lease = issue.lease;
       activeLeases.set(lease.lease_id, lease);
-
-      // Link to agent
       const agent = registeredAgents.get(agent_id)!;
       agent.lease_ids.push(lease.lease_id);
-
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({
-            status: "SEAL",
-            source: "arifOS",
-            lease_id: lease.lease_id,
-            agent_id,
-            scope: lease.scope,
-            max_action_class,
-            ttl_seconds: lease.ttl_seconds,
-            expires_at: new Date(lease.expires_at).toISOString(),
-          }, null, 2),
-        }],
-      };
-    }
-  );
-
-  // forge_lease_status
-  server.tool(
-    "forge_lease_status",
-    "Check current lease state, remaining TTL, and scope. Queries arifOS and falls back to local cache.",
-    {
-      lease_id: z.string().describe("Lease ID to query"),
-    },
-    async (args: any) => {
-      const { lease_id } = args;
-      try {
-        const inspect = await inspectLeaseViaKernel(lease_id);
-        const kernelLease = inspect?.lease ?? inspect?.result?.lease;
-        if (kernelLease) {
-          const lease = arifosLeaseToLocal(kernelLease);
-          activeLeases.set(lease_id, lease);
-          const remaining_s = Math.max(0, Math.floor((lease.expires_at - Date.now()) / 1000));
-          return {
-            content: [{
-              type: "text" as const,
-              text: JSON.stringify({
-                status: lease.revoked ? "REVOKED" : remaining_s === 0 ? "EXPIRED" : "ACTIVE",
-                source: "arifOS",
-                lease_id: lease.lease_id,
-                agent_id: lease.agent_id,
-                scope: lease.scope,
-                max_action_class: lease.max_action_class,
-                remaining_seconds: remaining_s,
-                revoked: lease.revoked,
-                expires_at: new Date(lease.expires_at).toISOString(),
-              }, null, 2),
-            }],
-          };
-        }
-      } catch (err) {
-        // fall through to local cache
-      }
-
-      const lease = activeLeases.get(lease_id);
-      if (!lease) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Lease '${lease_id}' not found in kernel or local cache` }, null, 2) }], isError: true };
-      }
-
-      const remaining_s = Math.max(0, Math.floor((lease.expires_at - Date.now()) / 1000));
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({
-            status: lease.revoked ? "REVOKED" : remaining_s === 0 ? "EXPIRED" : "ACTIVE",
-            source: "local_cache",
-            lease_id: lease.lease_id,
-            agent_id: lease.agent_id,
-            scope: lease.scope,
-            max_action_class: lease.max_action_class,
-            remaining_seconds: remaining_s,
-            revoked: lease.revoked,
-            expires_at: new Date(lease.expires_at).toISOString(),
-          }, null, 2),
-        }],
-      };
-    }
-  );
-
-  // forge_lease_revoke
-  server.tool(
-    "forge_lease_revoke",
-    "Revoke a lease early. F1 AMANAH: revocation is routed to arifOS; local cache is updated on success.",
-    {
-      lease_id: z.string().describe("Lease ID to revoke"),
-      agent_id: z.string().describe("Agent requesting revocation"),
-      reason: z.string().optional().describe("Reason for revocation"),
-    },
-    async (args: any) => {
-      const { lease_id, agent_id, reason, session_id } = args;
-      const revoke = await revokeLeaseViaKernel({ lease_id, agent_id, reason, session_id });
-      if (!revoke.ok) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", gate: "LEASE_REVOKE_FAILED", reason: revoke.reason }, null, 2) }], isError: true };
-      }
-
-      const lease = revoke.lease;
-      activeLeases.set(lease_id, lease);
-
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({ status: "REVOKED", source: "arifOS", lease_id, agent_id, reason: reason ?? "no reason given", revoked_at: new Date().toISOString() }, null, 2),
-        }],
-      };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", source: "arifOS", lease_id: lease.lease_id, agent_id, scope: lease.scope, max_action_class, ttl_seconds: lease.ttl_seconds, expires_at: new Date(lease.expires_at).toISOString() }, null, 2) }] };
     }
   );
 }
@@ -614,27 +476,11 @@ export function registerLeaseTools(server: McpServer): void {
 // ── 3. forge_registry_* — Tool Registry ─────────────────────────────────────
 
 export function registerRegistryTools(server: McpServer): void {
-  // forge_registry_status
   server.tool(
     "forge_registry_status",
     "Full A-FORGE tool registry: callable, blocked, degraded, and drift status for all registered tools.",
     {},
     async () => {
-      // Tool list is hardcoded since MCP SDK doesn't expose runtime tool enumeration
-      const tools = [
-        "arif_session_init", "arif_health_check", "arif_sense_observe", "arif_mind_reason",
-        "arif_heart_critique", "arif_judge_deliberate", "forge_pipeline",
-        "forge_filesystem_read", "forge_filesystem_write", "forge_filesystem_glob",
-        "forge_filesystem_grep", "forge_filesystem_stat",
-        "forge_git_status", "forge_git_diff", "forge_git_log", "forge_git_commit",
-        "forge_docker_ps", "forge_docker_logs", "forge_docker_exec", "forge_docker_images",
-        "forge_agent_register", "forge_agent_status", "forge_agent_list",
-        "forge_lease_request", "forge_lease_status", "forge_lease_revoke",
-        "forge_registry_status", "forge_shell_dryrun",
-        "forge_log_tail",
-        "forge_job_submit", "forge_job_status",
-      ];
-
       return {
         content: [{
           type: "text" as const,
@@ -642,10 +488,9 @@ export function registerRegistryTools(server: McpServer): void {
             status: "SEAL",
             service: "A-FORGE MCP",
             version: "0.1.0",
-            tool_count: tools.length,
-            tools: tools.sort(),
             registry_truth: "VERIFIED",
             authority_ceiling: "777_FORGE",
+            note: "Tool list is dynamic — use MCP tools/list for live count",
           }, null, 2),
         }],
       };
@@ -719,77 +564,43 @@ export function registerLogTools(server: McpServer): void {
   // NOTE: forge_log_tail REMOVED — use forge_journalctl with mode=tail (merged tool).
 }
 
-// ── 6. forge_job_* — Background Job System ─────────────────────────────────
+// ── 6. forge_job — Background Job System ─────────────────────────────────
 
 export function registerJobTools(server: McpServer): void {
-  // forge_job_submit
+  // forge_job — merged: submit, status
   server.tool(
-    "forge_job_submit",
-    "Submit a background job for asynchronous execution. Returns job_id for polling.",
+    "forge_job",
+    "Background job system. Modes: submit, status.",
     {
-      agent_id: z.string().describe("Registered agent ID submitting the job"),
-      tool: z.string().describe("Tool to execute (e.g. 'forge_filesystem_grep')"),
-      args: z.record(z.string(), z.any()).optional().describe("Arguments to pass to the tool"),
-      description: z.string().optional().describe("Human-readable job description"),
+      mode: z.enum(["submit", "status"]).describe("Job operation"),
+      job_id: z.string().optional().describe("Job ID (status mode)"),
+      agent_id: z.string().optional().describe("Agent ID (submit)"),
+      tool: z.string().optional().describe("Tool to execute (submit)"),
+      args: z.record(z.string(), z.any()).optional().describe("Tool arguments (submit)"),
+      description: z.string().optional().describe("Job description (submit)"),
     },
-    async ({ agent_id, tool, args, description }) => {
-      const job_id = randomUUID();
-      const job = {
-        job_id,
-        agent_id,
-        tool,
-        status: "queued" as const,
-        args: args ?? {},
-        description: description ?? tool,
-        created_at: new Date().toISOString(),
-      };
-      jobStore.set(job_id, job);
-
-      // Start async execution (simplified — runs in background)
+    async ({ mode, job_id, agent_id, tool, args, description }) => {
+      if (mode === "status") {
+        if (!job_id) return { content: [{ type: "text" as const, text: "job_id required for mode=status" }], isError: true };
+        const job = jobStore.get(job_id);
+        if (!job) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Job '${job_id}' not found` }, null, 2) }], isError: true };
+        return { content: [{ type: "text" as const, text: JSON.stringify(job, null, 2) }] };
+      }
+      // submit
+      if (!agent_id || !tool) return { content: [{ type: "text" as const, text: "agent_id and tool required for mode=submit" }], isError: true };
+      const job_id_new = randomUUID();
+      const job = { job_id: job_id_new, agent_id, tool, status: "queued" as const, args: args ?? {}, description: description ?? tool, created_at: new Date().toISOString() };
+      jobStore.set(job_id_new, job);
       setTimeout(async () => {
-        const j = jobStore.get(job_id);
+        const j = jobStore.get(job_id_new);
         if (!j) return;
         j.status = "running";
         try {
-          // For now, just execute as a shell command placeholder
-          const output = execSync(`echo "Job ${job_id} for ${tool} completed."`, { encoding: "utf-8", timeout: 30000 });
-          j.status = "completed";
-          j.result = output;
-          j.completed_at = new Date().toISOString();
-        } catch (err: any) {
-          j.status = "failed";
-          j.error = err.message;
-          j.completed_at = new Date().toISOString();
-        }
+          const output = execSync(`echo "Job ${job_id_new} for ${tool} completed."`, { encoding: "utf-8", timeout: 30000 });
+          j.status = "completed"; j.result = output; j.completed_at = new Date().toISOString();
+        } catch (err: any) { j.status = "failed"; j.error = err.message; j.completed_at = new Date().toISOString(); }
       }, 100);
-
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({ status: "SEAL", job_id, tool, agent_id, queued_at: job.created_at }, null, 2),
-        }],
-      };
-    }
-  );
-
-  // forge_job_status
-  server.tool(
-    "forge_job_status",
-    "Check the status and result of a submitted job.",
-    {
-      job_id: z.string().describe("Job ID returned by forge_job_submit"),
-    },
-    async ({ job_id }) => {
-      const job = jobStore.get(job_id);
-      if (!job) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Job '${job_id}' not found` }, null, 2) }], isError: true };
-      }
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify(job, null, 2),
-        }],
-      };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", job_id: job_id_new, tool, agent_id, queued_at: job.created_at }, null, 2) }] };
     }
   );
 }
