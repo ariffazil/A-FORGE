@@ -49,10 +49,28 @@ def make_error(id, code: int, message: str):
     return json.dumps({"jsonrpc": "2.0", "id": id, "error": {"code": code, "message": message}})
 
 def main():
+    if not os.path.exists(TOKEN_FILE):
+        log("INIT", "hostinger-gate", "TOKEN_MISSING",
+            f"{TOKEN_FILE} not found. Hostinger MCP gate is disabled. Create the token file or set HOSTINGER_API_TOKEN to enable.")
+        for line in sys.stdin:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                req = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            rid = req.get("id", 0)
+            sys.stdout.write(make_error(rid, -32000,
+                "HOSTINGER_API_TOKEN missing: create /root/.secrets/tokens/hostinger_api_token or set HOSTINGER_API_TOKEN env var."))
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+        return
+
     token = open(TOKEN_FILE).read().strip()
     env = os.environ.copy()
     env["HOSTINGER_API_TOKEN"] = token
-    
+
     for line in sys.stdin:
         line = line.strip()
         if not line:

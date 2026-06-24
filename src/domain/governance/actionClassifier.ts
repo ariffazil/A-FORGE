@@ -57,12 +57,8 @@ const IRREVERSIBLE_TOOLS = new Set([
   "arif_forge_execute",
   "docker_container_remove",
   "docker_volume_remove",
-  "systemctl_stop",
-  "systemctl_restart",
   "git_push_force",
   "git_hard_reset",
-  "hostinger_vps_restart",
-  "hostinger_vps_stop",
   "forge_github_create_or_update_file",
   "forge_github_create_pull_request",
 ]);
@@ -84,16 +80,10 @@ const HIGH_IMPACT_TOOLS = new Set([
 
 // Tools that execute reversible operations
 const REVERSIBLE_EXEC_TOOLS = new Set([
-  "write",
-  "edit",
-  "bash",
-  "arif_systemctl",
-  "arif_sudo",
-  "arif_run",
   "forge_docker_exec",
   "forge_remember",
-  "request_amanah_lock",
-  "release_amanah_lock",
+  "forge_lock_acquire",
+  "forge_lock_release",
   "forge_well_anchor",
   "forge_agent_register",   // identity mutation — requires session
   "forge_job_submit",       // async job submission — requires session
@@ -148,6 +138,15 @@ const OBSERVE_TOOLS = new Set([
   "forge_docker_ps",          // docker ps — read-only
   "forge_docker_images",      // docker images — read-only
   "forge_docker_logs",        // docker logs — read-only
+  "forge_docker_inspect",     // docker inspect — read-only
+  "forge_docker_stats",       // docker stats — read-only
+  "forge_systemctl_status",   // systemd status — read-only
+  "forge_systemctl_is_active", // systemd is-active — read-only
+  "forge_systemctl_list_units", // systemd list-units — read-only
+  "forge_journalctl_logs",    // journal read — read-only
+  "forge_journalctl_errors",  // journal errors — read-only
+  "forge_journalctl_tail",    // journal tail — read-only
+  "forge_journalctl_grep",    // journal grep — read-only
   "forge_postgres_schema",    // schema read — read-only
   "forge_search",             // web search — read-only
   "forge_minimax_search",     // web search — read-only
