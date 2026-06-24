@@ -1,8 +1,8 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-06-22 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
+last_verified: 2026-06-24 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
 valid_from: 2026-06-14
-valid_until: 2026-07-22
+valid_until: 2026-07-24
 confidence: high
 scope: /root/A-FORGE
 epistemic_status: SOURCE_OF_TRUTH
@@ -16,6 +16,8 @@ epistemic_status: SOURCE_OF_TRUTH
 > 3. Read this file (Repo-Specific Build/Test/Run rules)
 
 > **DITEMPA BUKAN DIBERI** — Execution is forged, not given.
+
+**999_SEAL Reference (AF-2026-06-23-001-SEAL-001):** KERNEL INIT REPORT + brain/hands + narrow-to-canonical harden cycle sealed in forge_work/AF-2026-06-23-001-Tiered-Agent-Orchestration.md and BRAIN_HANDS_MCP_MAPPING.md. See ARCHITECTURE.md for narrow layer details.
 >
 > **Execution Intelligence / Forge Engine** — A-FORGE orchestrates and executes within bounded tools. It does NOT adjudicate, SEAL, or issue constitutional verdicts.
 
@@ -28,7 +30,7 @@ The governed execution shell of the arifOS Federation. A-FORGE builds, deploys, 
 - **stdio:** `npm run mcp:stdio` — **preferred agent ingress** (Kimi, Claude Code, etc.)
 - **Runtime:** Node.js 22+, TypeScript ~6.0
 - **Architecture:** Hexagonal / layered (domain → application → infrastructure → interfaces)
-- **Tool surface:** 77 forge tools under `forge_*` namespace
+- **Tool surface:** `forge_*` namespace tools
 
 ### Repository Structure
 
@@ -49,22 +51,34 @@ A-FORGE/
 
 A-FORGE is a **governed execution shell**, not a domain organ.
 
+**BRAIN / HANDS CONSTITUTIONAL SEPARATION (BINDING)**
+
+- **arifOS MCP (8088)** = Brain / Governor / Judge: owns floors (L01–L13), final verdicts (`SEAL`/`HOLD_888`/`VOID`/`SABAR`), INIT→JUDGE→SEAL contract, VAULT999, memory routing.
+- **A-FORGE MCP (7072 + stdio)** = Hands / Actuator / Forger: owns `forge_*` execution (77+ tools), leases, proxies, build/deploy/run/shell/browser. **Never** issues constitutional verdicts or self-authorizes.
+
+Every agent must respect the loop:
+1. arifOS (`arif_init`, `arif_think`, `arif_critique`, `arif_judge`).
+2. A-FORGE only after lease (`forge_lease_request` + scope) for execution.
+3. arifOS (`arif_judge` + `arif_seal`) to close.
+
+A-FORGE **routes** judgment back to arifOS. Parallelism and rich proxies are allowed only inside lease boundaries.
+
 | Boundary | Rule |
 |----------|------|
 | ✅ Routes intent | arifOS / GEOX / WEALTH / WELL MCP servers via A2A |
-| ✅ Orchestrates | Retries, escalation, tool chaining |
-| ✅ Forges | Build, deploy, artifact execution under governance |
+| ✅ Orchestrates | Retries, escalation, tool chaining **under lease** |
+| ✅ Forges | Build, deploy, artifact execution **after constitutional clearance** |
 | ❌ NEVER geoscience | Vsh, PHIE, Sw, porosity — GEOX only |
 | ❌ NEVER economics | NPV, IRR, capital allocation — WEALTH only |
-| ❌ NEVER verdicts | SEAL, VOID, HOLD — arifOS only |
-| ❌ NEVER NumPy/Pandas | Authoritative logic lives in Python MCP organs |
+| ❌ NEVER verdicts | SEAL, VOID, HOLD, SABAR — arifOS only |
+| ❌ NEVER self-authorize | No execution without valid lease + prior judge path |
 
-**Rule:** If your code needs NumPy / reservoir physics → wrong layer.
+**Rule:** If your code needs NumPy / reservoir physics → wrong layer. If an execution path bypasses arifOS judgment for high-risk action → constitutional violation (888_HOLD).
 
 ## Allowed Actions
 
 - Read, explore, code, test, refactor in A-FORGE boundary
-- Run forge_plan, forge_dry_run, forge_execute under governance
+- Run forge_dry_run, forge_approve, forge_execute under governance
 - Orchestrate cross-organ work via A2A mesh
 
 ## Forbidden Actions

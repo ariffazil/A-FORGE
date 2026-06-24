@@ -9,10 +9,10 @@
 
 	# arifOS MCP governance kernel
 	handle /mcp {
-		reverse_proxy arifos-mcp:8080
+		reverse_proxy arifos-mcp:8088  # updated stale (arifOS MCP)
 	}
 	handle /arifos/* {
-		reverse_proxy arifos-mcp:8080
+		reverse_proxy arifos-mcp:8088  # updated stale (arifOS MCP)
 	}
 
 	# AF FORGE bridge server — operator, sense, metrics, human escalation
@@ -48,7 +48,7 @@ mcp.arif-fazil.com {
 
 	# arifOS MCP
 	handle_path /arifos/* {
-		reverse_proxy arifos-mcp:8080
+		reverse_proxy arifos-mcp:8088  # updated stale (arifOS MCP)
 	}
 
 	# GEOX MCP
@@ -58,7 +58,7 @@ mcp.arif-fazil.com {
 
 	# Root MCP endpoint → arifOS MCP (default)
 	handle /* {
-		reverse_proxy arifos-mcp:8080
+		reverse_proxy arifos-mcp:8088  # updated stale (arifOS MCP)
 	}
 
 	# Auto TLS via Let's Encrypt
