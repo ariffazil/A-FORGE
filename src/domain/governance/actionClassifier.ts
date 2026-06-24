@@ -112,6 +112,10 @@ const OBSERVE_TOOLS = new Set([
   "forge_lock_release",
 ]);
 
+// Suggest and queue tools (currently none registered — placeholder for future)
+const SUGGEST_TOOLS = new Set<string>();
+const QUEUE_TOOLS = new Set<string>();
+
 /**
  * Classify a tool name into one of 7 action classes.
  *

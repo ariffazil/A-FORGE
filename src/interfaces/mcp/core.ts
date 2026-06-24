@@ -13,6 +13,8 @@
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { z } from "zod";
 
 import { checkWitness } from "../../domain/governance/f3Witness.js";
@@ -829,28 +831,39 @@ server.registerTool("forge_vault", {
 // Routes to WEALTH MCP (port 18082) for all capital intelligence.
 server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: emv, conservation, flow, runway, wisdom.", {
   mode: z.enum(["emv", "conservation", "flow", "runway", "wisdom"]).describe("WEALTH tool to invoke"),
-  outcomes: z.array(z.number()).optional().describe("EMV outcomes"),
-  probabilities: z.array(z.number()).optional().describe("EMV probabilities"),
+  outcomes: z.array(z.number()).optional().describe("outcomes"),
+  probabilities: z.array(z.number()).optional().describe("probabilities"),
   assets: z.array(z.record(z.string(), z.unknown())).optional().describe("Conservation assets"),
   liabilities: z.array(z.record(z.string(), z.unknown())).optional().describe("Conservation liabilities"),
   proposal: z.string().optional().describe("Wisdom proposal"),
 }, async (args) => {
+  const toolMap: Record<string, string> = {
+    emv: "wealth_compute_emv",
+    conservation: "wealth_conservation_check",
+    flow: "wealth_flow_check",
+    runway: "wealth_runway_check",
+    wisdom: "wealth_wisdom_evaluate",
+  };
+  const toolName = toolMap[args.mode];
+  const toolArgs: Record<string, unknown> = {};
+  if (args.mode === "emv") { toolArgs.outcomes = args.outcomes; toolArgs.probabilities = args.probabilities; }
+  if (args.mode === "conservation") { toolArgs.assets = args.assets; toolArgs.liabilities = args.liabilities; }
+  if (args.mode === "flow") { toolArgs.income = args.assets; toolArgs.expenses = args.liabilities; }
+  if (args.mode === "runway") { toolArgs.liquid_assets = (args.assets?.[0] as Record<string, unknown>)?.value; toolArgs.monthly_burn = (args.liabilities?.[0] as Record<string, unknown>)?.value; }
+  if (args.mode === "wisdom") { toolArgs.proposal = args.proposal; }
+
+  const laneUrl = process.env.WEALTH_TRUTH_LANE_URL || "http://localhost:18082";
+  let transport: StreamableHTTPClientTransport | undefined;
   try {
-    const toolMap: Record<string, string> = {
-      emv: "wealth_compute_emv",
-      conservation: "wealth_conservation_check",
-      flow: "wealth_flow_check",
-      runway: "wealth_runway_check",
-      wisdom: "wealth_wisdom_evaluate",
-    };
-    const toolName = toolMap[args.mode];
-    const toolArgs: Record<string, unknown> = {};
-    if (args.mode === "emv") { toolArgs.outcomes = args.outcomes; toolArgs.probabilities = args.probabilities; }
-    if (args.mode === "conservation") { toolArgs.assets = args.assets; toolArgs.liabilities = args.liabilities; }
-    if (args.mode === "wisdom") { toolArgs.proposal = args.proposal; }
-    const result = await callMCP(`wealth.${toolName}`, toolArgs);
-    return { content: [{ type: "text" as const, text: resultAsJson(result) }] };
+    const client = new Client({ name: "A-FORGE-forge-wealth", version: "0.1.0" }, { capabilities: {} });
+    transport = new StreamableHTTPClientTransport(new URL(`${laneUrl.replace(/\/$/, "")}/mcp`));
+    await client.connect(transport);
+    const result = await client.callTool({ name: toolName, arguments: toolArgs });
+    const text = Array.isArray(result.content) && typeof result.content[0]?.text === "string" ? result.content[0].text : JSON.stringify(result);
+    await transport.close();
+    return { content: [{ type: "text" as const, text: resultAsJson(text) }] };
   } catch (err) {
+    if (transport) { try { await transport.close(); } catch { /* best effort */ } }
     const msg = err instanceof Error ? err.message : String(err);
     return { content: [{ type: "text" as const, text: `WEALTH routing error: ${msg}` }], isError: true };
   }
