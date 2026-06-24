@@ -224,7 +224,7 @@ Key removals:
 ### Issues found during delta audit
 1. **`forge_well` doctrine violation (FIXED)** — Read `/root/A-FORGE/WELL/state.json` locally and computed `OPTIMAL/FUNCTIONAL/DEGRADED/LOW_CAPACITY` verdicts in A-FORGE. Also broken in production because `process.cwd()` is `/root/A-FORGE`, not `/root`. Replaced with streamable-http MCP routing to WELL organ (`well_assess_homeostasis` / `well_validate_vitality` / `well_guard_dignity`).
 2. **`forge://well/state` resource doctrine violation (FIXED)** — Read local `state.json` directly. Replaced with WELL organ call.
-3. **Telemetry EROFS under systemd** — `telemetry.ts` writes to `~/.agent-workbench/mcp-audit.jsonl`, but `a-forge-mcp.service` has `ProtectHome=read-only`. This blocks all telemetry-wrapped tools in production. **Needs separate fix.**
+3. **Telemetry EROFS under systemd (FIXED)** — `telemetry.ts` writes to `~/.agent-workbench/mcp-audit.jsonl`, but `a-forge-mcp.service` had `ProtectHome=read-only`. Added `Environment=AF_FORGE_AUDIT_PATH=/root/A-FORGE/data/mcp-audit.jsonl` to `/etc/systemd/system/a-forge-mcp.service`, reloaded, and restarted. `forge_well` now returns WELL organ output in production.
 4. **`callMCP()` REST bridge still broken** — Uses `/tools/<tool>` on FastMCP organs. Only `forge_wealth` and `forge_well` were fixed in this pass; other `callMCP` consumers (AgentEngine, PipelineCoordinator, etc.) will still 404 against WEALTH/WELL/GEOX.
 
 ---
@@ -238,7 +238,7 @@ Key removals:
 5. **Fix AGI gate dangerous-pattern hold gap** — `rm -rf /` must return HOLD/VOID.
 6. **Stabilize `arif_mind_reason`** — structured-output timeout.
 7. **Decide APEX removal** — still probed as down; formally decommission or remove from probe list.
-8. **Fix A-FORGE telemetry EROFS** — move `~/.agent-workbench/mcp-audit.jsonl` to `/root/A-FORGE/data` or add `ReadWritePaths`.
+8. ~~Fix A-FORGE telemetry EROFS~~ — **FIXED** during redeploy: set `AF_FORGE_AUDIT_PATH=/root/A-FORGE/data/mcp-audit.jsonl` in `a-forge-mcp.service`.
 9. **Rename operational `"SEAL"` status strings** in `forge_agent`/`forge_lease`/`forge_job` to avoid confusion with VAULT999 SEAL verdicts.
 
 ---
