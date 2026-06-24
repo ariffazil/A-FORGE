@@ -98,12 +98,12 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "request_amanah_lock",
   "release_amanah_lock",
   "forge_well_anchor",
-  "forge_shell_dryrun",
 ]);
 
 // Tools that should always be simulated first
 const SIMULATE_FIRST_TOOLS = new Set([
   "forge_dry_run",
+  "forge_shell_dryrun",
   "geox_prospect_evaluate",
   "geox_seismic_compute",
 ]);

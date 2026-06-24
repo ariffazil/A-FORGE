@@ -306,6 +306,11 @@ export async function handleForgeBrowserNavigate(args: any) {
   try {
     const res = (await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_navigate", { url })) as any;
     const text = typeof res === "string" ? res : res?.content?.[0]?.text ?? "";
+    // Fail-closed: check if response contains error indicators
+    const isError = text.includes("Error:") || text.includes("error:") || text.includes("Target page, context or browser has been closed");
+    if (isError) {
+      return gatewayError(request_id, `browser_navigate failed: ${text.slice(0, 300)}`, { tool: "forge_browser_navigate", url });
+    }
     const receipt_id = await recordReceipt({ tool: "forge_browser_navigate", url, task_context: task_context?.task, page_origin: page_context?.origin_domain });
     return {
       content: [{
