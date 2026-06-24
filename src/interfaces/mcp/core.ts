@@ -903,17 +903,10 @@ server.tool("forge_journalctl", "Query systemd journal logs (read-only, PII-reda
 // ── WELL Tools (Tier 03 — Human Substrate) ───────────────────────────────────
 // Merged: forge_well — single tool with mode parameter
 // Replaces: forge_well_state_read, forge_well_readiness_check, forge_well_floor_scan, forge_well_anchor
-
-async function readWellState(): Promise<any> {
-  const { readFile } = await import("node:fs/promises");
-  const { resolve } = await import("node:path");
-  const statePath = resolve(process.cwd(), "WELL", "state.json");
-  try { return JSON.parse(await readFile(statePath, "utf-8")); }
-  catch { return { ok: false, well_score: 50, verdict: "UNKNOWN", bandwidth: "NORMAL", floors_violated: [], metrics: {} }; }
-}
+// Doctrine: A-FORGE does NOT compute human readiness. It routes to WELL organ.
 
 server.registerTool("forge_well", {
-  description: "WELL human readiness primitive. Modes: state, readiness, floors, anchor.",
+  description: "WELL human readiness primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors, anchor.",
   inputSchema: z.object({
     mode: z.enum(["state", "readiness", "floors", "anchor"]).default("state"),
     sessionId: z.string().optional().describe("Session ID (anchor mode)"),
@@ -923,35 +916,44 @@ server.registerTool("forge_well", {
   const startedAt = Date.now();
   await telemetryInvoke(`forge_well:${mode}`);
   return runStage(mode === "anchor" ? "999_VAULT" as MetabolicStage : "111_SENSE" as MetabolicStage, async () => {
+    const toolMap: Record<string, string> = {
+      state: "well_assess_homeostasis",
+      readiness: "well_validate_vitality",
+      floors: "well_guard_dignity",
+      anchor: "well_assess_homeostasis",
+    };
+    const toolName = toolMap[mode];
+    const toolArgs: Record<string, unknown> = { mode: "sleep", subject: "operator" };
+    if (mode === "readiness") { toolArgs.mode = "readiness"; }
+    if (mode === "floors") { toolArgs.mode = "consent"; }
+    if (mode === "anchor") { toolArgs.mode = "sleep"; }
+
+    const laneUrl = process.env.WELL_TRUTH_LANE_URL || "http://localhost:18083";
+    let transport: StreamableHTTPClientTransport | undefined;
     try {
-      const state = await readWellState();
-      let result: any;
-      if (mode === "state") {
-        result = state;
-      } else if (mode === "readiness") {
-        const score = state.well_score ?? 50;
-        const violations = state.floors_violated ?? [];
-        let verdict: string, bandwidth: string;
-        if (violations.length > 0) { verdict = "DEGRADED"; bandwidth = "RESTRICTED"; }
-        else if (score >= 80) { verdict = "OPTIMAL"; bandwidth = "FULL"; }
-        else if (score >= 60) { verdict = "FUNCTIONAL"; bandwidth = "NORMAL"; }
-        else { verdict = "LOW_CAPACITY"; bandwidth = "REDUCED"; }
-        result = { verdict, well_score: score, bandwidth, violations, timestamp: state.timestamp };
-      } else if (mode === "floors") {
-        result = { floors_violated: state.floors_violated ?? [], metrics: state.metrics ?? {}, health_score: state.well_score ?? 0 };
-      } else if (mode === "anchor") {
+      const client = new Client({ name: "A-FORGE-forge-well", version: "0.1.0" }, { capabilities: {} });
+      transport = new StreamableHTTPClientTransport(new URL(`${laneUrl.replace(/\/$/, "")}/mcp`));
+      await client.connect(transport);
+      const upstreamResult = await client.callTool({ name: toolName, arguments: toolArgs });
+      await transport.close();
+
+      const text = Array.isArray(upstreamResult.content) && typeof upstreamResult.content[0]?.text === "string"
+        ? upstreamResult.content[0].text
+        : JSON.stringify(upstreamResult);
+
+      if (mode === "anchor") {
         const sbClient = new SupabaseVaultClient();
         await sbClient.write({
           name: `well_anchor_${sessionId ?? "unanchored"}`,
           category: "well",
-          value: JSON.stringify(state),
+          value: text,
           metadata: { agentId: agentId ?? "A-FORGE", sessionId: sessionId ?? "UNANCHORED", anchored_at: new Date().toISOString() },
         });
-        result = { status: "anchored", well_score: state.well_score, bandwidth: state.bandwidth ?? "NORMAL" };
       }
       await telemetrySuccess(`forge_well:${mode}`, startedAt);
-      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+      return { content: [{ type: "text" as const, text: resultAsJson(text) }] };
     } catch (err) {
+      if (transport) { try { await transport.close(); } catch { /* best effort */ } }
       await telemetryFailure(`forge_well:${mode}`, startedAt, err);
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
     }

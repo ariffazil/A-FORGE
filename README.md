@@ -27,7 +27,7 @@
 [![Federation](https://img.shields.io/badge/federation-arifOS-8B5CF6)](https://github.com/ariffazil/arifos)
 [![Systemd](https://img.shields.io/badge/systemd-A--FORGE.service-orange)](deploy/systemd/A-FORGE.service)
 [![Tests](https://img.shields.io/badge/tests-26%20suites-success)](test/)
-[![Tools](https://img.shields.io/badge/discovered-62%2B%20tools-8B5CF6)](docs/)
+[![Tools](https://img.shields.io/badge/primitives-40%20load--bearing-8B5CF6)](docs/)
 
 ---
 
@@ -73,7 +73,7 @@ A-FORGE is the **governed execution shell** of the arifOS Federation — one of 
       ┌──────────────────│      A-FORGE (execute)     │──────────────────┐
       │                  │  Port 7071 · Governed Shell │                  │
       │                  │  4-layer forge gate        │                  │
-      │                  │  62+ tools auto-discovered  │                  │
+       │                  │  40 load-bearing primitives  │                  │
       │                  │                             │                  │
       │                  │  "Do it, safely, with       │                  │
       │                  │         evidence."          │                  │
@@ -103,7 +103,7 @@ A-FORGE is the **governed execution shell** of the arifOS Federation — one of 
 | Domain | Description |
 |--------|-------------|
 | **Execution body** | Receives `JUDGE_SEAL_AUTHORIZATION` from arifOS, then gates and runs the plan |
-| **MCP federation bridge** | Auto-discovers 62+ tools across 5 MCP surfaces on startup (7 federation organs total) |
+| **MCP federation bridge** | 40 load-bearing primitives across 5 MCP surfaces (7 federation organs total) |
 | **Constitutional gatekeeper** | 4-layer forge gate inline on every execution path |
 | **Telemetry producer** | Every execution → Prometheus + Supabase + VAULT999 + Langfuse |
 | **Orchestration engine** | Routes intents, retries failures, handles escalation |
@@ -150,7 +150,7 @@ curl -s http://127.0.0.1:7071/api/federation-probe | python3 -m json.tool
 
 # Run the terminal forge (streaming LLM interface)
 npm run terminal
-# → ◬ A-FORGE Terminal Forge · 62+ tools available · type /help
+# → ◬ A-FORGE Terminal Forge · 40 primitives available · type /help
 ```
 
 **Prerequisites:**
@@ -278,7 +278,7 @@ Every execution path in A-FORGE passes through four constitutional gates **in or
 | Capability | Implementation | Constitutional Gate |
 |------------|---------------|---------------------|
 | Intent routing | `IntentRouter.ts` — routes to correct organ (GEOX/WEALTH/WELL/arifOS) | Layer 2 + 3 |
-| MCP auto-discovery | Federation bridge probes 5 organs on startup → 62+ tools | Startup-only |
+| MCP auto-discovery | Federation bridge probes 5 organs on startup → 40 primitives | Startup-only |
 | Federation probe | `GET /api/federation-probe` — live organ status, latency, verdict | Read-only |
 | A2A protocol | `application/a2a/` — agent card, task routing, agent profiles | Layer 3 |
 | Cross-organ orchestration | `PipelineCoordinator.ts` — multi-step plans with retry | Layer 2 + 3 |
@@ -689,6 +689,32 @@ AGPL-3.0 was chosen deliberately. Governed execution is meaningless if the gover
 
 ---
 
+## Tool Collapse: 93→40 (v2026.06.24)
+
+> **A-FORGE does not maximize tool count. A-FORGE minimizes lawful primitives.**
+
+On 2026-06-24, A-FORGE collapsed from 93 registered tools to 40 load-bearing primitives. This was not a reduction in capability — it was an increase in clarity.
+
+### What happened
+
+| Category | Before | After | Method |
+|----------|--------|-------|--------|
+| **Stubs removed** | 12 | 0 | `arif_sense_observe` (fake SEAL), `arif_mind_reason` (broken LLM sampling), vault duplicates |
+| **WEALTH pretenders** | 8 | 1 | Replaced by `forge_wealth` router → WEALTH organ |
+| **Mode-gated merges** | 39 | 13 | filesystem, docker, git, github, browser, agent, lease, job, vault, well, systemctl, journalctl, netdata |
+| **Proxy duplicates** | 15 | 0 | MiniMax stdio, duplicate remember/recall, redundant search |
+| **Total** | **93** | **40** | Each remaining tool is load-bearing |
+
+### The doctrine
+
+Most AI systems accumulate tools. A-FORGE prunes them. The 7-tier action taxonomy (OBSERVE → ANALYZE → DRAFT → MUTATE → EXTERNAL_SIDE_EFFECT → IRREVERSIBLE → PROPOSE) classifies every remaining primitive. Each tool earns its place by being the only way to perform its action class.
+
+### Verification
+
+Full audit receipt: `forge_work/RSI-AGI-ASI-AUDIT-2026-06-24.md`
+
+---
+
 ## Known Limitations
 
 | Limitation | Status | Notes |
@@ -838,5 +864,5 @@ F13 SOVEREIGN: Muhammad Arif bin Fazil holds absolute veto over all execution pa
 
 <p align="center">
   <strong>DITEMPA BUKAN DIBERI — Forged, Not Given.</strong><br>
-  <sub>999 SEAL ALIVE · arifOS Federation · v2026.06.06-HEXAGON</sub>
+   <sub>999 SEAL ALIVE · arifOS Federation · v2026.06.24-TOOL-COLLAPSE</sub>
 </p>
