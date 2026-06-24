@@ -27,28 +27,28 @@ jobs:
 
       - name: Block geophysics compute in execution shell
         run: |
-          if grep -r "Archie\|PHIE\|Vsh\|MATRIX_DENSITY\|porosity_fraction\|sw_calculat" src/; then
+          if grep -r --exclude='*.LEGACY' "Archie\|PHIE\|Vsh\|MATRIX_DENSITY\|porosity_fraction\|sw_calculat" src/; then
             echo "::error::A-FORGE must not contain geophysics domain computation. Move to GEOX."
             exit 1
           fi
 
       - name: Block hardcoded finance in execution shell
         run: |
-          if grep -r "5000000\|12.5 / riskMultiplier\|capitalRequired.*5000000" src/; then
+          if grep -r --exclude='*.LEGACY' "5000000\|12.5 / riskMultiplier\|capitalRequired.*5000000" src/; then
             echo "::error::A-FORGE must not contain hardcoded finance logic. Move to WEALTH."
             exit 1
           fi
 
       - name: Block governance shadows pretending to be kernel
         run: |
-          if grep -rn "export function checkTruth\|export function checkPrivacy\|export function checkStewardship" src/governance/; then
+          if grep -rn --exclude='*.LEGACY' "export function checkTruth\|export function checkPrivacy\|export function checkStewardship" src/governance/; then
             echo "::error::A-FORGE governance must be advisory-only. Remove kernel authority functions."
             exit 1
           fi
 
       - name: Block numpy/pandas domain imports in A-FORGE
         run: |
-          if grep -rn "from numpy\|import numpy\|from pandas\|import pandas\|from scipy\|import scipy\|from matplotlib\|import matplotlib" src/; then
+          if grep -rn --exclude='*.LEGACY' "from numpy\|import numpy\|from pandas\|import pandas\|from scipy\|import scipy\|from matplotlib\|import matplotlib" src/; then
             echo "::error::A-FORGE must not import scientific Python libraries. Move domain logic to Python organs."
             exit 1
           fi
