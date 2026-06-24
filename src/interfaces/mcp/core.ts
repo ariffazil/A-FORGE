@@ -1124,21 +1124,31 @@ server.resource("forge://vault/categories", "forge://vault/categories", { mimeTy
 });
 
 server.resource("forge://well/state", "forge://well/state", { mimeType: "application/json" }, async () => {
-  const { readFile } = await import("node:fs/promises");
-  const { resolve } = await import("node:path");
-  const statePath = resolve(process.cwd(), "WELL", "state.json");
-  let state: any;
+  const laneUrl = process.env.WELL_TRUTH_LANE_URL || "http://localhost:18083";
+  let transport: StreamableHTTPClientTransport | undefined;
   try {
-    const data = await readFile(statePath, "utf-8");
-    state = JSON.parse(data);
-  } catch {
-    state = { ok: false, well_score: 50, verdict: "UNKNOWN", bandwidth: "NORMAL", floors_violated: [], message: "WELL telemetry offline" };
+    const client = new Client({ name: "A-FORGE-well-resource", version: "0.1.0" }, { capabilities: {} });
+    transport = new StreamableHTTPClientTransport(new URL(`${laneUrl.replace(/\/$/, "")}/mcp`));
+    await client.connect(transport);
+    const result = await client.callTool({ name: "well_assess_homeostasis", arguments: { mode: "sleep", subject: "operator" } });
+    await transport.close();
+    const text = Array.isArray(result.content) && typeof result.content[0]?.text === "string" ? result.content[0].text : JSON.stringify(result);
+    return {
+      contents: [{
+        uri: "forge://well/state",
+        mimeType: "application/json",
+        text: resultAsJson(text),
+      }]
+    };
+  } catch (err) {
+    if (transport) { try { await transport.close(); } catch { /* best effort */ } }
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      contents: [{
+        uri: "forge://well/state",
+        mimeType: "application/json",
+        text: JSON.stringify({ ok: false, error: msg }, null, 2),
+      }]
+    };
   }
-  return {
-    contents: [{
-      uri: "forge://well/state",
-      mimeType: "application/json",
-      text: JSON.stringify(state, null, 2)
-    }]
-  };
 });
