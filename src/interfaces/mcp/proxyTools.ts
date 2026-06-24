@@ -24,6 +24,11 @@
  * F9 ANTI-HANTU: Pure tool wrappers. No claims about what the tool "understands".
  * F11 AUTH: git push --force and docker destructive ops require 888_HOLD.
  *
+ * One Skill + One Tool (constitutional law): 
+ * - Knowing What NOT To Do (restraint flags drive HOLD/ASK/REFUSE)
+ * - Verdict Loop With Memory (verdict_geometry.trace_id required for non-observe)
+ * All proxy tools must respect the pair. No execution without it.
+ *
  * DITEMPA BUKAN DIBERI — Forged, Not Given
  */
 

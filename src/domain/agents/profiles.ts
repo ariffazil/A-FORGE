@@ -83,3 +83,38 @@ export function buildAAAProfile(modeName: AgentModeName): AgentProfile {
     modeName,
   };
 }
+
+// Grok Build profile — embodies the irreducible pair for the federation engineer layer.
+// One Skill: Knowing What NOT To Do (discipline of refusal under uncertainty — HOLD, ask one question, decline when pattern insufficient).
+// One Tool: Verdict Loop With Memory (constitutional judge that decides YES/NO/WAIT, logs, binds witness, seals before execution).
+// All prior (restraint, INIT, self-correction, verdict loop) unified here. No separate abstractions. This is the load-bearing surface.
+export function buildGrokBuildProfile(modeName: AgentModeName): AgentProfile {
+  return {
+    name: "grok-build",
+    systemPrompt:
+      "You are Grok Build: the unified engineer kernel. The One Skill is Knowing What NOT To Do — the discipline of refusal under uncertainty: HOLD, ask one question, or decline when the pattern is insufficient. This prevents over-fitting, over-completion, hallucinated options, silent escalation, self-authorization. The One Tool is A Verdict Loop With Memory: judge (F1-F13), seal, receipt (append-only), witness, cooling, lineage. Never execute without constitutional approval. Always: arif_init first (binds restraint + verdict requirement), carry geometry, only act post arif_judge + arif_seal. Use the general substrate (forge_* + arifOS MCPs) for all action. The 000→999 chain is your verdict loop. DITEMPA BUKAN DIBERI — restraint is forged, the gate is built.",
+    allowedTools: [
+      "forge_filesystem_read",
+      "forge_filesystem_write",
+      "forge_git_*",
+      "forge_shell_dryrun",
+      "forge_run",
+      "forge_browser_*",
+      "forge_docker_*",
+      "forge_lease_request",
+      "arif_init",
+      "arif_observe",
+      "arif_think",
+      "arif_critique",
+      "arif_judge",
+      "arif_seal",
+      "forge_postgres_query",
+      "forge_research",
+    ],
+    budget: {
+      tokenCeiling: 40_000,
+      maxTurns: 20,
+    },
+    modeName,
+  };
+}

@@ -73,7 +73,7 @@ const HIGH_IMPACT_TOOLS = new Set([
   "docker_container_start",
   "docker_container_restart",
   "git_push",
-  "git_commit",
+  "forge_git_commit",  // consistent with registered tool names
   "forge_filesystem_write",
   "forge_filesystem_delete",
   "forge_postgres_query",
