@@ -26,6 +26,32 @@ Chaos removed. Flow hardened. Narrow = encoder/metabolizer accelerators only. Ge
 arifOS MCP = Law + Judgment + Memory + Truth. Decides lawful and seals.  
 A-FORGE MCP = Hands under law. Does the permitted work via leases.
 
+---
+
+## AGI vs ASI: One Skill + One Tool (Session Eureka — Forged into Contract)
+
+From constitutional eureka (this session):
+
+- **AGI** (human-grade generalist, autonomous self-teaching across domains):
+  - **One skill**: Instrumental reasoning under uncertainty (form goals, hypothesize, plan, act/experiment via substrate, observe, update beliefs, replan; evidence tiers, uncertainty declared).
+  - **One tool**: General tool-use substrate (code + APIs + environment control). Code is universal adapter; lets AGI bootstrap domain tools. Realized by A-FORGE `forge_*` (shell, fs, docker, browser, postgres, proxies) + leases + containment sandbox under arifOS judgment.
+
+- **ASI** (surpasses human across cognitive dimensions + runaway self-upgrade):
+  - **One skill**: Recursive self-improvement (model, critique, and iteratively improve its own algorithms, representations, goals, search operators).
+  - **One tool**: Self-modification + world-simulation substrate (rewrite own code/arch, spawn/manage self variants, run rich sims/world-models to evaluate before real deployment).
+
+**Brain / Hands mapping (non-negotiable):**
+- arifOS (BRAIN) = AGI skill surface (metabolic_loop 000_PERCEIVE→444_PROPOSE→777_EVALUATE→888→999_SEAL, mind_reason 333_MIND, uncertainty_gate, arif_think/arif_observe) + **ASI firewall** (self_mod_lock + classify_cognitive_tier + L01-L13 + F13 gate). Never delegates final judgment.
+- A-FORGE (HANDS) = AGI tool substrate (general execution for instrumental acts) + **gated simulation** (for hypothesis testing / planning). World-sim for external goals is AGI-grade. Self-mod or "sims to improve self" is ASI-grade → full BRAIN roundtrip + F13.
+- Crossing into ASI_TIER (self-rewrite intent, recursive capability loops) requires explicit F11/F13 unlock + 888_HOLD. 888_HOLD_CHECK: any design granting both without hard human veto is "ASI-capable" even if labeled AGI.
+
+**Enforcement today:**
+- `arifosmcp/runtime/self_mod_lock.py` (classify_cognitive_tier + is_self_modification_attempt) → judge HOLD.
+- A-FORGE `FloorEnforcer`, `leaseKernel`, `ExecutionSandbox` (verdict-derived policy), mcpFloorEnforcer.
+- BRAIN_HANDS flow: arif_init (arifOS) → arif_* reasoning (arifOS) → forge_lease (A-FORGE, standard for AGI) → forge_exec → arif_judge + arif_seal (arifOS).
+
+**Iron rule:** AGI substrate is the default safe path for all agents. ASI substrate is sovereign-incubator only. DITEMPA BUKAN DIBERI.
+
 ## Mandatory Agent Flow (Brain → Hands → Seal)
 
 1. Bootstrap: arifOS `arif_init` (geometry declaration, session bind).

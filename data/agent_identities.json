@@ -152,5 +152,24 @@
     "registered_at": "2026-06-23T05:26:50.208Z",
     "last_seen": "2026-06-23T05:26:50.208Z",
     "lease_ids": []
+  },
+  "audit-agent-01": {
+    "agent_id": "audit-agent-01",
+    "agent_type": "custom",
+    "role": "observer",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "pending",
+    "registered_at": "2026-06-24T01:19:13.889Z",
+    "last_seen": "2026-06-24T01:19:13.889Z",
+    "lease_ids": []
   }
 }
