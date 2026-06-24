@@ -54,10 +54,13 @@ export function classifyAction(toolName: string, args: Record<string, unknown>):
 
   // Executive / compute
   if (n.includes("forge_execute") || n.includes("execute")) return "EXECUTE";
-  if (n.includes("judge_deliberate") || n.includes("reason")) return "EXECUTE";
-  if (n.includes("heart_critique")) return "EXECUTE";
   if (n.includes("kernel_route")) return "EXECUTE";
   if (n.includes("thermodynamic")) return "EXECUTE";
+
+  // Reasoning / analysis — these are OBSERVE-class, not EXECUTE
+  if (n.includes("judge_deliberate") || n.includes("mind_reason")) return "READ";
+  if (n.includes("heart_critique")) return "READ";
+  if (n.includes("sense_observe")) return "READ";
 
   // Constitution / floor
   if (n.includes("floor") && (a.includes("change") || a.includes("mutate"))) return "CONSTITUTIONAL_FLOOR_CHANGE";

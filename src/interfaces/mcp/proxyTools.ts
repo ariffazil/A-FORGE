@@ -280,7 +280,7 @@ export function registerPostgresTools(server: McpServer): void {
 // ── 3. forge_memory_* ──────────────────────────────────────────────────────────
 
 export function registerMemoryTools(server: McpServer): void {
-  // forge_memory_recall
+  // forge_memory_recall — reads from VAULT999 local files (primary) + vault999-api (fallback)
   server.registerTool("forge_memory_recall", {
     description: "Search past sessions, sealed events, or codebase context from federation memory.",
     inputSchema: z.object({
@@ -288,39 +288,52 @@ export function registerMemoryTools(server: McpServer): void {
       limit: z.number().default(10).describe("Max results (default 10, max 50)"),
     }),
   }, async ({ query, limit }) => {
+    // Primary: search VAULT999 local JSONL files
     try {
-      const url = `http://127.0.0.1:8088/tools/arif_memory_recall`;
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, limit: Math.min(limit, 50), mode: "recall" }),
-      });
-      const data = await resp.json() as any;
-      return { content: [{ type: "text" as const, text: JSON.stringify(data.result ?? data, null, 2) }] };
-    } catch (err: any) {
-      // Fallback: try VAULT999 directly
-      try {
-        const result = execSync(
-          `ls -t /root/arifOS/VAULT999/*.jsonl 2>/dev/null | head -${Math.min(limit, 10)}`,
-          { encoding: "utf-8", timeout: 5000 }
-        );
-        const files = result.split("\n").filter(Boolean);
-        const entries = files.map(f => {
-          try {
-            const data = execSync(`tail -1 "${f}"`, { encoding: "utf-8", timeout: 3000 });
-            return { file: f, lastEntry: JSON.parse(data) };
-          } catch { return { file: f, lastEntry: null }; }
-        });
-        return { content: [{ type: "text" as const, text: JSON.stringify(entries, null, 2) }] };
-      } catch (fallbackErr: any) {
-        return { content: [{ type: "text" as const, text: `Error: ${err.message}. Fallback also failed: ${fallbackErr.message}` }], isError: true };
+      const safeLimit = Math.min(limit, 50);
+      const result = execSync(
+        `ls -t /root/arifOS/VAULT999/*.jsonl 2>/dev/null | head -${safeLimit}`,
+        { encoding: "utf-8", timeout: 5000 }
+      );
+      const files = result.split("\n").filter(Boolean);
+      const entries: Array<Record<string, unknown>> = [];
+      const queryLower = query.toLowerCase();
+      for (const f of files) {
+        try {
+          const content = execSync(`tail -20 "${f}"`, { encoding: "utf-8", timeout: 3000 });
+          const lines = content.split("\n").filter(Boolean);
+          for (const line of lines) {
+            try {
+              const entry = JSON.parse(line);
+              const entryStr = JSON.stringify(entry).toLowerCase();
+              if (queryLower === "*" || entryStr.includes(queryLower)) {
+                entries.push({ file: f, entry });
+                if (entries.length >= safeLimit) break;
+              }
+            } catch { /* skip malformed lines */ }
+          }
+          if (entries.length >= safeLimit) break;
+        } catch { /* skip unreadable files */ }
       }
+      if (entries.length > 0) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "ok", query, count: entries.length, results: entries }, null, 2) }] };
+      }
+      // Fallback: try vault999-api
+      try {
+        const resp = await fetch(`http://127.0.0.1:8100/api/vault/search?q=${encodeURIComponent(query)}&limit=${safeLimit}`, { signal: AbortSignal.timeout(5000) });
+        const data = await resp.json();
+        return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+      } catch {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "ok", query, count: 0, results: [], note: "No matches in VAULT999 local files; vault999-api unavailable" }, null, 2) }] };
+      }
+    } catch (err: any) {
+      return { content: [{ type: "text" as const, text: `Error: ${err.message}` }], isError: true };
     }
   });
 
-  // forge_memory_store
+  // forge_memory_store — writes to VAULT999 via vault999-writer (port 5001)
   server.registerTool("forge_memory_store", {
-    description: "Store a value in federation memory (VAULT999 + arifOS memory).",
+    description: "Store a value in federation memory (VAULT999).",
     inputSchema: z.object({
       key: z.string().describe("Memory key / identifier"),
       value: z.string().describe("Value to store (stringified JSON or text)"),
@@ -328,16 +341,26 @@ export function registerMemoryTools(server: McpServer): void {
     }),
   }, async ({ key, value, tier }) => {
     try {
-      const url = `http://127.0.0.1:8088/tools/arif_memory_recall`;
-      const resp = await fetch(url, {
+      const resp = await fetch("http://127.0.0.1:5001/api/vault/write", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "store", query: key, metadata: { value, tier }, actor_id: "FORGE-000Ω" }),
+        body: JSON.stringify({ name: key, category: tier, value, source: "forge_memory_store" }),
+        signal: AbortSignal.timeout(5000),
       });
-      const data = await resp.json() as any;
-      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "stored", key, tier, response: data.result ?? data }, null, 2) }] };
+      const data = await resp.json();
+      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "stored", key, tier, response: data }, null, 2) }] };
     } catch (err: any) {
-      return { content: [{ type: "text" as const, text: `Error: ${err.message}` }], isError: true };
+      // Fallback: write to local JSONL
+      try {
+        const entry = { ts: new Date().toISOString(), key, value, tier, source: "forge_memory_store" };
+        const dir = "/root/A-FORGE/data/memory";
+        execSync(`mkdir -p "${dir}"`, { timeout: 3000 });
+        const { appendFileSync } = await import("node:fs");
+        appendFileSync(`${dir}/memory.jsonl`, JSON.stringify(entry) + "\n");
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "stored_local", key, tier, note: "vault999-writer unavailable; stored locally" }, null, 2) }] };
+      } catch (fallbackErr: any) {
+        return { content: [{ type: "text" as const, text: `Error: ${err.message}. Fallback also failed: ${fallbackErr.message}` }], isError: true };
+      }
     }
   });
 }
