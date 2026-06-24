@@ -41,6 +41,7 @@ const ATOMIC_TOOLS = new Set([
 ]);
 
 function classifyToolAction(toolName: string): 'OBSERVE' | 'DERIVE' | 'MUTATE' | 'ATOMIC' {
+  // Aligned to actionClassifier for One Skill/One Tool consistency (minimal patch)
   if (ATOMIC_TOOLS.has(toolName)) return 'ATOMIC';
   if (MUTATE_TOOLS.has(toolName)) return 'MUTATE';
   return 'OBSERVE';
@@ -120,9 +121,10 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
   
   injectSovereignSignature(canonicalTool, argsRecord);
 
-  // ── Verdict precondition check (APEX Unified Theory) ─────────────────────
+  // ── Verdict precondition check (aligned to One Skill + One Tool) ─────────────────────
   // Before calling MUTATE/ATOMIC tools, check if a SEAL verdict exists.
   // This prevents execution without constitutional approval.
+  // Note: aligned to actionClassifier and enforce_restraint_and_verdict where possible.
   const actionClass = classifyToolAction(canonicalTool);
   if (requiresVerdictCheck(0.5) && (actionClass === 'MUTATE' || actionClass === 'ATOMIC')) {
     // Check for session_id in args — if present, check session verdict state

@@ -221,6 +221,40 @@ function isObserveClass(actionClass: string): boolean {
   return actionClass === "OBSERVE";
 }
 
+// One Skill + One Tool binding (from kernel INIT + capability map)
+// No execution without verdict loop receipt.
+// Restraint flags drive HOLD / ASK.
+interface VerdictGeometry {
+  trace_id?: string;
+  restraint_state?: string; // active | HOLD | ASK_ONE_QUESTION
+  requires_loop?: boolean;
+}
+
+function checkVerdictLoop(leaseOrSession: any, actionClass: string): { ok: boolean; reason?: string; hold?: boolean; ask?: boolean; refuse?: boolean } {
+  const vg: VerdictGeometry = leaseOrSession?.verdict_geometry || leaseOrSession?.session_geometry || {};
+  const restraintFlags: string[] = leaseOrSession?.restraint_flags || [];
+
+  // Verdict loop is the ONLY path for any non-OBSERVE action. This is non-bypassable.
+  if (!isObserveClass(actionClass)) {
+    if (!vg.trace_id) {
+      return { ok: false, reason: "VERDICT_LOOP_REQUIRED: INIT + arif_judge + arif_seal first (One Tool: Verdict Loop With Memory)", hold: true };
+    }
+  }
+
+  // One Skill: Knowing What NOT To Do — wire restraint flags into behavior
+  if (restraintFlags.includes("restraint_under_uncertainty") || vg.restraint_state === "HOLD") {
+    return { ok: false, reason: "RESTRAINT (One Skill): HOLD — pattern insufficient, do not proceed", hold: true };
+  }
+  if (restraintFlags.includes("refusal_on_ambiguity") || vg.restraint_state === "ASK_ONE_QUESTION") {
+    return { ok: false, reason: "RESTRAINT (One Skill): ASK — one clarifying question required, refuse to over-complete", ask: true };
+  }
+  if (restraintFlags.includes("bounded_authority") && ["EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"].includes(actionClass)) {
+    return { ok: false, reason: "RESTRAINT (One Skill): REFUSE — authority insufficient for this blast radius", refuse: true };
+  }
+
+  return { ok: true };
+}
+
 function logLeaseDecision(
   lease_id: string | undefined,
   tool: string,
@@ -233,6 +267,14 @@ function logLeaseDecision(
     `[LEASE_GATE] tool=${tool} class=${actionClass} lease_id=${leaseId} verdict=${status}` +
     (outcome.ok ? "" : ` reason=${outcome.reason}`) + "\n",
   );
+}
+
+// Enforce verdict loop + restraint before lease/execute (step 2 binding)
+function enforceOneSkillOneTool(lease: any, actionClass: string, tool: string) {
+  const check = checkVerdictLoop(lease, actionClass);
+  if (!check.ok) {
+    throw new Error(`[VERDICT_GATE] ${tool}: ${check.reason} — cannot proceed (One Tool + One Skill)`);
+  }
 }
 
 function arifosLeaseToLocal(lease: any): LeaseRecord {
@@ -274,7 +316,10 @@ async function issueLeaseViaKernel(args: {
     if (!lease || !lease.lease_id) {
       return { ok: false, reason: `Kernel issued lease without lease_id: ${JSON.stringify(result)}` };
     }
-    return { ok: true, lease: arifosLeaseToLocal(lease) };
+    const localLease = arifosLeaseToLocal(lease);
+    // Enforce One Tool + One Skill at A-FORGE boundary
+    enforceOneSkillOneTool(localLease, lease.max_action_class || "OBSERVE", "lease_issue");
+    return { ok: true, lease: localLease };
   } catch (err: any) {
     return { ok: false, reason: err?.message ?? String(err) };
   }
@@ -397,6 +442,16 @@ export async function validateLeaseForTool(
     logLeaseDecision(lease_id, tool, actionClass, fail);
     return fail;
   }
+
+  // Harden: Verdict loop + restraint (One Skill / One Tool) is the ONLY path. Non-bypassable.
+  try {
+    enforceOneSkillOneTool(lease, actionClass, tool);
+  } catch (e: any) {
+    const fail = { ok: false as const, gate: "VERDICT_RESTRAINT_GATE", reason: e?.message || "Verdict/restraint enforcement failed" };
+    logLeaseDecision(lease_id, tool, actionClass, fail);
+    return fail;
+  }
+
   const ok = { ok: true as const, lease };
   logLeaseDecision(lease_id, tool, actionClass, ok);
   return ok;
