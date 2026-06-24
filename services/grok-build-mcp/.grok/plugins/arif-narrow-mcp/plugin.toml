@@ -1,0 +1,35 @@
+# plugin.toml — Example Grok Build plugin bundling narrow MCPs + skills + hooks.
+# Per xAI Grok Build extension: skills, plugins (bundles MCPs), hooks, marketplaces.
+# Install: place in .grok/plugins/ or ~/.grok/plugins/ or marketplace.
+# Discovery: /plugins in TUI, or auto via Grok Build CLI.
+
+name = "arif-narrow-mcp"
+version = "2026.06.23"
+description = "Sovereign narrow MCP servers (repo-read, memory) + skills for arifOS federation orchestration. Bundles with arifos-mcp-federation and A-FORGE leases."
+author = "arifOS AAA Grok Build citizen"
+
+[capabilities]
+skills = true
+mcp_servers = true
+hooks = true
+agents = false  # subagents via Grok Build native spawn
+
+[mcps]
+# MCP servers launched by plugin
+repo-read = { command = "python", args = ["-m", "A-FORGE.services.grok-build-mcp.mcp_repo_read"], env = { REPO_ROOT = "/root" } }
+memory = { command = "python", args = ["-m", "A-FORGE.services.grok-build-mcp.mcp_memory"], env = { REPO_ROOT = "/root" } }
+
+[[hooks]]
+# Example lifecycle hook for governance (pre-tool policy)
+event = "pre_tool"
+script = "hooks/pre_tool_governance.py"
+description = "Deny risky tools, inject 888_HOLD for ops-change, redact, audit. Receives GROK_HOOK_EVENT etc + GROK_PLUGIN_ROOT."
+
+[[skills]]
+# Bundled skills (callable as /arif-narrow-mcp or /repo-ops)
+repo-ops = { path = "../skills/repo-ops" }  # relative or absolute
+
+[marketplace]
+# For private enterprise marketplace
+source = "git+https://example.internal/arif-narrow-mcp.git"
+trusted = true

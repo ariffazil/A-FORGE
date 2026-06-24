@@ -39,6 +39,13 @@ export interface AuditEvent {
   confidence?: number;
   verdict?: "SEAL" | "HOLD" | "VOID";
   metadata?: Record<string, unknown>;
+  // AF-2026-06-23: agent geometry for tiered orchestration instrumentation
+  agent_geometry?: {
+    harness?: string;
+    parallelism?: number;
+    transport?: string;
+    agent_type?: string;
+  };
 }
 
 export interface TelemetrySummary {
