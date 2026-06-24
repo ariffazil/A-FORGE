@@ -52,110 +52,64 @@ export function isMoreSevere(a: ActionClass, b: ActionClass): boolean {
 // Tools that seal, approve, or cause irreversible / high-blast-radius effects.
 const IRREVERSIBLE_TOOLS = new Set([
   "arif_vault_seal",
-  "forge_vault_seal",
   "forge_approve",
   "arif_forge_execute",
-  "docker_container_remove",
-  "docker_volume_remove",
-  "git_push_force",
-  "git_hard_reset",
-  "forge_github_create_or_update_file",
-  "forge_github_create_pull_request",
 ]);
 
 // Tools that execute high-impact operations (deploy, data mutation, billing)
 const HIGH_IMPACT_TOOLS = new Set([
   "forge_execute",
-  "docker_container_start",
-  "docker_container_restart",
-  "git_push",
-  "forge_git_commit",  // consistent with registered tool names
-  "forge_filesystem_write",
-  "forge_filesystem_delete",
   "forge_postgres_query",
   "forge_github_pr",
-  "forge_vault_write",
-  "forge_github_create_issue",
 ]);
 
 // Tools that execute reversible operations
 const REVERSIBLE_EXEC_TOOLS = new Set([
-  "forge_docker_exec",
   "forge_lock_acquire",
   "forge_lock_release",
-  "forge_well_anchor",
-  "forge_agent_register",   // identity mutation — requires session
-  "forge_job_submit",       // async job submission — requires session
-  "forge_lease_request",    // lease issuance — requires session
-  "forge_lease_revoke",     // lease revocation — requires session
 ]);
 
 // Tools that should always be simulated first
 const SIMULATE_FIRST_TOOLS = new Set([
   "forge_dry_run",
   "forge_shell_dryrun",
-  "geox_prospect_evaluate",
-  "geox_seismic_compute",
 ]);
 
-// Tools that are pure suggestions / drafts
-const SUGGEST_TOOLS = new Set([
-  "arif_suggest",
-  "forge_suggest",
-  "wealth_suggest_allocation",
-  "geox_suggest_prospect",
-]);
-
-// Queued / scheduled tools
-const QUEUE_TOOLS = new Set([
-  "forge_queue",
-  "forge_schedule",
-  "jobs_schedule",
-]);
-
-// Explicit OBSERVE-class tools (documentation + future-proofing)
-// These default to OBSERVE anyway, but listing them makes the contract explicit.
+// Explicit OBSERVE-class tools (merged mode-gated primitives)
+// These tools have modes — most modes are OBSERVE, some are MUTATE.
+// The FloorEnforcer handles mode-level classification.
 const OBSERVE_TOOLS = new Set([
-  "forge_pipeline_run",       // routing tool — no mutation
-  "forge_check_governance",   // governance check — read-only
-  "forge_job_status",         // job status — read-only
-  "forge_job_result",         // job result — read-only
-  "forge_registry_status",    // registry read — read-only
-  "forge_lease_status",       // lease status — read-only
-  "forge_agent_list",         // agent list — read-only
-  "forge_agent_status",       // agent status — read-only
-  "forge_health_check",       // health check — read-only
-  "forge_memory_recall",      // memory read — read-only
-  "forge_filesystem_read",    // file read — read-only
-  "forge_filesystem_glob",    // file search — read-only
-  "forge_filesystem_grep",    // content search — read-only
-  "forge_filesystem_stat",    // file metadata — read-only
-  "forge_git_status",         // git status — read-only
-  "forge_git_log",            // git log — read-only
-  "forge_git_diff",           // git diff — read-only
-  "forge_docker_ps",          // docker ps — read-only
-  "forge_docker_images",      // docker images — read-only
-  "forge_docker_logs",        // docker logs — read-only
-  "forge_systemctl_status",   // systemd status — read-only
-  "forge_systemctl_list_units", // systemd list-units — read-only
-  "forge_journalctl",         // journal query (merged: logs/errors/tail/grep) — read-only
-  "forge_postgres_schema",    // schema read — read-only
-  "forge_minimax_search",     // web search — read-only
-  "forge_minimax_text_to_image",  // image generation — low risk_tier
-  "forge_minimax_text_to_audio",  // TTS — low risk_tier
-  "forge_minimax_music_generation", // music gen — low risk_tier
-  "forge_minimax_understand_image", // image understanding — low risk_tier
-  "forge_research",           // web research — read-only
-  "forge_docs_lookup",        // docs lookup — read-only
-  "forge_browser_navigate",   // browser nav — read-only (observe-class)
-  "forge_browser_click",      // browser click — read-only (observe-class)
-  "forge_browser_type",       // browser type — read-only (observe-class)
-  "forge_browser_screenshot", // browser screenshot — read-only
-  "forge_browser_extract_text", // browser text extract — read-only
-  "forge_browser_evaluate_js",  // browser JS eval — read-only
-  "forge_well_state_read",    // well state — read-only
-  "forge_well_readiness_check", // well readiness — read-only
-  "forge_well_floor_scan",    // well floor scan — read-only
+  // Merged primitives — default OBSERVE (mode-level gating in FloorEnforcer)
+  "forge_filesystem",
+  "forge_docker",
+  "forge_git",
+  "forge_github",
+  "forge_agent",
+  "forge_lease",
+  "forge_job",
+  "forge_vault",
+  "forge_well",
+  "forge_systemctl",
+  "forge_journalctl",
+  "forge_browser",
+  "forge_netdata",
+  "forge_wealth",
+  // Non-merged tools
+  "forge_pipeline_run",
+  "forge_check_governance",
+  "forge_registry_status",
+  "forge_health_check",
+  "forge_memory",
+  "forge_postgres",
+  "forge_minimax_search",
+  "forge_minimax_text_to_image",
+  "forge_minimax_text_to_audio",
+  "forge_minimax_music_generation",
+  "forge_minimax_understand_image",
+  "forge_research",
+  "forge_docs_lookup",
+  "forge_lock_acquire",
+  "forge_lock_release",
 ]);
 
 /**
