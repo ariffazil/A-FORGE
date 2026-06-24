@@ -587,10 +587,15 @@ export class AgentEngine {
         let wealthAdvice: { deferred: unknown[]; reason: string } = { deferred: [], reason: "" };
         try {
           const budgetStatus = budgetManager.getStatus();
-          wealthAdvice = await wealthEngine.evaluatePlan(plannedActions, {
+          const rawAdvice = await wealthEngine.evaluatePlan(plannedActions, {
             remainingTokens: Math.max(0, budgetStatus.totalTokensUsed - this.profile.budget.tokenCeiling) * -1,
             remainingTurns: budgetStatus.turnsRemaining,
-          }) as { deferred: unknown[]; reason: string };
+          });
+          const adviceRecord = (typeof rawAdvice === "object" && rawAdvice !== null ? rawAdvice : {}) as Record<string, unknown>;
+          wealthAdvice = {
+            deferred: Array.isArray(adviceRecord.deferred) ? adviceRecord.deferred : [],
+            reason: typeof adviceRecord.reason === "string" ? adviceRecord.reason : "",
+          };
         } catch (error) {
           console.warn(
             `[WEALTH-ADVISORY] Failed to evaluate plan: ${
@@ -630,7 +635,12 @@ export class AgentEngine {
         };
         let continueAdvice: { verdict: string; reason: string } = { verdict: "SEAL", reason: "" };
         try {
-          continueAdvice = await wealthEngine.shouldContinue(stressState) as { verdict: string; reason: string };
+          const rawContinue = await wealthEngine.shouldContinue(stressState);
+          const continueRecord = (typeof rawContinue === "object" && rawContinue !== null ? rawContinue : {}) as Record<string, unknown>;
+          continueAdvice = {
+            verdict: typeof continueRecord.verdict === "string" ? continueRecord.verdict : "SEAL",
+            reason: typeof continueRecord.reason === "string" ? continueRecord.reason : "",
+          };
         } catch (error) {
           console.warn(
             `[WEALTH-ADVISORY] Failed to check continuation: ${
