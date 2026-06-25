@@ -137,7 +137,8 @@ def _find_related_adrs(query_text: str, exclude_name: Optional[str] = None, top_
                     "path": str(adr_path.relative_to(REPO_ROOT)),
                     "snippet": content[:180].replace("\n", " ")
                 })
-        except Exception:
+        except (OSError, UnicodeDecodeError) as e:
+            # ADR file unreadable — skip, not fatal for related-ADR lookups
             pass
     related.sort(key=lambda x: x["relevance"], reverse=True)
     return related[:top_k]
@@ -317,15 +318,23 @@ def search_symbols(query: str, path: str = ".", glob: str = "*.py", max_results:
                 if "def " in line or "class " in line or "function " in line.lower():
                     typ = "definition"
                 hits.append({"line": line.strip()[:220], "type": typ})
-    except Exception:
-        # Fallback: simple scan
+    except (FileNotFoundError, subprocess.TimeoutExpired) as e:
+        # rg not available or timed out — fall through to pure-Python fallback
+        pass
+    except (OSError, subprocess.CalledProcessError) as e:
+        # rg path error (non-zero exit, permission denied) — fall through to fallback
+        pass
+
+    # Fallback: pure-Python scan when rg unavailable
+    if not hits:
         for f in list(base.rglob(glob.replace("**", "*")))[:50]:
             try:
                 txt = f.read_text(errors="ignore")
                 if q_lower in txt.lower():
                     rel = str(f.relative_to(REPO_ROOT))
                     hits.append({"file": rel, "type": "file_match", "snippet": txt[:160].replace("\n", " ")})
-            except Exception:
+            except (OSError, UnicodeDecodeError) as e:
+                # Binary or unreadable file — skip, not fatal
                 pass
             if len(hits) >= max_results:
                 break
@@ -425,7 +434,8 @@ def search_memory(query: str, top_k: int = 5) -> Dict[str, Any]:
                     "relevance": score,
                     "trust": "human_verified"
                 })
-        except Exception:
+        except (OSError, UnicodeDecodeError) as e:
+            # ADR file unreadable — skip, not fatal for search
             pass
         if len(results) >= top_k:
             break
@@ -446,7 +456,8 @@ def search_memory(query: str, top_k: int = 5) -> Dict[str, Any]:
                             "path": str(f.relative_to(REPO_ROOT)),
                             "relevance": 0.5,
                         })
-                except Exception:
+                except (OSError, UnicodeDecodeError) as e:
+                    # Cooling ledger file unreadable — skip, not fatal
                     pass
                 if len(results) >= top_k:
                     break
@@ -493,7 +504,8 @@ def query_context(query: str, focus: str = "all", top_k: int = 6) -> Dict[str, A
                     "path": str(a.relative_to(REPO_ROOT)),
                     "relevance": rel
                 })
-        except Exception:
+        except (OSError, UnicodeDecodeError) as e:
+            # ADR file unreadable — skip, not fatal for query_context synthesis
             pass
     if adr_hits:
         evidence.extend(sorted(adr_hits, key=lambda x: -x["relevance"])[:3])
@@ -509,7 +521,11 @@ def query_context(query: str, focus: str = "all", top_k: int = 6) -> Dict[str, A
                     evidence.append({"type": "code", "match": line.strip()[:180], "relevance": 0.5})
             if any(e["type"] == "code" for e in evidence):
                 reasoning_parts.append("Code matches located via rg.")
-        except Exception:
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            # rg unavailable or timed out — skip code scan, synthesis still valid
+            pass
+        except (OSError, subprocess.CalledProcessError) as e:
+            # rg path error (non-zero exit, permission denied) — skip, not fatal
             pass
 
     # Structure hints
