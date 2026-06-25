@@ -54,6 +54,7 @@ import {
   registerShellTools,
   registerLogTools,
   registerJobTools,
+  registerOrchestrationTools,
   initializeForgeTools,
 } from "./forgeTools.js";
 import { registerGatewayTools } from "./gatewayTools.js";
@@ -978,6 +979,7 @@ registerRegistryTools(server);
 registerShellTools(server);
 registerLogTools(server);
 registerJobTools(server);
+registerOrchestrationTools(server);
 
 // ── P1 Gateway Tools: external MCP internalization ───────────────────────────
 registerGatewayTools(server);
