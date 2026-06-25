@@ -100,6 +100,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_registry_status",
   "forge_health_check",
   "forge_memory",
+  "forge_orchestrate",
   "forge_postgres",
   "forge_minimax_search",
   "forge_minimax_text_to_image",

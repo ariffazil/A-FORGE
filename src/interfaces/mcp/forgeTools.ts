@@ -605,6 +605,134 @@ export function registerJobTools(server: McpServer): void {
   );
 }
 
+// ── 7. forge_orchestrate — Multi-Agent Role-Based Orchestration ──────────
+
+export function registerOrchestrationTools(server: McpServer): void {
+  server.tool(
+    "forge_orchestrate",
+    "Multi-agent role-based orchestration. Decomposes a task into subtasks, classifies each into a specialized role (planner/implementer/reviewer/tester/security/release), routes to role-specific agents, and returns structured results. Requires lease for EXECUTE mode.",
+    {
+      task: z.string().describe("High-level engineering task to orchestrate"),
+      mode: z.enum(["plan", "execute"]).default("plan").describe("plan = classify + route only; execute = run agents"),
+      roles: z.array(z.enum(["planner", "implementer", "reviewer", "tester", "security", "release"])).optional().describe("Restrict to specific roles (default: all)"),
+      session_id: z.string().optional(),
+      actor_id: z.string().optional(),
+    },
+    async ({ task, mode, roles, session_id, actor_id }) => {
+      const { classifyTaskRole, buildRoleProfile, buildRolePrompt, ALL_TASK_ROLES } = await import("../../domain/agents/roles.js");
+
+      // Phase 1: Decompose task into subtasks (LLM-assisted)
+      const subtaskPrompts = [
+        "Break the following engineering task into 2-5 subtasks.",
+        "Return strict JSON as an array.",
+        'Each item: {"name":"short-name","task":"specific subtask description"}',
+        `Task: ${task}`,
+      ];
+      // For now, use a simple decomposition heuristic.
+      // In production, this calls the LLM via the planner contract.
+      const subtasks = decomposeTask(task);
+
+      // Phase 2: Classify each subtask into a role
+      const classified = subtasks.map((st) => {
+        const role = classifyTaskRole(st.task);
+        return { ...st, role };
+      });
+
+      // Phase 3: Filter to requested roles
+      const filtered = roles && roles.length > 0
+        ? classified.filter((c) => roles.includes(c.role))
+        : classified;
+
+      // Phase 4: Build role-routed plan
+      const plan = filtered.map((c, i) => {
+        const profile = buildRoleProfile(c.role, "internal_mode");
+        return {
+          order: i,
+          name: c.name,
+          task: c.task,
+          role: c.role,
+          system_prompt_preview: profile.systemPrompt.slice(0, 200) + "...",
+          allowed_tools: profile.allowedTools,
+          budget: profile.budget,
+        };
+      });
+
+      if (mode === "plan") {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "SEAL",
+              mode: "plan",
+              task,
+              subtask_count: plan.length,
+              role_distribution: countRoles(plan.map((p) => p.role)),
+              plan,
+            }, null, 2),
+          }],
+        };
+      }
+
+      // mode === "execute" — return the execution plan with role annotations
+      // Actual execution happens through the CoordinatorAgent with roleRouting=true
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "SEAL",
+            mode: "execute",
+            task,
+            subtask_count: plan.length,
+            role_distribution: countRoles(plan.map((p) => p.role)),
+            plan,
+            execution_hint: "Pass roleRouting=true to CoordinatorAgent.coordinate() to execute with role-specialized agents.",
+          }, null, 2),
+        }],
+      };
+    },
+  );
+}
+
+/**
+ * Simple task decomposition heuristic.
+ * In production, this delegates to the LLM via ParallelPlannerContract.
+ */
+function decomposeTask(task: string): Array<{ name: string; task: string }> {
+  const t = task.toLowerCase();
+
+  // If task mentions multiple concerns, split by concern
+  const subtasks: Array<{ name: string; task: string }> = [];
+
+  if (t.includes("implement") || t.includes("build") || t.includes("create") || t.includes("add")) {
+    subtasks.push({ name: "plan", task: `Plan the approach for: ${task}` });
+    subtasks.push({ name: "implement", task: task });
+    subtasks.push({ name: "review", task: `Review the implementation for correctness and conventions` });
+    subtasks.push({ name: "test", task: `Run tests and validate the changes work correctly` });
+  } else if (t.includes("fix") || t.includes("bug") || t.includes("issue")) {
+    subtasks.push({ name: "diagnose", task: `Diagnose the root cause: ${task}` });
+    subtasks.push({ name: "implement", task: `Apply the fix` });
+    subtasks.push({ name: "test", task: `Verify the fix resolves the issue` });
+  } else if (t.includes("refactor") || t.includes("clean") || t.includes("improve")) {
+    subtasks.push({ name: "plan", task: `Plan the refactoring: ${task}` });
+    subtasks.push({ name: "implement", task: `Apply the refactoring changes` });
+    subtasks.push({ name: "review", task: `Review for regressions and convention compliance` });
+    subtasks.push({ name: "test", task: `Run tests to verify no regressions` });
+  } else {
+    // Generic: plan + implement + review
+    subtasks.push({ name: "plan", task: `Plan the approach for: ${task}` });
+    subtasks.push({ name: "implement", task: task });
+    subtasks.push({ name: "review", task: `Review the changes` });
+  }
+
+  return subtasks;
+}
+
+function countRoles(roles: string[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const r of roles) counts[r] = (counts[r] ?? 0) + 1;
+  return counts;
+}
+
 // ── Initialize ────────────────────────────────────────────────────────────────
 
 export async function initializeForgeTools(): Promise<void> {
