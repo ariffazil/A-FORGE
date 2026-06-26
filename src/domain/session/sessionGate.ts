@@ -54,6 +54,8 @@ export function registerSession(
 /**
  * Validate a session_id — is it a known kernel-born session?
  * Returns { valid: true, actor_id } or { valid: false, reason }.
+ *
+ * F1 AMANAH: proactively cleans expired sessions on every validation.
  */
 export function validateSession(
   session_id: string | undefined,
@@ -74,6 +76,8 @@ export function validateSession(
   }
   if (Date.now() > record.expires_at) {
     sessions.delete(session_id);
+    // Proactively clean other expired sessions
+    cleanExpiredSessions();
     return { valid: false, reason: "SESSION_EXPIRED: Session TTL has expired. Issue a new session via arif_session_init." };
   }
   return { valid: true, actor_id: record.actor_id };

@@ -5,8 +5,16 @@
  * Manages the full lifecycle: provision → exec → stream → deprovision.
  * Integrates with arifOS constitutional verdict chain.
  *
+ * This realizes **AGI tool substrate** (general code/API/env execution for
+ * instrumental reasoning under uncertainty). Rich sims for external goal
+ * planning/hypothesis testing are AGI-grade (under lease + prior judgment).
+ *
+ * ASI_TIER (recursive self-improvement + self-mod / self-sims for kernel upgrade)
+ * must be detected upstream in BRAIN (arifOS self_mod_lock + 888/F13) and never
+ * auto-authorized here. SandboxPolicy derived from verdict will be narrow.
+ *
  * Flow:
- *   1. Constitutional Verdict (arif_judge_deliberate)
+ *   1. Constitutional Verdict (arif_judge_deliberate)  [AGI vs ASI tier already classified]
  *   2. Policy Derivation (derivePolicyFromVerdict)
  *   3. Sandbox Provision (createSandbox)
  *   4. Command Execution (executeInSandbox)

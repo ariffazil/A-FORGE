@@ -52,77 +52,78 @@ export function isMoreSevere(a: ActionClass, b: ActionClass): boolean {
 // Tools that seal, approve, or cause irreversible / high-blast-radius effects.
 const IRREVERSIBLE_TOOLS = new Set([
   "arif_vault_seal",
-  "forge_vault_seal",
   "forge_approve",
   "arif_forge_execute",
-  "docker_container_remove",
-  "docker_volume_remove",
-  "systemctl_stop",
-  "systemctl_restart",
-  "git_push_force",
-  "git_hard_reset",
-  "hostinger_vps_restart",
-  "hostinger_vps_stop",
 ]);
 
 // Tools that execute high-impact operations (deploy, data mutation, billing)
 const HIGH_IMPACT_TOOLS = new Set([
   "forge_execute",
-  "docker_container_start",
-  "docker_container_restart",
-  "git_push",
-  "git_commit",
-  "forge_filesystem_write",
-  "forge_filesystem_delete",
   "forge_postgres_query",
   "forge_github_pr",
-  "forge_vault_write",
-  "forge_vault_delete",
 ]);
 
 // Tools that execute reversible operations
 const REVERSIBLE_EXEC_TOOLS = new Set([
-  "write",
-  "edit",
-  "bash",
-  "arif_systemctl",
-  "arif_sudo",
-  "arif_run",
-  "forge_memory_store",
-  "forge_git_commit",
-  "forge_docker_exec",
-  "forge_remember",
-  "request_amanah_lock",
-  "release_amanah_lock",
-  "forge_well_anchor",
+  "forge_lock_acquire",
+  "forge_lock_release",
 ]);
 
 // Tools that should always be simulated first
 const SIMULATE_FIRST_TOOLS = new Set([
   "forge_dry_run",
-  "geox_prospect_evaluate",
-  "geox_seismic_compute",
+  "forge_shell_dryrun",
 ]);
 
-// Tools that are pure suggestions / drafts
-const SUGGEST_TOOLS = new Set([
-  "arif_suggest",
-  "forge_suggest",
-  "wealth_suggest_allocation",
-  "geox_suggest_prospect",
+// Explicit OBSERVE-class tools (merged mode-gated primitives)
+// These tools have modes — most modes are OBSERVE, some are MUTATE.
+// The FloorEnforcer handles mode-level classification.
+const OBSERVE_TOOLS = new Set([
+  // Merged primitives — default OBSERVE (mode-level gating in FloorEnforcer)
+  "forge_filesystem",
+  "forge_docker",
+  "forge_git",
+  "forge_github",
+  "forge_agent",
+  "forge_lease",
+  "forge_job",
+  "forge_vault",
+  "forge_well",
+  "forge_systemctl",
+  "forge_journalctl",
+  "forge_browser",
+  "forge_netdata",
+  "forge_wealth",
+  // Non-merged tools
+  "forge_pipeline_run",
+  "forge_check_governance",
+  "forge_registry_status",
+  "forge_health_check",
+  "forge_memory",
+  "forge_orchestrate",
+  "forge_postgres",
+  "forge_minimax_search",
+  "forge_minimax_text_to_image",
+  "forge_minimax_text_to_audio",
+  "forge_minimax_music_generation",
+  "forge_minimax_understand_image",
+  "forge_research",
+  "forge_docs_lookup",
+  "forge_lock_acquire",
+  "forge_lock_release",
 ]);
 
-// Queued / scheduled tools
-const QUEUE_TOOLS = new Set([
-  "forge_queue",
-  "forge_schedule",
-  "jobs_schedule",
-]);
+// Suggest and queue tools (currently none registered — placeholder for future)
+const SUGGEST_TOOLS = new Set<string>();
+const QUEUE_TOOLS = new Set<string>();
 
 /**
  * Classify a tool name into one of 7 action classes.
  *
  * Default: OBSERVE (conservative — if we don't know, it's read-only).
+ *
+ * Explicit OBSERVE_TOOLS set documents known read-only tools.
+ * Unknown tools also default to OBSERVE (fail-safe: read-only by default).
  */
 export function classifyTool(toolName: string): ActionClass {
   if (IRREVERSIBLE_TOOLS.has(toolName)) return "IRREVERSIBLE";
@@ -131,6 +132,7 @@ export function classifyTool(toolName: string): ActionClass {
   if (REVERSIBLE_EXEC_TOOLS.has(toolName)) return "EXECUTE_REVERSIBLE";
   if (SUGGEST_TOOLS.has(toolName)) return "SUGGEST";
   if (QUEUE_TOOLS.has(toolName)) return "QUEUE";
+  // OBSERVE_TOOLS and unknown tools both return OBSERVE (fail-safe)
   return "OBSERVE";
 }
 

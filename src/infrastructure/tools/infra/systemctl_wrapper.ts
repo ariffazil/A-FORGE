@@ -21,7 +21,6 @@ import {
   assertSystemdUnitPattern,
   execFileAsync,
   requireMutationApproval,
-  type ApprovalLease,
 } from "./safety.js";
 
 // ─── TYPES ────────────────────────────────────────────────────────
@@ -147,18 +146,18 @@ export async function listUnits(filter?: string): Promise<UnitInfo[]> {
   }
 }
 
-// ─── WRITE OPERATIONS (GATED — requires E7 approval) ─────────────
+// ─── WRITE OPERATIONS (GATED — requires kernel lease) ─────────────
 
 /**
  * Start a service.
- * Risk: MUTATE — APPROVE_ONLY. Requires lease check before execution.
+ * Risk: MUTATE — APPROVE_ONLY. Requires kernel-issued lease.
  * 
  * @param ackImpact - Must be true. Caller acknowledges blast radius.
  */
 export async function start(
   service: string,
   ackImpact: boolean,
-  approvalLease?: ApprovalLease,
+  lease_id?: string,
 ): Promise<ActionResult> {
   const unit = assertSystemdUnitName(service);
   if (!ackImpact) {
@@ -173,7 +172,7 @@ export async function start(
     };
   }
 
-  const gate = requireMutationApproval('systemctl.start', unit, approvalLease);
+  const gate = await requireMutationApproval('systemctl.start', unit, lease_id);
   if (!gate.allowed) {
     return {
       success: false,

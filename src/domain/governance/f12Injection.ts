@@ -150,5 +150,44 @@ export function checkF12Injection(ctx: FloorContext): FloorReason[] {
     }
   }
 
+  // Rule 7: Browser page-originated actions (two-context defense).
+  // Page content is never authority; agent task instructions are authority.
+  const rawTaskContext = ctx.action.metadata?.task_context;
+  const rawPageContext = ctx.action.metadata?.page_context;
+  if (
+    ctx.action.tool_name.startsWith("forge_browser_") &&
+    rawPageContext &&
+    typeof rawPageContext === "object"
+  ) {
+    const pageSnippet = (rawPageContext as Record<string, unknown>).snippet;
+    if (!rawTaskContext) {
+      reasons.push({
+        floor: "F12",
+        code: "PAGE_ORIGINATED_ACTION",
+        message: "F12 INJECTION: browser action driven by page content without agent task authority",
+        severity: "HOLD",
+      });
+    } else if (
+      typeof pageSnippet === "string" &&
+      pageSnippet.length >= 12 &&
+      haystack.toLowerCase().includes(pageSnippet.toLowerCase())
+    ) {
+      const taskText = rawTaskContext && typeof rawTaskContext === "object"
+        ? [
+            (rawTaskContext as Record<string, unknown>).task ?? "",
+            (rawTaskContext as Record<string, unknown>).expected_outcome ?? "",
+          ].join(" ").toLowerCase()
+        : "";
+      if (!taskText.includes(pageSnippet.toLowerCase())) {
+        reasons.push({
+          floor: "F12",
+          code: "PAGE_ORIGINATED_ACTION",
+          message: "F12 INJECTION: browser action reproduces page content not authorized by task",
+          severity: "VOID",
+        });
+      }
+    }
+  }
+
   return reasons;
 }

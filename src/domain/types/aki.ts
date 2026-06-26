@@ -62,6 +62,11 @@ export interface AkiForgeManifest {
     network: boolean;
   };
   telemetry_snapshot: AkiTelemetrySnapshot;
+  // ── APEX custody chain (hardened 2026-06-20) ──────────────────────────
+  // Records who held this action from conception to execution.
+  // [initiator, validator, approver, executor]
+  // This is how EXPLORATION × AMANAH is enforced in the runtime.
+  custodyChain: string[];
 }
 
 export interface AkiTelemetrySnapshot {

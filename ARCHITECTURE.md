@@ -189,6 +189,48 @@ The `/api/federation-probe` endpoint returns live status of connected surfaces.
 
 ---
 
+## Narrow Instruments + Tool Mapping (Added for Clarity — Removes Chaos)
+
+**Core Principle:** Narrow Grok-Build MCPs (services/grok-build-mcp/) are subordinate instruments. They accelerate early cognitive actions (encoder/observe, partial metabolizer) but **must hand off** to canonical arifOS MCP for metabolizer depth (333+) and reality forging (010/888/999).
+
+**Geometry (Scar + Soul):** All agents declare at arif_init. Geometry unifies runtime shape with scar (history/wounds/drift) and soul (transformer position: encoder → metabolizer → decoder + thordials/fractals).
+
+**Tool Mapping to Function Mode (Stage) + Cognitive Action → Reality**
+
+- mcp-repo-read (Encoder/Observe + Evidence):
+  - Modes: 111_OBSERVE, 222_EVIDENCE
+  - Cognitive: observe (encoder), context synthesis (metabolizer entry)
+  - Reality: Evidence only. Handoff via canonical_handoff for gov.
+
+- gb_federation_router (Route/Planner):
+  - Modes: 555_ROUTE
+  - Cognitive: route + orchestrate (boundary)
+  - Reality: Planning + lease request. Execution in A-FORGE after canonical seal.
+
+- mcp-arifos-kernel (Measure + Advisory):
+  - Modes: 777_MEASURE
+  - Cognitive: measure vitality, advisory metabolizer
+  - Reality: Views only. Full 888 in canonical.
+
+- mcp-repo-write (Decoder/Forge — Gated):
+  - Modes: 010_FORGE (decoder)
+  - Cognitive: forge (reality change)
+  - Reality: Only after arif_judge SEAL + lease + geometry.
+
+**Canonical Reference (arifOS MCP):**
+- 000 arif_init (geometry bind)
+- 111 arif_observe / arif_explore (encoder)
+- 222 arif_fetch (evidence)
+- 333 arif_think (metabolizer/reason)
+- 555 arif_route / arif_memory (route + memory metabolizer)
+- 666 arif_critique (metabolizer/critique)
+- 777 arif_measure
+- 888 arif_judge (judgment)
+- 010 arif_forge (decoder/execute)
+- 999 arif_seal (reality seal)
+
+Narrow surfaces return explicit `canonical_stage`, `cognitive_action`, `geometry`, `handoff` to enforce this.
+
 ## Key Design Decisions
 
 1. **No NumPy/Pandas.** A-FORGE is TypeScript-only. All domain computation stays in the Python MCP organs.
@@ -205,5 +247,8 @@ The `/api/federation-probe` endpoint returns live status of connected surfaces.
 - `INVARIANTS.md` — Live ports, federation topology, forbidden assumptions
 - `QUICKSTART.md` — 15-minute local setup
 - `README.md` — Repository overview
+- `docs/BRAIN_HANDS_MCP_MAPPING.md` — Full brain/hands contrast, tool mapping to stages/cognitive actions/reality, agent flow contract (updated with 999_SEAL AF-2026-06-23-001-SEAL-001)
+
+**999_SEAL Reference:** AF-2026-06-23-001-Tiered-Agent-Orchestration.md (KERNEL INIT REPORT audit + harden cycle sealed).
 
 **DITEMPA BUKAN DIBERI — Forged, Not Given.**

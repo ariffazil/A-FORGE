@@ -54,6 +54,14 @@
       "command": "npx",
       "args": ["-y", "docker-mcp-server"],
       "description": "Docker container management — build, run, logs, images."
+    },
+    "composio": {
+      "command": "sh",
+      "args": [
+        "-lc",
+        "set -a; . /root/.secrets/env/infra.env; set +a; exec node /root/.config/mcp/composio-proxy.mjs"
+      ],
+      "description": "Composio MCP — 1,000+ SaaS tools (Gmail, Slack, GitHub, Notion, etc.) with managed OAuth. Stdio proxy. Policy-gated via /root/HERMES/config/agent_policies/composio.yaml."
     }
   }
 }

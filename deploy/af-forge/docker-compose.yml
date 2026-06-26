@@ -25,13 +25,13 @@ services:
     restart: unless-stopped
 
     ports:
-      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8088:8088"  # arifOS MCP updated from stale 8080
 
     environment:
       # Transport (HTTP/streamable-http for production)
       ARIFOS_MCP_TRANSPORT: http
       ARIFOS_MCP_HOST: 0.0.0.0
-      ARIFOS_MCP_PORT: 8080
+      ARIFOS_MCP_PORT: 8088  # updated
       VAULT999_PATH: /app/VAULT999/outcomes.jsonl
       TELEMETRY_PATH: /app/telemetry
 
@@ -65,10 +65,10 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
 
       # LLM providers
-      SEA_LION_API_KEY: sk-znzfOJH_Yc7LKewfrfsl2A
+      SEA_LION_API_KEY: ${SEA_LION_API_KEY:-}
 
       # Memory engine (Postgres + Qdrant + Ollama)
-      DATABASE_URL: postgresql://arifos_admin:ArifPostgresVault2026!@postgres:5432/vault999
+      DATABASE_URL: ${DATABASE_URL:-postgresql://arifos_admin:changeme@postgres:5432/vault999}
       QDRANT_URL: http://host.docker.internal:6333
       OLLAMA_URL: http://ollama:11434
       EMBEDDING_MODEL: bge-m3
@@ -86,7 +86,7 @@ services:
       - session-data:/app/data
 
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8088/health')"]  # updated stale
       interval: 30s
       timeout: 5s
       retries: 3
