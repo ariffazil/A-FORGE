@@ -1,27 +1,42 @@
-# CONTEXT.md — A-FORGE (Execution Shell)
+<!-- SOT-MANIFEST
+owner: Arif
+last_verified: 2026-06-24
+valid_from: 2026-06-24
+valid_until: 2026-07-24
+confidence: high
+scope: /root/A-FORGE
+-->
 
-> **Organ:** A-FORGE | **Port:** 7071 | **Repo:** `ariffazil/A-FORGE`
-> **Kernel SoT:** `ariffazil/arifos` (FEDERATION_CONTRACT.md + GENESIS/000)
-> **Last Updated:** 2026-06-12
+# CONTEXT.md — A-FORGE (Engineering Actuator)
+
+> **Organ:** A-FORGE | **Port:** 7071 (MCP: 7072) | **Repo:** `ariffazil/A-FORGE`
+> **Last Updated:** 2026-06-24
 
 ## Live State
-- **Service:** `a-forge.service` (systemd, enabled)
+
+- **Service:** `a-forge.service` (systemd, port 7071)
+- **MCP Service:** `a-forge-mcp.service` (systemd, port 7072)
 - **Health:** `http://127.0.0.1:7071/health`
-- **Runtime:** TypeScript, Node 22
-- **Role:** Governed execution — never adjudicates, never self-authorizes
+- **Runtime:** Node.js 22+ / TypeScript / Express
+- **Role:** Engineering actuator — execute under SEAL, never self-authorize
+
+## Key Components
+
+- `src/domain/` — pure business logic
+- `src/application/` — use cases (services, approval, jobs)
+- `src/infrastructure/` — external adapters (LLM, tools, vault, bridges)
+- `src/interfaces/` — delivery (Express server, MCP, routes)
 
 ## Dependencies
-- arifOS MCP kernel (port 8088) — JUDGE_SEAL_AUTHORIZATION required before execution
-- All 6 organ MCP endpoints for routing
 
-## Current Focus
-- Operational. CONSTITUTION.md ratified 2026-06-05. 4-layer forge gate active.
-- GENESIS/ linked from arifOS kernel canon
-- TUI production gaps sealed 2026-06-14: governance panel live, CI fixed, tui:start renamed
+- arifOS MCP kernel (8088) — constitutional judgment + leases
+- All domain organs for health/status monitoring
+- VAULT999 (8100/5001) — audit ledger writes
 
 ## Known Issues
-- Pre-existing CI rot SEALED 2026-06-14 (checkout/setup-node @v6 → @v4)
-- F2/F12 post-execution judge now halting (was annotation-only)
-- GEOX/WEALTH bridge calls: advisory-only (graceful degradation by design for phase 1)
-- F3 Tri-Witness: still linguistic detection (distributed consensus: phase 2 backlog)
-- Ed25519 sovereign signature: fully automated via local key injection (sealed 2026-06-14)
+
+- Federation Governance Gate previously failed due to missing `FEDERATION_CONTRACT.md` and `CONTEXT.md` — **resolved 2026-06-24**
+
+---
+
+*DITEMPA BUKAN DIBERI — Execution is forged under judgment, not given.*

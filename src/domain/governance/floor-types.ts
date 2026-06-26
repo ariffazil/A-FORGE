@@ -12,7 +12,28 @@ export type FloorName =
   | "F1" | "F2" | "F3" | "F4" | "F5" | "F6" | "F7" | "F8" | "F9"
   | "F10" | "F11" | "F12" | "F13";
 
-export type Severity = "SEAL" | "CAUTION" | "HOLD" | "VOID";
+/**
+ * Constitutional verdict severity.
+ *
+ * Canonical vocabulary (F13 RATIFIED 2026-06-20):
+ *   SEAL  — proceed, governance satisfied
+ *   SABAR — caution/warning, SOFT floor tension
+ *   HOLD  — blocked pending human review or condition resolution
+ *   VOID  — permanently blocked, constitutional violation
+ *
+ * CAUTION is retained as a legacy alias for SABAR — accepted everywhere
+ * SABAR is used. New code should emit SABAR. Display surfaces emit SABAR.
+ */
+export type Severity = "SEAL" | "SABAR" | "CAUTION" | "HOLD" | "VOID";
+
+/**
+ * Normalize a severity string to canonical form.
+ * CAUTION → SABAR, everything else passes through.
+ */
+export function canonicalSeverity(s: Severity): "SEAL" | "SABAR" | "HOLD" | "VOID" {
+  if (s === "CAUTION") return "SABAR";
+  return s;
+}
 
 export interface FloorReason {
   floor: FloorName;

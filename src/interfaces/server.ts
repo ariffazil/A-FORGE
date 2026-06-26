@@ -46,6 +46,7 @@ import {
 } from "./routes/approvalOperatorRoutes.js";
 import { createGovernanceRouter } from "./routes/governanceRoutes.js";
 import { createJobsRouter } from "./routes/jobsRoutes.js";
+import { createPeerContractRouter } from "./routes/peerContractRoutes.js";
 import { subscribe, type SseEvent } from "../infrastructure/tui/adapters/event-bus.js";
 import { getTuiHealth } from "../infrastructure/tui/adapters/tui-health.js";
 import { createVaultMerkleRouter } from "./routes/vaultMerkleRoutes.js";
@@ -56,6 +57,7 @@ import { validateLeaseForTool } from "./mcp/forgeTools.js";
 import { validateSession } from "../domain/session/sessionGate.js";
 import { classifyTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
 import { preForgeCheck, PreForgeGateBlockedError, registerEarthMeasurement } from "../domain/governance/PreForgeGateClient.js";
+import { actCheck, ActGateBlockedError } from "../domain/governance/ActGateClient.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
 import { getApprovalBoundary } from "../application/approval/index.js";
@@ -115,9 +117,18 @@ export function createApp(): express.Express {
   // req.body already parsed by app.use(express.json()) above.
   const mcpRouter = express.Router();
 
-  // GET /mcp — server info (OpenCode MCP client probes GET before POST)
-  // Returns 200 so the client proceeds to POST for actual MCP protocol.
-  mcpRouter.get("/mcp", (_req: Request, res: Response) => {
+  // GET /mcp — conditional routing based on Accept header.
+  // Standards-compliant MCP clients (Claude Code, Claude Desktop) send
+  // Accept: text/event-stream and expect SSE — those MUST reach the MCP SDK.
+  // OpenCode and other clients that probe GET before POST send a plain Accept
+  // header — return static service info so they proceed to POST.
+  mcpRouter.get("/mcp", (req: Request, res: Response, next: NextFunction) => {
+    const accept = (req.headers["accept"] || "").toString();
+    if (accept.includes("text/event-stream")) {
+      // SSE-capable client — let mcpHandler handle it
+      return next();
+    }
+    // OpenCode compat: static server info
     res.json({
       service: "A-FORGE",
       version: "0.1.0",
@@ -129,16 +140,18 @@ export function createApp(): express.Express {
     });
   });
 
-  // ── Accept header fix for OpenCode MCP client ──
-  // The TypeScript MCP SDK requires BOTH Accept: application/json AND text/event-stream.
-  // OpenCode's MCP client may send only one. Middleware patches Accept to include both.
-  mcpRouter.use("/mcp", (req: Request, _res: Response, next: NextFunction) => {
-    const accept = req.headers["accept"] || "";
-    if (accept && !accept.includes("application/json")) {
-      req.headers["accept"] = accept + ", application/json";
-    }
-    if (accept && !accept.includes("text/event-stream")) {
-      req.headers["accept"] = (req.headers["accept"] || accept) + ", text/event-stream";
+  // ── A-FORGE MCP transport middleware ──
+  // Session ID injection: MCP SDK 1.29.0 StreamableHTTPServerTransport requires
+  // Mcp-Session-Id header on every POST. Claude Code's MCP client doesn't send
+  // one on first contact. Inject a generated session ID so the transport never
+  // sees a missing header.
+  // Accept header patching is done in mcpHandler directly (after the middleware
+  // because the SDK's getRequestListener reads from the raw IncomingMessage).
+  mcpRouter.use((req: Request, _res: Response, next: NextFunction) => {
+    const hasSessionId = req.headers["mcp-session-id"] || req.query.sessionId || req.query.session_id;
+    if (req.method === "POST" && !hasSessionId) {
+      const generatedId = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      req.headers["mcp-session-id"] = generatedId;
     }
     next();
   });
@@ -148,6 +161,30 @@ export function createApp(): express.Express {
       res.status(503).json({ error: "MCP transport not initialized" });
       return;
     }
+    // MCP SDK 1.9.0 StreamableHTTPServerTransport requires Mcp-Session-Id header
+    // on every POST. Inject a session ID if none is present in query or headers.
+    const hasSessionId = req.headers["mcp-session-id"] || req.query.sessionId || req.query.session_id;
+    if (req.method === "POST" && !hasSessionId) {
+      req.headers["mcp-session-id"] = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+    // SDK 1.29.0 StreamableHTTPServerTransport validates Accept header on the Web
+    // Standard Request object created by @hono/node-server's getRequestListener.
+    // That library reads from rawHeaders (raw HTTP array), NOT req.headers (parsed
+    // object). Patching req.headers is invisible to the SDK.
+    // Fix: patch rawHeaders directly so the Web Request sees both required types.
+    const rawAcceptIdx = req.rawHeaders.findIndex(
+      (h: string) => h.toLowerCase() === "accept"
+    );
+    if (rawAcceptIdx >= 0) {
+      let patched = req.rawHeaders[rawAcceptIdx + 1] as string;
+      if (!patched.includes("application/json")) patched += ", application/json";
+      if (!patched.includes("text/event-stream")) patched += ", text/event-stream";
+      req.rawHeaders[rawAcceptIdx + 1] = patched;
+    } else {
+      // No Accept header at all — add both required values
+      req.rawHeaders.push("Accept", "application/json, text/event-stream");
+    }
+    console.error(`[A-FORGE] MCP handler: accept="${req.headers["accept"]}" method=${req.method} url=${req.url}`);
     try {
       await mcpTransport.handleRequest(req, res, req.body);
     } catch (err) {
@@ -168,6 +205,7 @@ export function createApp(): express.Express {
   const requireOperatorAuth = createOperatorAuthMiddleware(ensureOperatorTokenPolicy());
   app.use("/operator", requireOperatorAuth);
   app.use("/human-expert", requireOperatorAuth);
+  app.use("/peer", requireOperatorAuth, createPeerContractRouter());
 
 /**
  * POST /sense
@@ -176,7 +214,7 @@ export function createApp(): express.Express {
 app.post("/sense", async (req: Request, res: Response) => {
   try {
     return await runStage("111_SENSE" as MetabolicStage, async () => {
-    const { version: clientVersion, session_id, prompt, context } = req.body;
+    const { version: clientVersion, session_id, prompt, context, peer_contract_id } = req.body;
     if (clientVersion && clientVersion !== "0.1.0" && clientVersion !== "1") {
       recordBridgeContractMismatch(`client_version_${clientVersion}`);
     }
@@ -222,9 +260,9 @@ app.post("/sense", async (req: Request, res: Response) => {
 
     // Log for observability
     console.error(
-      `[SENSE 111] session=${session_id ?? "anon"} mode=${sense.mode_used} ` +
-        `uncertainty=${sense.uncertainty_band} recommendation=${sense.recommended_next_stage} ` +
-        `verdict=${judge.verdict}`,
+      `[SENSE 111] session=${session_id ?? "anon"} peer_contract=${peer_contract_id ?? "none"} ` +
+        `mode=${sense.mode_used} uncertainty=${sense.uncertainty_band} ` +
+        `recommendation=${sense.recommended_next_stage} verdict=${judge.verdict}`,
     );
 
     const payload = {
@@ -259,6 +297,7 @@ app.post("/sense", async (req: Request, res: Response) => {
         version: "0.1.0",
         epoch: "2026-04-08",
         received_context: context,
+        peer_contract_id,
       },
     };
     res.json(payload);
@@ -284,7 +323,7 @@ app.post("/sense", async (req: Request, res: Response) => {
 app.post("/route", async (req: Request, res: Response) => {
   try {
     return await runStage("333_MIND" as MetabolicStage, async () => {
-      const { prompt, sessionId, mode } = req.body;
+      const { prompt, sessionId, mode, peer_contract_id } = req.body;
       if (!prompt) {
         res.status(400).json({ ok: false, error: "prompt is required" });
         return;
@@ -311,6 +350,7 @@ app.post("/route", async (req: Request, res: Response) => {
         is_hold: decision === "888_HOLD",
         session_id: sessionId ?? "anon",
         coordinator: "AAA-Agent",
+        peer_contract_id,
       });
     });
   } catch (error) {
@@ -481,6 +521,80 @@ app.post("/execute", async (req: Request, res: Response) => {
       }
     }
 
+    // ── A-FORGE ACT GATE (Gate 2.6) ──
+    // Execution craft check: determines if the execution pattern is safe
+    // for this action class + blast radius combination.
+    // Calls the arifOS ACT module via MCP.
+    // Only for non-OBSERVE actions.
+    if (requiresGovernance(actionClass)) {
+      try {
+        // Determine blast radius from action class (ACT gate 2.6)
+        const _actBlastRadius = actionClass === "IRREVERSIBLE" || actionClass === "EXECUTE_HIGH_IMPACT"
+          ? "high"
+          : actionClass === "EXECUTE_REVERSIBLE" || actionClass === "QUEUE"
+            ? "medium"
+            : "low";
+        const _actIsReversible = actionClass !== "IRREVERSIBLE" && actionClass !== "EXECUTE_HIGH_IMPACT";
+
+        const actGateResult = await actCheck({
+          actionClass,
+          blastRadius: _actBlastRadius,
+          isReversible: _actIsReversible,
+          isMultiStep: false, // single tool call
+          stageNumber: 1,
+          totalStages: 1,
+          sessionId: session_id,
+          actorId: actor_id,
+        });
+
+        if (!actGateResult.allowed) {
+          if (actGateResult.verdict === "BLOCK") {
+            res.status(423).json({
+              ok: false,
+              error: {
+                type: "governance_hold",
+                message: `ACT_GATE_BLOCKED: ${actGateResult.verdict} — ${actGateResult.reason}`,
+                recommended_pattern: actGateResult.recommendedPattern,
+              },
+              action_class: actionClass,
+              adat_gate: "ACT_GATE_BLOCKED",
+            });
+            return;
+          }
+
+          // HOLD / DRY_RUN_REQUIRED / CANARY_REQUIRED / COMPENSATION_REQUIRED / HUMAN_REQUIRED
+          res.status(423).json({
+            ok: false,
+            error: {
+              type: "governance_hold",
+              message: `ACT_GATE_HOLD: ${actGateResult.verdict} — ${actGateResult.reason}`,
+              recommended_pattern: actGateResult.recommendedPattern,
+              required_actions: actGateResult.requiredActions,
+            },
+            action_class: actionClass,
+            adat_gate: "ACT_GATE_HOLD",
+            required_actions: actGateResult.requiredActions,
+          });
+          return;
+        }
+      } catch (err) {
+        if (err instanceof ActGateBlockedError) {
+          res.status(423).json({
+            ok: false,
+            error: {
+              type: "governance_hold",
+              message: `ACT_GATE_ERROR: ${err.message}`,
+              gate_result: err.gateResult,
+            },
+            action_class: actionClass,
+            adat_gate: "ACT_GATE_ERROR",
+          });
+          return;
+        }
+        console.error(`[ACT-GATE] Gate error for ${tool}: ${err}. Failing open — continuing.`);
+      }
+    }
+
     const mergedArgs = { ...(args ?? {}), session_id, actor_id };
     const result = await callMCP(tool, mergedArgs);
 
@@ -533,6 +647,124 @@ app.post("/execute", async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /skills/run
+ * Governed skill execution — AAA ingress dispatch target.
+ *
+ * Accepts: { capsule, skill_id, agent_pool, authority_tier, floor_gates }
+ * Loads SKILL.md, pins skill_sha256, executes via AgentEngine, signs receipt.
+ */
+app.post("/skills/run", async (req: Request, res: Response) => {
+  try {
+    const { capsule, skill_id, agent_pool, authority_tier, floor_gates } = req.body;
+    if (!skill_id || typeof skill_id !== "string") {
+      res.status(400).json({ ok: false, error: "skill_id is required" });
+      return;
+    }
+
+    // Dynamically import SkillRunner (avoids circular deps at module load)
+    const { loadSkill, buildSkillTask, signSkillReceipt } = await import(
+      "../domain/engine/SkillRunner.js"
+    );
+
+    const skill = loadSkill(skill_id);
+    if (!skill) {
+      res.status(404).json({
+        ok: false,
+        verdict: "VOID",
+        error: `Skill not found: ${skill_id}`,
+      });
+      return;
+    }
+
+    // Build the governed task prompt
+    const task = buildSkillTask(
+      skill,
+      capsule || {},
+      authority_tier || "Tier0",
+      floor_gates || [],
+    );
+
+    // Execute via AgentEngine
+    const config = readRuntimeConfig();
+    const llmProvider = createLlmProvider(config);
+    const toolRegistry = new ToolRegistry();
+    const longTermMemory = new LongTermMemory(config.memoryPath || "/tmp/aforge-memory");
+    const profile = buildAAAProfile("external_safe_mode");
+    const engine = new AgentEngine(profile, {
+      llmProvider,
+      toolRegistry,
+      longTermMemory,
+    });
+
+    const sessionId = capsule?.event_id
+      ? `skill-${skill_id}-${capsule.event_id.substring(0, 16)}`
+      : `skill-${skill_id}-${Date.now()}`;
+
+    const runResult = await engine.run({
+      task,
+      sessionId,
+      intentModel: "execution",
+      riskLevel: skill.frontmatter?.risk_tier === "critical" ? "high" : "medium",
+      metadata: {
+        capsule_id: capsule?.event_id,
+        skill_id,
+        skill_sha256: skill.sha256,
+      },
+    });
+
+    // Sign the receipt
+    const receiptInput = {
+      skill_id,
+      skill_sha256: skill.sha256,
+      capsule_id: capsule?.event_id ?? "unknown",
+      authority_tier: authority_tier ?? "Tier0",
+      steps: [],
+      final_text: runResult.finalText,
+      turn_count: runResult.turnCount,
+      total_tokens: runResult.totalEstimatedTokens,
+      verdict: (runResult.finalText.toUpperCase().includes("VERDICT: SEAL")
+        ? "SEAL"
+        : runResult.finalText.toUpperCase().includes("VERDICT: HOLD")
+          ? "HOLD"
+          : runResult.finalText.toUpperCase().includes("VERDICT: VOID")
+            ? "VOID"
+            : "UNKNOWN") as "SEAL" | "HOLD" | "VOID" | "SABAR" | "UNKNOWN",
+      session_id: sessionId,
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+    };
+
+    const receiptSig = signSkillReceipt(receiptInput);
+
+    console.error(
+      `[A-FORGE] Skill ${skill_id} | sha256=${skill.sha256.substring(0, 12)} | ` +
+      `verdict=${receiptInput.verdict} | turns=${runResult.turnCount} | ` +
+      `tokens=${runResult.totalEstimatedTokens}`,
+    );
+
+    res.json({
+      ok: true,
+      verdict: receiptInput.verdict,
+      skill_id,
+      skill_sha256: skill.sha256,
+      capsule_id: capsule?.event_id ?? "unknown",
+      receipt_signature: receiptSig,
+      session_id: sessionId,
+      final_text: runResult.finalText.substring(0, 2000), // Truncate for response
+      turn_count: runResult.turnCount,
+      total_tokens: runResult.totalEstimatedTokens,
+    });
+  } catch (error) {
+    console.error("[A-FORGE] /skills/run error:", error);
+    res.status(500).json({
+      ok: false,
+      verdict: "VOID",
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
+/**
  * GET /metrics
  * Prometheus metrics endpoint
  */
@@ -568,6 +800,7 @@ app.get("/contract", (_req: Request, res: Response) => {
       operator_console: true,
       human_expert: true,
       seal_service: true,
+      peer_contract: true,
       dangerous_tools: process.env.ENABLE_DANGEROUS_TOOLS === "1" || process.env.ENABLE_DANGEROUS_TOOLS === "true",
       background_jobs: process.env.ENABLE_BACKGROUND_JOBS === "1" || process.env.ENABLE_BACKGROUND_JOBS === "true",
       GEOX_log_interpreter: true,
@@ -580,6 +813,8 @@ app.get("/contract", (_req: Request, res: Response) => {
       python_mcp: "GEOX-mcp:8081",
       bridge: "A-FORGE-bridge:7071",
       federation_probe: "GET /api/federation-probe",
+      peer_contract: "GET /peer/contract",
+      peer_contract_validate: "POST /peer/contract/validate",
       governance_status: "GET /api/governance-status",
       repo_steward: "GET /api/repo-steward/{sot-validator,registry-trinity,repo-entropy,steward-suggest}",
     },
@@ -961,10 +1196,10 @@ async function initMcpTransport(): Promise<StreamableHTTPServerTransport | null>
     await memoryContract.initialize();
     await telemetry.initialize();
     const transport = new StreamableHTTPServerTransport({
-      // Fixed session ID: A-FORGE runs on localhost behind the authenticated
-      // gateway; a stable session lets the gateway and direct callers share
-      // the same transport session without re-initialization races.
-      sessionIdGenerator: () => "a-forge-gateway-session",
+      // Use sessionIdGenerator for stateful mode. Each fresh POST /mcp without
+      // a session header creates a new session. The transport handles session
+      // lifecycle internally.
+      sessionIdGenerator: () => randomUUID(),
       enableJsonResponse: true, // Direct JSON (not SSE) — arifOS parity. Required for OpenCode MCP client compat.
     });
     await mcpServer.connect(transport);
@@ -989,6 +1224,7 @@ export async function startServer(): Promise<void> {
     console.error(`    POST /sense          - Sense + Judge evaluation`);
     console.error(`    POST /route          - Federal Coordinator Routing`);
     console.error(`    POST /execute        - Federation MCP proxy`);
+    console.error(`    POST /skills/run     - Governed skill execution 🆕`);
     console.error(`    POST /a2a            - A2A JSON-RPC gateway`);
     console.error(`    GET  /health         - Health check`);
     console.error(`    GET  /ready          - Readiness probe`);

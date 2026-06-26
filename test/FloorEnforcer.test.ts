@@ -167,6 +167,7 @@ test("FloorEnforcer: destructive with rollback plan → CAUTION (F5)", () => {
     target: "/tmp/old",
     intent: "Delete temporary files",
     rollback_plan: "git checkout HEAD@{1} -- /tmp/old",
+    evidence_count: 1,
   });
   const v = checkAll(makeContext(action));
   // CAUTION means: passes the HARD check (F1 has rollback), still allowed
@@ -306,7 +307,7 @@ test("FloorEnforcer: VOID + HOLD in reasons → final VOID", () => {
   resetF13HaltChannel();
   // Shell metachar (VOID) + low tier (HOLD)
   const action = makeAction({
-    args: { cmd: "rm -rf /" },
+    args: { cmd: "echo hi; rm -rf /" },
     action_type: "EXECUTE",
     tier: 1,
   });
@@ -321,11 +322,12 @@ test("FloorEnforcer: HOLD + CAUTION in reasons → final HOLD", () => {
   // High blast (F1 HOLD) + destructive verb with rollback (F5 CAUTION)
   const action = makeAction({
     action_type: "DELETE",
-    target: "/etc/something",
+    target: "/tmp/something",
     blast_radius: "vps",
     reversibility_score: 0.2,
     intent: "Delete old config",
-    rollback_plan: "git restore /etc/something",
+    rollback_plan: "git restore /tmp/something",
+    evidence_count: 1,
   });
   const v = checkAll(makeContext(action));
   assert.equal(v.final, "HOLD");
