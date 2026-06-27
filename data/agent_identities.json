@@ -190,5 +190,24 @@
     "registered_at": "2026-06-24T05:13:42.612Z",
     "last_seen": "2026-06-24T05:13:42.612Z",
     "lease_ids": []
+  },
+  "forge-000omega": {
+    "agent_id": "forge-000omega",
+    "agent_type": "opencode",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "sha256:pending-arif-via-AAA-IDENTITY",
+    "registered_at": "2026-06-27T19:36:00.808Z",
+    "last_seen": "2026-06-27T19:36:00.808Z",
+    "lease_ids": []
   }
 }
