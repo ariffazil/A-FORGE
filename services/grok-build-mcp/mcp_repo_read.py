@@ -26,12 +26,15 @@ Register as "mcp-repo-read". Preferred after external research for sovereign gro
 """
 
 from __future__ import annotations
+import logging
 import os
 import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
+
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP(
     name="mcp-repo-read",
@@ -170,6 +173,7 @@ def list_files(path: str = ".", recursive: bool = False, glob: Optional[str] = N
     Returns: files (capped), categories, key_hints, plus full cognitive envelope.
     Default is shallow (one level). Set recursive=true for deeper walks (still capped).
     """
+    logger.info("list_files called", extra={"tool": "list_files", "path": path})
     base = _safe_path(path)
     if not base.exists():
         err = {
@@ -235,6 +239,7 @@ def read_file(path: str, offset: int = 0, limit: int = 500, mode: str = "smart")
     mode="full" or explicit offset/limit: progressive disclosure for large files.
     Always bounded + size guarded.
     """
+    logger.info("read_file called", extra={"tool": "read_file", "path": path, "mode": mode})
     p = _safe_path(path)
     if not p.is_file():
         err = {
@@ -304,6 +309,7 @@ def search_symbols(query: str, path: str = ".", glob: str = "*.py", max_results:
     Hits are tagged "definition" vs "match" when detectable.
     Uses rg when available (context lines) with pure-Python fallback.
     """
+    logger.info("search_symbols called", extra={"tool": "search_symbols", "query": query})
     base = _safe_path(path)
     hits: List[Dict[str, Any]] = []
     q_lower = query.lower()
@@ -485,6 +491,7 @@ def query_context(query: str, focus: str = "all", top_k: int = 6) -> Dict[str, A
 
     focus: "all" | "adr" | "code" | "structure"
     """
+    logger.info("query_context called", extra={"tool": "query_context", "query": query[:80]})
     q = query.lower()
     evidence: List[Dict] = []
     reasoning_parts: List[str] = []

@@ -28,6 +28,7 @@ usage:
 ═══════════════════════════════════════════════════════════════════════════════
 """
 import json
+import logging
 import os
 import sys
 import time
@@ -36,6 +37,8 @@ import urllib.error
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
@@ -122,9 +125,11 @@ def _supabase_post(payload: dict) -> Optional[str]:
             return None
     except urllib.error.URLError as e:
         _log_stderr("INSERT_URLError", f"{type(e).__name__}: {e}")
+        logger.error("Supabase INSERT URLError: %s", e)
         return None
     except Exception as e:
         _log_stderr("INSERT_EXCEPTION", f"{type(e).__name__}: {e}")
+        logger.exception("Supabase INSERT exception")
         return None
 
 
@@ -159,9 +164,11 @@ def _supabase_patch(receipt_id: str, payload: dict) -> bool:
             return ok
     except urllib.error.URLError as e:
         _log_stderr("UPDATE_URLError", f"{type(e).__name__}: {e}")
+        logger.error("Supabase PATCH URLError: %s", e)
         return False
     except Exception as e:
         _log_stderr("UPDATE_EXCEPTION", f"{type(e).__name__}: {e}")
+        logger.exception("Supabase PATCH exception")
         return False
 
 

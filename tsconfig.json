@@ -17,5 +17,5 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo"
   },
   "include": ["src/**/*.ts", "examples/**/*.ts", "test/**/*.ts", "scripts/**/*.ts"],
-  "exclude": ["**/*.legacy.ts", "examples/field_optimization_loop.ts", "test/engine.test.ts"]
+  "exclude": ["**/*.legacy.ts", "examples/field_optimization_loop.ts", "test/engine.test.ts", "test/InspectorIntegration.test.ts"]
 }

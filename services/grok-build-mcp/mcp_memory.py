@@ -22,11 +22,14 @@ Transport: stdio preferred.
 """
 
 from __future__ import annotations
+import logging
 import os
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 from fastmcp import FastMCP
+
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP(
     name="mcp-memory",
@@ -52,6 +55,7 @@ DREAM_SPEC_FALLBACKS = [
 @mcp.tool()
 def recall_adr_context(query: str, top_k: int = 5) -> Dict[str, Any]:
     """Semantic-ish recall of relevant ADRs. Real load from /root/arifOS/adr."""
+    logger.info("recall_adr_context called", extra={"tool": "recall_adr_context", "query": query[:80]})
     adrs = sorted(ADR_DIR.glob("*.md"))
     hits = []
     q = query.lower()
@@ -60,7 +64,7 @@ def recall_adr_context(query: str, top_k: int = 5) -> Dict[str, Any]:
             txt = a.read_text(encoding="utf-8", errors="replace")
             if q in txt.lower() or q in a.name.lower():
                 hits.append({"adr": a.name, "snippet": txt[:400], "path": str(a.relative_to(REPO_ROOT))})
-        except:
+        except Exception:
             pass
         if len(hits) >= top_k:
             break
@@ -85,6 +89,7 @@ def _find_cooling_entries(q: str = "", top_k: int = 5) -> List[Dict]:
 @mcp.tool()
 def recall_cooling_ledger(query: str = "", top_k: int = 5) -> Dict[str, Any]:
     """Recall recent Cooling Ledger entries for reflection. Grounded in HERMES + AAA locations."""
+    logger.info("recall_cooling_ledger called", extra={"tool": "recall_cooling_ledger"})
     q = query.lower()
     entries = _find_cooling_entries(q, top_k)
     return {"status": "ok", "entries": entries, "note": "Cooling Ledger for F7/F11 humility and audit. Bridge to arifos-memory-mcp or arifOS core/cooling_ledger.py for semantic. Escalate writes via 888.", "telemetry": {"tool": "recall_cooling_ledger", "sources": [str(d) for d in COOLING_DIRS]}}
@@ -114,6 +119,7 @@ def get_dream_summary() -> Dict[str, Any]:
 @mcp.tool()
 def search_governance(query: str, top_k: int = 5) -> Dict[str, Any]:
     """Search constitutional floors, 888 notes, F-gates, ADRs. Thin governance overlay. Full via arifOS 888 + A2A."""
+    logger.info("search_governance called", extra={"tool": "search_governance", "query": query[:80]})
     q = query.lower()
     results: List[Dict] = []
     # Scan ADRs for governance mentions (F floors, 888, HOLD)

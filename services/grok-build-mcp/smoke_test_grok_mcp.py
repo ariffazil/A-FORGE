@@ -105,7 +105,7 @@ def test_stdio_basic(server_path: Path, tool: str, args: dict):
         proc.terminate()
         try:
             proc.wait(timeout=2)
-        except:
+        except subprocess.TimeoutExpired:
             proc.kill()
 
 def main():

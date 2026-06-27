@@ -11,7 +11,9 @@ authority:  F13 SOVEREIGN — Arif Fazil
 vm_id:      1325122 (af-forge, 72.62.71.199)
 ═══════════════════════════════════════════════════════
 """
-import sys, json, subprocess, os, hashlib
+import sys, json, subprocess, os, hashlib, logging
+
+logger = logging.getLogger(__name__)
 
 # ── External Action Receipt (Supabase DB = reality) ──
 # Doctrine: AAA-SUPABASE-RECORD-DOCTRINE v1.0 §3.5
@@ -66,6 +68,7 @@ def make_error(id, code: int, message: str):
     return json.dumps({"jsonrpc": "2.0", "id": id, "error": {"code": code, "message": message}})
 
 def main():
+    logger.info("hostinger-gate starting")
     if not os.path.exists(TOKEN_FILE):
         log("INIT", "hostinger-gate", "TOKEN_MISSING",
             f"{TOKEN_FILE} not found. Hostinger MCP gate is disabled. Create the token file or set HOSTINGER_API_TOKEN to enable.")
@@ -96,6 +99,7 @@ def main():
         try:
             req = json.loads(line)
         except json.JSONDecodeError:
+            logger.warning("Invalid JSON received: %s", line[:100])
             continue
         
         method = req.get("method", "")

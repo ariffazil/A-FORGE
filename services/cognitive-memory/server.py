@@ -22,10 +22,14 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
+import logging
+
 import httpx
 from fastmcp import FastMCP
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+
+logger = logging.getLogger(__name__)
 
 # ─── Server Identity ───────────────────────────────────────────
 VERSION = "0.1.0"
@@ -115,6 +119,7 @@ async def _qdrant_search(query_vector: list[float], limit: int = 10) -> list[dic
             if resp.status_code == 200:
                 return resp.json().get("result", [])
         except Exception:
+            logger.exception("Qdrant search failed")
             pass
     return []
 
@@ -129,6 +134,7 @@ async def _qdrant_upsert(point_id: str, vector: list[float], payload: dict) -> b
             )
             return resp.status_code == 200
         except Exception:
+            logger.exception("Qdrant upsert failed")
             return False
 
 
@@ -191,6 +197,7 @@ async def mem_store_plan(
     source_session: str = "",
 ) -> dict[str, Any]:
     """Store a MIND plan into persistent cognitive memory."""
+    logger.info("mem_store_plan called", extra={"tool": "mem_store_plan", "plan_id": plan_id})
     floors_triggered = []
 
     # ── F09 check ──
@@ -268,6 +275,7 @@ async def mem_recall_plans(
     include_graph_context: bool = True,
 ) -> dict[str, Any]:
     """Recall semantically similar plans from cognitive memory."""
+    logger.info("mem_recall_plans called", extra={"tool": "mem_recall_plans"})
     vector = _simple_embed(query)
     qdrant_results = await _qdrant_search(vector, limit=max_results)
 
@@ -322,6 +330,7 @@ async def mem_detect_contradictions(
     threshold: float = 0.7,
 ) -> dict[str, Any]:
     """Detect contradictions between new plan and stored plans."""
+    logger.info("mem_detect_contradictions called", extra={"tool": "mem_detect_contradictions"})
     vector = _simple_embed(plan_summary)
     results = await _qdrant_search(vector, limit=5)
 
