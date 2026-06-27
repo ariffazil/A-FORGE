@@ -20,12 +20,12 @@
     "tui:start": "node dist/src/infrastructure/tui/forge-tui.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.9.0",
-    "@supabase/supabase-js": "^2.108.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@supabase/supabase-js": "^2.108.2",
     "blessed": "^0.1.81",
-    "blessed-contrib": "^4.8.13",
-    "express": "^5.1.0",
-    "glob": "^11.0.2",
+    "blessed-contrib": "^4.11.0",
+    "express": "^5.2.1",
+    "glob": "^11.1.0",
     "pg": "^8.22.0",
     "prom-client": "^15.1.3",
     "zod": "^4.4.3"

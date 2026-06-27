@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -22,6 +23,8 @@ from typing import Any
 
 import requests
 import yaml
+
+logger = logging.getLogger(__name__)
 
 
 def load_config(path: str) -> dict[str, Any]:
@@ -180,6 +183,7 @@ def run_battery(config: dict[str, Any], probes: list[dict[str, Any]], execute: b
                 try:
                     direct = direct_call(model_cfg, probe["prompt"])
                 except Exception as e:
+                    logger.error("Direct call failed for probe %s: %s", probe["probe_id"], e)
                     direct = {"response": "", "error": str(e), "latency_ms": 0, "status": -1, "prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
             else:
                 direct = dry_run_response("direct", probe)
@@ -253,6 +257,8 @@ def main() -> int:
     parser.add_argument("--config", default="apex_battery_config.yaml", help="Path to config YAML")
     parser.add_argument("--execute", action="store_true", help="Make real API calls (default: dry-run)")
     args = parser.parse_args()
+
+    logger.info("APEX battery starting", extra={"config": args.config, "execute": args.execute})
 
     config = load_config(args.config)
     probes_path = config["protocol"]["probes_file"]

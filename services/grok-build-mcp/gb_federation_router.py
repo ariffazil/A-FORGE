@@ -45,12 +45,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import sys
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
+
+logger = logging.getLogger(__name__)
 
 # ── Identity & Federation Context ─────────────────────────────────────────────
 VERSION = "2026.06.23-arifos-gb"
@@ -140,6 +143,7 @@ async def orchestrate_sequence(intent: str, target_servers: Optional[List[str]] 
 
     Use before any change tier.
     """
+    logger.info("orchestrate_sequence called", extra={"tool": "orchestrate_sequence", "intent": intent[:80]})
     servers = target_servers or ["arifos", "aforge", "geox", "wealth", "well", "a2a"]
     plan = {
         "intent": intent,
@@ -171,6 +175,7 @@ async def route_to_mcp(server_label: str, tool_name: str, arguments: Dict[str, A
     Router: suggest or describe route. In full impl calls the actual MCP (stdio or http).
     For now returns routing directive + minimal validation. Server-side policy applies.
     """
+    logger.info("route_to_mcp called", extra={"tool": "route_to_mcp", "server": server_label, "target_tool": tool_name})
     allowed = {
         "arifos": ["arif_sense", "arif_judge", "arif_vault"],
         "aforge": ["forge_registry_status", "forge_lease_request", "forge_shell_dryrun"],
@@ -260,6 +265,7 @@ def main():
     args = parser.parse_args()
 
     if args.http:
+        logger.info("Starting %s on http://%s:%d/mcp (streamable-http)", SERVER_LABEL, args.host, args.port)
         print(f"Starting {SERVER_LABEL} on http://{args.host}:{args.port}/mcp (streamable-http)", file=sys.stderr)
         mcp.run(transport="streamable-http", host=args.host, port=args.port)
     else:

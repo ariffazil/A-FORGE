@@ -65,6 +65,7 @@ import type { ToolAction, TokenBudget, StressState } from "../types/wealth.js";
 import { getScenarios } from "../../infrastructure/bridges/geoxBridge.js";
 import { evaluateWithConfidence, calculateConfidenceEstimate } from "../policy/confidence.js";
 import { ArifOSKernel } from "./ArifOSKernel.js";
+import { InspectorClient, type DeprecationCheck, type AuthorityCheck, type SchemaCheckResult, type InspectorSnapshot, type DriftReport, type ReceiptChainCheck, type OutputValidationResult } from "../../infrastructure/inspector/InspectorClient.js";
 
 export type AgentEngineDependencies = {
   llmProvider: ILlmProvider;
@@ -91,6 +92,8 @@ export type AgentEngineDependencies = {
   wealthBridge?: WealthEngineBridge;
   /** GEOX scenario loader (Phase 3 hexagonal) */
   geoxScenarioLoader?: typeof getScenarios;
+  /** InspectorClient for MCP reality introspection (P0-P4 hooks) */
+  inspector?: InspectorClient;
 };
 
 export class AgentEngine {
@@ -99,11 +102,14 @@ export class AgentEngine {
   private _wealthAllocations: Array<{ id: string; maruahScore: number }> = [];
   private _kernel: ArifOSKernel | null = null;
   private _pipeline?: import("./PipelineCoordinator.js").PipelineCoordinator;
+  private _inspector: InspectorClient | null = null;
 
   constructor(
     private readonly profile: AgentProfile,
     private readonly dependencies: AgentEngineDependencies,
-  ) {}
+  ) {
+    this._inspector = dependencies.inspector ?? null;
+  }
 
   async run(options: EngineRunOptions): Promise<AgentRunResult> {
     const startedAt = new Date();
@@ -139,6 +145,32 @@ export class AgentEngine {
 
     // === 000_INIT: Bootstrap ArifOSKernel ===
     this._kernel = new ArifOSKernel(options.task, sessionId);
+
+    // === INSPECTOR P1: Baseline reality snapshot + drift detection ===
+    let inspectorBaseline: InspectorSnapshot | null = null;
+    let inspectorDrift: DriftReport | null = null;
+    if (this._inspector) {
+      try {
+        inspectorBaseline = await this._inspector.snapshot();
+        inspectorDrift = await this._inspector.detectDrift(inspectorBaseline);
+        if (inspectorDrift.zombie.length > 0 || inspectorDrift.degraded.length > 0) {
+          const driftMsg = [
+            inspectorDrift.zombie.length > 0 ? `ZOMBIE:${inspectorDrift.zombie.join(",")}` : "",
+            inspectorDrift.degraded.length > 0 ? `DEGRADED:${inspectorDrift.degraded.join(",")}` : "",
+            inspectorDrift.missing.length > 0 ? `MISSING:${inspectorDrift.missing.join(",")}` : "",
+          ].filter(Boolean).join(" | ");
+          shortTermMemory.pin({
+            role: "system",
+            content: `[INSPECTOR] Reality drift detected at INIT. ${driftMsg}. ${inspectorDrift.healthy.length} tools healthy.`,
+          });
+        }
+      } catch (inspectorErr) {
+        // Inspector failure is non-fatal — log and proceed without sensory cortex
+        process.stderr.write(
+          `[INSPECTOR] Snapshot failed (non-fatal): ${inspectorErr instanceof Error ? inspectorErr.message : String(inspectorErr)}\n`
+        );
+      }
+    }
 
     // === PipelineDelegate: Optionally wire PipelineCoordinator as orchestrator ===
     if (this.dependencies.pipelineDelegate && this.dependencies.pipelineDependencies) {
@@ -911,6 +943,27 @@ export class AgentEngine {
       }
     }
 
+    // === INSPECTOR P3: Receipt chain verification before seal ===
+    if (this._inspector) {
+      try {
+        const chainCheck = await this._inspector.verifyReceiptChain(sessionId);
+        if (!chainCheck.intact) {
+          const gapMsg = chainCheck.gaps.length > 0
+            ? `VAULT999 chain gaps detected: ${chainCheck.gaps.slice(0, 10).join(", ")}${chainCheck.gaps.length > 10 ? `... (+${chainCheck.gaps.length - 10} more)` : ""}`
+            : "VAULT999 chain integrity unknown";
+          process.stderr.write(`[INSPECTOR] ${gapMsg}. Last seal: ${chainCheck.lastSealId ?? "NONE"}\n`);
+          floorsTriggered.push("INSPECTOR_CHAIN");
+          // Advisory only — do not block seal on chain gap. Existing gaps (60 pre-May-2026)
+          // are SOVEREIGN RULING 2026-06-05: non-issue. New gaps → flag for human review.
+        }
+      } catch (chainCheckErr) {
+        // Chain check failure is non-fatal
+        process.stderr.write(
+          `[INSPECTOR] Receipt chain check failed (non-fatal): ${chainCheckErr instanceof Error ? chainCheckErr.message : String(chainCheckErr)}\n`
+        );
+      }
+    }
+
     // === 999 VAULT: Seal terminal verdict ===
     const sealResult = await this.sealTerminal(
       options,
@@ -962,6 +1015,18 @@ export class AgentEngine {
       });
     } catch {
       // Non-fatal — ledger failure must not break agent execution
+    }
+
+    // === INSPECTOR P4: Session continuity manifest ===
+    if (this._inspector) {
+      try {
+        await this._inspector.snapshotFinal();
+      } catch (manifestErr) {
+        // Manifest write failure is non-fatal
+        process.stderr.write(
+          `[INSPECTOR] Session manifest write failed (non-fatal): ${manifestErr instanceof Error ? manifestErr.message : String(manifestErr)}\n`
+        );
+      }
     }
 
     return result;
@@ -1109,6 +1174,52 @@ export class AgentEngine {
         continue;
       }
 
+      // === INSPECTOR P0: Deprecation + Authority + Schema preflight ===
+      if (this._inspector) {
+        try {
+          this._inspector.trackToolCall(call.toolName);
+          const preflight = this._inspector.preflight(call.toolName, call.args, permissionContext);
+          if (preflight.verdict === "HOLD") {
+            floorsTriggered.push("INSPECTOR_DEPRECATION");
+            recordFloorViolation("INSPECTOR_DEPRECATION", "hard");
+            toolMessage = {
+              role: "tool",
+              toolCallId: call.id,
+              toolName: call.toolName,
+              content: `HOLD [INSPECTOR]: ${preflight.message}`,
+            };
+            shortTermMemory.append(toolMessage);
+            toolMessages.push(toolMessage);
+            blockedDangerousActions += 1;
+            callIndex++;
+            continue;
+          }
+          if (preflight.verdict === "VOID") {
+            floorsTriggered.push("INSPECTOR_AUTHORITY");
+            recordFloorViolation("INSPECTOR_AUTHORITY", "hard");
+            toolMessage = {
+              role: "tool",
+              toolCallId: call.id,
+              toolName: call.toolName,
+              content: `VOID [INSPECTOR]: ${preflight.message}`,
+            };
+            shortTermMemory.append(toolMessage);
+            toolMessages.push(toolMessage);
+            blockedDangerousActions += 1;
+            callIndex++;
+            continue;
+          }
+          if (preflight.verdict === "WARN") {
+            process.stderr.write(`[INSPECTOR] WARN: ${call.toolName} — ${preflight.message}\n`);
+          }
+        } catch (inspectorPreflightErr) {
+          // Preflight failure is non-fatal — log and proceed without Inspector gating
+          process.stderr.write(
+            `[INSPECTOR] Preflight failed (non-fatal): ${inspectorPreflightErr instanceof Error ? inspectorPreflightErr.message : String(inspectorPreflightErr)}\n`
+          );
+        }
+      }
+
       let toolResult;
       try {
         // PER-TOOL TIMEOUT HARDENING: Ensure no tool hangs the engine
@@ -1130,6 +1241,29 @@ export class AgentEngine {
         );
 
         toolResult = await Promise.race([toolPromise, timeoutPromise]);
+
+        // === INSPECTOR P3: Output validation ===
+        if (this._inspector && toolResult && typeof toolResult.output === "string") {
+          try {
+            const outputCheck = this._inspector.validateOutput(call.toolName, toolResult.output);
+            if (!outputCheck.valid) {
+              const outputErrors = outputCheck.errors.join("; ");
+              process.stderr.write(`[INSPECTOR] Output validation failed for ${call.toolName}: ${outputErrors}\n`);
+              if (toolResult.ok) {
+                // Don't override the ok flag — the tool succeeded but output looks suspicious
+                toolResult.metadata = {
+                  ...(toolResult.metadata ?? {}),
+                  inspectorOutputWarning: outputErrors,
+                };
+              }
+            }
+          } catch (outputCheckErr) {
+            // Output validation failure is non-fatal
+            process.stderr.write(
+              `[INSPECTOR] Output validation errored (non-fatal): ${outputCheckErr instanceof Error ? outputCheckErr.message : String(outputCheckErr)}\n`
+            );
+          }
+        }
 
         // Track for grounding check
         toolResults.push({ ok: toolResult.ok, output: toolResult.output });

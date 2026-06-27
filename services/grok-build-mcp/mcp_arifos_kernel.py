@@ -31,12 +31,15 @@ Hybrid: xAI multi-agent for breadth -> this for sovereign kernel depth -> A-FORG
 from __future__ import annotations
 
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastmcp import FastMCP
+
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP(
     name="mcp-arifos-kernel",
@@ -87,6 +90,7 @@ def _tele(tool: str, **extra: Any) -> Dict[str, Any]:
 @mcp.tool()
 def get_kernel_health() -> Dict[str, Any]:
     """Snapshot of arifOS kernel health, entropy, floors summary, last rhythm, vault liveness."""
+    logger.info("get_kernel_health called", extra={"tool": "get_kernel_health"})
     health: Dict[str, Any] = {
         "status": "ok",
         "kernel": "arifOS constitutional core",
@@ -105,6 +109,7 @@ def get_kernel_health() -> Dict[str, Any]:
             }
         except Exception:
             health["entropy"] = {"note": "entropy-report present but unparsable"}
+            logger.exception("Failed to parse entropy report")
 
     # Recent VAULT seals (read-only chain state)
     seals: List[str] = []
@@ -223,6 +228,7 @@ def submit_for_judgment(candidate: str, evidence_refs: Optional[List[str]] = Non
     Returns HOLD structure + exact escalation path. Does NOT execute judgment here.
     Real 888 lives in arifOS MCP (arif_judge) + AAA A2A deliberation + Arif (F13).
     """
+    logger.info("submit_for_judgment called", extra={"tool": "submit_for_judgment", "candidate": candidate[:80]})
     evidence_refs = evidence_refs or []
     receipt = {
         "status": "hold",
@@ -266,6 +272,7 @@ source: mcp-arifos-kernel / Grok Build Malam
             written.append(str(out.relative_to(ROOT)))
         except Exception as e:
             written.append(f"error:{cdir}:{e}")
+            logger.exception("Failed to write malam reflection to %s", cdir)
 
     # Also drop into dream inbox for engine pickup
     try:

@@ -17,10 +17,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { z } from "zod";
 
-import { checkWitness } from "../../domain/governance/f3Witness.js";
-import { checkEmpathy } from "../../domain/governance/f6Empathy.js";
-import { checkAntiHantu } from "../../domain/governance/f9AntiHantu.js";
-import { checkWellReadiness, AmanahLockManager } from "../../domain/governance/index.js";
+// F3/F6/F9/W0 adjudication removed from A-FORGE — delegated to arifOS 666 HEART pipeline.
+// A-FORGE NEVER adjudicates constitutional floors locally.
+import { AmanahLockManager } from "../../domain/governance/index.js";
 import { readRuntimeConfig } from "../../interfaces/config/RuntimeConfig.js";
 import { createLlmProvider } from "../../infrastructure/llm/providerFactory.js";
 import { getApprovalBoundary } from "../../application/approval/index.js";
@@ -37,6 +36,7 @@ import { systemctlWrapper } from "../../infrastructure/tools/infra/systemctl_wra
 import { dockerWrapper } from "../../infrastructure/tools/infra/docker_wrapper.js";
 import { journalctlWrapper } from "../../infrastructure/tools/infra/journalctl_wrapper.js";
 import { registerCoreResources } from "./resources.js";
+import { registerPrompts } from "./prompts.js";
 import { callMCP } from "./client.js";
 import { enforceMcpFloor, floorErrorResponse } from "../../domain/governance/mcpFloorEnforcer.js";
 import {
@@ -410,7 +410,7 @@ function resultAsJson(output: unknown): string {
 // ── Tier 00 Identity ─────────────────────────────────────────────────────────
 
 server.tool(
-  "arif_session_init",
+  "forge_session_init",
   "Constitutional session ignition. Proxies to arifOS kernel — A-FORGE no longer mints independent sessions. (Stage 000 INIT)",
   {
     actor_id: z.string().describe("Identifier for the human architect or agent"),
@@ -419,7 +419,7 @@ server.tool(
   },
   async ({ actor_id, intent, mode }) => {
     const startedAt = Date.now();
-    await telemetryInvoke("arif_session_init");
+    await telemetryInvoke("forge_session_init");
     return runStage("000_INIT" as MetabolicStage, async () => {
       try {
         // Proxy to kernel's arif_session_init (mode=light for fast bootstrap)
@@ -442,7 +442,7 @@ server.tool(
             error: "Kernel did not return a session_id",
             kernel_response: response,
           }, null, 2);
-          await telemetryFailure("arif_session_init", startedAt, new Error(errorText));
+          await telemetryFailure("forge_session_init", startedAt, new Error(errorText));
           return { content: [{ type: "text" as const, text: errorText }], isError: true };
         }
         // Register the kernel-born session locally
@@ -463,10 +463,10 @@ server.tool(
             }, null, 2),
           }],
         };
-        await telemetrySuccess("arif_session_init", startedAt);
+        await telemetrySuccess("forge_session_init", startedAt);
         return result;
       } catch (err) {
-        await telemetryFailure("arif_session_init", startedAt, err);
+        await telemetryFailure("forge_session_init", startedAt, err);
         return {
           content: [{
             type: "text" as const,
@@ -484,12 +484,12 @@ server.tool(
 );
 
 server.tool(
-  "arif_health_check",
-  "Return server health and constitutional genome (v2.0) status.",
+  "forge_health_check",
+  "Return A-FORGE server health and constitutional genome (v2.0) status.",
   {},
   async () => {
     const startedAt = Date.now();
-    await telemetryInvoke("arif_health_check");
+    await telemetryInvoke("forge_health_check");
     return runStage("000_INIT" as MetabolicStage, async () => {
     try {
       const result = {
@@ -513,10 +513,10 @@ server.tool(
           },
         ],
       };
-      await telemetrySuccess("arif_health_check", startedAt);
+      await telemetrySuccess("forge_health_check", startedAt);
       return result;
     } catch (err) {
-      await telemetryFailure("arif_health_check", startedAt, err);
+      await telemetryFailure("forge_health_check", startedAt, err);
       throw err;
     }
     });
@@ -533,30 +533,55 @@ server.tool(
 
 const heartHandler = async ({ task }: { task: string }) => {
   const startedAt = Date.now();
-  await telemetryInvoke("arif_heart_critique");
+  await telemetryInvoke("forge_heart_critique");
   return runStage("555_HEART" as MetabolicStage, async () => {
   try {
-    const f3 = checkWitness(task);
-    const f6 = checkEmpathy(task);
-    // Passing hasTelemetry: true because MCP calls are structurally verified by the server
-    const f9 = checkAntiHantu(task, { sessionId: "mcp-session", hasTelemetry: true, pipelineStage: "555_HEART" });
-    const w0 = await checkWellReadiness("high"); // W0: Human Substrate Gate
-
-    const blocked = f3.verdict === "SABAR" || f6.verdict === "VOID" || f9.verdict === "VOID" || w0.verdict === "HOLD" || w0.verdict === "SABAR";
-    const result = { 
-      content: [{ type: "text" as const, text: JSON.stringify({ overall: blocked ? "BLOCK" : "PASS", blocked, floors: { F3: f3.verdict, F6: f6.verdict, F9: f9.verdict, W0: w0.verdict }, w0_message: w0.message }, null, 2) }],
-      isError: blocked
+    // Delegate to arifOS 666 HEART pipeline.
+    // A-FORGE NEVER adjudicates constitutional floors locally.
+    const kernelResponse = await callMCP("arifos.arif_heart_critique", { task }) as Record<string, unknown>;
+    const verdict = kernelResponse?.verdict ?? kernelResponse?.status ?? "DELEGATED";
+    const blocked = verdict === "VOID" || verdict === "SABAR" || verdict === "HOLD";
+    const result = {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          overall: blocked ? "BLOCK" : "PASS",
+          blocked,
+          source: "arifOS::666_HEART",
+          kernel_verdict: verdict,
+          kernel_response: kernelResponse,
+        }, null, 2),
+      }],
+      isError: blocked,
     };
-    await telemetrySuccess("arif_heart_critique", startedAt);
+    await telemetrySuccess("forge_heart_critique", startedAt);
     return result;
-  } catch (err) { await telemetryFailure("arif_heart_critique", startedAt, err); throw err; }
+  } catch (err) {
+    // arifOS unreachable — refuse to adjudicate locally.
+    // A-FORGE is an execution shell, not a constitutional judge.
+    const result = {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          overall: "HOLD",
+          blocked: true,
+          gate: "ARIFOS_UNREACHABLE",
+          error: err instanceof Error ? err.message : String(err),
+          message: "Cannot reach arifOS 666 HEART pipeline. A-FORGE refuses to adjudicate constitutional floors locally. Ensure arifOS kernel is running on port 8088.",
+        }, null, 2),
+      }],
+      isError: true,
+    };
+    await telemetryFailure("forge_heart_critique", startedAt, err);
+    return result;
+  }
   });
 };
 
 server.registerTool(
-  "arif_heart_critique",
+  "forge_heart_critique",
   {
-    description: "Risk assessment and ethical review (Stage 666 HEART).",
+    description: "Risk assessment and ethical review — delegates to arifOS 666 HEART pipeline. A-FORGE does NOT adjudicate floors locally.",
     inputSchema: z.object({ task: z.string() })
   },
   heartHandler
@@ -565,7 +590,7 @@ server.registerTool(
 server.registerTool(
   "forge_check_governance",
   {
-    description: "Run A-FORGE constitutional governance checks.",
+    description: "Constitutional governance check — delegates to arifOS. A-FORGE NEVER adjudicates constitutional floors.",
     inputSchema: z.object({ task: z.string() })
   },
   heartHandler
@@ -576,7 +601,7 @@ server.registerTool(
 const forgeHandler = async (args: any, toolName: string) => {
   const { task, mode, session_id, actor_id, lease_id, evidence_receipt, peer_contract_id } = args;
   const startedAt = Date.now();
-  await telemetryInvoke("arif_forge_execute");
+  await telemetryInvoke("forge_execute");
   return runStage("777_FORGE" as MetabolicStage, async () => {
   try {
     // ── FORGE 2-B: arifOS judge SEAL required before any execution ──
@@ -616,7 +641,7 @@ const forgeHandler = async (args: any, toolName: string) => {
         }],
         isError: true,
       };
-      await telemetryFailure("arif_forge_execute", startedAt, new Error(`JUDGE_GATE: ${judgeVerdict}`));
+      await telemetryFailure("forge_execute", startedAt, new Error(`JUDGE_GATE: ${judgeVerdict}`));
       return holdResult;
     }
 
@@ -656,15 +681,15 @@ const forgeHandler = async (args: any, toolName: string) => {
         content: [{ type: "text" as const, text: JSON.stringify({ finalText: res.finalText, turns: res.turnCount, blocked, judge_verdict: judgeVerdict }, null, 2) }],
         isError: blocked
       };
-      await telemetrySuccess("arif_forge_execute", startedAt, undefined, { judge_verdict: judgeVerdict });
+      await telemetrySuccess("forge_execute", startedAt, undefined, { judge_verdict: judgeVerdict });
       return result;
     } finally { await rm(root, { recursive: true, force: true }); }
-  } catch (err) { await telemetryFailure("arif_forge_execute", startedAt, err); throw err; }
+  } catch (err) { await telemetryFailure("forge_execute", startedAt, err); throw err; }
   });
 };
 
 server.registerTool(
-  "arif_forge_execute",
+  "forge_execute",
   {
     description: "Execution and motor cortex (Stage 777 FORGE). Use this to execute an action plan. Requires cc_id for mutations (INV-4).",
     inputSchema: z.object({
@@ -684,7 +709,7 @@ server.registerTool(
     // _meta extension for constitutional address (C2)
     _meta: { arifos: { requires_cc_id: true, action_class: "FORGE_EXECUTE" } }
   },
-  (args) => forgeHandler(args, "arif_forge_execute")
+  (args) => forgeHandler(args, "forge_execute")
 );
 
 // Example structured output hint (C3) — in real would use outputSchema when SDK supports per-tool
@@ -746,7 +771,7 @@ const judgeProxyHandler = async (args: Record<string, unknown>) => {
   });
 };
 
-server.tool("forge_approve", "Approve action.", { holdId: z.string(), reason: z.string().optional() }, judgeHandler);
+server.tool("forge_approve", "Refuses approval — A-FORGE cannot self-authorize. Route to arifOS arif_judge_deliberate via forge_judge_proxy instead.", { holdId: z.string(), reason: z.string().optional() }, judgeHandler);
 
 server.tool(
   "forge_judge_proxy",
@@ -770,40 +795,39 @@ server.tool(
 
 // ── Tier 06 Stewardship (Vault) ──────────────────────────────────────────────
 
-const vaultHandler = async ({ content, reason, tier, tags }: { content: string, reason: string, tier?: any, tags?: string[] }) => {
-  const startedAt = Date.now();
-  await telemetryInvoke("arif_vault_seal");
-  return runStage("999_VAULT" as MetabolicStage, async () => {
-  try {
-    const entry = await memoryContract.store({ content, reason, tier, tags });
-    return { content: [{ type: "text" as const, text: JSON.stringify({ memoryId: entry.memoryId, tier: entry.tier }, null, 2) }] };
-  } catch (err) { await telemetryFailure("arif_vault_seal", startedAt, err); throw err; }
-  });
-};
-
-server.tool("arif_vault_seal", "Ledger closure (Stage 999 VAULT).", { content: z.string(), reason: z.string(), tier: z.string().optional(), tags: z.array(z.string()).optional() }, vaultHandler);
-// NOTE: forge_remember REMOVED — duplicate of arif_vault_seal (same handler).
-
 // Merged: forge_vault — single tool with mode parameter
-// Replaces: forge_vault_read, forge_vault_list, forge_vault_write
+// Modes: read, list, write, seal
+// Replaces: forge_vault_read, forge_vault_list, forge_vault_write, forge_vault_seal
 // forge_vault_delete REMOVED — VAULT999 is append-only.
-// forge_vault_seal REMOVED — final sealing belongs to arifOS. Use arif_vault_seal.
 
 server.registerTool("forge_vault", {
-  description: "VAULT999 primitive. Modes: read, list, write.",
+  description: "VAULT999 primitive. Modes: read, list, write, seal.",
   inputSchema: z.object({
-    mode: z.enum(["read", "list", "write"]).describe("Vault operation"),
-    name: z.string().optional().describe("Record name (read/write)"),
+    mode: z.enum(["read", "list", "write", "seal"]).describe("Vault operation"),
+    name: z.string().optional().describe("Record name (read/write/seal)"),
     category: z.string().optional().describe("Category filter (list) / Record category (write)"),
     limit: z.number().optional().describe("Max records (list, default 100)"),
-    value: z.string().optional().describe("Record value (write)"),
+    value: z.string().optional().describe("Record value (write/seal)"),
+    content: z.string().optional().describe("Content to seal (seal mode)"),
+    reason: z.string().optional().describe("Seal reason (seal mode)"),
+    tier: z.string().optional().describe("Memory tier (seal mode)"),
+    tags: z.array(z.string()).optional().describe("Tags (seal mode)"),
     metadata: z.record(z.string(), z.unknown()).optional().describe("Optional metadata (write)"),
   }),
-}, async ({ mode, name, category, limit, value, metadata }) => {
+}, async ({ mode, name, category, limit, value, content, reason, tier, tags, metadata }) => {
   const startedAt = Date.now();
   await telemetryInvoke(`forge_vault:${mode}`);
   return runStage("999_VAULT" as MetabolicStage, async () => {
     try {
+      if (mode === "seal") {
+        const sealContent = content || value;
+        if (!sealContent || !reason) {
+          return { content: [{ type: "text" as const, text: "content (or value) and reason required for mode=seal" }], isError: true };
+        }
+        const entry = await memoryContract.store({ content: sealContent, reason, tier: tier as any, tags });
+        await telemetrySuccess(`forge_vault:seal`, startedAt);
+        return { content: [{ type: "text" as const, text: JSON.stringify({ memoryId: entry.memoryId, tier: entry.tier, mode: "seal" }, null, 2) }] };
+      }
       const sbClient = new SupabaseVaultClient();
       let result: any;
       if (mode === "read") {
@@ -826,6 +850,9 @@ server.registerTool("forge_vault", {
     }
   });
 });
+
+// NOTE: forge_vault_seal REMOVED — collapsed into forge_vault mode=seal.
+// NOTE: forge_remember REMOVED — duplicate of arif_vault_seal.
 
 // ── Domain Tools (Tier 03) ───────────────────────────────────────────────────
 // forge_wealth: Domain router to WEALTH organ. No local computation.
@@ -992,75 +1019,74 @@ initializeForgeTools().catch(err => {
 // ── Resources ────────────────────────────────────────────────────────────────
 registerCoreResources(server, approvalBoundary, memoryContract);
 
+// ── Prompts ──────────────────────────────────────────────────────────────────
+registerPrompts(server);
+
 // ── Tier 01 Amanah (SERI_KEMBANGAN_ACCORDS) ────────────────────────────────────
 
 const amanahManager = AmanahLockManager.getInstance();
 
-// Canonical per blueprint C1 (A-FORGE hands): forge_lock_acquire (primary).
-// NOTE: request_amanah_lock REMOVED — deprecated alias. Use forge_lock_acquire.
+// Canonical: forge_lock — unified Amanah/F1 lock primitive.
+// Modes: acquire (F1 gate before mutation), release (free lock).
+// Collapsed from forge_lock_acquire + forge_lock_release (2026-06-26).
 server.tool(
-  "forge_lock_acquire",
-  "Request an Amanah/F1 lock (canonical). Reversible F1 gate before mutation.",
+  "forge_lock",
+  "Amanah/F1 lock primitive. Modes: acquire (reversible F1 gate before mutation), release (free lock).",
   {
-    resource_id: z.string().describe("Canonical path or identifier of the target resource"),
-    actor_id: z.string().describe("Agent or human identifier requesting the lock"),
-    justification: z.string().describe("Semantic intent for the lock"),
+    mode: z.enum(["acquire", "release"]).describe("acquire = request lock, release = free lock"),
+    resource_id: z.string().optional().describe("Canonical path or identifier (acquire)"),
+    actor_id: z.string().optional().describe("Agent or human identifier"),
+    justification: z.string().optional().describe("Semantic intent (acquire)"),
+    lock_id: z.string().optional().describe("Lock ID to release (release)"),
+    release_reason: z.string().optional().describe("Why releasing (release)"),
     session_id: z.string().optional().describe("Session context for re-entrant locks"),
-    ttl_seconds: z.number().optional().default(300).describe("Lock TTL in seconds"),
-    constitutional_chain_id: z.string().optional().describe("cc_id from prior arif_judge SEAL (required for high impact)"),
+    ttl_seconds: z.number().optional().default(300).describe("Lock TTL in seconds (acquire)"),
+    constitutional_chain_id: z.string().optional().describe("cc_id from prior arif_judge SEAL"),
   },
   async (args) => {
-    const { resource_id, actor_id, justification, session_id, ttl_seconds, constitutional_chain_id } = args as any;
+    const { mode, resource_id, actor_id, justification, lock_id, release_reason, session_id, ttl_seconds, constitutional_chain_id } = args as any;
     const startedAt = Date.now();
-    await telemetryInvoke("forge_lock_acquire");
-    // Phase 2 stub (flag-guarded): if REQUIRE_CC_ID_GATE, enforce for non-observe
-    if (process.env.REQUIRE_CC_ID_GATE === "true" && !constitutional_chain_id) {
-      return { content: [{ type: "text" as const, text: JSON.stringify({ verdict: "VOID", reason: "cc_id required for lock on mutate path (INV-4)" }) }] };
+    await telemetryInvoke("forge_lock");
+
+    if (mode === "acquire") {
+      if (!resource_id || !actor_id || !justification) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: "resource_id, actor_id, justification required for mode=acquire" }) }], isError: true };
+      }
+      if (process.env.REQUIRE_CC_ID_GATE === "true" && !constitutional_chain_id) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ verdict: "VOID", reason: "cc_id required for lock on mutate path (INV-4)" }) }] };
+      }
+      return runStage("000_INIT" as MetabolicStage, async () => {
+        try {
+          const result = await amanahManager.acquireLock(resource_id, actor_id, justification, session_id, (ttl_seconds || 300) * 1000);
+          const text = JSON.stringify({ ...result, canonical: "forge_lock", mode: "acquire" }, null, 2);
+          await telemetrySuccess("forge_lock", startedAt);
+          return { content: [{ type: "text" as const, text }] };
+        } catch (err) {
+          await telemetryFailure("forge_lock", startedAt, err);
+          throw err;
+        }
+      });
+    }
+
+    // mode === "release"
+    if (!lock_id || !actor_id) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: "lock_id and actor_id required for mode=release" }) }], isError: true };
     }
     return runStage("000_INIT" as MetabolicStage, async () => {
       try {
-        const result = await amanahManager.acquireLock(resource_id, actor_id, justification, session_id, (ttl_seconds || 300) * 1000);
-        const text = JSON.stringify({ ...result, canonical: "forge_lock_acquire", deprecated_alias: "request_amanah_lock" }, null, 2);
-        await telemetrySuccess("forge_lock_acquire", startedAt);
-        return { content: [{ type: "text" as const, text }] };
-      } catch (err) {
-        await telemetryFailure("forge_lock_acquire", startedAt, err);
-        throw err;
-      }
-    });
-  }
-);
-
-// NOTE: request_amanah_lock REMOVED — deprecated alias. Use forge_lock_acquire.
-
-server.tool(
-  "forge_lock_release",
-  "Release an Amanah/F1 lock (canonical).",
-  {
-    lock_id: z.string().describe("The lock_id returned by forge_lock_acquire"),
-    actor_id: z.string().describe("Agent or human identifier that originally acquired the lock"),
-    release_reason: z.string().optional().describe("Why the lock is being released"),
-    constitutional_chain_id: z.string().optional(),
-  },
-  async (args) => {
-    const { lock_id, actor_id, release_reason } = args as any;
-    const startedAt = Date.now();
-    await telemetryInvoke("forge_lock_release");
-    return runStage("000_INIT" as MetabolicStage, async () => {
-      try {
         const result = await amanahManager.releaseLock(lock_id, actor_id, release_reason);
-        const text = JSON.stringify({ ...result, canonical: "forge_lock_release" }, null, 2);
-        await telemetrySuccess("forge_lock_release", startedAt);
+        const text = JSON.stringify({ ...result, canonical: "forge_lock", mode: "release" }, null, 2);
+        await telemetrySuccess("forge_lock", startedAt);
         return { content: [{ type: "text" as const, text }] };
       } catch (err) {
-        await telemetryFailure("forge_lock_release", startedAt, err);
+        await telemetryFailure("forge_lock", startedAt, err);
         throw err;
       }
     });
   }
 );
 
-// NOTE: release_amanah_lock REMOVED — deprecated alias. Use forge_lock_release.
+// NOTE: forge_lock_acquire + forge_lock_release REMOVED — collapsed into forge_lock with mode=acquire|release.
 
 // ── Autonomous Pipeline Tool ───────────────────────────────────────────────────
 // Canonical: forge_pipeline_run. forge_pipeline alias REMOVED.

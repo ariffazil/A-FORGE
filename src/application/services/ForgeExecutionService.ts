@@ -19,6 +19,7 @@ import { getTicketStore } from "../approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { WealthEngineBridge } from "../../infrastructure/bridges/wealthBridge.js";
 import { getScenarios } from "../../infrastructure/bridges/geoxBridge.js";
+import { InspectorClient } from "../../infrastructure/inspector/InspectorClient.js";
 
 export type { AgentEngineDependencies } from "../../domain/engine/AgentEngine.js";
 export type { PipelineDependencies } from "../../domain/engine/PipelineCoordinator.js";
@@ -33,6 +34,7 @@ const DEFAULT_API_PRICING = {
 
 let _toolRegistry: ToolRegistry | undefined;
 let _longTermMemory: LongTermMemory | undefined;
+let _inspector: InspectorClient | undefined;
 
 function getTR(): ToolRegistry {
   if (!_toolRegistry) _toolRegistry = new (ToolRegistry as unknown as { new(): ToolRegistry })();
@@ -42,6 +44,24 @@ function getTR(): ToolRegistry {
 function getLTM(): LongTermMemory {
   if (!_longTermMemory) _longTermMemory = new LongTermMemory(resolve(homedir(), ".aforge", "long-term-memory.json"));
   return _longTermMemory;
+}
+
+function getInspector(): InspectorClient {
+  if (!_inspector) {
+    _inspector = new InspectorClient({
+      deprecationRegistryPath: "/root/AAA/docs/deprecation-registry.json",
+      toolRegistryPath: "/root/AAA/docs/TOOLREGISTRY.json",
+      mcpSurfaces: [
+        { name: "arifos", url: "http://localhost:8088" },
+        { name: "aforge", url: "http://localhost:7072" },
+        { name: "geox", url: "http://localhost:8081" },
+        { name: "wealth", url: "http://localhost:18082" },
+        { name: "well", url: "http://localhost:18083" },
+      ],
+      manifestDir: resolve(homedir(), ".aforge", "inspector"),
+    });
+  }
+  return _inspector;
 }
 
 function buildEngineDeps(llmProvider: any, overrides?: Partial<AgentEngineDependencies>): AgentEngineDependencies {
@@ -58,6 +78,7 @@ function buildEngineDeps(llmProvider: any, overrides?: Partial<AgentEngineDepend
     wealthBridge: new WealthEngineBridge(),
     geoxScenarioLoader: getScenarios,
     apiPricing: DEFAULT_API_PRICING,
+    inspector: getInspector(),
     ...overrides,
   };
 }

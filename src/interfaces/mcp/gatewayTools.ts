@@ -813,43 +813,13 @@ export function registerGatewayTools(server: McpServer): void {
     }
   });
 
-  // GitHub (get_file, create_or_update_file, create_issue — not in proxyTools forge_github)
-  // NOTE: forge_github_search_code, forge_github_search_repos, forge_github_create_pull_request REMOVED
-  //       — use forge_github (proxyTools) with mode=search/type=code|repositories or mode=pr/action=create.
-
-  server.tool("forge_github_get_file", "Read a file from GitHub. OBSERVE-class.", {
-    owner: z.string().describe("Repository owner"),
-    repo: z.string().describe("Repository name"),
-    path: z.string().describe("File path"),
-    branch: z.string().default("main").describe("Branch"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeGitHubGetFile);
-
-  server.tool("forge_github_create_or_update_file", "Create or update a file on GitHub. MUTATE — lease required.", {
-    owner: z.string().describe("Repository owner"),
-    repo: z.string().describe("Repository name"),
-    path: z.string().describe("File path"),
-    branch: z.string().describe("Branch"),
-    content: z.string().describe("Base64-encoded file content"),
-    message: z.string().describe("Commit message"),
-    sha: z.string().optional().describe("Existing blob SHA for updates"),
-    create_pr: z.boolean().default(true).describe("Create a PR"),
-    pr_base: z.string().default("main").describe("PR base branch"),
-    request_id: z.string().describe("Caller request ID"),
-    lease_id: z.string().describe("Kernel-issued lease ID"),
-  }, handleForgeGitHubCreateOrUpdateFile);
-
-  server.tool("forge_github_create_issue", "Create a GitHub issue. MUTATE — lease required.", {
-    owner: z.string().describe("Repository owner"),
-    repo: z.string().describe("Repository name"),
-    title: z.string().describe("Issue title"),
-    body: z.string().describe("Issue body"),
-    labels: z.array(z.string()).optional().describe("Labels"),
-    assignees: z.array(z.string()).optional().describe("Assignees"),
-    request_id: z.string().describe("Caller request ID"),
-    lease_id: z.string().describe("Kernel-issued lease ID"),
-  }, handleForgeGitHubCreateIssue);
-  // NOTE: forge_github_create_pull_request REMOVED — use forge_github (proxyTools) with mode=pr/action=create.
+  // GitHub tools COLLAPSED into forge_github (proxyTools) with modes:
+  //   mode=file/action=get  → replaces forge_github_get_file
+  //   mode=file/action=write → replaces forge_github_create_or_update_file
+  //   mode=issue/action=create → replaces forge_github_create_issue
+  //   mode=search/type=code|repositories → replaces forge_github_search_code/repos
+  //   mode=pr/action=create → replaces forge_github_create_pull_request
+  // All 5 standalone GitHub tools removed. forge_github is the single canonical surface.
 
   // Netdata — consolidated into forge_netdata with mode
   server.tool("forge_netdata", "Query Netdata monitoring. Modes: alarms, metrics. OBSERVE-class.", {
