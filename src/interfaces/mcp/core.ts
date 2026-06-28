@@ -60,6 +60,7 @@ import {
   initializeForgeTools,
 } from "./forgeTools.js";
 import { registerGatewayTools } from "./gatewayTools.js";
+import { registerForge8Verbs } from "./forge8Verbs.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
@@ -1208,6 +1209,12 @@ registerGovernedTools(server);
 
 // ── P1 Gateway Tools: external MCP internalization ───────────────────────────
 registerGatewayTools(server);
+
+// ── FORGE8 Execution Verbs: Governed artifact lifecycle (v42.1) ─────────────
+// 8 constitutional verbs: synthesize → stage → sandbox_run → scar_scan → 
+// skillstore_sync → tier_bind → docket_prep → execute
+// Each verb has enforced boundaries. forge_execute requires VAULT999 SEAL.
+registerForge8Verbs(server);
 
 // Initialize identity store
 initializeForgeTools().catch(err => {
