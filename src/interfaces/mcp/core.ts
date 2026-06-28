@@ -67,6 +67,33 @@ export const server = new McpServer({
   version: "0.1.0",
 });
 
+// ── Schema strictification guard ──────────────────────────────────────────
+// Every tool's inputSchema MUST have additionalProperties: false to prevent
+// agents from passing garbage fields that silently get ignored.
+// This wraps server.registerTool() to auto-strictify inputSchema.
+//
+// For server.tool() (raw shape pattern), the fix is in the SDK's
+// normalizeObjectSchema → objectFromShape — see SDK patch at line 99 of
+// node_modules/@modelcontextprotocol/sdk/dist/esm/server/zod-compat.js
+// which adds .strict() to all created object schemas.
+//
+// F2 TRUTH: SDK's objectFromShape() does NOT add .strict() automatically.
+// Without this guard, ALL 36 A-FORGE tools accept arbitrary extra fields.
+// Ratified 2026-06-28 per MCP spec: inputSchema must reject unknown fields.
+// ──────────────────────────────────────────────────────────────────────────
+
+// Wrap server.registerTool() to auto-strictify inputSchema
+const origRegisterTool = server.registerTool.bind(server);
+(server as any).registerTool = function (name: string, config: any, cb?: any) {
+  if (config?.inputSchema) {
+    const p = config.inputSchema;
+    if (p && typeof p === "object" && (p._def || p._zod) && typeof p.strict === "function") {
+      config = { ...config, inputSchema: p.strict() };
+    }
+  }
+  return origRegisterTool(name, config, cb);
+};
+
 // ── _epistemic tag injection ──────────────────────────────────────────────
 //
 // Every MCP tool response carries a mandatory _epistemic envelope field
