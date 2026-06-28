@@ -733,7 +733,8 @@ export async function initializeForgeTools(): Promise<void> {
 //   Q = query clarity, V = viability, Ψ = purity (HARAM inversed), Φ = wisdom (scar-adjusted)
 //   Θ = dΦ/dt (wisdom trajectory, per-tool)
 // Multiplicative: zero in any component collapses G.
-// Verdict thresholds: G ≥ 0.50 SEAL, ≥ 0.25 SABAR, ≥ 0.10 HOLD, < 0.10 VOID.
+// Verdict thresholds (organism-layer vocabulary — arifOS SEAL/SABAR/HOLD/VOID reserved):
+//   G ≥ 0.50 CRYSTALLIZE, ≥ 0.25 NUCLEATE, ≥ 0.10 DORMANT, < 0.10 WITHER.
 
 export function registerSkillTools(server: McpServer): void {
 
@@ -765,8 +766,8 @@ export function registerSkillTools(server: McpServer): void {
             content: [{
               type: "text" as const,
               text: JSON.stringify({
-                status: "HOLD",
-                verdict: "HOLD",
+                status: "DORMANT",
+                verdict: "DORMANT",
                 domain: args.domain,
                 message: "F13 SOVEREIGN: arifos domain requires seal_verdict_id from arifOS arif_judge+arif_seal. Cannot forge tools that touch the constitutional kernel.",
               }, null, 2),
@@ -775,30 +776,13 @@ export function registerSkillTools(server: McpServer): void {
           };
         }
 
-        // Phase 1: LLM is optional. If llm_endpoint provided, use it; else template scaffold.
-        let llm: { generate(opts: { prompt: string; maxTokens?: number; temperature?: number }): Promise<string> } | null = null;
+        // Phase 2: LLM wired via TokenRouter (MiniMax primary → deepseek → groq).
+        // args.llm_endpoint is now deprecated — kept for backward compat only.
         if (args.llm_endpoint) {
-          llm = {
-            async generate({ prompt, maxTokens = 2000, temperature = 0.2 }) {
-              const res = await fetch(args.llm_endpoint!, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  prompt,
-                  max_tokens: maxTokens,
-                  temperature,
-                  // OpenAI-compatible shape — adjust per endpoint
-                }),
-                signal: AbortSignal.timeout(60000),
-              });
-              if (!res.ok) throw new Error(`LLM HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
-              const data = await res.json() as any;
-              return data.choices?.[0]?.text ?? data.choices?.[0]?.message?.content ?? data.text ?? JSON.stringify(data);
-            },
-          };
+          console.warn("[forge_skill] llm_endpoint param is deprecated — LLM is now wired via TokenRouter/providers.yml");
         }
 
-        const result = await forgeSkill(llm, {
+        const result = await forgeSkill({
           intent: args.intent,
           domain: args.domain as SkillDomain,
           target_tool_name: args.target_tool_name,
@@ -808,7 +792,7 @@ export function registerSkillTools(server: McpServer): void {
           seal_verdict_id: args.seal_verdict_id,
         });
 
-        const isError = result.status === "VOID" || result.status === "HOLD";
+        const isError = result.status === "WITHER" || result.status === "DORMANT";
         return {
           content: [{
             type: "text" as const,
@@ -821,8 +805,8 @@ export function registerSkillTools(server: McpServer): void {
           content: [{
             type: "text" as const,
             text: JSON.stringify({
-              status: "HOLD",
-              verdict: "HOLD",
+              status: "DORMANT",
+              verdict: "DORMANT",
               error: `forge_skill failed: ${err?.message ?? String(err)}`,
             }, null, 2),
           }],
