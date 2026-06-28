@@ -1,8 +1,8 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-06-27 15:45 UTC
+last_verified: 2026-06-28 15:45 UTC
 valid_from: 2026-06-25
-valid_until: 2026-07-27
+valid_until: 2026-07-28
 confidence: high
 scope: /root/A-FORGE/GENESIS
 epistemic_status: DESIGN_CANON
