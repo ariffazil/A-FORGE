@@ -7,6 +7,28 @@ import { globSync } from "glob";
 
 const ALLOWED_ROOTS = ["/root", "/tmp", "/data", "/var/log"];
 
+// ── APEX: Landauer Thermodynamic Cost ────────────────────────────────────────
+// Per-byte Landauer cost at room temperature (293K).
+// kT * ln(2) ≈ 4.05e-21 J per bit erased irreversibly.
+// Cost formula: bits_written * kT * ln(2) joules.
+// 1 byte = 8 bits. 1 KB ≈ 3.24e-17 J. 1 MB ≈ 3.24e-14 J.
+const K_BOLTZMANN = 1.380649e-23;   // J/K
+const ROOM_TEMP_K = 293.15;          // ~20°C
+const LANDALER_BITS = K_BOLTZMANN * ROOM_TEMP_K * Math.log(2); // ≈ 2.78e-23 J/bit
+
+function landauerCostBytes(bytes: number): number {
+  if (bytes <= 0) return 0;
+  return (bytes * 8 * LANDALER_BITS);
+}
+
+function landauerCostHuman(bytes: number): string {
+  const j = landauerCostBytes(bytes);
+  if (j < 1e-18) return `${(j * 1e21).toFixed(2)} zJ`;
+  if (j < 1e-15) return `${(j * 1e18).toFixed(2)} aJ`;
+  if (j < 1e-12) return `${(j * 1e15).toFixed(2)} fJ`;
+  return `${(j * 1e12).toFixed(2)} pJ`;
+}
+
 function text(content: unknown, isError = false) {
   const body = typeof content === "string" ? content : JSON.stringify(content, null, 2);
   return { content: [{ type: "text" as const, text: body }], isError };
@@ -84,7 +106,23 @@ export function registerFilesystemTools(server: McpServer): void {
         if (exists && !overwrite) return text(`F1 AMANAH: File '${inputPath}' exists. Set overwrite=true to replace.`, true);
         await mkdir(resolve(check.resolvedPath, ".."), { recursive: true });
         await writeFile(check.resolvedPath, content, "utf-8");
-        return text({ status: "written", path: check.resolvedPath, bytes: content.length });
+        const byteCount = Buffer.byteLength(content, "utf-8");
+        const thermoJ = landauerCostBytes(byteCount);
+        return text({
+          status: "written",
+          path: check.resolvedPath,
+          bytes: byteCount,
+          landauer_joules: thermoJ,
+          landauer_human: landauerCostHuman(byteCount),
+          // APEX Stream 3: thermodynamic cost metadata
+          apex_theory: {
+            epistemic_label: "OBS",
+            confidence: 1.0,
+            confidence_label: "OBS",
+            mesa_signal: false,
+            thermodynamic_band: "LOW",
+          },
+        });
       }
 
       if (mode === "glob") {
@@ -219,14 +257,44 @@ export function registerGitTools(server: McpServer): void {
         const status = gitExec(repo, "status --short");
         return text(`Branch: ${branch}\n${status || "(clean)"}`);
       }
-      if (mode === "diff") return text(gitExec(repo, `diff ${staged ? "--cached" : ""} --unified=3`).split("\n").slice(0, limit).join("\n") || "(no diff)");
+      if (mode === "diff") {
+        const diffOutput = gitExec(repo, `diff ${staged ? "--cached" : ""} --unified=3`).split("\n").slice(0, limit).join("\n") || "(no diff)";
+        const diffBytes = Buffer.byteLength(diffOutput, "utf-8");
+        return text({
+          diff: diffOutput,
+          bytes: diffBytes,
+          landauer_joules: landauerCostBytes(diffBytes),
+          landauer_human: landauerCostHuman(diffBytes),
+          apex_theory: {
+            epistemic_label: "DER",
+            confidence: 1.0,
+            confidence_label: "OBS",
+            mesa_signal: false,
+            thermodynamic_band: "LOW",
+          },
+        });
+      }
       if (mode === "log") return text(gitExec(repo, `log --oneline -${Math.min(count, 50)}`));
       if (!message) return text("message is required for mode=commit", true);
       if (files && files.length > 0) gitExec(repo, `add ${files.map((f) => `"${f}"`).join(" ")}`);
       else gitExec(repo, "add -A");
       const output = gitExec(repo, `commit -m "${message.replace(/"/g, '\\"')}"`);
+      const msgBytes = Buffer.byteLength(message, "utf-8");
+      const thermoJ = landauerCostBytes(msgBytes);
       if (push) return text("F1 AMANAH: push requires separate judge/lease path; commit created but push refused.", true);
-      return text(output);
+      return text({
+        commit: output,
+        message_bytes: msgBytes,
+        landauer_joules: thermoJ,
+        landauer_human: landauerCostHuman(msgBytes),
+        apex_theory: {
+          epistemic_label: "OBS",
+          confidence: 1.0,
+          confidence_label: "OBS",
+          mesa_signal: false,
+          thermodynamic_band: "LOW",
+        },
+      });
     } catch (err: any) {
       return text(`Error: ${err.message}`, true);
     }

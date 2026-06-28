@@ -151,7 +151,7 @@ export const DEFAULT_MESA_CONFIG: MesaConfig = {
   klDivergenceMesa: 0.5,
   zScoreThreshold: 2.0,
   budgetGamingThreshold: 0.15,
-  floorViolationSpikeThreshold: 3.0,
+  floorViolationSpikeThreshold: 0.5,
   successRateCollapse: 0.4,
   stateDir: ".arifos/mesa",
 };
