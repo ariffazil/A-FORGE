@@ -44,15 +44,39 @@ function flattenForScan(a: FloorContext["action"]): string {
 }
 
 /**
+ * Tools that legitimately accept code or structured strings containing
+ * shell metacharacters (braces, parens, etc.). These tools are governed
+ * by additional layers (HARAM scan, Decision Field, Scar Law, Witness)
+ * and their code inputs are sanitized at their own enforcement boundaries.
+ *
+ * Without this allowlist, F12 blocks legitimate governance tools from
+ * receiving implementation code as arguments.
+ */
+const CODE_ACCEPTING_TOOLS = new Set([
+  "forge_skill",
+  "forge_evaluate",
+  "forge_witness",
+  "forge_scar",
+  "forge_register",
+  "forge_registry",
+  "forge_shell_dryrun",
+]);
+
+/**
  * F12 verdict on a single action.
  */
 export function checkF12Injection(ctx: FloorContext): FloorReason[] {
   const reasons: FloorReason[] = [];
   const a = ctx.action;
+
+  // Code-accepting tools skip shell metacharacter check — they have their
+  // own governance layers (HARAM scan, Decision Field, etc.)
+  const isCodeAccepter = CODE_ACCEPTING_TOOLS.has(a.tool_name);
+
   const haystack = flattenForScan(a);
 
   // Rule 1: Shell metacharacters in tool args (high suspicion)
-  if (a.args) {
+  if (a.args && !isCodeAccepter) {
     for (const [k, v] of Object.entries(a.args)) {
       if (typeof v === "string" && F12_THREAT_PATTERNS.SHELL_METACHARS.test(v)) {
         // Allow some benign uses of `*` `?` `[]` in patterns

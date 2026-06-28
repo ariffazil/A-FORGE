@@ -111,7 +111,7 @@ export type WorkerTask = {
   profile: AgentProfile;
   /** Task-division role (planner/implementer/reviewer/tester/security/release).
    *  When present, the coordinator routes this task to a role-specialized agent. */
-  role?: import("../agents/roles.js").TaskRole;
+  role?: string;
 };
 
 export type WorkerReport = {

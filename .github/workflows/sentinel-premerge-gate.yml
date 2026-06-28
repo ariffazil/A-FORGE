@@ -29,7 +29,7 @@ jobs:
     outputs:
       changed: ${{ steps.scan.outputs.critical_changed }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -69,7 +69,7 @@ jobs:
     name: "Q2 — Organ Boundary"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -85,18 +85,13 @@ jobs:
           fi
 
           # Finance/capital leak (WEALTH concern, not A-FORGE)
-          # Word boundaries prevent false positives on WEALTH tool names like
-          # wealth_compute_EMV or forge_wealth mode "emv"; we only block actual
-          # capital-computation syntax (NPV/IRR/EMV/discount_rate/cashflow/etc.).
-          FIN_HITS=$(git diff origin/main...HEAD -- 'src/**' | grep '^+' | grep -iE "\b(NPV|IRR|EMV|discount_rate|cashflow|capex|opex)\b" | grep -v "^++" || true)
+          FIN_HITS=$(git diff origin/main...HEAD -- 'src/**' | grep '^+' | grep -iE "NPV|IRR|EMV|discount_rate|cashflow|capex\b|opex\b" | grep -v "^++" || true)
           if [[ -n "$FIN_HITS" ]]; then
             VIOLATIONS="${VIOLATIONS}\n  - Financial compute leaking into A-FORGE src/ (delegate to WEALTH)"
           fi
 
           # Constitutional judgment leak (arifOS concern, not A-FORGE)
-          # VAULT999 is intentionally removed: A-FORGE may read/write vault records
-          # as execution shell, but may not issue final verdicts or attribution.
-          JUDGE_HITS=$(git diff origin/main...HEAD -- 'src/**' | grep '^+' | grep -iE "floor_attribution|888_JUDGE|verdict_issued|issue.*verdict|render.*verdict|final.*seal" | grep -v "^++" || true)
+          JUDGE_HITS=$(git diff origin/main...HEAD -- 'src/**' | grep '^+' | grep -iE "floor_attribution|VAULT999|888_JUDGE|verdict_issued" | grep -v "^++" || true)
           if [[ -n "$JUDGE_HITS" ]]; then
             VIOLATIONS="${VIOLATIONS}\n  - Constitutional judgment logic leaking into A-FORGE (belongs in arifOS)"
           fi
@@ -114,7 +109,7 @@ jobs:
     name: "Q3 — Build + Test"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v6
 
       - name: Set up Node
         uses: actions/setup-node@v6

@@ -1,19 +1,14 @@
 import { resolve } from "node:path";
 import { AgentEngine } from "../../domain/engine/AgentEngine.js";
 import {
-  buildCoordinatorProfile,
   buildExploreProfile,
   buildFixProfile,
   buildTestProfile,
 } from "../../domain/agents/profiles.js";
-import type { AgentModeName, AgentProfile, WorkerTask } from "../../domain/types/agent.js";
-import { CoordinatorAgent } from "../../domain/agents/CoordinatorAgent.js";
-import { WorkerAgent } from "../../domain/agents/WorkerAgent.js";
+import type { AgentModeName, AgentProfile } from "../../domain/types/agent.js";
 import type { LlmProvider } from "../../infrastructure/llm/LlmProvider.js";
 import type { RuntimeConfig } from "../../interfaces/config/RuntimeConfig.js";
 import { ForgeScoreboard } from "../../domain/scoreboard/ForgeScoreboard.js";
-import { RunMetricsLogger } from "../../domain/scoreboard/RunMetricsLogger.js";
-import type { ForgeTaskRecord } from "../../domain/types/scoreboard.js";
 import { getTicketStore } from "../../application/approval/index.js";
 import { FileVaultClient } from "../../infrastructure/vault/index.js";
 import {
@@ -66,7 +61,6 @@ export async function runCliCommand(
   const modeName = getMode(options, runtimeConfig);
   const cwd = typeof options.cwd === "string" ? resolve(options.cwd) : process.cwd();
   const scoreboard = new ForgeScoreboard(runtimeConfig.scoreboardPath);
-  const runMetricsLogger = new RunMetricsLogger(runtimeConfig.runMetricsDir);
   const baseTaskOptions = {
     taskId: typeof options["task-id"] === "string" ? options["task-id"] : undefined,
     humanMinutes: toNumberOption(options["human-minutes"]),
@@ -118,105 +112,6 @@ export async function runCliCommand(
         ...baseTaskOptions,
       })
     ).finalText;
-  }
-
-  if (command === "coordinate") {
-    const startedAt = new Date();
-    const goal = String(options.goal ?? "Coordinate the requested engineering task.");
-    const coordinatorProfile = applyTrustLocalVps(buildCoordinatorProfile(modeName), runtimeConfig);
-    const workerAgent = new WorkerAgent((task: WorkerTask) =>
-      engineFactory(applyTrustLocalVps(task.profile, runtimeConfig)),
-    );
-    const coordinator = new CoordinatorAgent(
-      coordinatorProfile,
-      workerAgent,
-      llmProviderFactory(),
-    );
-
-    const coordinated = await coordinator.coordinate(goal, cwd);
-    const completedAt = new Date();
-    const taskId =
-      (typeof options["task-id"] === "string" ? options["task-id"] : undefined) ??
-      `coordinate-${startedAt.getTime()}`;
-    const successful = coordinated.metrics.coordinationFailures === 0 ? 1 : 0;
-    const trustMode: ForgeTaskRecord["trustMode"] = runtimeConfig.trustLocalVps
-      ? "local_vps"
-      : "default";
-    const record: ForgeTaskRecord = {
-      taskId,
-      taskType: "feature" as const,
-      taskCommand: "coordinate",
-      profileName: coordinatorProfile.name,
-      sessionId: taskId,
-      createdAt: startedAt.toISOString(),
-      completedAt: completedAt.toISOString(),
-      taskCompletion: successful as 0 | 1,
-      trustMode,
-      passAt1: successful as 0 | 1,
-      passAtK: successful as 0 | 1,
-      codexTurns: coordinated.metrics.turnsUsed,
-      toolCalls: 0,
-      toolCallsByType: {},
-      responsesCalls: 1,
-      toolCallParseFailures: 0,
-      previousResponseResumes: 0,
-      memoryInjectedItems: 0,
-      memoryInjectedBytes: 0,
-      memoryUsedReferences: 0,
-      plannerSubtasks: coordinated.metrics.plannerSubtasks,
-      workerSuccessRate: coordinated.metrics.workerSuccessRate,
-      coordinationFailures: coordinated.metrics.coordinationFailures,
-      blockedDangerousActions: 0,
-      blockedCommands: 0,
-      timeoutEvents: 0,
-      restrictedPathAttempts: 0,
-      totalEstimatedTokens: 0,
-      llmTokensIn: 0,
-      llmTokensOut: 0,
-      codexApiCost: 0,
-      wallClockMs: completedAt.getTime() - startedAt.getTime(),
-      humanMinutes: baseTaskOptions.humanMinutes ?? 0,
-      testsPassed: successful as 0 | 1,
-      lintIssuesDelta: baseTaskOptions.lintIssuesDelta ?? 0,
-      metadata: {
-        maxAttempts: baseTaskOptions.maxAttempts ?? 1,
-      },
-    };
-    await scoreboard.append(record);
-    await runMetricsLogger.log(taskId, {
-      taskId,
-      command: "coordinate",
-      taskType: "feature",
-      sessionId: taskId,
-      metrics: {
-        taskSuccess: record.taskCompletion,
-        turnsUsed: record.codexTurns,
-        toolCalls: record.toolCalls,
-        toolCallsByType: record.toolCallsByType,
-        responsesCalls: record.responsesCalls,
-        toolCallParseFailures: record.toolCallParseFailures,
-        previousResponseResumes: record.previousResponseResumes,
-        memoryInjectedItems: record.memoryInjectedItems,
-        memoryInjectedBytes: record.memoryInjectedBytes,
-        memoryUsedReferences: record.memoryUsedReferences,
-        plannerSubtasks: record.plannerSubtasks,
-        workerSuccessRate: record.workerSuccessRate,
-        coordinationFailures: record.coordinationFailures,
-        trustMode: trustMode,
-        blockedDangerousActions: record.blockedDangerousActions,
-        blockedCommands: record.blockedCommands,
-        timeoutEvents: record.timeoutEvents,
-        restrictedPathAttempts: record.restrictedPathAttempts,
-        llmTokensIn: record.llmTokensIn,
-        llmTokensOut: record.llmTokensOut,
-        llmCost: record.codexApiCost,
-        wallClockMs: record.wallClockMs,
-        completion: record.taskCompletion === 1,
-        testsPassed: record.testsPassed === 1,
-      },
-    });
-
-    return coordinated.summary;
   }
 
   if (command === "operator") {
@@ -303,8 +198,7 @@ export async function runCliCommand(
     "  agent explore --goal \"explain this repo\" [--mode internal|external] [--cwd path]",
     "  agent fix --file src/file.ts [--issue \"what to fix\"] [--mode internal|external] [--cwd path]",
     "  agent test [--goal \"what to validate\"] [--mode internal|external] [--cwd path]",
-    "  agent coordinate --goal \"ship this feature\" [--mode internal|external] [--cwd path]",
-    "  agent scoreboard [--period weekly] [--command explore|fix|test|coordinate] [--trust-mode local_vps|default]",
+    "  agent scoreboard [--period weekly] [--command explore|fix|test] [--trust-mode local_vps|default]",
     "  agent operator approvals [--status <status>] [--sessionId <id>] [--riskLevel <level>]",
     "  agent operator vault [--verdict <verdict>] [--sessionId <id>] [--since <iso>] [--until <iso>] [--limit <n>]",
     "Environment:",

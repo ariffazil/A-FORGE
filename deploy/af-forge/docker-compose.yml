@@ -65,10 +65,10 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
 
       # LLM providers
-      SEA_LION_API_KEY: ${SEA_LION_API_KEY:-}
+      SEA_LION_API_KEY: sk-znzfOJH_Yc7LKewfrfsl2A
 
       # Memory engine (Postgres + Qdrant + Ollama)
-      DATABASE_URL: ${DATABASE_URL:-postgresql://arifos_admin:changeme@postgres:5432/vault999}
+      DATABASE_URL: postgresql://arifos_admin:ArifPostgresVault2026!@postgres:5432/vault999
       QDRANT_URL: http://host.docker.internal:6333
       OLLAMA_URL: http://ollama:11434
       EMBEDDING_MODEL: bge-m3
