@@ -11,7 +11,7 @@
 
 export type SkillDomain = "geox" | "wealth" | "well" | "arifos" | "hermes" | "aforge" | "general";
 
-export type SkillStatus = "PENDING_REVIEW" | "REGISTERED" | "EXECUTED" | "EXPIRED" | "REVOKED" | "VOID";
+export type SkillStatus = "PENDING_REVIEW" | "REGISTERED" | "EXECUTED" | "EXPIRED" | "REVOKED" | "WITHER";
 
 /**
  * Decision Field components per APEX THEORY Epoch 34Ω
@@ -32,7 +32,7 @@ export type DecisionField = {
   Psi: number;
   Phi: number;
   G: number;
-  verdict: "SEAL" | "SABAR" | "HOLD" | "VOID";
+  verdict: "CRYSTALLIZE" | "NUCLEATE" | "DORMANT" | "WITHER";
   rationale: string[];
 };
 
@@ -68,6 +68,7 @@ export type SkillManifest = {
   scar_pressure_applied: number; // total scar pressure that reduced Φ
   fingerprint: string;           // sha256[:16] of (intent + domain + normalized implementation)
   vault_seal_id?: string;        // VAULT999 seal ID — required before execution
+  llm_used: boolean;             // whether TokenRouter LLM generated the implementation
   created_at: string;
   expires_at: string;            // 24h default for Phase 1
   created_by: string;            // actor_id (human or agent)
@@ -96,12 +97,13 @@ export type WisdomTrajectory = {
 };
 
 export type ForgeSkillResult = {
-  status: "SEAL" | "SABAR" | "HOLD" | "VOID";
+  status: "CRYSTALLIZE" | "NUCLEATE" | "DORMANT" | "WITHER";
   tool_name?: string;
   fingerprint?: string;
   decision_field: DecisionField;
   scars_consulted: number;
   haram_findings: number;
+  llm_used: boolean;
   vault_seal_id?: string;
   message: string;
   expires_at?: string;

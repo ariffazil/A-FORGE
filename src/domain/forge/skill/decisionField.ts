@@ -246,32 +246,33 @@ export function computeDecisionField(params: {
     ...Phi.rationale,
   ];
 
-  // Verdict from G — the physics
+  // Verdict from G — organism-layer physics (not constitutional verdicts)
+  // Vocabulary: CRYSTALLIZE/NUCLEATE/DORMANT/WITHER (arifOS SEAL/SABAR/HOLD/VOID reserved)
   let verdict: DecisionField["verdict"];
   if (Phi.score < 0.10) {
-    verdict = "VOID";
-    rationale.push(`⚖️ VERDICT=VOID: Φ<0.10 — Scar Law pressure prevents formation`);
+    verdict = "WITHER";
+    rationale.push(`⚖️ VERDICT=WITHER: Φ<0.10 — Scar Law pressure prevents formation`);
   } else if (Psi.score < 0.30) {
-    verdict = "VOID";
-    rationale.push(`⚖️ VERDICT=VOID: Ψ<0.30 — constitutional instability`);
+    verdict = "WITHER";
+    rationale.push(`⚖️ VERDICT=WITHER: Ψ<0.30 — constitutional instability`);
   } else if (V.score < 0.20) {
-    verdict = "HOLD";
-    rationale.push(`⚖️ VERDICT=HOLD: V<0.20 — no federation purpose`);
+    verdict = "DORMANT";
+    rationale.push(`⚖️ VERDICT=DORMANT: V<0.20 — no federation purpose`);
   } else if (Q.score < 0.20) {
-    verdict = "SABAR";
-    rationale.push(`⚖️ VERDICT=SABAR: Q<0.20 — intent too vague, wait for clarity`);
+    verdict = "NUCLEATE";
+    rationale.push(`⚖️ VERDICT=NUCLEATE: Q<0.20 — intent too vague, wait for clarity`);
   } else if (G >= 0.5) {
-    verdict = "SEAL";
-    rationale.push(`⚖️ VERDICT=SEAL: G≥0.50 — tool has sufficient action potential`);
+    verdict = "CRYSTALLIZE";
+    rationale.push(`⚖️ VERDICT=CRYSTALLIZE: G≥0.50 — tool has sufficient action potential`);
   } else if (G >= 0.25) {
-    verdict = "SABAR";
-    rationale.push(`⚖️ VERDICT=SABAR: 0.25≤G<0.50 — register with conditions`);
+    verdict = "NUCLEATE";
+    rationale.push(`⚖️ VERDICT=NUCLEATE: 0.25≤G<0.50 — register with conditions`);
   } else if (G >= 0.10) {
-    verdict = "HOLD";
-    rationale.push(`⚖️ VERDICT=HOLD: 0.10≤G<0.25 — insufficient energy`);
+    verdict = "DORMANT";
+    rationale.push(`⚖️ VERDICT=DORMANT: 0.10≤G<0.25 — insufficient energy`);
   } else {
-    verdict = "VOID";
-    rationale.push(`⚖️ VERDICT=VOID: G<0.10 — cannot accumulate enough action potential`);
+    verdict = "WITHER";
+    rationale.push(`⚖️ VERDICT=WITHER: G<0.10 — cannot accumulate enough action potential`);
   }
 
   return {
