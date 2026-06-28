@@ -19,15 +19,15 @@
 ```
 
 [![Organ](https://img.shields.io/badge/organ-A--FORGE-8B5CF6)](https://github.com/ariffazil/A-FORGE)
-[![Status](https://img.shields.io/badge/status-LIVE-brightgreen)](CONTEXT.md)
+[![Status](https://img.shields.io/badge/status-LIVE-brightgreen)](https://forge.arif-fazil.com/health)
 [![Node](https://img.shields.io/badge/node-22+-339933?logo=node.js&logoColor=white)](package.json)
 [![TypeScript](https://img.shields.io/badge/typescript-6.0-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
-[![Port](https://img.shields.io/badge/port-7071-64748b?logo=express&logoColor=white)](deploy/Caddyfile)
+[![Port](https://img.shields.io/badge/ports-7071%2F7072-64748b?logo=express&logoColor=white)](deploy/Caddyfile)
 [![Federation](https://img.shields.io/badge/federation-arifOS-8B5CF6)](https://github.com/ariffazil/arifos)
 [![Systemd](https://img.shields.io/badge/systemd-A--FORGE.service-orange)](deploy/systemd/A-FORGE.service)
 [![Tests](https://img.shields.io/badge/tests-26%20suites-success)](test/)
-[![Tools](https://img.shields.io/badge/primitives-40%20load--bearing-8B5CF6)](docs/)
+[![Tools](https://img.shields.io/badge/tools-35-8B5CF6)](docs/)
 
 ---
 
@@ -37,7 +37,7 @@
 > **Canonical contract:** [ariffazil/arifos/FEDERATION_CONTRACT.md](https://github.com/ariffazil/arifos/blob/main/FEDERATION_CONTRACT.md)
 > **Kernel canon:** [ariffazil/arifos/GENESIS/000_KERNEL_CANON.md](https://github.com/ariffazil/arifos/blob/main/GENESIS/000_KERNEL_CANON.md)
 
-A-FORGE is the **governed execution shell** of the arifOS Federation — one of 7 sovereign organs running bare-metal on VPS `af-forge` (72.62.71.199). It also hosts the MIND:51001 and MEMORY:51002 federated intelligence **services**, which are not separate organs. A-FORGE does not judge, does not compute domain logic, and **executes** only within bounded constitutional gates, with full audit trail, and never without upstream authorization.
+A-FORGE is the **governed execution shell** of the arifOS Federation — one of 7 sovereign organs running bare-metal on VPS `af-forge` (72.62.71.199). It also hosts two federated intelligence services: **MIND:51001** (LLM reasoning endpoint — MiniMax M3, SEA_LION, Ollama) and **MEMORY:51002** (Qdrant vector memory + VAULT999 archival bridge), which are not separate organs. A-FORGE does not judge, does not compute domain logic, and **executes** only within bounded constitutional gates, with full audit trail, and never without upstream authorization.
 
 ---
 
@@ -73,7 +73,7 @@ A-FORGE is the **governed execution shell** of the arifOS Federation — one of 
       ┌──────────────────│      A-FORGE (execute)     │──────────────────┐
       │                  │  Port 7071 · Governed Shell │                  │
       │                  │  4-layer forge gate        │                  │
-       │                  │  40 load-bearing primitives  │                  │
+       │                  │  35 tools · 4-layer forge gate         │                  │
       │                  │                             │                  │
       │                  │  "Do it, safely, with       │                  │
       │                  │         evidence."          │                  │
@@ -103,7 +103,7 @@ A-FORGE is the **governed execution shell** of the arifOS Federation — one of 
 | Domain | Description |
 |--------|-------------|
 | **Execution body** | Receives `JUDGE_SEAL_AUTHORIZATION` from arifOS, then gates and runs the plan |
-| **MCP federation bridge** | 40 load-bearing primitives across 5 MCP surfaces (7 federation organs total) |
+| **MCP federation bridge** | 35 tools across 5 MCP surfaces (7 federation organs total) |
 | **Constitutional gatekeeper** | 4-layer forge gate inline on every execution path |
 | **Telemetry producer** | Every execution → Prometheus + Supabase + VAULT999 + Langfuse |
 | **Orchestration engine** | Routes intents, retries failures, handles escalation |
@@ -150,7 +150,7 @@ curl -s http://127.0.0.1:7071/api/federation-probe | python3 -m json.tool
 
 # Run the terminal forge (streaming LLM interface)
 npm run terminal
-# → ◬ A-FORGE Terminal Forge · 40 primitives available · type /help
+# → ◬ A-FORGE Terminal Forge · 35 tools available · type /help
 ```
 
 **Prerequisites:**
@@ -159,6 +159,83 @@ npm run terminal
 - Federation organs (GEOX, WEALTH, WELL) for full tool surface
 
 For detailed setup including standalone mode and stdio MCP configuration, see [QUICKSTART.md](QUICKSTART.md).
+
+---
+
+## MCP Surface
+
+A-FORGE exposes its execution surface via the Model Context Protocol on port **7072**. This is the primary interface used by arifOS kernel and federation agents to call A-FORGE capabilities programmatically.
+
+**Endpoint:** `https://forge.arif-fazil.com/mcp`
+**Transport:** Streamable HTTP (single session, lazy connect)
+**Protocol:** MCP 2025-11-25
+**Auth:** Bearer token (validated server-side)
+
+### Port Matrix
+
+| Port | Interface | Function | Used By |
+|------|-----------|----------|---------|
+| **7071** | HTTP REST | Health, federation probe, terminal forge | Humans, systemd, CLI |
+| **7072** | MCP | Tool execution, session lifecycle | arifOS kernel, agents, federation |
+
+### Session Lifecycle
+
+```
+1. POST /mcp          → connect (lazy — first call creates transport)
+2. tools/list          → discover 35 forge_* tools
+3. tools/call          → execute forge_* tool with arguments
+4. DELETE /mcp         → close session, release transport
+```
+
+Session idle timeout: 30 min. Max age: 24h. Cleanup interval: 5 min.
+
+### Connecting
+
+```bash
+# stdio bridge (via fastmcp-remote)
+uvx fastmcp-remote https://forge.arif-fazil.com/mcp
+
+# MCP Inspector
+npx @modelcontextprotocol/inspector \
+  https://forge.arif-fazil.com/mcp
+
+# Direct (any MCP client)
+# Configure endpoint: https://forge.arif-fazil.com/mcp
+# Transport: streamable-http
+```
+
+### Primary Tool: forge_execute
+
+All governed execution flows through one entry point. Requires a valid `seal_verdict_id` from arifOS — no seal, no execution.
+
+```typescript
+// Called by arifOS kernel via arif_act
+const result = await aforge.forge_execute({
+  task: "the execution plan",
+  mode: "external_safe_mode",
+  constitutional_chain_id: "cc_id_from_arif_judge",  // required
+  evidence_receipt: { /* optional F-WEB receipt */ },
+  peer_contract_id: "optional audit continuity",
+});
+// → { finalText, turns, blocked, judge_verdict }
+```
+
+Without `constitutional_chain_id` → rejected at Layer 3 (Governance Bridge). No exceptions.
+
+### Tool Surface (35 tools across 4 modules)
+
+| Module | Count | Purpose |
+|--------|-------|---------|
+| `core.ts` | 37 tools | Primary execution gate, health, vault, organ bridges, pipeline |
+| `forgeTools.ts` | 6 tools | Agent identity, lease lifecycle, orchestration, status, abort |
+| `gatewayTools.ts` | 24 tools | Research, browser, netdata, MiniMax bridges |
+| `proxyTools.ts` | 6 tools | Filesystem, postgres, memory, git, github, docker |
+
+Full tool catalog with descriptions and parameters: [docs/TOOL_CATALOG.md](docs/TOOL_CATALOG.md)
+
+### Architecture Note
+
+MCP is the agent-to-server protocol. A-FORGE's A2A protocol (port 7071) handles agent-to-agent communication — these are perpendicular axes. MCP crosses protocol boundaries. A2A crosses agent boundaries.
 
 ---
 
@@ -278,7 +355,7 @@ Every execution path in A-FORGE passes through four constitutional gates **in or
 | Capability | Implementation | Constitutional Gate |
 |------------|---------------|---------------------|
 | Intent routing | `IntentRouter.ts` — routes to correct organ (GEOX/WEALTH/WELL/arifOS) | Layer 2 + 3 |
-| MCP auto-discovery | Federation bridge probes 5 organs on startup → 40 primitives | Startup-only |
+| MCP auto-discovery | Federation bridge probes 5 organs on startup → 35 tools | Startup-only |
 | Federation probe | `GET /api/federation-probe` — live organ status, latency, verdict | Read-only |
 | A2A protocol | `application/a2a/` — agent card, task routing, agent profiles | Layer 3 |
 | Cross-organ orchestration | `PipelineCoordinator.ts` — multi-step plans with retry | Layer 2 + 3 |
@@ -689,29 +766,72 @@ AGPL-3.0 was chosen deliberately. Governed execution is meaningless if the gover
 
 ---
 
-## Tool Collapse: 93→40 (v2026.06.24)
+## Tool Surface: 93→40→35 (2026-06-28)
 
 > **A-FORGE does not maximize tool count. A-FORGE minimizes lawful primitives.**
 
-On 2026-06-24, A-FORGE collapsed from 93 registered tools to 40 load-bearing primitives. This was not a reduction in capability — it was an increase in clarity.
+A-FORGE has undergone two collapses. On 2026-06-24, 93 registered tools collapsed to 40. On 2026-06-28, dead code removal and alias consolidation reduced the surface to **35 tools** across 4 modules.
 
-### What happened
+### 2026-06-28 Collapse (this session)
 
-| Category | Before | After | Method |
-|----------|--------|-------|--------|
-| **Stubs removed** | 12 | 0 | `arif_sense_observe` (fake SEAL), `arif_mind_reason` (broken LLM sampling), vault duplicates |
-| **WEALTH pretenders** | 8 | 1 | Replaced by `forge_wealth` router → WEALTH organ |
-| **Mode-gated merges** | 39 | 13 | filesystem, docker, git, github, browser, agent, lease, job, vault, well, systemctl, journalctl, netdata |
-| **Proxy duplicates** | 15 | 0 | MiniMax stdio, duplicate remember/recall, redundant search |
-| **Total** | **93** | **40** | Each remaining tool is load-bearing |
+| Action | Count | Details |
+|--------|-------|---------|
+| **Dead code removed** | −8 | Unregistered GitHub handlers, deprecated forge_search alias, dead helper functions |
+| **Alias merged** | −1 | forge_run → forge_execute (identical handler) |
+| **Canonical gap filled** | +5 | forge_probe, forge_status, forge_abort, forge_agent_kill, forge_scan |
+| **Schema strictified** | 0 | All server.tool() calls now auto-strictify Zod schemas |
+| **Total** | **35** | 8 public facade + 13 internal + 7 deprecated shims + 7 external bridges |
 
-### The doctrine
+### 2026-06-24 Collapse (historical)
 
-Most AI systems accumulate tools. A-FORGE prunes them. The 7-tier action taxonomy (OBSERVE → ANALYZE → DRAFT → MUTATE → EXTERNAL_SIDE_EFFECT → IRREVERSIBLE → PROPOSE) classifies every remaining primitive. Each tool earns its place by being the only way to perform its action class.
+| Action | Count | Method |
+|--------|-------|--------|
+| Stubs removed | 12 | `arif_sense_observe` (fake SEAL), `arif_mind_reason` (broken LLM), vault duplicates |
+| WEALTH pretenders | 8→1 | Replaced by `forge_wealth` router → WEALTH organ |
+| Mode-gated merges | 39→13 | filesystem, docker, git, github, browser, agent, lease, job, vault, well, systemctl, journalctl, netdata |
+| Proxy duplicates | 15→0 | MiniMax stdio, duplicate remember/recall, redundant search |
+| **Total then** | **93→40** | Each remaining tool load-bearing |
+
+### Canonical target (#529)
+
+After architecture lock on 2026-06-28, the canonical MCP surface target is **8 tools**:
+
+```
+forge_execute | forge_route | forge_probe | forge_pipeline
+forge_abort   | forge_audit | forge_agent_spawn | forge_scan
+```
+
+Everything else is either an internal implementation (moved from MCP to lib), a deprecated shim (warning + route to canonical), or an external bridge (kept as gateway). See #529 for the classification.
+
+### Doctrine
+
+Most AI systems accumulate tools. A-FORGE prunes them. The 7-tier action taxonomy (OBSERVE → ANALYZE → DRAFT → MUTATE → EXTERNAL_SIDE_EFFECT → IRREVERSIBLE → PROPOSE) classifies every remaining primitive. Each tool earns its place by being the only constitutional way to perform its action class across the federation boundary.
 
 ### Verification
 
-Full audit receipt: `forge_work/RSI-AGI-ASI-AUDIT-2026-06-24.md`
+Full tool audit: `forge_work/2026-06-28/A-FORGE-TOOL-SURFACE-AUDIT.md`
+Build receipt: `forge_work/2026-06-28/A-FORGE-TOOL-SURFACE-FORGE.md`
+
+---
+
+## Known Issues — 2026-06-28
+
+Truth layer (F2). These are live defects, not limitations.
+
+| Issue | Severity | Impact | Status |
+|-------|----------|--------|--------|
+| **claude.ai connector points to deprecated endpoint** | P0 CRITICAL | `actor_verified=false` on every kernel init — cascades to all downstream organ calls | Pending re-registration at claude.ai/settings |
+| **WELL identity unstable** | P0 HIGH | `identity_valid=false`, `amanah=UNLOCKED` on cold start. Fixed by adding identity block to state.json but may drift on restart. | Monitor — fix applied 2026-06-28 |
+| **Enforcement spine 30–40% unwired** | HIGH | `conflict_resolver.py` and `latency_budget.py` exist but not wired into interceptor path. Constitution declared, not fully applied. | interceptor.py: wired latency budget + floor tracking on 2026-06-28. Conflict resolver remains unwired. |
+| **Schema fingerprinting (TOCTOU) not integrated** | HIGH | FastMCP fingerprinting marked `TO_INTEGRATE`. Tool schema could drift between discovery and execution without detection. | Roadmap |
+| **Federation memory (Qdrant) partial** | MEDIUM | Qdrant running (10 collections, 4700+ points). `arif_init` memory recall wired. Memory write from tools not yet fully integrated. | Ongoing |
+| **CI checks fail on main** | MEDIUM | Boundary Guard + AF-FORGE CI fail on main. These are CI infra issues, not code defects. `make test` passes locally. | Stale — needs infra update |
+
+### Process
+
+- P0 issues block autonomous execution. Fixes require human approval (888_HOLD).
+- P1–P2 issues are tracked in GitHub issues.
+- This list refreshes on every forge session. Last verified: 2026-06-28.
 
 ---
 
@@ -730,7 +850,7 @@ Full audit receipt: `forge_work/RSI-AGI-ASI-AUDIT-2026-06-24.md`
 
 ## Federation Cross-Reference
 
-A-FORGE is one of **7 organs** in the arifOS Federation. Every organ has its own repository, port, and constitutional role. MIND:51001 and MEMORY:51002 are federated intelligence **services** hosted by A-FORGE, not separate organs. `arif-sites` is a public surface, not an organ.
+A-FORGE is one of **7 organs** in the arifOS Federation. Every organ has its own repository, port, and constitutional role. A-FORGE additionally hosts two federated intelligence services: **MIND:51001** (multi-provider LLM endpoint — MiniMax M3, SEA_LION, Ollama) and **MEMORY:51002** (Qdrant vector memory + VAULT999 bridge). These services are not organs — they are capabilities A-FORGE exposes to the federation. `arif-sites` is a public surface, not an organ.
 
 | Organ | Repository | Role | Port | License |
 |-------|-----------|------|------|---------|
@@ -864,5 +984,5 @@ F13 SOVEREIGN: Muhammad Arif bin Fazil holds absolute veto over all execution pa
 
 <p align="center">
   <strong>DITEMPA BUKAN DIBERI — Forged, Not Given.</strong><br>
-   <sub>999 SEAL ALIVE · arifOS Federation · v2026.06.24-TOOL-COLLAPSE</sub>
+   <sub>999 SEAL ALIVE · arifOS Federation · v2026.06.28-AFORGE-SURFACE-COLLAPSE</sub>
 </p>
