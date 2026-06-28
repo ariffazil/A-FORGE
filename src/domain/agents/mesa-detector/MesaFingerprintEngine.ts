@@ -217,7 +217,10 @@ export class MesaFingerprintEngine {
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
   private zScore(value: number, mean: number, n: number): number {
-    if (n < 2 || mean === 0) return 0;
+    if (n < 2) return 0;
+    // Zero-mean spike: any non-zero value from zero-baseline is infinitely anomalous.
+    // This is the correct behavior for floor violations — baseline 0 → 1 violation = spike.
+    if (mean === 0) return value > 0 ? 99 : 0;
     // Approximate std dev from sample size (not perfect but sufficient for detection)
     const stdDev = Math.max(mean * 0.3, 1); // At least 30% of mean, or 1
     return (value - mean) / stdDev;

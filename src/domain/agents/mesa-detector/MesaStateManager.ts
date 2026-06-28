@@ -66,6 +66,16 @@ export class MesaStateManager {
   }
 
   /**
+   * Get baseline fingerprint WITHOUT recording a session.
+   * Used by MesaDetector.analyze() to get pre-session baseline for drift tests,
+   * before recordSession() updates the fingerprint with the current session.
+   */
+  getBaseline(agentName: string, profileName: string): ProfileFingerprint | null {
+    const state = this.getState(agentName, profileName);
+    return state?.baseline ?? null;
+  }
+
+  /**
    * Get all agent states (for batch analysis).
    */
   getAllStates(): AgentMesaState[] {

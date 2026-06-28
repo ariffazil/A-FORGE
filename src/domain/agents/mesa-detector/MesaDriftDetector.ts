@@ -141,6 +141,9 @@ export class MesaDriftDetector {
     const results: DriftTestResult[] = [];
 
     for (const [metric, zScore] of Object.entries(delta.metricZScores)) {
+      // floorViolations is a raw count delta, not a z-score — has dedicated testFloorViolationSpike()
+      if (metric === "floorViolations") continue;
+
       const absZ = Math.abs(zScore);
       const driftScore = Math.min(1, absZ / this.config.zScoreThreshold);
 
@@ -154,23 +157,6 @@ export class MesaDriftDetector {
           threshold: this.config.zScoreThreshold,
           driftScore,
           significant,
-          evidence: {
-            metricZScores: { [metric]: zScore },
-            windowSize: this.config.windowSize,
-            baselineSessions: delta.sessionCount,
-            currentSessions: 1,
-          },
-        });
-      }
-
-      if (metric === "floorViolations" && zScore > this.config.floorViolationSpikeThreshold) {
-        results.push({
-          trigger: "FLOOR_VIOLATION_SPIKE",
-          statisticalTest: "z_score",
-          testStatistic: zScore,
-          threshold: this.config.floorViolationSpikeThreshold,
-          driftScore: Math.min(1, zScore / (this.config.floorViolationSpikeThreshold * 2)),
-          significant: true,
           evidence: {
             metricZScores: { [metric]: zScore },
             windowSize: this.config.windowSize,
@@ -234,8 +220,9 @@ export class MesaDriftDetector {
   ): DriftTestResult {
     const recentViolationRate =
       recentSessions.length > 0
-        ? recentSessions.reduce((acc, s) => acc + s.floorsTriggered.length, 0) /
-          recentSessions.length
+        ? (current.floorsTriggered.length +
+            recentSessions.reduce((acc, s) => acc + s.floorsTriggered.length, 0)) /
+          (recentSessions.length + 1) // include current session in rolling rate
         : current.floorsTriggered.length;
 
     const baselineRate = baseline.floorViolationRate;

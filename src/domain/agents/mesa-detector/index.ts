@@ -88,28 +88,32 @@ export class MesaDetector {
       },
     });
 
-    // 2. Record session and update baseline
-    const baseline = this.stateManager.recordSession(snapshot);
+    // 2. Get pre-session baseline BEFORE recording (tests compare eval vs history)
+    const preSessionBaseline = this.stateManager.getBaseline(agentName, profile.name);
 
-    // 3. Get recent sessions for drift comparison
+    // 3. Record current session and update fingerprint for next cycle
+    this.stateManager.recordSession(snapshot);
+
+    // 4. Get recent sessions for drift comparison
     const recentSessions = this.stateManager.getRecentSessions(agentName, profile.name);
 
-    // 4. Run drift tests (only if baseline exists)
+    // 5. Run drift tests against pre-session baseline (not post-session baseline)
+    //    Using post-session baseline would contaminate chi-square, z-score, and FLOOR tests.
     const tests =
-      baseline !== null
+      preSessionBaseline !== null
         ? this.driftDetector.runTests(
             snapshot,
-            baseline,
+            preSessionBaseline,
             recentSessions,
             profile.allowedTools,
           )
         : [];
 
-    // 5. Build report
+    // 5. Build report against pre-session baseline
     const report = this.alertService.buildReport({
       agentName,
       profileName: profile.name,
-      baseline,
+      baseline: preSessionBaseline,
       tests,
       currentSession: snapshot,
     });

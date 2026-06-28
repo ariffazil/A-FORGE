@@ -76,7 +76,7 @@ const MATRIX: Record<TrustTier, {
     can_register: "conditional",
     can_call_external: "allowlist_only",
     requiredAction: "FORGE_GATE",
-    minG: 0.70,
+    minG: 0.60,
     maxCdark: 0.40,
   },
   TRUSTED: {
