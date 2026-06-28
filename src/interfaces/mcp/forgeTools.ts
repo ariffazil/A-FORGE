@@ -757,6 +757,8 @@ export function registerSkillTools(server: McpServer): void {
       session_id: z.string().optional(),
       seal_verdict_id: z.string().optional()
         .describe("arifOS seal verdict (required for arifos domain or execute_after_register)"),
+      staging: z.boolean().default(false)
+        .describe("If true, stage the generated skill for mesa/Landauer scan before production registration"),
     },
     async (args) => {
       try {
@@ -792,11 +794,23 @@ export function registerSkillTools(server: McpServer): void {
           seal_verdict_id: args.seal_verdict_id,
         });
 
+        // ── Staging gate: mesa-scan + Landauer check before production ──
+        let stagingResult = null;
+        if (args.staging && result.status !== "DORMANT" && result.status !== "WITHER") {
+          const { getSkillStagingGate } = await import("../../domain/governance/SkillStagingGate.js");
+          const gate = getSkillStagingGate();
+          stagingResult = gate.stage(
+            result.message ?? args.intent,
+            args.target_tool_name ?? result.tool_name ?? "forge_staged",
+            args.intent,
+          );
+        }
+
         const isError = result.status === "WITHER" || result.status === "DORMANT";
         return {
           content: [{
             type: "text" as const,
-            text: JSON.stringify(result, null, 2),
+            text: JSON.stringify({ ...result, staging: stagingResult }, null, 2),
           }],
           isError,
         };
