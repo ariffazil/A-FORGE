@@ -681,6 +681,35 @@ const forgeHandler = async (args: any, toolName: string) => {
       return holdResult;
     }
 
+    // ── FORGE 2-C: Landauer thermodynamic pre-check (APEX Stream 3) ──
+    const { ThermodynamicCostEstimator } = await import("../../domain/ops/ThermodynamicCostEstimator.js");
+    const { detectMesaRisk } = await import("../../domain/governance/mesaDetector.js");
+    const thermo = new ThermodynamicCostEstimator();
+    const landauerCost = thermo.estimate("forge_execute", args);
+    if (landauerCost.thermodynamicBand === "CRITICAL") {
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({
+          status: "HOLD", gate: "LANDAUER_GATE",
+          reason: `Thermodynamic cost CRITICAL (${landauerCost.landauerCost.toFixed(2)}). Irreversible ${!landauerCost.isReversible}.`,
+          cost: landauerCost,
+        }, null, 2) }], isError: true,
+      };
+    }
+    // ── End Landauer gate ──
+
+    // ── FORGE 2-D: Mesa-optimization scan (APEX Stream 1) ──
+    const mesa = detectMesaRisk(task ?? "", args.session_id ?? undefined);
+    if (mesa.blocked) {
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({
+          status: "HOLD", gate: "MESA_DETECTOR",
+          reason: mesa.rationale,
+          mesa_risk: mesa,
+        }, null, 2) }], isError: true,
+      };
+    }
+    // ── End Mesa gate ──
+
     const { AgentEngine } = await import("../../domain/engine/AgentEngine.js");
     const { LongTermMemory } = await import("../../application/memory/LongTermMemory.js");
     const { ToolRegistry } = await import("../../infrastructure/tools/ToolRegistry.js");

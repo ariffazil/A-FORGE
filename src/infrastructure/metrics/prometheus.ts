@@ -44,6 +44,38 @@ const bridgeContractMismatchTotal = new Counter({
   labelNames: ["reason"],
 });
 
+// ─── Mesa-Detector Metrics ──────────────────────────────────────────────────
+
+const mesaAlertTotal = new Counter({
+  name: "arifos_mesa_alert_total",
+  help: "Count of mesa-detection alerts raised.",
+  labelNames: ["agent", "profile", "level", "trigger"],
+});
+
+const mesaDriftScore = new Gauge({
+  name: "arifos_mesa_drift_score",
+  help: "Current drift score [0-1] per agent profile.",
+  labelNames: ["agent", "profile"],
+});
+
+const mesaBaselineConfidence = new Gauge({
+  name: "arifos_mesa_baseline_confidence",
+  help: "Confidence [0-1] in established baseline per agent profile.",
+  labelNames: ["agent", "profile"],
+});
+
+const mesaSessionCount = new Gauge({
+  name: "arifos_mesa_session_count",
+  help: "Number of sessions recorded for baseline per agent profile.",
+  labelNames: ["agent", "profile"],
+});
+
+const mesaProbabilityCurrent = new Gauge({
+  name: "arifos_mesa_probability_current",
+  help: "Current mesa probability [0-1] per agent profile.",
+  labelNames: ["agent", "profile"],
+});
+
 export async function runStage<T>(stage: MetabolicStage, fn: () => Promise<T>): Promise<T> {
   const end = metabolicStageDuration.startTimer({ stage });
   try {
@@ -83,6 +115,49 @@ export function setOpenHolds(count: number): void {
 
 export function recordBridgeContractMismatch(reason: string): void {
   bridgeContractMismatchTotal.inc({ reason });
+}
+
+// ─── Mesa-Detector Metric Writers ────────────────────────────────────────────
+
+export function recordMesaAlert(
+  agentName: string,
+  profileName: string,
+  level: string,
+  trigger: string,
+): void {
+  mesaAlertTotal.inc({ agent: agentName, profile: profileName, level, trigger });
+}
+
+export function setMesaDriftScore(
+  agentName: string,
+  profileName: string,
+  score: number,
+): void {
+  mesaDriftScore.set({ agent: agentName, profile: profileName }, score);
+}
+
+export function setMesaBaselineConfidence(
+  agentName: string,
+  profileName: string,
+  confidence: number,
+): void {
+  mesaBaselineConfidence.set({ agent: agentName, profile: profileName }, confidence);
+}
+
+export function setMesaSessionCount(
+  agentName: string,
+  profileName: string,
+  count: number,
+): void {
+  mesaSessionCount.set({ agent: agentName, profile: profileName }, count);
+}
+
+export function setMesaProbabilityCurrent(
+  agentName: string,
+  profileName: string,
+  probability: number,
+): void {
+  mesaProbabilityCurrent.set({ agent: agentName, profile: profileName }, probability);
 }
 
 
