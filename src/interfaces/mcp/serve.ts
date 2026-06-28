@@ -80,10 +80,17 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
       // The SDK internally converts the Node.js IncomingMessage to a Web
       // Standard Request via getRequestListener, which handles body reading.
       if (req.url === "/mcp") {
+        // Inject session ID on POST if missing in headers
+        const hasSessionId = req.headers["mcp-session-id"] || req.headers["Mcp-Session-Id"];
+        if (req.method === "POST" && !hasSessionId) {
+          const generatedId = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+          req.headers["mcp-session-id"] = generatedId;
+        }
+
         // Fresh connection (no session header): reset transport to avoid
         // "already initialized" rejections from the SDK's singleton session.
         const mcpSessionId = req.headers["mcp-session-id"];
-        if (req.method === "POST" && !mcpSessionId) {
+        if (req.method === "POST" && !hasSessionId) {
           try { await transport.close(); } catch (_) { /* best-effort */ }
           try { await server.close(); } catch (_) { /* clears Protocol._transport */ }
           transport = new StreamableHTTPServerTransport({
@@ -93,6 +100,20 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           await server.connect(transport);
           process.stderr.write("[A-FORGE-MCP] Transport reset for new session\n");
         }
+
+        // Patch Accept header in rawHeaders to bypass SDK's strict check
+        const rawAcceptIdx = req.rawHeaders.findIndex(
+          (h: string) => h.toLowerCase() === "accept"
+        );
+        if (rawAcceptIdx >= 0) {
+          let patched = req.rawHeaders[rawAcceptIdx + 1] as string;
+          if (!patched.includes("application/json")) patched += ", application/json";
+          if (!patched.includes("text/event-stream")) patched += ", text/event-stream";
+          req.rawHeaders[rawAcceptIdx + 1] = patched;
+        } else {
+          req.rawHeaders.push("Accept", "application/json, text/event-stream");
+        }
+
         await transport.handleRequest(req, res);
         return;
       }
