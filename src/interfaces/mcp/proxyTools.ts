@@ -1,8 +1,9 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { execSync } from "node:child_process";
-import { readFile, writeFile, readdir, stat, mkdir } from "node:fs/promises";
+import { readFile, writeFile, readdir, stat, mkdir, appendFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
+import { randomUUID } from "node:crypto";
 import { globSync } from "glob";
 
 const ALLOWED_ROOTS = ["/root", "/tmp", "/data", "/var/log"];
@@ -159,20 +160,44 @@ export function registerPostgresTools(server: McpServer): void {
 }
 
 export function registerMemoryTools(server: McpServer): void {
+  // P1.3 (2026-06-28): Added mode=write for session memory persistence.
+  // forge_memory — modes: recall (reads VAULT999), write (stores to session memory file)
   server.registerTool("forge_memory", {
-    description: "Canonical memory primitive. Modes: recall. Reads VAULT999 local files, then vault999-api fallback.",
+    description: "Canonical memory primitive. Modes: recall (read VAULT999), write (store to session memory). P1.3: write mode added.",
     inputSchema: z.object({
-      mode: z.enum(["recall"]).default("recall"),
-      query: z.string(),
-      limit: z.number().default(10),
+      mode: z.enum(["recall", "write"]).default("recall"),
+      query: z.string().optional().describe("Search query (recall) or content to write (write)"),
+      limit: z.number().default(10).describe("Max results (recall)"),
+      category: z.string().optional().describe("Memory category (write)"),
+      tags: z.array(z.string()).optional().describe("Tags (write)"),
+      actor_id: z.string().optional().describe("Actor ID (write)"),
+      session_id: z.string().optional().describe("Session ID (write)"),
     }),
-  }, async ({ query, limit }) => {
+  }, async ({ mode, query, limit, category, tags, actor_id, session_id }) => {
     try {
+      if (mode === "write") {
+        if (!query) return text("query (content) is required for mode=write", true);
+        const MEMORY_STORE = "/root/A-FORGE/data/session_memory.jsonl";
+        const entry = {
+          id: randomUUID(),
+          timestamp: new Date().toISOString(),
+          content: query,
+          ...(category ? { category } : {}),
+          ...(tags ? { tags } : {}),
+          ...(actor_id ? { actor_id } : {}),
+          ...(session_id ? { session_id } : {}),
+        };
+        await mkdir(resolve(MEMORY_STORE, ".."), { recursive: true });
+        await appendFile(MEMORY_STORE, JSON.stringify(entry) + "\n");
+        return text({ status: "SEAL", mode: "write", id: entry.id });
+      }
+
+      // mode === "recall" (existing implementation)
       const safeLimit = Math.min(limit, 50);
       const result = execSync(`ls -t /root/arifOS/VAULT999/*.jsonl 2>/dev/null | head -${safeLimit}`, { encoding: "utf-8", timeout: 5000 });
       const files = result.split("\n").filter(Boolean);
       const entries: Array<Record<string, unknown>> = [];
-      const queryLower = query.toLowerCase();
+      const queryLower = (query ?? "").toLowerCase();
       for (const f of files) {
         try {
           const content = execSync(`tail -20 "${f}"`, { encoding: "utf-8", timeout: 3000 });
@@ -186,9 +211,10 @@ export function registerMemoryTools(server: McpServer): void {
           if (entries.length >= safeLimit) break;
         } catch { /* skip */ }
       }
-      if (entries.length > 0) return text({ status: "ok", query, count: entries.length, results: entries });
+      if (entries.length > 0) return text({ status: "ok", query: query ?? "*", count: entries.length, results: entries });
       try {
-        const resp = await fetch(`http://127.0.0.1:8100/api/vault/search?q=${encodeURIComponent(query)}&limit=${safeLimit}`, { signal: AbortSignal.timeout(5000) });
+        const q = query ?? "*";
+        const resp = await fetch(`http://127.0.0.1:8100/api/vault/search?q=${encodeURIComponent(q)}&limit=${safeLimit}`, { signal: AbortSignal.timeout(5000) });
         return text(await resp.json());
       } catch {
         return text({ status: "ok", query, count: 0, results: [], note: "No matches in VAULT999 local files; vault999-api unavailable" });
