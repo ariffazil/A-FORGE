@@ -25,7 +25,6 @@ export {
 } from "../domain/policy/sense.js";
 
 // Agents
-export { CoordinatorAgent } from "../domain/agents/CoordinatorAgent.js";
 export { WorkerAgent } from "../domain/agents/WorkerAgent.js";
 export { buildExploreProfile, buildFixProfile, buildTestProfile, buildCoordinatorProfile, buildWorkerProfile } from "../domain/agents/profiles.js";
 

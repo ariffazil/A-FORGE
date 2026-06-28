@@ -28,7 +28,6 @@ import {
 
 const PLAYWRIGHT_MCP_URL = process.env.PLAYWRIGHT_MCP_URL ?? "http://localhost:8931/mcp";
 const MINIMAX_MCP_URL = process.env.MINIMAX_MCP_URL ?? "http://localhost:18091/mcp";
-const MINIMAX_MEDIA_MCP_URL = process.env.MINIMAX_MEDIA_MCP_URL ?? "http://localhost:18090/mcp";
 const NETDATA_URL = process.env.NETDATA_URL ?? "http://localhost:19999";
 const CONTEXT7_MCP_URL = process.env.CONTEXT7_MCP_URL ?? "https://mcp.context7.com/mcp";
 const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY ?? "";
@@ -134,7 +133,38 @@ async function context7Lookup(query: string, _corpus: string, maxResults: number
   }
 }
 
-// ── Handlers: Browser ─────────────────────────────────────────────────────────
+// ── GitHub REST helpers ───────────────────────────────────────────────────────
+
+const GITHUB_API = "https://api.github.com";
+
+function ghHeaders(): Record<string, string> {
+  const h: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+  if (GITHUB_TOKEN) h.Authorization = `Bearer ${GITHUB_TOKEN}`;
+  return h;
+}
+
+async function ghGet(path: string): Promise<any> {
+  const resp = await fetch(`${GITHUB_API}${path}`, { headers: ghHeaders() });
+  const text = await resp.text();
+  if (!resp.ok) throw new Error(`GitHub ${resp.status}: ${text.slice(0, 200)}`);
+  return JSON.parse(text);
+}
+
+async function ghPost(path: string, body: unknown): Promise<any> {
+  const resp = await fetch(`${GITHUB_API}${path}`, {
+    method: "POST",
+    headers: { ...ghHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const text = await resp.text();
+  if (!resp.ok) throw new Error(`GitHub ${resp.status}: ${text.slice(0, 200)}`);
+  return JSON.parse(text);
+}
+
+// ── Netdata helpers ───────────────────────────────────────────────────────────
 
 async function netdataAlarms(status: string): Promise<any[]> {
   const resp = await fetch(`${NETDATA_URL}/api/v1/alarms?${status === "all" ? "" : `active=${status === "raised" ? "true" : "false"}`}`);
@@ -436,6 +466,156 @@ export async function handleForgeBrowserEvaluateJs(args: any) {
   }
 }
 
+// ── Handlers: GitHub ──────────────────────────────────────────────────────────
+
+export async function handleForgeGitHubSearchCode(args: any) {
+  const { q, per_page, page, request_id } = args;
+  try {
+    const data = await ghGet(`/search/code?q=${encodeURIComponent(q)}&per_page=${per_page ?? 30}&page=${page ?? 1}`);
+    const items = (data.items ?? []).map((i: any) => ({
+      repo: i.repository?.full_name,
+      path: i.path,
+      url: i.html_url,
+      snippet: i.text_matches?.[0]?.fragment ?? "",
+    }));
+    const receipt_id = await recordReceipt({ tool: "forge_github_search_code", query: q, count: items.length });
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({ request_id, total_count: data.total_count ?? 0, items, receipt_id }, null, 2),
+      }],
+    };
+  } catch (err: any) {
+    return gatewayError(request_id, `GitHub search code failed: ${err?.message ?? String(err)}`, { tool: "forge_github_search_code", query: q });
+  }
+}
+
+export async function handleForgeGitHubSearchRepos(args: any) {
+  const { q, per_page, page, request_id } = args;
+  try {
+    const data = await ghGet(`/search/repositories?q=${encodeURIComponent(q)}&per_page=${per_page ?? 30}&page=${page ?? 1}`);
+    const items = (data.items ?? []).map((i: any) => ({
+      full_name: i.full_name,
+      description: i.description ?? "",
+      url: i.html_url,
+      stars: i.stargazers_count ?? 0,
+    }));
+    const receipt_id = await recordReceipt({ tool: "forge_github_search_repos", query: q, count: items.length });
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({ request_id, total_count: data.total_count ?? 0, items, receipt_id }, null, 2),
+      }],
+    };
+  } catch (err: any) {
+    return gatewayError(request_id, `GitHub search repos failed: ${err?.message ?? String(err)}`, { tool: "forge_github_search_repos", query: q });
+  }
+}
+
+export async function handleForgeGitHubGetFile(args: any) {
+  const { owner, repo, path, branch, request_id } = args;
+  try {
+    const data = await ghGet(`/repos/${owner}/${repo}/contents/${path}?ref=${branch ?? "main"}`);
+    const content = typeof data.content === "string" ? Buffer.from(data.content, "base64").toString("utf-8") : "";
+    const receipt_id = await recordReceipt({ tool: "forge_github_get_file", owner, repo, path, branch });
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({ request_id, content, sha: data.sha, size: data.size, encoding: "utf-8", receipt_id }, null, 2),
+      }],
+    };
+  } catch (err: any) {
+    return gatewayError(request_id, `GitHub get file failed: ${err?.message ?? String(err)}`, { tool: "forge_github_get_file", owner, repo, path });
+  }
+}
+
+export async function handleForgeGitHubCreateOrUpdateFile(args: any) {
+  const { owner, repo, path, branch, content, message, sha, create_pr, pr_base, request_id } = args;
+  try {
+    const body: any = {
+      message,
+      content: Buffer.from(content).toString("base64"),
+      branch,
+      ...(sha ? { sha } : {}),
+    };
+    const fileRes = await ghPut(`/repos/${owner}/${repo}/contents/${path}`, body);
+    let pr_url: string | null = null;
+    if (create_pr !== false) {
+      const pr = await ghPost(`/repos/${owner}/${repo}/pulls`, {
+        title: message,
+        body: `Auto-created by A-FORGE gateway`,
+        head: branch,
+        base: pr_base ?? "main",
+        draft: true,
+      });
+      pr_url = pr.html_url ?? null;
+    }
+    const receipt_id = await recordReceipt({ tool: "forge_github_create_or_update_file", owner, repo, path, branch, pr_url });
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({ request_id, commit_sha: fileRes.commit?.sha ?? null, pr_url, file_sha: fileRes.content?.sha ?? "", receipt_id }, null, 2),
+      }],
+    };
+  } catch (err: any) {
+    return gatewayError(request_id, `GitHub create/update file failed: ${err?.message ?? String(err)}`, { tool: "forge_github_create_or_update_file", owner, repo, path });
+  }
+}
+
+export async function handleForgeGitHubCreateIssue(args: any) {
+  const { owner, repo, title, body, labels, assignees, request_id } = args;
+  try {
+    const issue = await ghPost(`/repos/${owner}/${repo}/issues`, {
+      title,
+      body,
+      ...(labels ? { labels } : {}),
+      ...(assignees ? { assignees } : {}),
+    });
+    const receipt_id = await recordReceipt({ tool: "forge_github_create_issue", owner, repo, issue_number: issue.number });
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({ request_id, issue_number: issue.number, issue_url: issue.html_url, receipt_id }, null, 2),
+      }],
+    };
+  } catch (err: any) {
+    return gatewayError(request_id, `GitHub create issue failed: ${err?.message ?? String(err)}`, { tool: "forge_github_create_issue", owner, repo, title });
+  }
+}
+
+export async function handleForgeGitHubCreatePullRequest(args: any) {
+  const { owner, repo, title, body, head, base, draft, request_id } = args;
+  try {
+    const pr = await ghPost(`/repos/${owner}/${repo}/pulls`, {
+      title,
+      body,
+      head,
+      base: base ?? "main",
+      draft: draft ?? true,
+    });
+    const receipt_id = await recordReceipt({ tool: "forge_github_create_pull_request", owner, repo, pr_number: pr.number, head, base });
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({ request_id, pr_number: pr.number, pr_url: pr.html_url, receipt_id }, null, 2),
+      }],
+    };
+  } catch (err: any) {
+    return gatewayError(request_id, `GitHub create PR failed: ${err?.message ?? String(err)}`, { tool: "forge_github_create_pull_request", owner, repo, head, base });
+  }
+}
+
+async function ghPut(path: string, body: unknown): Promise<any> {
+  const resp = await fetch(`${GITHUB_API}${path}`, {
+    method: "PUT",
+    headers: { ...ghHeaders(), "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const text = await resp.text();
+  if (!resp.ok) throw new Error(`GitHub ${resp.status}: ${text.slice(0, 200)}`);
+  return JSON.parse(text);
+}
+
 // ── Handlers: Netdata ─────────────────────────────────────────────────────────
 
 export async function handleForgeNetdataAlarms(args: any) {
@@ -496,90 +676,6 @@ export async function handleForgeMinimaxSearch(args: any) {
   }
 }
 
-// ── Handler: MiniMax media tools (low/medium-risk only) ───────────────────────
-// risk_tier: LOW — text_to_image, text_to_audio, music_generation
-// HIGH-TIER GATED (NOT registered): voice_clone, generate_video, image_to_video, voice_design
-
-export async function handleForgeMinimaxTextToImage(args: any) {
-  const { prompt, aspect_ratio, request_id } = args;
-  try {
-    const res = (await callHttpMcp(MINIMAX_MEDIA_MCP_URL, "text_to_image", {
-      prompt,
-      aspect_ratio: aspect_ratio ?? "1:1",
-    })) as any;
-    const text = typeof res === "string" ? res : res?.content?.[0]?.text ?? JSON.stringify(res);
-    const receipt_id = await recordReceipt({ tool: "forge_minimax_text_to_image", prompt: prompt.slice(0, 100), risk_tier: "LOW" });
-    return {
-      content: [{
-        type: "text" as const,
-        text: JSON.stringify({ request_id, result: text, risk_tier: "LOW", receipt_id }, null, 2),
-      }],
-    };
-  } catch (err: any) {
-    return gatewayError(request_id, `MiniMax text_to_image failed: ${err?.message ?? String(err)}`, { tool: "forge_minimax_text_to_image", risk_tier: "LOW" });
-  }
-}
-
-export async function handleForgeMinimaxTextToAudio(args: any) {
-  const { text, voice_id, request_id } = args;
-  try {
-    const res = (await callHttpMcp(MINIMAX_MEDIA_MCP_URL, "text_to_audio", {
-      text,
-      voice_id: voice_id ?? "female-shaonv",
-    })) as any;
-    const result = typeof res === "string" ? res : res?.content?.[0]?.text ?? JSON.stringify(res);
-    const receipt_id = await recordReceipt({ tool: "forge_minimax_text_to_audio", text_len: text.length, risk_tier: "LOW" });
-    return {
-      content: [{
-        type: "text" as const,
-        text: JSON.stringify({ request_id, result, risk_tier: "LOW", receipt_id }, null, 2),
-      }],
-    };
-  } catch (err: any) {
-    return gatewayError(request_id, `MiniMax text_to_audio failed: ${err?.message ?? String(err)}`, { tool: "forge_minimax_text_to_audio", risk_tier: "LOW" });
-  }
-}
-
-export async function handleForgeMinimaxMusicGeneration(args: any) {
-  const { prompt, lyrics, request_id } = args;
-  try {
-    const res = (await callHttpMcp(MINIMAX_MEDIA_MCP_URL, "music_generation", {
-      prompt,
-      lyrics: lyrics ?? "",
-    })) as any;
-    const result = typeof res === "string" ? res : res?.content?.[0]?.text ?? JSON.stringify(res);
-    const receipt_id = await recordReceipt({ tool: "forge_minimax_music_generation", prompt: prompt.slice(0, 100), risk_tier: "LOW" });
-    return {
-      content: [{
-        type: "text" as const,
-        text: JSON.stringify({ request_id, result, risk_tier: "LOW", receipt_id }, null, 2),
-      }],
-    };
-  } catch (err: any) {
-    return gatewayError(request_id, `MiniMax music_generation failed: ${err?.message ?? String(err)}`, { tool: "forge_minimax_music_generation", risk_tier: "LOW" });
-  }
-}
-
-export async function handleForgeMinimaxUnderstandImage(args: any) {
-  const { image_source, prompt, request_id } = args;
-  try {
-    const res = (await callHttpMcp(MINIMAX_MCP_URL, "understand_image", {
-      image_source,
-      prompt,
-    })) as any;
-    const result = typeof res === "string" ? res : res?.content?.[0]?.text ?? JSON.stringify(res);
-    const receipt_id = await recordReceipt({ tool: "forge_minimax_understand_image", prompt: prompt.slice(0, 100), risk_tier: "LOW" });
-    return {
-      content: [{
-        type: "text" as const,
-        text: JSON.stringify({ request_id, result, risk_tier: "LOW", receipt_id }, null, 2),
-      }],
-    };
-  } catch (err: any) {
-    return gatewayError(request_id, `MiniMax understand_image failed: ${err?.message ?? String(err)}`, { tool: "forge_minimax_understand_image", risk_tier: "LOW" });
-  }
-}
-
 // ── Registration ──────────────────────────────────────────────────────────────
 
 export function registerGatewayTools(server: McpServer): void {
@@ -593,7 +689,14 @@ export function registerGatewayTools(server: McpServer): void {
     include_citations: z.boolean().default(true).describe("Include citations"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeResearch);
-  // NOTE: forge_search REMOVED — duplicate of forge_research (which wraps Brave search internally).
+
+  server.tool("forge_search", "Governed web search via Brave. OBSERVE-class.", {
+    query: z.string().max(400).describe("Search query"),
+    count: z.number().min(1).max(20).default(10).describe("Result count"),
+    freshness: z.enum(["any", "day", "week", "month", "year"]).default("any").describe("Freshness"),
+    safesearch: z.enum(["off", "moderate", "strict"]).default("moderate").describe("SafeSearch"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeSearch);
 
   server.tool("forge_docs_lookup", "Governed docs lookup via Context7. OBSERVE-class.", {
     query: z.string().describe("Docs query"),
@@ -602,58 +705,131 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeDocsLookup);
 
-  // Browser — consolidated into forge_browser with mode
-  server.tool("forge_browser", "Browser automation. Modes: navigate, click, type, screenshot, extract_text, evaluate_js. OBSERVE-class.", {
-    mode: z.enum(["navigate", "click", "type", "screenshot", "extract_text", "evaluate_js"]).describe("Browser action"),
-    url: z.string().optional().describe("URL (navigate mode)"),
-    wait_until: z.enum(["load", "domcontentloaded", "networkidle"]).default("networkidle").describe("Wait condition (navigate)"),
-    timeout_ms: z.number().min(1000).max(30000).default(15000).describe("Timeout ms (navigate)"),
-    selector: z.string().optional().describe("Element selector (click/type/screenshot/extract)"),
-    button: z.enum(["left", "right", "middle"]).default("left").describe("Mouse button (click)"),
-    text: z.string().optional().describe("Text to type (type mode)"),
-    submit: z.boolean().default(false).describe("Submit after typing (type mode)"),
-    full_page: z.boolean().default(false).describe("Full page screenshot (screenshot mode)"),
-    max_chars: z.number().default(50000).describe("Max chars (extract_text mode)"),
-    script: z.string().optional().describe("JavaScript to evaluate (evaluate_js mode)"),
+  // Browser
+  server.tool("forge_browser_navigate", "Navigate browser to URL. OBSERVE-class.", {
+    url: z.string().describe("URL to navigate to"),
+    wait_until: z.enum(["load", "domcontentloaded", "networkidle"]).default("networkidle").describe("Wait condition"),
+    timeout_ms: z.number().min(1000).max(30000).default(15000).describe("Timeout ms"),
     request_id: z.string().describe("Caller request ID"),
     task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
     page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, async (args) => {
-    try {
-      checkBrowserSentinel({ task_context: args.task_context, page_context: args.page_context, tool_name: `forge_browser:${args.mode}` });
-    } catch (e: any) { return browserSentinelErrorResponse(args.request_id, e.message); }
-    switch (args.mode) {
-      case "navigate": return handleForgeBrowserNavigate(args);
-      case "click": return handleForgeBrowserClick(args);
-      case "type": return handleForgeBrowserType(args);
-      case "screenshot": return handleForgeBrowserScreenshot(args);
-      case "extract_text": return handleForgeBrowserExtractText(args);
-      case "evaluate_js": return handleForgeBrowserEvaluateJs(args);
-    }
-  });
+  }, handleForgeBrowserNavigate);
 
-  // GitHub tools COLLAPSED into forge_github (proxyTools) with modes:
-  //   mode=file/action=get  → replaces forge_github_get_file
-  //   mode=file/action=write → replaces forge_github_create_or_update_file
-  //   mode=issue/action=create → replaces forge_github_create_issue
-  //   mode=search/type=code|repositories → replaces forge_github_search_code/repos
-  //   mode=pr/action=create → replaces forge_github_create_pull_request
-  // All 5 standalone GitHub tools removed. forge_github is the single canonical surface.
-
-  // Netdata — consolidated into forge_netdata with mode
-  server.tool("forge_netdata", "Query Netdata monitoring. Modes: alarms, metrics. OBSERVE-class.", {
-    mode: z.enum(["alarms", "metrics"]).default("alarms").describe("Query mode"),
-    host: z.string().default("localhost").describe("Netdata host"),
-    status: z.enum(["all", "raised", "clear", "warning", "critical"]).default("raised").describe("Alarm status filter (alarms mode)"),
-    chart: z.string().optional().describe("Chart name (metrics mode)"),
-    after: z.number().optional().describe("Unix timestamp start (metrics mode)"),
-    before: z.number().optional().describe("Unix timestamp end (metrics mode)"),
-    points: z.number().default(100).describe("Data points (metrics mode)"),
+  server.tool("forge_browser_click", "Click a browser element. OBSERVE-class.", {
+    selector: z.string().describe("Element selector"),
+    button: z.enum(["left", "right", "middle"]).default("left").describe("Mouse button"),
     request_id: z.string().describe("Caller request ID"),
-  }, async (args) => {
-    if (args.mode === "alarms") return handleForgeNetdataAlarms(args);
-    return handleForgeNetdataMetrics(args);
-  });
+    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
+    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
+  }, handleForgeBrowserClick);
+
+  server.tool("forge_browser_type", "Type text into a browser element. OBSERVE-class.", {
+    selector: z.string().describe("Element selector"),
+    text: z.string().max(1000).describe("Text to type"),
+    submit: z.boolean().default(false).describe("Submit after typing"),
+    request_id: z.string().describe("Caller request ID"),
+    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
+    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
+  }, handleForgeBrowserType);
+
+  server.tool("forge_browser_screenshot", "Take a browser screenshot. OBSERVE-class.", {
+    selector: z.string().optional().describe("Element selector (omit for full page)"),
+    full_page: z.boolean().default(false).describe("Full page screenshot"),
+    request_id: z.string().describe("Caller request ID"),
+    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
+    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
+  }, handleForgeBrowserScreenshot);
+
+  server.tool("forge_browser_extract_text", "Extract text from browser page. OBSERVE-class.", {
+    selector: z.string().optional().describe("Element selector (omit for body)"),
+    max_chars: z.number().default(50000).describe("Max characters"),
+    request_id: z.string().describe("Caller request ID"),
+    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
+    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
+  }, handleForgeBrowserExtractText);
+
+  server.tool("forge_browser_evaluate_js", "Evaluate JS in browser context. OBSERVE-class.", {
+    script: z.string().max(2000).describe("JavaScript to evaluate"),
+    request_id: z.string().describe("Caller request ID"),
+    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
+    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
+  }, handleForgeBrowserEvaluateJs);
+
+  // GitHub
+  server.tool("forge_github_search_code", "Search GitHub code. OBSERVE-class.", {
+    q: z.string().describe("GitHub code search query"),
+    per_page: z.number().min(1).max(100).default(30).describe("Results per page"),
+    page: z.number().default(1).describe("Page"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeGitHubSearchCode);
+
+  server.tool("forge_github_search_repos", "Search GitHub repositories. OBSERVE-class.", {
+    q: z.string().describe("Repository search query"),
+    per_page: z.number().min(1).max(100).default(30).describe("Results per page"),
+    page: z.number().default(1).describe("Page"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeGitHubSearchRepos);
+
+  server.tool("forge_github_get_file", "Read a file from GitHub. OBSERVE-class.", {
+    owner: z.string().describe("Repository owner"),
+    repo: z.string().describe("Repository name"),
+    path: z.string().describe("File path"),
+    branch: z.string().default("main").describe("Branch"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeGitHubGetFile);
+
+  server.tool("forge_github_create_or_update_file", "Create or update a file on GitHub. MUTATE — lease required.", {
+    owner: z.string().describe("Repository owner"),
+    repo: z.string().describe("Repository name"),
+    path: z.string().describe("File path"),
+    branch: z.string().describe("Branch"),
+    content: z.string().describe("Base64-encoded file content"),
+    message: z.string().describe("Commit message"),
+    sha: z.string().optional().describe("Existing blob SHA for updates"),
+    create_pr: z.boolean().default(true).describe("Create a PR"),
+    pr_base: z.string().default("main").describe("PR base branch"),
+    request_id: z.string().describe("Caller request ID"),
+    lease_id: z.string().describe("Kernel-issued lease ID"),
+  }, handleForgeGitHubCreateOrUpdateFile);
+
+  server.tool("forge_github_create_issue", "Create a GitHub issue. MUTATE — lease required.", {
+    owner: z.string().describe("Repository owner"),
+    repo: z.string().describe("Repository name"),
+    title: z.string().describe("Issue title"),
+    body: z.string().describe("Issue body"),
+    labels: z.array(z.string()).optional().describe("Labels"),
+    assignees: z.array(z.string()).optional().describe("Assignees"),
+    request_id: z.string().describe("Caller request ID"),
+    lease_id: z.string().describe("Kernel-issued lease ID"),
+  }, handleForgeGitHubCreateIssue);
+
+  server.tool("forge_github_create_pull_request", "Create a GitHub pull request. MUTATE — lease required.", {
+    owner: z.string().describe("Repository owner"),
+    repo: z.string().describe("Repository name"),
+    title: z.string().describe("PR title"),
+    body: z.string().describe("PR body"),
+    head: z.string().describe("Head branch"),
+    base: z.string().default("main").describe("Base branch"),
+    draft: z.boolean().default(true).describe("Draft PR"),
+    request_id: z.string().describe("Caller request ID"),
+    lease_id: z.string().describe("Kernel-issued lease ID"),
+  }, handleForgeGitHubCreatePullRequest);
+
+  // Netdata
+  server.tool("forge_netdata_alarms", "Read Netdata alarms. OBSERVE-class.", {
+    host: z.string().default("localhost").describe("Netdata host"),
+    status: z.enum(["all", "raised", "clear", "warning", "critical"]).default("raised").describe("Alarm status filter"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeNetdataAlarms);
+
+  server.tool("forge_netdata_metrics", "Read Netdata chart data. OBSERVE-class.", {
+    host: z.string().default("localhost").describe("Netdata host"),
+    chart: z.string().describe("Chart name"),
+    after: z.number().optional().describe("Unix timestamp start"),
+    before: z.number().optional().describe("Unix timestamp end"),
+    points: z.number().default(100).describe("Data points"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeNetdataMetrics);
 
   // MiniMax
   server.tool("forge_minimax_search", "Search the web via MiniMax. OBSERVE-class.", {
@@ -661,30 +837,4 @@ export function registerGatewayTools(server: McpServer): void {
     max_results: z.number().min(1).max(20).default(10).describe("Max results"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeMinimaxSearch);
-
-  // MiniMax Multimodal — LOW risk tier only
-  // HIGH-TIER GATED: voice_clone, generate_video, image_to_video, voice_design (require 888_HOLD)
-  server.tool("forge_minimax_text_to_image", "Generate image from text prompt via MiniMax. LOW risk_tier.", {
-    prompt: z.string().max(1000).describe("Image description prompt"),
-    aspect_ratio: z.enum(["1:1", "16:9", "4:3", "3:2", "2:3", "3:4", "9:16"]).default("1:1").describe("Image aspect ratio"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeMinimaxTextToImage);
-
-  server.tool("forge_minimax_text_to_audio", "Convert text to speech via MiniMax TTS. LOW risk_tier.", {
-    text: z.string().max(5000).describe("Text to convert to speech"),
-    voice_id: z.string().default("female-shaonv").describe("Voice ID (e.g. female-shaonv, male-qn-qingse)"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeMinimaxTextToAudio);
-
-  server.tool("forge_minimax_music_generation", "Generate music from prompt and lyrics via MiniMax. LOW risk_tier.", {
-    prompt: z.string().max(300).describe("Music style/mood description"),
-    lyrics: z.string().max(600).describe("Song lyrics with [Verse] [Chorus] structure"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeMinimaxMusicGeneration);
-
-  server.tool("forge_minimax_understand_image", "Analyze or describe an image via MiniMax vision. LOW risk_tier.", {
-    image_source: z.string().describe("Image URL or local file path"),
-    prompt: z.string().min(1).describe("Question or instruction about the image"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeMinimaxUnderstandImage);
 }

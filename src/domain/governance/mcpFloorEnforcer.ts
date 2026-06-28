@@ -51,15 +51,8 @@ export function classifyAction(toolName: string, args: Record<string, unknown>):
   if (n.includes("db_write") || n.includes("database_write")) return "DATABASE_WRITE";
   if (n.includes("postgres_query") && !a.includes("insert") && !a.includes("update") && !a.includes("delete")) return "READ";
 
-  // Wealth / capital analysis tools are pure computation, not transactions.
-  if (n.includes("wealth_") && (
-    n.includes("compute") || n.includes("evaluate") || n.includes("thermodynamic") ||
-    n.includes("portfolio") || n.includes("entropy") || n.includes("objective") ||
-    n.includes("stock") || n.includes("market") || n.includes("omni")
-  )) return "READ";
-
   // Financial / production
-  if (n.includes("financial") || n.includes("transaction") || n.includes("payment") || n.includes("trade")) return "FINANCIAL_TRANSACTION";
+  if (n.includes("financial") || n.includes("emv") || n.includes("roi")) return "FINANCIAL_TRANSACTION";
   if (n.includes("production") || n.includes("deploy")) return "PRODUCTION_DEPLOY";
 
   // Execution — only actual execution tools, not routing or analysis
@@ -192,47 +185,11 @@ export function enforceMcpFloor(
 
 /**
  * Convert a Verdict into an MCP error response.
- * Enhanced with floor references and actionable guidance.
  */
 export function floorErrorResponse(verdict: Verdict): {
   content: Array<{ type: "text"; text: string }>;
   isError: boolean;
 } {
-  // Map floor codes to human-readable names
-  const floorNames: Record<string, string> = {
-    L01: "AMANAH", L02: "TRUTH", L03: "WITNESS", L04: "CLARITY",
-    L05: "PEACE", L06: "EMPATHY", L07: "HUMILITY", L08: "GENIUS",
-    L09: "ANTIHANTU", L10: "ONTOLOGY", L11: "AUTH", L12: "INJECTION", L13: "SOVEREIGN",
-    F1: "AMANAH", F2: "TRUTH", F3: "WITNESS", F4: "CLARITY",
-    F5: "PEACE", F6: "EMPATHY", F7: "HUMILITY", F8: "GENIUS",
-    F9: "ANTIHANTU", F10: "ONTOLOGY", F11: "AUTH", F12: "INJECTION", F13: "SOVEREIGN",
-  };
-
-  // Generate actionable guidance based on verdict
-  const guidance: string[] = [];
-  if (verdict.hold_required) {
-    guidance.push("This action requires 888_HOLD — escalate to arifOS arif_judge for constitutional verdict.");
-  }
-  if (verdict.void) {
-    guidance.push("This action is VOID — blocked by constitutional floor. Do not retry without addressing the violation.");
-  }
-  if (verdict.caution) {
-    guidance.push("This action has CAUTION — proceed with awareness of the flagged concerns.");
-  }
-
-  const topReasons = verdict.reasons.slice(0, 5).map((r) => ({
-    floor: r.floor,
-    floor_name: floorNames[r.floor] || r.floor,
-    code: r.code,
-    severity: r.severity,
-    message: r.message,
-    guidance: r.severity === "HOLD"
-      ? `Blocked by ${floorNames[r.floor] || r.floor}. Resolve before retry.`
-      : r.severity === "CAUTION"
-        ? `Warning from ${floorNames[r.floor] || r.floor}. Review before proceeding.`
-        : undefined,
-  }));
-
   const summary = {
     verdict: verdict.final,
     allowed: verdict.allowed,
@@ -242,13 +199,12 @@ export function floorErrorResponse(verdict: Verdict): {
     action_id: verdict.action_id,
     tool_name: verdict.tool_name,
     reason_count: verdict.reasons.length,
-    top_reasons: topReasons,
-    guidance,
-    escalation: verdict.hold_required
-      ? "Call arif_judge with this action_id for constitutional review"
-      : verdict.void
-        ? "Fix the floor violation before retrying"
-        : undefined,
+    top_reasons: verdict.reasons.slice(0, 5).map((r) => ({
+      floor: r.floor,
+      code: r.code,
+      severity: r.severity,
+      message: r.message,
+    })),
     checked_at: verdict.checked_at,
   };
   return {

@@ -647,124 +647,6 @@ app.post("/execute", async (req: Request, res: Response) => {
 });
 
 /**
- * POST /skills/run
- * Governed skill execution — AAA ingress dispatch target.
- *
- * Accepts: { capsule, skill_id, agent_pool, authority_tier, floor_gates }
- * Loads SKILL.md, pins skill_sha256, executes via AgentEngine, signs receipt.
- */
-app.post("/skills/run", async (req: Request, res: Response) => {
-  try {
-    const { capsule, skill_id, agent_pool, authority_tier, floor_gates } = req.body;
-    if (!skill_id || typeof skill_id !== "string") {
-      res.status(400).json({ ok: false, error: "skill_id is required" });
-      return;
-    }
-
-    // Dynamically import SkillRunner (avoids circular deps at module load)
-    const { loadSkill, buildSkillTask, signSkillReceipt } = await import(
-      "../domain/engine/SkillRunner.js"
-    );
-
-    const skill = loadSkill(skill_id);
-    if (!skill) {
-      res.status(404).json({
-        ok: false,
-        verdict: "VOID",
-        error: `Skill not found: ${skill_id}`,
-      });
-      return;
-    }
-
-    // Build the governed task prompt
-    const task = buildSkillTask(
-      skill,
-      capsule || {},
-      authority_tier || "Tier0",
-      floor_gates || [],
-    );
-
-    // Execute via AgentEngine
-    const config = readRuntimeConfig();
-    const llmProvider = createLlmProvider(config);
-    const toolRegistry = new ToolRegistry();
-    const longTermMemory = new LongTermMemory(config.memoryPath || "/tmp/aforge-memory");
-    const profile = buildAAAProfile("external_safe_mode");
-    const engine = new AgentEngine(profile, {
-      llmProvider,
-      toolRegistry,
-      longTermMemory,
-    });
-
-    const sessionId = capsule?.event_id
-      ? `skill-${skill_id}-${capsule.event_id.substring(0, 16)}`
-      : `skill-${skill_id}-${Date.now()}`;
-
-    const runResult = await engine.run({
-      task,
-      sessionId,
-      intentModel: "execution",
-      riskLevel: skill.frontmatter?.risk_tier === "critical" ? "high" : "medium",
-      metadata: {
-        capsule_id: capsule?.event_id,
-        skill_id,
-        skill_sha256: skill.sha256,
-      },
-    });
-
-    // Sign the receipt
-    const receiptInput = {
-      skill_id,
-      skill_sha256: skill.sha256,
-      capsule_id: capsule?.event_id ?? "unknown",
-      authority_tier: authority_tier ?? "Tier0",
-      steps: [],
-      final_text: runResult.finalText,
-      turn_count: runResult.turnCount,
-      total_tokens: runResult.totalEstimatedTokens,
-      verdict: (runResult.finalText.toUpperCase().includes("VERDICT: SEAL")
-        ? "SEAL"
-        : runResult.finalText.toUpperCase().includes("VERDICT: HOLD")
-          ? "HOLD"
-          : runResult.finalText.toUpperCase().includes("VERDICT: VOID")
-            ? "VOID"
-            : "UNKNOWN") as "SEAL" | "HOLD" | "VOID" | "SABAR" | "UNKNOWN",
-      session_id: sessionId,
-      started_at: new Date().toISOString(),
-      completed_at: new Date().toISOString(),
-    };
-
-    const receiptSig = signSkillReceipt(receiptInput);
-
-    console.error(
-      `[A-FORGE] Skill ${skill_id} | sha256=${skill.sha256.substring(0, 12)} | ` +
-      `verdict=${receiptInput.verdict} | turns=${runResult.turnCount} | ` +
-      `tokens=${runResult.totalEstimatedTokens}`,
-    );
-
-    res.json({
-      ok: true,
-      verdict: receiptInput.verdict,
-      skill_id,
-      skill_sha256: skill.sha256,
-      capsule_id: capsule?.event_id ?? "unknown",
-      receipt_signature: receiptSig,
-      session_id: sessionId,
-      final_text: runResult.finalText.substring(0, 2000), // Truncate for response
-      turn_count: runResult.turnCount,
-      total_tokens: runResult.totalEstimatedTokens,
-    });
-  } catch (error) {
-    console.error("[A-FORGE] /skills/run error:", error);
-    res.status(500).json({
-      ok: false,
-      verdict: "VOID",
-      error: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-
-/**
  * GET /metrics
  * Prometheus metrics endpoint
  */
@@ -1224,7 +1106,6 @@ export async function startServer(): Promise<void> {
     console.error(`    POST /sense          - Sense + Judge evaluation`);
     console.error(`    POST /route          - Federal Coordinator Routing`);
     console.error(`    POST /execute        - Federation MCP proxy`);
-    console.error(`    POST /skills/run     - Governed skill execution 🆕`);
     console.error(`    POST /a2a            - A2A JSON-RPC gateway`);
     console.error(`    GET  /health         - Health check`);
     console.error(`    GET  /ready          - Readiness probe`);

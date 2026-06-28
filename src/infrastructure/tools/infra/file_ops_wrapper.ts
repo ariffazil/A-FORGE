@@ -18,7 +18,6 @@ import {
   requireMutationApproval,
   resolveWorkspacePath,
 } from "./safety.js";
-import { writePending, complete } from "./receiptClient.js";
 
 const WORKSPACE_ROOT = '/root';
 const TRASH_DIR = '/tmp/forge_trash';
@@ -115,81 +114,29 @@ export async function writeFile(
   const resolved = safePath(filePath);
   const gate = await hold('write', resolved, lease_id);
   if (gate) return gate;
-
+  
   if (fs.existsSync(resolved) && !ackOverwrite) {
-    return { success: false, path: filePath, action: 'write',
+    return { success: false, path: filePath, action: 'write', 
              error: `File exists. Set ackOverwrite=true to proceed. F1 AMANAH: backup will be created.` };
   }
-
+  
   // F1 AMANAH: backup before overwrite
   let backup: string | undefined;
   if (fs.existsSync(resolved)) {
     backup = `${TRASH_DIR}/${path.basename(resolved)}.${Date.now()}.bak`;
     fs.copyFileSync(resolved, backup);
   }
-
-  // Doctrine §3.5: log BEFORE the action (DB = reality)
-  const receipt_id = await writePending({
-    source_system: "local_fs",
-    source_subdomain: "a-forge:file_ops",
-    action_type: "file_write",
-    target: resolved,
-    parameters: {
-      size_bytes: Buffer.byteLength(content, 'utf-8'),
-      ackOverwrite,
-      lease_id: lease_id ?? null,
-      path_from: filePath,
-    },
-    risk_tier: 2,
-    floor_refs: ["F1", "F11"],
-    ack_irreversible: fs.existsSync(resolved),
-    actor_id: "a-forge:file_ops",
-    metadata: { action: "file_write", backup: backup ?? null },
-  });
-
-  try {
-    fs.writeFileSync(resolved, content, 'utf-8');
-    if (receipt_id) {
-      await complete({ receipt_id, result: "success", external_reference: backup ?? null });
-    }
-    return { success: true, path: filePath, action: 'write', backup };
-  } catch (e: any) {
-    if (receipt_id) {
-      await complete({ receipt_id, result: "failure", error_message: e?.message ?? String(e) });
-    }
-    return { success: false, path: filePath, action: 'write', error: e?.message ?? String(e) };
-  }
+  
+  fs.writeFileSync(resolved, content, 'utf-8');
+  return { success: true, path: filePath, action: 'write', backup };
 }
 
 export async function mkdir(dirPath: string, lease_id?: string): Promise<FileOpResult> {
   const resolved = safePath(dirPath);
   const gate = await hold('mkdir', resolved, lease_id);
   if (gate) return gate;
-
-  const receipt_id = await writePending({
-    source_system: "local_fs",
-    source_subdomain: "a-forge:file_ops",
-    action_type: "mkdir",
-    target: resolved,
-    parameters: { lease_id: lease_id ?? null, path_from: dirPath },
-    risk_tier: 1,
-    floor_refs: ["F11"],
-    actor_id: "a-forge:file_ops",
-    metadata: { action: "mkdir" },
-  });
-
-  try {
-    fs.mkdirSync(resolved, { recursive: true });
-    if (receipt_id) {
-      await complete({ receipt_id, result: "success" });
-    }
-    return { success: true, path: dirPath };
-  } catch (e: any) {
-    if (receipt_id) {
-      await complete({ receipt_id, result: "failure", error_message: e?.message ?? String(e) });
-    }
-    return { success: false, path: dirPath, error: e?.message ?? String(e) };
-  }
+  fs.mkdirSync(resolved, { recursive: true });
+  return { success: true, path: dirPath };
 }
 
 export async function copyFile(src: string, dest: string, lease_id?: string): Promise<FileOpResult> {
@@ -198,31 +145,8 @@ export async function copyFile(src: string, dest: string, lease_id?: string): Pr
   const gate = await hold('copy', destPath, lease_id);
   if (gate) return { ...gate, src, dest };
   if (!fs.existsSync(srcPath)) return { success: false, src, dest, error: 'Source not found' };
-
-  const receipt_id = await writePending({
-    source_system: "local_fs",
-    source_subdomain: "a-forge:file_ops",
-    action_type: "file_copy",
-    target: `${srcPath} -> ${destPath}`,
-    parameters: { src_path: srcPath, dest_path: destPath, lease_id: lease_id ?? null },
-    risk_tier: 1,
-    floor_refs: ["F11"],
-    actor_id: "a-forge:file_ops",
-    metadata: { action: "file_copy" },
-  });
-
-  try {
-    fs.copyFileSync(srcPath, destPath);
-    if (receipt_id) {
-      await complete({ receipt_id, result: "success" });
-    }
-    return { success: true, src, dest };
-  } catch (e: any) {
-    if (receipt_id) {
-      await complete({ receipt_id, result: "failure", error_message: e?.message ?? String(e) });
-    }
-    return { success: false, src, dest, error: e?.message ?? String(e) };
-  }
+  fs.copyFileSync(srcPath, destPath);
+  return { success: true, src, dest };
 }
 
 export async function moveFile(src: string, dest: string, lease_id?: string): Promise<FileOpResult> {
@@ -231,32 +155,8 @@ export async function moveFile(src: string, dest: string, lease_id?: string): Pr
   const gate = await hold('move', `${srcPath} -> ${destPath}`, lease_id);
   if (gate) return { ...gate, src, dest };
   if (!fs.existsSync(srcPath)) return { success: false, src, dest, error: 'Source not found' };
-
-  const receipt_id = await writePending({
-    source_system: "local_fs",
-    source_subdomain: "a-forge:file_ops",
-    action_type: "file_move",
-    target: `${srcPath} -> ${destPath}`,
-    parameters: { src_path: srcPath, dest_path: destPath, lease_id: lease_id ?? null },
-    risk_tier: 2,
-    floor_refs: ["F1", "F11"],
-    ack_irreversible: true,
-    actor_id: "a-forge:file_ops",
-    metadata: { action: "file_move", risk: "HUMAN_ONLY" },
-  });
-
-  try {
-    fs.renameSync(srcPath, destPath);
-    if (receipt_id) {
-      await complete({ receipt_id, result: "success" });
-    }
-    return { success: true, src, dest };
-  } catch (e: any) {
-    if (receipt_id) {
-      await complete({ receipt_id, result: "failure", error_message: e?.message ?? String(e) });
-    }
-    return { success: false, src, dest, error: e?.message ?? String(e) };
-  }
+  fs.renameSync(srcPath, destPath);
+  return { success: true, src, dest };
 }
 
 // deleteFile is BLOCKED per F1 AMANAH. Use moveFile to trash instead.

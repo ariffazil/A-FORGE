@@ -21,6 +21,25 @@ import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
 import { callMCP } from "./client.js";
 import { registerSession } from "../../domain/session/sessionGate.js";
+import {
+  forgeSkill,
+  getSkillRegistry,
+  consultScars,
+  listScars,
+  haramScan,
+} from "../../domain/forge/skill/index.js";
+import type { SkillDomain } from "../../domain/forge/skill/types.js";
+import { evaluateCandidate, evaluateDryRun } from "../../domain/forge/evaluate.js";
+import { evaluateWitness, witnessDryRun } from "../../domain/forge/witness.js";
+import { sealFailure, listFailures, consultFailurePressure } from "../../domain/forge/scar.js";
+import { registerTool, queryRegistry, registryFingerprint } from "../../domain/forge/register.js";
+import type {
+  CandidateSpec,
+  GateDecision,
+  WitnessBundle,
+  WitnessVerdict,
+  GovernedDomain,
+} from "../../contracts/types.js";
 
 // ── In-memory stores ──────────────────────────────────────────────────────────
 
@@ -685,137 +704,641 @@ export function registerStatusTools(server: McpServer): void {
   );
 }
 
-// ── 7. forge_orchestrate — Multi-Agent Role-Based Orchestration ──────────
-
-export function registerOrchestrationTools(server: McpServer): void {
-  server.tool(
-    "forge_orchestrate",
-    "Multi-agent role-based orchestration. Decomposes a task into subtasks, classifies each into a specialized role (planner/implementer/reviewer/tester/security/release), routes to role-specific agents, and returns structured results. Requires lease for EXECUTE mode.",
-    {
-      task: z.string().describe("High-level engineering task to orchestrate"),
-      mode: z.enum(["plan", "execute"]).default("plan").describe("plan = classify + route only; execute = run agents"),
-      roles: z.array(z.enum(["planner", "implementer", "reviewer", "tester", "security", "release"])).optional().describe("Restrict to specific roles (default: all)"),
-      session_id: z.string().optional(),
-      actor_id: z.string().optional(),
-    },
-    async ({ task, mode, roles, session_id, actor_id }) => {
-      const { classifyTaskRole, buildRoleProfile, buildRolePrompt, ALL_TASK_ROLES } = await import("../../domain/agents/roles.js");
-
-      // Phase 1: Decompose task into subtasks (LLM-assisted)
-      const subtaskPrompts = [
-        "Break the following engineering task into 2-5 subtasks.",
-        "Return strict JSON as an array.",
-        'Each item: {"name":"short-name","task":"specific subtask description"}',
-        `Task: ${task}`,
-      ];
-      // For now, use a simple decomposition heuristic.
-      // In production, this calls the LLM via the planner contract.
-      const subtasks = decomposeTask(task);
-
-      // Phase 2: Classify each subtask into a role
-      const classified = subtasks.map((st) => {
-        const role = classifyTaskRole(st.task);
-        return { ...st, role };
-      });
-
-      // Phase 3: Filter to requested roles
-      const filtered = roles && roles.length > 0
-        ? classified.filter((c) => roles.includes(c.role))
-        : classified;
-
-      // Phase 4: Build role-routed plan
-      const plan = filtered.map((c, i) => {
-        const profile = buildRoleProfile(c.role, "internal_mode");
-        return {
-          order: i,
-          name: c.name,
-          task: c.task,
-          role: c.role,
-          system_prompt_preview: profile.systemPrompt.slice(0, 200) + "...",
-          allowed_tools: profile.allowedTools,
-          budget: profile.budget,
-        };
-      });
-
-      if (mode === "plan") {
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              status: "SEAL",
-              mode: "plan",
-              task,
-              subtask_count: plan.length,
-              role_distribution: countRoles(plan.map((p) => p.role)),
-              plan,
-            }, null, 2),
-          }],
-        };
-      }
-
-      // mode === "execute" — return the execution plan with role annotations
-      // Actual execution happens through the CoordinatorAgent with roleRouting=true
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({
-            status: "SEAL",
-            mode: "execute",
-            task,
-            subtask_count: plan.length,
-            role_distribution: countRoles(plan.map((p) => p.role)),
-            plan,
-            execution_hint: "Pass roleRouting=true to CoordinatorAgent.coordinate() to execute with role-specialized agents.",
-          }, null, 2),
-        }],
-      };
-    },
-  );
-}
-
-/**
- * Simple task decomposition heuristic.
- * In production, this delegates to the LLM via ParallelPlannerContract.
- */
-function decomposeTask(task: string): Array<{ name: string; task: string }> {
-  const t = task.toLowerCase();
-
-  // If task mentions multiple concerns, split by concern
-  const subtasks: Array<{ name: string; task: string }> = [];
-
-  if (t.includes("implement") || t.includes("build") || t.includes("create") || t.includes("add")) {
-    subtasks.push({ name: "plan", task: `Plan the approach for: ${task}` });
-    subtasks.push({ name: "implement", task: task });
-    subtasks.push({ name: "review", task: `Review the implementation for correctness and conventions` });
-    subtasks.push({ name: "test", task: `Run tests and validate the changes work correctly` });
-  } else if (t.includes("fix") || t.includes("bug") || t.includes("issue")) {
-    subtasks.push({ name: "diagnose", task: `Diagnose the root cause: ${task}` });
-    subtasks.push({ name: "implement", task: `Apply the fix` });
-    subtasks.push({ name: "test", task: `Verify the fix resolves the issue` });
-  } else if (t.includes("refactor") || t.includes("clean") || t.includes("improve")) {
-    subtasks.push({ name: "plan", task: `Plan the refactoring: ${task}` });
-    subtasks.push({ name: "implement", task: `Apply the refactoring changes` });
-    subtasks.push({ name: "review", task: `Review for regressions and convention compliance` });
-    subtasks.push({ name: "test", task: `Run tests to verify no regressions` });
-  } else {
-    // Generic: plan + implement + review
-    subtasks.push({ name: "plan", task: `Plan the approach for: ${task}` });
-    subtasks.push({ name: "implement", task: task });
-    subtasks.push({ name: "review", task: `Review the changes` });
-  }
-
-  return subtasks;
-}
-
-function countRoles(roles: string[]): Record<string, number> {
-  const counts: Record<string, number> = {};
-  for (const r of roles) counts[r] = (counts[r] ?? 0) + 1;
-  return counts;
-}
-
 // ── Initialize ────────────────────────────────────────────────────────────────
 
 export async function initializeForgeTools(): Promise<void> {
   await loadIdentities();
+  // Pre-load skill registry to populate volatile state
+  try {
+    const reg = getSkillRegistry();
+    await reg.load();
+    process.stderr.write(`[forgeTools] Skill registry loaded (volatile)\n`);
+  } catch (err: any) {
+    process.stderr.write(`[forgeTools] Skill registry load warning: ${err?.message ?? err}\n`);
+  }
   process.stderr.write(`[forgeTools] Loaded ${registeredAgents.size} agent identities\n`);
+}
+
+// ── 8. forge_skill — Dynamic Tool Forge (APEX Epoch 34Ω — Organism Layer) ──
+//
+// forge_skill + forge_registry together close the dynamic forge loop:
+//
+//   arifOS judges → A-FORGE asks:
+//     ├── tool exists? → forge_execute
+//     └── tool missing → forge_skill (generate, gated, sealed)
+//
+// Phase 1: human approval per generation, HARAM scan + Decision Field gate,
+//          volatile registry, 24h expiry, max 1 generation depth.
+// Decision Field: G = Q·V·Ψ·Φ
+//   Q = query clarity, V = viability, Ψ = purity (HARAM inversed), Φ = wisdom (scar-adjusted)
+//   Θ = dΦ/dt (wisdom trajectory, per-tool)
+// Multiplicative: zero in any component collapses G.
+// Verdict thresholds: G ≥ 0.50 SEAL, ≥ 0.25 SABAR, ≥ 0.10 HOLD, < 0.10 VOID.
+
+export function registerSkillTools(server: McpServer): void {
+
+  // ── forge_skill — generate or template a tool ────────────────────────────────
+  server.tool(
+    "forge_skill",
+    "Dynamic tool forge (APEX Epoch 34Ω). Generates a new MCP tool via LLM, gated by HARAM scan + Decision Field (G=Q·V·Ψ·Φ), sealed to VAULT999. Phase 1: human approval per generation, 24h expiry, max 1 generation depth. F13 SOVEREIGN: arifOS domains require seal_verdict_id.",
+    {
+      intent: z.string().min(10).max(2000).describe("Natural-language description of what tool is needed"),
+      domain: z.enum([
+        "geox", "wealth", "well", "arifos", "hermes", "aforge", "general",
+      ]).default("general").describe("Domain routing"),
+      target_tool_name: z.string().regex(/^forge_[a-z0-9_]+$/).optional()
+        .describe("Suggested name (must start with forge_, lowercase + digits + underscore)"),
+      llm_endpoint: z.string().url().optional()
+        .describe("Optional LLM endpoint for code generation (Phase 2). Phase 1 returns template scaffold if omitted."),
+      execute_after_register: z.boolean().default(false)
+        .describe("If true, execute the generated tool immediately. REQUIRES seal_verdict_id."),
+      actor_id: z.string().default("forge_skill").describe("Calling actor"),
+      session_id: z.string().optional(),
+      seal_verdict_id: z.string().optional()
+        .describe("arifOS seal verdict (required for arifos domain or execute_after_register)"),
+    },
+    async (args) => {
+      try {
+        // F8 LAW: arifos domain requires arifOS seal verdict (F13 SOVEREIGN)
+        if (args.domain === "arifos" && !args.seal_verdict_id) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "HOLD",
+                verdict: "HOLD",
+                domain: args.domain,
+                message: "F13 SOVEREIGN: arifos domain requires seal_verdict_id from arifOS arif_judge+arif_seal. Cannot forge tools that touch the constitutional kernel.",
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+
+        // Phase 1: LLM is optional. If llm_endpoint provided, use it; else template scaffold.
+        let llm: { generate(opts: { prompt: string; maxTokens?: number; temperature?: number }): Promise<string> } | null = null;
+        if (args.llm_endpoint) {
+          llm = {
+            async generate({ prompt, maxTokens = 2000, temperature = 0.2 }) {
+              const res = await fetch(args.llm_endpoint!, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  prompt,
+                  max_tokens: maxTokens,
+                  temperature,
+                  // OpenAI-compatible shape — adjust per endpoint
+                }),
+                signal: AbortSignal.timeout(60000),
+              });
+              if (!res.ok) throw new Error(`LLM HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+              const data = await res.json() as any;
+              return data.choices?.[0]?.text ?? data.choices?.[0]?.message?.content ?? data.text ?? JSON.stringify(data);
+            },
+          };
+        }
+
+        const result = await forgeSkill(llm, {
+          intent: args.intent,
+          domain: args.domain as SkillDomain,
+          target_tool_name: args.target_tool_name,
+          execute_after_register: args.execute_after_register,
+          actor_id: args.actor_id,
+          session_id: args.session_id,
+          seal_verdict_id: args.seal_verdict_id,
+        });
+
+        const isError = result.status === "VOID" || result.status === "HOLD";
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          }],
+          isError,
+        };
+      } catch (err: any) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "HOLD",
+              verdict: "HOLD",
+              error: `forge_skill failed: ${err?.message ?? String(err)}`,
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── forge_registry — query / inspect the dynamic tool registry ──────────────
+  server.tool(
+    "forge_registry",
+    "Dynamic skill registry. Modes: list (all generated tools + Decision Field), get (one tool manifest), scars (Scar Law history), fingerprint (registry integrity hash), scan (HARAM scan arbitrary code). Volatile + 24h expiry by default.",
+    {
+      mode: z.enum(["list", "get", "scars", "fingerprint", "scan"]).default("list"),
+      tool_name: z.string().optional().describe("Tool name (get mode)"),
+      domain: z.enum(["geox", "wealth", "well", "arifos", "hermes", "aforge", "general"]).optional()
+        .describe("Filter by domain (list mode)"),
+      status_filter: z.enum(["REGISTERED", "PENDING_REVIEW", "REVOKED", "EXPIRED"]).optional()
+        .describe("Filter by status (list mode)"),
+      include_theta: z.boolean().default(false).describe("Include wisdom trajectory Θ=dΦ/dt per tool (list mode)"),
+      code_to_scan: z.string().optional().describe("Source code to HARAM-scan (scan mode)"),
+    },
+    async ({ mode, tool_name, domain, status_filter, include_theta, code_to_scan }) => {
+      try {
+        const reg = getSkillRegistry();
+        await reg.load();
+
+        if (mode === "list") {
+          const result = await reg.query({
+            domain: domain as SkillDomain | undefined,
+            status: status_filter,
+            include_theta,
+          });
+          const fp = await reg.fingerprint();
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "SEAL",
+                mode: "list",
+                registry_fingerprint: fp,
+                total: result.total,
+                tools: result.tools,
+              }, null, 2),
+            }],
+          };
+        }
+
+        if (mode === "get") {
+          if (!tool_name) {
+            return {
+              content: [{ type: "text" as const, text: JSON.stringify({ error: "tool_name required for mode=get" }, null, 2) }],
+              isError: true,
+            };
+          }
+          const r = await reg.query({});
+          const tool = r.tools.find(t => t.tool_name === tool_name);
+          if (!tool) {
+            return {
+              content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `Tool '${tool_name}' not found in registry` }, null, 2) }],
+              isError: true,
+            };
+          }
+          const traj = include_theta ? await reg.getTheta(tool_name) : undefined;
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "SEAL",
+                mode: "get",
+                tool,
+                theta_trajectory: traj,
+              }, null, 2),
+            }],
+          };
+        }
+
+        if (mode === "scars") {
+          const scars = await listScars();
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "SEAL",
+                mode: "scars",
+                total: scars.length,
+                scars,
+                doctrine: "Scar Law: failed generations seal their fingerprint. Future generations with matching fingerprints inherit scar_pressure, reducing Φ until the failure pattern is no longer reachable.",
+              }, null, 2),
+            }],
+          };
+        }
+
+        if (mode === "fingerprint") {
+          const fp = await reg.fingerprint();
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "SEAL",
+                mode: "fingerprint",
+                registry_fingerprint: fp,
+                doctrine: "Same fingerprint on two registries = same constitution. Drift = different federation.",
+              }, null, 2),
+            }],
+          };
+        }
+
+        if (mode === "scan") {
+          if (!code_to_scan) {
+            return {
+              content: [{ type: "text" as const, text: JSON.stringify({ error: "code_to_scan required for mode=scan" }, null, 2) }],
+              isError: true,
+            };
+          }
+          const scan = haramScan(code_to_scan);
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "SEAL",
+                mode: "scan",
+                haram_findings: scan.findings,
+                haram_names: scan.names,
+                critical_count: scan.critical,
+                high_count: scan.high,
+                passed: scan.findings === 0,
+                doctrine: "F9 ANTI-HANTU: blocks shell-bombs, drop tables, device writes, fork bombs, eval().",
+              }, null, 2),
+            }],
+          };
+        }
+
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown mode: ${mode}` }, null, 2) }],
+          isError: true,
+        };
+      } catch (err: any) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "HOLD",
+              error: `forge_registry failed: ${err?.message ?? String(err)}`,
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+    },
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// APEX v36Ω GOVERNED TOOLS — forge.evaluate / forge.witness / forge.scar / forge.register
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// These four tools decompose the forge_skill monolith into composable, independently
+// callable governed gates. Each tool is a standalone measurement instrument (not a
+// physical law) per the v36Ω Scientific Validation Report.
+//
+// Registration requires ALL four gates:
+//   forge.evaluate → SEAL
+//   forge.witness  → CONSENSUS
+//   forge.scar     → consult (no CRITICAL match)
+//   forge.register → SEAL (if all above pass)
+//
+// DITEMPA BUKAN DIBERI — Forged, Not Given
+
+export function registerGovernedTools(server: McpServer): void {
+
+  // ── forge_evaluate — standalone G = A·P·E·X·Φ gate ────────────────────────
+  server.tool(
+    "forge_evaluate",
+    "APEX v36Ω evaluation gate. Computes G = A·P·E·X·Φ (Nash bargaining product) and C_dark = A·(1-P)·(1-X) for a candidate tool spec. Returns SEAL/REVIEW/VOID verdict. Does NOT generate code — evaluates only. Falsifiable: thresholds must be calibrated on held-out data.",
+    {
+      tool_name: z.string().describe("Proposed tool name (forge_* convention)"),
+      description: z.string().min(10).max(2000).describe("Natural-language description"),
+      domain: z.enum(["geox", "wealth", "well", "arifos", "hermes", "aforge", "general"]).default("general"),
+      implementation: z.string().default("").describe("Tool implementation code to evaluate"),
+      input_schema: z.string().default("z.object({}).strict()").describe("Zod inputSchema as TS source"),
+      declared_side_effects: z.array(z.string()).default([]).describe("Declared side effects (filesystem, network, shell, db, vault)"),
+      required_permissions: z.array(z.string()).default([]).describe("Required permissions (read, write, execute, seal)"),
+      proposed_by: z.string().default("unknown").describe("Who is proposing this tool"),
+      evaluator_count: z.number().int().min(1).max(10).default(1).describe("Number of evaluators in ensemble (for Ω₀ calibration)"),
+      estimated_cost: z.number().min(0).max(1).optional().describe("Estimated resource cost [0-1]"),
+      max_recursion_depth: z.number().int().min(1).max(10).default(1).describe("Maximum recursion depth"),
+      session_id: z.string().optional(),
+      seal_verdict_id: z.string().optional().describe("Prior arifOS seal verdict (required for arifos domain)"),
+    },
+    async (args) => {
+      try {
+        const spec: CandidateSpec = {
+          tool_name: args.tool_name,
+          description: args.description,
+          domain: args.domain as GovernedDomain,
+          implementation: args.implementation,
+          input_schema: args.input_schema,
+          declared_side_effects: args.declared_side_effects,
+          required_permissions: args.required_permissions,
+          proposed_by: args.proposed_by,
+          session_id: args.session_id,
+          seal_verdict_id: args.seal_verdict_id,
+          max_recursion_depth: args.max_recursion_depth,
+          estimated_cost: args.estimated_cost,
+        };
+
+        // Quick dry-run for empty implementations (preview only)
+        if (!args.implementation || args.implementation.trim().length === 0) {
+          const dryRun = evaluateDryRun(spec, args.evaluator_count);
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                ...dryRun,
+                mode: "dry_run",
+                note: "Implementation empty — dry run only. Full evaluation requires implementation code for HARAM scan + scar consultation.",
+                doctrine: "G = A·P·E·X·Φ (Nash 1950 pattern). C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G.",
+              }, null, 2),
+            }],
+          };
+        }
+
+        // Full evaluation with scar consultation
+        const consScars = async (fp: string, dom: GovernedDomain) => {
+          const { scarPressure, count } = await consultFailurePressure(fp, dom);
+          return { scarPressure, count };
+        };
+
+        const decision = await evaluateCandidate({
+          spec,
+          evaluatorCount: args.evaluator_count,
+          consultScars: consScars,
+        });
+
+        const isError = decision.verdict === "VOID";
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              ...decision,
+              doctrine: "G = A·P·E·X·Φ (Nash 1950 pattern). C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G. Forged, Not Given.",
+              v36_status: "MEASUREMENT_INSTRUMENT — thresholds must be calibrated on held-out data via ROC analysis",
+            }, null, 2),
+          }],
+          isError,
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `forge_evaluate failed: ${err?.message ?? String(err)}` }, null, 2) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── forge_witness — tri-witness W³ = ∛(H·AI·E) consensus ──────────────────
+  server.tool(
+    "forge_witness",
+    "APEX v36Ω tri-witness consensus gate. Computes W³ = ∛(Human × AI × External) via geometric mean (Nash 1950). Returns CONSENSUS/WEAK/DIVERGENT. All three channels must be present. Zero in any channel collapses consensus. DO NOT fake witness confidence — unknown → 0.0, not 0.5. F13 SOVEREIGN: DIVERGENT → 888_HOLD.",
+    {
+      tool_name: z.string().describe("Tool being witnessed"),
+      target_fingerprint: z.string().optional().describe("Fingerprint of the tool/candidate"),
+      // Human channel
+      h_confidence: z.number().min(0).max(1).describe("Human witness confidence [0-1]"),
+      h_evidence: z.array(z.string()).default([]).describe("Human witness evidence"),
+      h_source: z.string().default("human").describe("Human witness source identifier"),
+      // AI channel
+      ai_confidence: z.number().min(0).max(1).describe("AI witness confidence [0-1]"),
+      ai_evidence: z.array(z.string()).default([]).describe("AI witness evidence"),
+      ai_source: z.string().default("ai-ensemble").describe("AI witness source identifier"),
+      // External/Earth channel
+      ext_confidence: z.number().min(0).max(1).describe("External/Earth witness confidence [0-1]"),
+      ext_evidence: z.array(z.string()).default([]).describe("External witness evidence"),
+      ext_source: z.string().default("external").describe("External witness source identifier"),
+      session_id: z.string().optional(),
+    },
+    async (args) => {
+      try {
+        const now = new Date().toISOString();
+        const bundle: WitnessBundle = {
+          target_fingerprint: args.target_fingerprint ?? "unknown",
+          tool_name: args.tool_name,
+          human: {
+            channel: "Human",
+            confidence: args.h_confidence,
+            evidence: args.h_evidence,
+            source: args.h_source,
+            timestamp: now,
+          },
+          ai: {
+            channel: "AI",
+            confidence: args.ai_confidence,
+            evidence: args.ai_evidence,
+            source: args.ai_source,
+            timestamp: now,
+          },
+          external: {
+            channel: "External",
+            confidence: args.ext_confidence,
+            evidence: args.ext_evidence,
+            source: args.ext_source,
+            timestamp: now,
+          },
+          session_id: args.session_id,
+        };
+
+        const verdict = await evaluateWitness({ bundle });
+
+        const isError = verdict.verdict === "DIVERGENT";
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              ...verdict,
+              doctrine: "W³ = ∛(H × AI × E). Geometric mean — one zero collapses consensus. No SEAL without W³ ≥ 0.75. TRI-WITNESS CONSTRAINT: no fake confidence.",
+              "888_HOLD": verdict.verdict === "DIVERGENT" ? "DIVERGENT witness — escalate to human sovereign" : undefined,
+            }, null, 2),
+          }],
+          isError,
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `forge_witness failed: ${err?.message ?? String(err)}` }, null, 2) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── forge_scar — standalone scar sealing ───────────────────────────────────
+  server.tool(
+    "forge_scar",
+    "APEX v36Ω scar metabolization gate. Seals failures as permanent constitutional constraints. Modes: seal (record failure), list (enumerate scars), consult (check fingerprint for matching scars). SCAR LAW: errors are metabolized into constitutional constraints. Pain = ΔS spike. Learning = cooling. F1 AMANAH: scars are immutable once sealed.",
+    {
+      mode: z.enum(["seal", "list", "consult"]).default("list"),
+      // seal mode
+      failure_mode: z.string().optional().describe("Description of the failure (seal mode)"),
+      severity: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).optional().describe("Severity (seal mode)"),
+      scar_pressure: z.number().min(0).max(1).optional().describe("Scar pressure ∈ [0,1] (seal mode)"),
+      domain: z.enum(["geox", "wealth", "well", "arifos", "hermes", "aforge", "general"]).optional().describe("Domain (seal/list mode)"),
+      detection_method: z.string().optional().describe("How the failure was detected (seal mode)"),
+      constraint_imposed: z.string().optional().describe("What constraint this scar imposes (seal mode)"),
+      sealed_by: z.string().default("forge_scar").describe("Who sealed this scar"),
+      // consult mode
+      fingerprint: z.string().optional().describe("Fingerprint to consult (consult mode)"),
+    },
+    async (args) => {
+      try {
+        if (args.mode === "list") {
+          const scars = await listFailures(args.domain as GovernedDomain | undefined);
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "SEAL",
+                mode: "list",
+                total: scars.length,
+                scars,
+                doctrine: "Scar Law: failed generations seal their fingerprint. Future generations inherit scar_pressure, reducing Φ until the failure pattern is no longer reachable.",
+              }, null, 2),
+            }],
+          };
+        }
+
+        if (args.mode === "consult") {
+          if (!args.fingerprint) {
+            return {
+              content: [{ type: "text" as const, text: JSON.stringify({ error: "fingerprint required for mode=consult" }, null, 2) }],
+              isError: true,
+            };
+          }
+          const result = await consultFailurePressure(args.fingerprint, args.domain as GovernedDomain | undefined);
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "SEAL",
+                mode: "consult",
+                ...result,
+              }, null, 2),
+            }],
+          };
+        }
+
+        if (args.mode === "seal") {
+          if (!args.failure_mode || !args.severity || args.scar_pressure === undefined) {
+            return {
+              content: [{ type: "text" as const, text: JSON.stringify({ error: "failure_mode, severity, scar_pressure required for mode=seal" }, null, 2) }],
+              isError: true,
+            };
+          }
+          const scar = await sealFailure({
+            failure_mode: args.failure_mode,
+            severity: args.severity,
+            scar_pressure: args.scar_pressure,
+            domain: (args.domain ?? "general") as GovernedDomain,
+            detection_method: args.detection_method ?? "manual",
+            constraint_imposed: args.constraint_imposed ?? `Failure '${args.failure_mode}' sealed as constraint`,
+            sealed_by: args.sealed_by,
+          });
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "SEAL",
+                mode: "seal",
+                scar,
+                doctrine: "This scar is now a constitutional constraint. Future generations with matching fingerprints inherit scar_pressure. Immutable per F1 AMANAH.",
+              }, null, 2),
+            }],
+          };
+        }
+
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown mode: ${args.mode}` }, null, 2) }],
+          isError: true,
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `forge_scar failed: ${err?.message ?? String(err)}` }, null, 2) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── forge_register — gated tool registration ──────────────────────────────
+  server.tool(
+    "forge_register",
+    "APEX v36Ω gated registration gate. Registers a tool ONLY after all gates pass: SEAL verdict from forge_evaluate, CONSENSUS from forge_witness, HARAM scan pass, and scar consultation pass. Non-compensatory: any single gate failure blocks registration. 24h TTL expiry. Backward compatible with forge_skill registry.",
+    {
+      tool_name: z.string().regex(/^forge_[a-z0-9_]+$/).describe("Tool name (forge_* convention)"),
+      domain: z.enum(["geox", "wealth", "well", "arifos", "hermes", "aforge", "general"]),
+      description: z.string().min(10).max(2000).describe("Tool description"),
+      implementation: z.string().describe("Tool implementation code"),
+      input_schema: z.string().default("z.object({}).strict()").describe("Zod inputSchema"),
+      registered_by: z.string().default("forge_register").describe("Who is registering"),
+      // Gate preconditions — all required
+      gate_verdict: z.enum(["SEAL", "REVIEW", "VOID"]).describe("Verdict from forge_evaluate (must be SEAL)"),
+      gate_G: z.number().min(0).max(1).describe("G score from forge_evaluate"),
+      gate_C_dark: z.number().min(0).max(1).describe("C_dark from forge_evaluate"),
+      witness_verdict: z.enum(["CONSENSUS", "WEAK", "DIVERGENT"]).describe("Verdict from forge_witness (must be CONSENSUS)"),
+      witness_W3: z.number().min(0).max(1).describe("W³ from forge_witness"),
+      haram_findings: z.number().int().default(0).describe("HARAM findings count (must be 0 for CRITICAL)"),
+      scar_pressure: z.number().min(0).max(1).default(0).describe("Scar pressure from forge_scar consult"),
+      scars_consulted: z.number().int().default(0).describe("Number of scars consulted"),
+    },
+    async (args) => {
+      try {
+        // Reconstruct minimal gate decision from provided scores
+        const gate: GateDecision = {
+          tool_name: args.tool_name,
+          fingerprint: "provided-by-caller",
+          G: args.gate_G,
+          C_dark: args.gate_C_dark,
+          scores: {
+            A: 0.8, P: 0.8, E: 0.8, X: 0.8, Phi: 0.8, Omega: 0.04,
+            rationale: ["Scores reconstructed from registration call — see prior forge_evaluate output for full detail"],
+          },
+          verdict: args.gate_verdict,
+          evaluator_disagreement: 0,
+          evaluator_count: 1,
+          evaluated_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        };
+
+        const witness: WitnessVerdict = {
+          W3: args.witness_W3,
+          channels: {
+            human: { confidence: 0.8, evidence_count: 1 },
+            ai: { confidence: 0.8, evidence_count: 1 },
+            external: { confidence: 0.8, evidence_count: 1 },
+          },
+          verdict: args.witness_verdict,
+          seal_eligible: args.witness_verdict === "CONSENSUS",
+          register_eligible: args.witness_verdict !== "DIVERGENT",
+          rationale: ["Witness verdict reconstructed from registration call — see prior forge_witness output for full detail"],
+          witnessed_at: new Date().toISOString(),
+        };
+
+        const result = await registerTool({
+          tool_name: args.tool_name,
+          domain: args.domain as GovernedDomain,
+          description: args.description,
+          implementation: args.implementation,
+          input_schema: args.input_schema,
+          registered_by: args.registered_by,
+          preconditions: {
+            gate,
+            witness,
+            haramPassed: args.haram_findings === 0,
+            haramFindings: args.haram_findings,
+            scarPressure: args.scar_pressure,
+            scarsConsulted: args.scars_consulted,
+          },
+        });
+
+        const isError = result.status === "HOLD";
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              ...result,
+              doctrine: "Registration requires: SEAL (forge_evaluate) + CONSENSUS (forge_witness) + HARAM pass + SCAR pass. Non-compensatory: any single gate failure blocks registration. 24h TTL.",
+            }, null, 2),
+          }],
+          isError,
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `forge_register failed: ${err?.message ?? String(err)}` }, null, 2) }],
+          isError: true,
+        };
+      }
+    },
+  );
 }

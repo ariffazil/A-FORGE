@@ -55,7 +55,8 @@ import {
   registerLogTools,
   registerJobTools,
   registerStatusTools,
-  registerOrchestrationTools,
+  registerSkillTools,
+  registerGovernedTools,
   initializeForgeTools,
 } from "./forgeTools.js";
 import { registerGatewayTools } from "./gatewayTools.js";
@@ -1163,7 +1164,18 @@ registerShellTools(server);
 registerLogTools(server);
 registerJobTools(server);
 registerStatusTools(server);
-registerOrchestrationTools(server);
+
+// ── Phase 2: Skill Forge (APEX Epoch 34Ω — Organism Layer) ─────────────────
+// forge_skill + forge_registry: dynamic tool generation with Decision Field gate.
+// Phase 1: human approval per generation, 24h expiry, 1-generation depth.
+registerSkillTools(server);
+
+// ── Phase 3: Governed Tools (APEX v36Ω — Measurement Instruments) ──────────
+// forge_evaluate, forge_witness, forge_scar, forge_register:
+// decomposed monolith → composable non-compensatory gates.
+// Per v36Ω Scientific Validation Report: these are measurement instruments,
+// not physical laws. Thresholds must be calibrated on held-out data.
+registerGovernedTools(server);
 
 // ── P1 Gateway Tools: external MCP internalization ───────────────────────────
 registerGatewayTools(server);

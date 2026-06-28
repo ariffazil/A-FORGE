@@ -1,9 +1,8 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { execSync } from "node:child_process";
-import { readFile, writeFile, readdir, stat, mkdir, appendFile } from "node:fs/promises";
+import { readFile, writeFile, readdir, stat, mkdir } from "node:fs/promises";
 import { resolve, join } from "node:path";
-import { randomUUID } from "node:crypto";
 import { globSync } from "glob";
 
 const ALLOWED_ROOTS = ["/root", "/tmp", "/data", "/var/log"];
@@ -160,44 +159,20 @@ export function registerPostgresTools(server: McpServer): void {
 }
 
 export function registerMemoryTools(server: McpServer): void {
-  // P1.3 (2026-06-28): Added mode=write for session memory persistence.
-  // forge_memory — modes: recall (reads VAULT999), write (stores to session memory file)
   server.registerTool("forge_memory", {
-    description: "Canonical memory primitive. Modes: recall (read VAULT999), write (store to session memory). P1.3: write mode added.",
+    description: "Canonical memory primitive. Modes: recall. Reads VAULT999 local files, then vault999-api fallback.",
     inputSchema: z.object({
-      mode: z.enum(["recall", "write"]).default("recall"),
-      query: z.string().optional().describe("Search query (recall) or content to write (write)"),
-      limit: z.number().default(10).describe("Max results (recall)"),
-      category: z.string().optional().describe("Memory category (write)"),
-      tags: z.array(z.string()).optional().describe("Tags (write)"),
-      actor_id: z.string().optional().describe("Actor ID (write)"),
-      session_id: z.string().optional().describe("Session ID (write)"),
+      mode: z.enum(["recall"]).default("recall"),
+      query: z.string(),
+      limit: z.number().default(10),
     }),
-  }, async ({ mode, query, limit, category, tags, actor_id, session_id }) => {
+  }, async ({ query, limit }) => {
     try {
-      if (mode === "write") {
-        if (!query) return text("query (content) is required for mode=write", true);
-        const MEMORY_STORE = "/root/A-FORGE/data/session_memory.jsonl";
-        const entry = {
-          id: randomUUID(),
-          timestamp: new Date().toISOString(),
-          content: query,
-          ...(category ? { category } : {}),
-          ...(tags ? { tags } : {}),
-          ...(actor_id ? { actor_id } : {}),
-          ...(session_id ? { session_id } : {}),
-        };
-        await mkdir(resolve(MEMORY_STORE, ".."), { recursive: true });
-        await appendFile(MEMORY_STORE, JSON.stringify(entry) + "\n");
-        return text({ status: "SEAL", mode: "write", id: entry.id });
-      }
-
-      // mode === "recall" (existing implementation)
       const safeLimit = Math.min(limit, 50);
       const result = execSync(`ls -t /root/arifOS/VAULT999/*.jsonl 2>/dev/null | head -${safeLimit}`, { encoding: "utf-8", timeout: 5000 });
       const files = result.split("\n").filter(Boolean);
       const entries: Array<Record<string, unknown>> = [];
-      const queryLower = (query ?? "").toLowerCase();
+      const queryLower = query.toLowerCase();
       for (const f of files) {
         try {
           const content = execSync(`tail -20 "${f}"`, { encoding: "utf-8", timeout: 3000 });
@@ -211,10 +186,9 @@ export function registerMemoryTools(server: McpServer): void {
           if (entries.length >= safeLimit) break;
         } catch { /* skip */ }
       }
-      if (entries.length > 0) return text({ status: "ok", query: query ?? "*", count: entries.length, results: entries });
+      if (entries.length > 0) return text({ status: "ok", query, count: entries.length, results: entries });
       try {
-        const q = query ?? "*";
-        const resp = await fetch(`http://127.0.0.1:8100/api/vault/search?q=${encodeURIComponent(q)}&limit=${safeLimit}`, { signal: AbortSignal.timeout(5000) });
+        const resp = await fetch(`http://127.0.0.1:8100/api/vault/search?q=${encodeURIComponent(query)}&limit=${safeLimit}`, { signal: AbortSignal.timeout(5000) });
         return text(await resp.json());
       } catch {
         return text({ status: "ok", query, count: 0, results: [], note: "No matches in VAULT999 local files; vault999-api unavailable" });
@@ -261,31 +235,22 @@ export function registerGitTools(server: McpServer): void {
 
 export function registerGitHubTools(server: McpServer): void {
   server.registerTool("forge_github", {
-    description: "Canonical GitHub primitive. Modes: search, pr, file, issue. Use type for search variants instead of separate tools.",
+    description: "Canonical GitHub primitive. Modes: search, pr. Use type for search variants instead of separate tools.",
     inputSchema: z.object({
-      mode: z.enum(["search", "pr", "file", "issue"]),
+      mode: z.enum(["search", "pr"]),
       query: z.string().optional(),
       type: z.enum(["repositories", "code", "issues", "prs"]).default("repositories"),
       limit: z.number().default(10),
       repo: z.string().optional(),
-      owner: z.string().optional(),
-      path: z.string().optional(),
-      branch: z.string().optional(),
-      content: z.string().optional(),
-      message: z.string().optional(),
-      sha: z.string().optional(),
-      action: z.enum(["list", "get", "create", "write"]).default("list"),
+      action: z.enum(["list", "get", "create"]).default("list"),
       pr_number: z.number().optional(),
-      issue_number: z.number().optional(),
       title: z.string().optional(),
       body: z.string().optional(),
       head: z.string().optional(),
       base: z.string().default("main"),
       state: z.enum(["open", "closed", "all"]).default("open"),
-      labels: z.array(z.string()).optional(),
-      create_pr: z.boolean().default(false),
     }),
-  }, async ({ mode, query, type, limit, repo, owner, path, branch, content, message, sha, action, pr_number, issue_number, title, body, head, base, state, labels, create_pr }) => {
+  }, async ({ mode, query, type, limit, repo, action, pr_number, title, body, head, base, state }) => {
     try {
       const auth = ghAuthHeader();
       if (mode === "search") {
@@ -305,64 +270,21 @@ export function registerGitHubTools(server: McpServer): void {
         }));
         return text({ total: data.total_count, returned: items.length, items });
       }
-      // ── mode=pr: list/get/create pull requests ─────────────────────
-      if (mode === "pr") {
-        if (!repo) return text("repo is required for mode=pr", true);
-        if (action === "list") {
-          const prs = JSON.parse(execSync(`curl -s ${auth} "https://api.github.com/repos/${repo}/pulls?state=${state}&per_page=10"`, { encoding: "utf-8", timeout: 15000 }))
-            .map((p: any) => ({ number: p.number, title: p.title, state: p.state, user: p.user?.login, url: p.html_url }));
-          return text(prs);
-        }
-        if (action === "get") {
-          if (!pr_number) return text("pr_number required for action=get", true);
-          const pr = JSON.parse(execSync(`curl -s ${auth} "https://api.github.com/repos/${repo}/pulls/${pr_number}"`, { encoding: "utf-8", timeout: 15000 }));
-          return text({ number: pr.number, title: pr.title, state: pr.state, body: pr.body?.slice(0, 2000), user: pr.user?.login, url: pr.html_url });
-        }
-        if (!title || !head) return text("title and head required for action=create", true);
-        const payload = JSON.stringify({ title, body: body || "", head, base });
-        const pr = JSON.parse(execSync(`curl -s -X POST ${auth} "https://api.github.com/repos/${repo}/pulls" -d '${payload.replace(/'/g, "'\\''")}'`, { encoding: "utf-8", timeout: 15000 }));
-        return text({ number: pr.number, title: pr.title, url: pr.html_url, state: pr.state });
+      if (!repo) return text("repo is required for mode=pr", true);
+      if (action === "list") {
+        const prs = JSON.parse(execSync(`curl -s ${auth} "https://api.github.com/repos/${repo}/pulls?state=${state}&per_page=10"`, { encoding: "utf-8", timeout: 15000 }))
+          .map((p: any) => ({ number: p.number, title: p.title, state: p.state, user: p.user?.login, url: p.html_url }));
+        return text(prs);
       }
-      // ── mode=file: get or write files ──────────────────────────────
-      if (mode === "file") {
-        if (!repo || !path) return text("repo and path required for mode=file", true);
-        const ref = branch ? `?ref=${branch}` : "";
-        if (action === "get" || action === "list") {
-          const data = JSON.parse(execSync(`curl -s ${auth} "https://api.github.com/repos/${repo}/contents/${path}${ref}"`, { encoding: "utf-8", timeout: 15000 }));
-          if (Array.isArray(data)) {
-            return text({ path, entries: data.map((f: any) => ({ name: f.name, type: f.type, size: f.size, sha: f.sha })) });
-          }
-          const decoded = Buffer.from(data.content, "base64").toString("utf-8");
-          return text({ path, sha: data.sha, size: data.size, encoding: "utf-8", content: decoded });
-        }
-        // action=write
-        if (!content) return text("content required for action=write", true);
-        if (!message) return text("message (commit message) required for action=write", true);
-        const writeBody: any = { message, content: Buffer.from(content).toString("base64"), branch: branch || "main" };
-        if (sha) writeBody.sha = sha;
-        const fileRes = JSON.parse(execSync(`curl -s -X PUT ${auth} "https://api.github.com/repos/${repo}/contents/${path}" -d '${JSON.stringify(writeBody).replace(/'/g, "'\\''")}'`, { encoding: "utf-8", timeout: 15000 }));
-        const result: any = { commit_sha: fileRes.commit?.sha, content_sha: fileRes.content?.sha, path: fileRes.content?.path };
-        if (create_pr) {
-          const prBody = JSON.stringify({ title: `Update ${path}`, body: message, head: branch || "main", base: base });
-          const prRes = JSON.parse(execSync(`curl -s -X POST ${auth} "https://api.github.com/repos/${repo}/pulls" -d '${prBody.replace(/'/g, "'\\''")}'`, { encoding: "utf-8", timeout: 15000 }));
-          result.pr_url = prRes.html_url;
-          result.pr_number = prRes.number;
-        }
-        return text(result);
+      if (action === "get") {
+        if (!pr_number) return text("pr_number required for action=get", true);
+        const pr = JSON.parse(execSync(`curl -s ${auth} "https://api.github.com/repos/${repo}/pulls/${pr_number}"`, { encoding: "utf-8", timeout: 15000 }));
+        return text({ number: pr.number, title: pr.title, state: pr.state, body: pr.body?.slice(0, 2000), user: pr.user?.login, url: pr.html_url });
       }
-      // ── mode=issue: create issues ──────────────────────────────────
-      if (mode === "issue") {
-        if (!repo) return text("repo required for mode=issue", true);
-        if (action === "create") {
-          if (!title) return text("title required for action=create", true);
-          const issueBody: any = { title, body: body || "" };
-          if (labels && labels.length > 0) issueBody.labels = labels;
-          const issue = JSON.parse(execSync(`curl -s -X POST ${auth} "https://api.github.com/repos/${repo}/issues" -d '${JSON.stringify(issueBody).replace(/'/g, "'\\''")}'`, { encoding: "utf-8", timeout: 15000 }));
-          return text({ number: issue.number, title: issue.title, url: issue.html_url, state: issue.state });
-        }
-        return text("action=create supported for mode=issue", true);
-      }
-      return text(`Unknown mode: ${mode}`, true);
+      if (!title || !head) return text("title and head required for action=create", true);
+      const payload = JSON.stringify({ title, body: body || "", head, base });
+      const pr = JSON.parse(execSync(`curl -s -X POST ${auth} "https://api.github.com/repos/${repo}/pulls" -d '${payload.replace(/'/g, "'\\''")}'`, { encoding: "utf-8", timeout: 15000 }));
+      return text({ number: pr.number, title: pr.title, url: pr.html_url, state: pr.state });
     } catch (err: any) {
       return text(`Error: ${err.message?.slice(0, 500)}`, true);
     }
