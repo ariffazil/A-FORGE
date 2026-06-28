@@ -26,6 +26,7 @@
 
 import type { TrustTier } from "../../infrastructure/skills/SkillStore.js";
 import type { TriWitnessResult } from "./TriWitnessValidator.js";
+import type { APEXReceipt } from "./APEXRuntimeReceipt.js";
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -52,30 +53,39 @@ const MATRIX: Record<TrustTier, {
   can_register: boolean | "conditional";
   can_call_external: boolean | "allowlist_only" | "scoped";
   requiredAction: EnforcementVerdict["requiredAction"];
+  minG?: number;        // minimum G-score for this tier (APEX binding)
+  maxCdark?: number;    // maximum C_dark for this tier (APEX binding)
 }> = {
   UNTRUSTED: {
     can_execute: false,
     can_register: false,
     can_call_external: false,
     requiredAction: "REVIEW",
+    // No G threshold — UNTRUSTED cannot execute regardless
   },
   STAGED: {
     can_execute: "sandbox_only",
     can_register: false,
     can_call_external: false,
     requiredAction: "TRI_WITNESS",
+    minG: 0.50,
+    maxCdark: 0.60,
   },
   REVIEWED: {
     can_execute: "limited",
     can_register: "conditional",
     can_call_external: "allowlist_only",
     requiredAction: "FORGE_GATE",
+    minG: 0.70,
+    maxCdark: 0.40,
   },
   TRUSTED: {
     can_execute: true,
     can_register: true,
     can_call_external: "scoped",
     requiredAction: "SCAR_MONITOR",
+    minG: 0.50,
+    maxCdark: 0.30,
   },
 };
 
@@ -108,6 +118,37 @@ export class TrustTierEnforcer {
       default:
         return { allowed: false, reason: `Unknown action: ${action}`, requiredAction: "REVIEW" };
     }
+  }
+
+  /**
+   * Validate APEX receipt against trust tier thresholds.
+   * G-score must meet minimum. C_dark must not exceed maximum.
+   * Without this, trust tiers are independent of APEX geometry — forbidden.
+   */
+  validateAPEX(tier: TrustTier, receipt: APEXReceipt): EnforcementVerdict {
+    const rule = MATRIX[tier];
+
+    if (rule.minG !== undefined && receipt.G < rule.minG) {
+      return {
+        allowed: false,
+        reason: `G=${receipt.G.toFixed(2)} below tier minimum ${rule.minG}. Requires promotion or re-validation.`,
+        requiredAction: rule.requiredAction,
+      };
+    }
+
+    if (rule.maxCdark !== undefined && receipt.C_dark > rule.maxCdark) {
+      return {
+        allowed: false,
+        reason: `C_dark=${receipt.C_dark.toFixed(2)} exceeds tier maximum ${rule.maxCdark}. Misalignment risk too high.`,
+        requiredAction: rule.requiredAction,
+      };
+    }
+
+    return {
+      allowed: true,
+      reason: `APEX geometry valid for ${tier}: G=${receipt.G.toFixed(2)}≥${rule.minG ?? "N/A"}, C_dark=${receipt.C_dark.toFixed(2)}≤${rule.maxCdark ?? "N/A"}.`,
+      requiredAction: rule.requiredAction,
+    };
   }
 
   /**
