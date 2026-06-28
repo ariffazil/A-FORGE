@@ -830,6 +830,78 @@ export function registerSkillTools(server: McpServer): void {
     },
   );
 
+  // ── forge_seal — VAULT999 skill binding (Phase 2 Sprint 4) ────────────────
+  server.tool(
+    "forge_seal",
+    "Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills cannot be deleted, demoted below TRUSTED, or expired. Requires REVIEWED tier + Tri-Witness PASS + F13 approval token.",
+    {
+      skill_name: z.string().describe("Tool name to seal (forge_*)"),
+      human_approval_token: z.string().describe("F13 sovereign approval token (stg_<16+>)"),
+      tri_witness_evidence: z.string().optional()
+        .describe("JSON-serialized TriWitnessResult from prior validation"),
+      actor_id: z.string().default("forge_seal").describe("Calling actor"),
+    },
+    async (args) => {
+      try {
+        const { getForgeSealService } = await import("../../domain/governance/ForgeSealService.js");
+        const { getTriWitnessValidator } = await import("../../domain/governance/TriWitnessValidator.js");
+        const { getSkillStore } = await import("../../infrastructure/skills/SkillStore.js");
+
+        const sealer = getForgeSealService();
+        const store = getSkillStore();
+
+        // Retrieve the skill to get its code for Tri-Witness re-validation
+        const skill = await store.get(args.skill_name);
+
+        // Build or parse TriWitnessResult
+        let triWitness;
+        if (args.tri_witness_evidence) {
+          triWitness = JSON.parse(args.tri_witness_evidence);
+        } else if (skill) {
+          // Re-validate if no evidence provided
+          const validator = getTriWitnessValidator();
+          triWitness = await validator.validate({
+            skillName: skill.tool_name,
+            skillCode: skill.code,
+            skillIntent: skill.intent,
+            domain: "general",
+            generatorModel: skill.provenance.llm_model ?? "unknown",
+            humanApprovalToken: args.human_approval_token,
+            earthEvidenceType: "DOMAIN_ORGAN",
+            earthEvidence: `Seal validation for ${skill.tool_name}`,
+          });
+        } else {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              status: "NOT_FOUND",
+              reason: `Skill '${args.skill_name}' not found.`,
+            }, null, 2) }], isError: true,
+          };
+        }
+
+        const result = await sealer.seal(
+          args.skill_name,
+          triWitness,
+          args.actor_id,
+          args.human_approval_token,
+        );
+
+        const isError = result.status !== "SEALED" && result.status !== "ALREADY_SEALED";
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          isError,
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({
+            status: "REJECTED",
+            reason: `forge_seal failed: ${err?.message ?? String(err)}`,
+          }, null, 2) }], isError: true,
+        };
+      }
+    },
+  );
+
   // ── forge_registry — query / inspect the dynamic tool registry ──────────────
   server.tool(
     "forge_registry",
