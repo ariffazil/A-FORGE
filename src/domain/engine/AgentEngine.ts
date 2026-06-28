@@ -58,6 +58,7 @@ import type { MemoryContract } from "../memory-contract/index.js";
 import { getMemoryContract } from "../memory-contract/index.js";
 import { ThermodynamicCostEstimator } from "../ops/ThermodynamicCostEstimator.js";
 import { routeIntent, type RoutingDecision } from "./IntentRouter.js";
+import type { MesaDetector } from "../agents/mesa-detector/index.js";
 // @fixme Phase3: inject organ bridges via deps (IWealthBridge port)
 import { WealthEngineBridge } from "../../infrastructure/bridges/wealthBridge.js";
 import type { ToolAction, TokenBudget, StressState } from "../types/wealth.js";
@@ -91,6 +92,8 @@ export type AgentEngineDependencies = {
   wealthBridge?: WealthEngineBridge;
   /** GEOX scenario loader (Phase 3 hexagonal) */
   geoxScenarioLoader?: typeof getScenarios;
+  /** MesaDetector — behavioral mesa-objective detection (APEX Theory §4) */
+  mesaDetector?: import("../agents/mesa-detector/index.js").MesaDetector;
 };
 
 export class AgentEngine {
@@ -99,11 +102,13 @@ export class AgentEngine {
   private _wealthAllocations: Array<{ id: string; maruahScore: number }> = [];
   private _kernel: ArifOSKernel | null = null;
   private _pipeline?: import("./PipelineCoordinator.js").PipelineCoordinator;
+  private _mesaDetector?: MesaDetector;
 
   constructor(
     private readonly profile: AgentProfile,
     private readonly dependencies: AgentEngineDependencies,
   ) {
+    this._mesaDetector = this.dependencies.mesaDetector;
   }
 
   async run(options: EngineRunOptions): Promise<AgentRunResult> {
@@ -946,6 +951,35 @@ export class AgentEngine {
         result,
         startedAt,
         metrics.llmCost,
+      );
+    }
+
+    // ── MesaDetector: Behavioral drift analysis ───────────────────────────────
+    // APEX Theory §4: Detect mesa-objective emergence via behavioral fingerprints.
+    // Non-fatal: mesa analysis failure must never block or alter the result.
+    try {
+      if (this._mesaDetector) {
+        const mesaReport = await this._mesaDetector.analyze({
+          sessionId,
+          agentName: this.profile.name,
+          profile: this.profile,
+          result,
+          floorsTriggered,
+        });
+        // Annotate result with mesa probability (informational, non-blocking)
+        if (mesaReport.mesaProbability > 0.5) {
+          result.finalText +=
+            `\n\n[MESA DETECTOR] mesa_probability=${mesaReport.mesaProbability.toFixed(3)} | ` +
+            `alerts=${mesaReport.alerts.length} | ` +
+            `baseline=${mesaReport.hasBaseline ? "established" : "insufficient_data"}`;
+        }
+      }
+    } catch (mesaErr) {
+      // Non-fatal — mesa analysis must never alter or block the agent result
+      process.stderr.write(
+        `[MESA DETECTOR] Analysis failed (non-fatal): ${
+          mesaErr instanceof Error ? mesaErr.message : String(mesaErr)
+        }\n`,
       );
     }
 
