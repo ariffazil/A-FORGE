@@ -106,57 +106,10 @@ test("forge_docs_lookup returns empty with gaps when context7 unreachable", asyn
   assert.ok(data.receipt_id);
 });
 
-test("forge_github_search_code returns standard envelope", async () => {
-  const originalFetch = global.fetch;
-  global.fetch = async (input: any) => {
-    const url = input.toString();
-    if (url.includes("/search/code")) {
-      const payload = JSON.stringify({
-        total_count: 1,
-        items: [{ repository: { full_name: "ariffazil/arifos" }, path: "README.md", html_url: "https://github.com/ariffazil/arifos/blob/main/README.md", text_matches: [{ fragment: "arifOS" }] }],
-      });
-      return {
-        ok: true,
-        status: 200,
-        text: async () => payload,
-        json: async () => JSON.parse(payload),
-      } as Response;
-    }
-    return { ok: false, status: 404, text: async () => "not found" } as Response;
-  };
-
-  try {
-    const res = await gateway.handleForgeGitHubSearchCode({ q: "arifos", per_page: 10, page: 1, request_id: REQUEST_ID });
-    const data = parseContent(res);
-    assert.equal(data.request_id, REQUEST_ID);
-    assert.ok(Array.isArray(data.items));
-    assert.ok(data.receipt_id);
-  } finally {
-    global.fetch = originalFetch;
-  }
-});
-
-test("forge_github_get_file decodes base64 content", async () => {
-  const originalFetch = global.fetch;
-  const payload = JSON.stringify({ content: Buffer.from("hello world").toString("base64"), sha: "abc123", size: 11 });
-  global.fetch = async () => ({
-    ok: true,
-    status: 200,
-    text: async () => payload,
-    json: async () => JSON.parse(payload),
-  } as Response);
-
-  try {
-    const res = await gateway.handleForgeGitHubGetFile({ owner: "ariffazil", repo: "arifos", path: "hello.txt", branch: "main", request_id: REQUEST_ID });
-    const data = parseContent(res);
-    assert.equal(data.request_id, REQUEST_ID);
-    assert.equal(data.content, "hello world");
-    assert.equal(data.encoding, "utf-8");
-    assert.ok(data.receipt_id);
-  } finally {
-    global.fetch = originalFetch;
-  }
-});
+// ── forge_github handler tests removed (2026-06-28 P1.1) ────────────────
+// handleForgeGitHubSearchCode and handleForgeGitHubGetFile were removed
+// as dead code. GitHub ops now go through proxyTools forge_github.
+// ─────────────────────────────────────────────────────────────────────────
 
 test("forge_netdata_alarms returns standard envelope", async () => {
   const originalFetch = global.fetch;

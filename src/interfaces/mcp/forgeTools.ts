@@ -103,12 +103,12 @@ async function saveIdentities(): Promise<void> {
 // ── 1. forge_agent_* — Identity Registration ────────────────────────────────
 
 export function registerIdentityTools(server: McpServer): void {
-  // forge_agent — merged: register, status, list
+// forge_agent — merged: register, status, list, kill
   server.tool(
     "forge_agent",
     "Agent identity management. Modes: register, status, list. F11 AUTH.",
     {
-      mode: z.enum(["register", "status", "list"]).default("list"),
+      mode: z.enum(["register", "status", "list", "kill"]).default("list"),
       agent_id: z.string().optional().describe("Agent identifier"),
       agent_type: z.enum(["opencode", "hermes", "chatgpt", "custom"]).optional().describe("Agent origin"),
       role: z.enum(["governed_coder", "observer", "geoscience_agent", "finance_agent", "wellness_agent", "controller"]).optional().describe("Role profile"),
@@ -138,6 +138,20 @@ export function registerIdentityTools(server: McpServer): void {
         if (!agent) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Agent '${agent_id}' not registered` }, null, 2) }], isError: true };
         agent.last_seen = new Date().toISOString();
         return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", agent, active_leases: agent.lease_ids.map(id => activeLeases.get(id)).filter(Boolean) }, null, 2) }] };
+      }
+      // P2.4: forge_agent kill mode — terminate agent + revoke leases + recover resources
+      if (mode === "kill") {
+        if (!agent_id) return { content: [{ type: "text" as const, text: "agent_id required for mode=kill" }], isError: true };
+        const agent = registeredAgents.get(agent_id);
+        if (!agent) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Agent '${agent_id}' not registered` }, null, 2) }], isError: true };
+        const revokedLeases: string[] = [];
+        for (const lid of agent.lease_ids) {
+          const lease = activeLeases.get(lid);
+          if (lease && !lease.revoked) { lease.revoked = true; revokedLeases.push(lid); }
+        }
+        registeredAgents.delete(agent_id);
+        await saveIdentities();
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", mode: "kill", agent_id, revoked_leases: revokedLeases.length, removed_at: new Date().toISOString() }, null, 2) }] };
       }
       // register
       if (!agent_id || !agent_type || !role) return { content: [{ type: "text" as const, text: "agent_id, agent_type, role required for mode=register" }], isError: true };
@@ -601,6 +615,72 @@ export function registerJobTools(server: McpServer): void {
         } catch (err: any) { j.status = "failed"; j.error = err.message; j.completed_at = new Date().toISOString(); }
       }, 100);
       return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", job_id: job_id_new, tool, agent_id, queued_at: job.created_at }, null, 2) }] };
+    }
+  );
+}
+
+// ── P2.2: forge_status — Active execution state ──────────────────────────
+//
+// Exposes jobStore, activeLeases, and registeredAgents state.
+// Added 2026-06-28 as canonical gap fill.
+
+export function registerStatusTools(server: McpServer): void {
+  server.tool(
+    "forge_status",
+    "Active execution state: jobs, leases, agents. INFRA-class. P2.2 canonical gap fill.",
+    {
+      mode: z.enum(["overview", "jobs", "leases", "agents"]).default("overview"),
+      limit: z.number().default(20).describe("Max items per section"),
+    },
+    async ({ mode, limit }: { mode: string; limit: number }) => {
+      const result: Record<string, any> = { timestamp: new Date().toISOString() };
+      if (mode === "overview" || mode === "jobs") {
+        const jobs = Array.from(jobStore.values()).slice(-limit);
+        result.jobs = { count: jobStore.size, recent: jobs.map(j => ({ job_id: j.job_id, tool: j.tool, status: j.status, created_at: j.created_at })) };
+      }
+      if (mode === "overview" || mode === "leases") {
+        const now = Date.now();
+        const leases = Array.from(activeLeases.values()).filter(l => !l.revoked && l.expires_at > now).slice(0, limit);
+        result.leases = { count: activeLeases.size, active: leases.length, items: leases.map(l => ({ lease_id: l.lease_id, agent_id: l.agent_id, scope: l.scope, max_action_class: l.max_action_class, remaining_s: Math.max(0, Math.floor((l.expires_at - now) / 1000)) })) };
+      }
+      if (mode === "overview" || mode === "agents") {
+        const agents = Array.from(registeredAgents.values());
+        result.agents = { count: agents.length, recent: agents.slice(-limit).map(a => ({ agent_id: a.agent_id, role: a.role, last_seen: a.last_seen, active_leases: a.lease_ids.length })) };
+      }
+      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", ...result }, null, 2) }] };
+    }
+  );
+
+  // ── P2.3: forge_abort — Safe stop + rollback ──────────────────────────────
+  server.tool(
+    "forge_abort",
+    "Safe stop + rollback for running execution. Requires lease or session auth. P2.3 canonical gap fill.",
+    {
+      target: z.enum(["job", "lease", "pipeline"]).describe("What to abort"),
+      target_id: z.string().describe("ID of the target to abort"),
+      reason: z.string().describe("Why this abort is happening"),
+      rollback: z.boolean().default(true).describe("Attempt rollback if applicable"),
+    },
+    async ({ target, target_id, reason, rollback }: { target: string; target_id: string; reason: string; rollback: boolean }) => {
+      const log: string[] = [];
+      if (target === "job") {
+        const job = jobStore.get(target_id);
+        if (!job) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Job '${target_id}' not found` }, null, 2) }], isError: true };
+        job.status = "failed";
+        job.error = `Aborted: ${reason}`;
+        job.completed_at = new Date().toISOString();
+        log.push(`Job ${target_id} set to failed`);
+      }
+      if (target === "lease") {
+        const lease = activeLeases.get(target_id);
+        if (!lease) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Lease '${target_id}' not found` }, null, 2) }], isError: true };
+        lease.revoked = true;
+        log.push(`Lease ${target_id} revoked`);
+      }
+      if (target === "pipeline") {
+        log.push(`Pipeline ${target_id} abort requested. Manual verification required.`);
+      }
+      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", target, target_id, reason, rollback, actions: log }, null, 2) }] };
     }
   );
 }

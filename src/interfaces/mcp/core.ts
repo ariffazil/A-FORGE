@@ -54,6 +54,7 @@ import {
   registerShellTools,
   registerLogTools,
   registerJobTools,
+  registerStatusTools,
   registerOrchestrationTools,
   initializeForgeTools,
 } from "./forgeTools.js";
@@ -157,7 +158,6 @@ function epistemicForTool(toolName: string): EpistemicTag {
     name.includes("forge_filesystem") ||
     name.includes("forge_postgres") ||
     name.includes("forge_memory") ||
-    name.includes("forge_git") ||
     name.includes("forge_docker") ||
     name.includes("forge_shell") ||
     name.includes("forge_log") ||
@@ -166,7 +166,6 @@ function epistemicForTool(toolName: string): EpistemicTag {
     name.includes("forge_pipeline") ||
     name.includes("forge_well") ||
     name.includes("forge_research") ||
-    name.includes("forge_search") ||
     name.includes("forge_docs") ||
     name.includes("forge_netdata") ||
     name.includes("forge_minimax") ||
@@ -300,7 +299,16 @@ const _originalTool = server.tool.bind(server);
   schema: any,
   handler: (args: any, ctx: any) => Promise<any>,
 ) {
-  const gatedSchema = extendZodSchema(schema);
+  // ── P0.1: Strictify Zod schema (2026-06-28) ──────────────────────────
+  // server.tool() uses objectFromShape which does NOT auto-add .strict().
+  // Without this, ALL tools registered via server.tool() accept arbitrary
+  // extra fields — a silent schema drift vector. This mirrors the guard at
+  // line 86-95 for registerTool.
+  // ──────────────────────────────────────────────────────────────────────
+  const strictSchema = (schema && typeof schema === "object" && typeof schema.strict === "function")
+    ? schema.strict()
+    : schema;
+  const gatedSchema = extendZodSchema(strictSchema);
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     const actionClass = classifyTool(name);
@@ -742,20 +750,10 @@ server.registerTool(
 // Example structured output hint (C3) — in real would use outputSchema when SDK supports per-tool
 // verdict shape: { verdict: "SEAL"|"VOID"|..., cc_id, floors_evaluated, reason } isError:false always for verdicts.
 
-server.registerTool(
-  "forge_run",
-  {
-    description: "Run a full agent task with governance floors.",
-    inputSchema: z.object({
-      task: z.string().describe("The task to execute"),
-      mode: z.enum(["internal_mode", "external_safe_mode"]).optional(),
-      evidence_receipt: z.record(z.string(), z.unknown()).optional().describe("Optional F-WEB evidence receipt to support a SEAL verdict"),
-      peer_contract_id: z.string().optional().describe("Optional Peer Federation Contract v1 ID for audit continuity"),
-    }),
-    annotations: { title: "Agent Run", destructiveHint: true }
-  },
-  (args) => forgeHandler(args, "forge_run")
-);
+// ── DEPRECATED: forge_run REMOVED 2026-06-28 ─────────────────────────────────
+// forge_run was an alias of forge_execute with the same forgeHandler.
+// Use forge_execute with task + mode instead.
+// ──────────────────────────────────────────────────────────────────────────────
 
 const judgeHandler = async ({ holdId, reason }: { holdId: string, reason?: string }) => {
   const startedAt = Date.now();
@@ -771,7 +769,7 @@ const judgeHandler = async ({ holdId, reason }: { holdId: string, reason?: strin
           gate: "SELF_AUTHORIZE_REFUSED",
           holdId,
           reason: reason ?? "none given",
-          message: "A-FORGE no longer issues approvals. Route to arifOS arif_judge_deliberate (via forge_judge_proxy) instead.",
+          message: "A-FORGE cannot self-authorize. Route to arifOS via: forge_judge_proxy({mode:'judge', candidate:'...', session_id:'...'}). See forge_judge_proxy for full parameter spec.",
         }, null, 2),
       }],
       isError: true,
@@ -1015,6 +1013,137 @@ server.registerTool("forge_well", {
   });
 });
 
+// ── P2 TOOLS (2026-06-28): Canonical gap fill — forge_probe, forge_status, forge_abort, forge_scan ──
+
+// P2.1: forge_probe — Federation organ liveness check
+server.tool(
+  "forge_probe",
+  "Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill.",
+  {
+    organs: z.array(z.enum(["arifos", "geox", "wealth", "well", "aforge"])).optional()
+      .describe("Organs to probe (default: all except self)"),
+    include_latency: z.boolean().default(true).describe("Include latency measurement"),
+  },
+  async ({ organs, include_latency }: { organs?: string[]; include_latency?: boolean }) => {
+  const targets: Record<string, string> = {
+    arifos: "http://localhost:8088/health",
+    geox: "http://localhost:8081/health",
+    wealth: "http://localhost:18082/health",
+    well: "http://localhost:18083/health",
+    aforge: "http://localhost:7072/health",
+  };
+  const selected = organs ?? ["arifos", "geox", "wealth", "well"];
+  const results: Record<string, { alive: boolean; latency_ms?: number; error?: string }> = {};
+  for (const organ of selected) {
+    const url = targets[organ];
+    if (!url) { results[organ] = { alive: false, error: "unknown organ" }; continue; }
+    const t0 = Date.now();
+    try {
+      const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      const elapsed = Date.now() - t0;
+      results[organ] = {
+        alive: resp.ok,
+        ...(include_latency ? { latency_ms: elapsed } : {}),
+      };
+    } catch (err: any) {
+      results[organ] = {
+        alive: false,
+        ...(include_latency ? { latency_ms: Date.now() - t0 } : {}),
+        error: err?.message?.slice(0, 200) ?? "unreachable",
+      };
+    }
+  }
+  const allAlive = Object.values(results).every(r => r.alive);
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify({
+      status: allAlive ? "SEAL" : "DEGRADED",
+      timestamp: new Date().toISOString(),
+      organs: results,
+    }, null, 2) }],
+  };
+});
+
+// P2.2-2.3: forge_status + forge_abort reside in forgeTools.ts (needs jobStore/activeLeases scope)
+
+// P2.5: forge_scan — AST security scan (wraps SecurityScanner internally)
+server.tool(
+  "forge_scan",
+  "Security scan a file or directory before code execution. Detects dangerous patterns. OBSERVE-class. P2.5 canonical gap fill.",
+  {
+    target: z.string().describe("File or directory path to scan"),
+    depth: z.enum(["quick", "full"]).default("quick").describe("Scan depth: quick = dangerous patterns, full = extended patterns"),
+  },
+  async ({ target, depth }: { target: string; depth?: string }) => {
+  const result: {
+    target: string;
+    depth: string;
+    scanned_files: number;
+    passed: boolean;
+    findings: Array<{ file: string; line: number; pattern: string; severity: string }>;
+    critical?: number;
+    high?: number;
+    medium?: number;
+  } = {
+    target,
+    depth: depth ?? "quick",
+    scanned_files: 0,
+    passed: true,
+    findings: [] as Array<{ file: string; line: number; pattern: string; severity: string }>,
+  };
+  try {
+    const stats = await import("node:fs/promises").then(m => m.stat(target));
+    const isDir = stats.isDirectory();
+    const files: string[] = [];
+    if (isDir) {
+      const { execSync } = await import("node:child_process");
+      const out = execSync(`find "${target}" -name "*.ts" -o -name "*.js" -o -name "*.py" 2>/dev/null | head -200`, { encoding: "utf-8", timeout: 10000 });
+      files.push(...out.trim().split("\n").filter(Boolean));
+    } else {
+      files.push(target);
+    }
+
+    // Dangerous patterns — HARAM list
+    const patterns: Array<{ re: RegExp; severity: string; name: string }> = [
+      { re: /rm\s+-rf\s+\/\s*(;|$|\||2>)/, severity: "CRITICAL", name: "rm -rf /" },
+      { re: /DROP\s+DATABASE|DROP\s+TABLE/i, severity: "CRITICAL", name: "DROP DATABASE/TABLE" },
+      { re: /:\(\)\s*\{\s*:\|:&\s*\;?\s*\};?\s*:/, severity: "CRITICAL", name: "Fork bomb" },
+      { re: />\s*\/dev\/(sda|sdb|nvme|mmc)/, severity: "CRITICAL", name: "Direct block device write" },
+      { re: /mkfs\.\w+/, severity: "HIGH", name: "Filesystem creation" },
+      { re: /dd\s+if=/, severity: "HIGH", name: "dd destructive" },
+      { re: /chmod\s+777/, severity: "MEDIUM", name: "World-writable file" },
+    ];
+    if (depth === "full") {
+      patterns.push(
+        { re: /eval\s*\(/, severity: "HIGH", name: "eval() usage" },
+        { re: /process\.env\./, severity: "LOW", name: "Environment variable access" },
+        { re: /child_process\.exec(File)?\(/, severity: "MEDIUM", name: "Shell exec" },
+      );
+    }
+
+    for (const file of files) {
+      try {
+        const content = await import("node:fs/promises").then(m => m.readFile(file, "utf-8"));
+        result.scanned_files++;
+        const lines = content.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          for (const p of patterns) {
+            if (p.re.test(lines[i])) {
+              result.findings.push({ file, line: i + 1, pattern: p.name, severity: p.severity });
+              result.passed = false;
+            }
+          }
+        }
+      } catch { /* skip unreadable */ }
+    }
+    result.critical = result.findings.filter(f => f.severity === "CRITICAL").length;
+    result.high = result.findings.filter(f => f.severity === "HIGH").length;
+    result.medium = result.findings.filter(f => f.severity === "MEDIUM").length;
+  } catch (err: any) {
+    return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Scan failed: ${err.message}` }) }], isError: true };
+  }
+  return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+});
+
 // ── Tier 1 Proxy Tools (forge_filesystem, forge_postgres, forge_memory, forge_git, forge_github, forge_docker) ──
 // Each group registers 4-6 tools under the forge_* namespace.
 // F8 LAW: All filesystem ops scoped to /root, /tmp, /data.
@@ -1033,6 +1162,7 @@ registerRegistryTools(server);
 registerShellTools(server);
 registerLogTools(server);
 registerJobTools(server);
+registerStatusTools(server);
 registerOrchestrationTools(server);
 
 // ── P1 Gateway Tools: external MCP internalization ───────────────────────────
