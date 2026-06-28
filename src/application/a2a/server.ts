@@ -407,6 +407,10 @@ export function createA2ARouter(): express.Router {
     res.json(createArifOSAgentCard(getBaseUrl(req)));
   });
 
+  router.get("/.well-known/agent.json", (req: Request, res: Response) => {
+    res.json(createArifOSAgentCard(getBaseUrl(req)));
+  });
+
   router.get("/.well-known/mcp", (_req: Request, res: Response) => {
     res.json(createMCPManifest());
   });
