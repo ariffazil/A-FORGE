@@ -1,5 +1,5 @@
 /**
- * TrustTierEnforcer.ts — Trust Tier Execution Gate (Phase 2 Sprint 2)
+ * TrustTierEnforcer.ts — Trust Tier Execution Gate (Phase 2 Sprint 2+3)
  *
  * Enforces the constitutional trust tier matrix:
  *   UNTRUSTED: cannot execute, register, or call external MCP
@@ -7,20 +7,25 @@
  *   REVIEWED:  limited execution, conditional registration, allowlist MCP
  *   TRUSTED:   full authority, scoped external calls, scar-monitored
  *
+ * Sprint 3: Tri-Witness integration — STAGED→REVIEWED promotion
+ * requires all three witness channels (Human × AI × Earth) to PASS.
+ *
  * Without this enforcer, trust tiers are metadata, not governance.
  * This is the difference between "memory" and "law."
  *
  * Constitutional:
  *   F1 AMANAH — UNTRUSTED tools blocked from mutation
+ *   F2 TRUTH  — Tri-Witness breaks the LLM self-audit loop
  *   F8 LAW    — trust tier boundaries enforce system rules
  *   F13 SOVEREIGN — promotion to TRUSTED requires human approval
  *
  * @module governance/TrustTierEnforcer
- * @phase 2 sprint 2
+ * @phase 2 sprint 2+3
  * @forged 2026-06-28 by FORGE (000Ω)
  */
 
 import type { TrustTier } from "../../infrastructure/skills/SkillStore.js";
+import type { TriWitnessResult } from "./TriWitnessValidator.js";
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -110,6 +115,42 @@ export class TrustTierEnforcer {
    */
   requiredAction(tier: TrustTier): EnforcementVerdict["requiredAction"] {
     return MATRIX[tier].requiredAction;
+  }
+
+  /**
+   * Validate Tri-Witness result for STAGED→REVIEWED promotion.
+   * All three channels must PASS. Any FAIL blocks promotion.
+   *
+   * @param triWitness — result from TriWitnessValidator.validate()
+   * @returns EnforcementVerdict with promotion decision
+   */
+  validateTriWitness(triWitness: TriWitnessResult): EnforcementVerdict {
+    if (triWitness.consensus === "PASS") {
+      return {
+        allowed: true,
+        reason: `Tri-Witness PASS: ${triWitness.summary}. Promotion to REVIEWED authorized.`,
+        requiredAction: "FORGE_GATE",
+      };
+    }
+
+    if (triWitness.consensus === "DEGRADED") {
+      return {
+        allowed: false,
+        reason: `Tri-Witness DEGRADED: ${triWitness.summary}. Human tiebreaker required.`,
+        requiredAction: "TRI_WITNESS",
+      };
+    }
+
+    // FAIL
+    const failures = [triWitness.human, triWitness.ai, triWitness.earth]
+      .filter(c => c.verdict === "FAIL")
+      .map(c => `${c.channel}: ${c.reason}`);
+
+    return {
+      allowed: false,
+      reason: `Tri-Witness FAILED: ${failures.join(" | ")}`,
+      requiredAction: "TRI_WITNESS",
+    };
   }
 
   // ── Private ────────────────────────────────────────────────────────
