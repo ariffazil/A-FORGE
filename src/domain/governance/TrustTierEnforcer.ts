@@ -133,10 +133,10 @@ export class TrustTierEnforcer {
       };
     }
 
-    if (triWitness.consensus === "DEGRADED") {
+    if (triWitness.consensus === "HOLD") {
       return {
         allowed: false,
-        reason: `Tri-Witness DEGRADED: ${triWitness.summary}. Human tiebreaker required.`,
+        reason: `Tri-Witness HOLD: ${triWitness.summary}. Missing evidence or low confidence. Skill stays STAGED.`,
         requiredAction: "TRI_WITNESS",
       };
     }
@@ -148,7 +148,7 @@ export class TrustTierEnforcer {
 
     return {
       allowed: false,
-      reason: `Tri-Witness FAILED: ${failures.join(" | ")}`,
+      reason: `Tri-Witness FAILED. SCAR may attach. ${failures.join(" | ")}`,
       requiredAction: "TRI_WITNESS",
     };
   }
