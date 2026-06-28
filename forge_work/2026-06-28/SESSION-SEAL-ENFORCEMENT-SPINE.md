@@ -40,3 +40,9 @@
 | geox | 48e48378 | PUSHED |
 
 *DITEMPA BUKAN DIBERI — The spine is wired.*
+
+## Deployment Notes
+- 6 additional commits needed to get actor_verified working end-to-end
+- `/opt/arifos/app` was tracking `master` branch — switched to `main`
+- Git index corruption required direct file copy for final deploy
+- Smoke test: `arif_init(mode=light, actor_id="arif-os-agent")` → `actor_verified=true, verdict=SEAL` ✅
