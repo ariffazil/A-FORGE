@@ -320,6 +320,9 @@ export function registerGitHubTools(server: McpServer): void {
     }),
   }, async ({ mode, query, type, limit, repo, action, pr_number, title, body, head, base, state }) => {
     try {
+      // TODO: BYPASS RISK — this uses raw execSync for curl. Shell injection via repo/payload.
+      // Migrate to forge_shell for governed execution + ArifSeal audit.
+      // See: forge_work/shell-terminal-wiring.md
       const auth = ghAuthHeader();
       if (mode === "search") {
         if (!query) return text("query is required for mode=search", true);
@@ -360,6 +363,10 @@ export function registerGitHubTools(server: McpServer): void {
 }
 
 export function registerDockerTools(server: McpServer): void {
+  // TODO: BYPASS RISK — forge_docker uses raw execSync with no input validation.
+  // container/command fields allow arbitrary shell injection.
+  // Migrate to docker_wrapper.ts (governed) + forge_shell for execution.
+  // See: forge_work/shell-terminal-wiring.md
   server.registerTool("forge_docker", {
     description: "Canonical Docker primitive. Modes: ps, logs, exec, images. Destructive operations stay out of this read/exec surface.",
     inputSchema: z.object({

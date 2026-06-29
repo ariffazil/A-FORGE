@@ -59,6 +59,8 @@ npm run mcp:stdio
 npm run mcp:http
 ```
 
+`mcp:stdio` is pipe-based, not terminal-driven. Launch it as a child process with stdin/stdout attached; no PTY is required.
+
 ## What A-FORGE Does (And Doesn't Do)
 
 | ✅ Does | ❌ Does NOT |

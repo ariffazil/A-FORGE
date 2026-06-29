@@ -1,8 +1,8 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-06-28 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
+last_verified: 2026-06-29 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
 valid_from: 2026-06-14
-valid_until: 2026-07-28
+valid_until: 2026-07-29
 confidence: high
 scope: /root/A-FORGE
 epistemic_status: SOURCE_OF_TRUTH
@@ -26,11 +26,12 @@ epistemic_status: SOURCE_OF_TRUTH
 The governed execution shell of the arifOS Federation. A-FORGE builds, deploys, forges, and runs code under constitutional gates. It also hosts MIND:51001 and MEMORY:51002 federated intelligence services.
 
 - **API Port:** 7071 (Express server, Docker Compose via systemd)
-- **MCP Port:** 7072 (`a-forge-mcp.service`, streamable-http, single session)
-- **stdio:** `npm run mcp:stdio` — **preferred agent ingress** (Kimi, Claude Code, etc.)
+- **MCP Port:** 7072 (`a-forge-mcp.service`, streamable-http, multi-client with stateless whitelist)
+- **HTTP Connector:** `https://forge.arif-fazil.com/mcp` (Caddy proxy, 14 stateless OBSERVE tools, MUTATE requires session)
+- **stdio:** `npm run mcp:stdio` — local agent ingress (OpenCode, Claude Code, etc.)
 - **Runtime:** Node.js 22+, TypeScript ~6.0
 - **Architecture:** Hexagonal / layered (domain → application → infrastructure → interfaces)
-- **Tool surface:** `forge_*` namespace tools
+- **Tool surface:** 63 `forge_*` tools (14 stateless, 49 session-owned)
 
 ### Repository Structure
 
