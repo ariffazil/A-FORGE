@@ -1,0 +1,34 @@
+{
+  "scar_1782634605518_8f742e48": {
+    "scar_id": "scar_1782634605518_8f742e48",
+    "fingerprint": "aa177eaea00975c7",
+    "failure_mode": "VOXEL_TRACE_TIMEOUT: AVO computation exceeded 30s budget on PM305 dataset",
+    "severity": "HIGH",
+    "sealed_at": "2026-06-28T08:16:45.518Z",
+    "scar_pressure": 0.5
+  },
+  "scar_1782634605519_e3ad0b78": {
+    "scar_id": "scar_1782634605519_e3ad0b78",
+    "fingerprint": "aa177eaea00975c7",
+    "failure_mode": "MEMORY_EXHAUSTION: voxel cube 100^3 exceeded 8GB heap on prior attempt",
+    "severity": "HIGH",
+    "sealed_at": "2026-06-28T08:16:45.519Z",
+    "scar_pressure": 0.5
+  },
+  "scar_1782634605520_d5e6a532": {
+    "scar_id": "scar_1782634605520_d5e6a532",
+    "fingerprint": "aa177eaea00975c7",
+    "failure_mode": "CONSOLE_BLOCKED: F12 INJECTION blocked shell escape attempt",
+    "severity": "CRITICAL",
+    "sealed_at": "2026-06-28T08:16:45.520Z",
+    "scar_pressure": 0.7
+  },
+  "scar_1782634896194_defb4ee6": {
+    "scar_id": "scar_1782634896194_defb4ee6",
+    "fingerprint": "aa177eaea00975c7",
+    "failure_mode": "MANUAL_TEST_4",
+    "severity": "LOW",
+    "sealed_at": "2026-06-28T08:21:36.195Z",
+    "scar_pressure": 0.1
+  }
+}

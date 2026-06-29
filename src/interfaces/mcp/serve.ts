@@ -51,6 +51,7 @@ const STATELESS_TOOLS = new Set([
   "forge_shell_ledger",
   "forge_shell_alert_history",
   "forge_registry",
+  "document_ingest",                                      // Phase 1 — read-only, no side effects
 ]);
 
 // ── Simple in-memory rate limiter ──────────────────────────────────────

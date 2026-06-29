@@ -63,6 +63,7 @@ import {
 import { registerGatewayTools } from "./gatewayTools.js";
 import { registerForge8Verbs } from "./forge8Verbs.js";
 import { registerShellTools as registerCanonicalShellTools } from "./shell/forgeShell.js";
+import { registerDocumentIngestTool } from "./documentIngest.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
@@ -105,6 +106,21 @@ const origRegisterTool = server.registerTool.bind(server);
 // Every MCP tool response carries a mandatory _epistemic envelope field
 // classifying the output by origin, authority, and evidence quality.
 // Ratified per arifOS federation doctrine.
+//
+// SOVEREIGN-GRADE AUTHORITY HEADER (2026-06-29):
+// Every output also carries authority_header with the 6-field constitutional
+// metadata. This makes authority geometry visible in runtime, not just declared.
+// Ref: Arif — "Authority Mode Separation + mandatory authority header on every output"
+
+interface AuthorityHeader {
+  actor: string;
+  authority_mode: "OBSERVE" | "DRAFT" | "EXECUTE" | "SEAL" | "RATIFY" | "NONE";
+  stage: "OBSERVE" | "DRAFT" | "EXECUTE" | "SEAL" | "RATIFY";
+  evidence_layer: "WORLD" | "WELL" | "BIO" | "ARIFOS" | "NONE";
+  reversibility: "reversible" | "irreversible";
+  seal_status: "unsealed" | "sealed";
+  ratification_required: boolean;
+}
 
 interface EpistemicTag {
   output_class: string;
@@ -114,6 +130,8 @@ interface EpistemicTag {
   tagged_by: string;
   tagged_at: string;
   schema_version: string;
+  /** Mandatory authority header — SOVEREIGN-GRADE binding (2026-06-29) */
+  authority_header: AuthorityHeader;
 }
 
 const DEFAULT_EPISTEMIC: EpistemicTag = {
@@ -123,8 +141,114 @@ const DEFAULT_EPISTEMIC: EpistemicTag = {
   evidence_source: "COMPUTED",
   tagged_by: "aforge-mcp",
   tagged_at: new Date().toISOString(),
-  schema_version: "1.0.0",
+  schema_version: "2.0.0",
+  authority_header: {
+    actor: "aforge",
+    authority_mode: "OBSERVE",
+    stage: "OBSERVE",
+    evidence_layer: "WORLD",
+    reversibility: "reversible",
+    seal_status: "unsealed",
+    ratification_required: false,
+  },
 };
+
+/**
+ * Compute the mandatory authority header for a tool.
+ * Derives: authority_mode, stage, evidence_layer, reversibility, seal_status, ratification_required
+ * from tool name + classification patterns.
+ *
+ * SOVEREIGN-GRADE AUTHORITY MODE SEPARATION (2026-06-29):
+ *   OBSERVE  — read-only, no mutation
+ *   DRAFT    — proposes, reversible
+ *   EXECUTE  — acts, reversibility取决于action class
+ *   SEAL     — commits to VAULT999, irreversible
+ *   RATIFY   — human confirmation, final
+ */
+function computeAuthorityHeader(toolName: string): AuthorityHeader {
+  const n = toolName.toLowerCase();
+
+  // ── stage + authority_mode from tool name ──
+  // SEAL tools
+  if (n.includes("_seal") || n.includes("vault_write") || n.includes("vault_seal")) {
+    return {
+      actor: "aforge",
+      authority_mode: "SEAL",
+      stage: "SEAL",
+      evidence_layer: "ARIFOS",
+      reversibility: "irreversible",
+      seal_status: "sealed",
+      ratification_required: true,
+    };
+  }
+  // RATIFY tools
+  if (n.includes("_ratify") || n.includes("_approve") || n.includes("_human")) {
+    return {
+      actor: "aforge",
+      authority_mode: "RATIFY",
+      stage: "RATIFY",
+      evidence_layer: "ARIFOS",
+      reversibility: "irreversible",
+      seal_status: "unsealed",
+      ratification_required: true,
+    };
+  }
+  // EXECUTE tools (mutations)
+  if (
+    n.includes("_execute") ||
+    n.includes("_run") ||
+    n.includes("_commit") ||
+    n.includes("_push") ||
+    n.includes("_create") ||
+    n.includes("_delete") ||
+    n.includes("_deploy") ||
+    n.includes("_browser_navigate") ||
+    n.includes("_shell") ||
+    n.includes("_github_create")
+  ) {
+    // EXECUTE Irreversible if git push/force, delete, drop, or IRREVERSIBLE action class
+    const isIrrev = n.includes("force_push") || n.includes("_delete") || n.includes("drop");
+    return {
+      actor: "aforge",
+      authority_mode: "EXECUTE",
+      stage: "EXECUTE",
+      evidence_layer: "WORLD",
+      reversibility: isIrrev ? "irreversible" : "reversible",
+      seal_status: "unsealed",
+      ratification_required: isIrrev,
+    };
+  }
+  // DRAFT tools (proposals, dry-run, plan)
+  if (
+    n.includes("_draft") ||
+    n.includes("_plan") ||
+    n.includes("_dry_run") ||
+    n.includes("_simulate") ||
+    n.includes("_probe") ||
+    n.includes("_health") ||
+    n.includes("_status")
+  ) {
+    return {
+      actor: "aforge",
+      authority_mode: "DRAFT",
+      stage: "DRAFT",
+      evidence_layer: "WORLD",
+      reversibility: "reversible",
+      seal_status: "unsealed",
+      ratification_required: false,
+    };
+  }
+  // OBSERVE tools
+  return {
+    actor: "aforge",
+    authority_mode: "OBSERVE",
+    stage: "OBSERVE",
+    evidence_layer: "WORLD",
+    reversibility: "reversible",
+    seal_status: "unsealed",
+    ratification_required: false,
+  };
+}
 
 /**
  * Infer the epistemic tag for a tool based on its name.
@@ -132,6 +256,8 @@ const DEFAULT_EPISTEMIC: EpistemicTag = {
  * Vault/approval tools → GOVERNANCE_TEMPLATE/NONE/EXECUTIVE/COMPUTED
  * Execution tools → DETERMINISTIC/NONE/EXECUTIVE/COMPUTED
  * Default → DETERMINISTIC/NONE/ADVISORY/COMPUTED
+ *
+ * Also computes and injects authority_header (SOVEREIGN-GRADE, 2026-06-29).
  */
 function epistemicForTool(toolName: string): EpistemicTag {
   const name = toolName.toLowerCase();
@@ -152,6 +278,7 @@ function epistemicForTool(toolName: string): EpistemicTag {
       authority_claim: "EXECUTIVE",
       evidence_source: "COMPUTED",
       tagged_at: new Date().toISOString(),
+      authority_header: computeAuthorityHeader(toolName),
     };
   }
 
@@ -185,6 +312,7 @@ function epistemicForTool(toolName: string): EpistemicTag {
       authority_claim: "ADVISORY",
       evidence_source: "COMPUTED",
       tagged_at: new Date().toISOString(),
+      authority_header: computeAuthorityHeader(toolName),
     };
   }
 
@@ -201,6 +329,7 @@ function epistemicForTool(toolName: string): EpistemicTag {
       authority_claim: "EXECUTIVE",
       evidence_source: "COMPUTED",
       tagged_at: new Date().toISOString(),
+      authority_header: computeAuthorityHeader(toolName),
     };
   }
 
@@ -211,6 +340,7 @@ function epistemicForTool(toolName: string): EpistemicTag {
     authority_claim: "ADVISORY",
     evidence_source: "COMPUTED",
     tagged_at: new Date().toISOString(),
+    authority_header: computeAuthorityHeader(toolName),
   };
 }
 
@@ -234,7 +364,7 @@ function injectEpistemic(
       try {
         payload = JSON.parse(item.text);
       } catch {
-        // Not JSON — skip (plain text responses don't get _epistemic)
+	// Not JSON — skip (plain text responses don't get _epistemic)
         continue;
       }
 
@@ -462,14 +592,14 @@ server.tool(
     await telemetryInvoke("forge_session_init");
     return runStage("000_INIT" as MetabolicStage, async () => {
       try {
-        // Proxy to kernel's arif_session_init (mode=light for fast bootstrap)
+	// Proxy to kernel's arif_session_init (mode=light for fast bootstrap)
         const kernelResponse = await callMCP("arifos.arif_session_init", {
           actor_id,
           intent: intent ?? "aforge session",
           mode: "light",
         });
         const response = kernelResponse as Record<string, unknown>;
-        // Extract session_id from kernel response (nested in session object or result object)
+	// Extract session_id from kernel response (nested in session object or result object)
         const sessionObj = response.session as Record<string, unknown> | undefined;
         const resultObj = response.result as Record<string, unknown> | undefined;
         const session_id =
@@ -485,7 +615,7 @@ server.tool(
           await telemetryFailure("forge_session_init", startedAt, new Error(errorText));
           return { content: [{ type: "text" as const, text: errorText }], isError: true };
         }
-        // Register the kernel-born session locally
+	// Register the kernel-born session locally
         const session = registerSession(session_id, actor_id);
         const result = {
           content: [{
@@ -1227,6 +1357,11 @@ registerGatewayTools(server);
 // skillstore_sync → tier_bind → docket_prep → execute
 // Each verb has enforced boundaries. forge_execute requires VAULT999 SEAL.
 registerForge8Verbs(server);
+
+	// ── Document Intelligence: layout-first parsing + semantic chunking ──────────
+	// Phase 1 MVP. Modes: analyze, extract, chunk, compare.
+	// Uses pymupdf + tesseract engine. Read-only, blast_radius=LOW.
+	registerDocumentIngestTool(server);
 
 // Initialize identity store
 initializeForgeTools().catch(err => {
