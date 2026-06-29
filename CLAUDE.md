@@ -27,7 +27,7 @@ A-FORGE is the **governed execution shell** of the arifOS Federation. It:
 - **Executes** approved plans through the 4-layer forge gate (F1 → Model → Governance → Irreversibility)
 - **Auto-discovers** 62+ tools across 5 MCP surfaces (arifOS, GEOX, WEALTH, WELL, A-FORGE)
 - **Bridges** arifOS SEAL authorization to execution substrates
-- **Hosts** MIND:51001 & MEMORY:51002 federated intelligence services
+- **Bridges** to MIND (Hermes:8644) and MEMORY (VAULT999 + tiered L1-L6 storage) — A-FORGE does NOT host them
 - **Terminal forge** — interactive streaming-LLM interface with session persistence
 
 **A-FORGE NEVER:** geoscience (GEOX), economics (WEALTH), verdicts (arifOS), NumPy/Pandas.
