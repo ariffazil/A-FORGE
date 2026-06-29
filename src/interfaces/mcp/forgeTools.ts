@@ -33,6 +33,30 @@ import { evaluateCandidate, evaluateDryRun } from "../../domain/forge/evaluate.j
 import { evaluateWitness, witnessDryRun } from "../../domain/forge/witness.js";
 import { sealFailure, listFailures, consultFailurePressure } from "../../domain/forge/scar.js";
 import { registerTool, queryRegistry, registryFingerprint } from "../../domain/forge/register.js";
+import {
+  createLoop,
+  getLoop,
+  destroyLoop,
+  listActiveLoops,
+  getLoopMetrics,
+  getLoopReport,
+  advanceStage,
+  nextStage,
+  sealIteration,
+  validateEvidenceEntry,
+  safeJsonParse,
+  MAX_CONFIDENCE,
+} from "../../domain/reality-loop/index.js";
+// Static imports for record functions (used in forge_reality_loop record mode)
+import {
+  recordEvidence,
+  recordAction,
+  recordEntropy,
+  recordModification,
+  recordScar,
+  recordFloorViolation,
+} from "../../domain/reality-loop/engine.js";
+import type { RealityLoopConfig } from "../../domain/reality-loop/types.js";
 import type {
   CandidateSpec,
   GateDecision,
@@ -531,64 +555,16 @@ export function registerRegistryTools(server: McpServer): void {
   );
 }
 
-// ── 4. forge_shell_dryrun — Shell Preview (NO EXECUTION) ─────────────────────
+// ── 4. forge_shell_dryrun — DEPRECATED — Use shell/forgeShell.ts ─────────
+//
+// The canonical forge_shell + forge_shell_dryrun live in shell/forgeShell.ts
+// with full ArifJudge constitutional gate + ArifSeal hash-chain audit.
+// This legacy registration is kept as a no-op shim for import compatibility.
 
-export function registerShellTools(server: McpServer): void {
-  server.tool(
-    "forge_shell_dryrun",
-    "Preview a shell command's output WITHOUT executing it. Returns what WOULD happen. F1 AMANAH: no mutation, pure dry-run.",
-    {
-      command: z.string().describe("Shell command to preview"),
-      timeout: z.number().default(10000).describe("Timeout in ms (default 10s, max 60s)"),
-    },
-    async ({ command, timeout }) => {
-      // BLOCK dangerous patterns in dry-run too
-      const blocked = ["rm -rf /", "mkfs", "dd if=", "> /dev/", ":(){ :|:& };:", "DROP DATABASE", "DROP TABLE"];
-      const blockedHit = blocked.find(b => command.includes(b));
-      if (blockedHit) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ error: `F9 ANTI-HANTU: Blocked pattern '${blockedHit}' in command. Even dry-run refuses destructive patterns.` }, null, 2) }], isError: true };
-      }
-
-      // Run sandboxed via timeout
-      const effective_timeout = Math.min(timeout, 60000);
-      try {
-        const output = execSync(command, {
-          encoding: "utf-8",
-          timeout: effective_timeout,
-          maxBuffer: 1024 * 1024, // 1MB
-        });
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              status: "SEAL",
-              dry_run: true,
-              command,
-              exit_code: 0,
-              output: output.slice(0, 100000), // Cap at 100KB
-              truncated: output.length > 100000,
-              note: "DRY-RUN: This shows actual output but does not mutate via A-FORGE. F1 AMANAH: irreversible operations require 888 JUDGE.",
-            }, null, 2),
-          }],
-        };
-      } catch (err: any) {
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              status: "SEAL",
-              dry_run: true,
-              command,
-              exit_code: err.status ?? -1,
-              output: err.stdout?.slice(0, 5000) ?? "",
-              error: err.stderr?.slice(0, 5000) ?? err.message?.slice(0, 1000),
-              note: "DRY-RUN: Command failed but no state was mutated.",
-            }, null, 2),
-          }],
-        };
-      }
-    }
-  );
+export function registerShellTools(_server: McpServer): void {
+  // Deprecated: forge_shell and forge_shell_dryrun are now registered
+  // by shell/forgeShell.ts with full constitutional governance.
+  // This shim exists only for import compatibility.
 }
 
 // ── 5. forge_log_tail — System Log Reader ─────────────────────────────────────
@@ -1406,6 +1382,268 @@ export function registerGovernedTools(server: McpServer): void {
       } catch (err: any) {
         return {
           content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `forge_register failed: ${err?.message ?? String(err)}` }, null, 2) }],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ── Reality Loop (The 13th Tool — Orchestrator of All 12 Prompts) ─────
+}
+
+export function registerRealityLoopTools(server: McpServer): void {
+  server.tool(
+    "forge_reality_loop",
+    "THE 13TH TOOL — Chains all 12 MCP prompts into a perpetual autonomous reality loop. Modes: start | advance | record | report | metrics | list | destroy. Constitutional F1-F13 at every stage. ΔS ≤ 0 per iteration. Self-improving.",
+    {
+      mode: z.enum(["start", "advance", "record", "seal", "report", "metrics", "list", "destroy"]).describe("Operation mode"),
+      session_id: z.string().optional().describe("Session ID (required for all modes except start/list)"),
+      intent: z.string().optional().describe('Primary intent for the loop. Default: "Self-sustaining federation health"'),
+      config: z.string().optional().describe('JSON config: {iteration_depth, max_hypotheses, action_budget, auto_execute, self_modify, seal_every_iteration}'),
+      // record mode args
+      record_stage: z.string().optional().describe('Stage being recorded (record mode)'),
+      record_type: z.string().optional().describe('Type of record: evidence | hypothesis | action | entropy | mod | scar | violation'),
+      record_value: z.string().optional().describe('JSON value to record'),
+    },
+    async (args) => {
+      try {
+        switch (args.mode) {
+          case "list": {
+            const loops = listActiveLoops();
+            return {
+              content: [{
+                type: "text" as const,
+                text: JSON.stringify({
+                  status: "OK",
+                  mode: "list",
+                  active_loops: loops.length,
+                  loops,
+                }, null, 2),
+              }],
+            };
+          }
+
+          case "start": {
+            const sid = args.session_id || `rl-${randomUUID()}`;
+            const cfg = safeJsonParse(args.config, {}) as Partial<RealityLoopConfig>;
+            const state = createLoop(sid, cfg);
+            return {
+              content: [{
+                type: "text" as const,
+                text: JSON.stringify({
+                  status: "OK",
+                  mode: "start",
+                  session_id: sid,
+                  iteration: state.iteration,
+                  stage: state.current_stage,
+                  next_stage: nextStage(state.current_stage),
+                  auto_execute: cfg.auto_execute ?? true,
+                  f13_override_required: cfg.auto_execute ?? true,
+                  available_prompts: ["reality-loop", "fix-bug", "refactor-module", "deploy-service", "audit-code", "research-topic", "cross-organ-query", "apex-reason", "quantum-frame", "reality-engineer", "godel-metabolize", "thermodynamic-zen", "recursive-self-improve"],
+                  doctrine: "Call forge_reality_loop mode=advance to begin iteration. The loop NEVER stops unless destroyed.",
+                }, null, 2),
+              }],
+            };
+          }
+
+          case "advance": {
+            if (!args.session_id) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "session_id required" }, null, 2) }], isError: true };
+            }
+            const state = getLoop(args.session_id);
+            if (!state) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Loop not found. Call forge_reality_loop mode=start first." }, null, 2) }], isError: true };
+            }
+            const next = advanceStage(state);
+            const stagePrompts = [
+              ...(next === "OBSERVE" ? ["cross-organ-query", "research-topic", "audit-code", "fix-bug"] : []),
+              ...(next === "QUANTUM" ? ["quantum-frame"] : []),
+              ...(next === "APEX" ? ["apex-reason"] : []),
+              ...(next === "GODEL" ? ["godel-metabolize"] : []),
+              ...(next === "REALITY" ? ["reality-engineer", "refactor-module", "deploy-service"] : []),
+              ...(next === "THERMO" ? ["thermodynamic-zen"] : []),
+              ...(next === "RECURSE" ? ["recursive-self-improve"] : []),
+              ...(next === "SEAL" ? [] : []),
+            ];
+            return {
+              content: [{
+                type: "text" as const,
+                text: JSON.stringify({
+                  status: "OK",
+                  mode: "advance",
+                  session_id: args.session_id,
+                  iteration: state.iteration,
+                  stage: next,
+                  stage_index: ["OBSERVE", "QUANTUM", "APEX", "GODEL", "REALITY", "THERMO", "RECURSE", "SEAL"].indexOf(next),
+                  total_stages: 8,
+                  invoke_prompts: stagePrompts,
+                  evidence_count: state.evidence_base.length,
+                  hypothesis_count: state.active_hypotheses.length,
+                  scar_count: state.scars.length,
+                  loop_report: getLoopReport(state),
+                  instruction: next === "SEAL"
+                    ? "Final stage. Seal iteration to VAULT999 via forge_reality_loop mode=seal, then call forge_reality_loop mode=advance to start next iteration."
+                    : `Call prompts/get for each prompt in invoke_prompts, execute the workflow, then record results.`,
+                }, null, 2),
+              }],
+            };
+          }
+
+          case "record": {
+            if (!args.session_id || !args.record_stage || !args.record_type || !args.record_value) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "session_id, record_stage, record_type, record_value all required" }, null, 2) }], isError: true };
+            }
+            const state = getLoop(args.session_id);
+            if (!state) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Loop not found" }, null, 2) }], isError: true };
+            }
+            const value = safeJsonParse(args.record_value);
+            if (!value || typeof value !== "object") {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "record_value must be valid JSON object" }, null, 2) }], isError: true };
+            }
+            let result: any;
+            switch (args.record_type) {
+              case "evidence":
+                if (!validateEvidenceEntry(value)) {
+                  return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Evidence requires: claim (string), epistemic_label (OBS/DER/INT/SPEC), confidence (0-1), source_stage, source_prompt" }, null, 2) }], isError: true };
+                }
+                // F7 HUMILITY cap
+                if ((value as Record<string, unknown>).confidence !== undefined) {
+                  (value as Record<string, unknown>).confidence = Math.min(Number((value as Record<string, unknown>).confidence), MAX_CONFIDENCE);
+                }
+                result = recordEvidence(state, value as any);
+                break;
+              case "action":
+                result = recordAction(state, value as any);
+                break;
+              case "entropy":
+                result = recordEntropy(state, value as any);
+                break;
+              case "mod":
+                result = recordModification(state, value as any);
+                break;
+              case "scar":
+                result = recordScar(state, value as any);
+                break;
+              case "violation":
+                result = recordFloorViolation(state, value as any);
+                break;
+              default:
+                return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown record_type: ${args.record_type}` }, null, 2) }], isError: true };
+            }
+            return {
+              content: [{
+                type: "text" as const,
+                text: JSON.stringify({
+                  status: "OK",
+                  mode: "record",
+                  session_id: args.session_id,
+                  record_type: args.record_type,
+                  record_stage: args.record_stage,
+                  result: "recorded",
+                  timestamp: new Date().toISOString(),
+                }, null, 2),
+              }],
+            };
+          }
+
+          case "report": {
+            if (!args.session_id) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "session_id required" }, null, 2) }], isError: true };
+            }
+            const state = getLoop(args.session_id);
+            if (!state) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Loop not found" }, null, 2) }], isError: true };
+            }
+            return {
+              content: [{
+                type: "text" as const,
+                text: getLoopReport(state),
+              }],
+            };
+          }
+
+          case "metrics": {
+            if (!args.session_id) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "session_id required" }, null, 2) }], isError: true };
+            }
+            const state = getLoop(args.session_id);
+            if (!state) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Loop not found" }, null, 2) }], isError: true };
+            }
+            return {
+              content: [{
+                type: "text" as const,
+                text: JSON.stringify({
+                  status: "OK",
+                  mode: "metrics",
+                  ...getLoopMetrics(state),
+                }, null, 2),
+              }],
+            };
+          }
+
+          case "seal": {
+            if (!args.session_id) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "session_id required" }, null, 2) }], isError: true };
+            }
+            const sealState = getLoop(args.session_id);
+            if (!sealState) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Loop not found" }, null, 2) }], isError: true };
+            }
+            const sealId = await sealIteration(sealState);
+            return {
+              content: [{
+                type: "text" as const,
+                text: JSON.stringify({
+                  status: "OK",
+                  mode: "seal",
+                  session_id: args.session_id,
+                  iteration: sealState.iteration,
+                  seal_id: sealId,
+                  vault_path: `/root/VAULT999/reality-loop/${sealState.session_id}/iter-${sealState.iteration}.json`,
+                  instruction: "Iteration sealed to VAULT999. Call forge_reality_loop mode=advance to start next iteration.",
+                }, null, 2),
+              }],
+            };
+          }
+
+          case "destroy": {
+            if (!args.session_id) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "session_id required" }, null, 2) }], isError: true };
+            }
+            const state = getLoop(args.session_id);
+            if (!state) {
+              return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Loop not found" }, null, 2) }], isError: true };
+            }
+            // Seal final state before destroying
+            let sealId: string | undefined;
+            try {
+              sealId = await sealIteration(state);
+            } catch { /* vault write failed — proceed with destroy anyway */ }
+            const finalReport = getLoopReport(state);
+            destroyLoop(args.session_id);
+            return {
+              content: [{
+                type: "text" as const,
+                text: JSON.stringify({
+                  status: "OK",
+                  mode: "destroy",
+                  session_id: args.session_id,
+                  vault_seal_id: sealId || "none",
+                  message: sealId ? "Reality loop destroyed. Final iteration sealed to VAULT999." : "Reality loop destroyed. Vault seal skipped.",
+                  final_report: finalReport,
+                }, null, 2),
+              }],
+            };
+          }
+
+          default:
+            return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown mode: ${args.mode}` }, null, 2) }], isError: true };
+        }
+      } catch (err: any) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `forge_reality_loop failed: ${err?.message ?? String(err)}` }, null, 2) }],
           isError: true,
         };
       }

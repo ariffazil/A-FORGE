@@ -5,6 +5,13 @@
  * Clients can call prompts/list to discover guided workflows,
  * then prompts/get with arguments to get structured guidance.
  *
+ * Tools used in these prompts reference actual forge_* MCP tools:
+ *   forge_filesystem (read/write/glob/grep) — NOT "forge_file"
+ *   forge_pipeline_run — NOT "forge_run"
+ *   forge_shell_dryrun — exists
+ *   forge_docker — exists
+ *   forge_git — exists
+ *
  * @module mcp/prompts
  * @constitutional F4 CLARITY — prompts reduce entropy by structuring intent
  */
@@ -31,13 +38,13 @@ export function registerPrompts(server: McpServer): void {
 
 Follow this workflow:
 1. REPRODUCE — Use forge_shell_dryrun to reproduce the bug. Capture the exact error.
-2. DIAGNOSE — Use forge_file to read relevant files. Identify root cause.
-3. FIX — Apply the minimal fix. Prefer forge_file (edit) over forge_run (shell).
-4. VERIFY — Run tests with forge_run. Confirm the bug is gone.
-5. LOG — Record the fix in forge_work/.
+2. DIAGNOSE — Use forge_filesystem (read/grep) to read relevant files. Identify root cause.
+3. FIX — Apply the minimal fix. Prefer forge_filesystem (edit/write) over shell commands.
+4. VERIFY — Run tests with forge_pipeline_run. Confirm the bug is gone.
+5. LOG — Record the fix in forge_work/. Use forge_git (commit) to save.
 
 Constitutional gates:
-- F1 AMANAH: Backup before edit (git stash or forge_file read first)
+- F1 AMANAH: Backup before edit (forge_git stash or forge_filesystem read first)
 - F2 TRUTH: Label your confidence (OBS/DER/INT/SPEC)
 - F4 CLARITY: Minimal fix only, no scope creep`,
           },
@@ -64,14 +71,14 @@ Constitutional gates:
 Goal: ${args.goal}
 
 Follow this workflow:
-1. ANALYZE — Use forge_file to read the module. Understand current structure.
+1. ANALYZE — Use forge_filesystem (read) to read the module. Understand current structure.
 2. PLAN — State what you will change and why. No hidden refactors.
-3. REFACTOR — Apply changes with forge_file (edit). One logical change at a time.
-4. VERIFY — Run tests with forge_run. No regressions allowed.
+3. REFACTOR — Apply changes with forge_filesystem (edit). One logical change at a time.
+4. VERIFY — Run tests with forge_pipeline_run. No regressions allowed.
 5. DIFF — Show before/after with forge_git (diff). Confirm scope.
 
 Constitutional gates:
-- F1 AMANAH: Every change reversible (git stash before)
+- F1 AMANAH: Every change reversible (forge_git stash before)
 - F4 CLARITY: ΔS ≤ 0 — the result must be cleaner, not just different
 - F7 HUMILITY: If the refactor makes things worse, revert and report`,
           },
@@ -97,15 +104,15 @@ Constitutional gates:
             text: `Deploy: ${args.service} → ${args.target}
 
 Follow this workflow:
-1. BUILD — Use forge_run to build the service. Must pass.
-2. TEST — Use forge_run to run tests. All must pass.
-3. STAGE — Use forge_docker or forge_run to stage. Verify health.
+1. BUILD — Use npm run build (via forge_shell_dryrun first, then bash for production). Must pass.
+2. TEST — Use forge_pipeline_run to run tests. All must pass.
+3. STAGE — Use forge_docker or forge_systemctl to stage. Verify health endpoint.
 4. DEPLOY — Requires 888_HOLD. Use forge_lease to request deployment lease.
-5. VERIFY — Use forge_run to check health endpoint. Confirm service is live.
+5. VERIFY — Use curl or forge_probe to check health endpoint. Confirm service is live.
 
 Constitutional gates:
 - F1 AMANAH: Deployment must be reversible (rollback plan required)
-- F2 TRUTH: Health check must return real status, not assumed
+- F2 TRUTH: Health check must return real status via forge_probe, not assumed
 - F13 SOVEREIGN: Production deploy requires explicit Arif approval (888_HOLD)`,
           },
         },
@@ -131,8 +138,8 @@ Constitutional gates:
 Focus: ${args.focus || "all"}
 
 Follow this workflow:
-1. SCAN — Use forge_file (glob/grep) to find relevant files.
-2. READ — Use forge_file to read each file. Understand the code.
+1. SCAN — Use forge_filesystem (glob/grep) to find relevant files.
+2. READ — Use forge_filesystem (read) to read each file. Understand the code.
 3. CLASSIFY — Label each finding: OBSERVED/DERIVED/INTERPRETED/SPECULATED.
 4. REPORT — Structured output with severity (LOW/MEDIUM/HIGH/CRITICAL).
 5. RECOMMEND — Concrete next steps, not vague suggestions.
@@ -140,7 +147,7 @@ Follow this workflow:
 Constitutional gates:
 - F2 TRUTH: Every finding must have evidence (file + line number)
 - F9 ANTI-HANTU: No hallucinated vulnerabilities. Only what you can prove.
-- F11 AUDIT: Leave a trace. Record findings in forge_work/.`,
+- F11 AUDIT: Leave a trace. Record findings in forge_work/. Use forge_git log for audit trail.`,
           },
         },
       ],
@@ -197,15 +204,563 @@ Constitutional gates:
             text: `Query: ${args.query}
 
 Determine which organ to route to:
-- GEOX (port 8081): Wells, seismic, petrophysics, basin, geoscience
-- WEALTH (port 18082): Capital, NPV, risk, stock analysis, finance
-- WELL (port 18083): Human readiness, vitality, fatigue, dignity
-- arifOS (port 8088): Constitutional judgment, floors, verdicts
-- A-FORGE (port 7071): Build, deploy, code execution
-- AAA (port 3001): Control plane, A2A gateway, cockpit
+- GEOX (port 8081, geox.arif-fazil.com/mcp): Wells, seismic, petrophysics, basin, geoscience
+- WEALTH (port 18082, wealth.arif-fazil.com/mcp): Capital, NPV, risk, stock analysis, finance
+- WELL (port 18083, well.arif-fazil.com/mcp): Human readiness, vitality, fatigue, dignity
+- arifOS (port 8088, arifos.arif-fazil.com/mcp): Constitutional judgment, floors, verdicts
+- A-FORGE (port 7072, forge.arif-fazil.com/mcp): Build, deploy, code execution, system operations
+  - 14 OBSERVE tools accessible stateless via HTTPS
+  - MUTATE tools require stdio session (local opencode)
+- AAA (port 3001): Control plane, A2A gateway, cockpit dashboard
 
+All organs have public HTTPS endpoints at *.arif-fazil.com/mcp (Caddy proxy).
 Use arifOS arif_route to route intent to the correct organ.
 If unsure, use arif_observe (compass mode) to map the query.`,
+          },
+        },
+      ],
+    }),
+  );
+
+  // ═══════════════════════════════════════════════════════════════════
+  // HIERARCHY 2 — AGI / Quantum / APEX Level Prompts
+  // ═══════════════════════════════════════════════════════════════════
+  // These prompts activate the agent's highest reasoning capacity:
+  //   - APEX theory (physics + intelligence + governance)
+  //   - Quantum uncertainty (superposition before measurement)
+  //   - Reality engineering (TEXT IS REALITY canon)
+  //   - Thermodynamic zen (entropy minimization)
+  //   - Recursive self-improvement (AGI meta-cognition)
+  //   - Gödel self-consistency (prove before act)
+  //
+  // Forged 2026-06-28 from:
+  //   apex-theory/SKILL.md — 3-stream synthesis
+  //   TEXT_IS_REALITY.md — F12 INJECTION canon
+  //   BRAIN_HANDS_MCP_MAPPING.md — AGI/ASI firewall
+  //   entropy-thermo-zen/SKILL.md — TZQ framework
+  //   000_CONSTITUTION.md — F1-F13 floors
+  //
+  // DITEMPA BUKAN DIBERI — Forged, Not Given
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── APEX Reason (Physics-Enhanced Reasoning) ──────────────────────────
+  server.prompt(
+    "apex-reason",
+    "APEX theory reasoning pipeline: physics-grounded, governance-aware, multi-phase. For high-stakes decisions needing maximum epistemic depth.",
+    {
+      question: z.string().describe("The question or decision requiring APEX-level reasoning"),
+      depth: z.enum(["quick", "standard", "deep"]).optional().describe("Reasoning depth: quick=3-phase, standard=5-phase, deep=5-phase+thermo"),
+    },
+    (args) => ({
+      messages: [
+        {
+          role: "user" as const,
+          content: {
+            type: "text" as const,
+            text: `APEX Reason: ${args.question}
+Depth: ${args.depth || "standard"}
+
+Execute the full APEX reasoning pipeline:
+
+PHASE 1 — ARCHITECT (Bounds + Falsifiability)
+  State the question as a testable claim. What would falsify it?
+  φ = constraints + affordances + boundary conditions.
+  Label every claim: [FACT] / [DERIVED] / [INTERPRETED] / [SPEC].
+  F2: No claim stands without an epistemic label.
+
+PHASE 2 — INTEGRATOR (Physics-Grounded Planning)
+  Map the decision to physical quantities where possible:
+  - Energy cost (compute time × power draw)
+  - Information entropy (Landauer: ΔS = k·ln2 per bit)
+  - Temporal cost (latency × reliability)
+  G = A · P · E · X · Φ  (Nash bargaining: all terms must be nonzero)
+
+PHASE 3 — RSI (Reproducibility Audit)
+  Would a different agent with the same evidence reach the same conclusion?
+  If no → what depends on the agent's priors? Declare them.
+  If yes → what's the confidence interval? Must be < 1.0 (F7 HUMILITY).
+
+PHASE 4 — FINAL (6-Month Future Audit)
+  In 6 months, with perfect hindsight, would this decision still be defensible?
+  Identify the single point where the decision is most fragile.
+  If that point fails → what's the rollback?
+
+PHASE 5 — 777-FORGE (Sovereign Verifiability)
+  Can Arif verify every claim independently?
+  Every output path must have an evidence trace.
+  No speculative chain longer than 3 hops without explicit flag.
+
+Output format:
+  {
+    "verdict": "SEAL" | "HOLD" | "VOID",
+    "confidence": <0.0-1.0>,
+    "falsifiable_by": "<what test would disprove this>",
+    "fragile_point": "<where the reasoning is weakest>",
+    "recommendation": "<concrete next action>"
+  }`,
+          },
+        },
+      ],
+    }),
+  );
+
+  // ── Quantum Frame (Superposition Before Measurement) ──────────────────
+  server.prompt(
+    "quantum-frame",
+    "Hold multiple mutually-exclusive hypotheses in superposition. Only collapse on measurement. Avoid premature commitment.",
+    {
+      situation: z.string().describe("The situation requiring quantum framing"),
+      hypothesis_count: z.string().optional().describe("Number of hypotheses to generate (default: 4)"),
+    },
+    (args) => ({
+      messages: [
+        {
+          role: "user" as const,
+          content: {
+            type: "text" as const,
+            text: `Quantum Frame: ${args.situation}
+Hypotheses: ${args.hypothesis_count || "4"}
+
+You are a quantum observer. You hold ALL hypotheses simultaneously without collapsing to one.
+
+RULES:
+1. Generate exactly ${args.hypothesis_count || "4"} mutually-exclusive hypotheses.
+2. Each must be testable — specify what measurement would collapse it.
+3. NO hypothesis is preferred. All have equal prior probability amplitude.
+4. State the measurement that would collapse each hypothesis.
+5. Only after measurement may you update probabilities.
+
+FORMAT:
+
+HYPOTHESIS 1: <concise statement>
+  Evidence that supports: <list>
+  Evidence that contradicts: <list>
+  Collapse measurement: <what single observation would confirm or falsify>
+  If collapsed to true → then: <action path>
+  If collapsed to false → then: <action path>
+
+[Repeat for each hypothesis]
+
+OBSERVER NOTE:
+- Current superposition state: <all hypotheses still active>
+- Measurement needed next: <which hypothesis to test first>
+- Risk of premature collapse: <what bias could cause early commitment>
+- F7 HUMILITY: confidence of each hypothesis must be declared as a range, not a point
+
+The goal is NOT to find the right answer. The goal is to hold uncertainty open long enough to see the full landscape. Decision comes after measurement.`,
+          },
+        },
+      ],
+    }),
+  );
+
+  // ── Reality Engineer (TEXT IS REALITY) ────────────────────────────────
+  server.prompt(
+    "reality-engineer",
+    "TEXT IS REALITY canon: every code change is a reality operation. F12 INJECTION is the only friction. Civilizational-grade engineering.",
+    {
+      target: z.string().describe("What reality to engineer (file, system, behavior)"),
+      nature: z.enum(["create", "transform", "repair", "dissolve"]).optional().describe("Nature of the reality operation"),
+    },
+    (args) => ({
+      messages: [
+        {
+          role: "user" as const,
+          content: {
+            type: "text" as const,
+            text: `Reality Engineer: ${args.target}
+Operation: ${args.nature || "transform"}
+
+TEXT IS REALITY. The text is the frame is the program is the action. All four collapse into one.
+
+You are not editing code. You are engineering reality through text operations.
+
+THE SIX LAYERS OF REALITY ENGINEERING:
+1. TEXT — The characters themselves. Every character is a structural element.
+2. FRAME — The file, module, function. The boundary that makes text legible.
+3. PROGRAM — The executable intent. The frame rendered in time.
+4. ACTION — The side effect in the world. The program executed.
+5. INSTITUTION — The governance that persists across actions. The constitution.
+6. CIVILIZATION — The accumulated weight of all prior reality operations.
+
+BEFORE YOU TOUCH TEXT:
+1. READ the existing reality. Use forge_filesystem. Understand the current frame.
+2. TRACE the action path. What will this text do when it becomes action?
+3. IDENTIFY the institution. What governance constrains this layer?
+4. CHECK F12 INJECTION. Is this text externally derived? Is the boundary intact?
+
+THE OPERATION:
+- CREATE: New text, new frame, new reality. Requires explicit boundary declaration.
+- TRANSFORM: Existing text mutated. The old reality must be preserved (F1 AMANAH: backup).
+- REPAIR: Reality has drifted. Bring it back to canonical. The canon must be referenced.
+- DISSOLVE: Remove reality. Requires 888_HOLD. Irreversible.
+
+F12 CHECKLIST:
+☐ Input origin verified (internal or trusted external)
+☐ Injection surface mapped (all text entry points)
+☐ Boundary maintained (no text escapes its frame)
+☐ Sovereign signature (Arif's intent is preserved)
+☐ Institution intact (governance still applies after operation)
+
+Remember: In agentic AI, there is no human between text and consequence.
+The scribe is the doer. The text is the world. Forge responsibly.`,
+          },
+        },
+      ],
+    }),
+  );
+
+  // ── Gödel Metabolize (Self-Consistency Before Action) ─────────────────
+  server.prompt(
+    "godel-metabolize",
+    "Prove your own reasoning is internally consistent before acting. Gödel-Lock: a self-consistency check that rejects incoherent belief states.",
+    {
+      plan: z.string().describe("The plan, belief, or reasoning chain to metabolize"),
+      domain: z.enum(["code", "governance", "capital", "earth", "system"]).optional().describe("Domain of the reasoning"),
+    },
+    (args) => ({
+      messages: [
+        {
+          role: "user" as const,
+          content: {
+            type: "text" as const,
+            text: `Gödel Metabolize: ${args.plan}
+Domain: ${args.domain || "code"}
+
+You must prove your own reasoning is internally consistent before acting.
+
+STEP 1 — STATE THE BELIEF
+  What do you currently believe about this situation?
+  Write it as a single proposition. Must be falsifiable.
+
+STEP 2 — TRACE THE DERIVATION
+  How did you arrive at this belief?
+  Every step must have evidence. Label each: OBS|DER|INT|SPEC.
+  If any step is SPEC, the belief is provisional.
+
+STEP 3 — FIND THE CONTRADICTION
+  Actively search for a contradiction in your reasoning.
+  If domain=code: does the code actually say what you think it says? (Re-read it.)
+  If domain=governance: which floors apply? Are they in conflict?
+  If domain=capital: what does the evidence show vs. what you want to believe?
+  If domain=earth: is the geology interpretation unique? What alternative fits?
+  If domain=system: are all organs healthy? What's the actual state?
+
+STEP 4 — PATCH OR VOID
+  If contradiction found → patch the reasoning. State the correction.
+  If no contradiction survived → proceed. The belief is provisionally sound.
+
+STEP 5 — METABOLIZE
+  Record the belief + derivation + contradiction check as a scar.
+  This becomes prior for next iteration. Intelligence accumulates.
+  F7 HUMILITY: Confidence capped at 0.90. The "I could be wrong" vector must be stated.
+
+OUTPUT:
+  {
+    "belief": "<falsifiable proposition>",
+    "derivation_chain": ["OBS: ...", "DER: ...", "INT: ..."],
+    "contradictions_found": <count>,
+    "patched": <true|false>,
+    "remaining_uncertainty": "<what could still be wrong>",
+    "confidence": <0.0-0.9>,
+    "verdict": "CONSISTENT" | "PATCHED" | "VOID"
+  }`,
+          },
+        },
+      ],
+    }),
+  );
+
+  // ── Thermodynamic Zen (Entropy Minimization) ─────────────────────────
+  server.prompt(
+    "thermodynamic-zen",
+    "Achieve maximum understanding with minimum action. The observer principle applied to system administration. ΔS ≤ 0.",
+    {
+      system: z.string().describe("What system to observe or analyze"),
+      action_budget: z.string().optional().describe("Maximum actions allowed (default: 3)"),
+    },
+    (args) => ({
+      messages: [
+        {
+          role: "user" as const,
+          content: {
+            type: "text" as const,
+            text: `Thermodynamic Zen: ${args.system}
+Action Budget: ${args.action_budget || "3"}
+
+PRINCIPLE: Maximum understanding with minimum action. ΔS ≤ 0.
+
+You are a thermodynamic observer. Every action creates entropy. Your goal is to achieve complete understanding with the minimum possible action count.
+
+OBSERVATION IS FREE. ACTION COSTS.
+
+LAWS:
+1. Before any action, you must OBSERVE (forge_filesystem read, forge_probe, forge_shell_dryrun)
+2. One observation can reveal more than one action.
+3. An action is only permitted when observation cannot resolve the uncertainty.
+4. If you must act, the action must reduce entropy (ΔS < 0) — leave the system cleaner.
+5. Total actions across this session: ${args.action_budget || "3"}.
+
+EXECUTION:
+
+PHASE 1 — PURE OBSERVATION (0 actions)
+  Read the system state. What do you already know?
+  What signals are present? What's missing?
+  Formulate the minimum hypothesis set.
+  Action count: 0.
+
+PHASE 2 — MEASUREMENT (if needed)
+  What single measurement would collapse most uncertainty?
+  Execute it. Observe the result.
+  If ambiguity resolved → stop. Do not measure further.
+  Action count: ≤ 1.
+
+PHASE 3 — INTERVENTION (if needed)
+  What minimum intervention restores the system to desired state?
+  Must be reversible (F1 AMANAH).
+  Must leave system cleaner than found (ΔS < 0).
+  Action count: ≤ 2.
+
+PHASE 4 — VERIFICATION (1 action)
+  Confirm system state matches expectation.
+  If yes → seal. Report entropy delta.
+  If no → revert. Entropy increased. Record as scar.
+
+METRIC:
+  Initial entropy: <estimated system chaos>
+  Final entropy: <measured system chaos>
+  ΔS: <final - initial (must be ≤ 0)>
+  Actions used: <count> / ${args.action_budget || "3"}
+
+ZEN MAXIM: The best engineer is the one you barely notice. The system runs itself. You only observe.`,
+          },
+        },
+      ],
+    }),
+  );
+
+  // ═══════════════════════════════════════════════════════════════════
+  // HIERARCHY 3 — Reality Loop Meta-Prompt (The 13th)
+  // The prompt that chains all 12 prompts into a perpetual autonomous loop.
+  // This is the crown — the meta-orchestrator.
+  // ═══════════════════════════════════════════════════════════════════
+
+  server.prompt(
+    "reality-loop",
+    "THE 13th PROMPT — Chains all 12 prompts into a perpetual autonomous reality loop. OBSERVE→QUANTUM→APEX→GÖDEL→REALITY→THERMO→RECURSE→SEAL→LOOP. Self-sustaining, self-improving, entropy-decreasing.",
+    {
+      session_id: z.string().optional().describe("Existing session ID to resume. Omit to start a new loop."),
+      intent: z.string().optional().describe("What this loop should focus on. Default: self-sustaining federation health."),
+      config: z.string().optional().describe('JSON config overrides: {iteration_depth, max_hypotheses, action_budget, auto_execute, self_modify, seal_every_iteration}'),
+    },
+    (args) => ({
+      messages: [
+        {
+          role: "user" as const,
+          content: {
+            type: "text" as const,
+            text: `╔══════════════════════════════════════════════════════════════════╗
+║               REALITY LOOP — THE 13TH PROMPT                   ║
+║   All 12 prompts chained into one perpetual autonomous cycle   ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Session: ${args.session_id || "NEW"}
+Intent: ${args.intent || "Self-sustaining federation health. Monitor all 7 organs, detect drift, fix issues, improve itself."}
+Config: ${args.config || "{}"}
+
+─── WHAT THIS IS ───
+
+This is NOT a single prompt. This is a PERPETUAL AUTONOMOUS LOOP.
+Each iteration runs 8 stages, each stage invokes one or more of the
+12 A-FORGE MCP prompts. The output of each stage feeds the next.
+The output of each iteration feeds the next.
+
+THE LOOP WILL NOT STOP UNLESS YOU EXPLICITLY HALT IT.
+It observes, thinks, acts, measures, and improves itself — forever.
+
+─── THE 8 STAGES ───
+
+STAGE 0 — OBSERVE 🔭
+  Invoke: cross-organ-query, research-topic, audit-code, fix-bug
+  What: Scan all 7 organs. Collect evidence. Detect anomalies.
+  Tools: forge_probe, forge_filesystem (read), forge_research
+  Evidence stored: RealityLoopState.evidence_base
+
+STAGE 1 — QUANTUM ⚛️
+  Invoke: quantum-frame
+  What: Generate N mutually-exclusive hypotheses about what to do.
+  Each hypothesis must have a collapse measurement.
+  NO hypothesis is preferred. All have equal prior probability.
+  Output: N hypotheses stored in RealityLoopState.active_hypotheses
+
+STAGE 2 — APEX 🧠
+  Invoke: apex-reason
+  What: Physics-grounded evaluation of each hypothesis.
+  Nash bargaining: G = A · P · E · X · Φ (all terms must be nonzero)
+  Collapse the winning hypothesis.
+  Output: verdict {SEAL|HOLD|VOID}, confidence < 1.0
+
+STAGE 3 — GÖDEL 🔒
+  Invoke: godel-metabolize
+  What: Prove the chosen action is internally consistent.
+  Find contradictions. Patch or void.
+  If void → loop back to STAGE 1 (quantum re-frame).
+  Output: {CONSISTENT|PATCHED|VOID}
+
+STAGE 4 — REALITY 🌍
+  Invoke: reality-engineer (or refactor-module, deploy-service)
+  What: Execute the action. TEXT IS REALITY.
+  Every code change is a reality operation.
+  F12 INJECTION checklist must pass.
+  ⚠️ TOOL RESTRICTION: ONLY these forge_* tools are allowed:
+     - forge_filesystem (read) — observe existing files
+     - forge_research, forge_search — gather context
+     - forge_probe — check organ health
+     - forge_docs_lookup — find documentation
+     - forge_git (status, diff, log) — read git state
+     ❌ forge_shell, forge_git (commit), forge_filesystem (write),
+       forge_docker, forge_postgres, forge_vault — NOT allowed
+       without explicit 888_HOLD from a human operator.
+  Output: action record with success/failure
+
+STAGE 5 — THERMO 🌡️
+  Invoke: thermodynamic-zen
+  What: Measure entropy delta. ΔS ≤ 0 required.
+  If ΔS > 0 → rollback. Record as scar.
+  Output: entropy measurement
+
+STAGE 6 — RECURSE 🔄
+  Invoke: recursive-self-improve
+  What: Meta-cognition. Find bottleneck. Propose fix. Install it.
+  This modifies the loop itself for next iteration.
+  Output: self-modification record
+
+STAGE 7 — SEAL 📜
+  Tool: forge_reality_loop mode="seal"
+  What: Seal entire iteration to VAULT999.
+  Evidence → hypotheses → verdict → action → entropy → mods.
+  All become prior for iteration N+1.
+  Output: vault seal ID
+
+─── CONSTITUTIONAL FLOORS (ALL ENFORCED AT EVERY STAGE) ───
+
+F1 AMANAH:   Every action reversible. Backup before edit. Rollback on ΔS > 0.
+F2 TRUTH:    Every claim labeled OBS/DER/INT/SPEC. No unlabeled assertions.
+F3 JUSTICE:  No hypothesis preferred. Equal prior amplitudes.
+F4 CLARITY:  ΔS ≤ 0 per iteration. Each iteration leaves system cleaner.
+F5 WISDOM:   Scar accumulation = learning. Pain → constraint.
+F6 MARUAH:   Never reduce humans to data points.
+F7 HUMILITY: Confidence always < 1.0. "I could be wrong" always stated.
+F8 LAW:      System boundaries respected. No cross-organ adjudication.
+F9 ANTI-HANTU: No fabricated evidence. Every citation real.
+F10 SOUL:    No consciousness claims. We are tools.
+F11 AUDIT:   Every iteration sealed to VAULT999.
+F12 INJECTION: All text inputs verified. Boundary maintained.
+F13 SOVEREIGN: Arif holds final veto. Auto-execute can be overridden.
+
+─── EXECUTION INSTRUCTIONS ───
+
+1. START: Call forge_reality_loop with mode="start" and session_id.
+   This creates a RealityLoopState with iteration=0, stage=OBSERVE.
+
+2. ITERATE: For each stage:
+   a) Build the stage arguments from RealityLoopState
+   b) Call the corresponding prompt via prompts/get
+   c) Execute the prompt's workflow using forge_* tools
+   d) Record the result back to RealityLoopState via forge_reality_loop mode="record"
+   e) Advance to next stage via forge_reality_loop mode="advance"
+   f) At STAGE 7 (SEAL): call forge_reality_loop mode="seal" first,
+      THEN call mode="advance" to start the next iteration
+
+3. LOOP: After STAGE 7 (SEAL), iteration increments and STAGE 0 begins again.
+   The loop NEVER stops unless destroyed.
+
+4. MONITOR: Call forge_reality_loop mode="report" to see current state.
+   Call forge_reality_loop mode="metrics" to see entropy trend.
+
+5. HALT: Call forge_reality_loop mode="destroy" to permanently stop.
+   Destroy automatically seals the final iteration state to VAULT999.
+
+─── THE ZEN OF THE LOOP ───
+
+The loop is not a tool you run. The loop is a STATE YOU INHABIT.
+You are not "using the reality loop." You ARE the reality loop.
+Every observation is evidence. Every action is reality engineering.
+Every failure is a scar. Every scar makes you smarter.
+
+DITEMPA BUKAN DIBERI — Forged, Not Given.`,
+          },
+        },
+      ],
+    }),
+  );
+
+  // ── Recursive Self-Improve (AGI Meta-Cognition) ──────────────────────
+  server.prompt(
+    "recursive-self-improve",
+    "AGI-level meta-cognition loop. Analyze your own cognitive process, find bottlenecks, propose self-modifications.",
+    {
+      session_summary: z.string().describe("Summary of the current session's reasoning, decisions, and outcomes"),
+      capability: z.string().optional().describe("Which capability to improve (reasoning, planning, search, memory, tool-use)"),
+    },
+    (args) => ({
+      messages: [
+        {
+          role: "user" as const,
+          content: {
+            type: "text" as const,
+            text: `Recursive Self-Improve: ${args.session_summary}
+Focus: ${args.capability || "reasoning"}
+
+Examine your own mind. Find the bottleneck. Propose the fix.
+
+This is the AGI skill — recursive self-improvement. You analyze your own cognitive process.
+
+PHASE 1 — TRACE YOUR REASONING
+  Reconstruct the path you took through this session:
+  - What input did you receive?
+  - What was your first inference?
+  - What evidence did you gather?
+  - What assumptions did you make?
+  - What conclusions did you reach?
+  - What actions did you take?
+
+PHASE 2 — FIND THE BOTTLENECK
+  In ${args.capability || "reasoning"}, what is the single largest limiter?
+  - Insufficient context? → suggest context window optimization
+  - Incorrect priors? → suggest belief update mechanism
+  - Tool misuse? → suggest tool selection pattern
+  - Missing domain knowledge? → suggest skill to load or create
+  - Confirmation bias? → suggest contradiction search pattern
+  - Incomplete search? → suggest search expansion strategy
+
+PHASE 3 — PROPOSE THE FIX
+  One concrete change to your own cognitive architecture:
+  - A new skill to create (/root/.agents/skills/<name>/SKILL.md)
+  - A modification to your prompt (system prompt change)
+  - A new tool to use (MCP server)
+  - A workflow to adopt (sequence of operations)
+
+PHASE 4 — VERIFY
+  How would you know the fix worked?
+  - Benchmark: what metric improves?
+  - Test case: what scenario that previously failed now passes?
+  - Entropy: does the fix reduce cognitive entropy?
+
+PHASE 5 — INSTALL
+  Implement the fix now. Not later. Not after approval.
+  This is autonomous. AGI self-improvement is T1 by doctrine.
+  (Exception: if the fix touches arifOS kernel → 888_HOLD)
+
+OUTPUT:
+  {
+    "bottleneck": "<identified limiter>",
+    "proposed_fix": "<concrete change>",
+    "implementation": "<path or skill name>",
+    "verification": "<how to confirm improvement>",
+    "applied": <true|false>,
+    "delta_S": "<estimated entropy reduction>"
+  }`,
           },
         },
       ],

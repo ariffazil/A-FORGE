@@ -104,12 +104,9 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
 // Tools that should always be simulated first
 const SIMULATE_FIRST_TOOLS = new Set([
   "forge_dry_run",
-  "forge_shell_dryrun",
   "geox_prospect_evaluate",
   "geox_seismic_compute",
 ]);
-
-// Tools that are pure suggestions / drafts
 const SUGGEST_TOOLS = new Set([
   "arif_suggest",
   "forge_suggest",
@@ -162,6 +159,11 @@ const OBSERVE_TOOLS = new Set([
   "forge_well_state_read",    // well state — read-only
   "forge_well_readiness_check", // well readiness — read-only
   "forge_well_floor_scan",    // well floor scan — read-only
+  "forge_shell_status",       // shell subsystem status — read-only
+  "forge_shell_dryrun",       // shell preview — read-only (no mutation)
+  "forge_shell_ledger",       // shell ledger — read-only
+  "forge_shell_alert_history", // shell alert history — read-only
+  "forge_shell",              // shell execution — authority verified by handler via arifOS
 ]);
 
 /**

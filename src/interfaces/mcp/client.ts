@@ -68,6 +68,12 @@ function parseToolName(tool: string): { namespace: MCPNamespace; toolName: strin
 
 function getMcpUrl(namespace: MCPNamespace): string {
   const cfg = NAMESPACE_DEFAULTS[namespace];
+  // P0-FIX: Prefer ARIFOS_KERNEL_URL for arifos namespace (VPS local execution).
+  // This prevents stale/incorrect public URLs from breaking local proxy calls.
+  if (namespace === "arifos") {
+    const kernelUrl = process.env["ARIFOS_KERNEL_URL"];
+    if (kernelUrl) return kernelUrl;
+  }
   const fromEnv = process.env[cfg.env];
   if (fromEnv) return fromEnv;
   return cfg.default;

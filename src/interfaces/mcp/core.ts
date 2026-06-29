@@ -57,10 +57,13 @@ import {
   registerStatusTools,
   registerSkillTools,
   registerGovernedTools,
+  registerRealityLoopTools,
   initializeForgeTools,
 } from "./forgeTools.js";
 import { registerGatewayTools } from "./gatewayTools.js";
 import { registerForge8Verbs } from "./forge8Verbs.js";
+import { registerShellTools as registerCanonicalShellTools } from "./shell/forgeShell.js";
+import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
@@ -1126,6 +1129,9 @@ server.tool(
     const isDir = stats.isDirectory();
     const files: string[] = [];
     if (isDir) {
+      // TODO: BYPASS RISK — execSync with user-supplied target path allows shell injection.
+      // Add path scope validation (F8) before execution + ArifSeal audit.
+      // Migrate to forge_shell for governed execution.
       const { execSync } = await import("node:child_process");
       const out = execSync(`find "${target}" -name "*.ts" -o -name "*.js" -o -name "*.py" 2>/dev/null | head -200`, { encoding: "utf-8", timeout: 10000 });
       files.push(...out.trim().split("\n").filter(Boolean));
@@ -1190,7 +1196,8 @@ registerDockerTools(server);
 registerIdentityTools(server);
 registerLeaseTools(server);
 registerRegistryTools(server);
-registerShellTools(server);
+registerShellTools(server);                                // forge_shell_dryrun (legacy)
+registerCanonicalShellTools(server);                        // forge_shell + forge_shell_status (canonical)
 registerLogTools(server);
 registerJobTools(server);
 registerStatusTools(server);
@@ -1207,6 +1214,11 @@ registerSkillTools(server);
 // not physical laws. Thresholds must be calibrated on held-out data.
 registerGovernedTools(server);
 
+// ── Phase 4: Reality Loop — The 13th Tool ───────────────────────────────────
+// Chains all 12 MCP prompts into a perpetual autonomous cycle.
+// OBSERVE→QUANTUM→APEX→GÖDEL→REALITY→THERMO→RECURSE→SEAL→LOOP.
+registerRealityLoopTools(server);
+
 // ── P1 Gateway Tools: external MCP internalization ───────────────────────────
 registerGatewayTools(server);
 
@@ -1219,6 +1231,13 @@ registerForge8Verbs(server);
 // Initialize identity store
 initializeForgeTools().catch(err => {
   process.stderr.write(`[forgeTools] Init error: ${err}\n`);
+});
+
+// Initialize ArifSeal hash-chain ledger (forge_shell audit trail)
+getDefaultArifSeal().open().then(() => {
+  process.stderr.write(`[ArifSeal] Ledger opened at ${new Date().toISOString()}\n`);
+}).catch(err => {
+  process.stderr.write(`[ArifSeal] Init error: ${err}\n`);
 });
 
 // ── Resources ────────────────────────────────────────────────────────────────
