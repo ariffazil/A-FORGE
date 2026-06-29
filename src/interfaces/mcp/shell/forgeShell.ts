@@ -87,15 +87,83 @@ async function verifyArifOSSession(session_id: string): Promise<AuthorityEnvelop
 }
 
 /**
- * Check if an authority mode permits EXECUTE_REVERSIBLE actions.
+ * 5-MODE LADDER — Authority Mode Separation (SOVEREIGN-GRADE, 2026-06-29)
+ *
+ *   OBSERVE  — read-only, no mutation. Any session permitted.
+ *   DRAFT    — proposes, dry-runs, plans. EXECUTE or higher required.
+ *   EXECUTE  — acts on world. EXECUTE or higher required.
+ *   SEAL     — commits to VAULT999. SEAL or SOVEREIGN required.
+ *   RATIFY   — human confirmation required. SOVEREIGN required.
+ *
+ * The ladder is strict: each mode requires that level OR higher.
  */
+
+function canObserve(authorityMode: string): boolean {
+  // All modes permit OBSERVE
+  return true;
+}
+
+function canDraft(authorityMode: string): boolean {
+  const mode = authorityMode.toUpperCase();
+  return mode.includes("EXECUTE") || mode.includes("SEAL") || mode.includes("FULL") || mode === "SOVEREIGN" || mode.includes("DRAFT");
+}
+
 function canExecute(authorityMode: string): boolean {
   const mode = authorityMode.toUpperCase();
-  // EXECUTE, SEAL, FULL, SOVEREIGN all permit execution
   if (mode.includes("EXECUTE") || mode.includes("SEAL") || mode.includes("FULL") || mode === "SOVEREIGN") {
     return true;
   }
   return false;
+}
+
+function canSeal(authorityMode: string): boolean {
+  const mode = authorityMode.toUpperCase();
+  return mode.includes("SEAL") || mode === "SOVEREIGN";
+}
+
+function canRatify(authorityMode: string): boolean {
+  return authorityMode === "SOVEREIGN";
+}
+
+/** Gate a tool call by required authority level */
+function gateByAuthority(toolName: string, authorityMode: string): { permitted: boolean; required: string; got: string } {
+  const n = toolName.toLowerCase();
+  const mode = authorityMode.toUpperCase();
+
+  // SEAL tools require SEAL or SOVEREIGN
+  if (n.includes("_seal") || n.includes("vault_write") || n.includes("vault_seal")) {
+    return { permitted: canSeal(mode), required: "SEAL", got: authorityMode };
+  }
+  // RATIFY/approve tools require SOVEREIGN
+  if (n.includes("_ratify") || n.includes("_approve") || n.includes("_human")) {
+    return { permitted: canRatify(mode), required: "SOVEREIGN", got: authorityMode };
+  }
+  // EXECUTE mutations require EXECUTE or higher
+  if (
+    n.includes("_execute") ||
+    n.includes("_run") ||
+    n.includes("_commit") ||
+    n.includes("_push") ||
+    n.includes("_create") ||
+    n.includes("_delete") ||
+    n.includes("_deploy") ||
+    n.includes("_shell") ||
+    n.includes("_github_create")
+  ) {
+    return { permitted: canExecute(mode), required: "EXECUTE", got: authorityMode };
+  }
+  // DRAFT tools (dry-run, plan, probe) require DRAFT or higher
+  if (
+    n.includes("_draft") ||
+    n.includes("_plan") ||
+    n.includes("_dry_run") ||
+    n.includes("_simulate") ||
+    n.includes("_probe")
+  ) {
+    return { permitted: canDraft(mode), required: "DRAFT", got: authorityMode };
+  }
+  // OBSERVE tools — always permitted
+  return { permitted: true, required: "OBSERVE", got: authorityMode };
 }
 
 // ── Constants ──────────────────────────────────────────────────────────────

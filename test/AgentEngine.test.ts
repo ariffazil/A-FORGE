@@ -178,6 +178,61 @@ test("agent engine aborts when token budget is exceeded", async () => {
   assert.match(result.metrics.errorMessage ?? "", /Token ceiling exceeded/i);
 });
 
+test("agent engine blocks high-risk execution when WELL substrate is not ready", async () => {
+  const root = resolve(tmpdir(), `agent-workbench-well-gate-${Date.now()}`);
+  await mkdir(root, { recursive: true });
+  const memoryPath = resolve(root, "memory.json");
+  let coolingLedgerRecorded = false;
+  let recordedVerdict = "";
+  let recordedEntryId = "";
+
+  const engine = new AgentEngine(buildFixProfile("internal_mode"), {
+    llmProvider: new MockLlmProvider(),
+    toolRegistry: new ToolRegistry(),
+    longTermMemory: new LongTermMemory(memoryPath),
+    vaultClient: new NoOpVaultClient(),
+    wellReadinessCheck: async () => ({
+      verdict: "HOLD",
+      score: 0,
+      fatigue: 0,
+      floors_violated: [],
+      message: "WELL telemetry freshness is expired. Inject fresh biometric state before consequential execution.",
+      source: "http://127.0.0.1:18083/health",
+      signal: "WELL_HOLD",
+      truthStatus: "INSUFFICIENT_DATA",
+      freshnessBand: "expired",
+      hasVerifiedTelemetry: true,
+      stateAgeHours: 1456.7,
+    }),
+    coolingLedgerRecorder: (params) => {
+      coolingLedgerRecorded = true;
+      recordedEntryId = params.cooldownEntryId;
+      recordedVerdict = params.verdict;
+      return "/tmp/well-runtime-test.md";
+    },
+  });
+
+  const result = await engine.run({
+    task: "Deploy the production runtime with consequential changes.",
+    workingDirectory: root,
+    riskLevel: "high",
+    intentModel: "execution",
+    ackIrreversible: true,
+  });
+
+  assert.match(result.finalText, /WELL telemetry freshness is expired/i);
+  assert.match(result.finalText, /signal=WELL_HOLD/i);
+  assert.match(result.finalText, /cooldown=/i);
+  assert.match(result.finalText, /ledger=\/tmp\/well-runtime-test\.md/i);
+  assert.equal(result.turnCount, 0);
+  assert.equal(result.metrics.completion, false);
+  assert.match(result.metrics.errorMessage ?? "", /freshness is expired/i);
+  assert.equal(coolingLedgerRecorded, true);
+  assert.equal(recordedVerdict, "HOLD");
+  assert.equal(typeof recordedEntryId, "string");
+  assert.notEqual(recordedEntryId, "");
+});
+
 test("external safe mode redacts obvious secrets and URLs", () => {
   const input = 'token="sk-abcdef1234567890" url=https://example.com/path';
   const output = redactForExternalMode(input, "external_safe_mode");

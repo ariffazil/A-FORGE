@@ -1,0 +1,31 @@
+{
+  "FORGE": {
+    "agent_id": "FORGE",
+    "agent_type": "opencode",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "sha256:smoke-test-session-4ef85d4c4d5246c5",
+    "registered_at": "2026-06-28T14:09:42.195Z",
+    "last_seen": "2026-06-28T14:09:42.195Z",
+    "lease_ids": []
+  },
+  "kimi-code-fi008": {
+    "agent_id": "kimi-code-fi008",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {},
+    "identity_proof": "pending",
+    "registered_at": "2026-06-29T15:47:51.036Z",
+    "last_seen": "2026-06-29T15:47:51.036Z",
+    "lease_ids": []
+  }
+}

@@ -41,6 +41,7 @@ import {
   SealService,
   calculateGeniusFromFloors,
   type FloorScores13,
+  checkWellReadiness,
 } from "../governance/index.js";
 import { callMCP } from "../../interfaces/mcp/client.js";
 import { getAdaptiveThresholds } from "../governance/thresholds.js";
@@ -66,6 +67,8 @@ import type { ToolAction, TokenBudget, StressState } from "../types/wealth.js";
 import { getScenarios } from "../../infrastructure/bridges/geoxBridge.js";
 import { evaluateWithConfidence, calculateConfidenceEstimate } from "../policy/confidence.js";
 import { ArifOSKernel } from "./ArifOSKernel.js";
+import { getCoolingGate } from "../governance/CoolingGate.js";
+import { recordCoolingLedgerEvent } from "../../infrastructure/governance/CoolingLedgerRegistry.js";
 
 export type AgentEngineDependencies = {
   llmProvider: ILlmProvider;
@@ -94,6 +97,8 @@ export type AgentEngineDependencies = {
   geoxScenarioLoader?: typeof getScenarios;
   /** MesaDetector — behavioral mesa-objective detection (APEX Theory §4) */
   mesaDetector?: import("../agents/mesa-detector/index.js").MesaDetector;
+  wellReadinessCheck?: typeof checkWellReadiness;
+  coolingLedgerRecorder?: typeof recordCoolingLedgerEvent;
 };
 
 export class AgentEngine {
@@ -238,6 +243,56 @@ export class AgentEngine {
         transcript: [],
         metrics: this.buildEmptyMetrics(options, startedAt, "F1", "ackIrreversible not set"),
       };
+    }
+
+    const requiresWellGate = (
+      riskLevel === "high" ||
+      riskLevel === "critical" ||
+      intentModel === "execution"
+    );
+    if (requiresWellGate) {
+      const wellReadinessCheck = this.dependencies.wellReadinessCheck ?? checkWellReadiness;
+      const wellResult = await wellReadinessCheck(riskLevel);
+      if (wellResult.verdict !== "PASS") {
+        const coolingGate = getCoolingGate();
+        const coolingEntry = coolingGate.propose({
+          artifact_ref: sessionId,
+          description: `WELL ${wellResult.verdict} gate: ${options.task.slice(0, 160)}`,
+          risk_tier: riskLevel,
+        });
+        const coolingLedgerRecorder = this.dependencies.coolingLedgerRecorder ?? recordCoolingLedgerEvent;
+        const coolingLedgerPath = coolingLedgerRecorder({
+          sessionId,
+          task: options.task,
+          verdict: wellResult.verdict,
+          riskLevel,
+          intentModel,
+          message: wellResult.message,
+          signal: wellResult.signal,
+          truthStatus: wellResult.truthStatus,
+          freshnessBand: wellResult.freshnessBand,
+          stateAgeHours: wellResult.stateAgeHours,
+          source: wellResult.source,
+          cooldownEntryId: coolingEntry.entry_id,
+        });
+        const summary = [
+          `${wellResult.verdict}: ${wellResult.message}`,
+          `cooldown=${coolingEntry.entry_id}`,
+          `ledger=${coolingLedgerPath}`,
+          wellResult.signal ? `signal=${wellResult.signal}` : null,
+          wellResult.truthStatus ? `truth=${wellResult.truthStatus}` : null,
+          wellResult.freshnessBand ? `freshness=${wellResult.freshnessBand}` : null,
+          wellResult.stateAgeHours !== null ? `age_h=${wellResult.stateAgeHours.toFixed(1)}` : null,
+        ].filter(Boolean).join(" | ");
+        return {
+          sessionId,
+          finalText: summary,
+          turnCount: 0,
+          totalEstimatedTokens: 0,
+          transcript: [],
+          metrics: this.buildEmptyMetrics(options, startedAt, "W0", summary),
+        };
+      }
     }
 
     // === Model Capability Gate (Governance Spine — Execution Layer) ===
