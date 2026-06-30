@@ -4,15 +4,21 @@
 # ═══════════════════════════════════════════════════════════════
 
 canonical_workflows:
-  - ci.yml                   # TypeScript build + test suite
-  - a-forge-boundary-guard.yml # Blocks geophysics/finance code leaking into A-FORGE
-  - publish-image.yml        # Build + push Docker image to GHCR
-  - repo-hygiene-weekly.yml  # Weekly automation-health digest
+  - agentic-ci.yml              # Dual-lane: Standard CI + BIJAKSANA metrics
+  - a-forge-boundary-guard.yml  # Blocks geophysics/finance code leaking into A-FORGE
+  - publish-image.yml           # Build + push Docker image to GHCR
+  - repo-hygiene-weekly.yml     # Weekly automation-health digest
   - repo-routing-validation.yml # Enforces REPO= trailer on commits
+  - governance-gate.yml         # Constitutional audit on every push
+  - sentinel-premerge-gate.yml  # Pre-merge binary gate
+  - auto-merge-dependabot.yml   # Dependabot auto-merge
+  - auto-tag-date.yml           # Auto tag on date
+  - copilot-setup-steps.yml     # Copilot agent setup
 
 required_checks_for_main:
-  - "AF-FORGE CI"
+  - "🧠 Agentic CI"
   - "A-FORGE Boundary Guard"
   - "Repo Routing Validation"
+  - "🛡️ A-FORGE Sentinel"
 
-last_audit: "2026-05-26"
+last_audit: "2026-06-30"
