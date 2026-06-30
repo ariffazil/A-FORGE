@@ -296,7 +296,7 @@ tools:
 
 
   # ── A-FORGE missing cards (auto-generated 2026-06-30 from live MCP tool descriptions) ──
-  - name: document_ingest
+  - name: forge_document_ingest
     purpose: "Document intelligence engine — layout-first parsing with bounding-box provenance"
     reads: ['vault999']
     writes: []
