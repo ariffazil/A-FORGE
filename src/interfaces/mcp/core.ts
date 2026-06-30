@@ -64,6 +64,7 @@ import { registerGatewayTools } from "./gatewayTools.js";
 import { registerForge8Verbs } from "./forge8Verbs.js";
 import { registerShellTools as registerCanonicalShellTools } from "./shell/forgeShell.js";
 import { registerDocumentIngestTool } from "./documentIngest.js";
+import { registerPolicyTools, installPolicyInterceptor } from "./policyTools.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
@@ -402,7 +403,16 @@ const GOVERNANCE_FIELDS = {
 
 function extendZodSchema(schema: any): any {
   if (schema && typeof schema.extend === "function") {
-    try { return schema.extend(GOVERNANCE_FIELDS); } catch { /* fall through */ }
+    try {
+      const strict = typeof schema.strict === "function" ? schema.strict() : schema;
+      return strict.extend(GOVERNANCE_FIELDS);
+    } catch { /* fall through */ }
+  }
+  if (schema && typeof schema === "object" && !schema._def) {
+    return {
+      ...schema,
+      ...GOVERNANCE_FIELDS,
+    };
   }
   return schema;
 }
@@ -410,12 +420,23 @@ function extendZodSchema(schema: any): any {
 function extendInputSchema(schema: any): any {
   // Zod object passed to registerTool
   if (schema && typeof schema.extend === "function") {
-    try { return schema.extend(GOVERNANCE_FIELDS); } catch { /* fall through */ }
+    try {
+      const strict = typeof schema.strict === "function" ? schema.strict() : schema;
+      return strict.extend(GOVERNANCE_FIELDS);
+    } catch { /* fall through */ }
   }
-  // Plain JSON schema object
-  if (schema && typeof schema === "object" && !schema._def) {
+  // Zod shape (plain object with zod properties)
+  if (schema && typeof schema === "object" && !schema._def && !schema.type) {
     return {
       ...schema,
+      ...GOVERNANCE_FIELDS,
+    };
+  }
+  // Plain JSON schema object
+  if (schema && typeof schema === "object") {
+    return {
+      ...schema,
+      additionalProperties: false,
       properties: {
         ...(schema.properties || {}),
         session_id: { type: "string", description: "Kernel-born session ID (FORGE 2-B)" },
@@ -434,16 +455,7 @@ const _originalTool = server.tool.bind(server);
   schema: any,
   handler: (args: any, ctx: any) => Promise<any>,
 ) {
-  // ── P0.1: Strictify Zod schema (2026-06-28) ──────────────────────────
-  // server.tool() uses objectFromShape which does NOT auto-add .strict().
-  // Without this, ALL tools registered via server.tool() accept arbitrary
-  // extra fields — a silent schema drift vector. This mirrors the guard at
-  // line 86-95 for registerTool.
-  // ──────────────────────────────────────────────────────────────────────
-  const strictSchema = (schema && typeof schema === "object" && typeof schema.strict === "function")
-    ? schema.strict()
-    : schema;
-  const gatedSchema = extendZodSchema(strictSchema);
+  const gatedSchema = extendZodSchema(schema);
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     const actionClass = classifyTool(name);
@@ -1577,6 +1589,17 @@ registerForge8Verbs(server);
 	// Phase 1 MVP. Modes: analyze, extract, chunk, compare.
 	// Uses pymupdf + tesseract engine. Read-only, blast_radius=LOW.
 	registerDocumentIngestTool(server);
+
+// ── Phase 5: MCP Policy Gate — architectural control plane ──────────────────
+// The missing boundary between AI agents and MCP tools. Enforces 5-layer
+// policy check (identity → server → tool → args → verdict) BEFORE every tool
+// handler runs. Forged 2026-06-30 per sovereign directive.
+registerPolicyTools(server);
+
+// Install the 5-layer policy pre-check wrapper on every registered tool.
+// Called AFTER all other registerXTools() so it wraps them all.
+// Idempotent: forge_policy_* tools themselves are excluded to avoid loops.
+installPolicyInterceptor(server);
 
 // Initialize identity store
 initializeForgeTools().catch(err => {
