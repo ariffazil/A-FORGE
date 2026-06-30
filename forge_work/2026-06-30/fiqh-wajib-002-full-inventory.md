@@ -35,7 +35,7 @@
 | **Search/Research** | `forge_search`, `forge_research`, `forge_docs_lookup`, `forge_minimax_search` | ✅ forge_* |
 | **Netdata** | `forge_netdata_alarms`, `forge_netdata_metrics` | ✅ forge_* |
 | **Governance** | `forge_session_init`, `forge_health_check`, `forge_heart_critique`, `forge_check_governance`, `forge_judge_proxy`, `forge_seal`, `forge_approve` | ✅ forge_* |
-| **Execution** | `forge_execute`, `forge8_execute`, `forge_abort`, `forge_pipeline_run`, `forge_job`, `forge_status`, `forge_agent`, `forge_lease` | ✅ forge_* |
+| **Execution** | `forge_execute`, `forge_execute_sealed`, `forge_abort`, `forge_pipeline_run`, `forge_job`, `forge_status`, `forge_agent`, `forge_lease` | ✅ forge_* |
 | **Skill/Tool Lifecycle** | `forge_skill`, `forge_register`, `forge_registry`, `forge_registry_status`, `forge_evaluate`, `forge_witness`, `forge_scar`, `forge_scar_scan`, `forge_synthesize`, `forge_stage`, `forge_sandbox_run`, `forge_skillstore_read`, `forge_skillstore_write`, `forge_tier_bind`, `forge_docket_prep` | ✅ forge_* |
 | **Domain Proxies** | `forge_wealth`, `forge_well`, `forge_vault`, `forge_memory`, `forge_chart`, `forge_probe`, `forge_document_ingest` | ✅ forge_* |
 | **Reality Loop** | `forge_reality_loop` | ✅ forge_* |

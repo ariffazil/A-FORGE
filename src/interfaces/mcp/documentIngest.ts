@@ -1,5 +1,5 @@
 /**
- * document_ingest — A-FORGE Document Intelligence Tool
+ * forge_document_ingest — A-FORGE Document Intelligence Tool
  * ======================================================
  * Phase 1 MVP. Layout-first document processing with bounding-box provenance.
  *
@@ -17,7 +17,7 @@
  *   compare   — Diff two documents (version comparison).
  *
  * Integration Points:
- *   Telegram PDF → Hermes → document_ingest(extract) → structured JSON
+ *   Telegram PDF → Hermes → forge_document_ingest(extract) → structured JSON
  *                                                    ├→ AAA knowledge graph
  *                                                    ├→ GEOX well report parser
  *                                                    ├→ WEALTH financial statement parser
@@ -75,7 +75,7 @@ function runEngine(args: string): { ok: boolean; data: any; error?: string } {
 
 export function registerDocumentIngestTool(server: McpServer): void {
   server.tool(
-    "document_ingest",
+    "forge_document_ingest",
     `Document intelligence engine — layout-first parsing with bounding-box provenance.
 
 Modes:
@@ -87,7 +87,7 @@ Modes:
 Output: Structured JSON with typed elements (paragraph, table, image), bounding boxes, page numbers,
 and SHA-256 provenance hash. Every claim traceable to source coordinates — VAULT999-compatible.
 
-Integration: Telegram PDF → Hermes → document_ingest → structured JSON → AAA/GEOX/WEALTH/VAULT999.
+Integration: Telegram PDF → Hermes → forge_document_ingest → structured JSON → AAA/GEOX/WEALTH/VAULT999.
 
 Blast radius: LOW (read-only, no side effects). Reversibility: FULL.`,
 

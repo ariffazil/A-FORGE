@@ -70,7 +70,7 @@ export const GODEL_LOCKED_PATHS: string[] = [
 export const GODEL_LOCKED_TOOLS: string[] = [
   "forge_filesystem",      // Must not write to locked paths
   "forge_git",             // Must not git-commit changes to locked paths
-  "forge8_execute",        // Must not execute artifacts that modify locked zones
+  "forge_execute_sealed",        // Must not execute artifacts that modify locked zones
 ];
 
 /**

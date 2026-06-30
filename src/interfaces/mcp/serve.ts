@@ -55,7 +55,7 @@ const STATELESS_TOOLS = new Set([
   "forge_shell_ledger",
   "forge_shell_alert_history",
   "forge_registry",
-  "document_ingest",                                      // Phase 1 — read-only, no side effects
+  "forge_document_ingest",                                   // Phase 1 — read-only, no side effects
 
   // ── Phase 5: MCP Policy Gate (2026-06-30) ──────────────────────────
   // Observation tool MUST be stateless so agents can pre-flight ANY call.

@@ -1,8 +1,8 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-06-29 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
+last_verified: 2026-06-30 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
 valid_from: 2026-06-14
-valid_until: 2026-07-29
+valid_until: 2026-07-30
 confidence: high
 scope: /root/A-FORGE
 epistemic_status: SOURCE_OF_TRUTH
@@ -31,7 +31,7 @@ The governed execution shell of the arifOS Federation. A-FORGE builds, deploys, 
 - **stdio:** `npm run mcp:stdio` — local agent ingress (OpenCode, Claude Code, etc.)
 - **Runtime:** Node.js 22+, TypeScript ~6.0
 - **Architecture:** Hexagonal / layered (domain → application → infrastructure → interfaces)
-- **Tool surface:** 75 tools (73 forge_*, 1 forge8_execute, 1 document_ingest; 22 stateless HTTP, rest session)
+- **Tool surface:** 75 tools (73 forge_*, 1 forge_execute_sealed, 1 forge_document_ingest; 22 stateless HTTP, rest session)
 
 ### Repository Structure
 
