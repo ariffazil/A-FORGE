@@ -69,6 +69,7 @@ import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
+import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
 
 export const server = new McpServer({
   name: "A-FORGE",
@@ -460,6 +461,15 @@ const _originalTool = server.tool.bind(server);
     const argsObj = (args && typeof args === "object") ? args : {};
     const actionClass = classifyTool(name);
 
+    // ── A-THINK Guard: classify → budget → affordance → permission ──
+    // This is the constitutional front-door. No tool bypasses this.
+    const aThinkUserInput = (typeof argsObj._user_input === "string") ? argsObj._user_input : undefined;
+    const aThinkSessionId = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+    const aThinkVerdict = aThinkCheck(name, aThinkUserInput, aThinkSessionId);
+    if (!aThinkVerdict.allowed) {
+      return aThinkErrorResponse(aThinkVerdict);
+    }
+
     // ── FORGE 2-B: Kernel session + lease gating for MUTATE/ATOMIC tools ──
     if (requiresGovernance(actionClass)) {
       const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
@@ -508,6 +518,15 @@ const _originalRegisterTool = server.registerTool.bind(server);
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     const actionClass = classifyTool(name);
+
+    // ── A-THINK Guard: classify → budget → affordance → permission ──
+    // This is the constitutional front-door. No tool bypasses this.
+    const aThinkUserInput = (typeof argsObj._user_input === "string") ? argsObj._user_input : undefined;
+    const aThinkSessionId = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+    const aThinkVerdict = aThinkCheck(name, aThinkUserInput, aThinkSessionId);
+    if (!aThinkVerdict.allowed) {
+      return aThinkErrorResponse(aThinkVerdict);
+    }
 
     // ── FORGE 2-B: Kernel session + lease gating for MUTATE/ATOMIC tools ──
     if (requiresGovernance(actionClass)) {

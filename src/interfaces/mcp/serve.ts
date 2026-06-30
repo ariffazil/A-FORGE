@@ -24,6 +24,7 @@ import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
 import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpPolicyGate.js";
 import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
+import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
 
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;  // 30 min idle before auto-close
 const SESSION_CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // check every 5 min
@@ -402,6 +403,29 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               process.stderr.write(`[A-FORGE-MCP] Rejected stateless call: ${toolName}\n`);
               res.writeHead(403, { "Content-Type": "application/json" });
               res.end(jsonRpcError(msgId, -32000, msg));
+              return;
+            }
+
+            // ── A-THINK Guard (stateless path) ────────────────────────
+            // Constitutional front-door. UNKNOWN = HOLD. Budget enforced.
+            const aThinkVerdict = aThinkCheck(toolName);
+            if (!aThinkVerdict.allowed) {
+              const errResp = aThinkErrorResponse(aThinkVerdict);
+              process.stderr.write(
+                `[A-FORGE-MCP] A-THINK ${aThinkVerdict.status} (stateless): ${toolName} — ${aThinkVerdict.reason}\n`,
+              );
+              res.writeHead(403, {
+                "Content-Type": "application/json",
+                "X-AThink-Gate": aThinkVerdict.status,
+                "X-AThink-Mode": aThinkVerdict.mode,
+              });
+              res.end(jsonRpcError(msgId, -32011, `A-THINK guard: ${aThinkVerdict.status}`, {
+                status: aThinkVerdict.status,
+                gate: "A_THINK_GUARD",
+                mode: aThinkVerdict.mode,
+                reason: aThinkVerdict.reason,
+                tool: toolName,
+              }));
               return;
             }
 
