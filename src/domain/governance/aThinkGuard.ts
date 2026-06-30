@@ -18,8 +18,12 @@
  */
 
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parse as parseYaml } from "yaml";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // ── Mode ─────────────────────────────────────────────────────────────────
 
@@ -150,7 +154,7 @@ export function classifyMode(userInput: string): AThinkMode {
 
 // ── YAML Loaders ─────────────────────────────────────────────────────────
 
-const A_THINK_DIR = resolve(process.cwd(), "a_think");
+const A_THINK_DIR = resolve(__dirname, "../../../../a_think");
 
 function loadBudgets(): Record<AThinkMode, Budget> {
   const raw = readFileSync(resolve(A_THINK_DIR, "budgets.yaml"), "utf-8");
