@@ -1,0 +1,125 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.ariffazil/arifos",
+  "title": "arifOS — Constitutional AI Kernel",
+  "description": "Constitutional AI kernel with 13 MCP tools, 888_JUDGE verdict pipeline, and VAULT999 ledger.",
+  "version": "2026.06.30",
+  "author": "Muhammad Arif bin Fazil",
+  "keywords": [
+    "constitutional-ai",
+    "governance",
+    "agentic",
+    "sovereign-ai",
+    "mcp-server",
+    "ai-safety",
+    "thermodynamic-ai",
+    "vault",
+    "judge",
+    "federation"
+  ],
+  "repository": {
+    "url": "https://github.com/ariffazil/arifOS",
+    "source": "github"
+  },
+  "homepage": "https://arif-fazil.com",
+  "license": "AGPL-3.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://arifos.arif-fazil.com/mcp"
+    }
+  ],
+
+  "tools": [
+    {
+      "name": "arif_init",
+      "description": "START HERE. Bootstrap a governed constitutional session and bind actor identity.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actor_id": { "type": "string", "description": "Calling actor identifier" },
+          "intent": { "type": "string", "description": "Primary session intent" }
+        }
+      }
+    },
+    {
+      "name": "arif_observe",
+      "description": "Ground decisions in reality. Search, fetch, system vitals, repo map.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": { "type": "string", "enum": ["search", "ingest", "vitals", "repo_map"] },
+          "query": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "arif_think",
+      "description": "Reason, plan, reflect, critique — the cognitive engine with epistemic labels.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": { "type": "string", "enum": ["reason", "reflect", "verify", "critique", "plan"] },
+          "query": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "arif_route",
+      "description": "Canonical intent router — route NL intent to correct federation organ.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "intent": { "type": "string", "description": "Natural-language description of what user wants" },
+          "organ_tool": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "arif_judge",
+      "description": "Render final constitutional verdict — SEAL/HOLD/SABAR/VOID with floor compliance.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "actor": { "type": "string" },
+          "intent": { "type": "string" },
+          "domain": { "type": "string" },
+          "blast_radius": { "type": "string" },
+          "reversibility_level": { "type": "string" }
+        },
+        "required": ["actor", "intent", "domain", "blast_radius", "reversibility_level"]
+      }
+    },
+    {
+      "name": "arif_act",
+      "description": "Execute an approved action — requires valid SEAL from arif_judge.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "seal_verdict_id": { "type": "string" },
+          "approved_action_hash": { "type": "string" }
+        },
+        "required": ["seal_verdict_id", "approved_action_hash"]
+      }
+    },
+    {
+      "name": "arif_seal",
+      "description": "Append to immutable VAULT999 ledger — irreversible. Cryptographic hash chain anchoring.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "mode": { "type": "string", "enum": ["seal", "verify", "ledger", "audit"] },
+          "payload": { "type": "string" },
+          "ack_irreversible": { "type": "boolean" }
+        }
+      }
+    }
+  ],
+  "capabilities": {
+    "tools": {
+      "listChanged": true
+    },
+    "resources": {},
+    "prompts": {}
+  }
+}
