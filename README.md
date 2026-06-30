@@ -106,6 +106,16 @@ MIND (Hermes:8644) and MEMORY (VAULT999) are separate federation services — A-
 
 ---
 
+## APEX STACK Bridge
+
+> APEX THEORY defines the constitutional dynamics of governed intelligence through ΔΩΨ. arifOS compiles those dynamics into an AGI substrate kernel. AAA renders the substrate as visible ASI civilization state. A-FORGE gives the system governed hands. GEOX, WEALTH, and WELL anchor those hands to earth, capital, and human reality. VAULT999 preserves consequence. Arif/F13 remains the sovereign witness and final veto.
+
+**A-FORGE must never:** self-authorize a SEAL, skip 888_JUDGE, or execute without a valid constitutional chain from arifOS.
+
+Full doctrine: [GENESIS/040_APEX_STACK.md](https://github.com/ariffazil/arifos/blob/main/GENESIS/040_APEX_STACK.md)
+
+---
+
 ## One-Sentence Identity
 
 > **A-FORGE is the governed execution shell of the arifOS constitutional federation. It receives approved plans, gates them through four constitutional layers, and executes them after domain organ evidence — never self-authorizing, never skipping audit.**
