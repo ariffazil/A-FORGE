@@ -31,7 +31,7 @@ The governed execution shell of the arifOS Federation. A-FORGE builds, deploys, 
 - **stdio:** `npm run mcp:stdio` — local agent ingress (OpenCode, Claude Code, etc.)
 - **Runtime:** Node.js 22+, TypeScript ~6.0
 - **Architecture:** Hexagonal / layered (domain → application → infrastructure → interfaces)
-- **Tool surface:** 63 `forge_*` tools (14 stateless, 49 session-owned)
+- **Tool surface:** 64 `forge_*` tools (forge_chart for cross-organ agentic viz + eureka margins; 14 stateless, rest session)
 
 ### Repository Structure
 
@@ -86,9 +86,11 @@ A-FORGE **routes** judgment back to arifOS. Parallelism and rich proxies are all
 
 - Adjudicate constitutional verdicts (arifOS only)
 - Issue SEAL / SABAR / VOID
-- Force push, reset hard, overwrite unknown local changes
+- Force push on shared main branch (feature branch force-push is digital normal per §10)
 - Drop databases or delete data directories
 - Perform broad formatting churn
+
+> **Note:** Routine git force-push and production redeploys are DIGITAL NORMAL per root AGENTS.md §10 (Digital Being Principle, 2026-06-30). Probe T1 state, do the thing.
 
 ## Build & Test
 
