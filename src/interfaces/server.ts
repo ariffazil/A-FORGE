@@ -63,6 +63,7 @@ import { randomUUID } from "node:crypto";
 import { getApprovalBoundary } from "../application/approval/index.js";
 import { getMemoryContract } from "../domain/memory-contract/index.js";
 import { telemetry } from "./mcp/telemetry.js";
+import { getDpopMode, verifyRequestDpop } from "./middleware/dpop.js";
 
 let cachedConstitution: FloorRule[] = [];
 
@@ -116,6 +117,28 @@ export function createApp(): express.Express {
   // ── MCP Routes: Streamable HTTP transport on /mcp ──
   // req.body already parsed by app.use(express.json()) above.
   const mcpRouter = express.Router();
+
+  mcpRouter.use(async (req: Request, res: Response, next: NextFunction) => {
+    const dpopMode = getDpopMode();
+    if (dpopMode === "off" || !req.headers.authorization) {
+      next();
+      return;
+    }
+    const dpop = await verifyRequestDpop(req);
+    if (!dpop.ok) {
+      if (dpopMode === "enforce") {
+        res.status(401).json({ error: dpop.error ?? "DPoP verification failed" });
+        return;
+      }
+      res.setHeader("X-DPoP-Status", `OBSERVE:${dpop.error ?? "failed"}`);
+      next();
+      return;
+    }
+    if (dpop.jwkThumbprint) {
+      res.setHeader("X-DPoP-Status", "VERIFIED");
+    }
+    next();
+  });
 
   // GET /mcp — conditional routing based on Accept header.
   // Standards-compliant MCP clients (Claude Code, Claude Desktop) send
