@@ -15,6 +15,38 @@
 
 import type { ActionRequest, FloorContext } from "../types/action-request.js";
 import type { FloorReason } from "./floor-types.js";
+import type { AAEV1 } from "./amanahEnvelope.js";
+import { verifyAAE } from "./amanahEnvelope.js";
+import { classifyTool, type ActionClass } from "./actionClassifier.js";
+
+/**
+ * Map AAE action_class to the 7-tier ActionClass used by the tool classifier.
+ * AAE uses the same enum but this handles any string mismatch.
+ */
+function aaeActionClassMatches(aaeClass: string, toolClass: ActionClass): boolean {
+  // Direct match
+  if (aaeClass === toolClass) return true;
+  // AAE EXECUTE_HIGH_IMPACT covers both HIGH_IMPACT and IRREVERSIBLE
+  if (aaeClass === "EXECUTE_HIGH_IMPACT" && toolClass === "IRREVERSIBLE") return true;
+  // AAE IRREVERSIBLE is strict — only IRREVERSIBLE tools match
+  if (aaeClass === "IRREVERSIBLE" && toolClass !== "IRREVERSIBLE") return false;
+  return false;
+}
+
+/**
+ * Severity map: which AAE action_class is required for which tool severity.
+ * If the tool is classified as X, the AAE must declare >= X.
+ */
+const SEVERITY_FLOOR: Record<ActionClass, ActionClass[]> = {
+  "OBSERVE": ["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"],
+  "SUGGEST": ["SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"],
+  "SIMULATE": ["SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"],
+  "DRAFT": ["DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"],
+  "QUEUE": ["QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"],
+  "EXECUTE_REVERSIBLE": ["EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"],
+  "EXECUTE_HIGH_IMPACT": ["EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"],
+  "IRREVERSIBLE": ["IRREVERSIBLE"],
+};
 
 /**
  * F1 verdict on a single action.
@@ -96,6 +128,40 @@ export function checkF1Amanah(ctx: FloorContext): FloorReason[] {
       message: "F1 AMANAH: constitutional floor changes require explicit F13 ratification",
       severity: "HOLD",
     });
+  }
+
+  // Rule 6: AAE action_class must match tool classification
+  // If an AAE envelope is present in the context, validate that its action_class
+  // is consistent with the tool being invoked. This prevents an agent from
+  // obtaining an AAE for OBSERVE and then using it for EXECUTE_HIGH_IMPACT.
+  const aae = (ctx as any).aae as AAEV1 | undefined;
+  if (aae) {
+    const toolClass = classifyTool(a.tool_name ?? a.action_type ?? "");
+    const aaeClass = aae.action_class as ActionClass;
+    const allowed = SEVERITY_FLOOR[toolClass] ?? [];
+
+    if (!allowed.includes(aaeClass)) {
+      reasons.push({
+        floor: "F1",
+        code: "AAE_ACTION_CLASS_MISMATCH",
+        message: `F1 AMANAH: AAE action_class=${aaeClass} insufficient for tool classified as ${toolClass} (need one of: ${allowed.join(", ")})`,
+        severity: "VOID",
+      });
+    }
+
+    // Verify AAE integrity (signature + expiry)
+    const organSecret = (ctx as any).organ_secret as string | undefined;
+    if (organSecret) {
+      const vResult = verifyAAE(aae, organSecret);
+      if (!vResult.valid) {
+        reasons.push({
+          floor: "F1",
+          code: "AAE_VERIFICATION_FAILED",
+          message: `F1 AMANAH: AAE verification failed — ${vResult.reason}`,
+          severity: "VOID",
+        });
+      }
+    }
   }
 
   return reasons;

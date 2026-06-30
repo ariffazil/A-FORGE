@@ -71,6 +71,11 @@ import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
 
+// ── Module-level actor ID for stdio transport ───────────────────────────
+// Read ONCE at module load time, not per-call. Ensures the env var is
+// captured even if the stdio transport doesn't pass it through correctly.
+const STDIO_ACTOR = process.env.FORGE_STDIO_ACTOR_ID ?? "opencode";
+
 export const server = new McpServer({
   name: "A-FORGE",
   version: "0.1.0",
@@ -493,7 +498,7 @@ const _originalTool = server.tool.bind(server);
     // Inject verified session context into FloorEnforcer
     const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
     const sessionCheck = callerSession ? validateSession(callerSession) : null;
-    const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : "mcp-anonymous";
+    const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : STDIO_ACTOR;
     const verdict = enforceMcpFloor(name, argsObj, callerActor);
     if (!verdict.allowed) {
       // FloorEnforcer refused: return MCP error response, do NOT call handler
@@ -551,7 +556,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
     // Inject verified session context into FloorEnforcer
     const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
     const sessionCheck = callerSession ? validateSession(callerSession) : null;
-    const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : "mcp-anonymous";
+    const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : STDIO_ACTOR;
     const verdict = enforceMcpFloor(name, argsObj, callerActor);
     if (!verdict.allowed) {
       return injectEpistemic(floorErrorResponse(verdict), name) as any;

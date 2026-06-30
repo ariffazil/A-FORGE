@@ -120,7 +120,8 @@ def call_mcp(server, payload):
         return {"error": str(e)}
 
 
-def test_server(server):
+def check_server(server):
+    """Standalone server conformance check — NOT a pytest test."""
     print(f"\n{'=' * 60}")
     print(f"TESTING: {server} @ {SERVERS[server][0]}")
     print(f"{'=' * 60}")
@@ -199,7 +200,7 @@ def main():
 
     all_pass = True
     for server in SERVERS:
-        if not test_server(server):
+        if not check_server(server):
             all_pass = False
 
     print(f"\n{'=' * 60}")

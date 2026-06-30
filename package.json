@@ -14,7 +14,7 @@
     "start": "node dist/src/interfaces/server.js",
     "test": "node dist/test/AgentEngine.test.js",
     "example:explore": "node dist/examples/runExploreExample.js",
-    "mcp:stdio": "node dist/src/interfaces/mcp/cli.js serve --transport stdio",
+    "mcp:stdio": "FORGE_STDIO_ACTOR_ID=opencode node dist/src/interfaces/mcp/cli.js serve --transport stdio",
     "mcp:http": "node dist/src/interfaces/mcp/cli.js serve --transport http --port 3000",
     "terminal": "node dist/src/cli/terminal.js",
     "terminal:dev": "npx tsx src/cli/terminal.ts",
@@ -28,6 +28,7 @@
     "blessed-contrib": "^4.11.0",
     "express": "^5.1.0",
     "glob": "^11.0.2",
+    "hash-wasm": "^4.12.0",
     "pg": "^8.21.0",
     "prom-client": "^15.1.3",
     "zod": "^3.24.4"

@@ -3,7 +3,7 @@
  *
  * FEDERATION MEMORY ADOPTION — 2026-06-03
  * Per FEDERATION_MEMORY_CONTRACT.md R1:
- *   "All organs write memory through arif_memory_recall(mode='store').
+ *   "All organs write memory through arif_memory(mode='store').
  *    No organ writes directly to Qdrant, Supabase, or Graphiti."
  *
  * This module USED TO write directly to Qdrant collection `federation_shared`.

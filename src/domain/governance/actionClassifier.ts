@@ -134,6 +134,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_agent_list",         // agent list — read-only
   "forge_agent_status",       // agent status — read-only
   "forge_health_check",       // health check — read-only
+  "forge_probe",              // federation organ liveness — read-only (hits /health endpoints)
   "forge_memory_recall",      // memory read — read-only
   "forge_filesystem_read",    // file read — read-only
   "forge_filesystem_glob",    // file search — read-only
