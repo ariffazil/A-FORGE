@@ -1,0 +1,33 @@
+{
+  "seal_id": "seal_1782764730216_86601e31",
+  "sealed_at": "2026-06-29T20:25:30.216Z",
+  "actor_id": "forge_skill",
+  "tool_name": "forge_osint_dork_lookup",
+  "fingerprint": "c72e5aa3afb7a536",
+  "domain": "aforge",
+  "decision_field": {
+    "Q": 0.9,
+    "V": 0.85,
+    "Psi": 1,
+    "Phi": 1,
+    "G": 0.765,
+    "verdict": "CRYSTALLIZE",
+    "rationale": [
+      "Decision Field G = Q·V·Ψ·Φ",
+      "Q=0.900 V=0.850 Ψ=1.000 Φ=1.000",
+      "G=0.765",
+      "Q↑: intent well-scoped (348 chars)",
+      "Q~: 1 domain keyword matched",
+      "V: domain=aforge baseline=0.85",
+      "Ψ↑: HARAM scan clean",
+      "Ψ↑: no system boundary violations",
+      "Φ↑: no prior scars — clean wisdom",
+      "⚖️ VERDICT=CRYSTALLIZE: G≥0.50 — tool has sufficient action potential"
+    ]
+  },
+  "haram_findings": 0,
+  "llm_used": false,
+  "scar_pressure_applied": 0,
+  "expires_at": "2026-06-30T20:25:30.215Z",
+  "schema_version": "1.1.0"
+}

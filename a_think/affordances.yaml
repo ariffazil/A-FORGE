@@ -1,0 +1,293 @@
+# A-THINK v1 — MCP Affordance Cards
+# ===================================
+#
+# WAJIB 2: Every tool must have an affordance card.
+# HARAM 1: UNKNOWN = HOLD.
+#
+# If any field is missing or unknown → tool is HOLD for GOVERN mode.
+#
+# Risk labels (SUNAT 3):
+#   R0: read_only
+#   R1: local_temp_write
+#   R2: repo_write
+#   R3: external_api_write
+#   R4: public_publish
+#   R5: destructive_or_irreversible
+#
+# DITEMPA BUKAN DIBERI.
+
+tools:
+
+  # ── arifOS kernel (8088) ───────────────────────────────────────────────
+
+  - name: arif_init
+    purpose: Initialize constitutional session
+    reads: [session_state]
+    writes: [session_state]
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R1
+
+  - name: arif_observe
+    purpose: Observe and classify evidence
+    reads: [evidence, claims]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: arif_think
+    purpose: Reason over plans and evidence
+    reads: [plans, evidence, claims]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: arif_judge_deliberate
+    purpose: Constitutional judgment on proposals
+    reads: [proposals, evidence, floors]
+    writes: [verdict]
+    external_side_effect: false
+    destructive: false
+    reversible: false
+    requires_human_approval: false
+    min_mode: GOVERN
+    risk_label: R2
+
+  - name: arif_seal
+    purpose: Seal verdict to VAULT999 (irreversible)
+    reads: [verdict]
+    writes: [vault999]
+    external_side_effect: false
+    destructive: false
+    reversible: false
+    requires_human_approval: true
+    min_mode: GOVERN
+    risk_label: R5
+
+  # ── A-FORGE (7072) ────────────────────────────────────────────────────
+
+  - name: forge_shell
+    purpose: Execute shell command (governed)
+    reads: [filesystem]
+    writes: [filesystem, processes]
+    external_side_effect: true
+    destructive: true
+    reversible: false
+    requires_human_approval: true
+    min_mode: GOVERN
+    risk_label: R5
+
+  - name: forge_git
+    purpose: Git operations (status, diff, log, commit)
+    reads: [repo_state]
+    writes: [repo_state]
+    external_side_effect: true
+    destructive: false
+    reversible: false
+    requires_human_approval: true
+    min_mode: GOVERN
+    risk_label: R3
+
+  - name: forge_filesystem
+    purpose: Read/write files in governed scope
+    reads: [filesystem]
+    writes: [filesystem]
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R1
+
+  - name: forge_dry_run
+    purpose: Preview execution without side effects
+    reads: [plans, tools]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: forge_execute
+    purpose: Execute action plan (requires cc_id)
+    reads: [plans]
+    writes: [filesystem, external_state]
+    external_side_effect: true
+    destructive: true
+    reversible: false
+    requires_human_approval: true
+    min_mode: GOVERN
+    risk_label: R5
+
+  - name: forge_lease
+    purpose: Request/revoke execution lease
+    reads: [lease_state]
+    writes: [lease_state]
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: GOVERN
+    risk_label: R2
+
+  - name: forge_docker
+    purpose: Docker container operations
+    reads: [containers]
+    writes: [containers]
+    external_side_effect: true
+    destructive: false
+    reversible: true
+    requires_human_approval: true
+    min_mode: GOVERN
+    risk_label: R3
+
+  - name: forge_postgres
+    purpose: Database queries and schema inspection
+    reads: [database]
+    writes: [database]
+    external_side_effect: true
+    destructive: false
+    reversible: false
+    requires_human_approval: true
+    min_mode: GOVERN
+    risk_label: R3
+
+  - name: forge_search
+    purpose: Web search via Brave (read-only)
+    reads: [web]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: forge_github
+    purpose: GitHub operations (search, PR)
+    reads: [github_repos]
+    writes: [github_repos]
+    external_side_effect: true
+    destructive: false
+    reversible: false
+    requires_human_approval: true
+    min_mode: GOVERN
+    risk_label: R3
+
+  # ── GEOX (8081) ───────────────────────────────────────────────────────
+
+  - name: geox_basin
+    purpose: Basin analysis and profiling
+    reads: [geological_data]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: geox_petrophysics
+    purpose: Petrophysical calculations (Vsh, porosity, Sw)
+    reads: [well_data]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: geox_seismic_compute
+    purpose: Seismic property computation
+    reads: [seismic_data]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: geox_claim
+    purpose: Create/validate geological claims
+    reads: [claims, evidence]
+    writes: [claims]
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R1
+
+  # ── WEALTH (18082) ────────────────────────────────────────────────────
+
+  - name: wealth_compute_emv
+    purpose: Compute Expected Monetary Value
+    reads: [outcomes, probabilities]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: wealth_compute_npv
+    purpose: Compute Net Present Value
+    reads: [cash_flows]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: wealth_vault_write
+    purpose: Write transaction to VAULT999 ledger
+    reads: [vault999]
+    writes: [vault999]
+    external_side_effect: false
+    destructive: false
+    reversible: false
+    requires_human_approval: true
+    min_mode: GOVERN
+    risk_label: R2
+
+  # ── WELL (18083) ──────────────────────────────────────────────────────
+
+  - name: well_validate_vitality
+    purpose: Validate human readiness and vitality
+    reads: [biometrics, state]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: well_guard_dignity
+    purpose: Guard dignity and consent boundaries
+    reads: [dignity_signals]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0

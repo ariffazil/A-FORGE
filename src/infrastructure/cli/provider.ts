@@ -200,29 +200,49 @@ function cmdHelp(): void {
 `);
 }
 
-async function main(): Promise<void> {
-  const args = parseArgs(process.argv);
+export async function runProvider(argv: string[]): Promise<string> {
+  const args = parseArgs(argv);
+  const chunks: string[] = [];
 
-  switch (args.subcommand) {
-    case "list":
-      await cmdList();
-      break;
-    case "health":
-      await cmdHealth();
-      break;
-    case "swap":
-      await cmdSwap(args);
-      break;
-    case "validate":
-      await cmdValidate(args);
-      break;
-    case "help":
-    default:
-      cmdHelp();
+  // Wrap console.log / console.error locally so output is captured and returned
+  const origLog = console.log;
+  const origErr = console.error;
+  console.log = (...vals: unknown[]) => { chunks.push(vals.map(String).join(" ")); };
+  console.error = (...vals: unknown[]) => { chunks.push(vals.map(String).join(" ")); };
+
+  try {
+    switch (args.subcommand) {
+      case "list":
+        await cmdList();
+        break;
+      case "health":
+        await cmdHealth();
+        break;
+      case "swap":
+        await cmdSwap(args);
+        break;
+      case "validate":
+        await cmdValidate(args);
+        break;
+      case "help":
+      default:
+        cmdHelp();
+    }
+    return chunks.join("\n");
+  } finally {
+    console.log = origLog;
+    console.error = origErr;
   }
 }
 
-main().catch((err) => {
-  console.error(`[FATAL] ${err}`);
-  process.exit(1);
-});
+async function main(): Promise<void> {
+  const out = await runProvider(process.argv);
+  process.stdout.write(`${out}\n`);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error(`[FATAL] ${err}`);
+    process.exit(1);
+  });
+}

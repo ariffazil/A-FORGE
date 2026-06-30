@@ -255,7 +255,7 @@ export class AgentEngine {
       const wellResult = await wellReadinessCheck(riskLevel);
       if (wellResult.verdict !== "PASS") {
         const coolingGate = getCoolingGate();
-        const coolingEntry = coolingGate.propose({
+        const coolingEntry = await coolingGate.propose({
           artifact_ref: sessionId,
           description: `WELL ${wellResult.verdict} gate: ${options.task.slice(0, 160)}`,
           risk_tier: riskLevel,

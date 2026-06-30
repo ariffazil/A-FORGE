@@ -30,5 +30,57 @@
     "severity": "LOW",
     "sealed_at": "2026-06-28T08:21:36.195Z",
     "scar_pressure": 0.1
+  },
+  "scar_1782764386546_c8b4e14e": {
+    "scar_id": "scar_1782764386546_c8b4e14e",
+    "fingerprint": "b2f7a36c151e7968",
+    "failure_mode": "LIST_CURATION_DRIFT: A curated list of attack tools (phishing generators, exploit frameworks, RATs, MITM kits, DDoS tools) published under \"Ethical Hacking Tools\" headings with no per-tool policy split. Aggregators that import it whole absorb an unverifiable mixture of harmless recon utilities and high-blast-radius offensives as if they shared the same governance status.",
+    "detection_method": "Static review of hhhrrrttt222111/Ethical-Hacking-Tools repo structure: 14 categories matching Kali Menu plus distinct \"Phishing\" top-level directory. The presence of the Phishing directory at the same hierarchy level as legit recon utilities is the load-bearing signal.",
+    "severity": "HIGH",
+    "scar_pressure": 0.42,
+    "domain": "aforge",
+    "constraint_imposed": "Any future ingest of a third-party pentest-curation repo MUST consult arifOS-level forbidden_patterns.yaml before admitting any tool name. Default classification for names appearing in \"Phishing\" or \"Maintaining Access\" or \"Exploitation Tools\" or \"Stress Testing\" cells is KERNEL_DENY regardless of parent README labeling.",
+    "occurred_at": "2026-06-29T20:19:46.546Z",
+    "sealed_at": "2026-06-29T20:19:46.546Z",
+    "sealed_by": "Claude Code AAA (DeepSeek v4-pro) — Arif directive"
+  },
+  "scar_1782782897668_abe58370": {
+    "scar_id": "scar_1782782897668_abe58370",
+    "fingerprint": "4d26b6c9d8774732",
+    "failure_mode": "AGENTS.md mandates SELF_AUDIT_PROMPT.md for hardening/mutation tasks (full Reflexion Loop 000→111→333→555→777→888→999). File does not exist at /root/AAA/SELF_AUDIT_PROMPT.md. Constitutional drift: agent cannot enforce full self-audit loop before mutation. Abbreviated inline loop was run as workaround.",
+    "detection_method": "constitutional_audit_during_hardening (MCP Apps sandbox amendment)",
+    "severity": "HIGH",
+    "scar_pressure": 0.55,
+    "domain": "aforge",
+    "constraint_imposed": "Any future forge session touching AAA must either (a) ratify SELF_AUDIT_PROMPT.md content before mutation, or (b) remove the AGENTS.md reference. Until resolved, all AAA hardening tasks must run abbreviated Reflexion Loop inline and record the finding in cooling ledger.",
+    "occurred_at": "2026-06-30T01:28:17.668Z",
+    "sealed_at": "2026-06-30T01:28:17.668Z",
+    "sealed_by": "forge-000omega-session-2026-06-30"
+  },
+  "scar_1782782897686_4d2927d6": {
+    "scar_id": "scar_1782782897686_4d2927d6",
+    "fingerprint": "9ae3c9aba99fc1dc",
+    "failure_mode": "Spec self-violation pattern detected: MCP-UI-DECLARATIVE-FIRST-v1.md §9 R2 mandated iframe sandbox=\"allow-scripts\" only, while shipped AAA code at MCPAppsHostBridge.ts:184 and MCPAppsPanel.tsx:513 used \"allow-scripts allow-same-origin allow-forms allow-popups\". Additionally spec §6 described TRIPLE-iframe architecture while §1 L107 and §6 L439 said \"double-iframe default of MCP Apps\" — internal inconsistency. Spec violated itself before amendment.",
+    "detection_method": "spec_drift_audit (read spec §6/§9 R2 vs shipped code during MCP Apps research session)",
+    "severity": "HIGH",
+    "scar_pressure": 0.5,
+    "domain": "aforge",
+    "constraint_imposed": "All AAA specs must be re-read against shipped code at session start before any spec edit. Spec/code drift must be raised to sovereign BEFORE amendment. Per-tier policy is now the canonical pattern: spec must declare per-tier behavior explicitly (L7-S/L7-D/L7-G), not blanket policy that contradicts code.",
+    "occurred_at": "2026-06-30T01:28:17.686Z",
+    "sealed_at": "2026-06-30T01:28:17.686Z",
+    "sealed_by": "forge-000omega-session-2026-06-30"
+  },
+  "scar_1782782897686_e2d7c5b7": {
+    "scar_id": "scar_1782782897686_e2d7c5b7",
+    "fingerprint": "2f08976eeae11bab",
+    "failure_mode": "None — this is a wisdom scar (success pattern), not a failure. Per-tier sandbox policy established as canonical pattern: trust boundary = kernel + postMessage origin check (not just sandbox attribute). L7-S = React in host DOM, no iframe. L7-D = trusted GEOX apps in single iframe with relaxed sandbox (descriptor-validated, not model-written). L7-G = LLM-generated UI in cross-origin iframe with strict sandbox (deferred per §3 kill switch, requires 888_HOLD per-organ).",
+    "detection_method": "synthesis_from_MCP_Apps_research (SEP-1865 spec + Casas AI Engineer Summit talk 2026-06-03)",
+    "severity": "LOW",
+    "scar_pressure": 0.3,
+    "domain": "aforge",
+    "constraint_imposed": "Any future AAA tier addition (L7-X) must follow per-tier sandbox policy pattern: declare (a) content type, (b) iframe sandbox attribute, (c) origin policy, (d) trust boundary anchor. See MCP-UI-DECLARATIVE-FIRST-v1 §6.3 table. Pattern must be referenced in any new spec touching AAA MCP Apps surface.",
+    "occurred_at": "2026-06-30T01:28:17.686Z",
+    "sealed_at": "2026-06-30T01:28:17.686Z",
+    "sealed_by": "forge-000omega-session-2026-06-30"
   }
 }

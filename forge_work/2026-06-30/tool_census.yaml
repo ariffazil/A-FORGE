@@ -1,0 +1,1185 @@
+# tool_census.yaml — arifOS Federation Tool Immune System
+# Generated: 2026-06-30 14:35 MYT
+# Author: FORGE (000Ω)
+# Status: DRAFT — requires conformance testing
+#
+# DITEMPA BUKAN DIBERI. Intelligence is forged, not claimed.
+#
+# Fields:
+#   name:             Canonical tool name
+#   organ:            Owner organ (arifos | aforge | geox | wealth | well)
+#   lane:             READ | ASSESS | PREPARE | EXECUTE | RECORD
+#   mutation:         true if tool modifies system state
+#   authority:        OBSERVE_ONLY | PREPARE_ONLY | EXECUTE | F13_REQUIRED
+#   danger_class:     GREEN (safe) | YELLOW (domain-specific) | ORANGE (tool-gated) | RED (quarantine) | BLACK (block)
+#   deprecated:       true if tool is legacy/replaced
+#   notes:            Reason for classification, known issues
+
+arifos:
+  - name: arif_init
+    lane: PREPARE
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Session bootstrap. Required before governed work.
+
+  - name: arif_observe
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Read-only sensing. Web search, URL fetch, vitals.
+
+  - name: arif_think
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Constitutional reasoning. No mutation.
+
+  - name: arif_route
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: true
+    notes: DEGRADED per deprecation registry. FastMCP 3.4.2 outputSchema issue.
+
+  - name: arif_judge
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Renders verdict structure. Does not execute. Output must not be treated as execution authority.
+
+  - name: arif_act
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: Execution gate. Requires prior SEAL from judge+seal pipeline. Never call without seal_verdict_id.
+
+  - name: arif_seal
+    lane: RECORD
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: IRREVERSIBLE vault write. Rename to arifos_request_seal or vault999_record_receipt.
+
+aforge:
+  # READ tools
+  - name: forge_health_check
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_probe
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_registry_status
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_status
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_memory
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_search
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_research
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_docs_lookup
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_minimax_search
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_chart
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  # ASSESS tools
+  - name: forge_heart_critique
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Risk assessment. Delegates to arifOS — never adjudicates floors locally.
+
+  - name: forge_check_governance
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Governance check. Delegates to arifOS.
+
+  - name: forge_registry
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: forge_evaluate
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: APEX evaluation gate. Computes G score. Does not execute.
+
+  - name: forge_witness
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: forge_scar
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Scar metabolization. Records failure patterns.
+
+  - name: forge_scar_scan
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: forge_scan
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Security scan. Read-only pattern detection.
+
+  - name: forge_netdata_alarms
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_netdata_metrics
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  # PREPARE tools
+  - name: forge_shell_dryrun
+    lane: PREPARE
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Preview shell output without executing. Safe.
+
+  - name: forge_synthesize
+    lane: PREPARE
+    mutation: false
+    authority: PREPARE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Code generation to buffer. Never touches filesystem.
+
+  - name: forge_stage
+    lane: PREPARE
+    mutation: false
+    authority: PREPARE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Quarantine staging. Spec becomes immutable after staging.
+
+  - name: forge_tier_bind
+    lane: PREPARE
+    mutation: false
+    authority: PREPARE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Sets lower bound trust tier only. A-FORGE cannot promote.
+
+  - name: forge_docket_prep
+    lane: PREPARE
+    mutation: false
+    authority: PREPARE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Package evidence for arifOS judgment. Read-only once prepared.
+
+  - name: forge_session_init
+    lane: PREPARE
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Proxies to arifOS kernel. Session ignition.
+
+  # EXECUTE tools — HIGH BLAST RADIUS
+  - name: forge_shell
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: RAW SHELL ACCESS. Must gate behind dryrun+allowlist+approval. Quarantine candidate.
+
+  - name: forge_filesystem
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: FILE WRITE/DELETE. Write mode must be F13-gated. Read mode is GREEN.
+
+  - name: forge_postgres
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: DB MUTATION. Query mode is GREEN. Mutate mode is RED.
+
+  - name: forge_git
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: GIT COMMIT. Status/diff/log are GREEN. Commit is RED.
+
+  - name: forge_github
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: GITHUB API. Read/search are GREEN. Write ops (PR, issue, file) are RED.
+
+  - name: forge_github_create_issue
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: ORANGE
+    deprecated: false
+    notes: External GitHub mutation.
+
+  - name: forge_github_create_or_update_file
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: FILE MUTATION on GitHub. F13 gate.
+
+  - name: forge_github_create_pull_request
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: ORANGE
+    deprecated: false
+    notes: Social/process mutation, not infra. Review required.
+
+  - name: forge_github_get_file
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_github_search_code
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_github_search_repos
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_docker
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: CONTAINER MUTATION. Docker exec can mutate host. Quarantine.
+
+  - name: forge_systemctl
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: SYSTEMD. Status mode is GREEN for LIST_UNITS. Service mutation is RED.
+
+  - name: forge_journalctl
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Read-only log query. PII-redacted.
+
+  - name: forge_execute
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: Raw execution cortex. Requires cc_id for mutations. Quarantine candidate.
+
+  - name: forge8_execute
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: BLACK
+    deprecated: false
+    notes: VAULT-SEALED execution. Requires valid SEAL to operate. Hard fail without.
+
+  - name: forge_approve
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: BLACK
+    deprecated: false
+    notes: A-FORGE CANNOT SELF-AUTHORIZE. Tool always returns refusal. Rename or block.
+
+  - name: forge_judge_proxy
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: PROXY to arifOS judge. Must not be treated as local authority. Rename to forge_route_to_judge.
+
+  - name: forge_lock
+    lane: EXECUTE
+    mutation: true
+    authority: EXECUTE
+    danger_class: ORANGE
+    deprecated: false
+    notes: F1 AMANAH lock. Acquire/release. Reversible.
+
+  - name: forge_pipeline_run
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: Autonomous pipeline. Can route+compute+judge+seal.
+
+  - name: forge_abort
+    lane: EXECUTE
+    mutation: true
+    authority: EXECUTE
+    danger_class: ORANGE
+    deprecated: false
+    notes: Safe stop + rollback. Reversible.
+
+  - name: forge_job
+    lane: EXECUTE
+    mutation: true
+    authority: EXECUTE
+    danger_class: ORANGE
+    deprecated: false
+    notes: Background job submission. TTL-gated.
+
+  - name: forge_agent
+    lane: EXECUTE
+    mutation: true
+    authority: EXECUTE
+    danger_class: ORANGE
+    deprecated: false
+    notes: Agent lifecycle management. Register/kill/list.
+
+  - name: forge_lease
+    lane: EXECUTE
+    mutation: true
+    authority: EXECUTE
+    danger_class: ORANGE
+    deprecated: false
+    notes: Lease lifecycle. arifOS mints leases, not A-FORGE.
+
+  # RECORD tools
+  - name: forge_seal
+    lane: RECORD
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: RENAME. Should be forge_prepare_seal_receipt. Current name implies authority it does not have.
+
+  - name: forge_vault
+    lane: RECORD
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: VAULT999 read/write/seal. Write/seal modes are RED. Read/list are YELLOW.
+
+  - name: forge_skillstore_write
+    lane: RECORD
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: ORANGE
+    deprecated: false
+    notes: Artifact store write. Two-layer retention.
+
+  - name: forge_skillstore_read
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_register
+    lane: RECORD
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: Tool registration gate. Multi-gate approval chain.
+
+  - name: forge_skill
+    lane: RECORD
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: Dynamic tool forge. Generates code. HARAM-scanned but still high risk.
+
+  - name: forge_reality_loop
+    lane: EXECUTE
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: Autonomous loop. Self-improving. Must be watched.
+
+  # BROWSER tools
+  - name: forge_browser_navigate
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Navigate to URL. Read-only if no login. Monitor for session mutation.
+
+  - name: forge_browser_click
+    lane: EXECUTE
+    mutation: true
+    authority: EXECUTE
+    danger_class: ORANGE
+    deprecated: false
+    notes: Click element. Can trigger state change (login, form submit). Requires page_context + task_context.
+
+  - name: forge_browser_type
+    lane: EXECUTE
+    mutation: true
+    authority: EXECUTE
+    danger_class: ORANGE
+    deprecated: false
+    notes: Type into element. Can modify forms. Requires context guards.
+
+  - name: forge_browser_screenshot
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_browser_extract_text
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_browser_evaluate_js
+    lane: EXECUTE
+    mutation: true
+    authority: EXECUTE
+    danger_class: ORANGE
+    deprecated: false
+    notes: JavaScript execution in browser context. Limited blast radius but script injection risk.
+
+  - name: forge_sandbox_run
+    lane: PREPARE
+    mutation: true
+    authority: EXECUTE
+    danger_class: ORANGE
+    deprecated: false
+    notes: Isolated execution. ABSOLUTE timeout enforced. Verify sandbox escape prevention.
+
+  - name: forge_well
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Proxy to WELL organ.
+
+  - name: forge_wealth
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Proxy to WEALTH organ.
+
+  - name: forge_shell_status
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_shell_ledger
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: forge_shell_alert_history
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: document_ingest
+    lane: PREPARE
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Document intelligence. Read-only parsing.
+
+geox:
+  - name: geox_basin
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Basin profiling. Evidence computation.
+
+  - name: geox_deep_time_state
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Deep time state vector.
+
+  - name: geox_atlas
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: geox_surface_status
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: geox_well_ingest
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_well_qc
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_well_desurvey
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Phase 2.1 sealed. Evidence-only.
+
+  - name: geox_petrophysics
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_sequence
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_seismic_ingest
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_seismic_compute
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_seismic_interpret
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_vision
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_subsurface_model
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_geomechanics
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_evidence
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_claim
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_prospect
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Risk/prospect computation. Advisory only.
+
+  - name: geox_doctrine
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Doctrine reference. Move to MCP resource (WAJIB-007).
+
+  # egs_* group — group into one router per WAJIB
+  - name: geox_egs_query_entity
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Earth graph entity query.
+
+  - name: geox_egs_query_claim
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: geox_egs_query_uncertainty
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: geox_egs_query_provenance
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: geox_egs_claim_create
+    lane: PREPARE
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_egs_claim_challenge
+    lane: PREPARE
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_egs_evidence_attach
+    lane: PREPARE
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_egs_evidence_reason
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_egs_seismic_compute
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_egs_rock_physics
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_egs_data_qc_bundle
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: geox_egs_scenario_audit
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+wealth:
+  - name: wealth_wisdom_evaluate
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Capital allocation evaluation. Advisory output. No investment instruction.
+
+  - name: wealth_power_audit
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Power dynamics audit. Advisory.
+
+  - name: wealth_capture_scan
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Capture signal detection.
+
+  - name: wealth_epistemic_audit
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: wealth_compute_npv
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_compute_irr
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_conservation_check
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_flow_check
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_runway_check
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_compute_emv
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_monte_carlo_simulate
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Simulation. Bands only. Must label uncertainty.
+
+  - name: wealth_compute_evoi
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_confluence_check
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_asymmetry_check
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_fiscal_breakeven
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Fiscal threshold computation. Advisory.
+
+  - name: wealth_stock_analysis
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Stock analysis. Read-only. No trade execution.
+
+  - name: wealth_personal_finance
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: wealth_market_data
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_omni_wisdom
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Unified capital synthesis.
+
+  - name: wealth_agent_path
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Intent router.
+
+  - name: wealth_vault_write
+    lane: RECORD
+    mutation: true
+    authority: F13_REQUIRED
+    danger_class: RED
+    deprecated: false
+    notes: IRREVERSIBLE vault record. F13 gate.
+
+  - name: wealth_vault_query
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_system_registry_status
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: wealth_boundary_governance
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: wealth_survival_engine
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: wealth_collapse_signature_scan
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: wealth_beautiful_mouse_scan
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: wealth_arifos_judge_handoff
+    lane: PREPARE
+    mutation: false
+    authority: PREPARE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Prepares verdict for arifOS judge. Does not self-seal.
+
+well:
+  - name: well_health_check
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Health status. Returns stale state warning.
+
+  - name: well_medical_boundary
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: well_signal_coverage
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: well_classify_substrate
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Substrate classification. Boundaries not diagnosis.
+
+  - name: well_trace_lineage
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+  - name: well_detect_boundary
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Boundary detection across membrane/body/machine.
+
+  - name: well_measure_gradient
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: well_assess_metabolism
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Biological metabolism assessment. STALE — April 30 state. Historical context only.
+
+  - name: well_assess_homeostasis
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Homeostasis assessment. STALE state.
+
+  - name: well_check_repair
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: well_validate_vitality
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Vitality validation. STALE without fresh biometrics.
+
+  - name: well_assess_livelihood
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: well_assess_reliability
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: well_compute_metabolic_flux
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+
+  - name: well_assess_sovereign_entropy
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: YELLOW
+    deprecated: false
+    notes: Sovereign entropy. Human unmodelability metric.
+
+  - name: well_guard_dignity
+    lane: ASSESS
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+    notes: Timeless principle. Works without fresh biometrics.
+
+  - name: well_registry_status
+    lane: READ
+    mutation: false
+    authority: OBSERVE_ONLY
+    danger_class: GREEN
+    deprecated: false
+
+# TOTALS:
+# arifOS:   7 tools (3 GREEN, 1 YELLOW, 2 RED, 1 deprecated)
+# A-FORGE: 70 tools (30 GREEN, 12 YELLOW, 8 ORANGE, 16 RED, 2 BLACK)
+# GEOX:    31 tools (10 GREEN, 21 YELLOW)
+# WEALTH:  28 tools (14 GREEN, 12 YELLOW, 1 RED, 1 PREPARE)
+# WELL:    17 tools (7 GREEN, 10 YELLOW)
+# ------
+# TOTAL:  153 tools (64 GREEN, 56 YELLOW, 8 ORANGE, 19 RED, 2 BLACK)
