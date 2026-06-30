@@ -64,7 +64,12 @@ const AgentSchema = z
 
 const CodexSchema = z
   .object({
-    command: z.string().min(1).default("codex app-server"),
+    command: z
+      .string()
+      .min(1)
+      .default(
+        `codex --config shell_environment_policy.inherit=all --config 'model="gpt-5.5"' --config model_reasoning_effort=xhigh app-server`,
+      ),
     approval_policy: z.string().optional(),
     thread_sandbox: z.string().optional(),
     turn_sandbox_policy: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
@@ -84,7 +89,7 @@ export const SymphonyWorkflowConfigSchema = z
     workspace: WorkspaceSchema.optional(),
     hooks: HooksSchema.optional(),
     agent: z.preprocess((v) => v ?? {}, AgentSchema),
-    codex: CodexSchema.optional(),
+    codex: z.preprocess((v) => v ?? {}, CodexSchema),
   })
   .passthrough();
 

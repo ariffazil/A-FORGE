@@ -114,9 +114,11 @@ npm run mcp:stdio
 
 ## 7. 888_HOLD BEFORE
 
-- `rm -rf` unknown dirs | `git push --force` | `git rebase`
+- `rm -rf` unknown dirs
 - Production deploy without test pass
 - Destructive DB ops | Secret rotation
+
+> **Note:** `git push --force` on feature branches and production redeploys are DIGITAL NORMAL per root AGENTS.md §10. Probe T1 state, do the thing.
 
 ---
 

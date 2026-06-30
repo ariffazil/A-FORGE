@@ -24,9 +24,13 @@
 import { logFederationFailure } from "./LongTermMemoryFailureLog.js";
 
 const ARIFOS_MCP_URL = process.env.ARIFOS_MCP_URL ?? "http://localhost:8088";
-const ACTOR_ID = "kimi";  // sovereign actor (kimi drives A-FORGE)
+const DEFAULT_ACTOR_ID = process.env.A_FORGE_ACTOR_ID ?? "a-forge::memory-client";
 const EMBED_TIMEOUT_MS = 5_000;
 const CALL_TIMEOUT_MS = 30_000;
+const F13_CHECK_TIMEOUT_MS = 3_000;
+
+// AAA: no more hardcoded "kimi" — actor is now a parameter on every call.
+// DEFAULT_ACTOR_ID is only used when caller doesn't provide one.
 
 interface ArifosStoreResult {
   stored: boolean;
@@ -97,9 +101,14 @@ export async function arifosStore(params: {
   summary?: string;
   context?: "normal" | "high_stakes" | "canon";
   metadata?: Record<string, unknown>;
+  /** AAA: the actor performing this operation (no more hardcoded "kimi") */
+  actor_id?: string;
+  /** AAA: receipt lineage ID from AaaMemoryLinkage */
+  aaa_receipt_id?: string;
 }): Promise<ArifosStoreResult> {
+  const actorId = params.actor_id ?? DEFAULT_ACTOR_ID;
   const tier = params.tier ?? "session";
-  const session_id = params.session_id ?? "a-forge-default-session";
+  const session_id = params.session_id ?? "SEAL-a11fa11fa11fa11f";
   const ctx = params.context ?? "normal";
 
   try {
@@ -137,9 +146,10 @@ export async function arifosStore(params: {
                 context: ctx,
                 ...(params.metadata ?? {}),
               },
-              actor_id: ACTOR_ID,
+              actor_id: actorId,
               session_id,
               tier,
+              aaa_receipt_id: params.aaa_receipt_id,
             },
           },
         }),
@@ -209,7 +219,10 @@ export async function arifosSearch(params: {
   session_id?: string;
   limit?: number;
   context?: "normal" | "high_stakes" | "canon";
+  /** AAA: the actor performing this search */
+  actor_id?: string;
 }): Promise<{ status: string; results?: unknown[]; _degraded?: string }> {
+  const actorId = params.actor_id ?? DEFAULT_ACTOR_ID;
   const sid = await ensureSession();
   if (!sid) {
     return { status: "session_unavailable", _degraded: "arifOS MCP unreachable" };
@@ -231,8 +244,8 @@ export async function arifosSearch(params: {
           arguments: {
             mode: "search",
             query: params.query,
-            session_id: params.session_id ?? "a-forge-default-session",
-            actor_id: ACTOR_ID,
+            session_id: params.session_id ?? "SEAL-a11fa11fa11fa11f",
+            actor_id: actorId,
             limit: params.limit ?? 5,
             context: params.context ?? "normal",
           },
@@ -268,7 +281,7 @@ export function getArifosContractSurface(): {
 } {
   return {
     mcpUrl: ARIFOS_MCP_URL,
-    actor: ACTOR_ID,
+    actor: `${DEFAULT_ACTOR_ID} (dynamic — no longer hardcoded "kimi")`,
     contract: "FEDERATION_MEMORY_CONTRACT.md (R1: single write surface)",
     l5_status: "advisory_only (worker neutralized; 888 injects via raw Cypher)",
   };

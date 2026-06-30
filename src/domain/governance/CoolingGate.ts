@@ -15,6 +15,20 @@
  */
 
 import { createHash, randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { dirname } from "node:path";
+import { aaaMemoryGate } from "../aaa/AaaMemoryLinkage.js";
+
+// ═══════════════════════════════════════════════════════════
+// Persistence
+// ═══════════════════════════════════════════════════════════
+
+function getCoolingStatePath(): string {
+  return process.env.COOLING_STATE_PATH ?? "/root/AAA/registries/cooling_state.json";
+}
+
+const AUTONOMOUS_KERNEL_SESSION = "SEAL-c001c0ffeec001d0";
 
 // ═══════════════════════════════════════════════════════════
 // Constants
@@ -124,15 +138,65 @@ export class CoolingGate {
   private entries: Map<string, CoolingEntry> = new Map();
   private sealedCount = 0;
   private voidedCount = 0;
+  private persistenceLoaded = false;
+
+  // ── Persistence ──────────────────────────────────────────────────
+
+  private async ensureLoaded(): Promise<void> {
+    if (this.persistenceLoaded) return;
+    try {
+      const raw = await readFile(getCoolingStatePath(), "utf8");
+      this.loadFromJson(raw);
+    } catch (e: unknown) {
+      const err = e as NodeJS.ErrnoException;
+      if (err.code !== "ENOENT") console.error("[CoolingGate] Load failed:", err);
+    }
+    this.persistenceLoaded = true;
+  }
+
+  private ensureLoadedSync(): void {
+    if (this.persistenceLoaded) return;
+    try {
+      const raw = readFileSync(getCoolingStatePath(), "utf8");
+      this.loadFromJson(raw);
+    } catch (e: unknown) {
+      const err = e as NodeJS.ErrnoException;
+      if (err.code !== "ENOENT") console.error("[CoolingGate] Sync load failed:", err);
+    }
+    this.persistenceLoaded = true;
+  }
+
+  private loadFromJson(raw: string): void {
+    const data = JSON.parse(raw);
+    this.entries.clear();
+    for (const e of data.entries ?? []) {
+      this.entries.set(e.entry_id, e as CoolingEntry);
+    }
+    this.sealedCount = data.sealedCount ?? 0;
+    this.voidedCount = data.voidedCount ?? 0;
+  }
+
+  private async persist(): Promise<void> {
+    const statePath = getCoolingStatePath();
+    await mkdir(dirname(statePath), { recursive: true });
+    const data = {
+      entries: [...this.entries.values()],
+      sealedCount: this.sealedCount,
+      voidedCount: this.voidedCount,
+      persistedAt: new Date().toISOString(),
+    };
+    await writeFile(statePath, JSON.stringify(data, null, 2), "utf8");
+  }
 
   // ── Core Operations ──
 
-  propose(opts: {
+  async propose(opts: {
     artifact_ref?: string;
     description?: string;
     risk_tier?: RiskTier;
     cooldown_hours?: number;
-  }): CoolingEntry {
+  }): Promise<CoolingEntry> {
+    await this.ensureLoaded();
     const now = new Date();
     const tier: RiskTier = opts.risk_tier ?? "medium";
     const hours =
@@ -162,23 +226,44 @@ export class CoolingGate {
     };
 
     this.entries.set(entry.entry_id, entry);
+
+    // AAA Gate: cooling entry = governed memory write → 555-ASI
+    try {
+      const gate = await aaaMemoryGate({
+        action: "memory:write",
+        actorId: "a-forge::cooling-gate",
+        sessionId: AUTONOMOUS_KERNEL_SESSION,
+        content: entry.description,
+        memoryId: entry.entry_id,
+        toolName: "CoolingGate.propose",
+        description: `Propose cooling entry: ${entry.description.slice(0, 80)}`,
+      });
+      if (!gate.allowed) {
+        console.error(`[AAA-MEM] CoolingGate.propose blocked: ${gate.reason}`);
+      }
+    } catch (e) {
+      console.error("[CoolingGate] AAA gate failed (non-blocking):", e);
+    }
+
+    await this.persist();
     return entry;
   }
 
-  check(entry_id: string): CoolingEntry | null {
+  async check(entry_id: string): Promise<CoolingEntry | null> {
+    await this.ensureLoaded();
     const entry = this.entries.get(entry_id);
     if (!entry) return null;
     if (entry.verdict === "SEAL" || entry.verdict === "VOID") return entry;
 
     // Auto-VOID on expiry
     if (this.isExpired(entry)) {
-      this.void(entry, "cooldown expired (auto-VOID)");
+      await this.void(entry, "cooldown expired (auto-VOID)");
       return entry;
     }
 
     // Auto-VOID on budget exhaustion
     if (this.isBudgetExhausted(entry)) {
-      this.void(entry, "resource budget exhausted");
+      await this.void(entry, "resource budget exhausted");
       return entry;
     }
 
@@ -194,14 +279,34 @@ export class CoolingGate {
     return true;
   }
 
-  seal(entry_id: string): { ok: boolean; reason: string } {
+  async seal(entry_id: string): Promise<{ ok: boolean; reason: string }> {
+    await this.ensureLoaded();
+
     const entry = this.entries.get(entry_id);
     if (!entry) return { ok: false, reason: "entry not found" };
     if (entry.verdict !== "SABAR")
       return { ok: false, reason: `already resolved: ${entry.verdict}` };
 
+    // AAA Gate: seal = memory:seal, requires A-ARCHIVE + F13 approval
+    try {
+      const gate = await aaaMemoryGate({
+        action: "memory:seal",
+        actorId: "a-forge::cooling-gate",
+        sessionId: AUTONOMOUS_KERNEL_SESSION,
+        memoryId: entry_id,
+        content: entry.description,
+        toolName: "CoolingGate.seal",
+        description: `Seal cooling entry: ${entry.description.slice(0, 80)}`,
+      });
+      if (!gate.allowed) {
+        return { ok: false, reason: `AAA gate: ${gate.reason}` };
+      }
+    } catch (e) {
+      return { ok: false, reason: `AAA gate error: ${e instanceof Error ? e.message : String(e)}` };
+    }
+
     // Run check first (auto-VOID on expiry/budget)
-    const checked = this.check(entry_id);
+    const checked = await this.check(entry_id);
     if (!checked) return { ok: false, reason: "entry vanished" };
     if (checked.verdict !== "SABAR")
       return { ok: false, reason: `auto-resolved: ${checked.verdict}` };
@@ -220,24 +325,25 @@ export class CoolingGate {
     entry.verdict = "SEAL";
     entry.sealed_at = new Date().toISOString();
     this.sealedCount++;
+    await this.persist();
     return { ok: true, reason: "sealed" };
   }
 
-  resolve(entry_id: string): CoolingEntry | null {
+  async resolve(entry_id: string): Promise<CoolingEntry | null> {
     const entry = this.entries.get(entry_id);
     if (!entry) return null;
     if (entry.verdict !== "SABAR") return entry;
 
-    const result = this.seal(entry_id);
+    const result = await this.seal(entry_id);
     if (!result.ok) {
-      this.void(entry, `resolve failed: ${result.reason}`);
+      await this.void(entry, `resolve failed: ${result.reason}`);
     }
     return entry;
   }
 
   // ── Deploy Gate ──
 
-  deployGate(artifact_ref: string): DeployGateResult {
+  async deployGate(artifact_ref: string): Promise<DeployGateResult> {
     // Find any active cooldown entries for this artifact
     for (const entry of this.entries.values()) {
       if (entry.artifact_ref === artifact_ref && entry.verdict === "SABAR") {
@@ -252,7 +358,7 @@ export class CoolingGate {
     }
 
     // Auto-register if not found — enters cooling band
-    const entry = this.propose({
+    const entry = await this.propose({
       artifact_ref,
       description: `auto-registered deploy: ${artifact_ref}`,
       risk_tier: "medium",
@@ -269,11 +375,11 @@ export class CoolingGate {
 
   // ── Housekeeping ──
 
-  expireAll(): number {
+  async expireAll(): Promise<number> {
     let count = 0;
     for (const entry of this.entries.values()) {
       if (entry.verdict === "SABAR" && this.isExpired(entry)) {
-        this.void(entry, "batch expiry");
+        await this.void(entry, "batch expiry");
         count++;
       }
     }
@@ -294,6 +400,7 @@ export class CoolingGate {
   // ── Queries ──
 
   vitals(): CoolingVitals {
+    this.ensureLoadedSync();
     const active = [...this.entries.values()].filter(
       (e) => e.verdict === "SABAR",
     );
@@ -320,16 +427,18 @@ export class CoolingGate {
   }
 
   getEntry(entry_id: string): CoolingEntry | undefined {
+    this.ensureLoadedSync();
     return this.entries.get(entry_id);
   }
 
   // ── Internal ──
 
-  private void(entry: CoolingEntry, reason: string): void {
+  private async void(entry: CoolingEntry, reason: string): Promise<void> {
     entry.verdict = "VOID";
     entry.voided_at = new Date().toISOString();
     entry.void_reason = reason;
     this.voidedCount++;
+    await this.persist().catch(e => console.error("[CoolingGate] Persist after void failed:", e));
   }
 
   private isExpired(entry: CoolingEntry): boolean {

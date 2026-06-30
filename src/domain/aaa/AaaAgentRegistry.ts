@@ -162,7 +162,7 @@ export function resolveActor(actorId: string): ActorBinding | null {
     "a-forge::cooling-gate": {
       actorId: "a-forge::cooling-gate",
       primaryAgent: "888-APEX",
-      delegateAgents: ["A-ARCHIVE", "A-AUDIT"],
+      delegateAgents: ["555-ASI", "A-ARCHIVE", "A-AUDIT"],
       humanOverride: false,
     },
     "kimi": {

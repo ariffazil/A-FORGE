@@ -15,15 +15,22 @@ import { homedir } from "node:os";
 import { resolve } from "node:path";
 import { readdir } from "node:fs/promises";
 
-async function main() {
-  const cmd = process.argv[2] ?? "daily";
-  const backupDir = resolve(homedir(), ".arifos", "backups");
+export interface RunBackupOptions {
+  cmd?: string;
+  backupDir?: string;
+  postgresUrl?: string;
+  offboxTarget?: string;
+}
+
+export async function runBackup(options: RunBackupOptions = {}): Promise<string> {
+  const cmd = options.cmd ?? process.argv[2] ?? "daily";
+  const backupDir = options.backupDir ?? resolve(homedir(), ".arifos", "backups");
 
   const manager = new BackupManager({
-    postgresUrl: process.env.POSTGRES_URL ?? "",
+    postgresUrl: options.postgresUrl ?? process.env.POSTGRES_URL ?? "",
     backupDir,
     retentionDays: 30,
-    offboxTarget: process.env.BACKUP_OFFBOX_TARGET,
+    offboxTarget: options.offboxTarget ?? process.env.BACKUP_OFFBOX_TARGET,
   });
 
   switch (cmd) {
@@ -32,17 +39,15 @@ async function main() {
       console.error(`[A-FORGE-backup] Starting daily backup...`);
       const result = await manager.dailyBackup();
       if (result.ok) {
-        console.log(JSON.stringify({
+        return JSON.stringify({
           ok: true,
           file: result.filePath,
           size_mb: (result.sizeBytes / 1024 / 1024).toFixed(2),
           duration_ms: result.durationMs,
           verified: result.verified,
-        }));
-        process.exit(result.verified ? 0 : 1);
+        }, null, 2);
       } else {
-        console.error(`[A-FORGE-backup] FAILED: ${result.error}`);
-        process.exit(1);
+        throw new Error(`[A-FORGE-backup] FAILED: ${result.error}`);
       }
     }
 
@@ -53,11 +58,9 @@ async function main() {
         .sort()
         .at(-1);
       if (!latest) {
-        console.error(`[A-FORGE-backup] No backups found in ${backupDir}`);
-        process.exit(1);
+        throw new Error(`[A-FORGE-backup] No backups found in ${backupDir}`);
       }
-      console.error(`[A-FORGE-backup] Verifying latest backup: ${latest}`);
-      process.exit(0);
+      return `[A-FORGE-backup] Verifying latest backup: ${latest}`;
     }
 
     case "list": {
@@ -68,23 +71,26 @@ async function main() {
         .reverse()
         .slice(0, 10);
       if (backups.length === 0) {
-        console.log("No backups found.");
-      } else {
-        console.log("Recent backups:");
-        for (const f of backups) console.log(`  ${f}`);
+        return "No backups found.";
       }
-      break;
+      return ["Recent backups:", ...backups.map((f) => `  ${f}`)].join("\n");
     }
 
     default:
-      console.error(`Usage: backup.js {daily|verify|list}`);
-      process.exit(1);
+      throw new Error(`Usage: backup {daily|verify|list}`);
   }
 }
 
-main().catch((err) => {
-  console.error(`[A-FORGE-backup] Fatal: ${err}`);
-  process.exit(1);
-});
+async function main() {
+  const out = await runBackup();
+  console.log(out);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((err) => {
+    console.error(`[A-FORGE-backup] Fatal: ${err}`);
+    process.exit(1);
+  });
+}
 
 

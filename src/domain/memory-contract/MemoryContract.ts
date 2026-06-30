@@ -14,6 +14,10 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { homedir } from "node:os";
+import { aaaMemoryGate, type MemoryReceipt } from "../aaa/AaaMemoryLinkage.js";
+import type { MemoryAction } from "../aaa/AaaCapabilityGraph.js";
+
+const AUTONOMOUS_KERNEL_SESSION = "SEAL-c0dec0dec0dec0de";
 
 // ============================================================================
 // MEMORY TIERS
@@ -192,9 +196,38 @@ export class MemoryContract {
   /**
    * Store a new memory.
    */
-  async store(request: StoreRequest): Promise<MemoryEntry> {
+  /**
+   * AAA Memory Gate — called before every governed memory operation.
+   * All new parameters optional for backward compatibility.
+   */
+  private async _aaaGate(
+    action: MemoryAction,
+    memoryId: string | undefined,
+    content: string | undefined,
+    opts?: { actorId?: string; sessionId?: string },
+    toolName?: string,
+  ) {
+    const gate = await aaaMemoryGate({
+      action,
+      actorId: opts?.actorId ?? "a-forge::memory-contract",
+      sessionId: opts?.sessionId ?? AUTONOMOUS_KERNEL_SESSION,
+      memoryId,
+      content,
+      toolName: toolName ?? `MemoryContract.${action.split(":")[1]}`,
+      description: `MemoryContract ${action}`,
+    });
+    if (!gate.allowed) {
+      throw new Error(`[AAA-MEM] MemoryContract blocked (${action}): ${gate.reason}`);
+    }
+    return gate;
+  }
+
+  async store(request: StoreRequest, opts?: { actorId?: string; sessionId?: string }): Promise<MemoryEntry> {
     this.ensureInitialized();
-    
+
+    // AAA Gate: write → 555-ASI
+    await this._aaaGate("memory:write", undefined, request.content, opts, "MemoryContract.store");
+
     // Auto-select tier if not specified
     const tier = request.tier ?? this.inferTier(request.content);
     
@@ -234,9 +267,12 @@ export class MemoryContract {
   /**
    * Correct an existing memory (creates version history).
    */
-  async correct(request: CorrectRequest): Promise<MemoryEntry> {
+  async correct(request: CorrectRequest, opts?: { actorId?: string; sessionId?: string }): Promise<MemoryEntry> {
     this.ensureInitialized();
-    
+
+    // AAA Gate: mutate → 888-APEX
+    await this._aaaGate("memory:mutate", request.memoryId, request.newContent, opts, "MemoryContract.correct");
+
     const memory = this.memories.get(request.memoryId);
     if (!memory) {
       throw new Error(`Memory not found: ${request.memoryId}`);
@@ -288,9 +324,12 @@ export class MemoryContract {
   /**
    * Forget (soft-delete) a memory.
    */
-  async forget(request: ForgetRequest): Promise<void> {
+  async forget(request: ForgetRequest, opts?: { actorId?: string; sessionId?: string }): Promise<void> {
     this.ensureInitialized();
-    
+
+    // AAA Gate: delete → 888-APEX
+    await this._aaaGate("memory:delete", request.memoryId, undefined, opts, "MemoryContract.forget");
+
     const memory = this.memories.get(request.memoryId);
     if (!memory) {
       throw new Error(`Memory not found: ${request.memoryId}`);
@@ -308,9 +347,12 @@ export class MemoryContract {
   /**
    * Downgrade a memory to quarantine.
    */
-  async downgrade(request: DowngradeRequest): Promise<MemoryEntry> {
+  async downgrade(request: DowngradeRequest, opts?: { actorId?: string; sessionId?: string }): Promise<MemoryEntry> {
     this.ensureInitialized();
-    
+
+    // AAA Gate: downgrade → 888-APEX
+    await this._aaaGate("memory:downgrade", request.memoryId, undefined, opts, "MemoryContract.downgrade");
+
     const memory = this.memories.get(request.memoryId);
     if (!memory) {
       throw new Error(`Memory not found: ${request.memoryId}`);
@@ -330,9 +372,12 @@ export class MemoryContract {
   /**
    * Verify a quarantined memory.
    */
-  async verify(request: VerifyRequest): Promise<MemoryEntry> {
+  async verify(request: VerifyRequest, opts?: { actorId?: string; sessionId?: string }): Promise<MemoryEntry> {
     this.ensureInitialized();
-    
+
+    // AAA Gate: verify → A-AUDIT
+    await this._aaaGate("memory:verify", request.memoryId, undefined, opts, "MemoryContract.verify");
+
     const memory = this.memories.get(request.memoryId);
     if (!memory) {
       throw new Error(`Memory not found: ${request.memoryId}`);
