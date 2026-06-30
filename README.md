@@ -27,7 +27,7 @@
 [![Federation](https://img.shields.io/badge/federation-arifOS-8B5CF6)](https://github.com/ariffazil/arifos)
 [![Systemd](https://img.shields.io/badge/systemd-A--FORGE.service-orange)](deploy/systemd/A-FORGE.service)
 [![Tests](https://img.shields.io/badge/tests-running-success)](test/)
-[![Tools](https://img.shields.io/badge/discovered-68%20tools-8B5CF6)](docs/)
+[![Tools](https://img.shields.io/badge/live-75%20tools-8B5CF6)](docs/)
 
 ---
 
@@ -37,7 +37,17 @@
 > **Canonical contract:** [ariffazil/arifos/FEDERATION_CONTRACT.md](https://github.com/ariffazil/arifos/blob/main/FEDERATION_CONTRACT.md)
 > **Kernel canon:** [ariffazil/arifos/GENESIS/000_KERNEL_CANON.md](https://github.com/ariffazil/arifos/blob/main/GENESIS/000_KERNEL_CANON.md)
 
-A-FORGE is the **governed execution shell** of the arifOS Federation — one of 7 sovereign organs running bare-metal on VPS `af-forge` (72.62.71.199). It executes governed plans across the federation. MIND (Hermes:8644) and MEMORY (VAULT999+tiered storage) are separate federation services — A-FORGE does not host them. A-FORGE does not judge, does not compute domain logic, and **executes** only within bounded constitutional gates, with full audit trail, and never without upstream authorization.
+A-FORGE is the **governed execution shell** of the arifOS Federation — one of 7 sovereign organs running bare-metal on VPS `af-forge` (72.62.71.199). It executes governed plans across the federation.
+
+### Federation Context (read all 3 for full picture)
+
+| Read this | For | Link |
+|-----------|-----|------|
+| **arifOS** | Constitutional kernel. 10 public verbs (`arif_init`→`arif_judge`→`arif_seal`). 13 floors. The judge. | [`ariffazil/arifos`](https://github.com/ariffazil/arifos) |
+| **A-FORGE** (this repo) | Executor. 75 MCP tools. Shell, git, docker, browser, vault. Gates + A-THINK law at border. | ← you are here |
+| **AAA** | Cockpit. A2A mesh. Agent registry. React 19 dashboard. What Arif reads. | [`ariffazil/AAA`](https://github.com/ariffazil/AAA) |
+
+MIND (Hermes:8644) and MEMORY (VAULT999) are separate federation services — A-FORGE does not host them. A-FORGE does not judge, does not compute domain logic, and **executes** only within bounded constitutional gates, with full audit trail, and never without upstream authorization.
 
 ---
 
@@ -710,21 +720,20 @@ AGPL-3.0 was chosen deliberately. Governed execution is meaningless if the gover
 
 ## Federation Cross-Reference
 
-A-FORGE is one of **7 organs** in the arifOS Federation. Every organ has its own repository, port, and constitutional role. MIND (Hermes:8644) and MEMORY (VAULT999 + tiered storage) are separate federation services — A-FORGE does not host them. `arif-sites` is a public surface, not an organ.
+A-FORGE is one of **7 organs** in the arifOS Federation.
 
-| Organ | Repository | Role | Port | License |
-|-------|-----------|------|------|---------|
-| **arifOS** | [ariffazil/arifos](https://github.com/ariffazil/arifos) | Constitutional Kernel · Judge | 8088 | AGPL-3.0 |
-| **A-FORGE** | [ariffazil/A-FORGE](https://github.com/ariffazil/A-FORGE) | Execution Shell · Forge | 7071/7072 | AGPL-3.0 |
-| **AAA** | [ariffazil/aaa](https://github.com/ariffazil/aaa) | Control Plane · Cockpit | 3001 | AGPL-3.0 |
-| **GEOX** | [ariffazil/geox](https://github.com/ariffazil/geox) | Earth Intelligence | 8081 | AGPL-3.0 |
-| **WEALTH** | [ariffazil/wealth](https://github.com/ariffazil/wealth) | Capital Intelligence | 18082 | AGPL-3.0 |
-| **WELL** | [ariffazil/well](https://github.com/ariffazil/well) | Human Readiness | 18083 | AGPL-3.0 |
+| Organ | Repository | Role | Port |
+|-------|-----------|------|------|
+| **arifOS** | [ariffazil/arifos](https://github.com/ariffazil/arifos) | Constitutional Kernel · Judge | 8088 |
+| **A-FORGE** | [ariffazil/A-FORGE](https://github.com/ariffazil/A-FORGE) | Execution Shell · Forge | 7071/7072 |
+| **AAA** | [ariffazil/aaa](https://github.com/ariffazil/aaa) | Control Plane · Cockpit | 3001 |
+| **GEOX** | [ariffazil/geox](https://github.com/ariffazil/geox) | Earth Intelligence | 8081 |
+| **WEALTH** | [ariffazil/wealth](https://github.com/ariffazil/wealth) | Capital Intelligence | 18082 |
+| **WELL** | [ariffazil/well](https://github.com/ariffazil/well) | Human Readiness | 18083 |
+| **VAULT999** | (arifOS subdir) | Immutable Sealed Ledger | filesystem |
 
 **A-FORGE executes ONLY after arifOS SEAL + domain evidence.**
-
-**Live federation status:** [FEDERATION_STATUS.md](https://github.com/ariffazil/arifos/blob/main/FEDERATION_STATUS.md)
-**Federation topology:** `/root/CONTEXT.md` on the VPS (live state)
+**Live federation topology:** `/root/CONTEXT.md` on the VPS
 
 ---
 
