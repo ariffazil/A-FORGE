@@ -114,7 +114,7 @@ export function checkF12Injection(ctx: FloorContext): FloorReason[] {
     a.tool_name.startsWith("forge_docker_") ||
     a.tool_name.startsWith("forge_github_") ||
     a.tool_name.startsWith("forge_memory_") ||
-    a.tool_name === "document_ingest";
+    a.tool_name === "forge_document_ingest";
   if (!isAuthorizedProxy) {
     for (const p of SENSITIVE_PATHS) {
       if (a.target.startsWith(p) || haystack.includes(p)) {

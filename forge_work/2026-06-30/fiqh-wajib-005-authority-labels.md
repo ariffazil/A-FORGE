@@ -40,7 +40,7 @@
 | forge_filesystem (write)*, forge_shell*, forge_git (commit)*, forge_docker*, forge_postgres (write)* | L2 | Requires lease |
 | forge_execute, forge_pipeline_run, forge_job | L2 | Requires lease |
 | forge_skill, forge_register, forge_seal | L4 | Skill creation + seal = F13 |
-| forge8_execute | L4 | F13_REQUIRED |
+| forge_execute_sealed | L4 | F13_REQUIRED |
 | forge_approve | L5 | BLOCKED — A-FORGE cannot self-authorize |
 
 *\*Mutating modes require mode-level gating, not tool-level.*

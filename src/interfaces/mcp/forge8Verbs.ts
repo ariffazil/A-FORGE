@@ -541,9 +541,9 @@ export function registerForge8Verbs(server: McpServer) {
     forgeDocketPrepHandler
   );
 
-  // VERB 8: forge8_execute (governed execution — distinct from legacy forge_execute)
+  // VERB 8: forge_execute_sealed (governed execution — distinct from legacy forge_execute)
   server.tool(
-    "forge8_execute",
+    "forge_execute_sealed",
     "Execute with VAULT999 seal. FAILS HARD without valid seal — no self-authorization possible.",
     ForgeExecuteRequestSchema.shape,
     forgeExecuteHandler
