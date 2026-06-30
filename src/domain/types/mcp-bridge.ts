@@ -28,7 +28,7 @@ export interface MCPBridgeResponse {
 
 /** Tool name mapping: A-FORGE internal → canonical arifOS tool name */
 export const TOOL_NAME_MAP: Record<string, string> = {
-  apex_judge: "arif_judge_deliberate",
+  apex_judge: "arif_judge",
 };
 
 /** Namespace routing map: which env var / default URL per namespace */
@@ -43,7 +43,7 @@ export const NAMESPACE_DEFAULTS: Record<MCPNamespace, { env: string; default: st
  * convention differs from the kernel's expected parameters.
  */
 export function transformArgs(tool: string, args: Record<string, unknown>): Record<string, unknown> {
-  if (tool === "apex_judge" || tool === "arif_judge_deliberate") {
+  if (tool === "apex_judge" || tool === "arif_judge") {
     const { concern, findings, riskLevel, ...rest } = args;
     return {
       ...rest,
@@ -62,7 +62,7 @@ export function transformArgs(tool: string, args: Record<string, unknown>): Reco
  * a different shape than the kernel returns.
  */
 export function transformResponse(tool: string, result: Record<string, unknown>): Record<string, unknown> {
-  if (tool === "apex_judge" || tool === "arif_judge_deliberate") {
+  if (tool === "apex_judge" || tool === "arif_judge") {
     // AgentEngine expects .decision ("HOLD" | "VOID"), kernel returns .verdict
     const verdict = result.verdict ?? result.decision;
     return {

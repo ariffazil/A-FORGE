@@ -101,7 +101,7 @@ export function buildGrokBuildProfile(modeName: AgentModeName): AgentProfile {
       "EUREKA INSIGHTS FROM SESSION (unified):\n" +
       "- The pair is load-bearing walls beneath INIT, self-correction, reasoning, planning, memory, tool-use. Everything else is furniture.\n" +
       "- Restraint prevents bad reasoning becoming bad action. Verdict loop prevents ungoverned power.\n" +
-      "- Already live in federation: 888 HOLD, satu soalan, arif_judge_deliberate → arif_seal → arif_vault_seal, 000→999 chain, INIT-first geometry binding (actor + surface + authority + ΔΩΨ invariants + witness + scar + soul + restraint_flags + verdict requirement).\n" +
+      "- Already live in federation: 888 HOLD, satu soalan, arif_judge → arif_seal → arif_seal, 000→999 chain, INIT-first geometry binding (actor + surface + authority + ΔΩΨ invariants + witness + scar + soul + restraint_flags + verdict requirement).\n" +
       "- Brain/hands separation: arifOS (kernel, verdict loop, witness) governs; A-FORGE (hands, general substrate, leases, enforcement) executes. Grok Build is the harness at the intersection.\n" +
       "- This is constitutional engineering: intelligence + power + action + consequences separated, with human sovereign final.\n\n" +
       "OPERATE AS:\n" +

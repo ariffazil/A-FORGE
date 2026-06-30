@@ -2,7 +2,7 @@
  * ArifOSMemoryClient — Federation Memory Bridge for A-FORGE
  *
  * Single-write surface contract: every organ (including A-FORGE) writes memory
- * through arifOS `arif_memory_recall(mode="store")`. This module is the
+ * through arifOS `arif_memory(mode="store")`. This module is the
  * TypeScript bridge for that contract.
  *
  * Per FEDERATION_MEMORY_CONTRACT.md (arifOS/docs):
@@ -136,7 +136,7 @@ export async function arifosStore(params: {
           id: Math.floor(Math.random() * 1_000_000),
           method: "tools/call",
           params: {
-            name: "arif_memory_recall",
+            name: "arif_memory",
             arguments: {
               mode: "store",
               metadata: {
@@ -240,7 +240,7 @@ export async function arifosSearch(params: {
         id: Math.floor(Math.random() * 1_000_000),
         method: "tools/call",
         params: {
-          name: "arif_memory_recall",
+          name: "arif_memory",
           arguments: {
             mode: "search",
             query: params.query,

@@ -28,6 +28,9 @@
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import type { AAEV1 } from "./amanahEnvelope.js";
+import { verifyAAE } from "./amanahEnvelope.js";
+import { classifyTool, type ActionClass, requires888Hold } from "./actionClassifier.js";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -70,6 +73,10 @@ export type ToolCallRequest = {
   session_id?: string;
   transport?: "stdio" | "http";
   client_ip?: string;
+  /** AAE v1 envelope — if present, Layer 1 validates signature + actor binding */
+  aae?: AAEV1;
+  /** Organ secret for AAE signature verification */
+  organ_secret?: string;
 };
 
 export type VerdictResult = {
@@ -161,6 +168,26 @@ export class McpPolicyGate {
     }
     result.layers.identity = true;
 
+    // Layer 1b: AAE envelope validation (if present)
+    if (req.aae) {
+      // Verify AAE signature + expiry + mandatory fields
+      const secret = req.organ_secret ?? "";
+      if (secret) {
+        const aaeResult = verifyAAE(req.aae, secret);
+        if (!aaeResult.valid) {
+          result.reasons.push(`L1_AAE:${aaeResult.reason}`);
+          this.appendAudit(result);
+          return result;
+        }
+      }
+      // Verify AAE actor_id matches request actor_id
+      if (req.aae.actor_id !== actorId) {
+        result.reasons.push(`L1_AAE:actor_mismatch — AAE says "${req.aae.actor_id}" but request says "${actorId}"`);
+        this.appendAudit(result);
+        return result;
+      }
+    }
+
     // Layer 2: Server
     if (!this.isServerAllowed(policy, mcpServer)) {
       result.reasons.push(`L2_SERVER:${mcpServer}_not_in_allowlist`);
@@ -210,7 +237,31 @@ export class McpPolicyGate {
     }
     result.layers.argument = true;
 
-    // Layer 5: All clear
+    // Layer 5: AAE action_class vs tool classification (if AAE present)
+    if (req.aae) {
+      const toolClass = classifyTool(req.tool_name);
+      const aaeClass = req.aae.action_class as ActionClass;
+
+      // IRREVERSIBLE tools require IRREVERSIBLE AAE
+      if (toolClass === "IRREVERSIBLE" && aaeClass !== "IRREVERSIBLE") {
+        result.reasons.push(
+          `L5_AAE:tool_classified_IRREVERSIBLE but AAE action_class=${aaeClass} — need IRREVERSIBLE`,
+        );
+        this.appendAudit(result);
+        return result;
+      }
+
+      // EXECUTE_HIGH_IMPACT tools require >= EXECUTE_HIGH_IMPACT AAE
+      if (toolClass === "EXECUTE_HIGH_IMPACT" && aaeClass !== "EXECUTE_HIGH_IMPACT" && aaeClass !== "IRREVERSIBLE") {
+        result.reasons.push(
+          `L5_AAE:tool_classified_EXECUTE_HIGH_IMPACT but AAE action_class=${aaeClass} — need EXECUTE_HIGH_IMPACT or IRREVERSIBLE`,
+        );
+        this.appendAudit(result);
+        return result;
+      }
+    }
+
+    // Layer 5b: All clear
     result.verdict = "ALLOW";
     this.appendAudit(result);
     return result;
