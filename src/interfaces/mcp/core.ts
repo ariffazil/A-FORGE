@@ -577,6 +577,181 @@ function resultAsJson(output: unknown): string {
   return JSON.stringify(output, null, 2);
 }
 
+// ── forge_chart: Native agentic visualization + eureka margin discovery ─────
+// Zero new runtime deps. Pure SVG generator for federation-wide use.
+// All domain organs (GEOX, WEALTH, WELL) + agents route data here for viz.
+// Inspired by antvis/mcp-server-chart (25+ @antv charts) — core types native here for always-on, no extra MCP.
+// Returns SVG (embeddable) + structured summary + eureka_candidates (discovery margins).
+// "Quantum eureka discovery margin pattern": turning points, high-z outliers, curvature maxima = insight frontiers.
+type ChartType = "line" | "bar" | "scatter" | "pie" | "area" | "histogram";
+
+interface ChartOptions {
+  title?: string;
+  width?: number;
+  height?: number;
+  x_field?: string;
+  y_field?: string;
+  return_format?: "svg" | "full";
+}
+
+interface EurekaCandidate {
+  index: number;
+  x: unknown;
+  y: number;
+  margin: number; // z-score or curvature magnitude
+  reason: string;
+}
+
+function normalizeSeries(data: any[], xField?: string, yField?: string): { xs: any[]; ys: number[]; labels: string[] } {
+  if (!Array.isArray(data) || data.length === 0) return { xs: [], ys: [], labels: [] };
+  const first = data[0];
+  let xs: any[], ys: number[];
+  if (typeof first === "number") {
+    ys = data as number[];
+    xs = ys.map((_, i) => i);
+  } else if (Array.isArray(first) && first.length === 2) {
+    xs = (data as any[]).map(d => d[0]);
+    ys = (data as any[]).map(d => Number(d[1]));
+  } else {
+    const xf = xField || Object.keys(first)[0];
+    const yf = yField || Object.keys(first).find(k => typeof first[k] === "number") || Object.keys(first)[1];
+    xs = data.map(d => (d && (d[xf] ?? d.x ?? d.label ?? d[0])));
+    ys = data.map(d => Number(d && (d[yf] ?? d.y ?? d.value ?? d[1])));
+  }
+  const labels = xs.map((x, i) => String(x ?? i));
+  ys = ys.map(v => (Number.isFinite(v) ? v : 0));
+  return { xs, ys, labels };
+}
+
+function computeEurekaCandidates(xs: any[], ys: number[], topK = 5): EurekaCandidate[] {
+  if (ys.length < 2) return [];
+  const n = ys.length;
+  const mean = ys.reduce((a, b) => a + b, 0) / n;
+  const variance = ys.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(1, n - 1);
+  const std = Math.sqrt(variance) || 1;
+  const diffs = ys.slice(1).map((y, i) => y - ys[i]);
+  const candidates: EurekaCandidate[] = [];
+  for (let i = 0; i < n; i++) {
+    const z = (ys[i] - mean) / std;
+    let margin = Math.abs(z);
+    let reason = Math.abs(z) > 2 ? "high deviation" : "nominal";
+    // turning point
+    if (i > 0 && i < n - 1) {
+      const d1 = diffs[i - 1];
+      const d2 = diffs[i];
+      if (d1 * d2 < 0 && Math.abs(d1 - d2) > 0.0001) {
+        const curv = Math.abs(d2 - d1);
+        margin = Math.max(margin, curv / (std + 1e-6) + 1);
+        reason = "trend reversal (eureka candidate)";
+      }
+    }
+    if (margin > 1.2) {
+      candidates.push({ index: i, x: xs[i], y: ys[i], margin: Number(margin.toFixed(3)), reason });
+    }
+  }
+  // sort by margin desc, take top
+  candidates.sort((a, b) => b.margin - a.margin);
+  return candidates.slice(0, topK);
+}
+
+function generateSvgChart(type: ChartType, data: any[], opts: ChartOptions = {}): { svg: string; summary: Record<string, unknown>; eureka_candidates: EurekaCandidate[] } {
+  const { xs, ys, labels } = normalizeSeries(data, opts.x_field, opts.y_field);
+  const W = opts.width || 640;
+  const H = opts.height || 380;
+  const pad = { l: 50, r: 20, t: 30, b: 40 };
+  const plotW = W - pad.l - pad.r;
+  const plotH = H - pad.t - pad.b;
+  const title = opts.title || `${type.toUpperCase()} Chart`;
+  const n = ys.length;
+  if (n === 0) {
+    return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><text x="20" y="20">No data</text></svg>`, summary: { n: 0 }, eureka_candidates: [] };
+  }
+  const yMin = Math.min(...ys);
+  const yMax = Math.max(...ys);
+  const yRange = (yMax - yMin) || 1;
+  const xIdx = (i: number) => pad.l + (n > 1 ? (i * plotW) / (n - 1) : plotW / 2);
+  const yPos = (y: number) => pad.t + plotH - ((y - yMin) / yRange) * plotH;
+  const eureka = computeEurekaCandidates(xs, ys);
+  let body = "";
+  const colors = { primary: "#3b82f6", accent: "#ef4444", grid: "#e5e7eb" };
+  // grid + axes
+  body += `<rect x="${pad.l}" y="${pad.t}" width="${plotW}" height="${plotH}" fill="#fafafa" stroke="#e5e7eb"/>`;
+  for (let i = 0; i <= 4; i++) {
+    const yy = pad.t + (plotH * i) / 4;
+    body += `<line x1="${pad.l}" y1="${yy}" x2="${pad.l + plotW}" y2="${yy}" stroke="${colors.grid}" />`;
+    const val = (yMax - (yRange * i) / 4).toFixed(2);
+    body += `<text x="${pad.l - 6}" y="${yy + 4}" font-size="10" fill="#666" text-anchor="end">${val}</text>`;
+  }
+  // title
+  body += `<text x="${W / 2}" y="18" font-size="14" font-weight="600" fill="#111" text-anchor="middle">${title}</text>`;
+  if (type === "pie") {
+    const sum = ys.reduce((a, b) => a + b, 0) || 1;
+    let angle = -Math.PI / 2;
+    const cx = pad.l + plotW / 2;
+    const cy = pad.t + plotH / 2;
+    const r = Math.min(plotW, plotH) / 2 - 10;
+    ys.forEach((v, i) => {
+      const frac = v / sum;
+      const a1 = angle;
+      const a2 = angle + frac * 2 * Math.PI;
+      const x1 = cx + r * Math.cos(a1);
+      const y1 = cy + r * Math.sin(a1);
+      const x2 = cx + r * Math.cos(a2);
+      const y2 = cy + r * Math.sin(a2);
+      const large = frac > 0.5 ? 1 : 0;
+      const color = `hsl(${(i * 67) % 360}, 70%, 55%)`;
+      body += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2} Z" fill="${color}" stroke="#fff" stroke-width="1"/>`;
+      angle = a2;
+    });
+  } else {
+    // line/area/bar/scatter/hist
+    const points: string[] = [];
+    ys.forEach((y, i) => {
+      const px = xIdx(i);
+      const py = yPos(y);
+      points.push(`${px},${py}`);
+      if (type === "bar" || type === "histogram") {
+        const bw = Math.max(4, (plotW / Math.max(1, n)) * 0.7);
+        const by = yPos(Math.min(y, 0)); // support neg? clamp simple
+        const bh = Math.abs(py - yPos(0));
+        body += `<rect x="${px - bw / 2}" y="${Math.min(py, yPos(0))}" width="${bw}" height="${Math.max(1, bh)}" fill="${colors.primary}" />`;
+      } else if (type === "scatter") {
+        body += `<circle cx="${px}" cy="${py}" r="3.5" fill="${colors.primary}" />`;
+      }
+      // label sparse
+      if (n <= 12 || i % Math.ceil(n / 8) === 0) {
+        body += `<text x="${px}" y="${pad.t + plotH + 14}" font-size="9" fill="#555" text-anchor="middle">${labels[i].slice(0, 10)}</text>`;
+      }
+    });
+    if (type === "line" || type === "area") {
+      const pathD = points.map((p, i) => (i === 0 ? "M" : "L") + p).join(" ");
+      body += `<path d="${pathD}" fill="none" stroke="${colors.primary}" stroke-width="2" />`;
+      if (type === "area") {
+        const areaD = `M${points[0]} ${pathD.replace(/^M/, "L")} L${points[points.length - 1].split(",")[0]},${pad.t + plotH} Z`;
+        body += `<path d="${areaD}" fill="${colors.primary}" fill-opacity="0.15" stroke="none" />`;
+      }
+    }
+    // axes
+    body += `<line x1="${pad.l}" y1="${pad.t + plotH}" x2="${pad.l + plotW}" y2="${pad.t + plotH}" stroke="#333" />`;
+    body += `<line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t + plotH}" stroke="#333" />`;
+  }
+  // eureka markers (red dots + tiny label)
+  eureka.forEach((c, idx) => {
+    const ii = Math.min(Math.max(0, c.index), n - 1);
+    const px = xIdx(ii);
+    const py = yPos(c.y);
+    body += `<circle cx="${px}" cy="${py}" r="5" fill="none" stroke="${colors.accent}" stroke-width="2" />`;
+    body += `<text x="${px + 8}" y="${py - 6}" font-size="9" fill="${colors.accent}">${c.margin}</text>`;
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${body}</svg>`;
+  const summary = {
+    n, type, title, y_min: Number(yMin.toFixed(4)), y_max: Number(yMax.toFixed(4)),
+    y_mean: Number((ys.reduce((a,b)=>a+b,0)/n).toFixed(4)),
+    eureka_count: eureka.length,
+  };
+  return { svg, summary, eureka_candidates: eureka };
+}
+
 // ── Tier 00 Identity ─────────────────────────────────────────────────────────
 
 server.tool(
@@ -1176,6 +1351,46 @@ server.registerTool("forge_well", {
     }
   });
 });
+
+// ── Visualization: forge_chart — cross-organ agentic data viz + eureka margins ──
+// All domain organs use via A-FORGE (forge_wealth data -> chart, GEOX logs -> scatter, WELL trends).
+// Returns SVG (text-embeddable) + stats + eureka_candidates (turning points / deviation margins).
+// OBSERVE class. No lease required. Native (no external MCP dep for core types).
+server.tool(
+  "forge_chart",
+  "Agentic charting + quantum eureka discovery margin patterns. Input data series or records; returns SVG + summary + eureka_candidates (reversals, high-z, curvature). Types support line/bar/scatter/pie/area/histogram. Use after postgres/wealth/well queries for visualization and pattern discovery. All organs share this surface.",
+  {
+    type: z.enum(["line", "bar", "scatter", "pie", "area", "histogram"]).default("line"),
+    data: z.array(z.any()).describe("Array of numbers, [x,y] pairs, or objects {x,y} / {label,value} or use x_field/y_field"),
+    title: z.string().optional(),
+    x_field: z.string().optional(),
+    y_field: z.string().optional(),
+    width: z.number().int().min(200).max(2000).default(640),
+    height: z.number().int().min(150).max(1200).default(380),
+    return_format: z.enum(["svg", "full"]).default("full"),
+  },
+  async (args) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("forge_chart");
+    try {
+      const { svg, summary, eureka_candidates } = generateSvgChart(args.type as ChartType, args.data, {
+        title: args.title,
+        width: args.width,
+        height: args.height,
+        x_field: args.x_field,
+        y_field: args.y_field,
+      });
+      const payload: any = args.return_format === "svg"
+        ? { svg }
+        : { svg, summary, eureka_candidates, note: "Paste SVG into .svg file or render in browser. Red rings mark eureka margins (discovery frontiers)." };
+      await telemetrySuccess("forge_chart", startedAt);
+      return { content: [{ type: "text" as const, text: resultAsJson(payload) }] };
+    } catch (err: any) {
+      await telemetryFailure("forge_chart", startedAt, err);
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: err.message || String(err) }) }], isError: true };
+    }
+  }
+);
 
 // ── P2 TOOLS (2026-06-28): Canonical gap fill — forge_probe, forge_status, forge_abort, forge_scan ──
 

@@ -1,4 +1,4 @@
-# A-FORGE MCP Tool Catalog — 77 Tools by Cognitive Function
+# A-FORGE MCP Tool Catalog — 78 Tools by Cognitive Function
 
 > **Purpose:** Give agents (and humans) a single-page map of the A-FORGE MCP surface so the right tool is chosen for the right intent.  
 > **Canonical source:** `A-FORGE/src/interfaces/mcp/core.ts` + `proxyTools.ts` + `forgeTools.ts` + `gatewayTools.ts`.  
@@ -219,6 +219,20 @@ Read federation health, logs, and Netdata metrics.
 | `forge_log_tail` | `OBSERVE` | No | Tail systemd logs for any federation organ. |
 | `forge_netdata_alarms` | `OBSERVE` | No | Read Netdata alarms. |
 | `forge_netdata_metrics` | `OBSERVE` | No | Read Netdata chart data. |
+
+---
+
+## 12.5. Visualization & Agentic Data Analysis (1 tool)
+
+Shared surface for all domain organs. Agentic charts + automatic "eureka margin" detection (turning points, high deviation, curvature). Enables GEOX crossplots, WEALTH time-series + distributions, WELL vitality trends, and quantum discovery pattern finding without each organ owning viz code.
+
+| Tool | Class | Lease? | Use When |
+|------|-------|--------|----------|
+| `forge_chart` | `OBSERVE` | No | Generate SVG chart from data + receive eureka_candidates (reversals/outliers/curvature as discovery margins). Types: line, bar, scatter, pie, area, histogram. |
+
+**Pattern:** query data (forge_postgres / forge_wealth / raw series) → forge_chart → agent sees SVG + margins → iterate / eureka.
+
+**Upstream reference:** antvis/mcp-server-chart (25+ @antv charts) — this is the A-FORGE canonical always-on subset for federation unity.
 
 ---
 
