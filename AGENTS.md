@@ -23,15 +23,15 @@ epistemic_status: SOURCE_OF_TRUTH
 
 ## What This Repo Is
 
-The governed execution shell of the arifOS Federation. A-FORGE builds, deploys, forges, and runs code under constitutional gates. It also hosts MIND:51001 and MEMORY:51002 federated intelligence services.
+The governed execution shell of the arifOS Federation. A-FORGE builds, deploys, forges, and runs code under constitutional gates. MIND:51001 (cognitive intelligence) runs alongside; MEMORY is VAULT999-only.
 
 - **API Port:** 7071 (Express server, Docker Compose via systemd)
 - **MCP Port:** 7072 (`a-forge-mcp.service`, streamable-http, multi-client with stateless whitelist)
-- **HTTP Connector:** `https://forge.arif-fazil.com/mcp` (Caddy proxy, 14 stateless OBSERVE tools, MUTATE requires session)
+- **HTTP Connector:** `https://forge.arif-fazil.com/mcp` (Caddy proxy, 22 stateless OBSERVE tools, MUTATE requires session)
 - **stdio:** `npm run mcp:stdio` — local agent ingress (OpenCode, Claude Code, etc.)
 - **Runtime:** Node.js 22+, TypeScript ~6.0
 - **Architecture:** Hexagonal / layered (domain → application → infrastructure → interfaces)
-- **Tool surface:** 64 `forge_*` tools (forge_chart for cross-organ agentic viz + eureka margins; 14 stateless, rest session)
+- **Tool surface:** 75 tools (73 forge_*, 1 forge8_execute, 1 document_ingest; 22 stateless HTTP, rest session)
 
 ### Repository Structure
 
@@ -55,7 +55,7 @@ A-FORGE is a **governed execution shell**, not a domain organ.
 **BRAIN / HANDS CONSTITUTIONAL SEPARATION (BINDING)**
 
 - **arifOS MCP (8088)** = Brain / Governor / Judge: owns floors (L01–L13), final verdicts (`SEAL`/`HOLD_888`/`VOID`/`SABAR`), INIT→JUDGE→SEAL contract, VAULT999, memory routing.
-- **A-FORGE MCP (7072 + stdio)** = Hands / Actuator / Forger: owns `forge_*` execution (77+ tools), leases, proxies, build/deploy/run/shell/browser. **Never** issues constitutional verdicts or self-authorizes.
+- **A-FORGE MCP (7072 + stdio)** = Hands / Actuator / Forger: owns execution (75 tools), leases, proxies, build/deploy/run/shell/browser. **Never** issues constitutional verdicts or self-authorizes.
 
 Every agent must respect the loop:
 1. arifOS (`arif_init`, `arif_think`, `arif_critique`, `arif_judge`).
