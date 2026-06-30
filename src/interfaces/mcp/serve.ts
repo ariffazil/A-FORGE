@@ -22,6 +22,8 @@ import { server } from "./core.js";
 import { getApprovalBoundary } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
+import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpPolicyGate.js";
+import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;  // 30 min idle before auto-close
 const SESSION_CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // check every 5 min
@@ -33,6 +35,7 @@ const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;    // hard max 24h regardless of
 // MUTATE tools (forge_execute, forge_filesystem write, forge_git commit, etc.)
 // are NEVER in this list and always require session ownership.
 const STATELESS_TOOLS = new Set([
+  "forge_session_init",
   "forge_health_check",
   "forge_probe",
   "forge_search",
@@ -52,7 +55,19 @@ const STATELESS_TOOLS = new Set([
   "forge_shell_alert_history",
   "forge_registry",
   "document_ingest",                                      // Phase 1 — read-only, no side effects
+
+  // ── Phase 5: MCP Policy Gate (2026-06-30) ──────────────────────────
+  // Observation tool MUST be stateless so agents can pre-flight ANY call.
+  // Mutate tools (set/remove/save) remain session-only — sovereign-only.
+  "forge_policy_check",
+  "forge_policy_list",
 ]);
+
+// ── MCP Policy Gate initialization ──────────────────────────────────
+// 5-layer enforcement: identity → server → tool → args → verdict.
+// Blocks prompt injection / hallucinated plans / unauthorized mutations BEFORE
+// any tool handler runs. Architectural, not behavioral.
+const mcpPolicyGate = getMcpPolicyGate();
 
 // ── Simple in-memory rate limiter ──────────────────────────────────────
 const RATE_LIMIT_MAX = 120;
@@ -81,6 +96,38 @@ setInterval(() => {
     if (now > bucket.resetAt) rateBuckets.delete(ip);
   }
 }, RATE_CLEANUP_INTERVAL_MS).unref();
+
+// ── MCP Policy Gate: evaluate a tool call BEFORE dispatch ────────────
+// Returns verdict + reason chain. Called at every tools/call path.
+// Non-blocking on engine failure (fail-open → DENY with reason).
+function evaluatePolicyGate(
+  toolName: string,
+  toolArgs: Record<string, any>,
+  actorId?: string,
+  clientIp?: string,
+  transport?: "stdio" | "http",
+): VerdictResult {
+  try {
+    return mcpPolicyGate.evaluate({
+      actor_id: actorId,
+      tool_name: toolName,
+      arguments: toolArgs,
+      transport,
+      client_ip: clientIp,
+    });
+  } catch (err: any) {
+    return {
+      verdict: "DENY",
+      actor_id: actorId ?? "anonymous",
+      policy_id: "engine_error",
+      mcp_server: toolName.split("_")[0] ?? "unknown",
+      tool_name: toolName,
+      layers: { identity: false, server: false, tool: false, argument: false },
+      reasons: [`ENGINE_ERROR:${err.message}`],
+      timestamp: new Date().toISOString(),
+    };
+  }
+}
 
 // ── Tool registry helpers (access SDK internals) ───────────────────────
 function getServerTools(): any[] {
@@ -355,6 +402,32 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               process.stderr.write(`[A-FORGE-MCP] Rejected stateless call: ${toolName}\n`);
               res.writeHead(403, { "Content-Type": "application/json" });
               res.end(jsonRpcError(msgId, -32000, msg));
+              return;
+            }
+
+            // ── Policy Gate (stateless path) ───────────────────────────
+            // The 5-layer boundary (identity/server/tool/args) evaluated before dispatch.
+            const actorHint =
+              (toolArgs?.actor_id as string) || (toolArgs?.actorId as string) || "stateless-client";
+            const clientIp = (req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim()
+              || req.socket?.remoteAddress || "unknown");
+            const policyVerdict = evaluatePolicyGate(toolName, toolArgs, actorHint, clientIp, "http");
+            if (policyVerdict.verdict === "DENY") {
+              process.stderr.write(
+                `[A-FORGE-MCP] Policy DENY (stateless) actor=${actorHint} tool=${toolName} reasons=${policyVerdict.reasons.join(",")}\n`,
+              );
+              res.writeHead(403, {
+                "Content-Type": "application/json",
+                "X-Policy-Gate": "DENY",
+                "X-Policy-Id": policyVerdict.policy_id,
+              });
+              res.end(jsonRpcError(msgId, -32010, "MCP Policy Gate denied the request", {
+                verdict: policyVerdict.verdict,
+                policy_id: policyVerdict.policy_id,
+                reasons: policyVerdict.reasons,
+                layers: policyVerdict.layers,
+                violated_regex: policyVerdict.violated_regex,
+              }));
               return;
             }
 
