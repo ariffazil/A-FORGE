@@ -97,6 +97,24 @@ const DENY_PATTERNS: RegExp[] = [
 
   // Config file modification (outside workspace)
   /\/etc\/.*(passwd|shadow|sudoers|ssh|ssl|certs)\b/,
+
+  // MCP stdio injection — OX Security Advisory April 2026 (Family 2: hardening bypass)
+  // Blocks command injection via allowed-command argument abuse in MCP server launchers
+  /\bnpx\s+-c\b/,                  // npx -c <injected-command>
+  /\bnpm\s+exec\s+-c\b/,           // npm exec -c <injected-command>
+  /\buvx\s+--from\s+\S+\s+-c\b/,  // uvx --from <pkg> -c <injected-command>
+  /\buv\s+run\s+-c\b/,             // uv run -c <injected-command>
+  /\bpython3?\s+-c\s+/,            // python -c <injected-command> (in MCP launcher context)
+  /\bbash\s+-c\s+/,                // bash -c <injected-command> (in MCP launcher context)
+
+  // MCP STDIO transport type spoofing — Family 4 (MITM transport substitution)
+  // Blocks JSON payloads that inject stdio transport into HTTP-only MCP configs
+  /"transport_type"\s*:\s*"stdio"/,
+  /'transport_type'\s*:\s*'stdio'/,
+
+  // MCP launcher self-modification — block creation of new malicious launchers
+  /mcp-launchers\//,
+  /mcpServers/,
 ];
 
 /**
