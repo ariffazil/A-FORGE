@@ -621,8 +621,7 @@ async function ghPut(path: string, body: unknown): Promise<any> {
 // ── Handler: Git Worktree (local physics sensor) ─────────────────────────────
 
 async function runGit(args: string[], cwd: string): Promise<string> {
-  const { execSync } = await import("child_process");
-  return execSync("git " + args.join(" "), {
+  return execFileSync("git", args, {
     encoding: "utf-8",
     cwd,
     timeout: 10000,
@@ -631,7 +630,7 @@ async function runGit(args: string[], cwd: string): Promise<string> {
 }
 
 function gitDirExists(p: string): boolean {
-  try { require("fs").existsSync(p); return true; } catch { return false; }
+  try { return existsSync(p); } catch { return false; }
 }
 
 export async function handleForgeWorktree(args: any) {
