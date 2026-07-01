@@ -27,5 +27,24 @@
     "registered_at": "2026-06-29T15:47:51.036Z",
     "last_seen": "2026-06-29T15:47:51.036Z",
     "lease_ids": []
+  },
+  "FI-008": {
+    "agent_id": "FI-008",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "always",
+      "shell_exec": "always",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "always"
+    },
+    "identity_proof": "pending",
+    "registered_at": "2026-07-01T17:22:18.751Z",
+    "last_seen": "2026-07-01T17:22:18.751Z",
+    "lease_ids": []
   }
 }
