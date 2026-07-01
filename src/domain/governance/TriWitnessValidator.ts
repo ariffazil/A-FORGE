@@ -294,7 +294,7 @@ export class TriWitnessValidator {
     const organ = domainOrgans[input.domain] ?? "AAA";
 
     const domainSignals: Record<string, string[]> = {
-      geox: ["seismic", "basin", "petrophysics", "well", "formation", "porosity", "Vsh", "Sw"],
+      geox: ["seismic", "basin", "petrophysics", "well", "formation", "porosity", "Vsh", "Sw", "gamma", "GR", "log", "depth"],
       wealth: ["NPV", "IRR", "capital", "cashflow", "portfolio", "risk", "asset"],
       well: ["vitality", "homeostasis", "fatigue", "dignity", "readiness", "sleep"],
       arifos: ["judge", "seal", "floor", "constitution", "session", "vault"],
