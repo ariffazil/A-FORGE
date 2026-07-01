@@ -25,7 +25,7 @@ node dist/test/PlanValidator.test.js
 A-FORGE is the **governed execution shell** of the arifOS Federation. It:
 
 - **Executes** approved plans through the 4-layer forge gate (F1 → Model → Governance → Irreversibility)
-- **Auto-discovers** 62+ tools across 5 MCP surfaces (arifOS, GEOX, WEALTH, WELL, A-FORGE)
+- **Auto-discovers** tools across live federation MCP surfaces (arifOS, GEOX, WEALTH, WELL, A-FORGE); A-FORGE :7072 exposes 72 tools
 - **Bridges** arifOS SEAL authorization to execution substrates
 - **Bridges** to MIND (Hermes:8644) and MEMORY (VAULT999 + tiered L1-L6 storage) — A-FORGE does NOT host them
 - **Terminal forge** — interactive streaming-LLM interface with session persistence
@@ -97,7 +97,7 @@ npm run mcp:stdio
 - **Tests run from `dist/test/`** — rebuild before testing
 - **Tool risk tiers:** low → auto | medium → advisory | high/critical → 888_HOLD
 - **`FloorEnforcer`** emits canonical `SABAR` not legacy `CAUTION` (fix per `9ded584`)
-- **STALE SOT FILES:** CLAUDE.md ✅ Updated 2026-06-21
+- **STALE SOT FILES:** CLAUDE.md ✅ Updated 2026-07-01
 
 ---
 

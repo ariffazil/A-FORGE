@@ -2,7 +2,7 @@
 
 > **DITEMPA BUKAN DIBERI** — Federated Source of Truth.
 > **Owner:** A-FORGE
-> **Last verified:** 2026-06-05
+> **Last verified:** 2026-07-01
 > **Canonical reference:** `/root/CONTEXT.md` (live machine state)
 
 ---
@@ -23,7 +23,7 @@ A-FORGE = execution shell (do it, safely)
 ## Owns
 
 - Governed agent execution pipeline (PlanValidator → ModelCapabilityGate → floors → ApprovalBoundary → execution)
-- MCP federation bridge (62+ tools across 5 organs, auto-discovered)
+- MCP federation bridge (72+ tools across A-FORGE + live federation MCP surfaces, auto-discovered)
 - Terminal forge (streaming LLM, session persistence, federation probe)
 - Build, deploy, and artifact orchestration
 - Observability (Prometheus metrics, federation telemetry)
@@ -45,7 +45,7 @@ If your code is judging constitutionality → wrong layer.
 
 ## Live Federation Ports (VERIFIED 2026-06-05)
 
-The arifOS Federation has **7 organs**: arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL, and APEX (legacy). A-FORGE additionally hosts the MIND:51001 and MEMORY:51002 federated intelligence services; these are services, not separate organs.
+The arifOS Federation has **6 active organs**: arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL. APEX (port 3002) is decommissioned. A-FORGE additionally hosts the MIND:51001 federated intelligence service; it is a service, not a separate organ. MEMORY:51002 is not currently responding.
 
 | Organ | Port | Public Host | Status |
 |-------|------|-------------|--------|
@@ -54,9 +54,9 @@ The arifOS Federation has **7 organs**: arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL
 | GEOX MCP | `127.0.0.1:8081` | `geox.arif-fazil.com` | ✅ LIVE |
 | WEALTH MCP | `127.0.0.1:18082` | `wealth.arif-fazil.com` | ✅ LIVE |
 | WELL MCP | `127.0.0.1:18083` | `well.arif-fazil.com` | ✅ LIVE |
-| A-FORGE | `127.0.0.1:7071` | — (internal only; no public ingress) | ✅ LIVE |
+| A-FORGE | `127.0.0.1:7071` | `forge.arif-fazil.com` (MCP) | ✅ LIVE |
 | AAA a2a | `127.0.0.1:3001` | `aaa.arif-fazil.com` | ✅ LIVE |
-| APEX Prime | `127.0.0.1:3002` | — (internal) | ⚠️ LEGACY — deliberation moved to AAA a2a-server; kept as health probe |
+| APEX Prime | `127.0.0.1:3002` | — (internal) | ❌ DECOMMISSIONED — deliberation moved to AAA a2a-server; service stopped |
 
 ---
 
@@ -65,6 +65,7 @@ The arifOS Federation has **7 organs**: arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL
 | Endpoint | URL | Transport |
 |----------|-----|-----------|
 | arifOS | `https://arifos.arif-fazil.com/mcp` | Cloudflare Tunnel |
+| A-FORGE | `https://forge.arif-fazil.com/mcp` | Cloudflare Tunnel |
 | GEOX | `https://geox.arif-fazil.com/mcp` | Cloudflare Tunnel |
 | WEALTH | `https://wealth.arif-fazil.com/mcp` | Cloudflare Tunnel |
 | WELL | `https://well.arif-fazil.com/mcp` | Cloudflare Tunnel |
