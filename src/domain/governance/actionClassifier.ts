@@ -165,6 +165,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_shell_ledger",       // shell ledger — read-only
   "forge_shell_alert_history", // shell alert history — read-only
   "forge_shell",              // shell execution — authority verified by handler via arifOS
+  "forge_worktree",           // local git physics sensor — read-only, OBSERVE
 ]);
 
 /**

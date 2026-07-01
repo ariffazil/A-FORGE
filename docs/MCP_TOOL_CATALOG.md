@@ -137,7 +137,7 @@ Direct Postgres access to the local vault999 database.
 
 ---
 
-## 7. Git — Local Repo Operations (4 tools)
+## 7. Git — Local Repo Operations (5 tools)
 
 Read + commit git state in allowed repo roots (`/root/arifOS`, `/root/A-FORGE`, `/root/AAA`, `/root/geox`, `/root/WEALTH`, `/root/WELL`, `/root/APEX`).
 
@@ -147,6 +147,7 @@ Read + commit git state in allowed repo roots (`/root/arifOS`, `/root/A-FORGE`, 
 | `forge_git_diff` | `OBSERVE` | No | Uncommitted diff (optionally staged). |
 | `forge_git_log` | `OBSERVE` | No | Recent commit history. |
 | `forge_git_commit` | `EXECUTE_REVERSIBLE` | Yes | Stage and commit; `push=true` requires 888_HOLD. |
+| `forge_worktree` | `OBSERVE` | No | Git physics sensor — branch, dirty state, stash, conflicts, in-progress ops, blast radius, recommendations. |
 
 ---
 

@@ -58,10 +58,8 @@ const STATELESS_TOOLS = new Set([
   "forge_document_ingest",                                   // Phase 1 — read-only, no side effects
 
   // ── Phase 5: MCP Policy Gate (2026-06-30) ──────────────────────────
-  // Observation tool MUST be stateless so agents can pre-flight ANY call.
-  // Mutate tools (set/remove/save) remain session-only — sovereign-only.
-  "forge_policy_check",
-  "forge_policy_list",
+  // Observation/check/list capability in the merged engine is stateless.
+  "forge_policy",
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────

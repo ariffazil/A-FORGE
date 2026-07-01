@@ -16,7 +16,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { randomUUID } from "node:crypto";
 import { mkdir, appendFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, join } from "node:path";
 import {
   type TaskContext,
   type PageContext,
@@ -616,6 +616,128 @@ async function ghPut(path: string, body: unknown): Promise<any> {
   return JSON.parse(text);
 }
 
+// ── Handler: Git Worktree (local physics sensor) ─────────────────────────────
+
+async function runGit(args: string[], cwd: string): Promise<string> {
+  const { execSync } = await import("child_process");
+  return execSync("git " + args.join(" "), {
+    encoding: "utf-8",
+    cwd,
+    timeout: 10000,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+}
+
+function gitDirExists(p: string): boolean {
+  try { require("fs").existsSync(p); return true; } catch { return false; }
+}
+
+export async function handleForgeWorktree(args: any) {
+  const { cwd, request_id } = args;
+  const workdir = cwd ?? process.cwd();
+
+  try {
+    // 1. Current branch
+    const branch = await runGit(["branch", "--show-current"], workdir);
+
+    // 2. Ahead/behind vs tracking remote
+    let ahead = 0, behind = 0, upstream: string | null = null;
+    try {
+      const upstreamRef = (await runGit(["rev-parse", "--abbrev-ref", "@{upstream}"], workdir)).trim();
+      if (upstreamRef) {
+        upstream = upstreamRef;
+        ahead  = parseInt((await runGit(["rev-list", "--count", `${upstreamRef}..${branch.trim()}`], workdir)).trim() || "0");
+        behind = parseInt((await runGit(["rev-list", "--count", `${branch.trim()}..${upstreamRef}`], workdir)).trim() || "0");
+      }
+    } catch { /* no upstream */ }
+
+    // 3. Porcelain status — single shot for all dirty signals
+    const status = await runGit(["status", "--porcelain=v1"], workdir);
+    const staged: string[] = [], unstaged: string[] = [], untracked: string[] = [], ignored: string[] = [];
+
+    for (const line of status.split("\n").filter(Boolean)) {
+      if (line.startsWith("warning:")) continue;
+      const [idx, wksp, ...rest] = line;
+      const file = rest.join("").replace(/^"(.*)"$/, "$1"); // unquote
+      if (idx === "?" && wksp === "?") untracked.push(file);
+      else if (idx === "!" && wksp === "!") ignored.push(file);
+      else if (idx !== " " && idx !== "?") staged.push(file);
+      else if (wksp !== " " && wksp !== "?") unstaged.push(file);
+    }
+
+    // 4. Stash list
+    const stashOut = await runGit(["stash", "list"], workdir);
+    const stash_list = stashOut.split("\n").filter(Boolean).map((line) => {
+      const m = line.match(/^(stash@\{(\d+)\}): (.*)$/);
+      return m ? { ref: m[1], index: parseInt(m[2]), message: m[3].trim() } : null;
+    }).filter(Boolean);
+
+    // 5. Diff summary
+    const diffSummary: { file: string; change: string }[] = [];
+    try {
+      const diffOut = await runGit(["diff", "--stat", "--summary"], workdir);
+      diffSummary.push(...diffOut.split("\n")
+        .filter((l) => l.includes("|"))
+        .map((l) => { const p = l.trim().split("|"); return { file: p[0].trim(), change: p[1].trim() }; }));
+    } catch { /* no diff */ }
+
+    // 6. In-progress operations
+    const gitDir = (await runGit(["rev-parse", "--git-dir"], workdir)).trim();
+    const in_progress_ops: string[] = [];
+    if (gitDir) {
+      if (gitDirExists(join(gitDir, "rebase-merge")) || gitDirExists(join(gitDir, "rebase-apply"))) in_progress_ops.push("rebase");
+      if (gitDirExists(join(gitDir, "MERGE_HEAD"))) in_progress_ops.push("merge");
+      if (gitDirExists(join(gitDir, "CHERRY_PICK_HEAD"))) in_progress_ops.push("cherry-pick");
+      if (gitDirExists(join(gitDir, "BISECT_LOG"))) in_progress_ops.push("bisect");
+      if (gitDirExists(join(gitDir, "REVERT_HEAD"))) in_progress_ops.push("revert");
+    }
+
+    // 7. Conflicts
+    const conflicts: string[] = [];
+    if (in_progress_ops.includes("merge") || in_progress_ops.includes("rebase")) {
+      const conflictOut = await runGit(["diff", "--name-only", "--diff-filter=U"], workdir);
+      conflicts.push(...conflictOut.split("\n").filter(Boolean));
+    }
+
+    // 8. Blast radius assessment
+    let blast_radius = "low", blast_reason = "clean";
+    if (conflicts.length > 0)          { blast_radius = "critical"; blast_reason = "conflicts_unresolved"; }
+    else if (in_progress_ops.some((op) => ["rebase","cherry-pick","revert"].includes(op))) { blast_radius = "high"; blast_reason = "in_progress_operation"; }
+    else if (staged.length + unstaged.length + untracked.length > 0) { blast_radius = "medium"; blast_reason = "uncommitted_changes"; }
+
+    // 9. Recommendations (OBSERVE — never mutate)
+    const recommendations: string[] = [];
+    if (conflicts.length > 0)                        recommendations.push("resolve_conflicts");
+    if (in_progress_ops.includes("rebase"))           recommendations.push("abort_rebase");
+    if (in_progress_ops.includes("merge"))             recommendations.push("abort_merge");
+    if (stash_list.length > 0)                       recommendations.push("inspect_stash");
+    if (staged.length > 0)                           recommendations.push("review_staged");
+    if (unstaged.length > 0)                         recommendations.push("review_unstaged");
+    if (untracked.length > 0)                        recommendations.push("consider_gitignore");
+
+    const receipt_id = await recordReceipt({
+      tool: "forge_worktree", cwd: workdir, branch: branch.trim(),
+      blast_radius, staged_count: staged.length, unstaged_count: unstaged.length,
+    });
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          request_id, workdir, branch: branch.trim() || null, ahead, behind, upstream,
+          staged_files: staged, unstaged_files: unstaged, untracked_files: untracked, ignored_files: ignored,
+          stash_list, diff_summary: diffSummary, conflicts, in_progress_ops,
+          blast_radius, blast_reason, recommendations,
+          is_dirty: staged.length + unstaged.length + untracked.length + conflicts.length > 0,
+          scope: "local_only", receipt_id,
+        }, null, 2),
+      }],
+    };
+  } catch (err: any) {
+    return gatewayError(request_id, `worktree failed: ${err?.message ?? String(err)}`, { tool: "forge_worktree", cwd: workdir });
+  }
+}
+
 // ── Handlers: Netdata ─────────────────────────────────────────────────────────
 
 export async function handleForgeNetdataAlarms(args: any) {
@@ -814,6 +936,12 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().describe("Caller request ID"),
     lease_id: z.string().describe("Kernel-issued lease ID"),
   }, handleForgeGitHubCreatePullRequest);
+
+  // Worktree
+  server.tool("forge_worktree", "Local git physics sensor. Returns branch, dirty state, stash, conflicts, in-progress ops, blast radius, and actionable recommendations. OBSERVE-class — never mutates.", {
+    cwd: z.string().optional().describe("Working directory (defaults to process cwd)"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeWorktree);
 
   // Netdata
   server.tool("forge_netdata_alarms", "Read Netdata alarms. OBSERVE-class.", {

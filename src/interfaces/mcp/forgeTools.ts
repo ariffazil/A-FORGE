@@ -149,10 +149,14 @@ export function registerIdentityTools(server: McpServer): void {
 // forge_agent — merged: register, status, list, kill
   server.tool(
     "forge_agent",
-    "Agent identity management. Modes: register, status, list. F11 AUTH.",
+    "Agent identity management. Modes: register, status, list, kill. F11 AUTH.",
     {
       mode: z.enum(["register", "status", "list", "kill"]).default("list"),
       agent_id: z.string().optional().describe("Agent identifier"),
+      // kill mode requires these three — F1 AMANAH + F11 AUDIT
+      actor_id: z.string().optional().describe("Actor requesting kill (required for mode=kill)"),
+      lease_id: z.string().optional().describe("Governed lease ID (required for mode=kill)"),
+      reason: z.string().optional().describe("Audit reason for kill (required for mode=kill)"),
       agent_type: z.enum(["opencode", "hermes", "chatgpt", "custom"]).optional().describe("Agent origin"),
       role: z.enum(["governed_coder", "observer", "geoscience_agent", "finance_agent", "wellness_agent", "controller"]).optional().describe("Role profile"),
       authority: z.object({
@@ -167,7 +171,7 @@ export function registerIdentityTools(server: McpServer): void {
       }).optional().describe("Authority ceiling per action class"),
       identity_proof: z.string().optional().describe("SHA-256 of agent's public key or session nonce"),
     },
-    async ({ mode, agent_id, agent_type, role, authority, identity_proof }) => {
+    async ({ mode, agent_id, agent_type, role, authority, identity_proof, actor_id, lease_id, reason }) => {
       if (mode === "list") {
         const agents = Array.from(registeredAgents.values()).map(a => ({
           agent_id: a.agent_id, role: a.role, agent_type: a.agent_type,
@@ -183,18 +187,26 @@ export function registerIdentityTools(server: McpServer): void {
         return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", agent, active_leases: agent.lease_ids.map(id => activeLeases.get(id)).filter(Boolean) }, null, 2) }] };
       }
       // P2.4: forge_agent kill mode — terminate agent + revoke leases + recover resources
+      // F1 AMANAH: requires actor_id + lease_id + reason (IRREVERSIBLE-level safety)
       if (mode === "kill") {
         if (!agent_id) return { content: [{ type: "text" as const, text: "agent_id required for mode=kill" }], isError: true };
+        if (!actor_id) return { content: [{ type: "text" as const, text: "actor_id required for mode=kill" }], isError: true };
+        if (!lease_id) return { content: [{ type: "text" as const, text: "lease_id required for mode=kill" }], isError: true };
+        if (!reason || reason.trim().length === 0) return { content: [{ type: "text" as const, text: "reason required for mode=kill" }], isError: true };
+        // Verify lease is valid and not expired
+        const lease = activeLeases.get(lease_id);
+        if (!lease || lease.revoked) return { content: [{ type: "text" as const, text: `Lease '${lease_id}' not found or revoked` }], isError: true };
+        if (new Date(lease.expires_at).getTime() < Date.now()) return { content: [{ type: "text" as const, text: `Lease '${lease_id}' expired` }], isError: true };
         const agent = registeredAgents.get(agent_id);
         if (!agent) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Agent '${agent_id}' not registered` }, null, 2) }], isError: true };
         const revokedLeases: string[] = [];
         for (const lid of agent.lease_ids) {
-          const lease = activeLeases.get(lid);
-          if (lease && !lease.revoked) { lease.revoked = true; revokedLeases.push(lid); }
+          const l = activeLeases.get(lid);
+          if (l && !l.revoked) { l.revoked = true; revokedLeases.push(lid); }
         }
         registeredAgents.delete(agent_id);
         await saveIdentities();
-        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", mode: "kill", agent_id, revoked_leases: revokedLeases.length, removed_at: new Date().toISOString() }, null, 2) }] };
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", mode: "kill", actor_id, lease_id, reason, agent_id, revoked_leases: revokedLeases.length, removed_at: new Date().toISOString() }, null, 2) }] };
       }
       // register
       if (!agent_id || !agent_type || !role) return { content: [{ type: "text" as const, text: "agent_id, agent_type, role required for mode=register" }], isError: true };
@@ -228,7 +240,11 @@ const AFORGE_TO_ARIFOS_CLASS: Record<string, string> = {
 };
 
 function toArifosActionClass(cls: string): string {
-  return AFORGE_TO_ARIFOS_CLASS[cls] ?? "OBSERVE";
+  // F9 ANTI-HANTU + F7 HUMILITY: unknown action class = HOLD, never silent OBSERVE
+  if (!(cls in AFORGE_TO_ARIFOS_CLASS)) {
+    throw new Error(`UNKNOWN_ACTION_CLASS: '${cls}' — must be one of: ${Object.keys(AFORGE_TO_ARIFOS_CLASS).join(", ")}`);
+  }
+  return AFORGE_TO_ARIFOS_CLASS[cls];
 }
 
 function isObserveClass(actionClass: string): boolean {
@@ -432,8 +448,19 @@ export async function validateLeaseForTool(
     return ok;
   }
 
-  const requestedRank = CLASS_RANK[actionClass] ?? 0;
-  const leaseRank = CLASS_RANK[lease.max_action_class] ?? 0;
+  // F9 ANTI-HANTU + F7 HUMILITY: unknown class = HOLD, never silent IRREVERSIBLE rank 0
+  if (!(actionClass in CLASS_RANK)) {
+    const fail = { ok: false as const, gate: "UNKNOWN_ACTION_CLASS", reason: `Unknown action class '${actionClass}' — cannot rank for lease check` };
+    logLeaseDecision(lease_id, tool, actionClass, fail);
+    return fail;
+  }
+  if (!(lease.max_action_class in CLASS_RANK)) {
+    const fail = { ok: false as const, gate: "LEASE_UNKNOWN_CLASS", reason: `Lease has unknown max_action_class '${lease.max_action_class}'` };
+    logLeaseDecision(lease_id, tool, actionClass, fail);
+    return fail;
+  }
+  const requestedRank = CLASS_RANK[actionClass];
+  const leaseRank = CLASS_RANK[lease.max_action_class];
   // Lower rank = higher severity. A lease can authorize actions at or below
   // its own severity, never above it.
   if (requestedRank < leaseRank) {
