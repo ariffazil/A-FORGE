@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { readFile, writeFile, readdir, stat, mkdir } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { globSync } from "glob";
@@ -47,10 +47,10 @@ function checkPathAllowed(target: string): { allowed: boolean; resolvedPath: str
   return { allowed: true, resolvedPath };
 }
 
-function gitExec(repo: string, args: string): string {
+function gitExec(repo: string, args: string[]): string {
   const repoDir = repo ? resolve(repo) : process.cwd();
-  execSync(`git -C "${repoDir}" rev-parse --git-dir 2>/dev/null`, { encoding: "utf-8", timeout: 5000 });
-  return execSync(`git -C "${repoDir}" ${args}`, { encoding: "utf-8", timeout: 30000 });
+  execFileSync("git", ["-C", repoDir, "rev-parse", "--git-dir"], { encoding: "utf-8", timeout: 5000 });
+  return execFileSync("git", ["-C", repoDir, ...args], { encoding: "utf-8", timeout: 30000 });
 }
 
 function ghAuthHeader(): string {
@@ -253,12 +253,13 @@ export function registerGitTools(server: McpServer): void {
   }, async ({ mode, repo, staged, limit, count, message, files, push }) => {
     try {
       if (mode === "status") {
-        const branch = gitExec(repo, "rev-parse --abbrev-ref HEAD").trim();
-        const status = gitExec(repo, "status --short");
+        const branch = gitExec(repo, ["rev-parse", "--abbrev-ref", "HEAD"]).trim();
+        const status = gitExec(repo, ["status", "--short"]);
         return text(`Branch: ${branch}\n${status || "(clean)"}`);
       }
       if (mode === "diff") {
-        const diffOutput = gitExec(repo, `diff ${staged ? "--cached" : ""} --unified=3`).split("\n").slice(0, limit).join("\n") || "(no diff)";
+        const diffArgs = staged ? ["diff", "--cached", "--unified=3"] : ["diff", "--unified=3"];
+        const diffOutput = gitExec(repo, diffArgs).split("\n").slice(0, limit).join("\n") || "(no diff)";
         const diffBytes = Buffer.byteLength(diffOutput, "utf-8");
         return text({
           diff: diffOutput,
@@ -274,11 +275,14 @@ export function registerGitTools(server: McpServer): void {
           },
         });
       }
-      if (mode === "log") return text(gitExec(repo, `log --oneline -${Math.min(count, 50)}`));
+      if (mode === "log") return text(gitExec(repo, ["log", "--oneline", `-${Math.min(count, 50)}`]));
       if (!message) return text("message is required for mode=commit", true);
-      if (files && files.length > 0) gitExec(repo, `add ${files.map((f) => `"${f}"`).join(" ")}`);
-      else gitExec(repo, "add -A");
-      const output = gitExec(repo, `commit -m "${message.replace(/"/g, '\\"')}"`);
+      if (files && files.length > 0) {
+        gitExec(repo, ["add", ...files]);
+      } else {
+        gitExec(repo, ["add", "-A"]);
+      }
+      const output = gitExec(repo, ["commit", "-m", message]);
       const msgBytes = Buffer.byteLength(message, "utf-8");
       const thermoJ = landauerCostBytes(msgBytes);
       if (push) return text("F1 AMANAH: push requires separate judge/lease path; commit created but push refused.", true);
