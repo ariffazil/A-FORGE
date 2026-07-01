@@ -1,8 +1,8 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-06-30 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
+last_verified: 2026-07-01 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
 valid_from: 2026-06-14
-valid_until: 2026-07-30
+valid_until: 2026-07-31
 confidence: high
 scope: /root/A-FORGE
 epistemic_status: SOURCE_OF_TRUTH
@@ -152,6 +152,24 @@ git push → Lane 1 (Standard) + Lane 2 (BIJAKSANA)
 ```
 
 **Cross-organ:** This architecture is deployed identically across all 6 federation organs (arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL). Each organ's `AGENTS.md` carries this section.
+
+## 🎭 Humour Execution Boundary (FORGED 2026-07-01)
+
+> **Canonical skill:** `agent-humour-doctrine` (Hermes)
+
+A-FORGE is the **execution shell** — the hard wall between banter and action.
+
+| Layer | Rule |
+|-------|------|
+| **Banter layer** | Agent can mirror tone, be socially natural, join the joke |
+| **Execution layer** | Tool calls remain boring, explicit, reversible unless confirmed |
+| **The wall** | Humour NEVER crosses from banter into execution |
+
+All 75 forge_* tools treat every input as literal. A joke is not a command. A laugh is not a confirmation. "Flush everything lah" ≠ permission to reset state.
+
+Humour never bypasses lease requirements. `forge_lease_request` requires explicit scope, not "haha do it."
+
+---
 
 ## 🛡️ STEEL SECURITY LAYER — Permanent Federation Context
 
