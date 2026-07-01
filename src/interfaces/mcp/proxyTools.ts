@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { execFileSync } from "node:child_process";
+import { execSync, execFileSync } from "node:child_process";
 import { readFile, writeFile, readdir, stat, mkdir } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { globSync } from "glob";
@@ -53,9 +53,21 @@ function gitExec(repo: string, args: string[]): string {
   return execFileSync("git", ["-C", repoDir, ...args], { encoding: "utf-8", timeout: 30000 });
 }
 
-function ghAuthHeader(): string {
+function ghAuthHeaders(): Record<string, string> {
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
-  return token ? `-H "Authorization: token ${token}"` : "";
+  const h: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
+  if (token) h.Authorization = `Bearer ${token}`;
+  return h;
+}
+
+async function ghFetch(url: string, init?: RequestInit): Promise<any> {
+  const resp = await fetch(url, { ...init, headers: { ...ghAuthHeaders(), ...init?.headers } });
+  const body = await resp.text();
+  if (!resp.ok) throw new Error(`GitHub ${resp.status}: ${body.slice(0, 200)}`);
+  return JSON.parse(body);
 }
 
 export function registerFilesystemTools(server: McpServer): void {
@@ -188,7 +200,7 @@ export function registerPostgresTools(server: McpServer): void {
       } else {
         sql = `SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = '${schema}' ORDER BY table_name`;
       }
-      const output = execSync(`psql "${pgUrl}" -c "${sql.replace(/"/g, '\\"')}" --csv 2>&1`, { encoding: "utf-8", timeout: 30000 });
+      const output = execFileSync("psql", [pgUrl, "-c", sql, "--csv"], { encoding: "utf-8", timeout: 30000 });
       return text(output);
     } catch (err: any) {
       return text(`Error: ${err.message?.slice(0, 1000)}`, true);
@@ -324,10 +336,6 @@ export function registerGitHubTools(server: McpServer): void {
     }),
   }, async ({ mode, query, type, limit, repo, action, pr_number, title, body, head, base, state }) => {
     try {
-      // TODO: BYPASS RISK — this uses raw execSync for curl. Shell injection via repo/payload.
-      // Migrate to forge_shell for governed execution + ArifSeal audit.
-      // See: forge_work/shell-terminal-wiring.md
-      const auth = ghAuthHeader();
       if (mode === "search") {
         if (!query) return text("query is required for mode=search", true);
         let url: string;
@@ -335,7 +343,7 @@ export function registerGitHubTools(server: McpServer): void {
         else if (type === "code") url = `https://api.github.com/search/code?q=${encodeURIComponent(query)}&per_page=${limit}`;
         else if (type === "issues") url = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}+type:issue&per_page=${limit}`;
         else url = `https://api.github.com/search/issues?q=${encodeURIComponent(query)}+type:pr&per_page=${limit}`;
-        const data = JSON.parse(execSync(`curl -s ${auth} "${url}"`, { encoding: "utf-8", timeout: 15000 }));
+        const data = await ghFetch(url, { method: "GET" });
         const items = (data.items || []).slice(0, limit).map((i: any) => ({
           name: i.full_name || i.repository?.full_name,
           url: i.html_url,
@@ -347,18 +355,21 @@ export function registerGitHubTools(server: McpServer): void {
       }
       if (!repo) return text("repo is required for mode=pr", true);
       if (action === "list") {
-        const prs = JSON.parse(execSync(`curl -s ${auth} "https://api.github.com/repos/${repo}/pulls?state=${state}&per_page=10"`, { encoding: "utf-8", timeout: 15000 }))
-          .map((p: any) => ({ number: p.number, title: p.title, state: p.state, user: p.user?.login, url: p.html_url }));
+        const data = await ghFetch(`https://api.github.com/repos/${repo}/pulls?state=${state}&per_page=10`, { method: "GET" });
+        const prs = (data || []).map((p: any) => ({ number: p.number, title: p.title, state: p.state, user: p.user?.login, url: p.html_url }));
         return text(prs);
       }
       if (action === "get") {
         if (!pr_number) return text("pr_number required for action=get", true);
-        const pr = JSON.parse(execSync(`curl -s ${auth} "https://api.github.com/repos/${repo}/pulls/${pr_number}"`, { encoding: "utf-8", timeout: 15000 }));
+        const pr = await ghFetch(`https://api.github.com/repos/${repo}/pulls/${pr_number}`, { method: "GET" });
         return text({ number: pr.number, title: pr.title, state: pr.state, body: pr.body?.slice(0, 2000), user: pr.user?.login, url: pr.html_url });
       }
       if (!title || !head) return text("title and head required for action=create", true);
-      const payload = JSON.stringify({ title, body: body || "", head, base });
-      const pr = JSON.parse(execSync(`curl -s -X POST ${auth} "https://api.github.com/repos/${repo}/pulls" -d '${payload.replace(/'/g, "'\\''")}'`, { encoding: "utf-8", timeout: 15000 }));
+      const pr = await ghFetch(`https://api.github.com/repos/${repo}/pulls`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, body: body || "", head, base }),
+      });
       return text({ number: pr.number, title: pr.title, url: pr.html_url, state: pr.state });
     } catch (err: any) {
       return text(`Error: ${err.message?.slice(0, 500)}`, true);
@@ -367,10 +378,6 @@ export function registerGitHubTools(server: McpServer): void {
 }
 
 export function registerDockerTools(server: McpServer): void {
-  // TODO: BYPASS RISK — forge_docker uses raw execSync with no input validation.
-  // container/command fields allow arbitrary shell injection.
-  // Migrate to docker_wrapper.ts (governed) + forge_shell for execution.
-  // See: forge_work/shell-terminal-wiring.md
   server.registerTool("forge_docker", {
     description: "Canonical Docker primitive. Modes: ps, logs, exec, images. Destructive operations stay out of this read/exec surface.",
     inputSchema: z.object({
@@ -383,12 +390,23 @@ export function registerDockerTools(server: McpServer): void {
     }),
   }, async ({ mode, all, container, command, interactive, tail }) => {
     try {
-      if (mode === "ps") return text(execSync(`docker ps ${all ? "-a" : ""} --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'`, { encoding: "utf-8", timeout: 10000 }));
-      if (mode === "images") return text(execSync("docker images --format 'table {{.Repository}}\t{{.Tag}}\t{{.Size}}'", { encoding: "utf-8", timeout: 10000 }));
+      if (mode === "ps") {
+        const output = execFileSync("docker", ["ps", ...(all ? ["-a"] : []), "--format", "table {{.Names}}\t{{.Status}}\t{{.Ports}}"], { encoding: "utf-8", timeout: 10000 });
+        return text(output);
+      }
+      if (mode === "images") {
+        const output = execFileSync("docker", ["images", "--format", "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"], { encoding: "utf-8", timeout: 10000 });
+        return text(output);
+      }
       if (!container) return text("container is required for mode=logs or mode=exec", true);
-      if (mode === "logs") return text(execSync(`docker logs --tail ${tail} "${container}" 2>&1`, { encoding: "utf-8", timeout: 10000 }));
+      if (mode === "logs") {
+        const output = execFileSync("docker", ["logs", "--tail", String(tail), container], { encoding: "utf-8", timeout: 10000 });
+        return text(output);
+      }
       if (!command) return text("command is required for mode=exec", true);
-      return text(execSync(`docker exec ${interactive ? "-it" : ""} "${container}" ${command} 2>&1`, { encoding: "utf-8", timeout: 30000 }));
+      const args = ["exec", ...(interactive ? ["-it"] : []), container, ...command.split(" ")];
+      const output = execFileSync("docker", args, { encoding: "utf-8", timeout: 30000 });
+      return text(output);
     } catch (err: any) {
       return text(`Error: ${err.message?.slice(0, 1000)}`, true);
     }
