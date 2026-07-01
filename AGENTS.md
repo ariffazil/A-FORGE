@@ -26,9 +26,9 @@ epistemic_status: SOURCE_OF_TRUTH
 The governed execution shell of the arifOS Federation. A-FORGE builds, deploys, forges, and runs code under constitutional gates. MIND:51001 (cognitive intelligence) runs alongside; MEMORY is VAULT999-only.
 
 - **API Port:** 7071 (Express server, Docker Compose via systemd)
-- **MCP Port:** 7072 (`a-forge-mcp.service`, streamable-http, multi-client with stateless whitelist)
-- **HTTP Connector:** `https://forge.arif-fazil.com/mcp` (Caddy proxy, 22 stateless OBSERVE tools, MUTATE requires session)
-- **stdio:** `npm run mcp:stdio` — local agent ingress (OpenCode, Claude Code, etc.)
+- **MCP Port:** 7072 (local-only loopback; `a-forge-mcp.service`, streamable-http, internal loopback ingress for federation organs)
+- **External Ingress:** Fully collapsed to `https://mcp.arif-fazil.com/mcp` (proxies to arifOS kernel `:8088` for central governance and constitutional refiltering). Direct public access to `:7072` is blocked.
+- **stdio:** `npm run mcp:stdio` — local secure agent ingress (OpenCode, Claude Code, etc.)
 - **Runtime:** Node.js 22+, TypeScript ~6.0
 - **Architecture:** Hexagonal / layered (domain → application → infrastructure → interfaces)
 - **Tool surface:** 75 tools (73 forge_*, 1 forge_execute_sealed, 1 forge_document_ingest; 22 stateless HTTP, rest session)
@@ -223,4 +223,3 @@ This prompt enforces the **Reflexion Loop** (000→111→333→555→777→888�
 4. Store forge receipt + critic output in `src/domain/memory/failed_plans/`
 
 **Explicit override:** `OBSERVE` or `READ` operations may skip steps 333–777 but must complete 000 (clarify), 111 (gather evidence), and 888 (log).
-
