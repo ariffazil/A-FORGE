@@ -633,6 +633,8 @@ app.post("/execute", async (req: Request, res: Response) => {
           content: JSON.stringify({ tool, actionClass, session_id, timestamp: new Date().toISOString() }),
           reason: `auto-seal: ${tool}`,
           tier: requires888Hold(actionClass) ? "CRITICAL" : "STANDARD",
+          actor_id,
+          session_id,
         });
         console.error(`[ADAT] Auto-sealed ${tool} (${actionClass}) → vault`);
       } catch (sealErr) {

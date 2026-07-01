@@ -99,6 +99,17 @@ tools:
     min_mode: GOVERN
     risk_label: R3
 
+  - name: forge_worktree
+    purpose: Git physics sensor — branch, dirty state, stash, conflicts, in-progress ops, blast radius, recommendations
+    reads: [repo_state]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
   - name: forge_filesystem
     purpose: Read/write files in governed scope
     reads: [filesystem]
