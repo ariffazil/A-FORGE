@@ -163,8 +163,8 @@ jobs:
           echo "Ψ  = $PSI"
           echo "Ω  = $OMEGA"
           
-          # Verdict
-          if [ "$STANDARD_OK" = "success" ] && [ "$DS" -lt 50 ] && [ "$PHI" -gt 80 ] && [ "$OMEGA" = "0" ]; then
+          # Verdict — ${VAR:-0} guards against empty-string outputs from failed upstream steps
+          if [ "$STANDARD_OK" = "success" ] && [ "${DS:-0}" -lt 50 ] && [ "${PHI:-0}" -gt 80 ] && [ "${OMEGA:-0}" = "0" ]; then
             VERDICT="SEAL_READY"
           elif [ "$STANDARD_OK" = "success" ]; then
             VERDICT="SABAR"
@@ -183,10 +183,10 @@ jobs:
             "timestamp": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
             "lane_1_standard": "$STANDARD_OK",
             "lane_2_bijaksana": {
-              "ds": $DS,
-              "phi": $PHI,
-              "psi": "$PSI",
-              "omega": $OMEGA
+              "ds": "${DS:-0}",
+              "phi": "${PHI:-0}",
+              "psi": "${PSI:-0}",
+              "omega": "${OMEGA:-0}"
             },
             "verdict": "$VERDICT",
             "label": "Agentic CI"
