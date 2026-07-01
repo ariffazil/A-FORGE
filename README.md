@@ -18,16 +18,10 @@
    ╚══════════════════════════════════════════════════════════════════════╝
 ```
 
-[![Organ](https://img.shields.io/badge/organ-A--FORGE-8B5CF6)](https://github.com/ariffazil/A-FORGE)
-[![Status](https://img.shields.io/badge/status-LIVE-brightgreen)](CONTEXT.md)
-[![Node](https://img.shields.io/badge/node-22+-339933?logo=node.js&logoColor=white)](package.json)
-[![TypeScript](https://img.shields.io/badge/typescript-6.0-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
-[![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
-[![Port](https://img.shields.io/badge/port-7071-64748b?logo=express&logoColor=white)](deploy/Caddyfile)
-[![Federation](https://img.shields.io/badge/federation-arifOS-8B5CF6)](https://github.com/ariffazil/arifos)
-[![Systemd](https://img.shields.io/badge/systemd-A--FORGE.service-orange)](deploy/systemd/A-FORGE.service)
-[![Tests](https://img.shields.io/badge/tests-running-success)](test/)
-[![Tools](https://img.shields.io/badge/live-75%20tools-8B5CF6)](docs/)
+[![Agentic CI](https://github.com/ariffazil/A-FORGE/actions/workflows/agentic-ci.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/agentic-ci.yml)
+[![Boundary Guard](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml)
+[![Governance Gate](https://github.com/ariffazil/A-FORGE/actions/workflows/governance-gate.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/governance-gate.yml)
+[![License](https://img.shields.io/github/license/ariffazil/A-FORGE?label=License)](LICENSE)
 
 ---
 
@@ -43,7 +37,7 @@ A-FORGE is the **governed execution shell** of the arifOS Federation — one of 
 
 | Read this | For | Link |
 |-----------|-----|------|
-| **arifOS** | Constitutional kernel. 10 public verbs (`arif_init`→`arif_judge`→`arif_seal`). 13 floors. The judge. | [`ariffazil/arifos`](https://github.com/ariffazil/arifos) |
+| **arifOS** | Constitutional kernel. 7 public verbs (`arif_init`→`arif_observe`→`arif_think`→`arif_route`→`arif_judge`→`arif_act`→`arif_seal`). 13 floors. The judge. | [`ariffazil/arifos`](https://github.com/ariffazil/arifos) |
 | **A-FORGE** (this repo) | Executor. 75 MCP tools. Shell, git, docker, browser, vault. Gates + A-THINK law at border. | ← you are here |
 | **AAA** | Cockpit. A2A mesh. Agent registry. React 19 dashboard. What Arif reads. | [`ariffazil/AAA`](https://github.com/ariffazil/AAA) |
 
