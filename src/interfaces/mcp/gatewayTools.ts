@@ -17,6 +17,8 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { randomUUID } from "node:crypto";
 import { mkdir, appendFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import {
   type TaskContext,
   type PageContext,
