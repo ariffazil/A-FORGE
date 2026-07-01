@@ -1,7 +1,7 @@
 # RUNBOOK.md — A-FORGE (Execution Shell)
 
 > **Organ:** A-FORGE | **API Port:** 7071 | **MCP Port:** 7072 | **stdio:** via `npm run mcp:stdio`
-> **Last Updated:** 2026-06-20
+> **Last Updated:** 2026-07-01
 
 ## Start / Stop
 ```bash
@@ -54,7 +54,7 @@ node -e "import('@modelcontextprotocol/sdk/client/index.js').then(({Client})=>im
 cd /root/A-FORGE
 npm install
 npm run build
-make test            # security-audit + build + 17 test suites
+make test            # security-audit + build + 48 test files
 ```
 
 ## Logs

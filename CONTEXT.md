@@ -1,8 +1,8 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-06-24
+last_verified: 2026-07-01
 valid_from: 2026-06-24
-valid_until: 2026-07-24
+valid_until: 2026-07-31
 confidence: high
 scope: /root/A-FORGE
 -->
@@ -10,7 +10,7 @@ scope: /root/A-FORGE
 # CONTEXT.md — A-FORGE (Engineering Actuator)
 
 > **Organ:** A-FORGE | **Port:** 7071 (MCP: 7072) | **Repo:** `ariffazil/A-FORGE`
-> **Last Updated:** 2026-06-24
+> **Last Updated:** 2026-07-01
 
 ## Live State
 

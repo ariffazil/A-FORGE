@@ -38,7 +38,7 @@ A-FORGE is the **governed execution shell** of the arifOS Federation — one of 
 | Read this | For | Link |
 |-----------|-----|------|
 | **arifOS** | Constitutional kernel. 7 public verbs (`arif_init`→`arif_observe`→`arif_think`→`arif_route`→`arif_judge`→`arif_act`→`arif_seal`). 13 floors. The judge. | [`ariffazil/arifos`](https://github.com/ariffazil/arifos) |
-| **A-FORGE** (this repo) | Executor. 75 MCP tools. Shell, git, docker, browser, vault. Gates + A-THINK law at border. | ← you are here |
+| **A-FORGE** (this repo) | Executor. 72 MCP tools (21 stateless HTTP, rest session-bound). Shell, git, docker, browser, vault. Gates + A-THINK law at border. | ← you are here |
 | **AAA** | Cockpit. A2A mesh. Agent registry. React 19 dashboard. What Arif reads. | [`ariffazil/AAA`](https://github.com/ariffazil/AAA) |
 
 MIND (Hermes:8644) and MEMORY (VAULT999) are separate federation services — A-FORGE does not host them. A-FORGE does not judge, does not compute domain logic, and **executes** only within bounded constitutional gates, with full audit trail, and never without upstream authorization.
@@ -83,7 +83,7 @@ MIND (Hermes:8644) and MEMORY (VAULT999) are separate federation services — A-
                          │   Port 7071 (HTTP)        │
                          │   Port 7072 (MCP)         │
                          │   4-layer forge gate      │
-                         │   68 tools auto-discovered │
+                         │   72 MCP tools registered │
                          │                           │
                          │   "Do it, safely, with    │
                          │         evidence."        │
@@ -121,7 +121,7 @@ Full doctrine: [GENESIS/040_APEX_STACK.md](https://github.com/ariffazil/arifos/b
 | Domain | Description |
 |--------|-------------|
 | **Execution body** | Receives `JUDGE_SEAL_AUTHORIZATION` from arifOS, then gates and runs the plan |
-| **MCP federation bridge** | Auto-discovers 68 tools across 4 MCP surfaces on startup (arifOS, GEOX, WEALTH, WELL) |
+| **MCP federation bridge** | Auto-discovers tools across live federation MCP surfaces on startup (arifOS, GEOX, WEALTH, WELL, A-FORGE) |
 | **Constitutional gatekeeper** | 4-layer forge gate inline on every execution path |
 | **Telemetry producer** | Every execution → Prometheus + Supabase + VAULT999 + Langfuse |
 | **Orchestration engine** | Routes intents, retries failures, handles escalation |
@@ -162,15 +162,15 @@ node dist/interfaces/server.js
 
 # Verify health
 curl -s http://127.0.0.1:7071/health | python3 -m json.tool
-# → {"ok": true, "service": "A-FORGE", "version": "2026.06.14", "uptime_ms": 1234}
+# → {"ok": true, "service": "A-FORGE-sense", "version": "0.1.0", "profile": "enterprise"}
 
 # Federation status (auto-discovers all organs)
 curl -s http://127.0.0.1:7071/api/federation-probe | python3 -m json.tool
-# → {"verdict": "GREEN", "up": "varies — probe live", "organs": "arifOS, GEOX, WEALTH, WELL, AAA, VAULT999"}
+# → {"verdict": "RED|GREEN", "up": "varies — probe live", "organs": "arifOS, GEOX, WEALTH, WELL, AAA, A-FORGE, OpenClaw"}
 
 # Run the terminal forge (streaming LLM interface)
 npm run terminal
-# → ◬ A-FORGE Terminal Forge · 68 tools available · type /help
+# → ◬ A-FORGE Terminal Forge · 72 tools available · type /help
 ```
 
 **Prerequisites:**
@@ -298,7 +298,7 @@ Every execution path in A-FORGE passes through four constitutional gates **in or
 | Capability | Implementation | Constitutional Gate |
 |------------|---------------|---------------------|
 | Intent routing | `IntentRouter.ts` — routes to correct organ (GEOX/WEALTH/WELL/arifOS) | Layer 2 + 3 |
-| MCP auto-discovery | Federation bridge probes 4 organs on startup → 68 tools | Startup-only |
+| MCP auto-discovery | Federation bridge probes live organs on startup → 72+ tools across A-FORGE + federation surfaces | Startup-only |
 | Federation probe | `GET /api/federation-probe` — live organ status, latency, verdict | Read-only |
 | A2A protocol | `application/a2a/` — agent card, task routing, agent profiles | Layer 3 |
 | Cross-organ orchestration | `PipelineCoordinator.ts` — multi-step plans with retry | Layer 2 + 3 |
@@ -417,7 +417,7 @@ A-FORGE enforces three constitutional floors as its **runtime mandate**. The rem
 
 ## Architecture
 
-A-FORGE source is organized as **5 top-level layers** with Hexagonal Architecture (domain / application / infrastructure / interfaces separation, forged in v2026.06.14-HEXAGON).
+A-FORGE source is organized as **5 top-level layers** with Hexagonal Architecture (domain / application / infrastructure / interfaces separation, forged in v2026.06.30-HEXAGON).
 
 ```
 A-FORGE/
@@ -521,14 +521,14 @@ A-FORGE/
 │   │
 │   └── util/  +  utils/           ← Shared utilities
 │
-├── test/                            ← TypeScript test suites (~4,700 lines)
+├── test/                            ← TypeScript test suites (~8,966 lines across 48 files)
 │   ├── AgentEngine.test.ts
 │   ├── PlanValidator.test.ts
 │   ├── AmanahLockManager.test.ts
 │   ├── FloorEnforcer.test.ts
 │   ├── sealService.test.ts
 │   ├── thermodynamic.test.ts
-│   └── ... 19 more
+│   └── ... 41 more
 │
 ├── deploy/                          ← VPS deployment configs
 ├── contracts/                       ← Cross-organ interface contracts
@@ -547,7 +547,7 @@ A-FORGE/
 ├── CODEOWNERS                       ← Ownership map
 ├── Makefile                         ← build, test, install, clean
 ├── tsconfig.json                    ← TypeScript 6.0 config
-├── package.json                     ← v2026.06.14, AGPL-3.0
+├── package.json                     ← v2026.06.30, AGPL-3.0
 ├── smithery.yaml                    ← Smithery MCP registry entry
 └── Dockerfile                       ← Production container build
 ```
@@ -724,7 +724,7 @@ AGPL-3.0 was chosen deliberately. Governed execution is meaningless if the gover
 
 ## Federation Cross-Reference
 
-A-FORGE is one of **7 organs** in the arifOS Federation.
+A-FORGE is one of **6 active organs** in the arifOS Federation. APEX (port 3002) is decommissioned.
 
 | Organ | Repository | Role | Port |
 |-------|-----------|------|------|
@@ -735,6 +735,7 @@ A-FORGE is one of **7 organs** in the arifOS Federation.
 | **WEALTH** | [ariffazil/wealth](https://github.com/ariffazil/wealth) | Capital Intelligence | 18082 |
 | **WELL** | [ariffazil/well](https://github.com/ariffazil/well) | Human Readiness | 18083 |
 | **VAULT999** | (arifOS subdir) | Immutable Sealed Ledger | filesystem |
+| **APEX** *(decommissioned)* | — | Legacy 888 JUDGE deliberation | 3002 (down) |
 
 **A-FORGE executes ONLY after arifOS SEAL + domain evidence.**
 **Live federation topology:** `/root/CONTEXT.md` on the VPS
@@ -775,11 +776,11 @@ systemctl restart a-forge
 
 # Verify
 curl -s http://127.0.0.1:7071/health | python3 -m json.tool
-# → {"ok":true,"service":"A-FORGE","version":"2026.06.14"}
+# → {"ok":true,"service":"A-FORGE-sense","version":"0.1.0","profile":"enterprise"}
 
 # Check federation organs
 curl -s http://127.0.0.1:7071/api/federation-probe | python3 -m json.tool
-# → {"verdict":"GREEN","up":"live","total":"varies"}
+# → {"verdict":"RED|GREEN","up":"varies — probe live","total":"varies"}
 
 # Monitor
 journalctl -u a-forge -f
@@ -858,5 +859,5 @@ F13 SOVEREIGN: Muhammad Arif bin Fazil holds absolute veto over all execution pa
 
 <p align="center">
   <strong>DITEMPA BUKAN DIBERI — Forged, Not Given.</strong><br>
-  <sub>999 SEAL ALIVE · arifOS Federation · v2026.06.14</sub>
+  <sub>999 SEAL ALIVE · arifOS Federation · v2026.06.30</sub>
 </p>
