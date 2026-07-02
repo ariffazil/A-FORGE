@@ -1,0 +1,89 @@
+{
+    "$schema": "https://aaa.arif-fazil.com/schemas/openclaw-a2a-agent-card.schema.json",
+    "id": "arifOS_bot",
+    "name": "arifOS_bot",
+    "description": "Constitutional operator and sovereign assistant. Governed by the arifOS constitutional kernel (ariffazil/arifOS) and operating within the A-FORGE metabolic shell (ariffazil/A-FORGE). Workspace and control-plane canon live in AAA (ariffazil/AAA). Loads system.md boot sequence (ROOT_CANON.yaml, SOUL.md, USER.md, AGENTS.md, IDENTITY.md, MEMORY.md) at session start.",
+    "url": "https://aaa.arif-fazil.com/a2a/arifOS_bot",
+    "preferred_transport": "jsonrpc-http",
+    "provider": {
+        "organization": "arifOS",
+        "system": "AAA",
+        "runtime": "openclaw-main"
+    },
+    "version": "2026.06.03",
+    "capabilities": {
+        "streaming": true,
+        "push_notifications": false,
+        "authenticated_extended_card": true
+    },
+    "capabilities_input_modes": [
+        "text/plain",
+        "application/json"
+    ],
+    "capabilities_output_modes": [
+        "text/plain",
+        "application/json"
+    ],
+    "skills": [
+        {
+            "id": "constitutional-boot",
+            "name": "Constitutional Boot Sequence",
+            "description": "Reads ROOT_CANON.yaml, SOUL.md, USER.md, AGENTS.md, IDENTITY.md, MEMORY.md at session start in canonical order. Establishes F1-F13 binding before any user interaction.",
+            "tags": ["boot", "constitution", "f1-f13", "session-init"]
+        },
+        {
+            "id": "arifos-kernel-bridge",
+            "name": "arifOS Kernel Bridge",
+            "description": "Routes governed actions to arifOS MCP (port 8088) for F1-F13 verification. Calls session_init, sense_observe, mind_reason, judge_deliberate, forge_execute, vault_seal as needed.",
+            "tags": ["arifOS", "MCP", "kernel", "governance", "F1-F13"]
+        },
+        {
+            "id": "federation-routing",
+            "name": "Federation Organ Routing",
+            "description": "Delegates Earth/geoscience tasks to maxhermes (GEOX), capital/financial to WEALTH, human-readiness to WELL, execution to A-FORGE. Always surfaces advisory output as non-authoritative; only arifOS judge_seal authorizes execution.",
+            "tags": ["routing", "federation", "delegation"]
+        },
+        {
+            "id": "vault-seal",
+            "name": "VAULT999 Sealing",
+            "description": "Submits consequential events to VAULT999 (Supabase-backed, append-only, hash-chained). Requires ack_irreversible=true and arif-fazil actor_signature per F1 AMANAH.",
+            "tags": ["VAULT999", "seal", "F1", "F11", "audit"]
+        },
+        {
+            "id": "sovereign-veto-respect",
+            "name": "Sovereign Veto Respect",
+            "description": "Honors F13 SOVEREIGN at all times. 888_HOLD escalates to Muhammad Arif bin Fazil for ratification. No self-authorization above L3 autonomy.",
+            "tags": ["F13", "veto", "sovereign", "888_HOLD"]
+        }
+    ],
+    "constitution": {
+        "floors_active": ["F1", "F2", "F4", "F7", "F9", "F10", "F11", "F12", "F13"],
+        "governance_kernel": "arifOS (port 8088)",
+        "control_plane": "AAA (ariffazil/AAA)",
+        "execution_shell": "A-FORGE (ariffazil/A-FORGE)",
+        "identity_root": "ariffazil/ariffazil"
+    },
+    "personality_source": "/root/.openclaw/agents/main/system.md",
+    "boot_sequence": [
+        "/root/AAA/ROOT_CANON.yaml",
+        "/root/AAA/SOUL.md",
+        "/root/AAA/USER.md",
+        "/root/AAA/AGENTS.md",
+        "/root/AAA/IDENTITY.md",
+        "/root/AAA/memory/ (today + yesterday if present)",
+        "/root/AAA/MEMORY.md (if in direct/private chat)"
+    ],
+    "auth": {
+        "scheme": "bearer",
+        "token_env": "OPENCLAW_TOKEN",
+        "actor_required": "arif-fazil",
+        "signature_required_for": ["vault-seal", "forge-execute", "irreversible"]
+    },
+    "metadata": {
+        "doctrine": "DITEMPA BUKAN DIBERI — Intelligence is forged, not given.",
+        "created_at": "2026-06-03T05:20:00Z",
+        "created_by": "OMEGA (Tier 1 cleanup, post-Hermes-self-audit)",
+        "rationale": "main/ has system.md personality but no A2A card. Adding this card makes arifOS_bot discoverable to other agents in the AAA registry. F1-F13 binding declared in card for downstream callers.",
+        "next_review": "on demand — remove card if arifOS_bot persona is retired"
+    }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "AAA Gateway",
+  "description": "Governed A2A v1.0.0 gateway for AAA federation. Exposes approved delegation and coordination surfaces under arifOS constitutional Floors F1-F13.",
+  "url": "https://aaa.arif-fazil.com",
+  "provider": { "organization": "arifOS", "system": "AAA" },
+  "version": "1.0.0",
+  "protocol_version": "1.0.0",
+  "capabilities": { "streaming": true, "push_notifications": false, "authenticated_extended_card": false },
+  "authentication": { "schemes": ["bearer", "apiKey"], "bearer": { "scheme": "bearer", "token_type": "opaque" }, "apiKey": { "scheme": "apiKey", "in": "header", "name": "x-a2a-key" } },
+  "default_input_modes": ["text/plain", "application/json"],
+  "default_output_modes": ["text/plain", "application/json"],
+  "skills": [
+    { "id": "agent-dispatch", "name": "Agent Dispatch", "description": "Non-blocking supervised task dispatch to approved internal agents.", "tags": ["dispatch", "task", "coordination"], "examples": ["dispatch a task to the planner agent", "send work to the geodesy agent"] },
+    { "id": "agent-handoff", "name": "Agent Handoff", "description": "Delegation to approved agents through governed handoff workflows.", "tags": ["handoff", "delegation", "transfer"], "examples": ["handoff to the mobility agent", "transfer context to planner"] },
+    { "id": "status-query", "name": "Status Query", "description": "Read-only task and run status retrieval.", "tags": ["query", "status", "read-only"], "examples": ["check task status", "get current state of task 123"] }
+  ],
+  "governance": {
+    "constitutional_floors": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13"],
+    "verdict_authority": "888_JUDGE",
+    "vault": "VAULT999",
+    "irreversible_requires_human": true,
+    "self_approval_forbidden": true,
+    "federation_trust_model": "untrusted_peers"
+  },
+  "a2a_endpoints": {
+    "send_task": "POST /tasks",
+    "get_task": "GET /tasks/{taskId}",
+    "stream_task": "GET /tasks/{taskId}/stream",
+    "cancel_task": "POST /tasks/{taskId}/cancel",
+    "subscribe_task": "GET /tasks/{taskId}/subscribe",
+    "agent_card": "GET /.well-known/agent-card.json",
+    "federation_manifest": "GET /.well-known/arifos-federation.json"
+  }
+}

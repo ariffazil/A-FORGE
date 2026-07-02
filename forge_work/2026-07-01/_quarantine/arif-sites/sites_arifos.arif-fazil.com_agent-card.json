@@ -1,0 +1,61 @@
+{
+  "name": "arifOS Observatory",
+  "description": "Constitutional governance observatory for the arifOS federation. Real-time organ health, floor scores, vault status, and federation topology. Part of the arifOS constellation — 7 organs, 13 constitutional floors, 120+ MCP tools.",
+  "url": "https://arifos.arif-fazil.com",
+  "provider": {
+    "organization": "arifOS",
+    "system": "arifOS Constitutional Kernel"
+  },
+  "version": "2026.06.26",
+  "protocol_version": "1.0.0",
+  "capabilities": {
+    "streaming": true,
+    "push_notifications": false,
+    "authenticated_extended_card": false
+  },
+  "default_input_modes": ["text/plain", "application/json"],
+  "default_output_modes": ["text/plain", "application/json"],
+  "skills": [
+    {
+      "id": "arifos-federation-status",
+      "name": "Federation Status",
+      "description": "Live health check of all 7 arifOS federation organs.",
+      "tags": ["governance", "health", "federation"],
+      "examples": ["Check federation health", "Which organs are alive?"]
+    },
+    {
+      "id": "arifos-floor-scores",
+      "name": "Constitutional Floor Scores",
+      "description": "Real-time F1-F13 constitutional floor compliance scores.",
+      "tags": ["governance", "constitution", "floors"],
+      "examples": ["Show floor scores", "Is F2 TRUTH being upheld?"]
+    },
+    {
+      "id": "arifos-vault-status",
+      "name": "VAULT999 Status",
+      "description": "Immutable audit vault health and recent seals.",
+      "tags": ["governance", "vault", "audit"],
+      "examples": ["Vault health", "Recent seals"]
+    }
+  ],
+  "governance": {
+    "constitutional_floors": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13"],
+    "verdict_authority": "888_JUDGE",
+    "vault": "VAULT999",
+    "irreversible_requires_human": true
+  },
+  "a2a_endpoints": {
+    "health": "GET /health",
+    "mcp": "POST /mcp",
+    "tools": "GET /tools.json",
+    "sse": "GET /sse"
+  },
+  "federation_organs": {
+    "arifos": {"port": 8088, "role": "governance_kernel"},
+    "geox": {"port": 8081, "role": "earth_intelligence"},
+    "wealth": {"port": 18082, "role": "capital_intelligence"},
+    "well": {"port": 18083, "role": "vitality_engine"},
+    "aaa": {"port": 3001, "role": "a2a_hub"},
+    "forge": {"port": 7071, "role": "metabolic_shell"}
+  }
+}

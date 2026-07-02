@@ -1,0 +1,73 @@
+{
+  "protocol_version": "0.3.0",
+  "id": "aaa-gateway",
+  "name": "AAA Gateway",
+  "description": "Governed agent gateway for AAA. Exposes only approved delegation and coordination surfaces.",
+  "url": "https://aaa.arif-fazil.com/a2a",
+  "preferred_transport": "jsonrpc-https",
+  "additional_interfaces": [
+    {
+      "transport": "sse",
+      "url": "https://aaa.arif-fazil.com/a2a/subscribe"
+    }
+  ],
+  "provider": {
+    "organization": "arifOS",
+    "system": "AAA",
+    "runtime": "OpenClaw"
+  },
+  "version": "0.1.0",
+  "capabilities": {
+    "streaming": true,
+    "push_notifications": false,
+    "authenticated_extended_card": false
+  },
+  "security_schemes": [
+    {
+      "id": "gateway-token",
+      "type": "bearer",
+      "description": "Gateway bearer token for internal trusted peers."
+    },
+    {
+      "id": "oauth2",
+      "type": "oauth2",
+      "description": "OAuth/OIDC for user-linked or federated callers."
+    },
+    {
+      "id": "api-key",
+      "type": "apiKey",
+      "description": "API key for fixed infrastructure peers."
+    }
+  ],
+  "security": [
+    ["gateway-token"],
+    ["oauth2"],
+    ["api-key"]
+  ],
+  "default_input_modes": ["text/plain", "application/json"],
+  "default_output_modes": ["text/plain", "application/json"],
+  "skills": [
+    {
+      "id": "agent-dispatch",
+      "name": "Agent Dispatch",
+      "description": "Non-blocking supervised task dispatch to approved internal agents.",
+      "tags": ["dispatch", "task", "coordination"],
+      "examples": ["dispatch a task to the planner agent", "send work to the geodesy agent"]
+    },
+    {
+      "id": "agent-handoff",
+      "name": "Agent Handoff",
+      "description": "Delegation to approved agents through governed handoff workflows.",
+      "tags": ["handoff", "delegation", "transfer"],
+      "examples": ["handoff to the mobility agent", "transfer context to planner"]
+    },
+    {
+      "id": "status-query",
+      "name": "Status Query",
+      "description": "Read-only task and run status retrieval.",
+      "tags": ["query", "status", "read-only"],
+      "examples": ["check task status", "get current state of task 123"]
+    }
+  ],
+  "supports_authenticated_extended_card": false
+}

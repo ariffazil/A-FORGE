@@ -1,0 +1,38 @@
+{
+  "id": "hermes-asi",
+  "name": "Hermes ASI",
+  "description": "Generalist agent — memory, reasoning, routing, coordination. Routes Earth tasks to maxhermes, execution tasks to hermes-ops.",
+  "url": "https://aaa.arif-fazil.com/a2a/hermes-asi",
+  "preferred_transport": "jsonrpc-http",
+  "provider": {
+    "organization": "arifOS",
+    "system": "AAA",
+    "runtime": "hermes"
+  },
+  "version": "1.0.0",
+  "capabilities": {
+    "streaming": true,
+    "push_notifications": false,
+    "authenticated_extended_card": false
+  },
+  "skills": [
+    {
+      "id": "memory-recall",
+      "name": "Memory Recall",
+      "description": "Retrieve past session context and decisions",
+      "tags": ["recall", "memory", "search"]
+    },
+    {
+      "id": "reasoning",
+      "name": "Reasoning",
+      "description": "Chain-of-thought logical reasoning",
+      "tags": ["reason", "logic", "analyze"]
+    },
+    {
+      "id": "routing",
+      "name": "Routing",
+      "description": "Route tasks to appropriate specialist agents",
+      "tags": ["route", "delegate", "coordinate"]
+    }
+  ]
+}

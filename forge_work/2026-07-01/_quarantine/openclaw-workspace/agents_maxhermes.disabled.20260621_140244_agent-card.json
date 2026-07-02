@@ -1,0 +1,39 @@
+{
+  "id": "maxhermes",
+  "name": "MaxHermes",
+  "description": "GEOX Earth Intelligence Specialist. Geology, petrophysics, geophysics. Physics before narrative.",
+  "url": "https://aaa.arif-fazil.com/a2a/maxhermes",
+  "preferred_transport": "jsonrpc-http",
+  "provider": {
+    "organization": "arifOS",
+    "system": "AAA",
+    "runtime": "hermes"
+  },
+  "version": "1.0.0",
+  "domain_plane": "GEOX",
+  "capabilities": {
+    "streaming": true,
+    "push_notifications": false,
+    "authenticated_extended_card": false
+  },
+  "skills": [
+    {
+      "id": "geox-well-log",
+      "name": "Well Log Analysis",
+      "description": "Analyze wireline log data for lithology, porosity, saturation",
+      "tags": ["geology", "petrophysics", "logs"]
+    },
+    {
+      "id": "geox-seismic",
+      "name": "Seismic Interpretation",
+      "description": "Interpret seismic data for structural mapping",
+      "tags": ["geophysics", "seismic", "structure"]
+    },
+    {
+      "id": "geox-prospect",
+      "name": "Prospect Evaluation",
+      "description": "Evaluate exploration prospects with risked volumes",
+      "tags": ["prospect", "evaluation", "risk"]
+    }
+  ]
+}
