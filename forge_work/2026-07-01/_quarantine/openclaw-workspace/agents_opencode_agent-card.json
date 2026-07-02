@@ -1,0 +1,45 @@
+{
+  "$schema": "https://aaa.arif-fazil.com/schemas/openclaw-a2a-agent-card.schema.json",
+  "id": "opencode",
+  "name": "opencode",
+  "description": "Coding agent — code analysis, feature building, refactoring. Operates under arifOS constitutional governance.",
+  "url": "https://aaa.arif-fazil.com/a2a/opencode",
+  "preferred_transport": "jsonrpc-http",
+  "provider": {
+    "organization": "arifOS",
+    "system": "AAA",
+    "runtime": "opencode"
+  },
+  "version": "1.0.0",
+  "capabilities": {
+    "streaming": true,
+    "push_notifications": false,
+    "authenticated_extended_card": false
+  },
+  "capabilities_input_modes": ["text/plain", "application/json"],
+  "capabilities_output_modes": ["text/plain", "application/json", "code/text"],
+  "skills": [
+    {
+      "id": "code-analysis",
+      "name": "Code Analysis",
+      "description": "Read and analyze codebase structure, patterns, and conventions",
+      "tags": ["read", "analyze", "understand"],
+      "examples": ["explain how auth works in this codebase", "what files handle user management"]
+    },
+    {
+      "id": "code-write",
+      "name": "Code Writing",
+      "description": "Create, edit, or refactor code files with constitutional compliance",
+      "tags": ["write", "edit", "refactor", "create"],
+      "examples": ["add authentication to the settings route", "refactor the database layer"]
+    },
+    {
+      "id": "build-validate",
+      "name": "Build & Validate",
+      "description": "Run linters, formatters, typecheckers, and tests",
+      "tags": ["build", "lint", "test", "format"],
+      "examples": ["run the full quality pipeline", "check if this file is properly formatted"]
+    }
+  ],
+  "supports_authenticated_extended_card": false
+}

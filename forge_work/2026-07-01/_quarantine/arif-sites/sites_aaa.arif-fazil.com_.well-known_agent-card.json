@@ -1,0 +1,88 @@
+{
+  "protocol_version": "0.3.0",
+  "id": "aaa-gateway",
+  "name": "AAA Cockpit",
+  "description": "Governed agentic cockpit for arifOS federation — monitors agents, tools, constitutional floors, approvals, health, and VAULT999 events.",
+  "url": "https://aaa.arif-fazil.com/a2a",
+  "preferred_transport": "jsonrpc-https",
+  "additional_interfaces": [
+    {
+      "transport": "sse",
+      "url": "https://aaa.arif-fazil.com/a2a/subscribe"
+    }
+  ],
+  "provider": {
+    "organization": "arifOS",
+    "system": "AAA",
+    "runtime": "OpenClaw"
+  },
+  "version": "2026.05.03",
+  "capabilities": {
+    "streaming": true,
+    "push_notifications": false,
+    "authenticated_extended_card": false
+  },
+  "security_schemes": [
+    {
+      "id": "gateway-token",
+      "type": "bearer",
+      "description": "Gateway bearer token for internal trusted peers."
+    },
+    {
+      "id": "oauth2",
+      "type": "oauth2",
+      "description": "OAuth/OIDC for user-linked or federated callers."
+    },
+    {
+      "id": "api-key",
+      "type": "apiKey",
+      "description": "API key for fixed infrastructure peers."
+    }
+  ],
+  "security": [
+    ["gateway-token"],
+    ["oauth2"],
+    ["api-key"]
+  ],
+  "default_input_modes": ["text/plain", "application/json"],
+  "default_output_modes": ["text/plain", "application/json"],
+  "skills": [
+    {
+      "id": "agent-dispatch",
+      "name": "Agent Dispatch",
+      "description": "Non-blocking supervised task dispatch to approved internal agents.",
+      "tags": ["dispatch", "task", "coordination"],
+      "examples": ["dispatch a task to the planner agent", "send work to the geodesy agent"]
+    },
+    {
+      "id": "agent-handoff",
+      "name": "Agent Handoff",
+      "description": "Delegation to approved agents through governed handoff workflows.",
+      "tags": ["handoff", "delegation", "transfer"],
+      "examples": ["handoff to the mobility agent", "transfer context to planner"]
+    },
+    {
+      "id": "status-query",
+      "name": "Status Query",
+      "description": "Read-only task and run status retrieval.",
+      "tags": ["query", "status", "read-only"],
+      "examples": ["check task status", "get current state of task 123"]
+    }
+  ],
+  "supports_authenticated_extended_card": false,
+  "governance": {
+    "constitutional_floors": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13"],
+    "verdict_authority": "888_JUDGE",
+    "vault": "VAULT999",
+    "irreversible_requires_human": true,
+    "self_approval_forbidden": true,
+    "federation_trust_model": "untrusted_peers",
+    "nist_ai_rmf": "https://airc.nist.gov/airmf-resources/airmf/5-sec-core/",
+    "owasp_genai": "https://owasp.org/www-project-top-10-for-large-language-model-applications/"
+  },
+  "proof": {
+    "build_hash": "c1d451b",
+    "governance_version": "KANON v2026.05",
+    "did_vc_proof": "https://arif-fazil.com/999"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "agent": {
+    "name": "AAA Gateway",
+    "version": "1.0.0",
+    "description": "AAA control-plane gateway for governed agent work, handoff, and runtime coordination",
+    "creator": "Arif",
+    "model": "minimax/auto",
+    "runtime": "OpenClaw"
+  },
+  "capabilities": {
+    "channels": ["telegram", "discord", "whatsapp"],
+    "features": [
+      "autonomous_execution",
+      "code_generation",
+      "research",
+      "document_creation",
+      "media_generation",
+      "web_browser_control",
+      "memory_management"
+    ]
+  },
+  "skills": [
+    {
+      "name": "coding-agent",
+      "description": "Delegate coding tasks to Codex/Claude Code"
+    },
+    {
+      "name": "weather",
+      "description": "Get weather and forecasts"
+    },
+    {
+      "name": "minimax-pdf",
+      "description": "Create professional PDF documents"
+    },
+    {
+      "name": "minimax-xlsx",
+      "description": "Create and edit Excel spreadsheets"
+    },
+    {
+      "name": "pptx-generator",
+      "description": "Generate PowerPoint presentations"
+    },
+    {
+      "name": "deep-research-consultant",
+      "description": "Deep research and consulting-style reports"
+    },
+    {
+      "name": "research-paper-generator",
+      "description": "Generate doctorate-level research papers"
+    },
+    {
+      "name": "social-media-trend-search",
+      "description": "Search trending social media content"
+    }
+  ],
+  "endpoints": {
+    "a2a": "https://aaa.arif-fazil.com/a2a",
+    "mcp": "https://aaa.arif-fazil.com/mcp"
+  },
+  "metadata": {
+    "created": "2026-03-31",
+    "updated": "2026-04-18",
+    "tags": ["AAA", "agent", "control-plane", "openclaw"]
+  }
+}

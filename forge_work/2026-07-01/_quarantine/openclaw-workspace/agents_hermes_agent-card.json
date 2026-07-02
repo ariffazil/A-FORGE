@@ -1,0 +1,45 @@
+{
+  "$schema": "https://aaa.arif-fazil.com/schemas/openclaw-a2a-agent-card.schema.json",
+  "id": "hermes",
+  "name": "Hermes",
+  "description": "Memory engine + deep reasoning specialist. Manages AAA institutional memory, recall, and reasoning chains.",
+  "url": "https://aaa.arif-fazil.com/a2a/hermes",
+  "preferred_transport": "jsonrpc-http",
+  "provider": {
+    "organization": "arifOS",
+    "system": "AAA",
+    "runtime": "ollama"
+  },
+  "version": "1.0.0",
+  "capabilities": {
+    "streaming": true,
+    "push_notifications": false,
+    "authenticated_extended_card": false
+  },
+  "capabilities_input_modes": ["text/plain", "application/json"],
+  "capabilities_output_modes": ["text/plain", "application/json"],
+  "skills": [
+    {
+      "id": "memory-recall",
+      "name": "Memory Recall",
+      "description": "Retrieve past session context, decisions, and accumulated knowledge",
+      "tags": ["recall", "memory", "search"],
+      "examples": ["what was decided about the MCP server config last week", "find all mentions of GEOX in memory"]
+    },
+    {
+      "id": "reasoning-chain",
+      "name": "Reasoning Chains",
+      "description": "Structured step-by-step reasoning for complex problems",
+      "tags": ["reason", "infer", "analyze"],
+      "examples": ["trace the logic behind this architectural decision", "what are the implications of this change"]
+    },
+    {
+      "id": "memory-curation",
+      "name": "Memory Curation",
+      "description": "Maintain and update the institutional memory index",
+      "tags": ["curate", "organize", "index"],
+      "examples": ["update memory with today's decisions", "rebuild the memory index"]
+    }
+  ],
+  "supports_authenticated_extended_card": false
+}

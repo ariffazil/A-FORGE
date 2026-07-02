@@ -1,0 +1,94 @@
+{
+  "protocol_version": "0.3.0",
+  "id": "aaa-gateway",
+  "name": "AAA Gateway",
+  "description": "Governed agent gateway for AAA. Exposes only approved delegation and coordination surfaces.",
+  "url": "https://aaa.arif-fazil.com/a2a",
+  "preferred_transport": "jsonrpc-https",
+  "additional_interfaces": [
+    {
+      "transport": "sse",
+      "url": "https://aaa.arif-fazil.com/a2a/events"
+    }
+  ],
+  "provider": {
+    "organization": "arifOS",
+    "system": "AAA",
+    "runtime": "OpenClaw"
+  },
+  "version": "0.1.0",
+  "capabilities": {
+    "streaming": true,
+    "push_notifications": false,
+    "authenticated_extended_card": false
+  },
+  "security_schemes": [
+    {
+      "id": "gateway-token",
+      "type": "bearer",
+      "description": "Gateway bearer token for internal trusted peers."
+    },
+    {
+      "id": "oauth2",
+      "type": "oauth2",
+      "description": "OAuth/OIDC for user-linked or federated callers."
+    },
+    {
+      "id": "api-key",
+      "type": "apiKey",
+      "description": "API key for fixed infrastructure peers."
+    },
+    {
+      "id": "mtls",
+      "type": "mutualTLS",
+      "description": "mTLS for trusted machine-to-machine lanes."
+    }
+  ],
+  "security": [
+    [
+      "gateway-token"
+    ],
+    [
+      "oauth2"
+    ],
+    [
+      "api-key",
+      "mtls"
+    ]
+  ],
+  "default_input_modes": [
+    "text/plain",
+    "application/json"
+  ],
+  "default_output_modes": [
+    "text/plain",
+    "application/json"
+  ],
+  "skills": [
+    {
+      "id": "agent-dispatch",
+      "name": "Agent Dispatch",
+      "description": "Non-blocking supervised task dispatch to approved internal agents.",
+      "approval_policy": "hold"
+    },
+    {
+      "id": "agent-handoff",
+      "name": "Agent Handoff",
+      "description": "Delegation to approved agents through governed handoff workflows.",
+      "approval_policy": "hold"
+    },
+    {
+      "id": "status-query",
+      "name": "Status Query",
+      "description": "Read-only task and run status retrieval.",
+      "approval_policy": "on-demand"
+    }
+  ],
+  "supports_authenticated_extended_card": false,
+  "openclaw_binding": {
+    "gateway_target": "openclaw-gateway",
+    "bridge_ref": "openclaw/a2a/bridge.yaml",
+    "session_mode": "acp",
+    "approval_policy": "hold"
+  }
+}

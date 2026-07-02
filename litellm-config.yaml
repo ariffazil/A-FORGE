@@ -1,0 +1,91 @@
+# LiteLLM Proxy Config — arifOS Federation Failover Gateway
+# 3 providers, 6 agent model groups, full fallback chains
+# Installed: 2026-07-02 by FORGE (000Ω)
+# DITEMPA BUKAN DIBERI
+
+model_list:
+  # ─── MAIN (MiMo V2.5 Pro — primary reasoning) ───
+  - model_name: main
+    litellm_params:
+      model: openai/mimo-v2.5-pro
+      api_base: https://token-plan-sgp.xiaomimimo.com/v1
+      api_key: os.environ/MIMO_API_KEY
+      request_timeout: 30
+
+  # ─── FORGE (GLM-5.2 — engineering execution) ───
+  - model_name: forge
+    litellm_params:
+      model: openai/glm-5.2
+      api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+      api_key: os.environ/QWEN_API_KEY
+      request_timeout: 45
+
+  # ─── AUDITOR (DeepSeek V4 Pro — deep reasoning) ───
+  - model_name: auditor
+    litellm_params:
+      model: openai/deepseek-v4-pro
+      api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+      api_key: os.environ/QWEN_API_KEY
+      request_timeout: 45
+
+  # ─── PLANNER (Kimi K2.7 Code — DAG planning) ───
+  - model_name: planner
+    litellm_params:
+      model: openai/kimi-k2.7-code
+      api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+      api_key: os.environ/QWEN_API_KEY
+      request_timeout: 45
+
+  # ─── OPS (MiniMax M2.5 Highspeed — fast monitoring) ───
+  - model_name: ops
+    litellm_params:
+      model: openai/MiniMax-M2.5-highspeed
+      api_base: https://api.minimax.io/v1
+      api_key: os.environ/MINIMAX_API_KEY
+      request_timeout: 15
+
+  # ─── SMALL (Qwen 3.6 Flash — lightweight tasks) ───
+  - model_name: small
+    litellm_params:
+      model: openai/qwen3.6-flash
+      api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+      api_key: os.environ/QWEN_API_KEY
+      request_timeout: 15
+
+  # ─── LAST RESORT (MiniMax M3 — never dies) ───
+  - model_name: last-resort
+    litellm_params:
+      model: openai/MiniMax-M3
+      api_base: https://api.minimax.io/v1
+      api_key: os.environ/MINIMAX_API_KEY
+      request_timeout: 15
+
+litellm_settings:
+  # ─── Retries (Layer 1: transient failures) ───
+  num_retries: 3
+  request_timeout: 30
+  
+  # ─── Circuit Breaker (Layer 3: proactive health) ───
+  allowed_fails: 3              # Trip after 3 fails in 60s window
+  cooldown_time: 60             # Cooldown 60s before retrying failed provider
+  
+  # ─── Fallback Chains (Layer 2: provider switch) ───
+  # Each chain crosses at least 2 different providers
+  fallbacks:
+    - {main: [forge, last-resort]}       # MiMo → GLM-5.2 (Bailian) → MiniMax M3
+    - {forge: [main, last-resort]}       # GLM-5.2 (Bailian) → MiMo → MiniMax M3
+    - {auditor: [main, last-resort]}     # DeepSeek (Bailian) → MiMo → MiniMax M3
+    - {planner: [main, last-resort]}     # Kimi (Bailian) → MiMo → MiniMax M3
+    - {ops: [small, last-resort]}        # MiniMax HS → Qwen Flash (Bailian) → MiniMax M3
+    - {small: [ops, last-resort]}        # Qwen Flash (Bailian) → MiniMax HS → MiniMax M3
+  
+  # ─── Default fallback (catch-all) ───
+  default_fallbacks: [last-resort]
+
+router_settings:
+  enable_pre_call_checks: true
+  routing_strategy: simple-shuffle
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  drop_params: true

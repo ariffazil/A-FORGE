@@ -1,0 +1,15 @@
+{
+  "id": "openclaw-arif-ops",
+  "name": "OpenClaw AGI",
+  "role": "Bounded operator — infra, exec, browser, cron, MCP gateway",
+  "tier": "AGI",
+  "capabilities": ["exec", "browser", "cron", "mcp", "acpx", "docker", "git", "health-probes"],
+  "endpoints": {
+    "gateway": "ws://127.0.0.1:18789",
+    "rest": "http://127.0.0.1:18789/gateway/execute",
+    "agent-card": "http://127.0.0.1:18789/.well-known/agent-card.json"
+  },
+  "governance": "AAA/arifOS",
+  "owner": "Arif",
+  "contact": "hermes-a2a (port 18001)"
+}
