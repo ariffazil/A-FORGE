@@ -60,6 +60,10 @@ const STATELESS_TOOLS = new Set([
   // ── Phase 5: MCP Policy Gate (2026-06-30) ──────────────────────────
   // Observation/check/list capability in the merged engine is stateless.
   "forge_policy",
+
+  // ── Phase 6: MCP Surface Guard (2026-07-03) ───────────────────────
+  // Drift detection is read-only observation. Pin mutates in-memory state only.
+  "forge_surface_guard",
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────
