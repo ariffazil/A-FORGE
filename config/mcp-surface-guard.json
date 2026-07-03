@@ -1,0 +1,24 @@
+{
+  "check_interval_ms": 60000,
+  "snapshot_ttl_ms": 300000,
+  "enforce_hold": true,
+  "drift_archive_age_ms": 86400000,
+  "organs": [
+    { "id": "arifos", "url": "http://localhost:8088", "required_tools": ["arif_init", "arif_observe", "arif_think", "arif_route", "arif_judge", "arif_act", "arif_seal"] },
+    { "id": "aforge", "url": "http://localhost:7072", "required_tools": ["forge_execute", "forge_shell", "forge_git", "forge_docker"] },
+    { "id": "geox", "url": "http://localhost:8081", "required_tools": ["geox_well_ingest", "geox_petrophysics", "geox_seismic_compute", "geox_basin"] },
+    { "id": "wealth", "url": "http://localhost:18082", "required_tools": ["wealth_compute_npv", "wealth_compute_emv", "wealth_monte_carlo_simulate"] },
+    { "id": "well", "url": "http://localhost:18083", "required_tools": ["well_readiness", "well_validate_vitality", "well_assess_homeostasis"] }
+  ],
+  "on_drift": {
+    "verdict": "HOLD",
+    "reason": "MCP_TOOL_SURFACE_DRIFT",
+    "notify": ["arif", "aaa_cockpit"],
+    "log_to": "vault999"
+  },
+  "error_envelope": {
+    "version": "2.0.0",
+    "classes": ["BAD_INPUT_SHAPE", "BAD_INPUT_VALUE", "MISSING_REQUIRED_FIELD", "DOWNSTREAM_FAILURE", "DOWNSTREAM_PARSER_FAIL", "RESOURCE_EXHAUSTED", "INTERNAL_ERROR", "AUTHORITY_BLOCK", "FLOOR_BLOCK", "TOOL_SURFACE_DRIFT"],
+    "recoverability_levels": ["AGENT_CAN_RETRY", "AGENT_CAN_ROUTE", "ESCALATE_TO_HUMAN", "ESCALATE_TO_888_HOLD", "FATAL_DO_NOT_RETRY", "RETRY_SAME_LATER"]
+  }
+}
