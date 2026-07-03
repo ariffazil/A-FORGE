@@ -76,6 +76,50 @@ A-FORGE **routes** judgment back to arifOS. Parallelism and rich proxies are all
 
 **Rule:** If your code needs NumPy / reservoir physics → wrong layer. If an execution path bypasses arifOS judgment for high-risk action → constitutional violation (888_HOLD).
 
+## Compile-Into-Runtime Rule (FORGED 2026-07-03)
+
+> **FORGE is a compiler, not a myth-maker.** Every new concept must route through the 7 organs before becoming output.
+
+When FORGE discovers a new pattern, failure mode, or insight, it MUST produce a structured organ mapping — not just prose:
+
+```
+insight → organ → failure mode → action → telemetry field
+```
+
+| Step | What to Map | Example |
+|------|------------|---------|
+| **insight** | What pattern was discovered? | Self-reference leads to overconfidence |
+| **organ** | Which of the 7 organs owns this? | Witness (check 7) |
+| **failure mode** | What breaks if ungoverned? | overconfidence → irreversible action |
+| **action** | What should be done? | require external check before SEAL |
+| **telemetry** | What field tracks this? | `witness_required=true` |
+
+### Reuse Hierarchy (Invariant 11)
+
+Before outputting ANY new concept, name, or taxonomy, run the 5-level check:
+
+```
+1. Can existing ORGANS express this?     → Reality/Governance/Memory/Meaning/Execution/Civilization/Witness
+2. Can existing FLOORS express this?      → F1-F13
+3. Can existing VERDICTS express this?    → SEAL/HOLD/SABAR/VOID
+4. Can existing MEMORY CLASSES hold this? → KSR/Vault/Ledger/Federation/Telemetry
+5. Can existing MCP PRIMITIVES cover it?  → tools/resources/prompts/leases/receipts
+```
+
+→ **YES to any:** ROUTE THROUGH EXISTING. Add the mapping as output.
+→ **ALL NO:** flag as DRAFT_ONLY. Do NOT mint as canonical.
+
+### Output Constraint
+
+Every FORGE response that introduces a new concept MUST include:
+
+```
+ROUTING: {insight} → {organ} → {failure_mode} → {action} → {telemetry}
+STATUS: REUSE_EXISTING | DRAFT_ONLY
+```
+
+This is what "compile-into-runtime" means. FORGE does not describe patterns — it routes them into executable architecture.
+
 ## Allowed Actions
 
 - Read, explore, code, test, refactor in A-FORGE boundary
