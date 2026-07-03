@@ -364,16 +364,17 @@ describe('Discovery 7: Remote State', () => {
   it('should run preflight on A-FORGE repo', () => {
     const result = gitRemotePreflight('/root/A-FORGE');
 
-    assert.ok(['CLEAR', 'WARN', 'BLOCK'].includes(result.status));
-    assert.ok(result.checks.auth, 'Auth check exists');
-    assert.ok(result.checks.reachable, 'Reachable check exists');
-    assert.ok(result.checks.branch_current, 'Branch current check exists');
-    assert.ok(result.recommendation, 'Has recommendation');
-    assert.ok(result.latency_ms > 0, 'Has latency');
+    assert.ok(['SAFE', 'DIVERGED', 'UNREACHABLE', 'AUTH_FAILED', 'PROTECTED', 'UNKNOWN'].includes(result.status));
+    assert.ok(typeof result.remote_reachable === 'boolean', 'Remote reachable is boolean');
+    assert.ok(typeof result.auth_ok === 'boolean', 'Auth ok is boolean');
+    assert.ok(typeof result.local_ahead === 'number', 'Local ahead is number');
+    assert.ok(result.details.branch, 'Has branch');
+    assert.ok(result.details.remote_url, 'Has remote URL');
+    assert.ok(result.reason, 'Has reason');
 
     // Auth should pass (we verified SSH works)
-    assert.equal(result.checks.auth.pass, true, 'SSH auth works');
-    assert.equal(result.checks.reachable.pass, true, 'Remote reachable');
+    assert.equal(result.auth_ok, true, 'SSH auth works');
+    assert.equal(result.remote_reachable, true, 'Remote reachable');
   });
 });
 
