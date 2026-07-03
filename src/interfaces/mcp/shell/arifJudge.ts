@@ -202,7 +202,7 @@ export function classifyCommand(command: string, cwd?: string): JudgeResult {
     if (pattern.test(trimmed)) {
       return {
         decision: "deny",
-        reason: `Constitutionally blocked operation: matched DENY pattern`,
+        reason: `888_HOLD: Constitutionally blocked operation — matched DENY pattern`,
         matchedPattern: pattern.source,
         actionClass: "IRREVERSIBLE",
       };
@@ -214,7 +214,7 @@ export function classifyCommand(command: string, cwd?: string): JudgeResult {
     if (pattern.test(trimmed)) {
       return {
         decision: "gate",
-        reason: `High-blast-radius operation: requires human approval`,
+        reason: `888_HOLD: High-blast-radius operation — requires human approval`,
         matchedPattern: pattern.source,
         actionClass: "EXECUTE_HIGH_IMPACT",
       };
@@ -235,7 +235,7 @@ export function classifyCommand(command: string, cwd?: string): JudgeResult {
     if (trimmed.includes(afPath)) {
       return {
         decision: "gate",
-        reason: `Self-modification risk: command touches A-FORGE path '${afPath}'`,
+        reason: `888_HOLD: Self-modification risk — command touches A-FORGE path '${afPath}'`,
         matchedPattern: `self_modify:${afPath}`,
         actionClass: "IRREVERSIBLE",
       };
@@ -250,7 +250,7 @@ export function classifyCommand(command: string, cwd?: string): JudgeResult {
       if (/\b(restart|stop|reload|kill|shutdown)\b/i.test(trimmed)) {
         return {
           decision: "gate",
-          reason: `Self-modification risk: command targets A-FORGE service '${svc}'`,
+          reason: `888_HOLD: Self-modification risk — command targets A-FORGE service '${svc}'`,
           matchedPattern: `self_modify:service:${svc}`,
           actionClass: "IRREVERSIBLE",
         };
