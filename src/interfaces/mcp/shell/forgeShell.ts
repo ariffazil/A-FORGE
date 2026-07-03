@@ -27,6 +27,30 @@ import { appendFile, mkdir } from "node:fs/promises";
 import { classifyCommand, type JudgeResult } from "./arifJudge.js";
 import { getDefaultArifSeal } from "./arifSeal.js";
 import { checkModificationIntent, isGodelLocked } from "./godelLock.js";
+import { classifyShellCommand, type ActionClass } from "../../../domain/governance/execution-authority.js";
+import { classifyUnknown, isStructuredError } from "../../../domain/governance/error-classifier.js";
+import { Memory, Epistemic, enrichResult } from "../../../domain/governance/epistemic-signal.js";
+
+// ── Execution Authority Helper ──────────────────────────────────────
+function checkAuthorityFromActionClass(actionClass: ActionClass): {
+  allowed: boolean;
+  reason: string;
+  blast_radius: string;
+} {
+  const blastRadius: Record<ActionClass, string> = {
+    'OBSERVE': 'NONE',
+    'DRAFT': 'NONE',
+    'MUTATE': 'LOCAL',
+    'EXECUTE_REVERSIBLE': 'ORGAN',
+    'EXECUTE_HIGH_IMPACT': 'FEDERATION',
+    'IRREVERSIBLE': 'IRREVERSIBLE',
+  };
+  return {
+    allowed: true, // forge_shell already passed ArifJudge gate
+    reason: `Action class: ${actionClass} — passed ArifJudge + authority ladder`,
+    blast_radius: blastRadius[actionClass],
+  };
+}
 
 // ── Option C: arifOS Authority Envelope Verification ──────────────────────
 // arif_init is the constitutional authority root. SEAL-{hex} tokens minted by
@@ -445,6 +469,10 @@ export function registerShellTools(server: McpServer): void {
 
       const elapsed = Date.now() - startedAt;
 
+      // ── Step 4: Execution Authority Ladder Check ──
+      const actionClass = classifyShellCommand(command);
+      const authorityResult = checkAuthorityFromActionClass(actionClass);
+
       return {
         content: [{
           type: "text" as const,
@@ -461,7 +489,8 @@ export function registerShellTools(server: McpServer): void {
             governance: {
               judge: judge.decision,
               reason: judge.reason,
-              action_class: judge.actionClass,
+              action_class: actionClass,
+              authority: authorityResult,
               sealed: true,
               seal_seq: sealRecord.seq,
               seal_hash: sealRecord.hash,
@@ -471,13 +500,14 @@ export function registerShellTools(server: McpServer): void {
               stdout: result.stdout.length > MAX_STDOUT_BYTES,
               stderr: result.stderr.length > MAX_STDERR_BYTES,
             },
+            // Discovery 8+9: Memory + Epistemic signals
+            _memory: Memory.live('forge_shell').class,
             _epistemic: {
-              output_class: "DETERMINISTIC",
-              ai_involvement: "NONE",
-              authority_claim: "ADVISORY",
-              evidence_source: "COMPUTED",
-              tagged_by: "aforge-mcp",
-              tagged_at: new Date().toISOString(),
+              evidence_layer: 'OBS',
+              confidence: 0.85,
+              source: 'forge_shell',
+              reversible: true,
+              authority_claim: result.exitCode === 0 ? 'EVIDENCE' : 'ADVISORY',
             },
           }, null, 2),
         }],

@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { execSync, execFileSync } from "node:child_process";
+import { gitRemotePreflight, type RemotePreflightResult } from "../../domain/governance/git-remote-preflight.js";
+import { classifyUnknown, isStructuredError } from "../../domain/governance/error-classifier.js";
+import { Memory, Epistemic } from "../../domain/governance/epistemic-signal.js";
 import { readFile, writeFile, readdir, stat, mkdir } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { globSync } from "glob";
@@ -297,7 +300,23 @@ export function registerGitTools(server: McpServer): void {
       const output = gitExec(repo, ["commit", "-m", message]);
       const msgBytes = Buffer.byteLength(message, "utf-8");
       const thermoJ = landauerCostBytes(msgBytes);
-      if (push) return text("F1 AMANAH: push requires separate judge/lease path; commit created but push refused.", true);
+      if (push) {
+        // Discovery 7: Remote Truth — preflight before push
+        const preflight = gitRemotePreflight(repo);
+        return text({
+          status: "PUSH_BLOCKED",
+          reason: "F1 AMANAH: push requires separate judge/lease path; commit created but push refused.",
+          remote_preflight: preflight,
+          _memory: Memory.live('forge_git').class,
+          _epistemic: {
+            evidence_layer: 'OBS',
+            confidence: 0.85,
+            source: 'forge_git',
+            reversible: true,
+            authority_claim: 'ADVISORY',
+          },
+        }, true);
+      }
       return text({
         commit: output,
         message_bytes: msgBytes,
@@ -312,6 +331,15 @@ export function registerGitTools(server: McpServer): void {
         },
       });
     } catch (err: any) {
+      // Discovery 3: Failure Truth — structured error envelope
+      const classified = classifyUnknown(err, { source_tool: 'forge_git', source_organ: 'aforge' });
+      if (isStructuredError(classified)) {
+        return text(JSON.stringify({
+          ...classified.structuredContent,
+          _memory: Memory.live('forge_git').class,
+          _epistemic: Epistemic.observed('forge_git').evidence_layer,
+        }, null, 2), true);
+      }
       return text(`Error: ${err.message}`, true);
     }
   });
