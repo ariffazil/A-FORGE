@@ -65,6 +65,7 @@ import { registerForge8Verbs } from "./forge8Verbs.js";
 import { registerShellTools as registerCanonicalShellTools } from "./shell/forgeShell.js";
 import { registerDocumentIngestTool } from "./documentIngest.js";
 import { registerPolicyTools, installPolicyInterceptor } from "./policyTools.js";
+import { registerSurfaceGuardTools } from "./surfaceGuardTools.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
@@ -1619,6 +1620,11 @@ registerForge8Verbs(server);
 // policy check (identity → server → tool → args → verdict) BEFORE every tool
 // handler runs. Forged 2026-06-30 per sovereign directive.
 registerPolicyTools(server);
+
+// ── Phase 6: MCP Surface Guard — drift detection + schema fingerprinting ────
+// Detects MCP tool surface drift before it breaks the federation.
+// Schema delta = 888_HOLD. Forged 2026-07-03 per eureka margin.
+registerSurfaceGuardTools(server);
 
 // Install the 5-layer policy pre-check wrapper on every registered tool.
 // Called AFTER all other registerXTools() so it wraps them all.
