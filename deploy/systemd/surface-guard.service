@@ -1,0 +1,16 @@
+[Unit]
+Description=MCP Surface Guard — federation drift watchdog
+After=network.target arifos.service a-forge-mcp.service geox-mcp.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/node /root/A-FORGE/dist/scripts/surface-guard-daemon.js
+WorkingDirectory=/root/A-FORGE
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=surface-guard
+
+[Install]
+WantedBy=multi-user.target

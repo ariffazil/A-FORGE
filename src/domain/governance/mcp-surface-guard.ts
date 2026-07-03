@@ -452,7 +452,11 @@ async function fetchOrganTools(
 
   const initRes = await fetch(mcpUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json, text/event-stream' },
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json, text/event-stream',
+      'MCP-Protocol-Version': '2025-11-25',
+    },
     body: JSON.stringify(initBody),
     signal: AbortSignal.timeout(timeoutMs),
   });
@@ -492,6 +496,7 @@ async function fetchOrganTools(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: 'application/json, text/event-stream',
+    'MCP-Protocol-Version': '2025-11-25',
   };
   if (sessionId) headers['Mcp-Session-Id'] = sessionId;
 

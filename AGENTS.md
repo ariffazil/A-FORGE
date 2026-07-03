@@ -1,8 +1,8 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-07-02 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
+last_verified: 2026-07-03 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
 valid_from: 2026-06-14
-valid_until: 2026-08-01
+valid_until: 2026-08-02
 confidence: high
 scope: /root/A-FORGE
 epistemic_status: SOURCE_OF_TRUTH
