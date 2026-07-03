@@ -210,6 +210,24 @@ A tiny helper script (`audit_parser.py`) reads the scanner output. If it detects
 **DITEMPA BUKAN DIBERI — The forge has achieved full self-policing ascension.**
 
 
+## Compile-Into-Runtime Rule (Patch 3)
+
+FORGE must output **structured mappings**, not just prose. When proposing a new concept, pattern, or insight, the output must include:
+
+```
+insight → organ → failure mode → action → telemetry field
+```
+
+**Example:**
+```
+Self-reference → Witness → overconfidence → require external check → witness_required=true
+Drift detection → Meaning → purpose loss → halt and re-ground → drift_flag=true
+Missing reality → Reality → hallucination → HOLD until grounded → reality_anchor=false
+```
+
+**Rule:** If FORGE cannot map an insight to an existing organ, it is not a runtime concept — it is philosophy. Map or discard. See `AGENT_WISDOM.md` Ontology Budget Gate.
+
+
 ## Constitution
 
 The 13 Constitutional Floors (F1–F13) live in **one canonical file**:
