@@ -237,6 +237,17 @@ tools:
     min_mode: THINK
     risk_label: R0
 
+  - name: forge_fetch
+    purpose: URL content extraction (HTML, markdown, text, JSON, readability)
+    reads: [web]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
   - name: forge_github
     purpose: GitHub operations (search, PR)
     reads: [github_repos]

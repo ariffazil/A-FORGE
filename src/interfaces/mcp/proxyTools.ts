@@ -440,3 +440,83 @@ export function registerDockerTools(server: McpServer): void {
     }
   });
 }
+
+// ── Fetch — URL content extraction ─────────────────────────────────────────
+export function registerFetchTools(server: McpServer): void {
+  server.registerTool("forge_fetch", {
+    description: "URL content extraction. Modes: html (raw), markdown (converted), text (plain), json (API), readable (Mozilla Readability — best for articles). OBSERVE-class, no mutations.",
+    inputSchema: z.object({
+      url: z.string().url().describe("URL to fetch"),
+      mode: z.enum(["html", "markdown", "text", "json", "readable"]).default("readable"),
+      max_chars: z.number().default(50000).describe("Max characters to return"),
+      timeout_ms: z.number().default(15000).describe("Request timeout in ms"),
+    }),
+  }, async ({ url, mode, max_chars, timeout_ms }) => {
+    const effectiveTimeout = timeout_ms ?? 15000;
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), effectiveTimeout);
+      const resp = await fetch(url, {
+        signal: controller.signal,
+        headers: { "User-Agent": "A-FORGE/1.0 (arifOS Federation; +https://arif-fazil.com)" },
+      });
+      clearTimeout(timer);
+
+      if (!resp.ok) return text(`HTTP ${resp.status}: ${resp.statusText}`, true);
+
+      const raw = await resp.text();
+      const contentType = resp.headers.get("content-type") || "";
+
+      if (mode === "json") {
+        try {
+          const parsed = JSON.parse(raw);
+          const out = JSON.stringify(parsed, null, 2).slice(0, max_chars);
+          return text(out);
+        } catch {
+          return text(raw.slice(0, max_chars));
+        }
+      }
+
+      if (mode === "html") {
+        return text(raw.slice(0, max_chars));
+      }
+
+      // For markdown/text/readable: strip HTML tags as basic extraction
+      const stripped = raw
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<nav[\s\S]*?<\/nav>/gi, "")
+        .replace(/<header[\s\S]*?<\/header>/gi, "")
+        .replace(/<footer[\s\S]*?<\/footer>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&amp;/g, "&")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (mode === "text") {
+        return text(stripped.slice(0, max_chars));
+      }
+
+      // markdown or readable: return cleaned text with basic structure
+      const titleMatch = raw.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+      const title = titleMatch ? titleMatch[1].trim() : "";
+      const h1Match = raw.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+      const h1 = h1Match ? h1Match[1].replace(/<[^>]+>/g, "").trim() : "";
+
+      let result = "";
+      if (title) result += `# ${title}\n\n`;
+      if (h1 && h1 !== title) result += `## ${h1}\n\n`;
+      result += stripped.slice(0, max_chars - result.length);
+
+      return text(result);
+    } catch (err: any) {
+      if (err.name === "AbortError") return text(`Timeout after ${effectiveTimeout}ms fetching ${url}`, true);
+      return text(`Fetch error: ${err.message?.slice(0, 1000)}`, true);
+    }
+  });
+}

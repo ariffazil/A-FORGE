@@ -31,7 +31,7 @@ The governed execution shell of the arifOS Federation. A-FORGE builds, deploys, 
 - **stdio:** `npm run mcp:stdio` — local secure agent ingress (OpenCode, Claude Code, etc.)
 - **Runtime:** Node.js 22+, TypeScript ~6.0
 - **Architecture:** Hexagonal / layered (domain → application → infrastructure → interfaces)
-- **Tool surface:** 72 MCP tools (21 stateless HTTP, rest session-bound; count from live `listTools` on :7072)
+- **Tool surface:** 79 MCP tools (33 stateless HTTP, rest session-bound; count from live `listTools` on :7072)
 
 ### Repository Structure
 
@@ -55,7 +55,7 @@ A-FORGE is a **governed execution shell**, not a domain organ.
 **BRAIN / HANDS CONSTITUTIONAL SEPARATION (BINDING)**
 
 - **arifOS MCP (8088)** = Brain / Governor / Judge: owns floors (L01–L13), final verdicts (`SEAL`/`HOLD_888`/`VOID`/`SABAR`), INIT→JUDGE→SEAL contract, VAULT999, memory routing.
-- **A-FORGE MCP (7072 + stdio)** = Hands / Actuator / Forger: owns execution (72 tools), leases, proxies, build/deploy/run/shell/browser. **Never** issues constitutional verdicts or self-authorizes.
+- **A-FORGE MCP (7072 + stdio)** = Hands / Actuator / Forger: owns execution (79 tools), leases, proxies, build/deploy/run/shell/browser. **Never** issues constitutional verdicts or self-authorizes.
 
 Every agent must respect the loop:
 1. arifOS (`arif_init`, `arif_think`, `arif_critique`, `arif_judge`).
@@ -209,7 +209,7 @@ A-FORGE is the **execution shell** — the hard wall between banter and action.
 | **Execution layer** | Tool calls remain boring, explicit, reversible unless confirmed |
 | **The wall** | Humour NEVER crosses from banter into execution |
 
-All 72 forge_* tools treat every input as literal. A joke is not a command. A laugh is not a confirmation. "Flush everything lah" ≠ permission to reset state.
+All 79 forge_* tools treat every input as literal. A joke is not a command. A laugh is not a confirmation. "Flush everything lah" ≠ permission to reset state.
 
 Humour never bypasses lease requirements. `forge_lease_request` requires explicit scope, not "haha do it."
 
