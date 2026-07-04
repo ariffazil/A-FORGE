@@ -110,6 +110,56 @@ tools:
     min_mode: THINK
     risk_label: R0
 
+  # ── P0 Machine Constitution Layer (2026-07-04) ─────────────────────
+  # VPS state-anchor tools. All modes are read-only observation.
+  # Make the machine's boundary state (ports/services/cron) visible
+  # and assertable against a saved Machine Constitution registry.
+  # F1 AMANAH: never mutate, only sense. F2 TRUTH: labeled outputs.
+
+  - name: forge_vps_ports
+    purpose: Scan listening ports and classify each as public, internal, or unknown. Persist to Machine Constitution registry.
+    reads: [network_state, process_state]
+    writes: [registry_file]
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: GOVERN
+    risk_label: R0
+
+  - name: forge_vps_services
+    purpose: List running systemd services and Docker containers. Persist to Machine Constitution registry.
+    reads: [systemd_state, docker_state]
+    writes: [registry_file]
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: GOVERN
+    risk_label: R0
+
+  - name: forge_vps_cron
+    purpose: List cron jobs from root crontab, /etc/crontab, /etc/cron.d. Persist to Machine Constitution registry.
+    reads: [cron_state]
+    writes: [registry_file]
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: GOVERN
+    risk_label: R0
+
+  - name: forge_boundaries_assert
+    purpose: Assert live ports/services/cron against saved Machine Constitution registry. Report unregistered mutations.
+    reads: [registry_files, live_state]
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: GOVERN
+    risk_label: R0
+
   - name: forge_filesystem
     purpose: Read/write files in governed scope
     reads: [filesystem]

@@ -67,6 +67,7 @@ import { registerDocumentIngestTool } from "./documentIngest.js";
 import { registerPolicyTools, installPolicyInterceptor } from "./policyTools.js";
 import { registerSurfaceGuardTools } from "./surfaceGuardTools.js";
 import { registerSurfaceAuditTools } from "./surfaceAuditTools.js";
+import { registerStateAnchorTools } from "./stateAnchorTools.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
@@ -1588,6 +1589,7 @@ registerCanonicalShellTools(server);                        // forge_shell + for
 registerLogTools(server);
 registerJobTools(server);
 registerStatusTools(server);
+registerStateAnchorTools(server);                          // P0 Machine Constitution Layer: ports/services/cron/boundaries
 
 // ── Phase 2: Skill Forge (APEX Epoch 34Ω — Organism Layer) ─────────────────
 // forge_skill + forge_registry: dynamic tool generation with Decision Field gate.

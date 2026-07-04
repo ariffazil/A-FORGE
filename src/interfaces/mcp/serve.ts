@@ -69,6 +69,16 @@ const STATELESS_TOOLS = new Set([
   // Phantom drift detection — compares registry vs affordances.
   // All modes are read-only (audit, scan). fix mode produces DRAFT only.
   "forge_surface_audit",
+
+  // ── Phase 8: P0 Machine Constitution Layer (2026-07-04) ─────────
+  // VPS state-anchor tools. All modes are read-only observation.
+  // They make the machine's boundary state (ports/services/cron) visible
+  // and assertable against a saved Machine Constitution registry.
+  // F1 AMANAH: never mutate, only sense. F2 TRUTH: labeled outputs.
+  "forge_vps_ports",
+  "forge_vps_services",
+  "forge_vps_cron",
+  "forge_boundaries_assert",
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────
