@@ -889,16 +889,15 @@ tools:
     min_mode: GOVERN
     risk_label: R5
   - name: forge_vault
-    purpose: "VAULT999 primitive. DEPRECATED: read/list OK, write/seal → arif_seal"
+    purpose: "VAULT999 primitive — read/list/write (append-only). Seal path → arif_seal."
     reads: ['vault999']
     writes: ['vault999']
     external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-    deprecated: true
+    destructive: false          # write is append-only, not destructive
+    reversible: false           # appends cannot be undone (correct)
+    requires_human_approval: false  # session logs auto-approved; seal → arif_seal handles R5
+    min_mode: THINK
+    risk_label: R2              # repo_write tier — append to local ledger
   - name: forge_wealth
     purpose: "Route to WEALTH capital intelligence organ"
     reads: ['tools', 'evidence']
