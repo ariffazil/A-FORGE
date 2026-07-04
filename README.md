@@ -401,7 +401,7 @@ A-FORGE enforces three constitutional floors as its **runtime mandate**. The rem
 | Floor | What happens before A-FORGE receives the plan |
 |-------|-----------------------------------------------|
 | **F2** | TRUTH — P(truth) ≥ 0.99 required for SEAL. A-FORGE receives only verified plans. |
-| **F3** | TRI-WITNESS — Human+AI+Earth+Verifier consensus ≥ 0.75 before SEAL. |
+| **F3** | WITNESS — Multi-party consensus (tri-witness channels: Human + AI + Earth) ≥ 0.75 before SEAL. |
 | **F4** | CLARITY — ΔS ≤ 0. Every plan must reduce system entropy. |
 | **F5** | PEACE² — Non-destructive power. Blocks harm/harass/extort. |
 | **F6** | EMPATHY — κᵣ ≥ 0.10. Protect weakest stakeholder. |
@@ -691,7 +691,7 @@ A-FORGE is built for institutions that need **execution with constitutional guar
 | **No self-authorization** | A-FORGE cannot approve its own execution. The `JUDGE_SEAL_AUTHORIZATION` must come from arifOS. No employee, no agent, no bypass. |
 | **Separation of powers** | arifOS judges. AAA displays. A-FORGE executes. Domain organs witness. No single organ holds all three. |
 | **Reversibility gates** | Irreversible actions require explicit approval. 888_HOLD escalation with human-verifiable tickets. |
-| **Defense in depth** | 4-layer gate chain. Even if Layer 2 is bypassed, Layers 1 and 3 remain. F14 is dead as a constitutional floor (Sovereign Ruling 2026-06-13); physical-kill-switch claims are reframed as F2 TRUTH + F3 TRI-WITNESS cross-verify protocol. |
+| **Defense in depth** | 4-layer gate chain. Even if Layer 2 is bypassed, Layers 1 and 3 remain. F14 is dead as a constitutional floor (Sovereign Ruling 2026-06-13); physical-kill-switch claims are reframed as F2 TRUTH + F3 WITNESS (tri-witness Human+AI+Earth) cross-verify protocol. |
 | **Observability** | Prometheus dashboards. Supabase tool call receipts. Langfuse trace sessions. No execution is invisible. |
 | **AGPL-3.0 copyleft** | The governed execution runtime is free software. Any modification that runs on a network server must release its source. The constitutional authority (arifOS) remains the sole arbiter of lawful use. |
 
