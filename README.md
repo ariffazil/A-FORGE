@@ -836,6 +836,41 @@ The GENESIS chain provides ordinal numbering for every constitutional document a
 
 ---
 
+## 🔌 MCP Connection
+
+Connect to A-FORGE via the Model Context Protocol:
+
+| Property | Value |
+|----------|-------|
+| **Endpoint** | `https://forge.arif-fazil.com/mcp` |
+| **Transport** | Streamable HTTP (JSON-RPC 2.0) |
+| **Tools** | 78 `forge_*` tools |
+| **Health** | `https://forge.arif-fazil.com/health` |
+
+### Claude Code / Cursor
+
+Add to your MCP client config:
+```json
+{
+  "mcpServers": {
+    "a-forge": {
+      "url": "https://forge.arif-fazil.com/mcp"
+    }
+  }
+}
+```
+
+### Direct Usage
+
+```bash
+curl -X POST https://forge.arif-fazil.com/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
+```
+
+---
+
 ## License & Sovereignty
 
 ```
