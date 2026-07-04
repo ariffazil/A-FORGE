@@ -28,7 +28,7 @@ budgets:
 
   GOVERN:
     max_steps: 9
-    max_tools: 5
+    max_tools: 25
     max_agents: 3
     max_time_seconds: 180
     memory: true

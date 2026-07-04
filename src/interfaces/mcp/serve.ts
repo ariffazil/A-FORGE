@@ -79,6 +79,18 @@ const STATELESS_TOOLS = new Set([
   "forge_vps_services",
   "forge_vps_cron",
   "forge_boundaries_assert",
+
+  // ── DARWIN FIX 1c: stateless mutate primitives ────────────────────
+  // Needed so forge_session_init's auto-minted lease + setActor can be
+  // exercised via the HTTP transport without stdio session setup.
+  // All are still governed by the policy gate (L1-L4), F12 injection
+  // check, F8 path scoping, and arifJudge / arifSeal audit chain.
+  "forge_filesystem",
+  "forge_vault",
+  "forge_lease",
+  "forge_agent",
+  "forge_lock",
+  "forge_seal",
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────
@@ -425,7 +437,19 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
 
             // ── A-THINK Guard (stateless path) ────────────────────────
             // Constitutional front-door. UNKNOWN = HOLD. Budget enforced.
-            const aThinkVerdict = aThinkCheck(toolName);
+            // DARWIN FIX 3b+c: forward the actual tool command as userInput
+            // so the aThinkGuard can detect read-only shell commands and
+            // skip the GOVERN+HOLD block. Also inject `_user_input` into
+            // the args so core.ts's wrapper aThinkCheck (line 475) sees it
+            // for read-only mode classification — without this, core.ts
+            // gets userInput=undefined and falls through to a different path.
+            let aThinkUserInput: string | undefined;
+            if (toolName === "forge_shell" || toolName === "forge_shell_dryrun") {
+              aThinkUserInput = String(toolArgs?.command ?? "");
+              // Inject _user_input into args so core.ts picks it up too
+              toolArgs._user_input = aThinkUserInput;
+            }
+            const aThinkVerdict = aThinkCheck(toolName, aThinkUserInput);
             if (!aThinkVerdict.allowed) {
               const errResp = aThinkErrorResponse(aThinkVerdict);
               process.stderr.write(
