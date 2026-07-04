@@ -44,7 +44,7 @@ const STATELESS_TOOLS = new Set([
   "forge_minimax_search",
   "forge_docs_lookup",
   "forge_memory",
-  "forge_systemctl",
+  // forge_systemctl — DEPRECATED, use forge_shell('systemctl ...') instead
   "forge_journalctl",
   "forge_registry_status",
   "forge_status",
@@ -64,6 +64,11 @@ const STATELESS_TOOLS = new Set([
   // ── Phase 6: MCP Surface Guard (2026-07-03) ───────────────────────
   // Drift detection is read-only observation. Pin mutates in-memory state only.
   "forge_surface_guard",
+
+  // ── Phase 7: MCP Surface Audit (2026-07-03) ──────────────────────
+  // Phantom drift detection — compares registry vs affordances.
+  // All modes are read-only (audit, scan). fix mode produces DRAFT only.
+  "forge_surface_audit",
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────
@@ -536,6 +541,13 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 messages: [{ role: "user", content: { type: "text", text: `Prompt "${promptName}" requires workflow-specific arguments. Use tools/list to discover capabilities.` } }],
               }));
             }
+            return;
+          }
+
+          // MCP notifications (no id) — acknowledge silently, no response body
+          if (method.startsWith("notifications/")) {
+            res.writeHead(202, { "Content-Type": "application/json" });
+            res.end();
             return;
           }
 

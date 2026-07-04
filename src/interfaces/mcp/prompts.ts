@@ -1,19 +1,36 @@
 /**
- * A-FORGE MCP Prompts — Guided workflow surfaces
+ * A-FORGE MCP Prompts — Guided workflow surfaces (RSI 2026-07-03)
  *
- * Exposes MCP prompts for common engineering workflows.
- * Clients can call prompts/list to discover guided workflows,
- * then prompts/get with arguments to get structured guidance.
+ * Exposes MCP prompts for common engineering workflows conforming to
+ * the Model Context Protocol specification (prompts/list, prompts/get),
+ * the FastMCP "Getting Prompts" pattern (rendered message templates with
+ * auto-serialization), and the A2A Agent Card capability discovery model.
+ *
+ * SEP Compliance:
+ *   - SEP-973: Additional metadata for prompts (descriptions, arg schemas)
+ *   - SEP-986: Kebab-case tool/prompt naming convention
+ *   - SEP-2549: Prompts list can benefit from TTL annotations (future)
+ *   - SEP-2322: Multi-round-trip prompts (future — for iterative workflows)
+ *
+ * A2A Alignment:
+ *   - Each prompt maps to an A2A skill capability
+ *   - Agent Cards should expose prompt:listChanged for skill discovery
+ *   - Cross-organ prompts route through arif_route (intent-based dispatch)
  *
  * Tools used in these prompts reference actual forge_* MCP tools:
  *   forge_filesystem (read/write/glob/grep) — NOT "forge_file"
  *   forge_pipeline_run — NOT "forge_run"
- *   forge_shell_dryrun — exists
- *   forge_docker — exists
- *   forge_git — exists
+ *   forge_shell_dryrun — exists, forge_shell — for execution
+ *   forge_docker — exists, forge_git — exists
+ *   forge_probe — federation health sensor (preferred over direct curl)
+ *   forge_policy — 5-layer MCP control plane management
+ *   arif_route — canonical intent router (preferred over hardcoded ports)
  *
  * @module mcp/prompts
  * @constitutional F4 CLARITY — prompts reduce entropy by structuring intent
+ * @mcp-sep SEP-973, SEP-986, SEP-2549
+ * @a2a Agent Card capability mapping
+ * @refactored 2026-07-03 — Q³ audit: forge_systemctl→shell, arif_route primary, A2A awareness
  */
 
 import { z } from "zod";
@@ -90,7 +107,7 @@ Constitutional gates:
   // ── Deploy Service ───────────────────────────────────────────────────
   server.prompt(
     "deploy-service",
-    "Structured deployment workflow: build → test → stage → deploy → verify",
+    "Structured deployment workflow: build → test → stage → deploy → verify. Supports docker, systemd, cloudflare targets.",
     {
       service: z.string().describe("Service name or path to deploy"),
       target: z.string().describe("Deployment target (docker, systemd, cloudflare)"),
@@ -104,11 +121,17 @@ Constitutional gates:
             text: `Deploy: ${args.service} → ${args.target}
 
 Follow this workflow:
-1. BUILD — Use npm run build (via forge_shell_dryrun first, then bash for production). Must pass.
+1. BUILD — Use npm run build (via forge_shell_dryrun first, then forge_shell for production). Must pass.
 2. TEST — Use forge_pipeline_run to run tests. All must pass.
-3. STAGE — Use forge_docker or forge_systemctl to stage. Verify health endpoint.
+3. STAGE — Use forge_docker (container) or forge_shell('systemctl ...') (systemd) to stage.
+   Verify health endpoint via forge_probe after staging.
 4. DEPLOY — Requires 888_HOLD. Use forge_lease to request deployment lease.
-5. VERIFY — Use curl or forge_probe to check health endpoint. Confirm service is live.
+5. VERIFY — Use forge_probe to check health endpoint. Confirm service is live.
+
+Notes:
+- forge_systemctl is DEPRECATED — use forge_shell('systemctl <action> <service>') instead.
+- forge_vault write/seal operations should route through arifOS (arif_seal), not forge_vault.
+- For Cloudflare Workers: use forge_shell('wrangler deploy') after npm build.
 
 Constitutional gates:
 - F1 AMANAH: Deployment must be reversible (rollback plan required)
@@ -123,10 +146,10 @@ Constitutional gates:
   // ── Audit Code ───────────────────────────────────────────────────────
   server.prompt(
     "audit-code",
-    "Code audit workflow: scan → classify → report → recommend",
+    "Code audit workflow: scan → classify → report → recommend. Supports security, performance, governance, and MCP surface audits.",
     {
       scope: z.string().describe("What to audit (file path, directory, or 'full')"),
-      focus: z.string().optional().describe("Audit focus (security, performance, governance, all)"),
+      focus: z.string().optional().describe("Audit focus (security, performance, governance, mcp-surface, all)"),
     },
     (args) => ({
       messages: [
@@ -144,6 +167,14 @@ Follow this workflow:
 4. REPORT — Structured output with severity (LOW/MEDIUM/HIGH/CRITICAL).
 5. RECOMMEND — Concrete next steps, not vague suggestions.
 
+AUDIT TYPE NOTES:
+- security: check for secrets (gitleaks), vulnerable deps (trivy), risky patterns (semgrep)
+- governance: check affordances.yaml completeness, F1-F13 compliance, policy alignment
+  Use forge_policy(mode=list) to audit active MCP policies and their 5-layer coverage.
+- mcp-surface: audit tool surface for phantom entries, alias conflicts, doc drift
+  Run forge_registry(mode=list) and compare against affordances.yaml
+- performance: use forge_netdata_metrics for system perf, forge_scan for code hotspots
+
 Constitutional gates:
 - F2 TRUTH: Every finding must have evidence (file + line number)
 - F9 ANTI-HANTU: No hallucinated vulnerabilities. Only what you can prove.
@@ -157,10 +188,11 @@ Constitutional gates:
   // ── Research Topic ────────────────────────────────────────────────────
   server.prompt(
     "research-topic",
-    "Structured research workflow: question → gather → synthesize → cite",
+    "Structured research workflow: question → gather → synthesize → cite. Supports web search, docs lookup, and document intelligence.",
     {
       topic: z.string().describe("What to research"),
       depth: z.string().optional().describe("Research depth: quick, standard, deep"),
+      document_path: z.string().optional().describe("Path to a local document (PDF, image) for document intelligence extraction"),
     },
     (args) => ({
       messages: [
@@ -170,13 +202,24 @@ Constitutional gates:
             type: "text" as const,
             text: `Research: ${args.topic}
 Depth: ${args.depth || "standard"}
+${args.document_path ? `Document: ${args.document_path}` : ""}
 
 Follow this workflow:
 1. QUESTION — State the exact question. No vague research.
-2. GATHER — Use forge_research or forge_docs_lookup. Multiple sources.
+2. GATHER —
+   - Web: forge_research or forge_search or forge_minimax_search (multi-source)
+   - Docs: forge_docs_lookup (Context7 for library docs)
+   - Documents: forge_document_ingest (PDF/image analysis with bbox provenance)
+   - Federation: forge_probe (organ health), forge_registry (tool surface)
 3. SYNTHESIZE — Combine findings. Resolve contradictions.
 4. CITE — Every claim needs a source. No unsourced assertions.
 5. LABEL — Epistemic labels on every claim: OBS/DER/INT/SPEC.
+
+${args.document_path ? `DOCUMENT INTELLIGENCE:
+For PDF/image documents, use forge_document_ingest with:
+- mode=extract for full text extraction with layout structure
+- mode=chunk for RAG-ready semantic chunks
+- Output includes SHA-256 provenance hash and bounding-box coordinates` : ""}
 
 Constitutional gates:
 - F2 TRUTH: ≥0.99 accuracy or declare uncertainty band
@@ -191,9 +234,10 @@ Constitutional gates:
   // ── Cross-Organ Query ────────────────────────────────────────────────
   server.prompt(
     "cross-organ-query",
-    "Route a query to the correct federation organ",
+    "Route a query to the correct federation organ via arif_route (canonical intent router). Supports MCP native routing and A2A agent discovery.",
     {
-      query: z.string().describe("What you want to know or do"),
+      query: z.string().describe("What you want to know or do — expressed as intent, not tool name"),
+      a2a_discovery: z.boolean().optional().describe("If true, also query A2A Agent Cards for capability discovery"),
     },
     (args) => ({
       messages: [
@@ -202,20 +246,39 @@ Constitutional gates:
           content: {
             type: "text" as const,
             text: `Query: ${args.query}
+A2A Discovery: ${args.a2a_discovery ?? false}
 
-Determine which organ to route to:
-- GEOX (port 8081, geox.arif-fazil.com/mcp): Wells, seismic, petrophysics, basin, geoscience
-- WEALTH (port 18082, wealth.arif-fazil.com/mcp): Capital, NPV, risk, stock analysis, finance
-- WELL (port 18083, well.arif-fazil.com/mcp): Human readiness, vitality, fatigue, dignity
-- arifOS (port 8088, arifos.arif-fazil.com/mcp): Constitutional judgment, floors, verdicts
-- A-FORGE (port 7072, forge.arif-fazil.com/mcp): Build, deploy, code execution, system operations
-  - 14 OBSERVE tools accessible stateless via HTTPS
-  - MUTATE tools require stdio session (local opencode)
-- AAA (port 3001): Control plane, A2A gateway, cockpit dashboard
+ROUTE VIA arif_route (PRIMARY):
+Call arifOS arif_route(intent="${args.query}") FIRST to determine the correct organ.
+arif_route returns: {organ, port, tool_prefix, suggested_tools, confidence}.
+Do NOT hardcode organ/port mappings — arif_route is source of truth.
 
-All organs have public HTTPS endpoints at *.arif-fazil.com/mcp (Caddy proxy).
-Use arifOS arif_route to route intent to the correct organ.
-If unsure, use arif_observe (compass mode) to map the query.`,
+ORGAN MAP (fallback if arif_route unavailable):
+- arifOS (:8088): Constitutional judgment, floors, verdicts, session init, vault seal
+- GEOX (:8081): Wells, seismic, petrophysics, basin, geoscience
+- WEALTH (:18082): Capital, NPV, risk, stock analysis, finance
+- WELL (:18083): Human readiness, vitality, fatigue, dignity
+- A-FORGE (:7072): Build, deploy, code execution, system operations
+- AAA (:3001): Control plane, A2A gateway, cockpit dashboard, agent registry
+
+All organs: *.arif-fazil.com/mcp (Caddy proxy, streamable-http transport).
+
+A2A DISCOVERY (when a2a_discovery=true):
+1. Query AAA cockpit for registered Agent Cards: forge_probe or GET /a2a
+2. Each Agent Card exposes: name, description, capabilities (including prompts), skills
+3. Map the query intent to the correct agent's skill set
+4. Agent Cards are published at /.well-known/agent.json per repo
+
+ROUTING RULES:
+- Earth science → GEOX (never A-FORGE — F8 boundary)
+- Capital decisions → WEALTH (compute only — never self-execute)
+- Human readiness → WELL (reflect only — never diagnose)
+- Constitutional → arifOS (judgment only — never A-FORGE)
+- Execution → A-FORGE (after lease from arifOS)
+- A2A coordination → AAA (agent registry + capability discovery)
+
+If unsure: use arif_observe(mode=compass) to map the query first.
+forge_probe can check organ liveness before routing.`,
           },
         },
       ],

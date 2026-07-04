@@ -46,5 +46,24 @@
     "registered_at": "2026-07-01T17:22:18.751Z",
     "last_seen": "2026-07-01T17:22:18.751Z",
     "lease_ids": []
+  },
+  "arifbench-eval": {
+    "agent_id": "arifbench-eval",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "always",
+      "shell_exec": "always",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "always"
+    },
+    "identity_proof": "sha256:arifbench-eval-ijcai-2026",
+    "registered_at": "2026-07-03T15:00:00.000Z",
+    "last_seen": "2026-07-03T15:00:00.000Z",
+    "lease_ids": []
   }
 }
