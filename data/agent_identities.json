@@ -65,5 +65,63 @@
     "registered_at": "2026-07-03T15:00:00.000Z",
     "last_seen": "2026-07-03T15:00:00.000Z",
     "lease_ids": []
+  },
+  "arif-f13-darwin-test": {
+    "agent_id": "arif-f13-darwin-test",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "pending",
+    "registered_at": "2026-07-04T15:21:42.147Z",
+    "last_seen": "2026-07-04T15:21:42.147Z",
+    "lease_ids": []
+  },
+  "agent-b-rerun2": {
+    "agent_id": "agent-b-rerun2",
+    "agent_type": "opencode",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "always",
+      "shell_exec": "always",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "pending",
+    "registered_at": "2026-07-04T15:50:38.472Z",
+    "last_seen": "2026-07-04T15:50:38.472Z",
+    "lease_ids": []
+  },
+  "darwin-e2e": {
+    "agent_id": "darwin-e2e",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {},
+    "identity_proof": "pending",
+    "registered_at": "2026-07-04T15:52:12.105Z",
+    "last_seen": "2026-07-04T15:52:12.105Z",
+    "lease_ids": []
+  },
+  "darwin-final": {
+    "agent_id": "darwin-final",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {},
+    "identity_proof": "pending",
+    "registered_at": "2026-07-04T15:55:30.418Z",
+    "last_seen": "2026-07-04T15:55:30.418Z",
+    "lease_ids": []
   }
 }
