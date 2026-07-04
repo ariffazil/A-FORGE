@@ -80,6 +80,9 @@ const STATELESS_TOOLS = new Set([
   "forge_vps_cron",
   "forge_boundaries_assert",
 
+  // ── Fetch — URL content extraction (OBSERVE-class, no mutations) ───
+  "forge_fetch",
+
   // ── DARWIN FIX 1c: stateless mutate primitives ────────────────────
   // Needed so forge_session_init's auto-minted lease + setActor can be
   // exercised via the HTTP transport without stdio session setup.

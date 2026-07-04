@@ -47,6 +47,7 @@ import {
   registerGitTools,
   registerGitHubTools,
   registerDockerTools,
+  registerFetchTools,
 } from "./proxyTools.js";
 import {
   registerIdentityTools,
@@ -1644,6 +1645,7 @@ registerMemoryTools(server);
 registerGitTools(server);
 registerGitHubTools(server);
 registerDockerTools(server);
+registerFetchTools(server);
 
 // ── Phase 1: Identity, Lease, Registry, Shell, Logs, Jobs ──────────────────
 registerIdentityTools(server);
