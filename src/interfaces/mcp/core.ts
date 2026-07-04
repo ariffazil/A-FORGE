@@ -66,6 +66,7 @@ import { registerShellTools as registerCanonicalShellTools } from "./shell/forge
 import { registerDocumentIngestTool } from "./documentIngest.js";
 import { registerPolicyTools, installPolicyInterceptor } from "./policyTools.js";
 import { registerSurfaceGuardTools } from "./surfaceGuardTools.js";
+import { registerSurfaceAuditTools } from "./surfaceAuditTools.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
@@ -1200,6 +1201,8 @@ server.tool(
 // Modes: read, list, write, seal
 // Replaces: forge_vault_read, forge_vault_list, forge_vault_write, forge_vault_seal
 // forge_vault_delete REMOVED — VAULT999 is append-only.
+// DEPRECATED (2026-07-03): write/seal modes should route through arifOS arif_seal.
+//   Keep read/list as A-FORGE native cache layer. Full removal TBD.
 
 server.registerTool("forge_vault", {
   description: "VAULT999 primitive. Modes: read, list, write, seal.",
@@ -1302,9 +1305,11 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
 // Read-only wrappers for systemd/docker/journalctl. Write variants remain
 // unregistered until the E7 lease executor is wired and tested.
 
-// Merged: forge_systemctl — single tool with mode parameter
+// DEPRECATED (2026-07-03): forge_systemctl — use forge_shell('systemctl ...') instead.
+// forge_journalctl handles log queries. forge_shell handles full systemctl.
+// Merged: forge_systemctl — single tool with mode parameter (kept for backward compat)
 // Replaces: forge_systemctl_status, forge_systemctl_is_active, forge_systemctl_list_units
-server.tool("forge_systemctl", "Query systemd. Modes: status, list_units.", { service: z.string().optional(), mode: z.enum(["status", "list_units"]).default("status"), pattern: z.string().optional() }, async (args) => {
+server.tool("forge_systemctl", "[DEPRECATED] Query systemd. Use forge_shell('systemctl ...') instead. Modes: status, list_units.", { service: z.string().optional(), mode: z.enum(["status", "list_units"]).default("status"), pattern: z.string().optional() }, async (args) => {
   if (args.mode === "list_units") {
     const res = await systemctlWrapper.listUnits(args.pattern ?? "*");
     return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
@@ -1625,6 +1630,7 @@ registerPolicyTools(server);
 // Detects MCP tool surface drift before it breaks the federation.
 // Schema delta = 888_HOLD. Forged 2026-07-03 per eureka margin.
 registerSurfaceGuardTools(server);
+registerSurfaceAuditTools(server);
 
 // Install the 5-layer policy pre-check wrapper on every registered tool.
 // Called AFTER all other registerXTools() so it wraps them all.

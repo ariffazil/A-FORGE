@@ -637,56 +637,16 @@ tools:
     requires_human_approval: true
     min_mode: THINK
     risk_label: R0
-  - name: forge_policy_check
-    purpose: "OBSERVE-class"
-    reads: ['tools', 'evidence']
-    writes: []
+  - name: forge_policy
+    purpose: "Governed MCP Policy Engine — 5-layer control plane (identity/server/tool/argument/integrity)"
+    reads: ['mcp_policies', 'system_state']
+    writes: ['mcp_policies']
     external_side_effect: false
     destructive: false
     reversible: true
     requires_human_approval: false
-    min_mode: THINK
+    min_mode: GOVERN
     risk_label: R3
-  - name: forge_policy_list
-    purpose: "OBSERVE-class"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R3
-  - name: forge_policy_remove
-    purpose: "MUTATE (sovereign-only)"
-    reads: ['tools', 'evidence']
-    writes: ['mcp_policies']
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-  - name: forge_policy_save
-    purpose: "MUTATE (sovereign-only)"
-    reads: ['tools', 'evidence']
-    writes: ['mcp_policies']
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-  - name: forge_policy_set
-    purpose: "MUTATE (sovereign-only)"
-    reads: ['tools', 'evidence']
-    writes: ['mcp_policies']
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
   - name: forge_probe
     purpose: "Federation organ liveness"
     reads: ['system_state']
@@ -908,7 +868,7 @@ tools:
     min_mode: THINK
     risk_label: R3
   - name: forge_systemctl
-    purpose: "Query systemd"
+    purpose: "[DEPRECATED] Query systemd — use forge_shell('systemctl ...') instead"
     reads: ['system_state']
     writes: []
     external_side_effect: false
@@ -917,6 +877,7 @@ tools:
     requires_human_approval: false
     min_mode: THINK
     risk_label: R4
+    deprecated: true
   - name: forge_tier_bind
     purpose: "Set trust tier LOWER BOUND only"
     reads: ['tools', 'evidence']
@@ -928,7 +889,7 @@ tools:
     min_mode: GOVERN
     risk_label: R5
   - name: forge_vault
-    purpose: "VAULT999 primitive"
+    purpose: "VAULT999 primitive. DEPRECATED: read/list OK, write/seal → arif_seal"
     reads: ['vault999']
     writes: ['vault999']
     external_side_effect: false
@@ -937,6 +898,7 @@ tools:
     requires_human_approval: true
     min_mode: GOVERN
     risk_label: R5
+    deprecated: true
   - name: forge_wealth
     purpose: "Route to WEALTH capital intelligence organ"
     reads: ['tools', 'evidence']

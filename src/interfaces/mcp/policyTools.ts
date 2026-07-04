@@ -1,12 +1,12 @@
 /**
  * policyTools.ts — MCP Policy Gate tools + handler interceptor.
  *
- * Registers 4 tools:
- *   forge_policy_check  (OBSERVE)  — pre-flight policy evaluation
- *   forge_policy_set    (MUTATE)   — add/update policy (sovereign-only)
- *   forge_policy_remove (MUTATE)   — remove policy (sovereign-only)
- *   forge_policy_list   (OBSERVE)  — list loaded policies
- *   forge_policy_save   (MUTATE)   — persist policies to disk (sovereign-only)
+ * Registers 1 merged tool:
+ *   forge_policy (mode: check|set|remove|list|save) — MCP policy engine
+ *
+ * Legacy separate tools (forge_policy_check/set/remove/list/save) were
+ * collapsed into forge_policy with mode parameter 2026-07-03. The 5 old
+ * names are REMOVED — they were phantom entries in affordances.yaml only.
  *
  * Also exports installPolicyInterceptor() which wraps EVERY registered tool
  * handler with a Layer 1-5 policy pre-check. This is the architectural
@@ -21,6 +21,7 @@
  *
  * @module mcp/policyTools
  * @forged 2026-06-30 by FORGE (000)
+ * @refactored 2026-07-03 by FORGE (000) — Q³ collapse: 5 phantom → 1 merged
  */
 
 import { z } from "zod";
@@ -213,8 +214,8 @@ export function registerPolicyTools(server: McpServer): void {
  *   MCP request → policy pre-check → (ALLOW) → original handler → response
  *                                     (DENY) → PolicyGateError (JSON-RPC -32010)
  *
- * The forge_policy_* tools themselves are exempt from interception to prevent
- * a chicken-and-egg loop (you can't call forge_policy_list if the policy
+ * forge_policy itself is exempt from interception to prevent
+ * a chicken-and-egg loop (you can't call forge_policy if the policy
  * check blocks it).
  */
 export function installPolicyInterceptor(srv: any): void {
@@ -232,11 +233,7 @@ export function installPolicyInterceptor(srv: any): void {
   }
 
   const BYPASS = new Set([
-    "forge_policy_check",
-    "forge_policy_set",
-    "forge_policy_remove",
-    "forge_policy_list",
-    "forge_policy_save",
+    "forge_policy",
   ]);
 
   let wrapped = 0;
@@ -249,7 +246,7 @@ export function installPolicyInterceptor(srv: any): void {
     const wrappedHandler = async (args: any, extra?: any): Promise<any> => {
       try {
         const actorId =
-          args?.actor_id ?? args?.actorId ?? args?.actor ?? extra?.actor_id ?? undefined;
+          args?.actor_id ?? args?.actorId ?? args?.actor ?? extra?.actor_id;
         const verdict = gate.evaluate({
           actor_id: typeof actorId === "string" ? actorId : undefined,
           tool_name: toolName,

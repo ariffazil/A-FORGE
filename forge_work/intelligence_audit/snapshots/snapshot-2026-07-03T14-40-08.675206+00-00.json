@@ -1,0 +1,298 @@
+{
+  "audited_at": "2026-07-03T14:40:08.675206+00:00",
+  "federation_intellect": "arifOS",
+  "audit_map_source": "forge_work/2026-07-03/INTELLIGENCE-VARIABLES-AUDIT-MAP.md",
+  "runner_version": "INTELLIGENCE-AUDIT-RUNNER.py v1.0.0 (FORGED 2026-07-03)",
+  "row_count": 14,
+  "real_count": 14,
+  "not_yet_count": 0,
+  "rows": [
+    {
+      "component": "\u0394G",
+      "row_id": "doc_presence",
+      "status": "REAL",
+      "why": "Actual os.path.exists(). Binary.",
+      "measured_value": {
+        "present": 6,
+        "total": 6
+      },
+      "evidence": {
+        "files": {
+          "/root/AAA/docs/MEANING.md": true,
+          "/root/AAA/docs/INVARIANTS.md": true,
+          "/root/AAA/docs/MCP-RESOURCES-MAP.md": true,
+          "/root/AAA/docs/MCP-TEST-SUITE.md": true,
+          "/root/AAA/docs/TOOLREGISTRY.json": true,
+          "/root/AAA/docs/deprecation-registry.json": true
+        },
+        "method": "os.path.exists"
+      },
+      "timestamp": "2026-07-03T14:40:08.132712+00:00"
+    },
+    {
+      "component": "\u0394G",
+      "row_id": "service_liveness",
+      "status": "REAL",
+      "why": "Same probes as \u0394R. Liveness binary.",
+      "measured_value": {
+        "reachable": true,
+        "latency_ms": 11,
+        "body_ok": "json_valid"
+      },
+      "evidence": {
+        "method": "urllib.urlopen(/health)",
+        "port": 7071
+      },
+      "timestamp": "2026-07-03T14:40:08.144338+00:00"
+    },
+    {
+      "component": "\u0394G",
+      "row_id": "vault_accessibility",
+      "status": "REAL",
+      "why": "Actual filesystem check.",
+      "measured_value": {
+        "exists": true,
+        "files_count": 196
+      },
+      "evidence": {
+        "method": "Path.exists + rglob",
+        "path": "/root/VAULT999"
+      },
+      "timestamp": "2026-07-03T14:40:08.148235+00:00"
+    },
+    {
+      "component": "\u0394R",
+      "row_id": "file_existence",
+      "status": "REAL",
+      "why": "Actual os.path.exists(). Binary.",
+      "measured_value": {
+        "present": 7,
+        "total": 7
+      },
+      "evidence": {
+        "files": {
+          "/root/AGENTS.md": true,
+          "/root/AAA/agents/AAA_ZEN_INIT.md": true,
+          "/root/CONTEXT.md": true,
+          "/root/RUNBOOK.md": true,
+          "/root/AAA/docs/MCP-RESOURCES-MAP.md": true,
+          "/root/AAA/docs/MEANING.md": true,
+          "/root/AAA/docs/INVARIANTS.md": true
+        },
+        "method": "os.path.exists"
+      },
+      "timestamp": "2026-07-03T14:40:08.148334+00:00"
+    },
+    {
+      "component": "\u0394R",
+      "row_id": "git_state",
+      "status": "REAL",
+      "why": "Actual git status --porcelain. Binary.",
+      "measured_value": {
+        "returncode": 0,
+        "dirty_file_count": 1,
+        "dirty_files": [
+          "?? forge_work/RDS-2026-07-03-PATCH1-verdict-gate-normalization.md"
+        ]
+      },
+      "evidence": {
+        "method": "git status --porcelain",
+        "repo": "/root/arifOS"
+      },
+      "timestamp": "2026-07-03T14:40:08.177793+00:00"
+    },
+    {
+      "component": "\u0394R",
+      "row_id": "service_health_probes",
+      "status": "REAL",
+      "why": "Actual curl to actual ports. Binary pass/fail.",
+      "measured_value": {
+        "alive": 6,
+        "total": 6
+      },
+      "evidence": {
+        "method": "urllib.urlopen(/health)",
+        "ports": {
+          "arifOS": {
+            "port": 8088,
+            "reachable": true,
+            "latency_ms": 2,
+            "body_ok": "json_valid"
+          },
+          "aforge": {
+            "port": 7071,
+            "reachable": true,
+            "latency_ms": 1,
+            "body_ok": "json_valid"
+          },
+          "aaa": {
+            "port": 3001,
+            "reachable": true,
+            "latency_ms": 36,
+            "body_ok": "json_valid"
+          },
+          "geox": {
+            "port": 8081,
+            "reachable": true,
+            "latency_ms": 15,
+            "body_ok": "json_valid"
+          },
+          "wealth": {
+            "port": 18082,
+            "reachable": true,
+            "latency_ms": 1,
+            "body_ok": "json_valid"
+          },
+          "well": {
+            "port": 18083,
+            "reachable": true,
+            "latency_ms": 2,
+            "body_ok": "json_valid"
+          }
+        }
+      },
+      "timestamp": "2026-07-03T14:40:08.237958+00:00"
+    },
+    {
+      "component": "\u2202M/\u2202t",
+      "row_id": "memory_monotonicity",
+      "status": "REAL",
+      "why": "Sealed entries per cycle; 7d \u2265 24h confirms monotonic growth (no overwrites).",
+      "measured_value": {
+        "seals_24h": 16,
+        "seals_7d": 76,
+        "monotonic": true
+      },
+      "evidence": {
+        "method": "Path.rglob + getmtime window",
+        "path": "/root/VAULT999",
+        "thresholds": {
+          "24h": ">=",
+          "7d": ">="
+        }
+      },
+      "timestamp": "2026-07-03T14:40:08.242730+00:00"
+    },
+    {
+      "component": "I_sys",
+      "row_id": "civilization",
+      "status": "REAL",
+      "why": "Pairwise attestation tracking wired via rolling-window mutual info.",
+      "measured_value": {
+        "i_sys": 0.9333,
+        "alive_now": [
+          "aaa",
+          "aforge",
+          "arifOS",
+          "geox",
+          "wealth",
+          "well"
+        ],
+        "snapshot_count": 5
+      },
+      "evidence": {
+        "history_file": "/root/A-FORGE/forge_work/intelligence_audit/attest_history.jsonl",
+        "method": "rolling_window_pairwise_overlap",
+        "snapshot_window": 5
+      },
+      "timestamp": "2026-07-03T14:40:08.652517+00:00"
+    },
+    {
+      "component": "\u2207F",
+      "row_id": "meaning_gradient",
+      "status": "REAL",
+      "why": "Session purpose tracking wired at forge_work/intelligence_audit/purpose_sessions.jsonl",
+      "measured_value": {
+        "nabla_f": 0.09,
+        "session_count": 3,
+        "mean_observed_delta_s": -0.09
+      },
+      "evidence": {
+        "ledger_path": "/root/A-FORGE/forge_work/intelligence_audit/purpose_sessions.jsonl",
+        "method": "mean(observed_delta_s) over rolling window",
+        "warning": null
+      },
+      "timestamp": "2026-07-03T14:40:08.652687+00:00"
+    },
+    {
+      "component": "\u03a9",
+      "row_id": "witness_ratio",
+      "status": "REAL",
+      "why": "Witness event log wired at forge_work/intelligence_audit/witness_events.jsonl",
+      "measured_value": {
+        "omega": 0.6667,
+        "external_count": 2,
+        "self_count": 1,
+        "total_events": 3
+      },
+      "evidence": {
+        "ledger_path": "/root/A-FORGE/forge_work/intelligence_audit/witness_events.jsonl",
+        "method": "1 - self/total from jsonl ledger",
+        "warning": null
+      },
+      "timestamp": "2026-07-03T14:40:08.652789+00:00"
+    },
+    {
+      "component": "W",
+      "row_id": "files_changed",
+      "status": "REAL",
+      "why": "Actual git status --porcelain. Counted.",
+      "measured_value": {
+        "files_touched": 0,
+        "sample": []
+      },
+      "evidence": {
+        "method": "git status --porcelain",
+        "scope": "/root"
+      },
+      "timestamp": "2026-07-03T14:40:08.655511+00:00"
+    },
+    {
+      "component": "W",
+      "row_id": "lines_changed",
+      "status": "REAL",
+      "why": "Actual git diff --stat. Measured.",
+      "measured_value": {
+        "total_line_changes": 0,
+        "files_changed": 0
+      },
+      "evidence": {
+        "method": "git diff --stat --numstat",
+        "repo": "/root/arifOS"
+      },
+      "timestamp": "2026-07-03T14:40:08.667897+00:00"
+    },
+    {
+      "component": "WELL",
+      "row_id": "bridge_freshness",
+      "status": "REAL",
+      "why": "Actual age_seconds from WELL. Compared.",
+      "measured_value": {
+        "age_seconds": 5582408.7,
+        "max_fresh_age_seconds": 3600,
+        "band": "expired",
+        "stale": true
+      },
+      "evidence": {
+        "endpoint": "http://localhost:18083/health",
+        "method": "freshness.age_seconds compare"
+      },
+      "timestamp": "2026-07-03T14:40:08.671586+00:00"
+    },
+    {
+      "component": "WELL",
+      "row_id": "bridge_readiness",
+      "status": "REAL",
+      "why": "Actual WELL health response. Parsed.",
+      "measured_value": {
+        "color": "RED",
+        "well_score": null
+      },
+      "evidence": {
+        "endpoint": "http://localhost:18083/health",
+        "method": "JSON parse + owner_summary.color"
+      },
+      "timestamp": "2026-07-03T14:40:08.675172+00:00"
+    }
+  ]
+}
