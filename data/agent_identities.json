@@ -123,5 +123,24 @@
     "registered_at": "2026-07-04T15:55:30.418Z",
     "last_seen": "2026-07-04T15:55:30.418Z",
     "lease_ids": []
+  },
+  "arif-forge-fix-2026-07-05": {
+    "agent_id": "arif-forge-fix-2026-07-05",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "never",
+      "vault_seal": "never"
+    },
+    "identity_proof": "aforge-fix-2026-07-05-001",
+    "registered_at": "2026-07-05T08:10:20.398Z",
+    "last_seen": "2026-07-05T08:10:20.398Z",
+    "lease_ids": []
   }
 }
