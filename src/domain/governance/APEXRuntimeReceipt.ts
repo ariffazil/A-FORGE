@@ -13,6 +13,14 @@
  * C_dark = A · (1-P) · (1-X)  (misalignment signature)
  * W³ = (H · AI · E) ^ (1/3)  (geometric mean, informational only)
  *
+ * Layer reconciliation (2026-07-05): this 4-term A·P·E·X is the
+ * kernel execution gate (per-action receipt). The `reality-loop`
+ * prompt uses a separate 4-term Q·V·Ψ·Φ as per-iteration decision
+ * frame, and forge_evaluate v36Ω (separately) uses 5-term A·P·E·X·Φ
+ * as tool-registration gate. Three distinct APEX-shaped formulas
+ * across three layers — none aliased. Same letter Φ appears in
+ * two (this file does not use Φ; the prompt and forge_evaluate do).
+ *
  * Required for:
  *   - Skill promotion (STAGED → REVIEWED → TRUSTED)
  *   - forge_seal (VAULT999 binding)

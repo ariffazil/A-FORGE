@@ -12,6 +12,14 @@
  *   G < 0.50 OR  C_dark > 0.80 → VOID
  *   Ω₀ ∉ [0.03, 0.05]          → REVIEW (uncalibrated evaluator)
  *
+ * Layer reconciliation (2026-07-05): this 5-term A·P·E·X·Φ is the
+ * engine tool-registration gate (Decision Field). The `reality-loop`
+ * prompt uses a different 4-term Q·V·Ψ·Φ as the per-iteration
+ * decision frame. Same letter Φ appears in both: here Φ is
+ * scar-adjusted wisdom from `forge_scar` consultation; in the
+ * prompt, Φ is agent-reasoning wisdom. Different carriers — do
+ * not collapse by symbol alone. See /root/.agents/skills/reality-loop-operator.
+ *
  * Demoted from "physics" to "instrument" per v36Ω validation report:
  *   - G is a non-compensatory veto score, not a thermodynamic law
  *   - X is an ensemble-evaluated ethics signal, not a constitutional derivation

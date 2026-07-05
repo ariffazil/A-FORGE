@@ -602,21 +602,21 @@ ZEN MAXIM: The best engineer is the one you barely notice. The system runs itsel
     }),
   );
 
-  // ═══════════════════════════════════════════════════════════════════
-  // HIERARCHY 3 — Reality Loop Meta-Prompt (Intent Compiler)
-  // The intent compiler: human shadow → system architecture.
-  // 7 stages. MEANING and RETURN close the human-machine circuit.
-  // QUANTUM/APEX/GÖDEL folded into ENCODE+IMPROVE+VERIFY as subskills.
-  // Tri-witness validated 2026-07-05 (W³=0.800, 3-agent test).
-  // ═══════════════════════════════════════════════════════════════════
+  // Reality Loop (Intent Compiler)
+  //
+  // Human shadow → system architecture. 7 stages; MEANING + RETURN
+  // close the human-machine circuit. QUANTUM/APEX/GÖDEL folded into
+  // ENCODE+IMPROVE+VERIFY as subskills. Tri-witness validated
+  // 2026-07-05 (W³=0.800, 3-agent test). Falsifiable thresholds are
+  //   marked PHASE 1 HEURISTIC in the prompt body.
 
   server.prompt(
     "reality-loop",
-    "Intent compiler: human shadow → system architecture. 7 stages: MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN. QUANTUM/APEX/GÖDEL are subskills within ENCODE+IMPROVE+VERIFY. State-tracking ledger with agent orchestration.",
+    "Intent compiler: human shadow → system architecture. 7 stages: MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN. QUANTUM/APEX/GÖDEL are subskills within ENCODE+IMPROVE+VERIFY. State-tracking ledger with agent orchestration. NOTE: This prompt's G=Q·V·Ψ·Φ is the per-iteration decision frame; engine gates forge_evaluate (G=A·P·E·X·Φ v36Ω, 5-term) and APEXRuntimeReceipt (G=A·P·E·X, 4-term) are separate layers — same letter Φ appears in both, different carriers.",
     {
       session_id: z.string().optional().describe("Existing session ID to resume. Omit to start a new loop."),
       intent: z.string().optional().describe("What this loop should focus on. Default: self-sustaining federation health."),
-      config: z.string().optional().describe('JSON config overrides: {iteration_depth, max_hypotheses, action_budget, auto_execute, seal_every_iteration}'),
+      config: z.string().optional().describe('JSON config overrides: {iteration_depth, max_hypotheses, action_budget, auto_execute, seal_every_iteration, min_g_score=0.70, min_witness=0.70}. Thresholds are PHASE 1 HEURISTIC pending ROC calibration.'),
     },
     (args) => ({
       messages: [
@@ -624,14 +624,11 @@ ZEN MAXIM: The best engineer is the one you barely notice. The system runs itsel
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `╔══════════════════════════════════════════════════════════════════╗
-║               REALITY LOOP — Intent Compiler                  ║
-║     Intent compiler: human shadow → system architecture         ║
-╚══════════════════════════════════════════════════════════════════╝
-
+            text: `REALITY LOOP — Intent Compiler
 Session: ${args.session_id || "NEW"}
 Intent: ${args.intent || "Self-sustaining federation health. Monitor all 7 organs, detect drift, fix issues, improve itself."}
 Config: ${args.config || "{}"}
+Thresholds (PHASE 1 HEURISTIC — not calibrated): min_g_score=0.70, min_witness=0.70. Override via config.min_g_score / config.min_witness.
 
 ─── WHAT THIS ACTUALLY IS ───
 
@@ -676,9 +673,14 @@ STAGE 2 — ENCODE  ⚛️
   - GÖDEL: Prove chosen hypothesis is self-consistent.
     Find contradictions. Patch or void.
   Physics: state (S) + transform (T) + measurement (M) + invariant (I)
-  APEX Score: G = Q · V · Ψ · Φ
-    Q = quality, V = value, Ψ = truth fidelity, Φ = wisdom
-    Minimum pass = 0.70. Below → return to MEANING.
+  APEX Score (per-iteration decision frame, layer 1 of 3 APEX gates):
+    G = Q · V · Ψ · Φ    Q=quality, V=value, Ψ=truth-fidelity, Φ=wisdom
+    Multiplicative: zero in any term → return to MEANING.
+    Threshold: G ≥ config.min_g_score (default 0.70, PHASE 1 HEURISTIC).
+    Calibrate via ROC on held-out SEAL/REJECT set before Phase 2.
+    This is layer-1 of 3 APEX gates; see forge_evaluate (layer 2,
+    A·P·E·X·Φ v36Ω) and APEXRuntimeReceipt (layer 3, A·P·E·X).
+    Same letter Φ appears in layers 1+2; carriers differ.
   Output: physics{S,T,M,I}, hypotheses[], G_score, godel_verdict
 
 STAGE 3 — IMPROVE  🧠
@@ -699,11 +701,12 @@ STAGE 3 — IMPROVE  🧠
 STAGE 4 — VERIFY  🔒
   Invoke: godel-metabolize (subskill)
   What: Tri-witness validation. Self-consistency check.
-  Tri-witness: W³ = ∛(h × ai × ext) ≥ 0.70 required
+  Tri-witness: W³ = ∛(h × ai × ext) ≥ config.min_witness (default 0.70)
     h = human confidence [0-1]
     ai = AI confidence [0-1] (independent of generator)
     ext = external/ground-truth confidence [0-1]
     Zero in ANY channel collapses consensus → 888_HOLD
+    Threshold PHASE 1 HEURISTIC — calibrate via held-out SEAL/REJECT.
   Cross-check:
   - Floor compliance re-run — any F-floor newly violated?
   - ΔS_measured ≤ 0 — entropy reduced as promised?
