@@ -719,7 +719,7 @@ tools:
     min_mode: THINK
     risk_label: R0
   - name: forge_reality_loop
-    purpose: "THE 13TH TOOL — Chains all 12 MCP prompts into a perpetual autonomous reality loop"
+    purpose: "7-stage state-tracking ledger (intent compiler): MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN. Modes: start/advance/record/seal/report/metrics/list/destroy. ΔS ≤ 0 per iteration; SEAL only after W³ ≥ 0.70 tri-witness and human RETURN."
     reads: ['tools', 'evidence']
     writes: []
     external_side_effect: false

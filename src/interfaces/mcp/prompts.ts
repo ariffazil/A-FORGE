@@ -603,16 +603,16 @@ ZEN MAXIM: The best engineer is the one you barely notice. The system runs itsel
   );
 
   // ═══════════════════════════════════════════════════════════════════
-  // HIERARCHY 3 — Reality Loop Meta-Prompt (The 13th)
+  // HIERARCHY 3 — Reality Loop Meta-Prompt (Intent Compiler)
   // The intent compiler: human shadow → system architecture.
   // 7 stages. MEANING and RETURN close the human-machine circuit.
-  // QUANTUM/APEX/GÖDEL folded into IMPROVE+VERIFY as subskills.
+  // QUANTUM/APEX/GÖDEL folded into ENCODE+IMPROVE+VERIFY as subskills.
   // Tri-witness validated 2026-07-05 (W³=0.800, 3-agent test).
   // ═══════════════════════════════════════════════════════════════════
 
   server.prompt(
     "reality-loop",
-    "THE 13th PROMPT — Intent compiler: human shadow → system architecture. 7 stages: MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN. QUANTUM/APEX/GÖDEL are subskills within IMPROVE+VERIFY. State-tracking ledger with agent orchestration.",
+    "Intent compiler: human shadow → system architecture. 7 stages: MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN. QUANTUM/APEX/GÖDEL are subskills within ENCODE+IMPROVE+VERIFY. State-tracking ledger with agent orchestration.",
     {
       session_id: z.string().optional().describe("Existing session ID to resume. Omit to start a new loop."),
       intent: z.string().optional().describe("What this loop should focus on. Default: self-sustaining federation health."),
@@ -625,7 +625,7 @@ ZEN MAXIM: The best engineer is the one you barely notice. The system runs itsel
           content: {
             type: "text" as const,
             text: `╔══════════════════════════════════════════════════════════════════╗
-║               REALITY LOOP — THE 13TH PROMPT                   ║
+║               REALITY LOOP — Intent Compiler                  ║
 ║     Intent compiler: human shadow → system architecture         ║
 ╚══════════════════════════════════════════════════════════════════╝
 

@@ -4,9 +4,9 @@
  * APEX v36Ω integrated: Gödel lock + Strange loop (champion/challenger) +
  * Anti-sink ecology. Three planes at once: Runtime / Judge / Archive.
  *
- * The 12 prompts become 8 stages in a perpetual autonomous cycle.
- * Each stage maps to one or more MCP prompts, and the loop feeds
- * its own output back as input for the next iteration.
+ * 7 stages: MEANING → OBSERVE → ENCODE → IMPROVE → VERIFY → SEAL → RETURN.
+ * Each stage maps to one or more MCP prompts (as subskills); the agent
+ * orchestrates. The loop does NOT decide — RETURN presents to human.
  *
  * Gödel Lock:   system may rewrite methods, never its constitution.
  * Strange Loop:  champion/challenger with empirical ΔU gate + W³ witness.

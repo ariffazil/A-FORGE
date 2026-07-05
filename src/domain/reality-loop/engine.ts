@@ -1,13 +1,13 @@
 /**
- * Reality Loop — Engine
+ * Reality Loop — Engine (state ledger)
  *
- * The perpetual cognitive cycle that chains all 12 MCP prompts
- * into a living autonomous system. Each iteration:
+ * State-tracking ledger for the 7-stage intent loop
+ * (MEANING → OBSERVE → ENCODE → IMPROVE → VERIFY → SEAL → RETURN).
+ * The agent orchestrates stages; the engine remembers state, evidence,
+ * hypotheses, actions, entropy, scars.
  *
- *   OBSERVE → QUANTUM → APEX → GÖDEL → REALITY → THERMO → RECURSE → SEAL
- *
- * The loop feeds its own output back as input. Evidence accumulates.
- * Entropy decreases (ΔS ≤ 0). The system improves itself recursively.
+ * The loop does NOT decide. The loop PRESENTS at STAGE 6 (RETURN)
+ * and waits for human judgment. No autonomous self-modification.
  *
  * @module reality-loop/engine
  * @constitutional F1-F13 — all floors enforced at every stage
