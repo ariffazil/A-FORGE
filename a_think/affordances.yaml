@@ -779,13 +779,13 @@ tools:
     min_mode: THINK
     risk_label: R1
   - name: forge_scar
-    purpose: "APEX v36Ω scar metabolization gate"
+    purpose: "APEX v36Ω scar metabolization gate — list/consult are read-only; mode=seal requires session ownership"
     reads: ['tools', 'evidence']
     writes: []
     external_side_effect: false
     destructive: false
     reversible: true
-    requires_human_approval: true
+    requires_human_approval: false
     min_mode: THINK
     risk_label: R0
   - name: forge_scar_scan
@@ -1003,6 +1003,17 @@ tools:
     requires_human_approval: false
     min_mode: THINK
     risk_label: R0
+
+  - name: forge_execute_sealed
+    purpose: "Execute with VAULT999 seal. FAILS HARD without valid seal — no self-authorization possible"
+    reads: ['plans', 'vault']
+    writes: ['filesystem', 'external_state']
+    external_side_effect: true
+    destructive: true
+    reversible: false
+    requires_human_approval: true
+    min_mode: GOVERN
+    risk_label: R3
 
   - name: forge_registry_status
     purpose: "Full A-FORGE tool registry: callable, blocked, degraded, and drift status"

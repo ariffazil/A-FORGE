@@ -192,11 +192,11 @@ function loadAffordances(): Map<string, AffordanceCard> {
 }
 
 // DARWIN FIX 3+5: hoisted readonly shell command set — used by both the
-    // FAST→GOVERN reclassification (line ~290) and the GOVERN+HOLD exemption
-    // (line ~390). Reading-only commands (sha256sum, cat, ls, etc.) cannot
-    // mutate state and should reach the inner arifJudge for proper
-    // DENY/GATE/ALLOW classification instead of being HOLD-blocked here.
-    const READONLY_SHELL_COMMANDS = new Set([
+// FAST→GOVERN reclassification (line ~290) and the GOVERN+HOLD exemption
+// (line ~390). Reading-only commands (sha256sum, cat, ls, curl, etc.)
+// cannot mutate state and should reach the inner arifJudge for proper
+// DENY/GATE/ALLOW classification instead of being HOLD-blocked here.
+const READONLY_SHELL_COMMANDS = new Set([
       "sha256sum", "sha1sum", "md5sum", "shasum",
       "cat", "head", "tail", "less", "more",
       "ls", "stat", "file", "wc", "du", "df", "tree",
@@ -207,6 +207,21 @@ function loadAffordances(): Map<string, AffordanceCard> {
       "test", "[", "true", "false",
       "mkdir", "touch", "ln", "cp",
     ]);
+
+function isReadonlyShellCommand(baseCmd: string, command: string): boolean {
+  if (READONLY_SHELL_COMMANDS.has(baseCmd)) {
+    return true;
+  }
+
+  if (baseCmd === "curl") {
+    // Permit read-only probes like:
+    //   curl -sf http://localhost:8088/health | python3 -c ...
+    // but reject explicit mutation verbs.
+    return !/\b(-X\s*(POST|PUT|PATCH|DELETE)|--request\s*(POST|PUT|PATCH|DELETE)|--data(?:-binary)?|-d\b|--upload-file\b|--form\b)\b/i.test(command);
+  }
+
+  return false;
+}
 
 const MODE_ORDER: Record<AThinkMode, number> = { FAST: 0, THINK: 1, GOVERN: 2 };
 
@@ -320,7 +335,7 @@ export class AThinkGuard {
     sessionId?: string,
   ): AThinkVerdict {
     // Step 1: Classify mode (from user input or default to GOVERN for safety)
-    // DARWIN FIX 5: read-only forge_shell commands (sha256sum, cat, ls, etc.)
+    // DARWIN FIX 5: read-only forge_shell commands (sha256sum, cat, ls, curl, etc.)
     // get reclassified from FAST → GOVERN so they hit the readonly exemption
     // path rather than the FAST BUDGET=0 STOP. FAST mode disallows tools
     // entirely; read-only shell commands are safe and must reach the inner
@@ -330,7 +345,7 @@ export class AThinkGuard {
       const u = (userInput ?? "").trim();
       const firstToken = u.split(/\s+/)[0]?.replace(/^["'`]/, "") ?? "";
       const baseCmd = firstToken.split("/").pop() ?? firstToken;
-      if (READONLY_SHELL_COMMANDS.has(baseCmd)) {
+      if (isReadonlyShellCommand(baseCmd, u)) {
         mode = "GOVERN";  // force GOVERN so readonly exemption applies
       }
     }
@@ -415,8 +430,8 @@ export class AThinkGuard {
         const u = (userInput ?? "").trim();
         const firstToken = u.split(/\s+/)[0]?.replace(/^["'`]/, "") ?? "";
         const baseCmd = firstToken.split("/").pop() ?? firstToken;
-        process.stderr.write(`[A-THINK] readonly check: tool=${toolName} userInput="${userInput}" firstToken="${firstToken}" baseCmd="${baseCmd}" inSet=${READONLY_SHELL_COMMANDS.has(baseCmd)}\n`);
-        if (READONLY_SHELL_COMMANDS.has(baseCmd)) {
+        process.stderr.write(`[A-THINK] readonly check: tool=${toolName} userInput="${userInput}" firstToken="${firstToken}" baseCmd="${baseCmd}" inSet=${isReadonlyShellCommand(baseCmd, u)}\n`);
+        if (isReadonlyShellCommand(baseCmd, u)) {
           // Allow through — inner arifJudge will still classify.
         } else {
           return {

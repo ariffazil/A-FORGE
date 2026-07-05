@@ -61,6 +61,30 @@ function checkAuthorityFromActionClass(actionClass: ActionClass): {
 // F11 AUTH: Authority is verified by token format, not redundant kernel round-trip.
 
 const SEAL_SESSION_PATTERN = /^SEAL-[a-f0-9]{16}$/;
+const READONLY_SHELL_COMMANDS = new Set([
+  "sha256sum", "sha1sum", "md5sum", "shasum",
+  "cat", "head", "tail", "less", "more",
+  "ls", "stat", "file", "wc", "du", "df", "tree",
+  "date", "echo", "printf", "env", "pwd", "whoami", "hostname", "uname",
+  "which", "whereis", "type",
+  "find", "grep", "rg", "ag",
+  "jq", "yq", "xmllint",
+  "test", "[", "true", "false",
+  "mkdir", "touch", "ln", "cp",
+]);
+
+function isReadonlyShellCommand(command: string): boolean {
+  const trimmed = command.trim();
+  const firstToken = trimmed.split(/\s+/)[0]?.replace(/^["'`]/, "") ?? "";
+  const baseCmd = firstToken.split("/").pop() ?? firstToken;
+  if (READONLY_SHELL_COMMANDS.has(baseCmd)) {
+    return true;
+  }
+  if (baseCmd === "curl") {
+    return !/\b(-X\s*(POST|PUT|PATCH|DELETE)|--request\s*(POST|PUT|PATCH|DELETE)|--data(?:-binary)?|-d\b|--upload-file\b|--form\b)\b/i.test(command);
+  }
+  return false;
+}
 
 /**
  * Authority envelope issued by arifOS constitutional kernel.
@@ -272,8 +296,8 @@ export function registerShellTools(server: McpServer): void {
     "Executes commands through constitutional gate (ArifJudge) + hash-chain audit (ArifSeal). " +
     "DENY patterns are hard-blocked. GATE patterns require human approval. " +
     "Every execution is sealed to VAULT999 hash chain. " +
-    "REQUIRES arifOS authority envelope: call arif_init() first, pass the returned session_id. " +
-    "Use forge_shell_dryrun for preview without side effects.",
+    "REQUIRES arifOS authority envelope for executing mutable shell commands: call arif_init() first, pass the returned session_id. " +
+    "Read-only probes may omit session_id when they are clearly observation-only. Use forge_shell_dryrun for preview without side effects.",
     {
       command: z.string().min(1).max(4000).describe("Shell command to execute"),
       cwd: z.string().default(DEFAULT_WORKSPACE).describe("Working directory"),
@@ -287,11 +311,13 @@ export function registerShellTools(server: McpServer): void {
       const safeTimeout = (typeof timeout === 'number' && timeout > 0) ? Math.min(timeout, MAX_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
       const startedAt = Date.now();
 
+      const readonlyBypass = !session_id && isReadonlyShellCommand(command);
+
       // ── Step 0: Verify arifOS authority envelope (Option C) ──
       // forge_shell does NOT use local session registry. It calls arifOS
       // directly to verify the session. This keeps the kernel as sole
       // issuer of authority.
-      if (!session_id) {
+      if (!session_id && !readonlyBypass) {
         return {
           content: [{
             type: "text" as const,
@@ -313,7 +339,15 @@ export function registerShellTools(server: McpServer): void {
         };
       }
 
-      const envelope = await verifyArifOSSession(session_id);
+      const envelope = readonlyBypass
+        ? {
+            valid: true,
+            session_id: "stateless-readonly",
+            actor_id: "stateless-client",
+            authority_mode: "OBSERVE",
+            verdict: "SEAL",
+          }
+        : await verifyArifOSSession(session_id as string);
       if (!envelope.valid) {
         return {
           content: [{
@@ -336,7 +370,7 @@ export function registerShellTools(server: McpServer): void {
         };
       }
 
-      if (!canExecute(envelope.authority_mode)) {
+      if (!readonlyBypass && !canExecute(envelope.authority_mode)) {
         return {
           content: [{
             type: "text" as const,

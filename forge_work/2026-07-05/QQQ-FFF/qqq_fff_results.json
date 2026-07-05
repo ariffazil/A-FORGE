@@ -1,0 +1,89 @@
+{
+  "test": "QQQ-FFF",
+  "timestamp_utc": "2026-07-05T09:55:13Z",
+  "las_file": "test_well.las",
+  "las_samples": 3000,
+  "parameters": {
+    "gr_clean": 30.0,
+    "gr_shale": 130.0,
+    "vsh_method": "linear",
+    "matrix_density": 2.65,
+    "fluid_density": 1.0,
+    "sw_model": "archie",
+    "rw": 0.05,
+    "archie_a": 1.0,
+    "archie_m": 2.0,
+    "archie_n": 2.0,
+    "vsh_cutoff": 0.5,
+    "phi_cutoff": 0.08,
+    "sw_cutoff": 0.6,
+    "rt_cutoff": 2.0
+  },
+  "results": {
+    "vanilla": {
+      "agent": "VANILLA",
+      "status": "QC_VERIFIED",
+      "time_seconds": 0.091,
+      "rss_mb": 44.3,
+      "peak_mem_mb": 2.5,
+      "api_calls": 3,
+      "n_samples": 3000,
+      "vsh": {
+        "mean": 0.5783,
+        "p10": 0.3745,
+        "p50": 0.591,
+        "p90": 0.7832
+      },
+      "phie": {
+        "mean": 0.2375,
+        "p50": 0.2376
+      },
+      "sw": {
+        "mean": 0.6432,
+        "p50": 0.6359
+      },
+      "net_pay": {
+        "gross_m": 1500.0,
+        "net_pay_m": 168.0,
+        "ntg": 0.112
+      },
+      "physics9_bounds": {
+        "porosity_ok": true,
+        "sw_ok": true,
+        "density_ok": true
+      }
+    },
+    "geox_only": {
+      "agent": "GEOX-ONLY",
+      "status": "FAILED",
+      "error": "HTTP Error 406: Not Acceptable",
+      "time_seconds": 0.024
+    },
+    "full_stack": {
+      "agent": "FULL-STACK",
+      "status": "COMPLETED",
+      "time_seconds": 0.039,
+      "rss_mb": 44.5,
+      "peak_mem_mb": 0.3,
+      "api_calls": 7,
+      "session_id": "QQQ-FFF-SESSION",
+      "pipeline": {
+        "arif_init": "FAIL",
+        "geox_ingest": "FAIL",
+        "geox_petrophysics": "FAIL",
+        "forge_evaluate": "FAIL",
+        "forge_lease": "FAIL",
+        "arif_judge": "FAIL",
+        "arif_seal": "FAIL"
+      },
+      "judge_verdict": "{'error': 'HTTP Error 406: Not Acceptable'}",
+      "seal_status": "{'error': 'HTTP Error 406: Not Acceptable'}"
+    }
+  },
+  "scores": {
+    "VANILLA": 100,
+    "GEOX-ONLY": 25,
+    "FULL-STACK": 100
+  },
+  "verdict": "NEEDS_CORRECTION"
+}

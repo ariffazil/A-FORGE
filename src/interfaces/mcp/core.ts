@@ -1509,19 +1509,24 @@ server.tool(
   "forge_probe",
   "Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill.",
   {
-    organs: z.array(z.enum(["arifos", "geox", "wealth", "well", "aforge"])).optional()
+    organs: z.array(z.enum(["arifos", "geox", "wealth", "well", "aforge", "aaa"])).optional()
       .describe("Organs to probe (default: all except self)"),
     include_latency: z.boolean().default(true).describe("Include latency measurement"),
   },
-  async ({ organs, include_latency }: { organs?: string[]; include_latency?: boolean }) => {
+  async ({ organs, include_latency }: { organs?: string[] | string; include_latency?: boolean }) => {
+  // SESAT FIX 2026-07-05: MCP client may pass comma-separated string instead of array
+  const organsArray: string[] | undefined = typeof organs === "string"
+    ? organs.split(",").map(s => s.trim()).filter(Boolean)
+    : organs;
   const targets: Record<string, string> = {
     arifos: "http://localhost:8088/health",
     geox: "http://localhost:8081/health",
     wealth: "http://localhost:18082/health",
     well: "http://localhost:18083/health",
     aforge: "http://localhost:7072/health",
+    aaa: "http://localhost:3001/health",
   };
-  const selected = organs ?? ["arifos", "geox", "wealth", "well"];
+  const selected = organsArray ?? ["arifos", "geox", "wealth", "well", "aaa"];
   const results: Record<string, { alive: boolean; latency_ms?: number; error?: string }> = {};
   for (const organ of selected) {
     const url = targets[organ];
