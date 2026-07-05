@@ -1460,12 +1460,12 @@ export function registerGovernedTools(server: McpServer): void {
 export function registerRealityLoopTools(server: McpServer): void {
   server.tool(
     "forge_reality_loop",
-    "Intent compiler: 7-stage state-tracking ledger (MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN). Modes: start | advance | record | seal | report | metrics | list | destroy. Constitutional F1–F13 at every stage. ΔS ≤ 0 per iteration. SEAL only after W³ ≥ 0.70 tri-witness and human RETURN.",
+    "Intent compiler: 7-stage state-tracking ledger (MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN). Modes: start | advance | record | seal | report | metrics | list | destroy. Constitutional F1–F13 at every stage. ΔS ≤ 0 per iteration. Heuristic thresholds (G≥config.min_g_score, W³≥config.min_witness) are PHASE 1 HEURISTIC — both surfaced in seal output with calibration_required: true. Default 0.70 each; override via config JSON; out-of-range values are clamped to [0,1], non-finite falls back to default.",
     {
       mode: z.enum(["start", "advance", "record", "seal", "report", "metrics", "list", "destroy"]).describe("Operation mode"),
       session_id: z.string().optional().describe("Session ID (required for all modes except start/list)"),
       intent: z.string().optional().describe('Primary intent for the loop. Default: "Self-sustaining federation health"'),
-      config: z.string().optional().describe('JSON config: {iteration_depth, max_hypotheses, action_budget, auto_execute, self_modify, seal_every_iteration}'),
+      config: z.string().optional().describe('JSON config: {iteration_depth, max_hypotheses, action_budget, auto_execute, self_modify, seal_every_iteration, min_g_score=0.70, min_witness=0.70}. Thresholds are PHASE 1 HEURISTIC. Out-of-range (not in [0,1]) is clamped; non-finite falls back to default. Surfaced in start + seal response.'),
       // record mode args
       record_stage: z.string().optional().describe('Stage being recorded (record mode)'),
       record_type: z.string().optional().describe('Type of record: evidence | hypothesis | action | entropy | mod | scar | violation'),
@@ -1505,6 +1505,14 @@ export function registerRealityLoopTools(server: McpServer): void {
                   next_stage: nextStage(state.current_stage),
                   auto_execute: cfg.auto_execute ?? true,
                   f13_override_required: cfg.auto_execute ?? true,
+                  // Per-iteration heuristic gates (PHASE 1 HEURISTIC, calibration pending).
+                  // Prompts the operator must know what the engine enforced.
+                  effective_thresholds: {
+                    min_g_score: state.effective_config.min_g_score,
+                    min_witness: state.effective_config.min_witness,
+                  },
+                  threshold_validation: state.threshold_validation,
+                  calibration_required: true,
                   available_prompts: ["reality-loop", "fix-bug", "refactor-module", "deploy-service", "audit-code", "research-topic", "cross-organ-query", "apex-reason", "quantum-frame", "reality-engineer", "godel-metabolize", "thermodynamic-zen", "recursive-self-improve"],
                   doctrine: "Call forge_reality_loop mode=advance to begin iteration. The loop NEVER stops unless destroyed.",
                 }, null, 2),
@@ -1668,6 +1676,14 @@ export function registerRealityLoopTools(server: McpServer): void {
                   iteration: sealState.iteration,
                   seal_id: sealId,
                   vault_path: `/root/VAULT999/reality-loop/${sealState.session_id}/iter-${sealState.iteration}.json`,
+                  // Per-iteration heuristic gates (PHASE 1 HEURISTIC, calibration pending).
+                  // Seal receipt must record what the loop enforced, not what it claimed to enforce.
+                  effective_thresholds: {
+                    min_g_score: sealState.effective_config.min_g_score,
+                    min_witness: sealState.effective_config.min_witness,
+                  },
+                  threshold_validation: sealState.threshold_validation,
+                  calibration_required: true,
                   instruction: "Iteration sealed to VAULT999. Call forge_reality_loop mode=advance to start next iteration.",
                 }, null, 2),
               }],
