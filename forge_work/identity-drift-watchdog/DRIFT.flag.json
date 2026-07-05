@@ -1,7 +1,0 @@
-{
-  "detected_at": "2026-07-05T23:30:01Z",
-  "session_anchor": "SEAL-2751ad53b5d04c50",
-  "baseline": "/root/.local/share/arifos/identity-fingerprint-baseline.sha256",
-  "diff_kind": "hash_mismatch",
-  "action": "next_arif_init_must_surface"
-}
