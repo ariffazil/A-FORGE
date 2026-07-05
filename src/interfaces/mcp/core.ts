@@ -1670,9 +1670,8 @@ registerSkillTools(server);
 // not physical laws. Thresholds must be calibrated on held-out data.
 registerGovernedTools(server);
 
-// ── Phase 4: Reality Loop — The 13th Tool ───────────────────────────────────
-// Chains all 12 MCP prompts into a perpetual autonomous cycle.
-// OBSERVE→QUANTUM→APEX→GÖDEL→REALITY→THERMO→RECURSE→SEAL→LOOP.
+// ── Phase 4: Reality Loop — Intent Compiler ────────────────────────────────
+// 7-stage state-tracking ledger; agent orchestrates MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN.
 registerRealityLoopTools(server);
 
 // ── P1 Gateway Tools: external MCP internalization ───────────────────────────

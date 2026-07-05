@@ -1454,13 +1454,13 @@ export function registerGovernedTools(server: McpServer): void {
     },
   );
 
-  // ── Reality Loop (The 13th Tool — Orchestrator of All 12 Prompts) ─────
+  // ── Reality Loop (Intent Compiler — 7-Stage State Ledger) ────────
 }
 
 export function registerRealityLoopTools(server: McpServer): void {
   server.tool(
     "forge_reality_loop",
-    "THE 13TH TOOL — Chains all 12 MCP prompts into a perpetual autonomous reality loop. Modes: start | advance | record | report | metrics | list | destroy. Constitutional F1-F13 at every stage. ΔS ≤ 0 per iteration. Self-improving.",
+    "Intent compiler: 7-stage state-tracking ledger (MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN). Modes: start | advance | record | seal | report | metrics | list | destroy. Constitutional F1–F13 at every stage. ΔS ≤ 0 per iteration. SEAL only after W³ ≥ 0.70 tri-witness and human RETURN.",
     {
       mode: z.enum(["start", "advance", "record", "seal", "report", "metrics", "list", "destroy"]).describe("Operation mode"),
       session_id: z.string().optional().describe("Session ID (required for all modes except start/list)"),
