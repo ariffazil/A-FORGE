@@ -1460,7 +1460,7 @@ export function registerGovernedTools(server: McpServer): void {
 export function registerRealityLoopTools(server: McpServer): void {
   server.tool(
     "forge_reality_loop",
-    "Intent compiler: 7-stage state-tracking ledger (MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN). Modes: start | advance | record | seal | report | metrics | list | destroy. Constitutional F1–F13 at every stage. ΔS ≤ 0 per iteration. Heuristic thresholds (G≥config.min_g_score, W³≥config.min_witness) are PHASE 1 HEURISTIC — both surfaced in seal output with calibration_required: true. Default 0.70 each; override via config JSON; out-of-range values are clamped to [0,1], non-finite falls back to default.",
+    "Intent compiler: 7-stage state-tracking ledger (MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN). Modes: start | advance | record | seal | report | metrics | list | destroy. Constitutional F1–F13 at every stage. ΔS ≤ 0 per iteration. Heuristic thresholds (G≥config.min_g_score, W³≥config.min_witness) are PHASE 1 HEURISTIC — both surfaced in seal output with calibration_required: true. Default 0.70 each; override via config JSON; out-of-range values are clamped to [0,1], non-finite falls back to default. W³ check: seal mode warns if min_witness > 0 and no tri_witness recorded. RETURN is terminal — human must decide.",
     {
       mode: z.enum(["start", "advance", "record", "seal", "report", "metrics", "list", "destroy"]).describe("Operation mode"),
       session_id: z.string().optional().describe("Session ID (required for all modes except start/list)"),
@@ -1530,14 +1530,13 @@ export function registerRealityLoopTools(server: McpServer): void {
             }
             const next = advanceStage(state);
             const stagePrompts = [
+              ...(next === "MEANING" ? [] : []),
               ...(next === "OBSERVE" ? ["cross-organ-query", "research-topic", "audit-code", "fix-bug"] : []),
-              ...(next === "QUANTUM" ? ["quantum-frame"] : []),
-              ...(next === "APEX" ? ["apex-reason"] : []),
-              ...(next === "GODEL" ? ["godel-metabolize"] : []),
-              ...(next === "REALITY" ? ["reality-engineer", "refactor-module", "deploy-service"] : []),
-              ...(next === "THERMO" ? ["thermodynamic-zen"] : []),
-              ...(next === "RECURSE" ? ["recursive-self-improve"] : []),
+              ...(next === "ENCODE" ? ["quantum-frame", "apex-reason", "godel-metabolize"] : []),
+              ...(next === "IMPROVE" ? ["reality-engineer", "refactor-module", "deploy-service"] : []),
+              ...(next === "VERIFY" ? ["godel-metabolize", "thermodynamic-zen", "recursive-self-improve"] : []),
               ...(next === "SEAL" ? [] : []),
+              ...(next === "RETURN" ? [] : []),
             ];
             return {
               content: [{
@@ -1548,15 +1547,19 @@ export function registerRealityLoopTools(server: McpServer): void {
                   session_id: args.session_id,
                   iteration: state.iteration,
                   stage: next,
-                  stage_index: ["OBSERVE", "QUANTUM", "APEX", "GODEL", "REALITY", "THERMO", "RECURSE", "SEAL"].indexOf(next),
-                  total_stages: 8,
+                  stage_index: ["MEANING", "OBSERVE", "ENCODE", "IMPROVE", "VERIFY", "SEAL", "RETURN"].indexOf(next),
+                  total_stages: 7,
                   invoke_prompts: stagePrompts,
                   evidence_count: state.evidence_base.length,
                   hypothesis_count: state.active_hypotheses.length,
                   scar_count: state.scars.length,
                   loop_report: getLoopReport(state),
                   instruction: next === "SEAL"
-                    ? "Final stage. Seal iteration to VAULT999 via forge_reality_loop mode=seal, then call forge_reality_loop mode=advance to start next iteration."
+                    ? "Seal iteration to VAULT999 via forge_reality_loop mode=seal, then call forge_reality_loop mode=advance to land on RETURN."
+                    : next === "RETURN"
+                    ? "TERMINAL STAGE. Present findings to Arif. Await human decision. Loop does NOT auto-advance from RETURN."
+                    : next === "MEANING"
+                    ? "Frame intent. What does the human want? What would make this loop unnecessary? (No tools — pure reasoning.)"
                     : `Call prompts/get for each prompt in invoke_prompts, execute the workflow, then record results.`,
                 }, null, 2),
               }],
@@ -1665,6 +1668,20 @@ export function registerRealityLoopTools(server: McpServer): void {
             if (!sealState) {
               return { content: [{ type: "text" as const, text: JSON.stringify({ error: "Loop not found" }, null, 2) }], isError: true };
             }
+
+            // W³ gate enforcement (PHASE 1 HEURISTIC — warns but does not block)
+            const minW = sealState.effective_config.min_witness;
+            const hasTriWitness = sealState.evidence_base.some(
+              (e) => e.source_prompt === "tri_witness" || e.source_stage === "VERIFY"
+            );
+            const w3Advisory: string[] = [];
+            if (minW > 0 && !hasTriWitness) {
+              w3Advisory.push(
+                `W³ gate: min_witness=${minW} but no tri_witness evidence recorded. ` +
+                `Seal proceeds without W³ verification. Record tri_witness evidence at VERIFY stage to gate future seals.`
+              );
+            }
+
             const sealId = await sealIteration(sealState);
             return {
               content: [{
@@ -1684,7 +1701,8 @@ export function registerRealityLoopTools(server: McpServer): void {
                   },
                   threshold_validation: sealState.threshold_validation,
                   calibration_required: true,
-                  instruction: "Iteration sealed to VAULT999. Call forge_reality_loop mode=advance to start next iteration.",
+                  w3_advisory: w3Advisory.length > 0 ? w3Advisory : undefined,
+                  instruction: "Iteration sealed to VAULT999. Call forge_reality_loop mode=advance to land on RETURN.",
                 }, null, 2),
               }],
             };
@@ -1730,5 +1748,148 @@ export function registerRealityLoopTools(server: McpServer): void {
         };
       }
     },
+  );
+}
+
+export function registerResilienceTools(server: McpServer): void {
+  server.tool(
+    "forge_probe_site",
+    "Probe a web site or cockpit surface for federation resilience and compliance checks. Returns status, static fallbacks, and metadata.",
+    {
+      url: z.string().url().describe("The URL of the site to probe"),
+      timeout_ms: z.number().default(5000).describe("Timeout in milliseconds"),
+    },
+    async ({ url, timeout_ms }) => {
+      try {
+        const urlObj = new URL(url);
+        const baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+
+        // 1. Probe the main page
+        const response = await fetch(url, { signal: AbortSignal.timeout(timeout_ms) });
+        const html = await response.text();
+
+        const hasNoscript = html.includes("<noscript>");
+        const hasFallback = html.includes("fallback-shell");
+        const hasErrorStyle = html.includes("error-boundary") || html.includes("ErrorBoundary");
+
+        // 2. Probe /health
+        let healthData: any = null;
+        try {
+          const healthRes = await fetch(`${baseUrl}/health`, { signal: AbortSignal.timeout(2000) });
+          healthData = healthRes.ok ? await healthRes.json() : { error: `HTTP ${healthRes.status}` };
+        } catch (e: any) {
+          healthData = { error: e.message };
+        }
+
+        // 3. Probe /ready
+        let readyData: any = null;
+        try {
+          const readyRes = await fetch(`${baseUrl}/ready`, { signal: AbortSignal.timeout(2000) });
+          readyData = readyRes.ok ? await readyRes.json() : { error: `HTTP ${readyRes.status}` };
+        } catch (e: any) {
+          readyData = { error: e.message };
+        }
+
+        // 4. Probe /llms.txt
+        let hasLlmsTxt = false;
+        try {
+          const llmsRes = await fetch(`${baseUrl}/llms.txt`, { signal: AbortSignal.timeout(2000) });
+          hasLlmsTxt = llmsRes.ok && (await llmsRes.text()).includes("#");
+        } catch (_) {}
+
+         // 5. Probe /.well-known/agent.json
+         let hasAgentJson = false;
+         try {
+           const agentRes = await fetch(`${baseUrl}/.well-known/agent.json`, { signal: AbortSignal.timeout(2000) });
+           if (agentRes.ok) {
+             const json: any = await agentRes.json();
+             hasAgentJson = json && json.name !== undefined;
+           }
+         } catch (_) {}
+
+        // 6. Probe /receipts/latest.json
+        let latestReceipt: any = null;
+        try {
+          const receiptRes = await fetch(`${baseUrl}/receipts/latest.json`, { signal: AbortSignal.timeout(2000) });
+          latestReceipt = receiptRes.ok ? await receiptRes.json() : null;
+        } catch (_) {}
+
+        const allOk = response.ok && hasNoscript && hasFallback && healthData?.status === "healthy";
+
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              url,
+              status: response.status,
+              ok: allOk,
+              resilience: {
+                has_noscript: hasNoscript,
+                has_fallback_shell: hasFallback,
+                has_error_boundary: hasErrorStyle,
+              },
+              metadata: {
+                has_llms_txt: hasLlmsTxt,
+                has_agent_json: hasAgentJson,
+                latest_receipt: latestReceipt,
+              },
+              endpoints: {
+                health: healthData,
+                ready: readyData,
+              }
+            }, null, 2)
+          }]
+        };
+      } catch (err: any) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ error: `Probe failed: ${err.message}` }, null, 2) }],
+          isError: true
+        };
+      }
+    }
+  );
+
+  server.tool(
+    "forge_receipt_draft",
+    "Draft a structured compliance receipt for a deployment or change. Output is standard markdown formatted for arifOS VAULT999 verification.",
+    {
+      actor_id: z.string().describe("The actor executing the change"),
+      session_id: z.string().describe("The active session ID"),
+      action_details: z.string().describe("Details of the modifications made"),
+      evidence: z.array(z.string()).describe("List of evidence/checks validated"),
+      verdict: z.enum(["PROCEED", "HOLD", "VOID", "SABAR"]).default("PROCEED"),
+    },
+    async ({ actor_id, session_id, action_details, evidence, verdict }) => {
+      const receiptId = `DRAFT-${randomUUID().substring(0, 8)}`;
+      const timestamp = new Date().toISOString();
+      const draftText = `
+# DRAFT RECEIPT — ${receiptId}
+**Date:** ${timestamp.split("T")[0]}
+**Actor:** ${actor_id}
+**Session:** ${session_id}
+**Verdict:** ${verdict}
+**Timestamp:** ${timestamp}
+
+## Action Details
+${action_details}
+
+## Evidence Validated
+${evidence.map(e => `- ${e}`).join("\n")}
+
+## Authority Boundary
+Drafted under A-FORGE resilience protocol. This draft receipt is unsealed.
+To finalize, invoke arif_judge with SEAL verdict and arif_seal.
+`;
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            receipt_id: receiptId,
+            status: "DRAFT",
+            draft_receipt: draftText.trim(),
+          }, null, 2)
+        }]
+      };
+    }
   );
 }

@@ -213,27 +213,37 @@ export function listActiveLoops(): Array<{
 
 // ── Stage Transitions ───────────────────────────────────────────────────────
 
+/**
+ * Canonical 7-stage order matching the skill's operator interface.
+ * RECURSE folded into VERIFY; MEANING and RETURN bookend the loop.
+ * RETURN is terminal — forge_reality_loop mode="advance" stops there.
+ * Human must call destroy or re-start to break the terminal.
+ */
 const STAGE_ORDER: RealityStage[] = [
+  "MEANING",
   "OBSERVE",
-  "QUANTUM",
-  "APEX",
-  "GODEL",
-  "REALITY",
-  "THERMO",
-  "RECURSE",
+  "ENCODE",
+  "IMPROVE",
+  "VERIFY",
   "SEAL",
+  "RETURN",
 ];
 
 export function nextStage(current: RealityStage): RealityStage {
   const idx = STAGE_ORDER.indexOf(current);
-  if (idx === -1 || idx >= STAGE_ORDER.length - 1) return "OBSERVE"; // loop back
+  if (idx === -1 || idx >= STAGE_ORDER.length - 1) return "OBSERVE"; // loop back after RETURN
   return STAGE_ORDER[idx + 1];
 }
 
 export function advanceStage(state: RealityLoopState): RealityStage {
-  state.current_stage = nextStage(state.current_stage);
-  // If we just completed SEAL, increment iteration and loop back to OBSERVE
-  if (state.current_stage === "OBSERVE") {
+  const next = nextStage(state.current_stage);
+  state.current_stage = next;
+  // If we just completed SEAL, increment iteration and land on RETURN
+  if (next === "RETURN") {
+    state.iteration++;
+  }
+  // If we looped back to OBSERVE (from RETURN or explicit restart)
+  if (next === "OBSERVE" && state.iteration === 0) {
     state.iteration++;
   }
   return state.current_stage;
@@ -242,6 +252,17 @@ export function advanceStage(state: RealityLoopState): RealityStage {
 // ── Stage Action Builders ────────────────────────────────────────────────────
 // These build the structured prompt arguments for each stage.
 // The agent consuming this output calls prompts/get with these args.
+// Aligned to the canonical 7-stage model: MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN.
+
+export function buildMeaningArgs(state: RealityLoopState) {
+  return {
+    stage: "MEANING",
+    iteration: state.iteration,
+    evidence_count: state.evidence_base.length,
+    scar_count: state.scars.length,
+    intent: `Iteration ${state.iteration}: Frame intent. What does the human want? What would make this loop unnecessary?`,
+  };
+}
 
 export function buildObserveArgs(state: RealityLoopState, config: RealityLoopConfig) {
   const prompts = STAGE_PROMPT_MAP.OBSERVE;
@@ -257,44 +278,27 @@ export function buildObserveArgs(state: RealityLoopState, config: RealityLoopCon
   };
 }
 
-export function buildQuantumArgs(state: RealityLoopState, config: RealityLoopConfig) {
+export function buildEncodeArgs(state: RealityLoopState, config: RealityLoopConfig) {
   return {
-    stage: "QUANTUM",
+    stage: "ENCODE",
     iteration: state.iteration,
-    situation: `Based on ${state.evidence_base.length} evidence entries from iteration ${state.iteration}, generate ${config.max_hypotheses} mutually-exclusive hypotheses about what action to take next.`,
+    sub_skills: ["quantum-frame", "apex-reason", "godel-metabolize"],
+    situation: `Based on ${state.evidence_base.length} evidence entries from iteration ${state.iteration}, generate ${config.max_hypotheses} mutually-exclusive hypotheses. Evaluate each via G = Q·V·Ψ·Φ (PHASE 1 HEURISTIC, min_g_score=${config.min_g_score}). Collapse to the best hypothesis.`,
     hypothesis_count: String(config.max_hypotheses),
     prior_evidence: state.evidence_base.slice(-10).map((e) => `[${e.epistemic_label}] ${e.claim}`),
+    min_g_score: config.min_g_score,
   };
 }
 
-export function buildApexArgs(state: RealityLoopState) {
+export function buildImproveArgs(state: RealityLoopState) {
   return {
-    stage: "APEX",
+    stage: "IMPROVE",
     iteration: state.iteration,
-    question: `Evaluate ${state.active_hypotheses.length} active hypotheses and determine which to collapse. Evidence base: ${state.evidence_base.length} entries. System state: ${JSON.stringify(state.system_health)}`,
-    depth: "standard",
-    hypotheses: state.active_hypotheses.map((h) => h.statement),
-  };
-}
-
-export function buildGodelArgs(state: RealityLoopState) {
-  const hypothesisStr = state.active_hypotheses
-    .filter((h) => h.collapsed && h.collapsed_to)
-    .map((h) => h.statement)
-    .join("; ");
-  return {
-    stage: "GODEL",
-    iteration: state.iteration,
-    plan: hypothesisStr || `Proceed with iteration ${state.iteration} plan based on evidence`,
-    domain: "system",
-  };
-}
-
-export function buildRealityArgs(state: RealityLoopState) {
-  return {
-    stage: "REALITY",
-    iteration: state.iteration,
-    godel_verdict: "CONSISTENT", // filled by agent after running godel-metabolize
+    sub_skills: ["reality-engineer", "refactor-module", "deploy-service"],
+    collapsed_hypothesis: state.active_hypotheses
+      .filter((h) => h.collapsed && h.collapsed_to)
+      .map((h) => h.statement)
+      .join("; ") || `Proceed with iteration ${state.iteration} plan`,
     target: "system",
     nature: "transform",
     prior_actions: state.last_action
@@ -303,24 +307,28 @@ export function buildRealityArgs(state: RealityLoopState) {
   };
 }
 
-export function buildThermoArgs(state: RealityLoopState, config: RealityLoopConfig) {
+export function buildVerifyArgs(state: RealityLoopState, config: RealityLoopConfig) {
   return {
-    stage: "THERMO",
+    stage: "VERIFY",
     iteration: state.iteration,
+    sub_skills: ["godel-metabolize", "thermodynamic-zen", "recursive-self-improve"],
     system: `Reality loop iteration ${state.iteration}`,
     action_budget: String(config.action_budget),
     prior_entropy: state.entropy_history.length > 0
       ? state.entropy_history[state.entropy_history.length - 1].entropy_after
       : 0.5,
+    min_witness: config.min_witness,
+    session_summary: `Completed iteration ${state.iteration}. Evidence: ${state.evidence_base.length} entries. Self-mods applied: ${state.self_modifications.filter((m) => m.applied).length}.`,
+    capability: "reasoning",
   };
 }
 
-export function buildRecurseArgs(state: RealityLoopState) {
+export function buildReturnArgs(state: RealityLoopState) {
   return {
-    stage: "RECURSE",
+    stage: "RETURN",
     iteration: state.iteration,
-    session_summary: `Completed iteration ${state.iteration} of reality loop. Stages executed: OBSERVE→QUANTUM→APEX→GÖDEL→REALITY→THERMO. Evidence: ${state.evidence_base.length} entries. Entropy Δ: ${state.entropy_history.length > 0 ? state.entropy_history[state.entropy_history.length - 1].delta_S : "N/A"}. Self-mods applied: ${state.self_modifications.filter((m) => m.applied).length}.`,
-    capability: "reasoning",
+    session_summary: `Iteration ${state.iteration} complete. Evidence: ${state.evidence_base.length} entries. Scars: ${state.scars.length}. Entropy Δ: ${state.entropy_history.length > 0 ? state.entropy_history[state.entropy_history.length - 1].delta_S : "N/A"}.`,
+    instruction: "Present findings to Arif. Await human decision: 'jalan terus' (continue), 'hold' (pause), 'sudah' (close). Terminal stage — loop does not auto-advance.",
   };
 }
 
@@ -519,6 +527,13 @@ export async function sealIteration(state: RealityLoopState): Promise<string> {
     scars: state.scars,
     floor_violations: state.floor_violations,
     system_health: state.system_health,
+    // Threshold gates persisted per iteration (PHASE 1 HEURISTIC)
+    effective_thresholds: {
+      min_g_score: state.effective_config.min_g_score,
+      min_witness: state.effective_config.min_witness,
+    },
+    threshold_validation: state.threshold_validation,
+    calibration_required: true,
   }, null, 2);
 
   const vaultPath = resolve(vaultDir, `iter-${state.iteration}.json`);

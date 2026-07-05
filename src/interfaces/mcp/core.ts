@@ -61,6 +61,7 @@ import {
   registerGovernedTools,
   registerRealityLoopTools,
   initializeForgeTools,
+  registerResilienceTools,
 } from "./forgeTools.js";
 import { registerGatewayTools } from "./gatewayTools.js";
 import { registerForge8Verbs } from "./forge8Verbs.js";
@@ -1673,6 +1674,9 @@ registerGovernedTools(server);
 // ── Phase 4: Reality Loop — Intent Compiler ────────────────────────────────
 // 7-stage state-tracking ledger; agent orchestrates MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN.
 registerRealityLoopTools(server);
+
+// ── Resilience Tools — AAA-FORGE-RESILIENCE-v0.1 ────────────────────────────
+registerResilienceTools(server);
 
 // ── P1 Gateway Tools: external MCP internalization ───────────────────────────
 registerGatewayTools(server);

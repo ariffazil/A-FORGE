@@ -292,48 +292,60 @@ export const PROMOTION_THRESHOLDS = {
 
 // ── Reality Loop State ───────────────────────────────────────────────────────
 
+/**
+ * Canonical 7 stages matching the skill's operator interface.
+ *
+ * Skill mapping:
+ *   MEANING → pre-loop framing (no tools — what does human want?)
+ *   OBSERVE → reality probe, evidence gathering
+ *   ENCODE  → quantum-frame + apex-reason + godel-metabolize (sub-skill composite)
+ *   IMPROVE → reality-engineer, refactor, deploy
+ *   VERIFY  → godel-metabolize + thermodynamic-zen (re-check + entropy)
+ *   SEAL    → vault append
+ *   RETURN  → terminal — present to human, await decision
+ *
+ * Previously 8 internal stages (OBSERVE→QUANTUM→APEX→GODEL→REALITY→THERMO→RECURSE→SEAL)
+ * collapsed to 7 per skill alignment 2026-07-05. RECURSE still accessible via
+ * STAGE_PROMPT_MAP if needed, but is no longer a mandatory stage in the loop.
+ */
 export const REALITY_STAGES = [
+  "MEANING",
   "OBSERVE",
-  "QUANTUM",
-  "APEX",
-  "GODEL",
-  "REALITY",
-  "THERMO",
-  "RECURSE",
+  "ENCODE",
+  "IMPROVE",
+  "VERIFY",
   "SEAL",
+  "RETURN",
 ] as const;
 
 export type RealityStage = (typeof REALITY_STAGES)[number];
 
 /** Which prompt(s) to invoke at each stage */
 export const STAGE_PROMPT_MAP: Record<RealityStage, string[]> = {
+  MEANING: [],             // pre-loop framing — no tools, human intent capture
   OBSERVE: [
     "cross-organ-query",   // route intent to correct organ
     "research-topic",      // deep observation / evidence gathering
     "audit-code",          // scan existing state
     "fix-bug",             // reactive observation (bug reports)
   ],
-  QUANTUM: [
+  ENCODE: [
     "quantum-frame",       // generate N mutually-exclusive hypotheses
-  ],
-  APEX: [
-    "apex-reason",         // physics-grounded evaluation of each hypothesis
-  ],
-  GODEL: [
+    "apex-reason",         // physics-grounded evaluation (G = Q·V·Ψ·Φ)
     "godel-metabolize",    // self-consistency check before action
   ],
-  REALITY: [
+  IMPROVE: [
     "reality-engineer",    // execute the chosen action (TEXT IS REALITY)
     "refactor-module",     // structural reality mutation
     "deploy-service",      // reality deployment
   ],
-  THERMO: [
+  VERIFY: [
+    "godel-metabolize",    // re-check consistency after action
     "thermodynamic-zen",   // measure ΔS, verify entropy reduction
-  ],
-  RECURSE: [
     "recursive-self-improve", // meta-cognition: find bottleneck, fix it
   ],
   SEAL: [],                // seal to VAULT999 (internal, no prompt needed)
+  RETURN: [],              // terminal — present to human, await decision
 };
 
 /** The loop state — carried forward between iterations */
