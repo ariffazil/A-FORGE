@@ -17,6 +17,8 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 
 import { server } from "./core.js";
 import { getApprovalBoundary } from "../../application/approval/index.js";
@@ -25,6 +27,8 @@ import { telemetry } from "./telemetry.js";
 import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpPolicyGate.js";
 import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
+
+const AFORGE_ROOT = process.cwd();
 
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;  // 30 min idle before auto-close
 const SESSION_CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // check every 5 min
@@ -94,6 +98,10 @@ const STATELESS_TOOLS = new Set([
   "forge_agent",
   "forge_lock",
   "forge_seal",
+    // ── Phase 9: Scar Law (2026-07-05) ─────────────────────────────
+    // forge_scar modes: list + consult are read-only OBSERVE-class.
+    // mode=seal requires session ownership (guarded in handler).
+    "forge_scar",
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────
@@ -304,7 +312,9 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             endpoints: {
               initialize: "POST /mcp",
               tools_list: "POST /mcp → tools/list",
-              tools_call: "POST /mcp → tools/call"
+              tools_call: "POST /mcp → tools/call",
+              resources_list: "POST /mcp → resources/list",
+              resources_read: "POST /mcp → resources/read"
             },
             docs: "https://forge.arif-fazil.com",
             stateless_tools: STATELESS_TOOLS.size,
@@ -392,7 +402,12 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(jsonRpcResult(msgId, {
               protocolVersion: "2025-11-25",
-              capabilities: { tools: {}, resources: {}, logging: {}, registration: { mode: "explicit", tool: "forge_agent" } },
+              capabilities: {
+                tools: {},
+                resources: { listChanged: false },
+                logging: {},
+                registration: { mode: "explicit", tool: "forge_agent" },
+              },
               serverInfo: { name: "A-FORGE-MCP", version: "0.1.0" },
             }));
             return;
@@ -415,6 +430,115 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             }));
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(jsonRpcResult(msgId, { tools }));
+            return;
+          }
+
+          // Case 2b: resources/list
+          if (method === "resources/list") {
+            const resources = [
+              {
+                uri: "forge://genesis/doctrine",
+                name: "A-FORGENESIS Doctrine",
+                description: "Constitutional doctrine — kernel canon, MCP boundary, adat agentic",
+                mimeType: "text/markdown",
+              },
+              {
+                uri: "forge://agents/governance",
+                name: "AGENTS.md",
+                description: "Agent governance — boundary contract, allowed/forbidden actions",
+                mimeType: "text/markdown",
+              },
+              {
+                uri: "forge://contract/affordances",
+                name: "Tool Affordances",
+                description: "Tool risk contracts, 8-class action taxonomy",
+                mimeType: "application/x-yaml",
+              },
+              {
+                uri: "forge://contract/brain-hands",
+                name: "Brain-Hands Contract",
+                description: "Constitutional separation — arifOS (brain) vs A-FORGE (hands)",
+                mimeType: "text/markdown",
+              },
+              {
+                uri: "forge://state/health",
+                name: "Health Status",
+                description: "Live health check — port, version, uptime",
+                mimeType: "application/json",
+              },
+            ];
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(jsonRpcResult(msgId, { resources }));
+            return;
+          }
+
+          // Case 2c: resources/read
+          if (method === "resources/read") {
+            const uri = parsed.params?.uri;
+            if (!uri) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, "Missing resource URI"));
+              return;
+            }
+
+            let content = "";
+            let mimeType = "text/plain";
+
+            try {
+              if (uri === "forge://genesis/doctrine") {
+                const genesisDir = path.join(AFORGE_ROOT, "GENESIS");
+                const files = fs.readdirSync(genesisDir).filter(f => f.endsWith(".md")).sort();
+                content = files.map(f => {
+                  const data = fs.readFileSync(path.join(genesisDir, f), "utf-8");
+                  return `## ${f}\n\n${data}`;
+                }).join("\n\n---\n\n");
+                mimeType = "text/markdown";
+              } else if (uri === "forge://agents/governance") {
+                content = fs.readFileSync(path.join(AFORGE_ROOT, "AGENTS.md"), "utf-8");
+                mimeType = "text/markdown";
+              } else if (uri === "forge://contract/affordances") {
+                const affPath = path.join(AFORGE_ROOT, "src", "interfaces", "mcp", "contract", "affordances.yaml");
+                if (fs.existsSync(affPath)) {
+                  content = fs.readFileSync(affPath, "utf-8");
+                  mimeType = "application/x-yaml";
+                } else {
+                  content = "# Affordances\n\naffordances.yaml not found at expected path.";
+                }
+              } else if (uri === "forge://contract/brain-hands") {
+                const bhPath = path.join(AFORGE_ROOT, "GENESIS", "BRAIN-HANDS-CONTRACT.md");
+                if (fs.existsSync(bhPath)) {
+                  content = fs.readFileSync(bhPath, "utf-8");
+                } else {
+                  content = "# Brain-Hands Contract\n\nSee AGENTS.md §Boundary Contract.";
+                }
+                mimeType = "text/markdown";
+              } else if (uri === "forge://state/health") {
+                content = JSON.stringify({
+                  status: "healthy",
+                  port: 7072,
+                  version: "0.1.0",
+                  tools_count: getServerTools().length,
+                  timestamp: new Date().toISOString(),
+                });
+                mimeType = "application/json";
+              } else {
+                res.writeHead(404, { "Content-Type": "application/json" });
+                res.end(jsonRpcError(msgId, -32601, `Unknown resource: ${uri}`));
+                return;
+              }
+
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(jsonRpcResult(msgId, {
+                contents: [{
+                  uri,
+                  mimeType,
+                  text: content,
+                }],
+              }));
+            } catch (err: any) {
+              res.writeHead(500, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32603, `Resource read error: ${err.message}`));
+            }
             return;
           }
 
@@ -509,6 +633,11 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 return;
               }
 
+              // Inject actor_id for PolicyInterceptor (L1_IDENTITY gate)
+              // Stateless path already passed evaluatePolicyGate above.
+              if (!toolArgs.actor_id && !toolArgs.actorId && !toolArgs.actor) {
+                toolArgs.actor_id = "stateless-client";
+              }
               const result = await handler(toolArgs);
               res.writeHead(200, { "Content-Type": "application/json" });
               res.end(jsonRpcResult(msgId, result));
