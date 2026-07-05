@@ -163,10 +163,13 @@ function loadBudgets(): Record<AThinkMode, Budget> {
 }
 
 function loadAffordances(): Map<string, AffordanceCard> {
-  const raw = readFileSync(resolve(A_THINK_DIR, "affordances.yaml"), "utf-8");
+  const yamlPath = resolve(A_THINK_DIR, "affordances.yaml");
+  const raw = readFileSync(yamlPath, "utf-8");
   const parsed = parseYaml(raw);
   const cards = new Map<string, AffordanceCard>();
-  for (const tool of parsed.tools ?? []) {
+  const toolList: any[] = parsed.tools ?? [];
+  process.stderr.write(`[A-THINK] Loaded ${toolList.length} affordance cards from ${yamlPath}\n`);
+  for (const tool of toolList) {
     cards.set(tool.name, {
       name: tool.name,
       purpose: tool.purpose ?? "",
@@ -180,6 +183,11 @@ function loadAffordances(): Map<string, AffordanceCard> {
       risk_label: (tool.risk_label ?? "R0") as RiskLabel,
     });
   }
+  // Debug: log a few specific cards
+  const fsg = cards.get("forge_surface_guard");
+  const fsl = cards.get("forge_shell_ledger");
+  process.stderr.write(`[A-THINK] forge_surface_guard: ${fsg ? `OK (risk=${fsg.risk_label}, destructive=${fsg.destructive})` : "MISSING"}\n`);
+  process.stderr.write(`[A-THINK] forge_shell_ledger: ${fsl ? `OK (risk=${fsl.risk_label}, destructive=${fsl.destructive})` : "MISSING"}\n`);
   return cards;
 }
 
@@ -220,6 +228,20 @@ function checkAffordance(
   mode: AThinkMode,
 ): { allowed: boolean; reason: string; card?: AffordanceCard } {
   const card = cards.get(toolName);
+
+  // Debug: log lookup result
+  if (toolName.includes("surface") || toolName.includes("shell_ledger")) {
+    process.stderr.write(`[A-THINK] checkAffordance(${toolName}): card=${card ? "FOUND" : "MISSING"}, map_size=${cards.size}\n`);
+    if (card) {
+      process.stderr.write(`[A-THINK]   card: risk=${card.risk_label} destructive=${card.destructive} requires_human=${card.requires_human_approval}\n`);
+    }
+    // List all keys that contain 'surface' or 'shell'
+    for (const [k] of cards) {
+      if (k.includes("surface") || k.includes("shell")) {
+        process.stderr.write(`[A-THINK]   map key: "${k}"\n`);
+      }
+    }
+  }
 
   // HARAM 1: No card = UNKNOWN = HOLD
   if (!card) {
@@ -278,6 +300,13 @@ export class AThinkGuard {
   constructor() {
     this.budgets = loadBudgets();
     this.affordanceCards = loadAffordances();
+    // Debug: log card count and specific lookups
+    process.stderr.write(`[A-THINK] Guard initialized: ${this.affordanceCards.size} cards\n`);
+    for (const [name, card] of this.affordanceCards) {
+      if (name.includes("surface") || name.includes("shell_ledger")) {
+        process.stderr.write(`[A-THINK]   ${name}: risk=${card.risk_label} destructive=${card.destructive}\n`);
+      }
+    }
   }
 
   /**

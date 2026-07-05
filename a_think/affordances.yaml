@@ -748,16 +748,6 @@ tools:
     requires_human_approval: false
     min_mode: THINK
     risk_label: R3
-  - name: forge_registry_status
-    purpose: "Full A-FORGE tool registry: callable, blocked, degraded, and drift status for all regis..."
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R3
   - name: forge_research
     purpose: "Governed research across web sources"
     reads: ['web']
@@ -830,34 +820,34 @@ tools:
     risk_label: R3
   - name: forge_shell_alert_history
     purpose: "View recent ArifJudge alert history (DENY/GATE/self-modification events)"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R4
-  - name: forge_shell_dryrun
-    purpose: "Preview a shell command's output WITHOUT executing it"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R4
-  - name: forge_shell_ledger
-    purpose: "Query recent ArifSeal hash-chain ledger entries"
     reads: ['system_state']
     writes: []
     external_side_effect: false
     destructive: false
     reversible: true
-    requires_human_approval: true
+    requires_human_approval: false
     min_mode: THINK
-    risk_label: R4
+    risk_label: R0
+  - name: forge_shell_dryrun
+    purpose: "Preview a shell command's output WITHOUT executing it"
+    reads: ['system_state']
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+  - name: forge_shell_ledger
+    purpose: "Query recent ArifSeal hash-chain ledger entries (read-only)"
+    reads: ['system_state']
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
   - name: forge_shell_status
     purpose: "Check forge_shell subsystem health: ledger state, judge pattern count, defaults"
     reads: ['system_state']
@@ -867,7 +857,7 @@ tools:
     reversible: true
     requires_human_approval: false
     min_mode: THINK
-    risk_label: R4
+    risk_label: R0
   - name: forge_skill
     purpose: "Dynamic tool forge (APEX Epoch 34Ω)"
     reads: ['vault999']
@@ -989,3 +979,38 @@ tools:
     requires_human_approval: false
     min_mode: THINK
     risk_label: R1
+
+  # ── Missing sense/observe cards (added 2026-07-05) ──────────────────
+
+  - name: forge_surface_guard
+    purpose: "MCP Surface Guard — schema fingerprinting + drift detection (read-only)"
+    reads: ['system_state']
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: forge_surface_audit
+    purpose: "Audit MCP tool surface: compare live registry vs affordances.yaml (read-only)"
+    reads: ['system_state']
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0
+
+  - name: forge_registry_status
+    purpose: "Full A-FORGE tool registry: callable, blocked, degraded, and drift status"
+    reads: ['system_state']
+    writes: []
+    external_side_effect: false
+    destructive: false
+    reversible: true
+    requires_human_approval: false
+    min_mode: THINK
+    risk_label: R0

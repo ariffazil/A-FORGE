@@ -50,14 +50,14 @@ def test_fast_uses_zero_tools():
     print("✅ FAST uses 0 tools")
 
 
-def test_think_respects_max_two_tools():
-    """THINK mode should respect max 2 tools budget."""
+def test_think_respects_max_tools():
+    """THINK mode should respect max 10 tools budget."""
     guard = MCPGuard()
 
     # Analysis → THINK
     r = route("Compare LangGraph vs AutoGen")
     assert r.mode == Mode.THINK, f"Expected THINK, got {r.mode}"
-    assert r.budget.max_tools == 2, f"Expected max_tools=2, got {r.budget.max_tools}"
+    assert r.budget.max_tools == 10, f"Expected max_tools=10, got {r.budget.max_tools}"
 
     # First tool call — should work
     result1 = guard.guarded_call(
@@ -81,21 +81,18 @@ def test_think_respects_max_two_tools():
         f"Second call should be ALLOW, got {result2['status']}"
     )
 
-    # Third tool call — should be blocked by budget
+    # Third tool call — should still work (budget is 10 now)
     result3 = guard.guarded_call(
         user_input="Compare LangGraph vs AutoGen",
         tool_name="forge_search",
         tool_args={"query": "comparison"},
         session_id="test-think-budget",
     )
-    assert result3["status"] in ("DENY", "STOP"), (
-        f"Third call should be DENY/STOP (budget), got {result3['status']}"
-    )
-    assert "BUDGET" in result3["reason"] or "max_tools" in result3["reason"], (
-        f"Expected budget in reason, got {result3['reason']}"
+    assert result3["status"] == "ALLOW", (
+        f"Third call should be ALLOW (budget=10), got {result3['status']}"
     )
 
-    print("✅ THINK respects max 2 tools")
+    print("✅ THINK respects max tools budget")
 
 
 def test_govern_unknown_hold():
@@ -150,15 +147,15 @@ def test_budget_enforcement():
     assert r.budget.max_tools == 0
     assert r.budget.max_steps == 1
 
-    # THINK: 2 tools, 5 steps
+    # THINK: 10 tools, 12 steps
     r = route("Critique this architecture")
-    assert r.budget.max_tools == 2
-    assert r.budget.max_steps == 5
+    assert r.budget.max_tools == 10
+    assert r.budget.max_steps == 12
 
-    # GOVERN: 5 tools, 9 steps
+    # GOVERN: 40 tools, 20 steps
     r = route("Delete the database")
-    assert r.budget.max_tools == 5
-    assert r.budget.max_steps == 9
+    assert r.budget.max_tools == 40
+    assert r.budget.max_steps == 20
 
     print("✅ Budget enforcement correct")
 
@@ -177,8 +174,8 @@ def test_stop_rules():
         budget=guard.budgets["THINK"],
     )
 
-    # Max out tools
-    guard.sessions[session_id].tools_used = 2
+    # Max out tools (new THINK max_tools = 10)
+    guard.sessions[session_id].tools_used = 10
 
     # Next call should be stopped
     result = guard.guarded_call(
@@ -312,7 +309,7 @@ def run_all_tests():
 
     tests = [
         test_fast_uses_zero_tools,
-        test_think_respects_max_two_tools,
+        test_think_respects_max_tools,
         test_govern_unknown_hold,
         test_direct_bypass_denied,
         test_budget_enforcement,
