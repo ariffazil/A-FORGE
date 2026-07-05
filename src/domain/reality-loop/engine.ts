@@ -23,6 +23,7 @@ import {
   type RealityStage,
   type RealityLoopState,
   type RealityLoopConfig,
+  type ThresholdValidation,
   type Hypothesis,
   type EvidenceEntry,
   type ActionRecord,
@@ -61,6 +62,57 @@ function touchLoop(session_id: string): void {
   loopTimestamps.set(session_id, Date.now());
 }
 
+/**
+ * Validate a single threshold against engine acceptance rules.
+ *
+ *   - undefined / null               → use default, status="ok" (caller
+ *                                       intentionally did not set this)
+ *   - finite number in [0, 1]        → use as-is, status="ok"
+ *   - finite number outside [0, 1]  → clamp to boundary, status="clamped"
+ *   - anything not a finite number   → use default, status="invalid_default_used"
+ *
+ * PHASE 1 HEURISTIC: the default 0.70 values are NOT calibrated on
+ * held-out SEAL/REJECT data. Calibrate via ROC before promoting
+ * them to enforceable gates. Calibration is a separate concern.
+ */
+export function normalizeThreshold(
+  raw: unknown,
+  defaultValue: number,
+  fieldName: string,
+): ThresholdValidation {
+  if (raw === undefined || raw === null) {
+    return {
+      status: "ok",
+      effective_value: defaultValue,
+      requested_value: null,
+      reason: `${fieldName}: not provided; using default ${defaultValue}`,
+    };
+  }
+  if (typeof raw !== "number" || !Number.isFinite(raw)) {
+    return {
+      status: "invalid_default_used",
+      effective_value: defaultValue,
+      requested_value: null,
+      reason: `${fieldName}: not a finite number; using default ${defaultValue}`,
+    };
+  }
+  if (raw < 0 || raw > 1) {
+    const clamped = raw < 0 ? 0 : 1;
+    return {
+      status: "clamped",
+      effective_value: clamped,
+      requested_value: raw,
+      reason: `${fieldName}: ${raw} outside [0, 1]; clamped to ${clamped}`,
+    };
+  }
+  return {
+    status: "ok",
+    effective_value: raw,
+    requested_value: raw,
+    reason: null,
+  };
+}
+
 export function createLoop(
   session_id: string,
   config?: Partial<RealityLoopConfig>,
@@ -75,7 +127,23 @@ export function createLoop(
     }
   }
 
-  const cfg = { ...DEFAULT_CONFIG, ...config };
+  // Wire the prompt-side thresholds into the engine surface. This
+  // closes the schema-to-runtime gap: a config override now changes
+  // what the engine enforces at STAGE 2/4 gates, not just a label
+  // the prompt reads.
+  const cfgRecord = (config ?? {}) as Record<string, unknown>;
+  const rawG = cfgRecord.min_g_score;
+  const rawW = cfgRecord.min_witness;
+  const minG = normalizeThreshold(rawG, DEFAULT_CONFIG.min_g_score, "min_g_score");
+  const minW = normalizeThreshold(rawW, DEFAULT_CONFIG.min_witness, "min_witness");
+
+  const cfg = {
+    ...DEFAULT_CONFIG,
+    ...config,
+    min_g_score: minG.effective_value,
+    min_witness: minW.effective_value,
+  };
+
   const state: RealityLoopState = {
     iteration: 0,
     current_stage: "OBSERVE",
@@ -99,6 +167,12 @@ export function createLoop(
     last_promotion_eval: null,
     retired: false,
     retirement_reason: null,
+    // Threshold gate config (PHASE 1 HEURISTIC, calibration pending)
+    effective_config: cfg,
+    threshold_validation: {
+      min_g_score: minG,
+      min_witness: minW,
+    },
   };
   activeLoops.set(session_id, state);
   touchLoop(session_id);

@@ -420,6 +420,25 @@ export interface RealityLoopState {
    */
   retired: boolean;
   retirement_reason: string | null;
+
+  // ── Threshold gate config (PHASE 1 HEURISTIC, calibration pending) ──
+
+  /**
+   * Snapshot of the effective RealityLoopConfig at create time,
+   * including threshold overrides. Surfaced in seal output so the
+   * reader knows exactly what the engine enforced during the loop.
+   */
+  effective_config: RealityLoopConfig;
+
+  /**
+   * Per-threshold validation report for min_g_score and min_witness.
+   * Captured at create time so seal can show which thresholds were
+   * exact, clamped (out of [0,1]), or fell back to default (non-finite).
+   */
+  threshold_validation: {
+    min_g_score: ThresholdValidation;
+    min_witness: ThresholdValidation;
+  };
 }
 
 export interface EvidenceEntry {
@@ -537,7 +556,54 @@ export interface RealityLoopConfig {
     tau_r: number;
     W3_min: number;
   };
+
+  // ── Per-iteration heuristic gates (PHASE 1 HEURISTIC) ────────────────
+  // These wire the prompt's reasoning-frame thresholds into the
+  // engine so config overrides actually do something. Both are tagged
+  // PHASE 1 HEURISTIC pending ROC calibration on held-out SEAL/REJECT
+  // labels. Do not ship as law without that pass. See normalizeThreshold
+  // (engine.ts) for validation rules.
+
+  /**
+   * Per-iteration APEX score gate (layer 1 of 3 APEX gates, prompt side).
+   * The multiplicative product G = Q·V·Ψ·Φ computed by the agent at
+   * STAGE 2 (ENCODE) must exceed this to pass. Default 0.70.
+   * PHASE 1 HEURISTIC — calibration required.
+   */
+  min_g_score: number;
+
+  /**
+   * Per-iteration tri-witness gate (layer 1 of 3 APEX gates, prompt side).
+   * W³ = ∛(h × ai × ext) computed at STAGE 4 (VERIFY) must exceed this
+   * to pass. Default 0.70. Distinct from promotion_thresholds.W3_min
+   * (which gates champion→challenger promotion at 0.95).
+   * PHASE 1 HEURISTIC — calibration required.
+   */
+  min_witness: number;
 }
+
+/**
+ * Result of validating one threshold value against the engine's
+ * acceptance rules. Surfaced in start + seal responses so the caller
+ * can see exactly what threshold is in effect, not what they typed.
+ */
+export type ThresholdValidation = {
+  /** ok = exact value used; clamped = out-of-range pinned to [0,1];
+   *  invalid_default_used = non-finite or non-number, fell back to default */
+  status: "ok" | "clamped" | "invalid_default_used";
+  /** The value the engine will actually use. */
+  effective_value: number;
+  /** What the caller passed (truncated to undefined for ok case). */
+  requested_value: number | null | undefined;
+  /** Free-text reason for non-ok statuses; null for ok. */
+  reason: string | null;
+};
+
+/** Default gates for PHASE 1 HEURISTIC per-iteration thresholds. */
+export const DEFAULT_HEURISTIC_GATES = {
+  min_g_score: 0.70,
+  min_witness: 0.70,
+} as const;
 
 export const DEFAULT_CONFIG: RealityLoopConfig = {
   iteration_depth: "standard",
@@ -552,4 +618,6 @@ export const DEFAULT_CONFIG: RealityLoopConfig = {
     tau_r: PROMOTION_THRESHOLDS.TAU_R,
     W3_min: PROMOTION_THRESHOLDS.W3_MIN,
   },
+  min_g_score: DEFAULT_HEURISTIC_GATES.min_g_score,
+  min_witness: DEFAULT_HEURISTIC_GATES.min_witness,
 };
