@@ -1,6 +1,6 @@
 <!-- SOT-MANIFEST
 federation_release: v2026.07.04-MCP-A2A
-last_verified: 2026-07-05
+last_verified: 2026-07-06
 changelog: /root/CHANGELOG-2026-07-04.md
 a2a_agent_json: /root/A-FORGE/.well-known/agent.json
 -->
@@ -45,7 +45,7 @@ A-FORGE is the **governed execution shell** of the arifOS Federation — one of 
 | Read this | For | Link |
 |-----------|-----|------|
 | **arifOS** | Constitutional kernel. 7 public verbs (`arif_init`→`arif_observe`→`arif_think`→`arif_route`→`arif_judge`→`arif_act`→`arif_seal`). 13 floors. The judge. | [`ariffazil/arifos`](https://github.com/ariffazil/arifos) |
-| **A-FORGE** (this repo) | Executor. 72 MCP tools (21 stateless HTTP, rest session-bound). Shell, git, docker, browser, vault. Gates + A-THINK law at border. | ← you are here |
+| **A-FORGE** (this repo) | Executor. 79 MCP tools (21 stateless HTTP, rest session-bound). Shell, git, docker, browser, vault. Gates + A-THINK law at border. | ← you are here |
 | **AAA** | Cockpit. A2A mesh. Agent registry. React 19 dashboard. What Arif reads. | [`ariffazil/AAA`](https://github.com/ariffazil/AAA) |
 
 MIND (Hermes:8644) and MEMORY (VAULT999) are separate federation services — A-FORGE does not host them. A-FORGE does not judge, does not compute domain logic, and **executes** only within bounded constitutional gates, with full audit trail, and never without upstream authorization.
@@ -90,7 +90,7 @@ MIND (Hermes:8644) and MEMORY (VAULT999) are separate federation services — A-
                          │   Port 7071 (HTTP)        │
                          │   Port 7072 (MCP)         │
                          │   4-layer forge gate      │
-                         │   72 MCP tools registered │
+                         │   79 MCP tools registered │
                          │                           │
                          │   "Do it, safely, with    │
                          │         evidence."        │
@@ -177,7 +177,7 @@ curl -s http://127.0.0.1:7071/api/federation-probe | python3 -m json.tool
 
 # Run the terminal forge (streaming LLM interface)
 npm run terminal
-# → ◬ A-FORGE Terminal Forge · 72 tools available · type /help
+# → ◬ A-FORGE Terminal Forge · 79 tools available · type /help
 ```
 
 **Prerequisites:**

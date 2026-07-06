@@ -1,0 +1,90 @@
+{
+  "config": {
+    "n_simulations": 100,
+    "n_periods": 20,
+    "initial_capital": 10000000,
+    "loss_threshold": 0.05,
+    "max_volatility": 0.15,
+    "scar_margin": 0.02,
+    "assets": [
+      "equities",
+      "bonds",
+      "commodities",
+      "cash"
+    ],
+    "mean_returns": [
+      0.1,
+      0.04,
+      0.07,
+      0.02
+    ],
+    "volatilities": [
+      0.2,
+      0.06,
+      0.18,
+      0.01
+    ],
+    "correlation": [
+      [
+        1.0,
+        0.2,
+        0.4,
+        0.05
+      ],
+      [
+        0.2,
+        1.0,
+        0.15,
+        0.1
+      ],
+      [
+        0.4,
+        0.15,
+        1.0,
+        0.05
+      ],
+      [
+        0.05,
+        0.1,
+        0.05,
+        1.0
+      ]
+    ],
+    "master_seed": 42
+  },
+  "naive": {
+    "mean_cumulative_return": 3.596854423876022,
+    "median_cumulative_return": 2.7289583985843087,
+    "std_cumulative_return": 3.28654084403858,
+    "mean_loss_events": 3.89,
+    "mean_sharpe": 2.54592589023539,
+    "mean_max_drawdown": 0.2466396738303075,
+    "worst": -0.02352156425555718,
+    "best": 17.816454219354714
+  },
+  "scar": {
+    "mean_cumulative_return": 3.322830226791289,
+    "median_cumulative_return": 2.4503375085281087,
+    "std_cumulative_return": 3.281029649433652,
+    "mean_loss_events": 3.73,
+    "mean_sharpe": 2.474873885020864,
+    "mean_max_drawdown": 0.24304664186614397,
+    "mean_scar_constraints": 3.73,
+    "median_scar_constraints": 4.0,
+    "worst": 0.035253693371707806,
+    "best": 17.14881671268759
+  },
+  "comparison": {
+    "return_delta_mean": -0.2740241970847328,
+    "return_delta_median": -0.27862089005619994,
+    "loss_event_delta": 0.16000000000000014,
+    "loss_event_reduction_pct": 4.113110539845763,
+    "scar_win_rate": 0.28,
+    "cohens_d": -0.2794297933679448,
+    "paired_t_stat": 2.780291339544038,
+    "paired_t_pvalue": 0.006501324958646562,
+    "significant_at_005": true,
+    "verdict": "SCAR-LEARNING shows STATISTICALLY SIGNIFICANT DEGRADATION."
+  },
+  "elapsed_seconds": 16.870772123336792
+}
