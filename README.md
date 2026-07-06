@@ -305,7 +305,7 @@ Every execution path in A-FORGE passes through four constitutional gates **in or
 | Capability | Implementation | Constitutional Gate |
 |------------|---------------|---------------------|
 | Intent routing | `IntentRouter.ts` — routes to correct organ (GEOX/WEALTH/WELL/arifOS) | Layer 2 + 3 |
-| MCP auto-discovery | Federation bridge probes live organs on startup → 72+ tools across A-FORGE + federation surfaces | Startup-only |
+| MCP auto-discovery | Federation bridge probes live organs on startup → 79+ tools across A-FORGE + federation surfaces | Startup-only |
 | Federation probe | `GET /api/federation-probe` — live organ status, latency, verdict | Read-only |
 | A2A protocol | `application/a2a/` — agent card, task routing, agent profiles | Layer 3 |
 | Cross-organ orchestration | `PipelineCoordinator.ts` — multi-step plans with retry | Layer 2 + 3 |
