@@ -1259,6 +1259,9 @@ server.tool(
     niat_params: z.record(z.string(), z.unknown()).optional().describe("Niat parameters"),
     context_source: z.string().optional().describe("Context source"),
     peer_contract_id: z.string().optional().describe("Peer Federation Contract v1 ID for audit continuity"),
+    measurement: z.record(z.string(), z.unknown()).optional().describe(
+      "MEMBRANE-03: MeasurementPacket from A-FORGE. Contains G, C_dark, W3, primitives, witness, trace. Kernel reads for floor checks; never recomputes."
+    ),
   },
   judgeProxyHandler
 );
