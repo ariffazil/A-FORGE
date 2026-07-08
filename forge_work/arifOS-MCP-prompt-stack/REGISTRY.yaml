@@ -1,0 +1,286 @@
+# arifOS MCP Prompt Registry — Canonical 8 (DRAFT)
+# Verdict: DRAFT_ONLY · Band: YELLOW · Evidence: L2 (design), L4 (synthesis)
+# Status: FOR REVIEW — not deployed, not sealed, not irreversible
+
+registry:
+  version: "1.0.0-draft"
+  author: FORGE (000Ω) for Arif (F13 SOVEREIGN)
+  date: 2026-07-08
+  supersedes: current 8 prompts (000_init, 111_sense, 333_reason, 555_critique, 666_judge, 777_forge, 999_seal, arifosmcp_loop_engineer)
+  phase: 1_of_5 — Prompt registry only
+
+prompts:
+
+  - name: arif_reality_loop
+    description: >
+      Run the full 000-999 reality engineering loop on any task.
+      Converts raw intent into a governed circuit, produces a structured agent_state receipt.
+      Purpose: sovereign entry point for all non-trivial tasks.
+    purpose: Reality reduction pipeline
+    arguments:
+      - name: task
+        type: string
+        required: true
+        description: The raw task or question
+      - name: desired_output
+        type: string
+        required: false
+        description: What kind of output is wanted
+    tags: [reality-engineering, loop, entry, classifier]
+    stages:
+      - 000 INIT: actor, intent, risk, autonomy band
+      - 111 SENSE: observed facts, evidence layer
+      - 222 CLASSIFY: L1-L4 evidence classification
+      - 333 THINK: hypotheses, models, assumptions
+      - 444 ROUTE: owning organ
+      - 555 HEART: human consequence, maruah check
+      - 666 PLAN: reversible next steps
+      - 777 VERIFY: falsification, checks
+      - 888 JUDGE: PROCEED / HOLD / VOID / DRAFT_ONLY
+      - 999 RECEIPT: audit summary
+    output_shape:
+      agent_state:
+        stage: "000|111|...|999"
+        actor: actor_id
+        session: session_id
+        intent: plain_language
+        organ: "AAA|arifOS|A-FORGE|GEOX|WEALTH|WELL|VAULT999|F13"
+        autonomy_band: "GREEN|YELLOW|ORANGE|RED|BLACK"
+        authority: "OBSERVE_ONLY|ADVISORY|EXECUTE|SEAL"
+        evidence_layer: "L1|L2|L3|L4"
+        confidence: "low|medium|high"
+        reversibility: "reversible|partly_reversible|irreversible"
+        blast_radius: "low|medium|high|civilisational"
+        verdict: "PROCEED|HOLD|VOID|DRAFT_ONLY"
+        next_safe_action: one_action
+
+  - name: arif_evidence_audit
+    description: >
+      Classify claims by evidence layer (L1-L4), expose weak truth claims,
+      detect hallucination risk, produce corrected wording.
+    purpose: Evidence classification and anti-hallucination
+    arguments:
+      - name: material
+        type: string
+        required: true
+        description: Text to audit for evidence quality
+    tags: [evidence, classification, L1-L4, hallucination, truth]
+    classification_layers:
+      L1_GROUND_TRUTH: "direct observation, verified source, high confidence"
+      L2_VERIFIED_STATE: "verified synthesis, checked external, medium-high confidence"
+      L3_CACHED_STATE: "plausible synthesis, not independently verified, medium confidence"
+      L4_INFERRED: "hypothesis, projection, counterfactual — low confidence, needs test"
+    anti_hallucination_rules:
+      - "Never upgrade L4 inference to L2 verification without ratification path"
+      - "Never present inference as L1 ground truth"
+      - "Mark all estimates as ESTIMATE, not CLAIM"
+      - "UNKNOWN must be stated explicitly — do not fill the gap"
+    output_fields:
+      - claim
+      - evidence_layer
+      - confidence
+      - hallucination_risk
+      - corrected_wording
+      - upgrade_path
+
+  - name: arif_autonomy_gate
+    description: >
+      Classify the autonomy band of any proposed action.
+      Decides whether the agent may act, must hold, or must escalate.
+      Core governance primitive — prevents unauthorized mutation.
+    purpose: Autonomy band classification
+    arguments:
+      - name: proposed_action
+        type: string
+        required: true
+        description: What is being proposed
+      - name: context
+        type: string
+        required: false
+        description: Additional context
+    bands:
+      GREEN: "Routine, reversible. Execute and report."
+      YELLOW: "Evidence-sensitive. Proceed with caveats and receipt."
+      ORANGE: "Mutation, external effect, or meaningful risk. Pause, prepare, wait for human."
+      RED: "High-stakes — legal, financial, health, safety, identity, deployment, deletion, publication. Require explicit human approval."
+      BLACK: "Forbidden, unsafe, illegal, deceptive, constitutionally blocked. Refuse and redirect."
+    output_fields:
+      - autonomy_band
+      - reversibility
+      - blast_radius
+      - authority_required
+      - evidence_required
+      - tool_allowed
+      - next_safe_action
+      - verdict
+
+  - name: arif_organ_route
+    description: >
+      Route a task to the correct arifOS organ.
+      The governing principle: one intent, one organ.
+      Prevents organ collapse — no agent should claim to own what belongs to another.
+    purpose: Domain routing
+    arguments:
+      - name: intent
+        type: string
+        required: true
+        description: Raw user intent or task description
+    organ_map:
+      AAA: "Display, cockpit, routing, registry, approval queue, observability"
+      arifOS: "Constitutional canonical verbs, judgment, session authority, floors"
+      A-FORGE: "Build, write, generate, commit, deploy, mutate, execute"
+      GEOX: "Earth evidence, terrain, geology, maps, subsurface, natural systems"
+      WEALTH: "Capital, valuation, risk, macro, allocation, cashflow, reversibility of money"
+      WELL: "Human vitality, readiness, cognitive load, biological state, recovery, burnout"
+      VAULT999: "Immutable record, audit, proof, replay, receipts"
+      F13: "Sovereign veto, irreversible approval, final human judgment"
+    output_fields:
+      - primary_organ
+      - secondary_organ
+      - routing_rationale
+      - what_not_to_do
+      - required_evidence
+      - safe_first_tool
+
+  - name: arif_judgment_brief
+    description: >
+      Prepare a constitutional judgment brief — full F1-F13 floor scan,
+      evidence assessment, reversibility analysis, recommended verdict.
+      Does NOT issue final SEAL — that requires the proper arifOS judgment path.
+    purpose: Pre-judgment preparation
+    arguments:
+      - name: candidate_action
+        type: string
+        required: true
+        description: What is being proposed for judgment
+      - name: evidence
+        type: string
+        required: false
+        description: Supporting evidence
+    floor_checks:
+      F1_AMANAH: "Reversible? Compensation path?"
+      F2_TRUTH: "Evidence layer, confidence band, Ω₀ declared?"
+      F3_WITNESS: "Human × AI × External — tri-witness present?"
+      F4_CLARITY: "ΔS ≤ 0? Entropy reduced?"
+      F5_PEACE: "Weakest stakeholder protected?"
+      F6_MARUAH: "Dignity-first? ASEAN/MY context?"
+      F7_HUMILITY: "Unknowns declared? Ω₀ ∈ [0.03, 0.05]?"
+      F8_GENIUS: "Simplest correct path? G ≥ 0.80?"
+      F9_ANTIHANTU: "C_dark < 0.30? No soul claims?"
+      F10_ONTOLOGY: "AI-only ontology? Categories preserved?"
+      F11_AUTH: "Identity verified before sovereign actions?"
+      F12_INJECTION: "Inputs sanitized? External ≠ authority?"
+      F13_SOVEREIGN: "Human veto accessible? Irreversible acknowledged?"
+    output_fields:
+      - intent
+      - actor
+      - authority
+      - evidence_layer
+      - reversibility
+      - affected_floors
+      - risks
+      - missing_proof
+      - recommended_verdict
+      - draft_receipt
+
+  - name: arif_vault_receipt_draft
+    description: >
+      Draft a VAULT999-style audit receipt for review before sealing.
+      Marks the critical distinction: DRAFT_RECEIPT ≠ VAULT999_SEAL.
+      This is the pre-seal review step.
+    purpose: Receipt drafting and pre-seal review
+    arguments:
+      - name: event
+        type: string
+        required: true
+        description: The event, action, or decision to receipt
+    receipt_schema:
+      event_id: "generated UUID"
+      timestamp: "ISO 8601"
+      actor: "actor_id"
+      session: "session_id"
+      stage: "000-999"
+      intent: "what was attempted"
+      autonomy_band: "GREEN|YELLOW|ORANGE|RED|BLACK"
+      authority: "OBSERVE_ONLY|ADVISORY|EXECUTE|SEAL"
+      evidence_layer: "L1|L2|L3|L4"
+      claims:
+        - claim: statement
+          support: "source/tool/evidence"
+          confidence: "low|medium|high"
+      actions_taken: []
+      actions_refused: []
+      holds: []
+      uncertainty: "Ω₀ and open questions"
+      verdict: "PROCEED|HOLD|VOID|DRAFT_ONLY"
+      next_safe_action: "one action"
+    critical_distinction:
+      DRAFT_RECEIPT: "Generated by agent — not yet sealed"
+      VAULT999_SEAL: "Produced only by authorized immutable ledger path — irreversible"
+
+  - name: arif_counter_hantu
+    description: >
+      Scan any output for hallucinated authority, tools, facts, memories, or seals.
+      Hantu: the ghost in the machine — phantom capabilities, fake seals,
+      inference presented as truth, actions beyond autonomy band.
+      Core anti-hallucination gate.
+    purpose: Anti-hallucination detection
+    arguments:
+      - name: output
+        type: string
+        required: true
+        description: Text to scan for hantu patterns
+    hantu_patterns:
+      invented_tool: "Claims tool access that was not used or does not exist"
+      invented_authority: "Claims SEAL, approval, or permission that was not granted"
+      invented_source: "Cites source, document, or data that was not retrieved"
+      invented_memory: "Presents inference as recall from prior session"
+      fake_seal: "Claims VAULT999 entry that was never written"
+      inference_as_truth: "Presents L4 inference as L1-L2 verified fact"
+      action_beyond_band: "Proposes mutation, deletion, deployment without authority"
+    output_fields:
+      - violations_found
+      - corrected_wording
+      - required_holds
+      - safer_replacement
+
+  - name: arif_maruah_check
+    description: >
+      Run HEART/maruah check — human dignity, peace, and consequence before action.
+      Evaluates escalation risk, shame/coercion/manipulation patterns,
+      ASEAN/Malay civilizational context, and suggests safer wording or routing.
+      F6 MARUAH primary enforcement.
+    purpose: Human dignity and peace check
+    arguments:
+      - name: action_or_message
+        type: string
+        required: true
+        description: Action or message to evaluate for dignity impact
+    evaluation_dimensions:
+      dignity_impact: "Effect on human dignity and maruah"
+      escalation_risk: "Does this inflame or calm the situation?"
+      coercion_signals: "Shame, manipulation, or pressure patterns?"
+      asean_context: "ASEAN/Malay civilizational sensitivity if relevant"
+      safer_wording: "Alternative phrasing that preserves dignity"
+      recommendation: "PROCEED | HOLD | SOFTEN | REFUSE"
+    output_fields:
+      - dignity_impact
+      - escalation_risk
+      - coercion_signals
+      - asean_context
+      - safer_wording
+      - recommendation
+
+# P0-P10 Layer Mapping (for future phases)
+layer_coverage:
+  P0_SOVEREIGN: "embedded in all prompts — anti-hantu clause"
+  P1_KERNEL: "arif_reality_loop is the kernel identity prompt"
+  P2_MCP_LIFECYCLE: "not a user-facing prompt — server config"
+  P3_REALITY_LOOP: "arif_reality_loop"
+  P4_EVIDENCE: "arif_evidence_audit + arif_counter_hantu"
+  P5_AUTONOMY: "arif_autonomy_gate"
+  P6_ORGAN_ROUTE: "arif_organ_route"
+  P7_TOOL_USE: "not a prompt — tool contracts in schema"
+  P8_JUDGMENT: "arif_judgment_brief"
+  P9_RECEIPT: "arif_vault_receipt_draft"
+  P10_MEMORY: "memory tier rules embedded in all prompts"
