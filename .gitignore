@@ -129,3 +129,4 @@ scratch/
 # GitHub Copilot workspace — not VPS-aware, do not commit
 Copilot/
 forge_work/identity-drift-watchdog/DRIFT.flag.json
+.registry/fingerprints.json
