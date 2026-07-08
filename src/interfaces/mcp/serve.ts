@@ -81,6 +81,12 @@ const STATELESS_TOOLS = new Set([
   "forge_vps_services",
   "forge_vps_cron",
 
+  // ── Phase 10: Governance Proxy (2026-07-08) ─────────────────────
+  // forge_judge_proxy is OBSERVE-class: forwards to arifOS kernel for
+  // constitutional judgment. No mutation, no side effects. Safe over HTTP.
+  // Session ownership enforced by arifOS, not by A-FORGE transport gate.
+  "forge_judge_proxy",
+
   // ── Phase 9: Reality Loop (2026-07-06) ─────────────────────────────
   // Intent compiler — 7-stage state-tracking ledger. All modes accept
   // session_id as explicit parameter, safe over HTTP. start/list modes
