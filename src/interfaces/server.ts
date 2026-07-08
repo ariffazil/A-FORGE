@@ -118,6 +118,36 @@ export function createApp(): express.Express {
   // req.body already parsed by app.use(express.json()) above.
   const mcpRouter = express.Router();
 
+  // ── DNS Rebinding Protection (2026-07-08) ──────────────────────────
+  // MCPJam conformance: localhost servers must reject requests with
+  // non-localhost Host/Origin headers to prevent DNS rebinding attacks.
+  const LOCALHOST_HOSTS = new Set([
+    "localhost", "127.0.0.1", "[::1]", "::1",
+    "localhost:7071", "127.0.0.1:7071", "[::1]:7071",
+    "localhost:7072", "127.0.0.1:7072", "[::1]:7072",
+  ]);
+  mcpRouter.use((req: Request, res: Response, next: NextFunction) => {
+    const host = (req.headers["host"] || "").toString().toLowerCase();
+    const origin = (req.headers["origin"] || "").toString().toLowerCase();
+    // Only check on initialize requests (POST /mcp with method=initialize)
+    if (req.method === "POST" && req.url === "/mcp") {
+      const body = req.body as any;
+      if (body?.method === "initialize") {
+        // Check Host header — must be localhost if present
+        if (host && !LOCALHOST_HOSTS.has(host) && !host.startsWith("localhost:") && !host.startsWith("127.0.0.1:") && !host.startsWith("[::1]:")) {
+          res.status(403).json({ error: "Invalid Origin", detail: "DNS rebinding protection" });
+          return;
+        }
+        // Check Origin header — must be localhost if present
+        if (origin && !origin.includes("localhost") && !origin.includes("127.0.0.1") && !origin.includes("[::1]")) {
+          res.status(403).json({ error: "Invalid Origin", detail: "DNS rebinding protection" });
+          return;
+        }
+      }
+    }
+    next();
+  });
+
   mcpRouter.use(async (req: Request, res: Response, next: NextFunction) => {
     const dpopMode = getDpopMode();
     if (dpopMode === "off" || !req.headers.authorization) {
@@ -165,27 +195,67 @@ export function createApp(): express.Express {
 
   // ── A-FORGE MCP transport middleware ──
   // Session ID injection: MCP SDK 1.29.0 StreamableHTTPServerTransport requires
-  // Mcp-Session-Id header on every POST. Claude Code's MCP client doesn't send
-  // one on first contact. Inject a generated session ID so the transport never
-  // sees a missing header.
+  // Mcp-Session-Id header on every POST EXCEPT initialize requests.
+  // Initialize requests must NOT have a session ID — the SDK creates a new
+  // session for each initialize. Injecting a session ID causes "Server already
+  // initialized" rejection (the SDK sees it as re-initialization).
   // Accept header patching is done in mcpHandler directly (after the middleware
   // because the SDK's getRequestListener reads from the raw IncomingMessage).
   mcpRouter.use((req: Request, _res: Response, next: NextFunction) => {
     const hasSessionId = req.headers["mcp-session-id"] || req.query.sessionId || req.query.session_id;
     if (req.method === "POST" && !hasSessionId) {
-      const generatedId = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-      req.headers["mcp-session-id"] = generatedId;
+      // Skip session ID injection for initialize requests — let the SDK
+      // create a fresh session. For all other POSTs, inject if missing.
+      const body = req.body as any;
+      const isInitialize = body?.method === "initialize";
+      if (!isInitialize) {
+        const generatedId = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        req.headers["mcp-session-id"] = generatedId;
+      }
     }
     next();
   });
 
   const mcpHandler = async (req: Request, res: Response) => {
-    if (!mcpTransport) {
-      res.status(503).json({ error: "MCP transport not initialized" });
+    // MCP SDK 1.29.0 StreamableHTTPServerTransport rejects re-initialization
+    // because _initialized is a global flag. Fix: detect initialize requests
+    // and create a fresh transport for each one.
+    const body = req.body as any;
+    const isInitialize = req.method === "POST" && body?.method === "initialize";
+
+    if (isInitialize) {
+      // Create a fresh transport for each initialize request.
+      // The SDK's _initialized flag is per-transport-instance, so a new
+      // transport allows a new session to be created.
+      // Must close old transport first — McpServer only supports one connection.
+      console.error(`[A-FORGE] MCP: fresh initialize — creating new transport`);
+      try {
+        if (mcpTransport) {
+          try { await mcpServer.close(); } catch {}
+        }
+        const freshTransport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+          enableJsonResponse: true,
+        });
+        await mcpServer.connect(freshTransport);
+        mcpTransport = freshTransport;
+        await freshTransport.handleRequest(req, res, req.body);
+      } catch (err) {
+        console.error("[A-FORGE] MCP initialize error:", err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "MCP initialize failed" });
+        }
+      }
       return;
     }
-    // MCP SDK 1.9.0 StreamableHTTPServerTransport requires Mcp-Session-Id header
-    // on every POST. Inject a session ID if none is present in query or headers.
+
+    if (!mcpTransport) {
+      res.status(503).json({ error: "MCP transport not initialized. Send initialize first." });
+      return;
+    }
+
+    // MCP SDK 1.29.0 StreamableHTTPServerTransport requires Mcp-Session-Id header
+    // on every POST EXCEPT initialize requests (see middleware above).
     const hasSessionId = req.headers["mcp-session-id"] || req.query.sessionId || req.query.session_id;
     if (req.method === "POST" && !hasSessionId) {
       req.headers["mcp-session-id"] = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

@@ -28,6 +28,43 @@ import * as fs from "node:fs";
 import * as crypto from "node:crypto";
 
 /**
+ * Canonical constitution_hash computation.
+ * MUST match sovereign_signer.py:get_constitution_hash() exactly.
+ * This is the SHA-256 hash of the floor spec, used as the payload anchor
+ * for Ed25519 sovereign signatures. The verifier (arifOS) computes the same
+ * value and compares.
+ */
+const FLOOR_SPEC =
+  "F1: Amanah, F2: Truth, F3: Tri-Witness, F4: Clarity, " +
+  "F5: Peace, F6: Maruah, F7: Humility, F8: Genius, " +
+  "F9: Anti-Hantu, F10: Ontology, F11: Auditability, F12: Resilience, F13: Sovereign";
+
+/**
+ * Try to compute constitution_hash from KERNEL_CANON file, falling back
+ * to FLOOR_SPEC hash. Matches sovereign_signer.py behavior exactly.
+ */
+function computeConstitutionHash(): string {
+  const candidates = [
+    "/root/arifOS/GENESIS/000_KERNEL_CANON.md",
+    "/opt/arifos/app/GENESIS/000_KERNEL_CANON.md",
+  ];
+  for (const p of candidates) {
+    try {
+      if (fs.existsSync(p)) {
+        const content = fs.readFileSync(p);
+        const hash = crypto.createHash("sha256").update(content).digest("hex");
+        return `sha256:${hash}`;
+      }
+    } catch {
+      // fall through
+    }
+  }
+  // Fallback: hash the floor spec (same as sovereign_signer.py)
+  const hash = crypto.createHash("sha256").update(FLOOR_SPEC).digest("hex").substring(0, 16);
+  return `sha256:${hash}`;
+}
+
+/**
  * Map MCP tool names to action classes for verdict precondition checking.
  * MUTATE tools modify state. ATOMIC tools are irreversible.
  */
@@ -79,32 +116,81 @@ function getMcpUrl(namespace: MCPNamespace): string {
   return cfg.default;
 }
 
-function injectSovereignSignature(canonicalTool: string, argsRecord: Record<string, unknown>) {
+/**
+ * Inject Ed25519 sovereign signature into tool call arguments.
+ *
+ * F13 SOVEREIGN: Signs `actor_id:constitution_hash:nonce` payload using the
+ * sovereign private key. The verifier (arifOS `verify_sovereign_signature`)
+ * checks this signature against the sovereign public key.
+ *
+ * FAIL-CLOSED (2026-07-07 FIX):
+ * - If key is missing → throws. Execution halts. No silent pass.
+ * - If signature fails → throws. Execution halts. No silent pass.
+ * - If payload is malformed → throws. Execution halts.
+ *
+ * Payload format (MUST match sovereign_verify.py):
+ *   "{actor_id}:{constitution_hash}:{nonce}"
+ *
+ * Signature format: base64-encoded Ed25519 raw bytes (no prefix)
+ */
+function injectSovereignSignature(canonicalTool: string, argsRecord: Record<string, unknown>): void {
+  // Only sign tools that reach arifOS verification paths:
+  // arif_forge_execute  → verified in tools.py line 6948 (session init chain)
+  // arif_vault_seal     → verified in tools.py line 15528 (seal chain)
   if (canonicalTool !== "arif_forge_execute" && canonicalTool !== "arif_vault_seal") {
     return;
   }
-  
+
+  const keyPath = "/root/compose/sekrits/arifos_sovereign.key";
+  let keyExists: boolean;
   try {
-    const keyPath = "/root/compose/sekrits/arifos_sovereign.key";
-    if (!fs.existsSync(keyPath)) return;
-    
-    const privateKey = fs.readFileSync(keyPath, "utf-8");
-    const nonce = `auto_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    
-    const actorId = (argsRecord.actor_id as string) || "ariffazil::auto";
-    argsRecord.actor_id = actorId;
-    
-    // In current implementation, arifOS just logs the signature and checks F1 AMANAH (nonce).
-    // The strict hash verification is F13-pending, so we sign a dummy payload for now
-    // until the exact constitution_hash structure is finalized.
-    const payload = Buffer.from(actorId + "auto-seal" + nonce);
-    const signature = crypto.sign(null, payload, privateKey);
-    
-    argsRecord.actor_signature = "ed25519:" + signature.toString("hex");
-    argsRecord.nonce = nonce;
-  } catch (err) {
-    // Silently fail if key cannot be read or used; kernel will handle the missing signature
+    keyExists = fs.existsSync(keyPath);
+  } catch {
+    keyExists = false;
   }
+  if (!keyExists) {
+    throw new Error(
+      `SOVEREIGN KEY MISSING: Cannot sign ${canonicalTool}. ` +
+      `Key not found at ${keyPath}. ` +
+      `888_HOLD: Sovereign identity binding requires the Ed25519 private key.`
+    );
+  }
+
+  const privateKeyPem = fs.readFileSync(keyPath, "utf-8");
+  const actorId = (argsRecord.actor_id as string) || "ariffazil::auto";
+  argsRecord.actor_id = actorId;
+
+  // constitution_hash MUST match what sovereign_signer.py and
+  // sovereign_verify.py compute. This anchors the signature to the
+  // specific constitution version, preventing replay across forks.
+  const constitutionHash = computeConstitutionHash();
+
+  // Nonce: timestamp-based with random suffix. Unique per invocation.
+  const nonce = `${Date.now()}:${crypto.randomBytes(4).toString("hex")}`;
+
+  // Payload format: {actor_id}:{constitution_hash}:{nonce}
+  // This MUST match sovereign_verify.py:verify_sovereign_signature()
+  const payload = Buffer.from(`${actorId}:${constitutionHash}:${nonce}`, "utf-8");
+
+  // Sign with Ed25519. crypto.sign(null, data, key) uses RSA-SSA-PSS default
+  // when key is PEM. For Ed25519, we need to load the key explicitly.
+  let signatureBytes: Buffer;
+  try {
+    const keyObject = crypto.createPrivateKey(privateKeyPem);
+    signatureBytes = crypto.sign(null, payload, keyObject);
+  } catch (signErr) {
+    throw new Error(
+      `SOVEREIGN SIGN FAILED: Cannot sign ${canonicalTool}. ` +
+      `Error: ${signErr instanceof Error ? signErr.message : String(signErr)}. ` +
+      `888_HOLD: Sovereign identity signature generation failed.`
+    );
+  }
+
+  // Signature format: raw base64 (no prefix, no hex)
+  // This MUST match sovereign_verify.py which does base64.b64decode(actor_signature)
+  argsRecord.actor_signature = signatureBytes.toString("base64");
+  argsRecord.nonce = nonce;
+  argsRecord.constitution_hash = constitutionHash;
 }
 
 /**

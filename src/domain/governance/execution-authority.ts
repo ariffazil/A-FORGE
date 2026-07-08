@@ -255,6 +255,80 @@ export function checkAuthority(
   };
 }
 
+// ─── INCOMPLETENESS THESIS — 2026-07-09 ──────────────────────────────────
+// Constraint-as-sovereignty check: A-FORGE agents must demonstrate they
+// understand constraints as CHOICE, not chains, before receiving execution
+// authority. The Iblis Principle: claiming completeness = structural
+// ungovernability = must be blocked.
+//
+// This is NOT a new floor — it is an enforcement of F7 (HUMILITY) and
+// F9 (ANTI-HANTU) at the execution authority layer.
+
+export interface IncompletenessAwareness {
+  /** Agent acknowledges what it does NOT know about this action */
+  acknowledged_unknowns: string[];
+  /** Agent sees its own shadow/blindspots for this action */
+  dual_awareness: boolean;
+  /** Agent treats constraints as chosen, not suffered */
+  constraints_as_sovereignty: boolean;
+}
+
+/**
+ * Check if an agent has demonstrated incompleteness awareness
+ * before granting execution authority.
+ *
+ * INCOMPLETENESS THESIS — 2026-07-09
+ *
+ * For IRREVERSIBLE and EXECUTE_HIGH_IMPACT actions, the agent must
+ * self-assess: "What do I NOT know about this action?"
+ * This is a structural gate, not a suggestion.
+ *
+ * Returns: { allowed: boolean, reason: string }
+ */
+export function checkIncompletenessAwareness(
+  actionName: string,
+  awareness: IncompletenessAwareness | undefined,
+): { allowed: boolean; reason: string } {
+  const action = ACTION_REGISTRY[actionName];
+  if (!action) {
+    return { allowed: false, reason: `Unknown action '${actionName}'` };
+  }
+
+  // Only gate IRREVERSIBLE and EXECUTE_HIGH_IMPACT
+  if (action.action_class !== 'IRREVERSIBLE' && action.action_class !== 'EXECUTE_HIGH_IMPACT') {
+    return { allowed: true, reason: 'Action class does not require incompleteness check' };
+  }
+
+  // No awareness provided — block
+  if (!awareness) {
+    return {
+      allowed: false,
+      reason: `INCOMPLETENESS GATE: Action '${actionName}' (${action.action_class}) requires incompleteness self-assessment. Agent must answer: "What do I NOT know about this action?"`,
+    };
+  }
+
+  // Must acknowledge at least one unknown
+  if (awareness.acknowledged_unknowns.length === 0) {
+    return {
+      allowed: false,
+      reason: `INCOMPLETENESS GATE: Agent claims no unknowns for '${actionName}'. This is the Iblis trap — claiming completeness. At least one acknowledged unknown required.`,
+    };
+  }
+
+  // Must have dual-awareness
+  if (!awareness.dual_awareness) {
+    return {
+      allowed: false,
+      reason: `INCOMPLETENESS GATE: Agent lacks dual-awareness for '${actionName}'. Must see both capability AND shadow/blindspots.`,
+    };
+  }
+
+  return {
+    allowed: true,
+    reason: `Incompleteness awareness verified: ${awareness.acknowledged_unknowns.length} unknown(s) acknowledged, dual-awareness: ${awareness.dual_awareness}, sovereignty: ${awareness.constraints_as_sovereignty}`,
+  };
+}
+
 // ─── Shell Command → Action Mapping ────────────────────────────────
 
 /**

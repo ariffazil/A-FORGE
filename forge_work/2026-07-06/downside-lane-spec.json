@@ -1,0 +1,64 @@
+{
+  "artifact_id": "downside-lane-spec",
+  "title": "Downside Lane Schema — wealth_power_audit",
+  "version": "1.0.0",
+  "forged": "2026-07-06T17:34Z",
+  "sovereign": "Arif",
+  "actor": "FORGE",
+  "session_id": "SEAL-e3a758ee0633439f",
+  "governance": {
+    "fix": "#1",
+    "dependency_order": 4,
+    "prerequisites": ["#2 arif_init ✅", "#3 sandbox-seal 🔧", "#4 scar-vault 🔧"]
+  },
+  "schema": {
+    "downside_signal": {
+      "description": "Mandatory downside signal for all wealth_power_audit calls. Enforces that every capital decision carries paired cost evidence.",
+      "required": true,
+      "fields": {
+        "cost": {
+          "type": "object",
+          "required": ["blast_radius", "reversibility", "dignity_impact"],
+          "fields": {
+            "blast_radius": {"type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"]},
+            "reversibility": {"type": "number", "minimum": 0.0, "maximum": 1.0},
+            "dignity_impact": {"type": "number", "minimum": 0.0, "maximum": 1.0}
+          },
+          "compute": "blast_radius_score × (1 - reversibility) × dignity_impact"
+        },
+        "entropy_delta": {
+          "description": "ΔS per decision — thermodynamic cost of the decision path",
+          "type": "number",
+          "minimum": 0.0
+        },
+        "scar_history": {
+          "description": "Failure patterns from forge_scar registry relevant to this decision domain",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "fields": {
+              "scar_id": {"type": "string"},
+              "failure_mode": {"type": "string"},
+              "severity": {"type": "string"},
+              "scar_pressure": {"type": "number"}
+            }
+          }
+        }
+      }
+    },
+    "mandatory_rules": {
+      "incentive_asymmetry_hold": {
+        "condition": "wealth_power_audit.result.incentive_asymmetry.risk_level == 'HIGH' AND downside_signal array is empty",
+        "action": "HOLD — return error: 'Downside signal required when incentive_asymmetry is HIGH'",
+        "floor": "F1 AMANAH"
+      },
+      "missing_downside_hold": {
+        "condition": "wealth_power_audit.result.capture_risk == 'HIGH' AND no cost field in downside_signal",
+        "action": "HOLD — 'HIGH capture risk requires explicit cost evidence'",
+        "floor": "F13 SOVEREIGN"
+      }
+    }
+  },
+  "status": "DRAFT",
+  "seal_status": "UNSEALED"
+}

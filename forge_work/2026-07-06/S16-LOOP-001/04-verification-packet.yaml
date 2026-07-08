@@ -1,0 +1,31 @@
+packet_type: verification_packet
+packet_id: vp-20260706-001
+query: >
+  VERIFY: Is HYP-003 (Docker volumes) the confirmed survivor?
+  What is the bounded test result and uncertainty band?
+survivor_refs:
+  - hp-20260706-001/hyp-003
+falsification_summary:
+  hyp-001_stash: FALSIFIED
+  hyp-002_pycache: FALSIFIED
+  hyp-003_volumes: CONFIRMED
+  falsifiers_passed: 4
+  falsifiers_failed: 1
+uncertainty_band: 0.15
+verdict_candidate: SEAL
+next_route: arifos
+receipts:
+  - ts_utc: "2026-07-06T15:09:00Z"
+    actor: FORGE-000Ω
+    action: docker ps --filter volume=X on all 5 suspected volumes + contradiction resolved
+    evidence: >
+      All 5 volumes have NO container reference (running OR stopped).
+      graphiti-mcp uses graphiti_data:/data, NOT af-forge_graphiti_data.
+      The name similarity was misleading.
+    findings:
+      - af-forge_grafana_data: 10 days old, no container reference. F1 AMANAH VIOLATION.
+      - af-forge_graphiti_data: 10 days old, no container reference (graphiti-mcp uses different volume)
+      - af-forge_loki_data: 10 days old, no container reference
+      - af-forge_prometheus_data: 10 days old, no container reference
+      - arifos-data_graphiti_data: 16 days old, no container reference
+    scar_trigger: Unknown data in orphaned volumes from stopped containers 10-16 days old
