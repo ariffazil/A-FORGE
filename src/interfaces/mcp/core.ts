@@ -117,13 +117,23 @@ export const server = new McpServer({
 // Ratified 2026-06-28 per MCP spec: inputSchema must reject unknown fields.
 // ──────────────────────────────────────────────────────────────────────────
 
-// Wrap server.registerTool() to auto-strictify inputSchema
+// Wrap server.registerTool() to auto-strictify inputSchema + enrich ACTUATOR descs
+import { enrichActuatorDescription } from "../../domain/registry/federationAlignment.js";
 const origRegisterTool = server.registerTool.bind(server);
 (server as any).registerTool = function (name: string, config: any, cb?: any) {
-  if (config?.inputSchema) {
-    const p = config.inputSchema;
-    if (p && typeof p === "object" && (p._def || p._zod) && typeof p.strict === "function") {
-      config = { ...config, inputSchema: p.strict() };
+  if (config && typeof config === "object") {
+    if (config.inputSchema) {
+      const p = config.inputSchema;
+      if (p && typeof p === "object" && (p._def || p._zod) && typeof p.strict === "function") {
+        config = { ...config, inputSchema: p.strict() };
+      }
+    }
+    // Federation alignment: descriptions are actuators (hands), not plugins/kernel verbs.
+    if (typeof config.description === "string" || config.description === undefined) {
+      config = {
+        ...config,
+        description: enrichActuatorDescription(name, config.description),
+      };
     }
   }
   return origRegisterTool(name, config, cb);
@@ -535,7 +545,9 @@ const _originalTool = server.tool.bind(server);
     const result = await handler(args, ctx);
     return injectEpistemic(result, name) as any;
   };
-  return _originalTool(name, description, gatedSchema, wrappedHandler);
+  // Federation alignment: ACTUATOR header on server.tool() path too
+  const actuatorDesc = enrichActuatorDescription(name, description);
+  return _originalTool(name, actuatorDesc, gatedSchema, wrappedHandler);
 };
 // Also wrap server.registerTool (used by some tool registrations)
 const _originalRegisterTool = server.registerTool.bind(server);
@@ -545,7 +557,11 @@ const _originalRegisterTool = server.registerTool.bind(server);
   handler: (args: any, ctx: any) => Promise<any>,
 ) {
   const gatedOptions = options && typeof options === "object"
-    ? { ...options, inputSchema: extendInputSchema(options.inputSchema) }
+    ? {
+        ...options,
+        inputSchema: extendInputSchema(options.inputSchema),
+        description: enrichActuatorDescription(name, options.description),
+      }
     : options;
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
