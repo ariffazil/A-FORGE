@@ -76,16 +76,24 @@ const STATELESS_TOOLS = new Set([
 
   // ── Phase 8: P0 Machine Constitution Layer (2026-07-04) ─────────
   // VPS state-anchor tools. All modes are read-only observation.
-  // They make the machine's boundary state (ports/services/cron) visible
-  // and assertable against a saved Machine Constitution registry.
   // F1 AMANAH: never mutate, only sense. F2 TRUTH: labeled outputs.
   "forge_vps_ports",
   "forge_vps_services",
   "forge_vps_cron",
+
+  // ── Phase 9: Reality Loop (2026-07-06) ─────────────────────────────
+  // Intent compiler — 7-stage state-tracking ledger. All modes accept
+  // session_id as explicit parameter, safe over HTTP. start/list modes
+  // require no prior session. F1 AMANAH + F4 CLARITY.
+  "forge_reality_loop",
   "forge_boundaries_assert",
 
   // ── Fetch — URL content extraction (OBSERVE-class, no mutations) ───
   "forge_fetch",
+  "forge_fetch_url",      // proxy → forge_fetch(mode=readable)
+  "forge_fetch_json",     // proxy → forge_fetch(mode=json)
+  "forge_fetch_metadata", // proxy → forge_fetch(mode=metadata)
+  "forge_fetch_links",    // proxy → forge_fetch(mode=links)
 
   // ── DARWIN FIX 1c: stateless mutate primitives ────────────────────
   // Needed so forge_session_init's auto-minted lease + setActor can be
@@ -213,6 +221,28 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
   await approvalBoundary.initialize();
   await memoryContract.initialize();
   await telemetry.initialize();
+
+  // ── Tool fingerprint startup check (2026-07-07) ──────────────────────
+  // Detect schema drift, duplicates, and new/removed tools at boot.
+  try {
+    const { startupFingerprintCheck } = await import("../../domain/registry/toolFingerprint.js");
+    const tools = getServerTools();
+    const report = await startupFingerprintCheck(tools);
+    if (report.verdict !== "CLEAN") {
+      process.stderr.write(`[A-FORGE-MCP] Fingerprint report: ${JSON.stringify({ verdict: report.verdict, new: report.new_tools.length, removed: report.removed_tools.length, changed: report.schema_changed.length })}\n`);
+    }
+  } catch (err: any) {
+    process.stderr.write(`[A-FORGE-MCP] Fingerprint check skipped: ${err.message}\n`);
+  }
+
+  // ── Item 5: Tool deduplication startup check (2026-07-07) ────────────
+  // Scans registered tools for duplicates, near-duplicates, deprecated aliases.
+  try {
+    const { runDedupeCheck } = await import("./toolDedupe.js");
+    runDedupeCheck(server);
+  } catch (err: any) {
+    process.stderr.write(`[A-FORGE-MCP] Dedupe check skipped: ${err.message}\n`);
+  }
 
   if (transportType === "stdio") {
     const transport = new StdioServerTransport();

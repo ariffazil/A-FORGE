@@ -1,0 +1,143 @@
+packet_type: falsification_packet
+packet_id: fp-20260706-001
+source_agent: FORGE-000Ω
+source_stage: hypothesize
+query: >
+  From entropy scan of /root/ (10 obs, 10 GB recovered), what is the
+  MOST dangerous chaos source for F1 AMANAH compliance?
+hypothesis_refs:
+  - hp-20260706-001/hyp-001
+  - hp-20260706-001/hyp-002
+  - hp-20260706-001/hyp-003
+falsifiers:
+  - falsifier_id: fals-001
+    hypothesis_id: hyp-001
+    description: Check stash age — stashes older than 30 days
+    tool_hint: git stash list
+    domain: git_state
+    requires_runtime: false
+    requires_code_execution: false
+    requires_build_or_deploy: false
+    cross_domain: false
+    test_result: PASSED
+    evidence: "All 17 arifOS stashes dated 2026-07-04 (2 days old). None > 30 days."
+    notes: No stash older than 30 days found
+  - falsifier_id: fals-002
+    hypothesis_id: hyp-001
+    description: Check stash content for deleted/diverged branches
+    tool_hint: git stash show -p
+    domain: git_state
+    requires_runtime: false
+    requires_code_execution: false
+    requires_build_or_deploy: false
+    cross_domain: false
+    test_result: PASSED
+    evidence: "All stashes on main. No deleted/diverged branches. No force-push risk in stash state."
+    notes: "HYP-001 FALSIFIED — no age or branch divergence found"
+  - falsifier_id: fals-003
+    hypothesis_id: hyp-002
+    description: Find stale .pyc where source .py is newer or missing
+    tool_hint: find + stat
+    domain: filesystem_entropy
+    requires_runtime: false
+    requires_code_execution: false
+    requires_build_or_deploy: false
+    cross_domain: false
+    test_result: PASSED
+    evidence: "Federation __pycache__ PURGED. 7301 .pyc remain only in .venv (acceptable). Zero in active code paths."
+    notes: HYP-002 FALSIFIED — no stale bytecode found
+  - falsifier_id: fals-004
+    hypothesis_id: hyp-002
+    description: Count __pycache__ dirs in active code paths
+    tool_hint: find __pycache__
+    domain: filesystem_entropy
+    requires_runtime: false
+    requires_code_execution: false
+    requires_build_or_deploy: false
+    cross_domain: false
+    test_result: PASSED
+    evidence: "Zero __pycache__ dirs in federation active paths (arifOS, AAA, geox, WEALTH, WELL, A-FORGE) post-purge"
+    notes: HYP-002 FALSIFIED
+  - falsifier_id: fals-005
+    hypothesis_id: hyp-003
+    description: Check dangling volume age and data state
+    tool_hint: docker volume inspect
+    domain: docker_state
+    requires_runtime: false
+    requires_code_execution: false
+    requires_build_or_deploy: false
+    cross_domain: false
+    test_result: FAILED
+    evidence: >
+      5 volumes NOT cleaned by today's prune:
+      af-forge_grafana_data: created 2026-06-26 (10 days old)
+      af-forge_graphiti_data: created 2026-06-26 (10 days old)
+      af-forge_loki_data: created 2026-06-26 (10 days old)
+      af-forge_prometheus_data: created 2026-06-26 (10 days old)
+      arifos-data_graphiti_data: created 2026-06-20 (16 days old)
+      These are STOPPED containers, not orphaned. docker volume prune -f
+      only removes truly orphaned volumes. Stopped-container volumes persist.
+    notes: HYP-003 CONFIRMED — survivor found
+tests:
+  - test_id: test-001
+    falsifier_id: fals-001
+    hypothesis_id: hyp-001
+    route_owner: openclaw
+    test_type: cognitive
+    passed: true
+    notes: No stale stash
+  - test_id: test-002
+    falsifier_id: fals-002
+    hypothesis_id: hyp-001
+    route_owner: openclaw
+    test_type: cognitive
+    passed: true
+    notes: No deleted branches
+  - test_id: test-003
+    falsifier_id: fals-003
+    hypothesis_id: hyp-002
+    route_owner: openclaw
+    test_type: cognitive
+    passed: true
+    notes: No stale bytecode
+  - test_id: test-004
+    falsifier_id: fals-004
+    hypothesis_id: hyp-002
+    route_owner: openclaw
+    test_type: cognitive
+    passed: true
+    notes: Active paths clean
+  - test_id: test-005
+    falsifier_id: fals-005
+    hypothesis_id: hyp-003
+    route_owner: openclaw
+    test_type: cognitive
+    passed: false
+    notes: Volumes are 10-16 days old, not cleaned
+next_route:
+  route_owner: openclaw
+  route_mode: local
+  escalation_reason: "HYP-003 CONFIRMED. EUREKA: cleanup script has structural blind spot — stopped-container volumes are not pruned by docker volume prune -f"
+contradictions:
+  - contradiction_id: contr-001
+    type: structural_blind_spot
+    description: >
+      docker volume prune -f does NOT remove volumes attached to STOPPED containers.
+      Only truly orphaned volumes (no container reference) are removed.
+      Today's cleanup (which pruned truly orphaned volumes) missed 5 stopped-container volumes.
+      This is a SCAR: future cleanup must explicitly list stopped-container volumes.
+    gates_crossed: 1
+    domains_touched:
+      - docker_state
+      - cleanup_procedure
+    evidence: docker volume inspect shows all 5 volumes attached to stopped containers
+owning_organs:
+  - aforge
+receipts:
+  - ts_utc: "2026-07-06T15:07:00Z"
+    actor: FORGE-000Ω
+    action: Falsification tests run against all 3 hypotheses
+    evidence: bash commands on live system
+timestamps:
+  started_at: "2026-07-06T15:06:00Z"
+  completed_at: "2026-07-06T15:08:00Z"

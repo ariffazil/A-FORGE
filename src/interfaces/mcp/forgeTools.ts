@@ -19,6 +19,14 @@ import { execSync } from "node:child_process";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { randomUUID } from "node:crypto";
+import {
+  computeToolFingerprint,
+  checkToolFingerprints,
+} from "../../domain/governance/tool-fingerprint.js";
+import type { FingerprintCheckResult, ToolFingerprintCollision } from "../../domain/governance/tool-fingerprint.js";
+import { runIsomorphismCheck, startupIsomorphismCheck } from "../../domain/isomorphism/isomorphism-check.js";
+import { getInvariantCounts, buildIsomorphismRegistry } from "../../domain/isomorphism/geo-computational-isomorphism.js";
+import { verdict, sealVerdict, errorVerdict, holdVerdict } from "../../domain/governance/verdict-envelope.js";
 import { callMCP } from "./client.js";
 import { registerSession } from "../../domain/session/sessionGate.js";
 import {
@@ -64,6 +72,12 @@ import type {
   WitnessVerdict,
   GovernedDomain,
 } from "../../contracts/types.js";
+import {
+  predictConsequences,
+  classifyPredictionDomain,
+  simulationGateVerdict,
+  type SimulationRequest,
+} from "../../domain/governance/preActionSimulation.js";
 
 // ── In-memory stores ──────────────────────────────────────────────────────────
 
@@ -601,23 +615,158 @@ export function registerLeaseTools(server: McpServer): void {
 export function registerRegistryTools(server: McpServer): void {
   server.tool(
     "forge_registry_status",
-    "Full A-FORGE tool registry: callable, blocked, degraded, and drift status for all registered tools.",
+    "Full A-FORGE tool registry: callable, blocked, degraded, and drift status for all registered tools. Includes tool fingerprinting for dedupe detection.",
     {},
     async () => {
+      // Collect all registered tools and compute fingerprints
+      const registry = (server as any)._registeredTools as Record<string, any> | undefined;
+      let fingerprintResult: FingerprintCheckResult | null = null;
+
+      if (registry) {
+        const tools = Object.entries(registry)
+          .filter(([, t]) => t && typeof t.handler === "function" && t.enabled !== false)
+          .map(([name, t]) => ({
+            name,
+            schema: t.inputSchema,
+          }));
+
+        fingerprintResult = checkToolFingerprints(tools);
+      }
+
+      const response: Record<string, any> = {
+        status: "SEAL",
+        service: "A-FORGE MCP",
+        version: "0.1.0",
+        registry_truth: "VERIFIED",
+        authority_ceiling: "777_FORGE",
+        note: "Tool list is dynamic — use MCP tools/list for live count",
+      };
+
+      if (fingerprintResult) {
+        response.fingerprint = {
+          total_tools: fingerprintResult.total,
+          unique_fingerprints: fingerprintResult.unique,
+          duplicates_found: fingerprintResult.duplicates.length,
+          passed: fingerprintResult.passed,
+          checked_at: fingerprintResult.checkedAt,
+        };
+
+        if (fingerprintResult.duplicates.length > 0) {
+          response.fingerprint.duplicates = fingerprintResult.duplicates.map((d: ToolFingerprintCollision) => ({
+            tools: d.tools,
+            collision: true,
+          }));
+          response.fingerprint_action = "888_HOLD — duplicate fingerprints detected";
+        }
+      }
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify(response, null, 2),
+        }],
+      };
+    }
+  );
+
+  // ── forge_fingerprint_check — standalone fingerprint audit ──────────────
+  server.tool(
+    "forge_fingerprint_check",
+    "Compute and verify tool fingerprints. Detects duplicate tools (same name + schema) and schema drift.",
+    {},
+    async () => {
+      const registry = (server as any)._registeredTools as Record<string, any> | undefined;
+      if (!registry) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "ERROR", message: "_registeredTools unavailable" }, null, 2) }], isError: true };
+      }
+
+      const tools = Object.entries(registry)
+        .filter(([, t]) => t && typeof t.handler === "function" && t.enabled !== false)
+        .map(([name, t]) => ({ name, schema: t.inputSchema }));
+
+      const result = checkToolFingerprints(tools);
+      const summary: Record<string, any> = {
+        status: result.passed ? "SEAL" : "DUPLICATE_DETECTED",
+        total_tools: result.total,
+        unique_fingerprints: result.unique,
+        duplicates: result.duplicates.length,
+        passed: result.passed,
+        checked_at: result.checkedAt,
+      };
+
+      if (result.duplicates.length > 0) {
+        summary.duplicate_details = result.duplicates;
+        summary.recommendation = "Review duplicate tools. Same fingerprint = same name + same schema. Use forge_registry list to inspect.";
+      }
+
+      return { content: [{ type: "text" as const, text: JSON.stringify(summary, null, 2) }] };
+    }
+  );
+}
+
+/**
+ * Run fingerprint check on all registered tools during server startup.
+ * Logs results to stderr for the operator to see.
+ * Does NOT block startup — this is diagnostic, not a gate.
+ */
+export function startupFingerprintCheck(server: McpServer): void {
+  const registry = (server as any)._registeredTools as Record<string, any> | undefined;
+  if (!registry) {
+    process.stderr.write("[Fingerprint] _registeredTools unavailable — startup check skipped\n");
+    return;
+  }
+
+  const tools = Object.entries(registry)
+    .filter(([, t]) => t && typeof t.handler === "function" && t.enabled !== false)
+    .map(([name, t]) => ({ name, schema: t.inputSchema }));
+
+  const result = checkToolFingerprints(tools);
+
+  process.stderr.write(
+    `[Fingerprint] startup check: ${result.total} tools, ${result.unique} unique fingerprints, ${result.duplicates.length} collisions\n`,
+  );
+
+  if (result.duplicates.length > 0) {
+    for (const dup of result.duplicates) {
+      process.stderr.write(
+        `[Fingerprint] DUPLICATE: ${dup.tools.join(" = ")}\n`,
+      );
+    }
+    process.stderr.write(
+      `[Fingerprint] ⚠️  ${result.duplicates.length} duplicate(s) detected. Run forge_fingerprint_check for details.\n`,
+    );
+  } else {
+    process.stderr.write(
+      `[Fingerprint] ✅ All tools have unique fingerprints. Dedupe check passed.\n`,
+    );
+  }
+}
+
+// ── forge_isomorphism_check — J‑space Manifold Stability ───────────────────
+export function registerIsomorphismTools(server: McpServer): void {
+  server.tool(
+    "forge_isomorphism_check",
+    "J‑space manifold stability check. Verifies GEOX ↔ arifOS isomorphism pairs (Identity, Authority, Irreversibility) through runtime witness functions.",
+    {},
+    async () => {
+      const result = runIsomorphismCheck();
+      const counts = getInvariantCounts(buildIsomorphismRegistry());
       return {
         content: [{
           type: "text" as const,
           text: JSON.stringify({
-            status: "SEAL",
-            service: "A-FORGE MCP",
-            version: "0.1.0",
-            registry_truth: "VERIFIED",
-            authority_ceiling: "777_FORGE",
-            note: "Tool list is dynamic — use MCP tools/list for live count",
+            status: result.verdict,
+            checked_at: result.checkedAt,
+            total_pairs: result.total,
+            passed: result.passed,
+            failed: result.failed,
+            per_invariant: counts,
+            stable_invariants: result.stableInvariants,
+            failed_invariants: result.failedInvariants,
           }, null, 2),
         }],
       };
-    }
+    },
   );
 }
 
@@ -1890,6 +2039,114 @@ To finalize, invoke arif_judge with SEAL verdict and arif_seal.
           }, null, 2)
         }]
       };
+    }
+  );
+}
+
+/**
+ * forge_predict — Pre-action simulation / prediction bridge.
+ *
+ * Calls GEOX (prospect/model) or WEALTH (EMV/MC/NPV/wisdom) for forward simulation
+ * of proposed action OUTCOME *before* forge_execute.
+ *
+ * Result is structured evidence injected into forge_judge_proxy / arif_judge.
+ * Now canon governs prediction + action (prediction enters judge as evidence).
+ *
+ * Tier: SIMULATE (no side effects). Safe pre-flight.
+ */
+export function registerPredictTools(server: McpServer): void {
+  server.tool(
+    "forge_predict",
+    "Pre-action simulation layer (prediction bridge). GEOX/WEALTH forward models run BEFORE forge_execute. Result attached as evidence to arif_judge via forge_judge_proxy. Build prediction bridge first, then formalize. Domain auto-detects geox vs wealth from proposed_action.",
+    {
+      domain: z.enum(["geox", "wealth", "auto"]).default("auto").describe("Simulation target organ"),
+      proposed_action: z.string().min(5).describe("Description of the candidate action/plan to simulate (e.g. 'drill prospect X in basin Y')"),
+      params: z.record(z.any()).optional().describe("Domain-specific prediction parameters (e.g. {initial_value, growth_rate} for wealth MC)"),
+      mode: z.string().optional().describe("Override: for geox 'prospect_evaluate'|'model'; for wealth 'monte_carlo'|'emv'|'npv'|'wisdom'"),
+      actor_id: z.string().optional(),
+      session_id: z.string().optional(),
+    },
+    async ({ domain: rawDomain, proposed_action, params = {}, mode, actor_id, session_id }) => {
+      const simReq: SimulationRequest = {
+        action_class: "EXECUTE_REVERSIBLE",
+        target: proposed_action,
+        intent: proposed_action,
+        tool_name: "forge_predict",
+        metadata: params as any,
+      };
+
+      // Use the canonical preActionSimulation module when possible (Tier 2 wiring)
+      try {
+        const callOrganAdapter = async (organ: string, tool: string, callArgs: Record<string, unknown>) => {
+          const ns = organ === "geox" ? "geox_mcp" : organ === "wealth" ? "wealth_mcp" : organ === "well" ? "well_mcp" : "arifos";
+          return await callMCP(`${ns}.${tool}`, { ...callArgs, actor_id: actor_id ?? "forge_predict", session_id });
+        };
+
+        const predResult = await predictConsequences(simReq, callOrganAdapter);
+        const gate = simulationGateVerdict(predResult);
+
+        const prediction = {
+          prediction_id: predResult.receipt_id,
+          domain: predResult.domain,
+          organ: predResult.organ,
+          proposed_action,
+          tool_invoked: predResult.tool,
+          result: predResult.prediction,
+          consequences: predResult.consequences,
+          risks: predResult.risks,
+          recommendation: predResult.recommendation,
+          simulation_gate: gate,
+          epistemic: predResult.epistemic,
+          confidence: predResult.confidence,
+          timestamp: predResult.timestamp,
+          _note: "Canonical PredictionResult from preActionSimulation.ts. Pass as prediction_context to forge_judge_proxy or forge_execute.",
+        };
+
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({ status: "SEAL", prediction, ready_for_judge: true, gate }, null, 2),
+          }],
+        };
+      } catch (moduleErr: any) {
+        // Fallback to previous direct calls (keeps backward compat)
+        process.stderr.write(`[forge_predict] preActionSimulation module path failed, falling back: ${moduleErr?.message?.slice(0,80)}\n`);
+      }
+
+      // Legacy direct path (kept for robustness)
+      let domain = rawDomain === "auto" ? (/(basin|prospect|seismic|geox|petrophys|well.?log)/i.test(proposed_action) ? "geox" : "wealth") : rawDomain;
+      const callBase = { actor_id: actor_id ?? "forge_predict", session_id, trace_id: `pred-${Date.now().toString(36)}` };
+
+      let result: any;
+      try {
+        if (domain === "geox") {
+          const m = mode || "prospect_evaluate";
+          result = await callMCP("geox_mcp.geox_bridge", { mode: m, arguments: { proposed_action, ...(params as any) }, ...callBase });
+        } else {
+          const m = (mode || "wisdom").toLowerCase();
+          if (m.includes("monte")) {
+            const p = params as any;
+            result = await callMCP("wealth_mcp.wealth_monte_carlo_simulate", { initial_value: p.initial_value ?? 100, growth_rate: p.growth_rate ?? 0.05, volatility: p.volatility ?? 0.2, ...callBase });
+          } else if (m === "emv") {
+            const p = params as any;
+            result = await callMCP("wealth_mcp.wealth_compute_emv", { outcomes: p.outcomes ?? [100,50,-20], probabilities: p.probabilities ?? [0.3,0.5,0.2], ...callBase });
+          } else {
+            result = await callMCP("wealth_mcp.wealth_wisdom_evaluate", { proposal: proposed_action, ...callBase });
+          }
+        }
+
+        const prediction = {
+          prediction_id: `PRED-${Date.now().toString(36)}`,
+          domain,
+          proposed_action,
+          result,
+          epistemic_tag: "DERIVED/SIMULATED",
+          timestamp: new Date().toISOString(),
+        };
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", prediction, ready_for_judge: true }, null, 2) }] };
+      } catch (err: any) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", domain, error: err?.message ?? String(err) }, null, 2) }], isError: true };
+      }
     }
   );
 }

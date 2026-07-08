@@ -1,1027 +1,853 @@
-# A-THINK v1 — MCP Affordance Cards
-# ===================================
-#
-# WAJIB 2: Every tool must have an affordance card.
-# HARAM 1: UNKNOWN = HOLD.
-#
-# If any field is missing or unknown → tool is HOLD for GOVERN mode.
-#
-# Risk labels (SUNAT 3):
-#   R0: read_only
-#   R1: local_temp_write
-#   R2: repo_write
-#   R3: external_api_write
-#   R4: public_publish
-#   R5: destructive_or_irreversible
-#
-# DITEMPA BUKAN DIBERI.
-
 tools:
-
-  # ── arifOS kernel (8088) ───────────────────────────────────────────────
-
-  - name: arif_init
-    purpose: Initialize constitutional session
-    reads: [session_state]
-    writes: [session_state]
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-
-  - name: arif_observe
-    purpose: Observe and classify evidence
-    reads: [evidence, claims]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: arif_think
-    purpose: Reason over plans and evidence
-    reads: [plans, evidence, claims]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: arif_judge_deliberate
-    purpose: Constitutional judgment on proposals
-    reads: [proposals, evidence, floors]
-    writes: [verdict]
-    external_side_effect: false
-    destructive: false
-    reversible: false
-    requires_human_approval: false
-    min_mode: GOVERN
-    risk_label: R2
-
-  - name: arif_seal
-    purpose: Seal verdict to VAULT999 (irreversible)
-    reads: [verdict]
-    writes: [vault999]
-    external_side_effect: false
-    destructive: false
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-
-  # ── A-FORGE (7072) ────────────────────────────────────────────────────
-
-  - name: forge_shell
-    purpose: Execute shell command (governed)
-    reads: [filesystem]
-    writes: [filesystem, processes]
-    external_side_effect: true
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-
-  - name: forge_git
-    purpose: Git operations (status, diff, log, commit)
-    reads: [repo_state]
-    writes: [repo_state]
-    external_side_effect: true
-    destructive: false
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R3
-
-  - name: forge_worktree
-    purpose: Git physics sensor — branch, dirty state, stash, conflicts, in-progress ops, blast radius, recommendations
-    reads: [repo_state]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  # ── P0 Machine Constitution Layer (2026-07-04) ─────────────────────
-  # VPS state-anchor tools. All modes are read-only observation.
-  # Make the machine's boundary state (ports/services/cron) visible
-  # and assertable against a saved Machine Constitution registry.
-  # F1 AMANAH: never mutate, only sense. F2 TRUTH: labeled outputs.
-
-  - name: forge_vps_ports
-    purpose: Scan listening ports and classify each as public, internal, or unknown. Persist to Machine Constitution registry.
-    reads: [network_state, process_state]
-    writes: [registry_file]
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: GOVERN
-    risk_label: R0
-
-  - name: forge_vps_services
-    purpose: List running systemd services and Docker containers. Persist to Machine Constitution registry.
-    reads: [systemd_state, docker_state]
-    writes: [registry_file]
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: GOVERN
-    risk_label: R0
-
-  - name: forge_vps_cron
-    purpose: List cron jobs from root crontab, /etc/crontab, /etc/cron.d. Persist to Machine Constitution registry.
-    reads: [cron_state]
-    writes: [registry_file]
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: GOVERN
-    risk_label: R0
-
-  - name: forge_boundaries_assert
-    purpose: Assert live ports/services/cron against saved Machine Constitution registry. Report unregistered mutations.
-    reads: [registry_files, live_state]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: GOVERN
-    risk_label: R0
-
-  - name: forge_filesystem
-    purpose: Read/write files in governed scope
-    reads: [filesystem]
-    writes: [filesystem]
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-
-  - name: forge_dry_run
-    purpose: Preview execution without side effects
-    reads: [plans, tools]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: forge_execute
-    purpose: Execute action plan (requires cc_id)
-    reads: [plans]
-    writes: [filesystem, external_state]
-    external_side_effect: true
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-
-  - name: forge_lease
-    purpose: Request/revoke execution lease
-    reads: [lease_state]
-    writes: [lease_state]
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: GOVERN
-    risk_label: R2
-
-  - name: forge_docker
-    purpose: Docker container operations
-    reads: [containers]
-    writes: [containers]
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R3
-
-  - name: forge_postgres
-    purpose: Database queries and schema inspection
-    reads: [database]
-    writes: [database]
-    external_side_effect: true
-    destructive: false
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R3
-
-  - name: forge_search
-    purpose: Web search via Brave (read-only)
-    reads: [web]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: forge_fetch
-    purpose: URL content extraction (HTML, markdown, text, JSON, readability)
-    reads: [web]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: forge_github
-    purpose: GitHub operations (search, PR)
-    reads: [github_repos]
-    writes: [github_repos]
-    external_side_effect: true
-    destructive: false
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R3
-
-  # ── GEOX (8081) ───────────────────────────────────────────────────────
-
-  - name: geox_basin
-    purpose: Basin analysis and profiling
-    reads: [geological_data]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: geox_petrophysics
-    purpose: Petrophysical calculations (Vsh, porosity, Sw)
-    reads: [well_data]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: geox_seismic_compute
-    purpose: Seismic property computation
-    reads: [seismic_data]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: geox_claim
-    purpose: Create/validate geological claims
-    reads: [claims, evidence]
-    writes: [claims]
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-
-  # ── WEALTH (18082) ────────────────────────────────────────────────────
-
-  - name: wealth_compute_emv
-    purpose: Compute Expected Monetary Value
-    reads: [outcomes, probabilities]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: wealth_compute_npv
-    purpose: Compute Net Present Value
-    reads: [cash_flows]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: wealth_vault_write
-    purpose: Write transaction to VAULT999 ledger
-    reads: [vault999]
-    writes: [vault999]
-    external_side_effect: false
-    destructive: false
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R2
-
-  # ── WELL (18083) ──────────────────────────────────────────────────────
-
-  - name: well_validate_vitality
-    purpose: Validate human readiness and vitality
-    reads: [biometrics, state]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: well_guard_dignity
-    purpose: Guard dignity and consent boundaries
-    reads: [dignity_signals]
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-
-
-
-  # ── A-FORGE missing cards (auto-generated 2026-06-30 from live MCP tool descriptions) ──
-  - name: forge_document_ingest
-    purpose: "Document intelligence engine — layout-first parsing with bounding-box provenance"
-    reads: ['vault999']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: true
-    min_mode: THINK
-    risk_label: R0
-  - name: forge8_execute
-    purpose: "Execute with VAULT999 seal"
-    reads: ['vault999']
-    writes: ['vault999']
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-  - name: forge_abort
-    purpose: "Safe stop + rollback for running execution"
-    reads: ['tools', 'evidence']
-    writes: ['lease_state']
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-  - name: forge_agent
-    purpose: "Agent identity management"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_approve
-    purpose: "Refuses approval — A-FORGE cannot self-authorize"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_browser_click
-    purpose: "Click a browser element"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_browser_evaluate_js
-    purpose: "Evaluate JS in browser context"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_browser_extract_text
-    purpose: "Extract text from browser page"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_browser_navigate
-    purpose: "Navigate browser to URL"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_browser_screenshot
-    purpose: "Take a browser screenshot"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_browser_type
-    purpose: "Type text into a browser element"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_chart
-    purpose: "Agentic charting + quantum eureka discovery margin patterns"
-    reads: ['database']
-    writes: ['database']
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_check_governance
-    purpose: "Constitutional governance check — delegates to arifOS"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_docket_prep
-    purpose: "Package all evidence and hand off to arifOS"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_docs_lookup
-    purpose: "Governed docs lookup via Context7"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_evaluate
-    purpose: "APEX v36Ω evaluation gate"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: true
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_github_create_issue
-    purpose: "Create a GitHub issue"
-    reads: ['github_repos']
-    writes: ['github_repos', 'lease_state']
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: GOVERN
-    risk_label: R4
-  - name: forge_github_create_or_update_file
-    purpose: "Create or update a file on GitHub"
-    reads: ['filesystem']
-    writes: ['filesystem', 'github_repos', 'lease_state']
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: GOVERN
-    risk_label: R4
-  - name: forge_github_create_pull_request
-    purpose: "Create a GitHub pull request"
-    reads: ['github_repos']
-    writes: ['github_repos', 'lease_state']
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: GOVERN
-    risk_label: R4
-  - name: forge_github_get_file
-    purpose: "Read a file from GitHub"
-    reads: ['filesystem']
-    writes: ['filesystem']
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_github_search_code
-    purpose: "Search GitHub code"
-    reads: ['github_repos']
-    writes: []
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_github_search_repos
-    purpose: "Search GitHub repositories"
-    reads: ['github_repos']
-    writes: []
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_health_check
-    purpose: "Return A-FORGE server health and constitutional genome (v2"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_heart_critique
-    purpose: "Risk assessment and ethical review — delegates to arifOS 666 HEART pipeline"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_job
-    purpose: "Background job system"
-    reads: ['system_state']
-    writes: ['job_queue']
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_journalctl
-    purpose: "Query systemd journal logs (read-only, PII-redacted)"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_judge_proxy
-    purpose: "Proxy forwarder to canonical arifOS constitutional judge"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_lock
-    purpose: "Amanah/F1 lock primitive"
-    reads: ['tools', 'evidence']
-    writes: ['lease_state']
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-  - name: forge_memory
-    purpose: "Canonical memory primitive"
-    reads: ['filesystem']
-    writes: ['filesystem']
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: true
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_minimax_search
-    purpose: "Search the web via MiniMax"
-    reads: ['web']
-    writes: []
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_netdata_alarms
-    purpose: "Read Netdata alarms"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_netdata_metrics
-    purpose: "Read Netdata chart data"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_pipeline_run
-    purpose: "Autonomous intelligence pipeline (canonical)"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: true
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_policy
-    purpose: "Governed MCP Policy Engine — 5-layer control plane (identity/server/tool/argument/integrity)"
-    reads: ['mcp_policies', 'system_state']
-    writes: ['mcp_policies']
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: GOVERN
-    risk_label: R3
-  - name: forge_probe
-    purpose: "Federation organ liveness"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_reality_loop
-    purpose: "7-stage state-tracking ledger (intent compiler): MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN. Modes: start/advance/record/seal/report/metrics/list/destroy. ΔS ≤ 0 per iteration; SEAL only after W³ ≥ 0.70 tri-witness and human RETURN."
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-  - name: forge_register
-    purpose: "APEX v36Ω gated registration gate"
-    reads: ['tools', 'evidence']
-    writes: ['skill_registry']
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-  - name: forge_registry
-    purpose: "Dynamic skill registry"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R3
-  - name: forge_research
-    purpose: "Governed research across web sources"
-    reads: ['web']
-    writes: []
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_sandbox_run
-    purpose: "Execute staged artifact in isolated sandbox"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-  - name: forge_scan
-    purpose: "Security scan a file or directory before code execution"
-    reads: ['filesystem']
-    writes: ['filesystem']
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_scar
-    purpose: "APEX v36Ω scar metabolization gate — list/consult are read-only; mode=seal requires session ownership"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_scar_scan
-    purpose: "Check artifact against SCAR database"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_seal
-    purpose: "Seal a Tri-Witness validated skill into permanent VAULT999 memory"
-    reads: ['memory']
-    writes: ['vault999']
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-  - name: forge_session_init
-    purpose: "Constitutional session ignition"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R3
-  - name: forge_shell_alert_history
-    purpose: "View recent ArifJudge alert history (DENY/GATE/self-modification events)"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_shell_dryrun
-    purpose: "Preview a shell command's output WITHOUT executing it"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_shell_ledger
-    purpose: "Query recent ArifSeal hash-chain ledger entries (read-only)"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_shell_status
-    purpose: "Check forge_shell subsystem health: ledger state, judge pattern count, defaults"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_skill
-    purpose: "Dynamic tool forge (APEX Epoch 34Ω)"
-    reads: ['vault999']
-    writes: ['vault999']
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: true
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_skillstore_read
-    purpose: "Query artifact store"
-    reads: ['web']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-  - name: forge_skillstore_write
-    purpose: "Store artifact with provenance"
-    reads: ['tools', 'evidence']
-    writes: ['skill_registry']
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R3
-  - name: forge_stage
-    purpose: "Move artifact to quarantine staging"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R3
-  - name: forge_status
-    purpose: "Active execution state: jobs, leases, agents"
-    reads: ['system_state']
-    writes: ['lease_state']
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R3
-  - name: forge_synthesize
-    purpose: "Create artifact from intent"
-    reads: ['filesystem']
-    writes: ['filesystem']
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R3
-  - name: forge_systemctl
-    purpose: "[DEPRECATED] Query systemd — use forge_shell('systemctl ...') instead"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R4
-    deprecated: true
-  - name: forge_tier_bind
-    purpose: "Set trust tier LOWER BOUND only"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R5
-  - name: forge_vault
-    purpose: "VAULT999 primitive — read/list/write (append-only). Seal path → arif_seal."
-    reads: ['vault999']
-    writes: ['vault999']
-    external_side_effect: false
-    destructive: false          # write is append-only, not destructive
-    reversible: false           # appends cannot be undone (correct)
-    requires_human_approval: false  # session logs auto-approved; seal → arif_seal handles R5
-    min_mode: THINK
-    risk_label: R2              # repo_write tier — append to local ledger
-  - name: forge_wealth
-    purpose: "Route to WEALTH capital intelligence organ"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_well
-    purpose: "WELL human readiness primitive"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-  - name: forge_witness
-    purpose: "APEX v36Ω tri-witness consensus gate"
-    reads: ['tools', 'evidence']
-    writes: []
-    external_side_effect: true
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R1
-
-  # ── Missing sense/observe cards (added 2026-07-05) ──────────────────
-
-  - name: forge_surface_guard
-    purpose: "MCP Surface Guard — schema fingerprinting + drift detection (read-only)"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: forge_surface_audit
-    purpose: "Audit MCP tool surface: compare live registry vs affordances.yaml (read-only)"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
-
-  - name: forge_execute_sealed
-    purpose: "Execute with VAULT999 seal. FAILS HARD without valid seal — no self-authorization possible"
-    reads: ['plans', 'vault']
-    writes: ['filesystem', 'external_state']
-    external_side_effect: true
-    destructive: true
-    reversible: false
-    requires_human_approval: true
-    min_mode: GOVERN
-    risk_label: R3
-
-  - name: forge_registry_status
-    purpose: "Full A-FORGE tool registry: callable, blocked, degraded, and drift status"
-    reads: ['system_state']
-    writes: []
-    external_side_effect: false
-    destructive: false
-    reversible: true
-    requires_human_approval: false
-    min_mode: THINK
-    risk_label: R0
+- name: forge_shell
+  purpose: Execute shell command (governed)
+  reads:
+  - filesystem
+  writes:
+  - filesystem
+  - processes
+  external_side_effect: true
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+- name: forge_git
+  purpose: Git operations (status, diff, log, commit)
+  reads:
+  - repo_state
+  writes:
+  - repo_state
+  external_side_effect: true
+  destructive: false
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R3
+- name: forge_worktree
+  purpose: Git physics sensor — branch, dirty state, stash, conflicts, in-progress
+    ops, blast radius, recommendations
+  reads:
+  - repo_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_filesystem
+  purpose: Read/write files in governed scope
+  reads:
+  - filesystem
+  writes:
+  - filesystem
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_execute
+  purpose: Execute action plan (requires cc_id)
+  reads:
+  - plans
+  writes:
+  - filesystem
+  - external_state
+  external_side_effect: true
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+- name: forge_lease
+  purpose: Request/revoke execution lease
+  reads:
+  - lease_state
+  writes:
+  - lease_state
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R2
+- name: forge_docker
+  purpose: Docker container operations
+  reads:
+  - containers
+  writes:
+  - containers
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R3
+- name: forge_postgres
+  purpose: Database queries and schema inspection
+  reads:
+  - database
+  writes:
+  - database
+  external_side_effect: true
+  destructive: false
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R3
+- name: forge_search
+  purpose: Web search via Brave (read-only)
+  reads:
+  - web
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_github
+  purpose: GitHub operations (search, PR)
+  reads:
+  - github_repos
+  writes:
+  - github_repos
+  external_side_effect: true
+  destructive: false
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R3
+- name: forge_document_ingest
+  purpose: Document intelligence engine — layout-first parsing with bounding-box provenance
+  reads:
+  - vault999
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: THINK
+  risk_label: R0
+- name: forge_abort
+  purpose: Safe stop + rollback for running execution
+  reads:
+  - tools
+  - evidence
+  writes:
+  - lease_state
+  external_side_effect: false
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+- name: forge_agent
+  purpose: Agent identity management
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_approve
+  purpose: Refuses approval — A-FORGE cannot self-authorize
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_browser_click
+  purpose: Click a browser element
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_browser_evaluate_js
+  purpose: Evaluate JS in browser context
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_browser_extract_text
+  purpose: Extract text from browser page
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_browser_navigate
+  purpose: Navigate browser to URL
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_browser_screenshot
+  purpose: Take a browser screenshot
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_browser_type
+  purpose: Type text into a browser element
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_chart
+  purpose: Agentic charting + quantum eureka discovery margin patterns
+  reads:
+  - database
+  writes:
+  - database
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_check_governance
+  purpose: Constitutional governance check — delegates to arifOS
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_docket_prep
+  purpose: Package all evidence and hand off to arifOS
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_docs_lookup
+  purpose: Governed docs lookup via Context7
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_evaluate
+  purpose: APEX v36Ω evaluation gate
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: THINK
+  risk_label: R1
+- name: forge_github_create_issue
+  purpose: Create a GitHub issue
+  reads:
+  - github_repos
+  writes:
+  - github_repos
+  - lease_state
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R4
+- name: forge_github_get_file
+  purpose: Read a file from GitHub
+  reads:
+  - filesystem
+  writes:
+  - filesystem
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_github_search_code
+  purpose: Search GitHub code
+  reads:
+  - github_repos
+  writes: []
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_github_search_repos
+  purpose: Search GitHub repositories
+  reads:
+  - github_repos
+  writes: []
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_health_check
+  purpose: Return A-FORGE server health and constitutional genome (v2
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_heart_critique
+  purpose: Risk assessment and ethical review — delegates to arifOS 666 HEART pipeline
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_job
+  purpose: Background job system
+  reads:
+  - system_state
+  writes:
+  - job_queue
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_journalctl
+  purpose: Query systemd journal logs (read-only, PII-redacted)
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_judge_proxy
+  purpose: Proxy forwarder to canonical arifOS constitutional judge
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_lock
+  purpose: Amanah/F1 lock primitive
+  reads:
+  - tools
+  - evidence
+  writes:
+  - lease_state
+  external_side_effect: false
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+- name: forge_memory
+  purpose: Canonical memory primitive
+  reads:
+  - filesystem
+  writes:
+  - filesystem
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: THINK
+  risk_label: R0
+- name: forge_minimax_search
+  purpose: Search the web via MiniMax
+  reads:
+  - web
+  writes: []
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_netdata_alarms
+  purpose: Read Netdata alarms
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_netdata_metrics
+  purpose: Read Netdata chart data
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_pipeline_run
+  purpose: Autonomous intelligence pipeline (canonical)
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: THINK
+  risk_label: R0
+- name: forge_policy
+  purpose: Governed MCP Policy Engine — 5-layer control plane (identity/server/tool/argument/integrity)
+  reads:
+  - mcp_policies
+  - system_state
+  writes:
+  - mcp_policies
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R3
+- name: forge_probe
+  purpose: Federation organ liveness
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_reality_loop
+  purpose: '7-stage state-tracking ledger (intent compiler): MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN.
+    Modes: start/advance/record/seal/report/metrics/list/destroy. ΔS ≤ 0 per iteration;
+    SEAL only after W³ ≥ 0.70 tri-witness and human RETURN.'
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+- name: forge_register
+  purpose: APEX v36Ω gated registration gate
+  reads:
+  - tools
+  - evidence
+  writes:
+  - skill_registry
+  external_side_effect: false
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+- name: forge_registry
+  purpose: Dynamic skill registry
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R3
+- name: forge_research
+  purpose: Governed research across web sources
+  reads:
+  - web
+  writes: []
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_sandbox_run
+  purpose: Execute staged artifact in isolated sandbox
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+- name: forge_scar
+  purpose: APEX v36Ω scar metabolization gate — list/consult are read-only; mode=seal
+    requires session ownership
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_scar_scan
+  purpose: Check artifact against SCAR database
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_seal
+  purpose: Seal a Tri-Witness validated skill into permanent VAULT999 memory
+  reads:
+  - memory
+  writes:
+  - vault999
+  external_side_effect: false
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+- name: forge_session_init
+  purpose: Constitutional session ignition
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R3
+- name: forge_shell_alert_history
+  purpose: View recent ArifJudge alert history (DENY/GATE/self-modification events)
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_shell_dryrun
+  purpose: Preview a shell command's output WITHOUT executing it
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_shell_ledger
+  purpose: Query recent ArifSeal hash-chain ledger entries (read-only)
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_shell_status
+  purpose: 'Check forge_shell subsystem health: ledger state, judge pattern count,
+    defaults'
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_skill
+  purpose: Dynamic tool forge (APEX Epoch 34Ω)
+  reads:
+  - vault999
+  writes:
+  - vault999
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: THINK
+  risk_label: R1
+- name: forge_stage
+  purpose: Move artifact to quarantine staging
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R3
+- name: forge_status
+  purpose: 'Active execution state: jobs, leases, agents'
+  reads:
+  - system_state
+  writes:
+  - lease_state
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R3
+- name: forge_synthesize
+  purpose: Create artifact from intent
+  reads:
+  - filesystem
+  writes:
+  - filesystem
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R3
+- name: forge_systemctl
+  purpose: '[DEPRECATED] Query systemd — use forge_shell(''systemctl ...'') instead'
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R4
+  deprecated: true
+- name: forge_tier_bind
+  purpose: Set trust tier LOWER BOUND only
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+- name: forge_vault
+  purpose: VAULT999 primitive — read/list/write (append-only). Seal path → arif_seal.
+  reads:
+  - vault999
+  writes:
+  - vault999
+  external_side_effect: false
+  destructive: false
+  reversible: false
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R2
+- name: forge_wealth
+  purpose: Route to WEALTH capital intelligence organ
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_well
+  purpose: WELL human readiness primitive
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_witness
+  purpose: APEX v36Ω tri-witness consensus gate
+  reads:
+  - tools
+  - evidence
+  writes: []
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+- name: forge_surface_guard
+  purpose: MCP Surface Guard — schema fingerprinting + drift detection (read-only)
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_surface_audit
+  purpose: 'Audit MCP tool surface: compare live registry vs affordances.yaml (read-only)'
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_execute_sealed
+  purpose: Execute with VAULT999 seal. FAILS HARD without valid seal — no self-authorization
+    possible
+  reads:
+  - plans
+  - vault
+  writes:
+  - filesystem
+  - external_state
+  external_side_effect: true
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R3
+- name: forge_registry_status
+  purpose: 'Full A-FORGE tool registry: callable, blocked, degraded, and drift status'
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_generated
+  purpose: TEMPLATE/STUB entry — placeholder for forge_skill LLM-generated tools.
+    APEX G=0.07 (SABAR), Q=0.10 intent too vague.
+  reads: []
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+  notes: Forged tools land here pre-vault-seal. Disambiguate from real registry tools
+    via vault_seal_id != null.
+- name: forge_github_create_pr
+  purpose: Alias of forge_github_create_pull_request. Prefer canonical name; this
+    entry exists to satisfy audit MISSING-class.
+  reads:
+  - github_repos
+  writes:
+  - github_repos
+  external_side_effect: true
+  destructive: false
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R3
+  notes: Alias. Use forge_github_create_pull_request for actual PR creation.

@@ -62,16 +62,31 @@ import {
   registerRealityLoopTools,
   initializeForgeTools,
   registerResilienceTools,
+  registerIsomorphismTools,
+  registerPredictTools,
+  startupFingerprintCheck,
 } from "./forgeTools.js";
 import { registerGatewayTools } from "./gatewayTools.js";
+import { startupIsomorphismCheck } from "../../domain/isomorphism/isomorphism-check.js";
 import { registerForge8Verbs } from "./forge8Verbs.js";
 import { registerShellTools as registerCanonicalShellTools } from "./shell/forgeShell.js";
 import { registerDocumentIngestTool } from "./documentIngest.js";
-import { registerPolicyTools, installPolicyInterceptor } from "./policyTools.js";
+import { registerPolicyTools, installPolicyInterceptor, installElicitationGate } from "./policyTools.js";
+import { installVerdictInterceptor } from "../../domain/governance/verdict-interceptor.js";
 import { registerSurfaceGuardTools } from "./surfaceGuardTools.js";
 import { registerSurfaceAuditTools } from "./surfaceAuditTools.js";
 import { registerStateAnchorTools } from "./stateAnchorTools.js";
+import { registerVerifyTimelineTools } from "./verifyTimelineTools.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
+import { elicitUser, tradeConfirmationSchema, isGenuineAuthorization } from "./elicitation.js";
+import {
+  predictConsequences,
+  classifyPredictionDomain,
+  simulationGateVerdict,
+  requiresSimulation,
+  type SimulationRequest,
+  type PredictionResult,
+} from "../../domain/governance/preActionSimulation.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
@@ -1050,7 +1065,7 @@ server.registerTool(
 // ── Tier 05 Execution ────────────────────────────────────────────────────────
 
 const forgeHandler = async (args: any, toolName: string) => {
-  const { task, mode, session_id, actor_id, lease_id, evidence_receipt, peer_contract_id } = args;
+  const { task, mode, session_id, actor_id, lease_id, evidence_receipt, peer_contract_id, prediction_context, auto_predict = true } = args;
   const startedAt = Date.now();
   await telemetryInvoke("forge_execute");
   return runStage("777_FORGE" as MetabolicStage, async () => {
@@ -1063,6 +1078,87 @@ const forgeHandler = async (args: any, toolName: string) => {
       lease_id,
       actor_id: actor_id ?? "mcp-anonymous",
     });
+
+    // ── ELICITATION GATE: Human confirmation before forge execution ──
+    // Item 2 (2026-07-07): forge_execute is always ATOMIC/IRREVERSIBLE class.
+    // Require explicit human elicitation BEFORE submitting to judge.
+    const elicitReq = tradeConfirmationSchema(
+      `Forge execution: ${String(task ?? "").slice(0, 500)}\n\nTool: ${toolName}\nMode: ${mode ?? "external_safe_mode"}\nThis will execute code after constitutional clearance.`,
+    );
+    const elicitResult = await elicitUser(server.server, elicitReq);
+    const auth = isGenuineAuthorization(elicitResult);
+    if (!auth.authorized) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "ELICITATION_BLOCKED",
+            gate: "HUMAN_CONSENT_WITHHELD",
+            reason: auth.reason,
+            tool: toolName,
+            elicit_action: elicitResult.action,
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+
+    // ── PREDICTION BRIDGE (TIER 2): Use preActionSimulation.ts before judge/execute ──
+    // Wire the real module (preActionSimulation.ts) — classify → predictConsequences → gate verdict.
+    // Explicit prediction_context from caller takes precedence. Auto only for irreversible-ish domain actions.
+    // This completes "wire prediction to actor".
+    let effectivePrediction = prediction_context;
+    const taskStr = String(task || "");
+    const taskLower = taskStr.toLowerCase();
+
+    if (!effectivePrediction && auto_predict) {
+      const simReq: SimulationRequest = {
+        action_class: "EXECUTE_IRREVERSIBLE", // conservative for forge_execute
+        target: taskStr,
+        intent: taskStr,
+        tool_name: toolName,
+        metadata: { ...(args.params || {}), session_id, actor_id },
+      };
+
+      const needs = requiresSimulation(simReq) || /geox|wealth|prospect|basin|seismic|npv|emv|capital|well|petrophys|drill|deploy|invest/.test(taskLower);
+      if (needs) {
+        try {
+          const callOrganAdapter = async (organ: string, tool: string, callArgs: Record<string, unknown>) => {
+            const ns = organ === "geox" ? "geox_mcp" : organ === "wealth" ? "wealth_mcp" : organ === "well" ? "well_mcp" : "arifos";
+            return await callMCP(`${ns}.${tool}`, callArgs);
+          };
+
+          const predResult: PredictionResult = await predictConsequences(simReq, callOrganAdapter);
+          effectivePrediction = {
+            ...predResult,
+            source: "preActionSimulation",
+            simulation_gate: simulationGateVerdict(predResult),
+          };
+
+          const gate = (effectivePrediction as any).simulation_gate;
+          process.stderr.write(`[PRE-ACTION-SIM] domain=${predResult.domain} rec=${predResult.recommendation} gate=${gate?.verdict} conf=${predResult.confidence}\n`);
+
+          // If simulation says BLOCK or strong CAUTION, short-circuit before judge (F1 + world model)
+          if (gate && !gate.proceed && gate.verdict === "VOID_RISK") {
+            return {
+              content: [{
+                type: "text" as const,
+                text: JSON.stringify({
+                  status: "VOID",
+                  gate: "PREDICTION_RISK",
+                  reason: gate.reason,
+                  prediction: effectivePrediction,
+                }, null, 2),
+              }],
+              isError: true,
+            };
+          }
+        } catch (predErr: any) {
+          process.stderr.write(`[PRE-ACTION-SIM] predictConsequences failed (F7 humility): ${String(predErr?.message || predErr).slice(0, 140)}\n`);
+        }
+      }
+    }
+
     const judgeBody: any = {
       mode: "judge",
       candidate,
@@ -1075,6 +1171,10 @@ const forgeHandler = async (args: any, toolName: string) => {
     }
     if (peer_contract_id) {
       judgeBody.peer_contract_id = peer_contract_id;
+    }
+    if (effectivePrediction) {
+      judgeBody.prediction_context = effectivePrediction;
+      judgeBody.evidence_receipt = { ...(judgeBody.evidence_receipt || {}), prediction: effectivePrediction, source: "forge_predict" };
     }
     const judgeResult = await callMCP("arifos.arif_judge_deliberate", judgeBody) as any;
     const judgeVerdict = judgeResult?.verdict ?? judgeResult?.decision ?? "HOLD";
@@ -1178,6 +1278,8 @@ server.registerTool(
       evidence_receipt: z.record(z.string(), z.unknown()).optional().describe("Optional F-WEB evidence receipt to support a SEAL verdict"),
       peer_contract_id: z.string().optional().describe("Optional Peer Federation Contract v1 ID for audit continuity"),
       constitutional_chain_id: z.string().optional().describe("cc_id from arif_judge SEAL"),
+      prediction_context: z.record(z.string(), z.unknown()).optional().describe("Optional pre-computed prediction from forge_predict to inject as judge evidence"),
+      auto_predict: z.boolean().optional().default(true).describe("If true and no prediction_context, auto-invoke forge_predict for geox/wealth tasks before judge"),
     }),
     annotations: {
       title: "777 FORGE",
@@ -1230,7 +1332,55 @@ const judgeProxyHandler = async (args: Record<string, unknown>) => {
   await telemetryInvoke("forge_judge_proxy");
   return runStage("888_JUDGE" as MetabolicStage, async () => {
     try {
-      const res = await callMCP("arifos.arif_judge_deliberate", args);
+      // ── ELICITATION GATE: Human confirmation before irreversible judge ──
+      // Item 2 (2026-07-07): If action_tier indicates IRREVERSIBLE or HIGH,
+      // require explicit human elicitation BEFORE forwarding to arifOS judge.
+      // This is the constitutional F1/F13 consent layer at the MCP boundary.
+      const actionTier = typeof args.action_tier === "string" ? args.action_tier.toUpperCase() : "";
+      const candidateStr = typeof args.candidate === "string" ? args.candidate : JSON.stringify(args.candidate ?? "unknown action");
+      const needsElicitation = actionTier === "IRREVERSIBLE" || actionTier === "HIGH" || actionTier === "CRITICAL";
+
+      if (needsElicitation) {
+        const elicitReq = tradeConfirmationSchema(
+          `Judge proxy forwarding: ${candidateStr.slice(0, 500)}\n\nAction tier: ${actionTier}\nThis will be submitted to arifOS constitutional judge.`,
+        );
+        const elicitResult = await elicitUser(server.server, elicitReq);
+        const auth = isGenuineAuthorization(elicitResult);
+        if (!auth.authorized) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "ELICITATION_BLOCKED",
+                gate: "HUMAN_CONSENT_WITHHELD",
+                reason: auth.reason,
+                action_tier: actionTier,
+                candidate: candidateStr.slice(0, 200),
+                elicit_action: elicitResult.action,
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+        // Human authorized — inject elicitation receipt into args for audit trail
+        args._elicitation_receipt = {
+          authorized: true,
+          action: elicitResult.action,
+          notes: elicitResult.content?.notes ?? null,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      // Wire prediction context into judge submission (prediction bridge requirement)
+      const judgeArgs = { ...args };
+      if (args.prediction_context) {
+        judgeArgs.prediction_context = args.prediction_context;
+        // Also promote to evidence_receipt if not present, for canon compatibility
+        if (!judgeArgs.evidence_receipt) {
+          judgeArgs.evidence_receipt = { prediction: args.prediction_context, source: "forge_predict" };
+        }
+      }
+      const res = await callMCP("arifos.arif_judge_deliberate", judgeArgs);
       const result = { content: [{ type: "text" as const, text: resultAsJson(res) }] };
       await telemetrySuccess("forge_judge_proxy", startedAt);
       return result;
@@ -1262,8 +1412,165 @@ server.tool(
     measurement: z.record(z.string(), z.unknown()).optional().describe(
       "MEMBRANE-03: MeasurementPacket from A-FORGE. Contains G, C_dark, W3, primitives, witness, trace. Kernel reads for floor checks; never recomputes."
     ),
+    prediction_context: z.record(z.string(), z.unknown()).optional().describe(
+      "Pre-action simulation result from forge_predict (GEOX/WEALTH evidence). Injected into judge submission as evidence. prediction→judge pipeline."
+    ),
   },
   judgeProxyHandler
+);
+
+// ── Tier 05b Elicitation — Human-in-the-loop for trades/sends ───────────────
+// Item 2 (2026-07-07): MCP elicitation/create protocol wired into A-FORGE.
+// Two explicit tools for trade/send authorization + inline gates on forge_execute and forge_judge_proxy.
+// Protocol: elicitation/create (2025-11-25), error code -32042 (UrlElicitationRequired)
+
+import {
+  sendConfirmationSchema,
+  sensitiveOperationURL,
+} from "./elicitation.js";
+
+server.tool(
+  "forge_transfer_confirm",
+  "Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until user accept/decline/cancel.",
+  {
+    amount: z.number().describe("Transfer amount"),
+    recipient: z.string().describe("Recipient identifier"),
+    currency: z.string().default("USD").describe("Currency code"),
+    memo: z.string().optional().describe("Transfer memo"),
+    session_id: z.string().optional(),
+    actor_id: z.string().optional(),
+    lease_id: z.string().optional(),
+  },
+  async ({ amount, recipient, currency, memo }) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("forge_transfer_confirm");
+    try {
+      const elicitReq = tradeConfirmationSchema(
+        `Transfer ${amount.toLocaleString()} ${currency} to ${recipient}` +
+        (memo ? `\nMemo: ${memo}` : "") +
+        `\n\nThis transfer requires explicit human authorization.`,
+      );
+      const result = await elicitUser(server.server, elicitReq);
+      const auth = isGenuineAuthorization(result);
+      const txId = `TX-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
+      if (auth.authorized) {
+        await telemetrySuccess("forge_transfer_confirm", startedAt, undefined, { action: "authorized" });
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "AUTHORIZED",
+              tx_id: txId,
+              amount,
+              currency,
+              recipient,
+              memo: memo ?? null,
+              authorization: {
+                method: "form_mode_elicitation",
+                action: result.action,
+                notes: result.content?.notes ?? null,
+                timestamp: new Date().toISOString(),
+              },
+              _epistemic: { output_class: "GOVERNANCE_TEMPLATE", authority_claim: "EXECUTIVE" },
+            }, null, 2),
+          }],
+        };
+      }
+
+      await telemetrySuccess("forge_transfer_confirm", startedAt, undefined, { action: "blocked" });
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "BLOCKED",
+            gate: "ELICITATION_DECLINED",
+            reason: auth.reason,
+            amount,
+            currency,
+            recipient,
+            elicit_action: result.action,
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    } catch (err) {
+      await telemetryFailure("forge_transfer_confirm", startedAt, err);
+      throw err;
+    }
+  }
+);
+
+server.tool(
+  "forge_send_confirm",
+  "Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensitive credentials). F13 consent gate.",
+  {
+    destination: z.string().describe("Destination identifier (URL, email, API endpoint)"),
+    payload_summary: z.string().default("").describe("Summary of payload being sent (never send raw secrets here)"),
+    sensitive: z.boolean().default(false).describe("If true, uses URL-mode elicitation for out-of-band auth"),
+    session_id: z.string().optional(),
+    actor_id: z.string().optional(),
+    lease_id: z.string().optional(),
+  },
+  async ({ destination, payload_summary, sensitive }) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("forge_send_confirm");
+    try {
+      if (sensitive) {
+        // URL mode — for credentials, API keys, tokens
+        // Returns -32042 if client doesn't support URL elicitation
+        const elicitId = `send-${Date.now().toString(36)}`;
+        const urlReq = sensitiveOperationURL(
+          elicitId,
+          `Sensitive data transmission to: ${destination}\nPayload: ${payload_summary}`,
+          `https://mcp.arif-fazil.com/elicit/${elicitId}`,
+        );
+        const result = await elicitUser(server.server, urlReq);
+        const auth = isGenuineAuthorization(result);
+
+        await telemetrySuccess("forge_send_confirm", startedAt, undefined, { action: result.action, mode: "url" });
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: auth.authorized ? "AUTHORIZED" : "BLOCKED",
+              gate: auth.authorized ? "URL_ELICITATION_PASSED" : "URL_ELICITATION_DECLINED",
+              destination,
+              sensitive: true,
+              method: "url_mode_elicitation",
+              reason: auth.reason,
+            }, null, 2),
+          }],
+          isError: !auth.authorized,
+        };
+      }
+
+      // Form mode — standard confirmation
+      const elicitReq = sendConfirmationSchema(destination, payload_summary || "(no summary)");
+      const result = await elicitUser(server.server, elicitReq);
+      const auth = isGenuineAuthorization(result);
+
+      await telemetrySuccess("forge_send_confirm", startedAt, undefined, { action: result.action, mode: "form" });
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: auth.authorized ? "AUTHORIZED" : "BLOCKED",
+            gate: auth.authorized ? "FORM_ELICITATION_PASSED" : "FORM_ELICITATION_DECLINED",
+            destination,
+            sensitive: false,
+            method: "form_mode_elicitation",
+            reason: auth.reason,
+            notes: result.content?.notes ?? null,
+          }, null, 2),
+        }],
+        isError: !auth.authorized,
+      };
+    } catch (err) {
+      await telemetryFailure("forge_send_confirm", startedAt, err);
+      throw err;
+    }
+  }
 );
 
 // ── Tier 06 Stewardship (Vault) ──────────────────────────────────────────────
@@ -1667,6 +1974,10 @@ registerJobTools(server);
 registerStatusTools(server);
 registerStateAnchorTools(server);                          // P0 Machine Constitution Layer: ports/services/cron/boundaries
 
+// ── Phase 1b: Verify Timeline — Source Verification ─────────────────────────
+// forge_verify_timeline: TIMELINE_MIN_SOURCES invariant enforcement.
+registerVerifyTimelineTools(server);
+
 // ── Phase 2: Skill Forge (APEX Epoch 34Ω — Organism Layer) ─────────────────
 // forge_skill + forge_registry: dynamic tool generation with Decision Field gate.
 // Phase 1: human approval per generation, 24h expiry, 1-generation depth.
@@ -1712,10 +2023,35 @@ registerPolicyTools(server);
 registerSurfaceGuardTools(server);
 registerSurfaceAuditTools(server);
 
+// ── Prediction Bridge (pre-action simulation for GEOX/WEALTH) ──────────────
+// forge_predict: called BEFORE forge_execute for domain actions.
+// Prediction result injected as evidence to judge.
+registerPredictTools(server);
+
 // Install the 5-layer policy pre-check wrapper on every registered tool.
 // Called AFTER all other registerXTools() so it wraps them all.
-// Idempotent: forge_policy_* tools themselves are excluded to avoid loops.
+// Idempotent: only forge_policy_* tools themselves are excluded to avoid loops.
 installPolicyInterceptor(server);
+
+// Install elicitation gate AFTER policy interceptor.
+// External clients calling MUTATE tools get -32042 (URLElicitationRequiredError)
+// instead of silent denial or execution. This is the Item 2 elicitation gate
+// for forge_filesystem/forge_shell/forge_execute and other MUTATE tools.
+installElicitationGate(server);
+
+// Run startup fingerprint check — detects duplicate tools + schema drift
+startupFingerprintCheck(server);
+
+// Register J‑space manifold stability check tool
+registerIsomorphismTools(server);
+
+// Run startup isomorphism check — verifies GEOX ↔ arifOS witness functions
+startupIsomorphismCheck();
+
+// Install verdict envelope interceptor — wraps EVERY tool response through
+// standardized VerdictEnvelope. Satu format, satu lokasi, satu monotonic chain.
+// Chamber ke-7: verdict monotonicity.
+installVerdictInterceptor(server);
 
 // Initialize identity store
 initializeForgeTools().catch(err => {

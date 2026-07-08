@@ -60,6 +60,12 @@ const CODE_ACCEPTING_TOOLS = new Set([
   "forge_register",
   "forge_registry",
   "forge_shell_dryrun",
+  "forge_vault",
+  // Filesystem content legitimately contains backticks, braces, and
+  // structured text (markdown, JSON, code). forge_filesystem has its
+  // own path scoping via checkPathAllowed — F12 SHELL_METACHARS is
+  // a false positive on content payloads.
+  "forge_filesystem",
 ]);
 
 /**
@@ -108,17 +114,20 @@ export function checkF12Injection(ctx: FloorContext): FloorReason[] {
   }
 
   // Rule 3: Absolute sensitive paths
-  // EXCEPTION: forge_filesystem_*, forge_git_*, forge_postgres_* tools are
-  // authorized proxies with their own path scoping (checkPathAllowed).
+  // EXCEPTION: forge_filesystem, forge_git, forge_postgres, forge_docker,
+  // forge_github, forge_memory, forge_document_ingest are authorized
+  // proxies with their own path scoping (checkPathAllowed).
   // They operate on /root, /tmp, /data which are valid work directories.
-  const isAuthorizedProxy =
-    a.tool_name.startsWith("forge_filesystem_") ||
-    a.tool_name.startsWith("forge_git_") ||
-    a.tool_name.startsWith("forge_postgres_") ||
-    a.tool_name.startsWith("forge_docker_") ||
-    a.tool_name.startsWith("forge_github_") ||
-    a.tool_name.startsWith("forge_memory_") ||
-    a.tool_name === "forge_document_ingest";
+  const AUTHORIZED_PROXY_TOOLS = new Set([
+    "forge_filesystem",
+    "forge_git",
+    "forge_postgres",
+    "forge_docker",
+    "forge_github",
+    "forge_memory",
+    "forge_document_ingest",
+  ]);
+  const isAuthorizedProxy = AUTHORIZED_PROXY_TOOLS.has(a.tool_name);
   if (!isAuthorizedProxy) {
     for (const p of SENSITIVE_PATHS) {
       if (a.target.startsWith(p) || haystack.includes(p)) {

@@ -1,0 +1,59 @@
+{
+  "month": "2026-07",
+  "total_limit": 250,
+  "used": 7,
+  "calls": [
+    {
+      "timestamp": "2026-07-07T10:12:33.615510+00:00",
+      "engine": "google_finance",
+      "domain": "finance",
+      "query": "PCHEM:KLSE",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-07-07T10:12:42.727521+00:00",
+      "engine": "bing_copilot",
+      "domain": "search",
+      "query": "Malaysia oil production 2024 barrels per day",
+      "credits": 2
+    },
+    {
+      "timestamp": "2026-07-07T10:15:59.517019+00:00",
+      "engine": "google_scholar",
+      "domain": "academic",
+      "query": "Miocene carbonate platforms southeast asia",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-07-07T10:17:44.992248+00:00",
+      "engine": "google_finance",
+      "domain": "finance",
+      "query": "PCHEM:KLSE",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-07-07T10:17:45.937017+00:00",
+      "engine": "google_scholar",
+      "domain": "academic",
+      "query": "petroleum geology malaysia",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-07-07T10:17:52.566697+00:00",
+      "engine": "google_finance",
+      "domain": "finance",
+      "query": "GOOGL:NASDAQ",
+      "credits": 1
+    }
+  ],
+  "by_domain": {
+    "finance": 3,
+    "search": 2,
+    "academic": 2
+  },
+  "by_engine": {
+    "google_finance": 3,
+    "bing_copilot": 2,
+    "google_scholar": 2
+  }
+}
