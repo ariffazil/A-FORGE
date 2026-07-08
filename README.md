@@ -1,29 +1,15 @@
 <!-- SOT-MANIFEST
 federation_release: v2026.07.04-MCP-A2A
-last_verified: 2026-07-06
+last_verified: 2026-07-08
 changelog: /root/CHANGELOG-2026-07-04.md
 a2a_agent_json: /root/A-FORGE/.well-known/agent.json
 -->
 
 # A-FORGE — Governed Execution Shell
 
-```
-   ╔══════════════════════════════════════════════════════════════════════╗
-   ║                                                                      ║
-   ║        █████╗       ███████╗ ██████╗ ██████╗  ██████╗ ███████╗      ║
-   ║       ██╔══██╗      ██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝      ║
-   ║       ███████║█████╗█████╗  ██║   ██║██████╔╝██║  ███╗█████╗        ║
-   ║       ██╔══██║╚════╝██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝        ║
-   ║       ██║  ██║      ██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗      ║
-   ║       ╚═╝  ╚═╝      ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝      ║
-   ║                                                                      ║
-   ║               GOVERNED EXECUTION SHELL · arifOS Federation           ║
-   ║                                                                      ║
-   ║    A constitutional kernel without a governed execution shell         ║
-   ║                       is just a PDF.                                  ║
-   ║                                                                      ║
-   ╚══════════════════════════════════════════════════════════════════════╝
-```
+Governed execution shell for the arifOS Federation. Hands do not judge. Brain does not execute. Each organ stays in its lane.
+
+MCP: 79 tools at `mcp.arif-fazil.com`. A2A: routing mesh via AAA cockpit.
 
 [![Agentic CI](https://github.com/ariffazil/A-FORGE/actions/workflows/agentic-ci.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/agentic-ci.yml)
 [![Boundary Guard](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml)
