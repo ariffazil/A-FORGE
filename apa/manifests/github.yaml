@@ -1,0 +1,175 @@
+# APA Manifest: GitHub (Sovereign REST API)
+# APA v1.0 — Autonomous Protocol for Applications
+# This is the canonical template. All connectors follow this format.
+
+connector:
+  name: github
+  mcp_tool: forge_github
+  version: "2.0.0"
+  domain: development.version_control
+  protocol: rest_api
+  provider: github
+  auth:
+    method: personal_access_token
+    credential_env: GITHUB_TOKEN
+    credential_file: /root/.secrets/github/token.json
+
+# ── Verb Classification ──────────────────────
+verbs:
+  # OBSERVE: No lease required. Read-only.
+  - name: search_repos
+    class: OBSERVE
+    blast_radius: LOW
+    description: Search repositories by query
+    endpoint: GET /search/repositories
+    requires_lease: false
+
+  - name: get_repo
+    class: OBSERVE
+    blast_radius: LOW
+    description: Get repository metadata
+    endpoint: GET /repos/{owner}/{repo}
+    requires_lease: false
+
+  - name: list_issues
+    class: OBSERVE
+    blast_radius: LOW
+    description: List issues for a repository
+    endpoint: GET /repos/{owner}/{repo}/issues
+    requires_lease: false
+
+  - name: list_pull_requests
+    class: OBSERVE
+    blast_radius: LOW
+    description: List pull requests for a repository
+    endpoint: GET /repos/{owner}/{repo}/pulls
+    requires_lease: false
+
+  # MUTATE: Lease required. Reversible.
+  - name: create_issue
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    description: Create a new issue
+    endpoint: POST /repos/{owner}/{repo}/issues
+    requires_lease: true
+    lease_scope: github.mutate
+
+  - name: close_issue
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    description: Close an existing issue
+    endpoint: PATCH /repos/{owner}/{repo}/issues/{number}
+    requires_lease: true
+    lease_scope: github.mutate
+
+  - name: create_pr
+    class: MUTATE
+    blast_radius: MEDIUM
+    reversible: true
+    description: Create a pull request
+    endpoint: POST /repos/{owner}/{repo}/pulls
+    requires_lease: true
+    lease_scope: github.mutate
+
+  - name: create_branch
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    description: Create a new branch
+    endpoint: POST /repos/{owner}/{repo}/git/refs
+    requires_lease: true
+    lease_scope: github.mutate
+
+  - name: create_or_update_file
+    class: MUTATE
+    blast_radius: MEDIUM
+    reversible: true
+    description: Create or update a file
+    endpoint: PUT /repos/{owner}/{repo}/contents/{path}
+    requires_lease: true
+    lease_scope: github.mutate
+
+  - name: add_issue_comment
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    description: Comment on an issue or PR
+    endpoint: POST /repos/{owner}/{repo}/issues/{number}/comments
+    requires_lease: true
+    lease_scope: github.mutate
+
+  - name: push_files
+    class: MUTATE
+    blast_radius: MEDIUM
+    reversible: true
+    description: Push multiple files in one commit
+    endpoint: POST /repos/{owner}/{repo}/git/commits
+    requires_lease: true
+    lease_scope: github.mutate
+
+  # IRREVERSIBLE: Short TTL lease + ACK required.
+  - name: merge_pr
+    class: IRREVERSIBLE
+    blast_radius: HIGH
+    reversible: false
+    description: Merge a pull request
+    endpoint: PUT /repos/{owner}/{repo}/pulls/{number}/merge
+    requires_lease: true
+    requires_ack: true
+    requires_witness: true
+    lease_scope: github.merge
+    lease_ttl: 300
+
+  - name: review_pr
+    class: IRREVERSIBLE
+    blast_radius: HIGH
+    reversible: false
+    description: Submit a PR review (APPROVE/REQUEST_CHANGES)
+    endpoint: POST /repos/{owner}/{repo}/pulls/{number}/reviews
+    requires_lease: true
+    requires_ack: true
+    lease_scope: github.merge
+    lease_ttl: 300
+
+# ── Lease Scopes ─────────────────────────────
+leases:
+  - scope: github.read
+    verbs: [search_repos, get_repo, list_issues, list_pull_requests]
+    ttl_default: 3600
+    note: "OBSERVE verbs — no lease actually required. Scope defined for documentation."
+
+  - scope: github.mutate
+    verbs: [create_issue, close_issue, create_pr, create_branch, create_or_update_file, add_issue_comment, push_files]
+    ttl_default: 3600
+    note: "MUTATE verbs — lease required. Reversible operations."
+
+  - scope: github.merge
+    verbs: [merge_pr, review_pr]
+    ttl_default: 300
+    note: "IRREVERSIBLE verbs — short TTL. ACK + witness required."
+
+# ── F1-F13 Gate Matrix ───────────────────────
+gates:
+  pre_execute: [F1_AMANAH, F2_TRUTH, F8_GENIUS]
+  pre_mutate: [F1_AMANAH, F13_SOVEREIGN]
+  pre_irreversible: [F1_AMANAH, F3_WITNESS, F13_SOVEREIGN]
+  post_execute: [F11_AUDIT, F4_CLARITY]
+
+# ── Response Envelope ────────────────────────
+envelope:
+  required_fields:
+    - ok
+    - connector
+    - verb
+    - verdict
+    - evidence_tag
+    - confidence
+    - receipt.timestamp
+  optional_fields:
+    - result
+    - error
+    - lease_id
+    - latency_ms
+    - receipt.sha256

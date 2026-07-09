@@ -1,41 +1,36 @@
-# SESSION SEAL — 2026-07-09
+# Session Seal — 2026-07-09
 
 **Verdict: SEAL**  
-**Session:** `session-2026-07-09-grok-build-seal-close`  
-**Context:** `ctx-session-2026-07-09-grok-build-seal-close`  
-**seal_id:** `sha256:133f7997311093ebf38c6022fa1c6f1f0dcaab35cf75fd2480d74011b49dc877`  
-**Actor:** grok-build (F13 close)  
-**Epoch:** 2026-07-09T00:52:08.457262+00:00
+**chain_head:** `sha256:eaa4c3870eee01ff7021a1da84e91d760e0e13e4fdcb0dd76619d20fe7322ab2`  
+**prev_hash:** `sha256:86bd18ec7e00ca53e8410c6092a9f58ef997629b5c61c3db3bb40f019fb27a1b`  
+**epoch:** 2026-07-09T01:51:23.392Z  
+**actor:** grok-build  
+**actor_source:** sovereign_directive  
+**session_id:** session-2026-07-09-grok-build-onboard-f3-identity  
+**context_id:** ctx-session-2026-07-09-grok-build-onboard-f3-identity  
 
-## Forged this session
-- Digital queue: litellm, GEOX, arifOS drift=false, AAA self-heal thrash
-- 999_RECURSIVE_HARDEN + prompt spine + INIT_TASKS T1–T5
-- Measurement Layer Performance Ledger
-- llms resource map falsify + live static serve
-- WEALTH MWC exact + second_price reserve + majority Shapley
-- Ghost Task lineage lock (session_id mandatory, INV-4)
+## Witness
 
-## T1 organs
-- **arifOS:** healthy
-- **A-FORGE:** healthy
-- **AAA:** healthy
-- **GEOX:** healthy
-- **WEALTH:** ALIVE
-- **WELL:** degraded
-- **litellm:** I'm alive!
+| Channel | Value |
+|---------|--------|
+| human | F13-SOVEREIGN-seal-the-session |
+| ai | grok-build |
+| external | live_health+f3_pulse_3of3+identity_propagation_fix |
 
-- Kernel: status=healthy commit=8136329 drift=True floors=13
-- Chain pre-append: ok=True length=98
-- Commits: {'arifOS': 'a9545e08c', 'AAA': '859b9e44', 'wealth': '77f7f02'}
+## What was sealed (session work)
 
-## Next 000_INIT (T1–T5)
-- **T1** (HIGH): arifOS tool manifest path / manifest.txt
-- **T2** (HIGH): WELL biometrics or formal mock banner
-- **T3** (MEDIUM): 999-seal 2026-07-08 DRAFT doxes if wanted
-- **T4** (MEDIUM): forge_tier_bind unregister + affordance regen
-- **T5** (MEDIUM): A-FORGE resources/list on stateless HTTP
+- Agent onboarding: Hermes, OpenClaw, grok-build (Ed25519 + agent_identities + DID)
+- F3 live pulse **3/3 PASS** (signed arif_init → wealth_compute_irr, IRR 0.218623)
+- Identity-propagation fix (openclaw-anon drop)
+- WEALTH lazy re-attest + `_envelope` strip
+- ARIFOS_ROOTKEY dual-read
+- SFAG stress suite + governance alerts
+- Doctrine path + F3 witness checklist
 
-## TERMINUS
-Ghosts blocked. History kept. Next agent loads carry_forward.init_tasks.
+## Trust tier
 
-*DITEMPA BUKAN DIBERI — the seal is the end and the beginning.*
+All three agents: **OBSERVED** (pulse_count incremented). Not auto-TRUSTED.
+
+## Note
+
+Remote mirror HTTP 422 (local chain intact). Pre-existing chain dual-format may fail `verify` on older segments — new head is SEAL.

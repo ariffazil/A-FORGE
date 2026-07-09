@@ -1,0 +1,47 @@
+{
+  "steps": [
+    {
+      "step": "connect",
+      "status": "SEAL",
+      "endpoint": "http://127.0.0.1:7072/mcp"
+    },
+    {
+      "step": "forge_session_init",
+      "status": "SEAL",
+      "session_id": "SEAL-8a5e827b91f3415c",
+      "kernel_origin": true,
+      "pre_minted_lease": null
+    },
+    {
+      "step": "forge_agent_register",
+      "status": "SEAL",
+      "agent_id": "arif",
+      "note": "forge_agent completed"
+    },
+    {
+      "step": "forge_lease",
+      "status": "SEAL",
+      "lease_id": "LCL-arif-mrcyena3-m361y5",
+      "detail": "forge_lease completed"
+    },
+    {
+      "step": "forge_github",
+      "status": "SEAL",
+      "total": 35,
+      "top": {
+        "name": "ComposioHQ/composio",
+        "stars": 29137,
+        "url": "https://github.com/ComposioHQ/composio"
+      },
+      "chain_hash": "5d7f583305a67116",
+      "duration_ms": 604
+    }
+  ],
+  "t0": "2026-07-09T03:35:17.470Z",
+  "t1": "2026-07-09T03:35:18.205Z",
+  "verdict": "SOVEREIGN_HAND_OK",
+  "contrast": {
+    "composio": "vendor session + OAuth + their audit",
+    "aforge": "session + actor + lease + VAULT/chain receipt"
+  }
+}
