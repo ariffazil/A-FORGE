@@ -1,0 +1,19 @@
+{
+  "seal_type": "session_seal",
+  "date": "2026-07-09",
+  "title": "KERNEL-INHABIT-AUDIT",
+  "verdict": "SEAL_PARTIAL",
+  "audit_closed": false,
+  "zen": "one state machine wearing eleven costumes — forge one truth",
+  "live": {
+    "sct_format": "sct_v1",
+    "sct_wired": ["arif_init", "arif_triage", "arif_observe"],
+    "sct_not_wired": ["arif_think", "arif_critique", "arif_judge", "arif_forge", "arif_seal", "arif_memory", "arif_compose"],
+    "birth_dual_source_sovereign_lie": "closed",
+    "apex_at_birth": "UNMEASURED",
+    "parallel_module": "capability_token.py (unwired — merge into sct)"
+  },
+  "commits": ["29e18b8df", "a6393cbff"],
+  "next_session": "spine_p0_inhabit_full_loop",
+  "score_estimate": {"current": 26, "birth_only": 32, "full_fix": 51, "max": 60}
+}
