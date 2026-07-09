@@ -109,6 +109,13 @@ const STATELESS_TOOLS = new Set([
   "forge_fetch_metadata", // proxy → forge_fetch(mode=metadata)
   "forge_fetch_links",    // proxy → forge_fetch(mode=links)
 
+  // ── Viz OBSERVE (2026-07-09) — pure render from payload, no host mutation ──
+  // Multi-step GEOX workflows over Streamable HTTP were blocked with
+  // "requires session ownership" (-32000). forge_chart is OBSERVE-class:
+  // data in → SVG out. Session continuity is optional (session_id param),
+  // not a transport ownership requirement.
+  "forge_chart",
+
   // ── GitHub OBSERVE (2026-07-09) — search/read only; multi-client HTTP ──
   // MUTATE github (create_issue/pr/file) stays session-owned. R0 OBSERVE
   // search must not require transport session ownership — same class as forge_fetch.
