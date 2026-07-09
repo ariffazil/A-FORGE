@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-09T11:05:46Z",
+  "generated_at": "2026-07-09T11:07:20Z",
   "actor": "grok-build",
   "sovereign": "Arif F13",
   "intent": "Spine P0 release wrap \u2014 sct_v1 inhabit + audit removal + SOT/deploy",
@@ -27,7 +27,8 @@
       "arif_act": "internal_only",
       "store_delete_loop": "proven"
     },
-    "runtime_drift": true
+    "runtime_drift": false,
+    "commit_short7": "2fc0089"
   },
   "units": {
     "arifos": "active",
@@ -57,5 +58,6 @@
     "AAA deprecation-registry.json",
     "AGENTS.md SOT spine_p0",
     "GitHub tag+release v2026.07.09"
-  ]
+  ],
+  "owner_summary": "GREEN"
 }
