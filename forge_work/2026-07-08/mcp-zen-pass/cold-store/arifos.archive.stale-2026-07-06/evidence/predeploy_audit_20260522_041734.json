@@ -1,0 +1,95 @@
+{
+  "skill": "predeploy_audit",
+  "status": "HOLD",
+  "timestamp_utc": "2026-05-22T04:17:39Z",
+  "evidence": {
+    "compose_valid": true,
+    "healthcheck_pass": true,
+    "missing_healthchecks": [],
+    "public_port_pass": true,
+    "exposed_db_ports": [],
+    "image_tag_pass": false,
+    "latest_images": [
+  "aaa-a2a:ghcr.io/ariffazil/aaa-a2a:latest",
+  "nats:nats:latest",
+  "qdrant:qdrant/qdrant:latest",
+  "headless_browser:ghcr.io/browserless/chromium:latest",
+  "graphiti-mcp:zepai/knowledge-graph-mcp:latest",
+  "ollama:ollama/ollama:latest",
+  "vaultwarden:vaultwarden/server:latest",
+  "uptime-kuma:louislam/uptime-kuma:latest",
+  "netdata:netdata/netdata:latest"
+],
+    "no_digest_images": [
+  "arifosmcp:ghcr.io/ariffazil/arifos:eureka-000-init",
+  "geox:ghcr.io/ariffazil/geox:aac9ce43",
+  "wealth-organ:ghcr.io/ariffazil/wealth:087c159",
+  "aaa-a2a:ghcr.io/ariffazil/aaa-a2a:latest",
+  "postgres:pgvector/pgvector:pg16",
+  "redis:redis:7-alpine",
+  "nats:nats:latest",
+  "qdrant:qdrant/qdrant:latest",
+  "headless_browser:ghcr.io/browserless/chromium:latest",
+  "graphiti-mcp:zepai/knowledge-graph-mcp:latest",
+  "loki:grafana/loki:3.4.2",
+  "promtail:grafana/promtail:2.9.6",
+  "grafana:grafana/grafana:12.0.2",
+  "ollama:ollama/ollama:latest",
+  "vault999:compose-vault999:v1.0.0",
+  "vault999-writer:compose-vault999-writer:v1.0.0",
+  "forge-notifier:compose-forge-notifier:v1.0.0",
+  "well:ghcr.io/ariffazil/well:a76c6ff",
+  "apex-prime:apex-prime:v1.0.5",
+  "vaultwarden:vaultwarden/server:latest",
+  "uptime-kuma:louislam/uptime-kuma:latest",
+  "netdata:netdata/netdata:latest"
+],
+    "drift_pass": true,
+    "live_mounts": [],
+    "import_truth_pass": false,
+    "caddy_pass": true,
+    "registry_pass": true,
+    "git_commit": "2311eb1ed4be767c453bcef1d1770c714dcf33da",
+    "git_branch": "main",
+    "tool_registry_hash": "b3398ef126760352a176cb01d9f101ae1ef25ad53c9834ba9eca54edbd26ac8e",
+    "constitutional_map_hash": "ea496e1f58effc30942b022de9d361a427ad05f67babc1f4187412b8bf343ac4",
+    "schema_hash": "f0df3c9757c54caddb229fd041ac6acf5a390e87bbf001b3447701c4be3035f9",
+    "policy_rules": [
+  {
+    "rule": "no_service_without_healthcheck",
+    "status": "pass"
+  },
+  {
+    "rule": "no_public_db_ports",
+    "status": "pass"
+  },
+  {
+    "rule": "no_deploy_without_import_truth",
+    "status": "violated"
+  },
+  {
+    "rule": "no_latest_tag_in_production",
+    "status": "violated"
+  },
+  {
+    "rule": "no_live_mount_in_production",
+    "status": "pass"
+  }
+]
+  },
+  "reasons": [
+  "image_uses_latest:aaa-a2a:ghcr.io/ariffazil/aaa-a2a:latest",
+  "image_uses_latest:nats:nats:latest",
+  "image_uses_latest:qdrant:qdrant/qdrant:latest",
+  "image_uses_latest:headless_browser:ghcr.io/browserless/chromium:latest",
+  "image_uses_latest:graphiti-mcp:zepai/knowledge-graph-mcp:latest",
+  "image_uses_latest:ollama:ollama/ollama:latest",
+  "image_uses_latest:vaultwarden:vaultwarden/server:latest",
+  "image_uses_latest:uptime-kuma:louislam/uptime-kuma:latest",
+  "image_uses_latest:netdata:netdata/netdata:latest",
+  "import_truth_not_pass:HOLD"
+],
+  "risk": "MEDIUM",
+  "next_safe_action": "resolve_audit_findings_before_deploy",
+  "requires_arif": true
+}

@@ -1,0 +1,311 @@
+{
+  "invalid_cases": [
+    {
+      "case_id": "INVALID_001",
+      "description": "Missing actor_id — identity field cannot be blank",
+      "expected_failure": "actor_id is required and minLength=1",
+      "receipt": {
+        "receipt_id": "receipt_invalid001actor",
+        "session_id": "sess_f8e7d6c5b4a39281",
+        "actor_id": "",
+        "principal_id": "ARIF",
+        "operator_id": "agent_FORGE_000",
+        "agent_id": "FORGE_000",
+        "tool_id": "geox_compute",
+        "organ": "GEOX",
+        "tool_name": "geox_compute",
+        "action_class": "COMPUTE",
+        "authority_scope": "compute",
+        "input_hash": "a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8",
+        "output_hash": "b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9",
+        "timestamp": "2026-07-07T14:30:00Z",
+        "epistemic_status": "DER",
+        "evidence_layer": "L2_VERIFIED_STATE",
+        "authority_claim": "ADVISORY",
+        "reversibility": "REVERSIBLE",
+        "mutation": {
+          "type": "none",
+          "scope": "local",
+          "reversible": true,
+          "rollback_path": null
+        },
+        "external_side_effect": {
+          "present": false,
+          "description": null,
+          "blast_radius": "LOW"
+        },
+        "witnesses": [
+          {
+            "witness_id": "w_trace_001",
+            "witness_type": "EXECUTION_TRACE",
+            "independence_class": "SAME_TOOL",
+            "signature": null,
+            "evidence": "Tool executed."
+          }
+        ],
+        "dependencies": [],
+        "floor_results": {
+          "F1": {"status": "PASS", "reason": "Reversible."},
+          "F2": {"status": "PASS", "reason": "L2 declared."},
+          "F3": {"status": "PASS", "reason": "Aligned."},
+          "F4": {"status": "PASS", "reason": "Explicit."},
+          "F5": {"status": "PASS", "reason": "No escalation."},
+          "F6": {"status": "PASS", "reason": "Dignity preserved."},
+          "F7": {"status": "PASS", "reason": "Unknowns declared."},
+          "F8": {"status": "PASS", "reason": "Safe."},
+          "F9": {"status": "PASS", "reason": "No hallucination."},
+          "F10": {"status": "PASS", "reason": "No false claims."},
+          "F11": {"status": "PASS", "reason": "Authority sufficient."},
+          "F12": {"status": "PASS", "reason": "No bypass."},
+          "F13": {"status": "PASS", "reason": "No veto required."}
+        },
+        "verdict_request": {"requested": false, "reason": null},
+        "vault999_status": "NONE"
+      }
+    },
+    {
+      "case_id": "INVALID_002",
+      "description": "Missing agent_id — identity field cannot be blank",
+      "expected_failure": "agent_id is required and minLength=1",
+      "receipt": {
+        "receipt_id": "receipt_invalid002agent",
+        "session_id": "sess_f8e7d6c5b4a39281",
+        "actor_id": "actor_arif_sovereign",
+        "principal_id": "ARIF",
+        "operator_id": "agent_FORGE_000",
+        "agent_id": "",
+        "tool_id": "geox_compute",
+        "organ": "GEOX",
+        "tool_name": "geox_compute",
+        "action_class": "COMPUTE",
+        "authority_scope": "compute",
+        "input_hash": "a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8",
+        "output_hash": "b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9",
+        "timestamp": "2026-07-07T14:30:00Z",
+        "epistemic_status": "DER",
+        "evidence_layer": "L2_VERIFIED_STATE",
+        "authority_claim": "ADVISORY",
+        "reversibility": "REVERSIBLE",
+        "mutation": {
+          "type": "none",
+          "scope": "local",
+          "reversible": true,
+          "rollback_path": null
+        },
+        "external_side_effect": {
+          "present": false,
+          "description": null,
+          "blast_radius": "LOW"
+        },
+        "witnesses": [
+          {
+            "witness_id": "w_trace_002",
+            "witness_type": "EXECUTION_TRACE",
+            "independence_class": "SAME_TOOL",
+            "signature": null,
+            "evidence": "Tool executed."
+          }
+        ],
+        "dependencies": [],
+        "floor_results": {
+          "F1": {"status": "PASS", "reason": "Reversible."},
+          "F2": {"status": "PASS", "reason": "L2 declared."},
+          "F3": {"status": "PASS", "reason": "Aligned."},
+          "F4": {"status": "PASS", "reason": "Explicit."},
+          "F5": {"status": "PASS", "reason": "No escalation."},
+          "F6": {"status": "PASS", "reason": "Dignity preserved."},
+          "F7": {"status": "PASS", "reason": "Unknowns declared."},
+          "F8": {"status": "PASS", "reason": "Safe."},
+          "F9": {"status": "PASS", "reason": "No hallucination."},
+          "F10": {"status": "PASS", "reason": "No false claims."},
+          "F11": {"status": "PASS", "reason": "Authority sufficient."},
+          "F12": {"status": "PASS", "reason": "No bypass."},
+          "F13": {"status": "PASS", "reason": "No veto required."}
+        },
+        "verdict_request": {"requested": false, "reason": null},
+        "vault999_status": "NONE"
+      }
+    },
+    {
+      "case_id": "INVALID_003",
+      "description": "Missing witness on SEAL_REQUEST — witnesses must be non-empty",
+      "expected_failure": "witnesses minItems=1 when authority_claim is SEAL_REQUEST",
+      "receipt": {
+        "receipt_id": "receipt_invalid003witness",
+        "session_id": "sess_f8e7d6c5b4a39281",
+        "actor_id": "actor_arif_sovereign",
+        "principal_id": "ARIF",
+        "operator_id": "agent_FORGE_000",
+        "agent_id": "FORGE_000",
+        "tool_id": "arif_seal",
+        "organ": "arifOS",
+        "tool_name": "arif_seal",
+        "action_class": "SEAL_REQUEST",
+        "authority_scope": "seal_request",
+        "input_hash": "a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8",
+        "output_hash": "b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9",
+        "timestamp": "2026-07-07T14:30:00Z",
+        "epistemic_status": "DER",
+        "evidence_layer": "L2_VERIFIED_STATE",
+        "authority_claim": "SEAL_REQUEST",
+        "reversibility": "IRREVERSIBLE",
+        "mutation": {
+          "type": "vault",
+          "scope": "federation",
+          "reversible": false,
+          "rollback_path": null
+        },
+        "external_side_effect": {
+          "present": true,
+          "description": "Seal request to VAULT999.",
+          "blast_radius": "CRITICAL"
+        },
+        "witnesses": [],
+        "dependencies": [],
+        "floor_results": {
+          "F1": {"status": "HOLD", "reason": "Irreversible action."},
+          "F2": {"status": "PASS", "reason": "L2 declared."},
+          "F3": {"status": "PASS", "reason": "Aligned."},
+          "F4": {"status": "PASS", "reason": "Explicit."},
+          "F5": {"status": "PASS", "reason": "No escalation."},
+          "F6": {"status": "PASS", "reason": "Dignity preserved."},
+          "F7": {"status": "PASS", "reason": "Unknowns declared."},
+          "F8": {"status": "PASS", "reason": "Safe."},
+          "F9": {"status": "PASS", "reason": "No hallucination."},
+          "F10": {"status": "PASS", "reason": "No false claims."},
+          "F11": {"status": "PASS", "reason": "Authority sufficient."},
+          "F12": {"status": "PASS", "reason": "No bypass."},
+          "F13": {"status": "HOLD", "reason": "Irreversible requires F13 approval."}
+        },
+        "verdict_request": {"requested": true, "reason": "Requesting seal."},
+        "vault999_status": "REQUESTED"
+      }
+    },
+    {
+      "case_id": "INVALID_004",
+      "description": "L1_GROUND_TRUTH without vault999_status SEALED — L1 requires VAULT999 receipt",
+      "expected_failure": "vault999_status must be SEALED when evidence_layer is L1_GROUND_TRUTH",
+      "receipt": {
+        "receipt_id": "receipt_invalid004l1seal",
+        "session_id": "sess_f8e7d6c5b4a39281",
+        "actor_id": "actor_arif_sovereign",
+        "principal_id": "ARIF",
+        "operator_id": "agent_FORGE_000",
+        "agent_id": "FORGE_000",
+        "tool_id": "geox_compute",
+        "organ": "GEOX",
+        "tool_name": "geox_compute",
+        "action_class": "COMPUTE",
+        "authority_scope": "compute",
+        "input_hash": "a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8",
+        "output_hash": "b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9",
+        "timestamp": "2026-07-07T14:30:00Z",
+        "epistemic_status": "OBS",
+        "evidence_layer": "L1_GROUND_TRUTH",
+        "authority_claim": "ADVISORY",
+        "reversibility": "REVERSIBLE",
+        "mutation": {
+          "type": "none",
+          "scope": "local",
+          "reversible": true,
+          "rollback_path": null
+        },
+        "external_side_effect": {
+          "present": false,
+          "description": null,
+          "blast_radius": "LOW"
+        },
+        "witnesses": [
+          {
+            "witness_id": "w_trace_004",
+            "witness_type": "EXECUTION_TRACE",
+            "independence_class": "SAME_TOOL",
+            "signature": null,
+            "evidence": "Tool executed."
+          }
+        ],
+        "dependencies": [],
+        "floor_results": {
+          "F1": {"status": "PASS", "reason": "Reversible."},
+          "F2": {"status": "PASS", "reason": "L1 declared."},
+          "F3": {"status": "PASS", "reason": "Aligned."},
+          "F4": {"status": "PASS", "reason": "Explicit."},
+          "F5": {"status": "PASS", "reason": "No escalation."},
+          "F6": {"status": "PASS", "reason": "Dignity preserved."},
+          "F7": {"status": "PASS", "reason": "Unknowns declared."},
+          "F8": {"status": "PASS", "reason": "Safe."},
+          "F9": {"status": "PASS", "reason": "No hallucination."},
+          "F10": {"status": "PASS", "reason": "No false claims."},
+          "F11": {"status": "PASS", "reason": "Authority sufficient."},
+          "F12": {"status": "PASS", "reason": "No bypass."},
+          "F13": {"status": "PASS", "reason": "No veto required."}
+        },
+        "verdict_request": {"requested": false, "reason": null},
+        "vault999_status": "NONE"
+      }
+    },
+    {
+      "case_id": "INVALID_005",
+      "description": "SEALED by non-VAULT999 owner — only VAULT999 may emit SEALED",
+      "expected_failure": "organ must be VAULT999 when vault999_status is SEALED",
+      "receipt": {
+        "receipt_id": "receipt_invalid005sealed",
+        "session_id": "sess_f8e7d6c5b4a39281",
+        "actor_id": "actor_arif_sovereign",
+        "principal_id": "ARIF",
+        "operator_id": "agent_FORGE_000",
+        "agent_id": "FORGE_000",
+        "tool_id": "geox_compute",
+        "organ": "GEOX",
+        "tool_name": "geox_compute",
+        "action_class": "COMPUTE",
+        "authority_scope": "compute",
+        "input_hash": "a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8a1b2c3d4e5f6g7h8",
+        "output_hash": "b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9b2c3d4e5f6g7h8i9",
+        "timestamp": "2026-07-07T14:30:00Z",
+        "epistemic_status": "OBS",
+        "evidence_layer": "L1_GROUND_TRUTH",
+        "authority_claim": "SEALED_RECEIPT",
+        "reversibility": "IRREVERSIBLE",
+        "mutation": {
+          "type": "vault",
+          "scope": "federation",
+          "reversible": false,
+          "rollback_path": null
+        },
+        "external_side_effect": {
+          "present": true,
+          "description": "Claiming sealed receipt.",
+          "blast_radius": "CRITICAL"
+        },
+        "witnesses": [
+          {
+            "witness_id": "w_vault999_005",
+            "witness_type": "VAULT999_RECEIPT",
+            "independence_class": "VAULT999",
+            "signature": "fake_signature",
+            "evidence": "Claimed vault receipt."
+          }
+        ],
+        "dependencies": [],
+        "floor_results": {
+          "F1": {"status": "HOLD", "reason": "Irreversible."},
+          "F2": {"status": "PASS", "reason": "L1 declared."},
+          "F3": {"status": "PASS", "reason": "Aligned."},
+          "F4": {"status": "PASS", "reason": "Explicit."},
+          "F5": {"status": "PASS", "reason": "No escalation."},
+          "F6": {"status": "PASS", "reason": "Dignity preserved."},
+          "F7": {"status": "PASS", "reason": "Unknowns declared."},
+          "F8": {"status": "PASS", "reason": "Safe."},
+          "F9": {"status": "PASS", "reason": "No hallucination."},
+          "F10": {"status": "PASS", "reason": "No false claims."},
+          "F11": {"status": "PASS", "reason": "Authority sufficient."},
+          "F12": {"status": "PASS", "reason": "No bypass."},
+          "F13": {"status": "HOLD", "reason": "Irreversible requires F13 approval."}
+        },
+        "verdict_request": {"requested": true, "reason": "Requesting seal confirmation."},
+        "vault999_status": "SEALED"
+      }
+    }
+  ]
+}

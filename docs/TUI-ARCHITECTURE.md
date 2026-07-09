@@ -12,7 +12,7 @@
 
 This document describes the **constitutional architecture** of the A-FORGE Terminal User Interface (TUI) — a real-time operations dashboard for forge job monitoring, governance floor status, federation organ health, and execution logs.
 
-**Critical distinction:** The TUI is a **witness surface**, not a judge. It observes and displays state emitted by the arifOS kernel and federation organs. It never calls `arif_judge_deliberate`, `arif_vault_seal`, or `arif_forge_execute`. It is the terminal-native complement to the AAA cockpit (React, port 3001).
+**Critical distinction:** The TUI is a **witness surface**, not a judge. It observes and displays state emitted by the arifOS kernel and federation organs. It never calls `arif_judge`, `arif_seal`, or `arif_forge_execute`. It is the terminal-native complement to the AAA cockpit (React, port 3001).
 
 **Eureka Insights (forged this session):**
 
@@ -192,7 +192,7 @@ function update(model: TuiModel, msg: TuiMessage): TuiModel {
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-**Agent rule:** No code in the TUI layer ever calls `arif_judge_deliberate`, `arif_vault_seal`, or `arif_forge_execute`. The TUI is a *reader* of the kernel, not an *actor*.
+**Agent rule:** No code in the TUI layer ever calls `arif_judge`, `arif_seal`, or `arif_forge_execute`. The TUI is a *reader* of the kernel, not an *actor*.
 
 ---
 
@@ -295,8 +295,8 @@ type SseEvent =
 
 | Action | Why | Consequence |
 |--------|-----|-------------|
-| Calling `arif_judge_deliberate` from TUI | TUI is witness, not judge | Bypasses 888_JUDGE gate |
-| Calling `arif_vault_seal` from TUI | TUI has no authority to seal | Forges unsigned ledger entries |
+| Calling `arif_judge` from TUI | TUI is witness, not judge | Bypasses 888_JUDGE gate |
+| Calling `arif_seal` from TUI | TUI has no authority to seal | Forges unsigned ledger entries |
 | Calling `arif_forge_execute` from TUI | TUI cannot mutate execution state | Bypasses F1 reversibility |
 | Inferring floor pass/fail locally | Only arifOS kernel can judge floors | F9 ANTI-HANTU violation |
 | Direct mutation of model (not via Msg) | Violates MVU contract | Hidden state, no audit trail |
@@ -365,7 +365,7 @@ forge_pipeline(task="Evaluate Malay Basin prospect X", mode="full", hold_id="...
 
 ### Constitutional
 - **observe** mode is always allowed (read-only classification)
-- **full** mode requires `hold_id` from arif_judge_deliberate (F13 gate)
+- **full** mode requires `hold_id` from arif_judge (F13 gate)
 - Pipeline never calls organs outside their lane (GEOX for earth, WEALTH for capital, etc.)
 - Errors in one organ don't block others (best-effort per stage)
 

@@ -1,0 +1,284 @@
+{
+  "timestamp": "2026-06-16T20:55:30.112832+00:00",
+  "truth_layer": "L2_VERIFIED_STATE",
+  "overall_verdict": "GREEN_WITH_GAPS",
+  "organs": [
+    {
+      "organ": {
+        "key": "arifOS",
+        "name": "arifOS",
+        "role": "constitutional_kernel",
+        "expected_tools": 13,
+        "localhost": "http://127.0.0.1:8088",
+        "public": "https://arifos.arif-fazil.com",
+        "mcp_path": "/mcp",
+        "freshness_required": false
+      },
+      "health": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 11.28,
+        "raw_status": "healthy",
+        "version": "kanon-5c27359",
+        "freshness": {
+          "status": "fresh",
+          "checked_at_utc": "2026-06-16T20:55:20.118760+00:00",
+          "source_timestamp_utc": "2026-06-16T20:55:20.118762+00:00",
+          "age_seconds": 0,
+          "max_fresh_age_seconds": 60,
+          "stale_after_seconds": 300,
+          "expired_after_seconds": 3600
+        },
+        "truth_status": null,
+        "error": null
+      },
+      "tools": {
+        "ok": true,
+        "count": 39,
+        "source": "mcp_tools/list"
+      },
+      "public": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 80.42,
+        "raw_status": "healthy",
+        "error": null
+      },
+      "verdict": "DEGRADED"
+    },
+    {
+      "organ": {
+        "key": "GEOX",
+        "name": "GEOX",
+        "role": "earth_evidence",
+        "expected_tools": 40,
+        "localhost": "http://127.0.0.1:8081",
+        "public": "https://geox.arif-fazil.com",
+        "mcp_path": "/mcp/",
+        "freshness_required": false
+      },
+      "health": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 16.08,
+        "raw_status": "healthy",
+        "version": "v2026.06.05",
+        "freshness": {
+          "status": "fresh",
+          "checked_at_utc": "geox-c2d8771a",
+          "source_timestamp_utc": "geox-c2d8771a",
+          "age_seconds": 0,
+          "max_fresh_age_seconds": 60,
+          "stale_after_seconds": 300,
+          "expired_after_seconds": 3600
+        },
+        "truth_status": null,
+        "error": null
+      },
+      "tools": {
+        "ok": true,
+        "count": 40,
+        "source": "mcp_tools/list"
+      },
+      "public": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 86.7,
+        "raw_status": "healthy",
+        "error": null
+      },
+      "verdict": "PASS"
+    },
+    {
+      "organ": {
+        "key": "WEALTH",
+        "name": "WEALTH",
+        "role": "capital_compute",
+        "expected_tools": 20,
+        "localhost": "http://127.0.0.1:18082",
+        "public": "https://wealth.arif-fazil.com",
+        "mcp_path": "/mcp",
+        "freshness_required": false
+      },
+      "health": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 2.11,
+        "raw_status": "ALIVE",
+        "version": "2026.06.15",
+        "freshness": null,
+        "truth_status": null,
+        "error": null
+      },
+      "tools": {
+        "ok": true,
+        "count": 21,
+        "source": "mcp_tools/list"
+      },
+      "public": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 67.38,
+        "raw_status": "ALIVE",
+        "error": null
+      },
+      "verdict": "DEGRADED"
+    },
+    {
+      "organ": {
+        "key": "WELL",
+        "name": "WELL",
+        "role": "human_readiness_reflect_only",
+        "expected_tools": 17,
+        "localhost": "http://127.0.0.1:18083",
+        "public": "https://well.arif-fazil.com",
+        "mcp_path": "/mcp",
+        "freshness_required": true
+      },
+      "health": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 2.94,
+        "raw_status": "healthy",
+        "version": "2026.05.15-ΩWELL+GWELL+FEDERATION",
+        "freshness": {
+          "status": "expired",
+          "checked_at_utc": "2026-06-16T20:55:30.428644+00:00",
+          "source_timestamp_utc": "2026-06-16T18:50:00+00:00",
+          "age_seconds": 7530.4,
+          "max_fresh_age_seconds": 3600,
+          "stale_after_seconds": 14400,
+          "expired_after_seconds": 86400
+        },
+        "truth_status": "INSUFFICIENT_DATA",
+        "error": null
+      },
+      "tools": {
+        "ok": true,
+        "count": 18,
+        "source": "mcp_tools/list"
+      },
+      "public": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 228.74,
+        "raw_status": "healthy",
+        "error": null
+      },
+      "verdict": "DEGRADED"
+    },
+    {
+      "organ": {
+        "key": "AAA",
+        "name": "AAA",
+        "role": "cockpit_a2a",
+        "expected_tools": null,
+        "localhost": "http://127.0.0.1:3001",
+        "public": "https://aaa.arif-fazil.com",
+        "mcp_path": null,
+        "freshness_required": false
+      },
+      "health": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 61.76,
+        "raw_status": "healthy",
+        "version": "1.0.0",
+        "freshness": null,
+        "truth_status": null,
+        "error": null
+      },
+      "tools": {
+        "ok": false,
+        "count": null,
+        "source": null,
+        "error": "organ has no MCP tool surface"
+      },
+      "public": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 248.9,
+        "raw_status": "healthy",
+        "error": null
+      },
+      "verdict": "PASS"
+    },
+    {
+      "organ": {
+        "key": "A-FORGE",
+        "name": "A-FORGE",
+        "role": "governed_execution",
+        "expected_tools": 59,
+        "localhost": "http://127.0.0.1:7071",
+        "public": null,
+        "mcp_path": "/mcp",
+        "freshness_required": false
+      },
+      "health": {
+        "reachable": true,
+        "status_code": 200,
+        "latency_ms": 1.68,
+        "raw_status": "healthy",
+        "version": "0.1.0",
+        "freshness": {
+          "status": "fresh",
+          "checked_at_utc": "2026-06-16T20:55:30.979Z",
+          "source_timestamp_utc": "2026-06-16T20:55:30.979Z",
+          "age_seconds": 0,
+          "max_fresh_age_seconds": 60,
+          "stale_after_seconds": 300,
+          "expired_after_seconds": 3600
+        },
+        "truth_status": null,
+        "error": null
+      },
+      "tools": {
+        "ok": true,
+        "count": 59,
+        "source": "forge_metadata",
+        "metadata": {
+          "service": "A-FORGE",
+          "version": "0.1.0",
+          "protocol_version": "2025-03-26",
+          "mcp_endpoint": "/mcp",
+          "health_endpoint": "/health",
+          "contract_url": "/contract",
+          "tool_count": 59
+        }
+      },
+      "public": {
+        "reachable": null,
+        "note": "no public endpoint configured"
+      },
+      "verdict": "PASS"
+    }
+  ],
+  "known_gaps": [
+    {
+      "id": "GAP-001",
+      "severity": "high",
+      "domain": "A-FORGE",
+      "description": "A-FORGE lease gate is self-issued; must become kernel-issued before broad autonomous mutation."
+    },
+    {
+      "id": "GAP-002",
+      "severity": "medium",
+      "domain": "WELL",
+      "description": "WELL live human-state telemetry is stale / INSUFFICIENT_DATA."
+    },
+    {
+      "id": "GAP-003",
+      "severity": "medium",
+      "domain": "arifOS",
+      "description": "arifOS CONTEXT.md and RUNBOOK.md are missing or incomplete."
+    },
+    {
+      "id": "GAP-004",
+      "severity": "low",
+      "domain": "A-FORGE",
+      "description": "A-FORGE public HTTPS ingress is not configured (public endpoint unavailable)."
+    }
+  ],
+  "probe_version": "1.0.0",
+  "probe_source": "scripts/federation_reality_probe.py"
+}

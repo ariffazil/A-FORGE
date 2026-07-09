@@ -85,7 +85,7 @@ The factory automatically inserts veto points based on four rules:
 
 | Rule | Condition | Floor | Human required? |
 |------|-----------|-------|-----------------|
-| **R1: F1 AMANAH** | Task is on F1 surface (`arif_vault_seal`, `arif_forge_execute`, `arif_judge_deliberate`) | F1 | ✅ yes |
+| **R1: F1 AMANAH** | Task is on F1 surface (`arif_seal`, `arif_forge_execute`, `arif_judge`) | F1 | ✅ yes |
 | **R2: F13 SOVEREIGN risk** | Task `risk_tier >= HIGH` (after sensitivity adjustment) | F13 | ✅ yes |
 | **R3: F13 ALWAYS_HOLD** | Task tool name is in `ALWAYS_HOLD_ACTIONS` (e.g., `DROP DATABASE`, `rm -rf /`) | F13 | ✅ yes |
 | **R4: 888_HOLD trigger** | Task triggers HOLD per `triggersHold(tool, sensitivity)` from OutcomeSpec | F13 | ✅ yes |
@@ -111,11 +111,11 @@ The factory automatically inserts veto points based on four rules:
 │  ↓                                                              │
 │  arifOS WorkflowEngine (Python) — zero-LLM execution            │
 │  ↓                                                              │
-│  arif_judge_deliberate (arifOS MCP) — seals the plan            │
+│  arif_judge (arifOS MCP) — seals the plan            │
 │  ↓ judge_verdict=SEAL, judge_state_hash=<hash>                 │
 │  Plan (APPROVED) → executor runs                                │
 │  ↓                                                              │
-│  arif_vault_seal — seals the result                             │
+│  arif_seal — seals the result                             │
 │  ↓                                                              │
 │  VAULT999 (L6 ledger)                                           │
 └─────────────────────────────────────────────────────────────────┘
@@ -139,7 +139,7 @@ The factory automatically inserts veto points based on four rules:
 
 - ❌ Does NOT issue SEAL/VOID/HOLD verdicts (arifOS only)
 - ❌ Does NOT execute geoscience/economic logic (GEOX/WEALTH only)
-- ❌ Does NOT write to VAULT999 directly (arifOS `arif_vault_seal` only)
+- ❌ Does NOT write to VAULT999 directly (arifOS `arif_seal` only)
 - ❌ Does NOT bypass FloorEnforcer
 
 ### Internal MCP tool exposure
@@ -191,7 +191,7 @@ The factory automatically inserts veto points based on four rules:
 - **Plan persistence to L1/L2/L3** (v0.1 in-memory)
 - **Temporal-style durable execution** (v0.1: plan exists, A-FORGE runs it; v0.3+: Temporal integration per W11)
 - **DB storage of plans** (v0.1: returned to caller; v0.3+: stored)
-- **VAULT999 auto-promotion of plans** (v0.1: caller hands receipt to `arif_vault_seal`; v0.3+: automatic on plan_state=APPROVED)
+- **VAULT999 auto-promotion of plans** (v0.1: caller hands receipt to `arif_seal`; v0.3+: automatic on plan_state=APPROVED)
 - **State machine enforcement** (v0.1: plan_state is a field; transitions are unenforced; v0.3+: state machine in `src/governance/planStateMachine.ts`)
 - **Plan modification API** (v0.1: build once; v0.2+: `arifos_plan_modify` for approved plans under F13)
 
@@ -203,7 +203,7 @@ The factory automatically inserts veto points based on four rules:
 |---|------|---------------|
 | W2.1 | Linear plan, 1 reversible task | Baseline: no veto, DRAFT, judge=HOLD |
 | W2.2 | Branching plan, diamond DAG | Edges derived from depends_on, deduplication |
-| W2.3 | Irreversible: `arif_vault_seal` | F1 AMANAH veto inserted, risk=CRITICAL |
+| W2.3 | Irreversible: `arif_seal` | F1 AMANAH veto inserted, risk=CRITICAL |
 | W2.4 | SOVEREIGN sensitivity | Plan-level F13 veto, inserted at first task |
 | W2.5 | HIGH sensitivity + MEDIUM tool | Risk bumped to HIGH → F13 veto |
 | W2.6 | Aggregation: reversibility + risk | `mixed` reversibility, `max(risk)` |
@@ -220,11 +220,11 @@ The W2 Plan output is **the contract** between A-FORGE and arifOS:
 
 | A-FORGE produces | arifOS receives | arifOS does |
 |------------------|-----------------|-------------|
-| `Plan` object (JSON) | via A2A or MCP | Routes through `arif_judge_deliberate` (SEAL/HOLD/VOID) |
+| `Plan` object (JSON) | via A2A or MCP | Routes through `arif_judge` (SEAL/HOLD/VOID) |
 | `plan_id`, `mission_id` | as envelope fields | Enters L2 session thread + L3 Qdrant index |
 | `veto_points[]` | as FloorContext | FloorEnforcer checks each veto before its task |
 | `Task.tool`, `Task.args` | as dispatch spec | WorkflowEngine executor calls the tool via dispatcher |
-| `Task.receipt` (post-exec) | as seal payload | Hand to `arif_vault_seal` for VAULT999 promotion |
+| `Task.receipt` (post-exec) | as seal payload | Hand to `arif_seal` for VAULT999 promotion |
 
 The arifOS Python `WorkflowEngine` (forge at `arifOS/core/workflow/`, 2026-06-07) already accepts plans compatible with this shape. Cross-repo integration is **read-only** (the arifOS engine does not need to change to accept these plans).
 
@@ -234,7 +234,7 @@ The arifOS Python `WorkflowEngine` (forge at `arifOS/core/workflow/`, 2026-06-07
 
 | Layer | Prefix | Tool names |
 |-------|--------|------------|
-| **External MCP (arifOS public 13)** | `arif_` | `arif_session_init`, `arif_sense_observe`, ..., `arif_floor_status` |
+| **External MCP (arifOS public 13)** | `arif_` | `arif_init`, `arif_observe`, ..., `arif_floor_status` |
 | **Internal federation** | `arifos_` | `arifos_workflow_compile`, `arifos_workflow_execute`, `arifos_plan_build` |
 
 This convention is enforced in `arifOS/arifosmcp/runtime/internal_tools.py` (test: `test_internal_tools_use_arifos_prefix`). A-FORGE mirrors the same convention.

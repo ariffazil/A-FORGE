@@ -1,0 +1,78 @@
+{
+  "generated_at": "2026-07-09T00:32:00.569765+00:00",
+  "session_id": "session-2026-07-09-recursive-harden-seal",
+  "init_tasks": [
+    {
+      "id": "T1",
+      "priority": "HIGH",
+      "layer": "resources",
+      "task": "Restore or retarget arifOS tool manifest HTTP path (manifest.txt 404)",
+      "evidence": "curl :8088/manifest.txt \u2192 404",
+      "effort": "30-90 LOC",
+      "first_path": "/root/arifOS/arifosmcp/runtime",
+      "first_lawful_call": "curl -s http://127.0.0.1:8088/health | jq .tool_manifest_url"
+    },
+    {
+      "id": "T2",
+      "priority": "HIGH",
+      "layer": "well",
+      "task": "Refresh WELL biometrics or formalize permanent mock banner in cockpit",
+      "evidence": "state.json STALE/MOCK",
+      "effort": "human + small code",
+      "first_path": "/root/WELL/state.json",
+      "first_lawful_call": "curl -s http://127.0.0.1:18083/health"
+    },
+    {
+      "id": "T3",
+      "priority": "MEDIUM",
+      "layer": "doctrine",
+      "task": "F13 999-seal the three 2026-07-08 DRAFT doxes if canon desired",
+      "evidence": "DRAFT_ONLY overnight brief",
+      "effort": "seal ritual",
+      "first_path": "/root/memory/2026-07-08.md",
+      "first_lawful_call": "read carry_forward init_tasks"
+    },
+    {
+      "id": "T4",
+      "priority": "MEDIUM",
+      "layer": "tools",
+      "task": "Optional: unregister forge_tier_bind + regen A-FORGE affordance cards",
+      "evidence": "prior polish queue",
+      "effort": "1-2h",
+      "first_path": "/root/A-FORGE",
+      "first_lawful_call": "tools/list on :7072"
+    },
+    {
+      "id": "T5",
+      "priority": "MEDIUM",
+      "layer": "tools",
+      "task": "Document or implement A-FORGE resources/list on stateless HTTP",
+      "evidence": "CONTEXT active blocker",
+      "effort": "hours",
+      "first_path": "/root/A-FORGE",
+      "first_lawful_call": "MCP resources/list probe"
+    }
+  ],
+  "future_init_seal_pack": {
+    "top_3_priorities": [
+      "T1 manifest path",
+      "T2 WELL honesty vs live feed",
+      "T3 doctrine 999 if wanted"
+    ],
+    "inspect_first": [
+      "/root/.local/share/arifos/carry_forward.json",
+      "/root/A-FORGE/forge_work/2026-07-09/999-RECURSIVE-HARDEN-SEAL.md",
+      "http://127.0.0.1:8088/health"
+    ],
+    "first_lawful_mcp_or_http": "GET http://127.0.0.1:8088/health then read carry_forward.init_tasks",
+    "proof_anchors": {
+      "arifos_commit": "81363294f",
+      "runtime_drift": false,
+      "floors_active": 13,
+      "seal_prompt_chars": 7265,
+      "prompt_tests": "8 passed (7 registry + runner_dry_run)",
+      "chain_ok": true,
+      "chain_length": 92
+    }
+  }
+}

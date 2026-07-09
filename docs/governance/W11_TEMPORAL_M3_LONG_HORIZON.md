@@ -31,7 +31,7 @@ The 12-hour case is the **target the architecture is being built to safely host*
 - Every figure = a `EPOCH_TASK_COMPLETED` event with `payload.receipt.result_preview` containing the figure
 - Every F13 halt = a `EPOCH_F13_HALTED` event with reason
 - Every checkpoint = a `EpochCheckpoint` with `reason: "PERIODIC"` or `"MANUAL"`
-- Final state = `EPOCH_COMPLETED` event + `arif_vault_seal` of the full run
+- Final state = `EPOCH_COMPLETED` event + `arif_seal` of the full run
 
 ---
 
@@ -47,7 +47,7 @@ The 12-hour case is the **target the architecture is being built to safely host*
 │  ↓ Plan (judge_verdict=SEAL)                                       │
 │  EpochEngine.create(plan)  (W3 — A-FORGE runtime/)                │
 │  ↓ Epoch (state=CREATED)                                            │
-│  arif_judge_deliberate  (arifOS MCP — confirms SEAL)               │
+│  arif_judge  (arifOS MCP — confirms SEAL)               │
 │  ↓                                                                  │
 │  W11 Temporal worker  (durable execution across restarts)         │
 │  │   ↓                                                              │
@@ -61,7 +61,7 @@ The 12-hour case is the **target the architecture is being built to safely host*
 │  │     ├─ EpochEngine.task_started(epoch, task_id)                 │
 │  │     ├─ ... task runs ...                                         │
 │  │     ├─ EpochEngine.task_completed(epoch, task_id, receipt)      │
-│  │     └─ arif_vault_seal(payload=receipt)                          │
+│  │     └─ arif_seal(payload=receipt)                          │
 │  │                                                                 │
 │  │   every N tasks:                                                 │
 │  │     EpochEngine.checkpoint(epoch, "PERIODIC", ...)             │
@@ -212,7 +212,7 @@ This is a SPEC, not an implementation. The W11 forge will need:
 | **Temporal-style scheduler** | New | A scheduler that picks up ACTIVE epochs and runs tasks in order. Could be Temporal, could be a simple asyncio loop |
 | **Checkpoint store** | L4 Supabase | Schema for `epoch_checkpoints` table, with `state_hash` + `last_event_id` + `storage_ref` |
 | **F13 sovereign key** | `/root/compose/sekrits/arifos_sovereign.key` | Ed25519 key for F13 signing (separate from VAULT999 writer key) |
-| **VAULT999 auto-seal of events** | arifOS | A hook that calls `arif_vault_seal` on every EPOCH_* event automatically |
+| **VAULT999 auto-seal of events** | arifOS | A hook that calls `arif_seal` on every EPOCH_* event automatically |
 | **Epoch search/replay UI** | AAA cockpit | A view that shows: state, event log, latest checkpoint, F13 halt status |
 | **Mission lifecycle dashboard** | AAA cockpit | A higher-level view: which missions are ACTIVE, which are F13_HALTED, which are COMPLETED |
 | **F13 notifier integration** | Hermes | A Telegram bot that sends a message when F13 halt fires |

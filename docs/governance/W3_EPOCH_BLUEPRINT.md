@@ -177,7 +177,7 @@ class EpochEngine {
 }
 ```
 
-All operations are **pure functions**. No I/O. No VAULT writes. The caller (an internal agent) is responsible for routing events to `arif_vault_seal`.
+All operations are **pure functions**. No I/O. No VAULT writes. The caller (an internal agent) is responsible for routing events to `arif_seal`.
 
 ---
 
@@ -223,8 +223,8 @@ All operations are **pure functions**. No I/O. No VAULT writes. The caller (an i
 | W3 (A-FORGE) | `Epoch` wrapping the Plan | `src/types/epoch.ts` |
 | A-FORGE execute | Carries `plan_id` + `epoch_id` | (next: integration in `src/server.ts`) |
 | arifOS Python | `WorkflowEngine` consumes the Plan | `arifOS/core/workflow/` |
-| arifOS judge | `arif_judge_deliberate` SEALs the Plan | `arifOS` MCP (port 8088) |
-| arifOS vault | `arif_vault_seal` writes the Event receipts | `arifOS` MCP (port 8088) |
+| arifOS judge | `arif_judge` SEALs the Plan | `arifOS` MCP (port 8088) |
+| arifOS vault | `arif_seal` writes the Event receipts | `arifOS` MCP (port 8088) |
 | W11 Temporal | Resume from checkpoint | (this forge: spec only — see `W11_TEMPORAL_M3_LONG_HORIZON.md`) |
 
 ---
@@ -264,7 +264,7 @@ All operations are **pure functions**. No I/O. No VAULT writes. The caller (an i
 ## 12. What's NOT in W3 v0.1 (For v0.2+ / W11)
 
 - **Persistent epoch storage** (v0.1: in-memory; W11 Temporal will persist to L1/L2/L3/L4)
-- **VAULT999 auto-seal of every event** (v0.1: caller hands event to `arif_vault_seal`; v0.2: automatic on every transition)
+- **VAULT999 auto-seal of every event** (v0.1: caller hands event to `arif_seal`; v0.2: automatic on every transition)
 - **State machine enforcement in the executor** (v0.1: the engine validates; v0.2: the executor will reject illegal transitions at the runtime gate)
 - **F13 sovereign key check** (v0.1: simple string match `actor_id === "arif-fazil"`; v0.2: real F13 signing key)
 - **Cross-organ epoch federation** (v0.1: single-process; v0.2: federated epochs across organs)
