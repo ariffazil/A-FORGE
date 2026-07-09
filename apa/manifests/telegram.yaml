@@ -1,0 +1,374 @@
+# APA Manifest: Telegram (Sovereign Bot API)
+# APA v1.0 — Autonomous Protocol for Applications
+# TELEGRAM IS THE F13 VETO SURFACE. Constitutional weight: CRITICAL.
+# Companion: APA-TELEGRAM-SOVEREIGN-CONNECTOR.md
+
+connector:
+  name: telegram
+  mcp_tool: forge_telegram
+  version: "1.0.0"
+  domain: communication.messenger
+  protocol: telegram_bot_api
+  provider: telegram.org
+  sovereign_weight: CRITICAL
+  note: "Not a standalone bridge — Hermes gateway IS the APA bridge."
+  auth:
+    method: bot_token
+    sources:
+      - env_file: /root/.secrets/vault.flat.env
+      - token_file: /root/.secrets/tokens/telegram-opencode-bot
+    inject: never_in_llm_context
+
+# ── Verb Classification ──────────────────────
+
+commands:
+
+  # OBSERVE: No lease required. Read-only.
+  observe:
+    - /help
+    - /commands
+    - /status
+    - /model[read]
+    - /profile
+    - /usage
+    - /insights
+    - /agents
+    - /skills
+    - /tools
+    - /toolsets
+    - /plugins
+    - /cron
+    - /platforms
+    - /curator
+
+  # MUTATE: Lease telegram.control required.
+  mutate:
+    - name: /model[write]
+      class: MUTATE
+      blast: MEDIUM
+      reversible: true
+      scope: telegram.control
+      act: { dry_run: "validate model name", simulate: "show target model", execute: "swap model", verify: "confirm active model", rollback: "switch back" }
+
+    - name: /reasoning
+      class: MUTATE
+      blast: MEDIUM
+      reversible: true
+      scope: telegram.control
+
+    - name: /verbose
+      class: MUTATE
+      blast: LOW
+      reversible: true
+      scope: telegram.control
+
+    - name: /yolo
+      class: MUTATE
+      blast: HIGH
+      reversible: true
+      scope: telegram.control
+      requires_ack: recommended
+      note: "DANGER ZONE — toggles approval bypass. ACK recommended for production."
+
+    - name: /fast
+      class: MUTATE
+      blast: LOW
+      reversible: true
+      scope: telegram.control
+
+    - name: /new
+      class: MUTATE
+      blast: MEDIUM
+      reversible: partial
+      scope: telegram.control
+      note: "Old session can be resumed via /resume"
+
+    - name: /clear
+      class: MUTATE
+      blast: MEDIUM
+      reversible: partial
+      scope: telegram.control
+
+    - name: /title
+      class: MUTATE
+      blast: LOW
+      reversible: true
+      scope: telegram.control
+
+    - name: /compress
+      class: MUTATE
+      blast: MEDIUM
+      reversible: partial
+      scope: telegram.control
+      note: "Compression may lose detail"
+
+    - name: /goal
+      class: MUTATE
+      blast: MEDIUM
+      reversible: true
+      scope: telegram.control
+
+    - name: /queue
+      class: MUTATE
+      blast: LOW
+      reversible: true
+      scope: telegram.control
+
+    - name: /steer
+      class: MUTATE
+      blast: MEDIUM
+      reversible: true
+      scope: telegram.control
+
+    - name: /background
+      class: MUTATE
+      blast: MEDIUM
+      reversible: true
+      scope: telegram.control
+
+    - name: /skill
+      class: MUTATE
+      blast: MEDIUM
+      reversible: true
+      scope: telegram.control
+
+    - name: /reload-skills
+      class: MUTATE
+      blast: MEDIUM
+      reversible: true
+      scope: telegram.control
+
+    - name: /reload-mcp
+      class: MUTATE
+      blast: HIGH
+      reversible: true
+      scope: telegram.control
+      ttl: 600
+
+    - name: /sethome
+      class: MUTATE
+      blast: LOW
+      reversible: true
+      scope: telegram.control
+
+    - name: /footer
+      class: MUTATE
+      blast: LOW
+      reversible: true
+      scope: telegram.control
+
+    - name: /voice
+      class: MUTATE
+      blast: MEDIUM
+      reversible: true
+      scope: telegram.control
+
+    - name: /browser
+      class: MUTATE
+      blast: MEDIUM
+      reversible: true
+      scope: telegram.control
+
+    - name: /retry
+      class: MUTATE
+      blast: LOW
+      reversible: true
+      scope: telegram.control
+
+    - name: /resume
+      class: MUTATE
+      blast: MEDIUM
+      reversible: true
+      scope: telegram.control
+
+    - name: /topic
+      class: MUTATE
+      blast: LOW
+      reversible: true
+      scope: telegram.control
+
+    - name: /debug
+      class: MUTATE
+      blast: LOW
+      reversible: true
+      scope: telegram.control
+
+  # IRREVERSIBLE: Short TTL lease + ACK required.
+  irreversible:
+    - name: /restart
+      class: IRREVERSIBLE
+      blast: CRITICAL
+      reversible: false
+      scope: telegram.veto
+      ttl: 120
+      requires_ack: true
+      requires_f13: true
+      note: "Kills and reinitializes Hermes gateway. All sessions interrupted."
+
+    - name: /stop
+      class: IRREVERSIBLE
+      blast: HIGH
+      reversible: partial
+      scope: telegram.control
+      note: "Kills background processes. Reversible by re-queuing."
+
+    - name: /undo
+      class: MUTATE
+      blast: MEDIUM
+      reversible: partial
+      scope: telegram.control
+      note: "Removes last exchange — context lost irreversibly."
+
+    - name: /update
+      class: IRREVERSIBLE
+      blast: HIGH
+      reversible: false
+      scope: telegram.veto
+      ttl: 120
+      requires_ack: true
+      requires_f13: true
+      note: "Updates Hermes code. Affects ALL sessions."
+
+  # VETO: F13 path — Arif only.
+  veto:
+    - name: /approve
+      class: VETO
+      blast: HIGH
+      reversible: false
+      scope: telegram.veto
+      ttl: 120
+      requires_sovereign_identity: true
+      sovereign_user_id: 267378578
+      note: "THIS IS F13. Only Arif can call."
+
+    - name: /deny
+      class: VETO
+      blast: HIGH
+      reversible: false
+      scope: telegram.veto
+      ttl: 120
+      requires_sovereign_identity: true
+      sovereign_user_id: 267378578
+      note: "THIS IS F13. Only Arif can call."
+
+# ── MESSAGE VERBS ────────────────────────────
+
+message_verbs:
+  - name: send_message
+    class: MUTATE
+    blast: MEDIUM
+    scope: telegram.mutate
+    reversible: true
+    rollback: delete_message
+
+  - name: edit_message
+    class: MUTATE
+    blast: MEDIUM
+    scope: telegram.mutate
+    reversible: true
+    rollback: re-edit
+
+  - name: delete_message
+    class: MUTATE
+    blast: MEDIUM
+    scope: telegram.mutate
+    reversible: conditional
+    note: "Reversible within 48h via Telegram API. Beyond 48h = IRREVERSIBLE."
+
+  - name: send_file
+    class: MUTATE
+    blast: MEDIUM
+    scope: telegram.mutate
+    reversible: true
+    handled_by: hermes-dispatcher.service
+
+  - name: send_photo
+    class: MUTATE
+    blast: LOW
+    scope: telegram.mutate
+    reversible: true
+
+  - name: pin_message
+    class: MUTATE
+    blast: LOW
+    scope: telegram.control
+    reversible: true
+
+  - name: unpin_message
+    class: MUTATE
+    blast: LOW
+    scope: telegram.control
+    reversible: true
+
+# ── Lease Scopes ─────────────────────────────
+
+leases:
+  - scope: telegram.read
+    verbs: [all OBSERVE commands]
+    ttl_default: 3600
+    note: "OBSERVE only — no lease required for Arif"
+
+  - scope: telegram.control
+    verbs: [all MUTATE commands]
+    ttl_default: 3600
+    note: "MUTATE commands — lease required. Reversible operations."
+
+  - scope: telegram.mutate
+    verbs: [send_message, edit_message, delete_message, send_file, send_photo]
+    ttl_default: 3600
+    note: "Message verbs — lease required."
+
+  - scope: telegram.veto
+    verbs: [/restart, /update, /approve, /deny]
+    ttl_default: 120
+    note: "IRREVERSIBLE/VETO — short TTL. ACK + F13 required. Arif-only for veto."
+
+# ── F1-F13 Gate Matrix ───────────────────────
+
+gates:
+  pre_observe: [F2_TRUTH, F4_CLARITY, F12_INJECTION]
+  pre_mutate: [F1_AMANAH, F2_TRUTH, F8_GENIUS, F13_SOVEREIGN]
+  pre_irreversible: [F1_AMANAH, F3_WITNESS, F13_SOVEREIGN]
+  pre_veto: [F1_AMANAH, F3_WITNESS, F13_SOVEREIGN]
+  post_execute: [F11_AUDIT, F4_CLARITY]
+  sovereignty: { user_id: 267378578, bypass_mention: true, bypass_lease_observe: true }
+
+# ── Response Envelope ────────────────────────
+
+envelope:
+  required_fields:
+    - ok
+    - connector
+    - command
+    - action_class
+    - evidence_tags
+    - confidence_cap
+    - vault_anchor_material
+  telegram_specific:
+    - chat_id
+    - message_id
+    - from_user_id
+  optional_fields:
+    - result
+    - error
+    - lease_id
+    - rollback_available
+
+# ── Automations (Cron) ───────────────────────
+
+automations:
+  - name: federation-health
+    schedule: "every 2h"
+    class: OBSERVE
+    blast: MEDIUM
+
+  - name: daily-digest
+    schedule: "7:00 AM MYT"
+    class: OBSERVE
+    blast: LOW
+
+  - name: nightly-seal
+    schedule: "11:00 PM MYT"
+    class: MUTATE
+    blast: MEDIUM
+    vault999: REQUIRED

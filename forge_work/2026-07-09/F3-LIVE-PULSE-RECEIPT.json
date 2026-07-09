@@ -1,0 +1,50 @@
+{
+  "ts": 1783561794.4099956,
+  "results": {
+    "hermes": {
+      "actor": "hermes",
+      "pass": true,
+      "init_verified": true,
+      "session_id": "SEAL-f0c2d4b69afc438d",
+      "authority": "LIMITED_MUTATE",
+      "tool": "arif_route\u2192wealth_compute_irr",
+      "top_actor": "hermes",
+      "top_session": "SEAL-f0c2d4b69afc438d",
+      "identity_propagated": true,
+      "bridge_status": "OK",
+      "bridge_verdict": "SEAL",
+      "irr": 0.218623,
+      "outer_verdict": "SEAL"
+    },
+    "openclaw": {
+      "actor": "openclaw",
+      "pass": true,
+      "init_verified": true,
+      "session_id": "SEAL-68874e9672594bd5",
+      "authority": "LIMITED_MUTATE",
+      "tool": "arif_route\u2192wealth_compute_irr",
+      "top_actor": "openclaw",
+      "top_session": "SEAL-68874e9672594bd5",
+      "identity_propagated": true,
+      "bridge_status": "OK",
+      "bridge_verdict": "SEAL",
+      "irr": 0.218623,
+      "outer_verdict": "SEAL"
+    },
+    "grok-build": {
+      "actor": "grok-build",
+      "pass": true,
+      "init_verified": true,
+      "session_id": "SEAL-87208054f7e0474b",
+      "authority": "LIMITED_MUTATE",
+      "tool": "arif_route\u2192wealth_compute_irr",
+      "top_actor": "grok-build",
+      "top_session": "SEAL-87208054f7e0474b",
+      "identity_propagated": true,
+      "bridge_status": "OK",
+      "bridge_verdict": "SEAL",
+      "irr": 0.218623,
+      "outer_verdict": "SEAL"
+    }
+  }
+}

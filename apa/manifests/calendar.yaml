@@ -1,0 +1,65 @@
+# APA Manifest: Calendar (Sovereign CalDAV)
+connector:
+  name: calendar
+  mcp_tool: forge_calendar
+  version: "1.0.0"
+  domain: productivity.calendar
+  protocol: caldav
+  provider: google
+  auth:
+    method: app_password
+    credential_file: /root/.secrets/calendar/google.json
+
+verbs:
+  - name: list_events
+    class: OBSERVE
+    blast_radius: LOW
+    requires_lease: false
+  - name: get_event
+    class: OBSERVE
+    blast_radius: LOW
+    requires_lease: false
+  - name: find_free_slots
+    class: OBSERVE
+    blast_radius: LOW
+    requires_lease: false
+  - name: create_event
+    class: MUTATE
+    blast_radius: MEDIUM
+    reversible: true
+    requires_lease: true
+    lease_scope: calendar.mutate
+  - name: update_event
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    requires_lease: true
+    lease_scope: calendar.mutate
+  - name: delete_event
+    class: IRREVERSIBLE
+    blast_radius: MEDIUM
+    reversible: false
+    requires_lease: true
+    requires_ack: true
+    lease_scope: calendar.delete
+    lease_ttl: 300
+
+leases:
+  - scope: calendar.read
+    verbs: [list_events, get_event, find_free_slots]
+  - scope: calendar.mutate
+    verbs: [create_event, update_event]
+    ttl_default: 3600
+  - scope: calendar.delete
+    verbs: [delete_event]
+    ttl_default: 300
+    note: "IRREVERSIBLE — short TTL + ACK"
+
+gates:
+  pre_execute: [F1_AMANAH, F2_TRUTH, F8_GENIUS]
+  pre_mutate: [F1_AMANAH, F13_SOVEREIGN]
+  pre_irreversible: [F1_AMANAH, F3_WITNESS, F13_SOVEREIGN]
+  post_execute: [F11_AUDIT, F4_CLARITY]
+
+envelope:
+  required_fields: [ok, connector, verb, verdict, evidence_tag, confidence, receipt.timestamp]

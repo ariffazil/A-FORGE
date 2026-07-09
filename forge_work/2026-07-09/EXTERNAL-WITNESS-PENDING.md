@@ -26,3 +26,8 @@
 → **`/root/A-FORGE/forge_work/2026-07-09/F3-WITNESS-CHECKLIST.md`**  
 → Prep sessions: `python3 /root/A-FORGE/scripts/identity/f3-witness-prep.py`  
 → Live sessions JSON: `F3-WITNESS-SESSIONS.json`
+
+## F3 MCP pulse (2026-07-09) — DONE 3/3
+
+Hermes, OpenClaw, grok-build: signed init + wealth_compute_irr under bound session.
+See `F3-LIVE-PULSE-RECEIPT.md`. Telegram human check-in for Hermes remains optional enrichment.
