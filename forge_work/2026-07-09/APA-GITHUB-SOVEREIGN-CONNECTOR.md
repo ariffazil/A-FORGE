@@ -1,478 +1,435 @@
-# APA Connector: GitHub (Sovereign REST API)
+# APA-GitHub Sovereign Connector — Canonical Reflex-Arc Example
 
-> **APA v1.0 Reference Implementation #3 — Developer Triad Complete**
-> **Forged:** 2026-07-09 · **Author:** FORGE (000Ω) · **Sovereign:** Muhammad Arif bin Fazil (F13)
-> **Status:** SPECIFICATION — Ready to forge
-
----
-
-## 0. WHY GITHUB THIRD
-
-After email and calendar, GitHub completes the developer sovereignty triad. A-FORGE already has `forge_github` for search/read operations via the GitHub MCP server. APA-GitHub extends this to **sovereign MUTATE operations** — creating issues, managing PRs, reviewing code — all gated through F1-F13 with VAULT999 receipts.
-
-**Existing:** `forge_github` (search repos, search code, read files) — OBSERVE only
-**APA extends:** MUTATE verbs with constitutional governance
+> **THIS IS THE TEMPLATE ALL FUTURE BRIDGES MUST FOLLOW.**  
+> Slack · Drive · Notion · Sheets · any SaaS — same arc, different protocol adapter.  
+> **Forged:** 2026-07-09 · **Live bridge:** `scripts/github_bridge.py` · **Port:** `127.0.0.1:18095`  
+> **Unit:** `apa-github-bridge.service` · **Status:** PRODUCTION TEMPLATE  
+> **Companion:** `APA-GITHUB-CANONICAL-TEMPLATE.md` (short form) · `APA-AFORGE-ARCHITECTURE-DERIVATION.md`
 
 ---
 
-## 1. CONNECTOR MANIFEST
+## 0. Bridge Theorem (what APA operationalizes)
+
+```
+classify before judgment,
+constrain after judgment.
+```
+
+| Stage | Name | Job |
+|-------|------|-----|
+| **ART** | Pre-kernel | Classify power (action class, blast radius) **before** it approaches judgment |
+| **KERNEL** | F1–F13 | Decide whether power may flow (SEAL / HOLD / VOID / SABAR) |
+| **APA** | Protocol | Express authorized power to external systems (manifest · lease · bridge) |
+| **ACT** | Post-kernel | Touch reality under phases (dry-run → simulate → execute → verify → rollback → receipt) |
+| **VAULT999** | Memory | Remember immutably |
+
+APA is the **formal language of constraint for SaaS** after the kernel has spoken.
+
+```
+ART ──classify──▶ KERNEL ──judge──▶ APA ──express──▶ ACT ──touch──▶ VAULT999
+                     │                  │                │
+                  F1–F13            lease+manifest    bridge+MCP
+                     │                  │                │
+                  STOP lawful        STOP lawful      STOP lawful
+```
+
+---
+
+## 1. Full reflex arc for one verb (create_issue)
+
+### 1.1 ART — classify power
+
+Before any judge call:
+
+| Field | Value |
+|-------|-------|
+| Intent | Open issue on `owner/repo` |
+| Verb | `create_issue` |
+| **Action class** | **MUTATE** |
+| Blast radius | MEDIUM (public if repo public) |
+| Reversible? | Partial (close_issue possible; not true undo) |
+| External side effect | Yes — GitHub.com |
+| Secret exposure risk | Low if bridge inject-only |
+| Requires lease | **Yes** — `github.mutate` |
+| Requires human ack | No (unless policy tightens) |
+
+ART output: `action_class=MUTATE`, `lease_scope=github.mutate`, `proceed_to_kernel=true`.
+
+If ART cannot classify → **STOP** (unknown power does not approach judgment).
+
+### 1.2 KERNEL — F1–F13 judgment
+
+| Floor | Check on create_issue |
+|-------|------------------------|
+| F1 AMANAH | Reversible-enough? close path exists; no force-push |
+| F2 TRUTH | Title/body not fabricated as sealed fact |
+| F3 WITNESS | Public issue may need external witness if HIGH stakes |
+| F4 CLARITY | Thin verb, not 846-tool dump |
+| F5 PEACE² | No harassment content |
+| F7 HUMILITY | confidence_cap ≤ 0.85 on MUTATE |
+| F11 AUDIT | Receipt required post-ACT |
+| F12 INJECTION | Issue body is data, not authority |
+| F13 SOVEREIGN | Actor bound; 888 can HOLD |
+
+Verdicts: **SEAL** (power may flow) · **HOLD** · **VOID** · **SABAR**.  
+No SEAL → APA and ACT do not run.
+
+### 1.3 APA — express power
+
+1. Load connector manifest (this file §2).  
+2. Resolve verb → lease scope `github.mutate`.  
+3. Require live lease: `forge_lease` / arifOS mint, scope includes github mutate tools, TTL ok.  
+4. Bind `session_id` + `actor_id`.  
+5. Dispatch envelope to bridge with `mode=create_issue` + `lease_id`.
+
+### 1.4 ACT — touch reality (phased)
+
+| Phase | Name | GitHub create_issue |
+|-------|------|---------------------|
+| **0** | DRY_RUN | Validate params; optional `GET /repos/{o}/{r}` existence; no POST |
+| **1** | SIMULATE | Build issue payload; hash body; show what would POST |
+| **2** | EXECUTE | Bridge `POST /repos/{o}/{r}/issues` with injected PAT |
+| **3** | VERIFY | Response has `number` + `html_url`; GET issue once to confirm open |
+| **4** | ROLLBACK | If policy allows: `close_issue` as compensating action (not true unsend) |
+| **5** | RECEIPT | `result_sha256` + lease_id + vault_anchor_material → VAULT999 / chain_hash |
+
+**STOP is lawful** at any phase. STOP preserves the system.
+
+### 1.5 VAULT999 — remember
+
+```json
+{
+  "connector": "github",
+  "verb": "create_issue",
+  "action_class": "MUTATE",
+  "actor_id": "arif",
+  "session_id": "SEAL-…",
+  "lease_id": "LCL-…",
+  "result_ref": "owner/repo#N",
+  "result_sha256": "…",
+  "art_class": "MUTATE",
+  "kernel_verdict": "SEAL",
+  "act_phases_completed": ["DRY_RUN", "SIMULATE", "EXECUTE", "VERIFY", "RECEIPT"],
+  "timestamp": "ISO-8601"
+}
+```
+
+---
+
+## 2. Connector manifest (complete)
 
 ```yaml
 connector:
-  name: "github"
-  mcp_tool: "forge_github"         # Extends existing, adds MUTATE verbs
-  version: "2.0.0"                 # v2 = +APA governance on MUTATE
-  domain: "development.version_control"
-  protocol: "rest_api"
-  provider: "github"
-  description: "Sovereign GitHub via REST API + personal access token. Extends existing forge_github OBSERVE tools with governed MUTATE operations."
+  name: github
+  version: "1.0.0-canonical"
+  domain: development.version_control
+  protocol: https+rest
+  provider: github.com
+  mcp_tools:
+    primary: forge_github
+    mutate: [forge_github_create_issue, forge_github_create_pull_request, …]
+  bridge:
+    script: /root/A-FORGE/scripts/github_bridge.py
+    port: 18095
+    bind: 127.0.0.1
+    unit: apa-github-bridge.service
+  auth:
+    method: personal_access_token
+    sources:
+      - env: GITHUB_TOKEN
+      - file: /root/.secrets/env/github-bridge.env
+      - file: /root/.secrets/github/token.json
+    inject: "Authorization: Bearer <token>"
+    never_return_to_caller: true
+    never_log: true
 
-auth:
-  method: "personal_access_token"
-  credential_path: "/root/.secrets/github/token.json"
-  env_fallback: "GITHUB_TOKEN"
-  credential_schema:
-    token: "ghp_xxxxxxxxxxxx"
-    api_url: "https://api.github.com"
+reflex:
+  art: required
+  kernel: required
+  apa: required
+  act_phases: [DRY_RUN, SIMULATE, EXECUTE, VERIFY, ROLLBACK, RECEIPT]
+  vault999: required_on_MUTATE_and_IRREVERSIBLE
 
 verbs:
-  # ── EXISTING (OBSERVE, already in forge_github) ──
   search_repos:
-    mode: "search_repos"
-    action_class: "OBSERVE"
-    existing: true
+    mode: search_repos
+    action_class: OBSERVE
+    lease_scope: github.read
+    requires_lease: false
+    blast_radius: LOW
+    api: "GET /search/repositories"
+    params: { q: string, limit: int }
+    act:
+      dry_run: validate query non-empty
+      execute: GET search
+      verify: items is array
+      rollback: n/a
 
-  search_code:
-    mode: "search_code"
-    action_class: "OBSERVE"
-    existing: true
+  get_repo:
+    mode: get_repo
+    action_class: OBSERVE
+    lease_scope: github.read
+    requires_lease: false
+    blast_radius: LOW
+    api: "GET /repos/{owner}/{repo}"
+    params: { owner: string, repo: string }
 
-  get_file:
-    mode: "get_file"
-    action_class: "OBSERVE"
-    existing: true
+  list_issues:
+    mode: list_issues
+    action_class: OBSERVE
+    lease_scope: github.read
+    requires_lease: false
+    blast_radius: LOW
+    api: "GET /repos/{owner}/{repo}/issues"
+    params: { owner, repo, state: open|closed|all, limit: int }
 
-  # ── NEW: APA-GOVERNED MUTATE ──────────────────
+  list_pull_requests:
+    mode: list_pull_requests
+    action_class: OBSERVE
+    lease_scope: github.read
+    requires_lease: false
+    blast_radius: LOW
+    api: "GET /repos/{owner}/{repo}/pulls"
+    params: { owner, repo, state, limit }
+
   create_issue:
-    mode: "create_issue"
-    action_class: "MUTATE"
-    irreversible: false
+    mode: create_issue
+    action_class: MUTATE
+    lease_scope: github.mutate
     requires_lease: true
-    blast_radius: "LOW"
-    description: "Create a GitHub issue"
-    params:
-      owner: "string (required)"
-      repo: "string (required)"
-      title: "string (required)"
-      body: "string (required)"
-      labels: "[string]"
-      assignees: "[string]"
+    blast_radius: MEDIUM
+    irreversible: false
+    api: "POST /repos/{owner}/{repo}/issues"
+    params: { owner, repo, title, body?, labels?, assignees? }
+    act:
+      dry_run: GET repo exists
+      simulate: hash title+body
+      execute: POST issue
+      verify: GET issues/{n} state=open
+      rollback: close_issue (compensating)
+      receipt: vault required
+
+  close_issue:
+    mode: close_issue
+    action_class: MUTATE
+    lease_scope: github.mutate
+    requires_lease: true
+    blast_radius: MEDIUM
+    api: "PATCH /repos/{owner}/{repo}/issues/{n}"
+    params: { owner, repo, issue_number }
 
   create_pr:
-    mode: "create_pr"
-    action_class: "MUTATE"
-    irreversible: false
+    mode: create_pr
+    action_class: MUTATE
+    lease_scope: github.mutate
     requires_lease: true
-    blast_radius: "MEDIUM"
-    description: "Create a pull request"
-    params:
-      owner: "string (required)"
-      repo: "string (required)"
-      title: "string (required)"
-      body: "string"
-      head: "string (required, source branch)"
-      base: "string (required, target branch)"
-      draft: "bool"
+    blast_radius: MEDIUM
+    api: "POST /repos/{owner}/{repo}/pulls"
+    params: { owner, repo, title, head, base, body?, draft: true }
+    note: "default draft=true (lower blast)"
 
   merge_pr:
-    mode: "merge_pr"
-    action_class: "MUTATE"
-    irreversible: true
+    mode: merge_pr
+    action_class: IRREVERSIBLE
+    lease_scope: github.merge
     requires_lease: true
     requires_ack: true
-    requires_tri_witness: true
-    blast_radius: "HIGH"
-    description: "Merge a pull request — IRREVERSIBLE"
-    params:
-      owner: "string (required)"
-      repo: "string (required)"
-      pr_number: "int (required)"
-      merge_method: "merge | squash | rebase"
-
-  create_or_update_file:
-    mode: "create_or_update_file"
-    action_class: "MUTATE"
-    irreversible: false
-    requires_lease: true
-    blast_radius: "MEDIUM"
-    description: "Create or update a file in a repo"
-    params:
-      owner: "string (required)"
-      repo: "string (required)"
-      path: "string (required)"
-      content: "string (base64-encoded)"
-      message: "string (commit message)"
-      branch: "string"
-      sha: "string (required for updates)"
-
-  create_branch:
-    mode: "create_branch"
-    action_class: "MUTATE"
-    irreversible: false
-    requires_lease: true
-    blast_radius: "LOW"
-    description: "Create a new branch"
-    params:
-      owner: "string (required)"
-      repo: "string (required)"
-      branch: "string (required)"
-      from_branch: "string (default: main)"
-
-  add_issue_comment:
-    mode: "add_issue_comment"
-    action_class: "MUTATE"
-    irreversible: false
-    requires_lease: true
-    blast_radius: "LOW"
-    description: "Comment on an issue or PR"
-    params:
-      owner: "string (required)"
-      repo: "string (required)"
-      issue_number: "int (required)"
-      body: "string (required)"
-
-  review_pr:
-    mode: "review_pr"
-    action_class: "MUTATE"
-    irreversible: true
-    requires_lease: true
-    requires_ack: true
-    blast_radius: "HIGH"
-    description: "Submit a PR review (APPROVE / REQUEST_CHANGES / COMMENT)"
-    params:
-      owner: "string (required)"
-      repo: "string (required)"
-      pr_number: "int (required)"
-      event: "APPROVE | REQUEST_CHANGES | COMMENT"
-      body: "string"
-
-  push_files:
-    mode: "push_files"
-    action_class: "MUTATE"
-    irreversible: false
-    requires_lease: true
-    blast_radius: "MEDIUM"
-    description: "Push multiple files in a single commit"
-    params:
-      owner: "string (required)"
-      repo: "string (required)"
-      branch: "string (required)"
-      message: "string (required)"
-      files: "[{path, content}]"
-
-gates:
-  pre_execute: [F1_AMANAH, F2_TRUTH, F8_GENIUS]
-  pre_irreversible: [F13_SOVEREIGN, F3_WITNESS]
-  post_execute: [F11_AUDIT, F4_CLARITY]
+    blast_radius: HIGH
+    ttl_max_seconds: 300
+    api: "PUT /repos/{owner}/{repo}/pulls/{n}/merge"
+    params: { owner, repo, pr_number, merge_method? }
+    act:
+      dry_run: GET pr mergeable
+      simulate: show merge_method + head sha
+      execute: PUT merge
+      verify: GET pr merged=true
+      rollback: NOT AVAILABLE (true irreversible)
+      receipt: vault required + F13 ack recorded
 ```
 
 ---
 
-## 2. IMPLEMENTATION
+## 3. Lease matrix (capability table)
 
-### 2.1 Architecture
+| Scope | max_action_class | Verbs allowed | Default TTL | Extra gates |
+|-------|------------------|---------------|-------------|-------------|
+| **github.read** | OBSERVE | search_repos, get_repo, list_issues, list_pull_requests | 3600 | Session may apply |
+| **github.mutate** | MUTATE | create_issue, close_issue, create_pr, add_issue_comment, create_branch, create_or_update_file, push_files, review_pr | 3600 | F11 receipt |
+| **github.merge** | IRREVERSIBLE | merge_pr | **300** | ACK + F13; no silent merge |
+
+### Live A-FORGE mapping
 
 ```
-┌──────────────────────────────────────────────────┐
-│              A-FORGE (TypeScript, :7072)          │
-│                                                   │
-│  forge_github(mode, params, lease_id, session)    │
-│    │                                               │
-│    ├─ IF mode in OBSERVE:                          │
-│    │   └─ Existing GitHub MCP path (no change)     │
-│    │                                               │
-│    ├─ IF mode in [MUTATE verbs]:                   │
-│    │   ├─ FloorEnforcer.checkAll(F1,F2,F8,F13)     │
-│    │   ├─ LeaseValidator.verify(lease_id)           │
-│    │   ├─ IF merge_pr/review_pr: TriWitness(F3)    │
-│    │   ├─ IF merge_pr/review_pr: ack_irreversible   │
-│    │   │                                           │
-│    │   └─ HTTP POST 127.0.0.1:18095/execute        │
-│    │                                               │
-│    └─ VAULT999 receipt for all MUTATE              │
-└───────────────────┬───────────────────────────────┘
-                    │
-┌───────────────────▼───────────────────────────────┐
-│     github_bridge.py (Python, :18095)               │
-│                                                    │
-│  Thin HTTP wrapper. Uses requests + GITHUB_TOKEN.  │
-│  Reads token from env or /root/.secrets/.           │
-│  Executes GitHub REST API v3.                      │
-│                                                    │
-│  Dependencies: requests (already installed)         │
-└────────────────────────────────────────────────────┘
+forge_session_init(actor_id, intent)
+forge_agent(mode=register)            # if lease path needs registered agent
+forge_lease(
+  mode=request,
+  agent_id=…,
+  scope=["github", "forge_github"],   # tool-name scopes used by runtime
+  max_action_class=EXECUTE_REVERSIBLE | …,
+  ttl_seconds=300|3600
+)
+# then MCP tool or POST :18095 with lease_id
 ```
 
-### 2.2 Python Bridge
+| APA scope | forge_lease max_action_class (approx) |
+|-----------|----------------------------------------|
+| github.read | OBSERVE / omit lease |
+| github.mutate | EXECUTE_REVERSIBLE / MUTATE |
+| github.merge | EXECUTE_HIGH_IMPACT / IRREVERSIBLE |
 
-```python
-#!/usr/bin/env python3
-"""
-github_bridge.py — APA GitHub Connector: Sovereign REST API bridge.
-Part of APA v1.0 (Autonomous Protocol for Applications).
-A-FORGE → APA → GitHub.
+### Soft vs hard lease enforcement
 
-Port: 18095 (internal, 127.0.0.1)
+| Layer | Behavior |
+|-------|----------|
+| Bridge | Soft: warns/allows missing lease_id unless `APA_REQUIRE_LEASE_ID=1` |
+| A-FORGE MCP | Hard: MUTATE tools require session ownership + lease policy |
+| Kernel | Hard: no SEAL → no ACT |
 
-DITEMPA BUKAN DIBERI — Code sovereignty is forged.
-"""
+---
 
-import json, os, base64, logging
-from http.server import HTTPServer, BaseHTTPRequestHandler
-import requests
+## 4. ACT phase machine (normative for all APA connectors)
 
-logging.basicConfig(level=logging.INFO, format='[github_bridge] %(message)s')
-log = logging.getLogger(__name__)
+```
+                    ┌─────────────┐
+                    │   ART       │  classify verb
+                    └──────┬──────┘
+                           ▼
+                    ┌─────────────┐
+                    │   KERNEL    │  SEAL?
+                    └──────┬──────┘
+                     no │    │ yes
+                        ▼    ▼
+                      STOP  APA resolve lease
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │ ACT                          │
+              │  0 DRY_RUN                   │
+              │  1 SIMULATE                  │
+              │  2 EXECUTE  ──bridge──▶ SaaS │
+              │  3 VERIFY                    │
+              │  4 ROLLBACK (if available)   │
+              │  5 RECEIPT → VAULT999        │
+              └──────────────────────────────┘
+```
 
-API_URL = "https://api.github.com"
-TOKEN = os.environ.get("GITHUB_TOKEN") or os.environ.get("GITHUB_PERSONAL_ACCESS_TOKEN")
+| Phase | Must not | Must |
+|-------|----------|------|
+| DRY_RUN | Mutate remote | Fail closed on bad params |
+| SIMULATE | Persist | Produce payload hash |
+| EXECUTE | Skip VERIFY | Use bridge only (no token in LLM) |
+| VERIFY | Trust EXECUTE alone | Re-read or check response invariants |
+| ROLLBACK | Claim full undo if impossible | Document compensating action or `NOT_AVAILABLE` |
+| RECEIPT | Skip for MUTATE | Emit result_sha256 + lease_id + verdict ids |
 
-# Fallback: read from secrets file
-if not TOKEN:
-    SECRET_PATH = "/root/.secrets/github/token.json"
-    if os.path.exists(SECRET_PATH):
-        with open(SECRET_PATH) as f:
-            TOKEN = json.load(f).get("token", "")
+**IRREVERSIBLE (merge_pr):** ROLLBACK = `NOT_AVAILABLE`. ACT must stop at SIMULATE unless ACK present.
 
-HEADERS = {
-    "Authorization": f"Bearer {TOKEN}",
-    "Accept": "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
+---
+
+## 5. Response envelope (bridge → A-FORGE → agent)
+
+```json
+{
+  "ok": true,
+  "status": "ok",
+  "mode": "create_issue",
+  "action_class": "MUTATE",
+  "lease_scope_hint": "github.mutate",
+  "lease_id": "LCL-…",
+  "evidence_tags": ["DERIVED", "GITHUB_REST"],
+  "confidence_cap": 0.85,
+  "result": { "number": 561, "url": "https://github.com/…/issues/561" },
+  "result_sha256": "…",
+  "vault_anchor_material": {
+    "connector": "github",
+    "verb": "create_issue",
+    "result_sha256": "…",
+    "lease_id": "LCL-…"
+  },
+  "reflex": {
+    "art_class": "MUTATE",
+    "kernel_verdict": "SEAL",
+    "act_phase": "RECEIPT"
+  }
 }
-
-def api(method, path, data=None):
-    url = f"{API_URL}{path}"
-    resp = requests.request(method, url, headers=HEADERS, json=data)
-    resp.raise_for_status()
-    return resp.json() if resp.text else {"status": resp.status_code}
-
-def action_create_issue(p):
-    owner, repo = p["owner"], p["repo"]
-    result = api("POST", f"/repos/{owner}/{repo}/issues", {
-        "title": p["title"],
-        "body": p.get("body", ""),
-        "labels": p.get("labels", []),
-        "assignees": p.get("assignees", []),
-    })
-    return {"issue_url": result["html_url"], "number": result["number"]}
-
-def action_create_pr(p):
-    owner, repo = p["owner"], p["repo"]
-    result = api("POST", f"/repos/{owner}/{repo}/pulls", {
-        "title": p["title"],
-        "body": p.get("body", ""),
-        "head": p["head"],
-        "base": p["base"],
-        "draft": p.get("draft", False),
-    })
-    return {"pr_url": result["html_url"], "number": result["number"]}
-
-def action_merge_pr(p):
-    owner, repo, num = p["owner"], p["repo"], p["pr_number"]
-    method = p.get("merge_method", "merge")
-    result = api("PUT", f"/repos/{owner}/{repo}/pulls/{num}/merge", {
-        "merge_method": method,
-    })
-    return {"merged": result.get("merged", False), "sha": result.get("sha")}
-
-def action_create_or_update_file(p):
-    owner, repo = p["owner"], p["repo"]
-    body = {
-        "message": p["message"],
-        "content": p["content"],
-        "branch": p.get("branch"),
-    }
-    if "sha" in p:
-        body["sha"] = p["sha"]
-    result = api("PUT", f"/repos/{owner}/{repo}/contents/{p['path']}", body)
-    return {"path": p["path"], "sha": result["content"]["sha"]}
-
-def action_create_branch(p):
-    owner, repo = p["owner"], p["repo"]
-    # Get SHA of base branch
-    base = p.get("from_branch", "main")
-    ref = api("GET", f"/repos/{owner}/{repo}/git/ref/heads/{base}")
-    sha = ref["object"]["sha"]
-    # Create new branch
-    result = api("POST", f"/repos/{owner}/{repo}/git/refs", {
-        "ref": f"refs/heads/{p['branch']}",
-        "sha": sha,
-    })
-    return {"branch": p["branch"], "ref": result["ref"]}
-
-def action_add_issue_comment(p):
-    owner, repo = p["owner"], p["repo"]
-    result = api("POST", f"/repos/{owner}/{repo}/issues/{p['issue_number']}/comments", {
-        "body": p["body"],
-    })
-    return {"comment_url": result["html_url"]}
-
-def action_review_pr(p):
-    owner, repo, num = p["owner"], p["repo"], p["pr_number"]
-    result = api("POST", f"/repos/{owner}/{repo}/pulls/{num}/reviews", {
-        "event": p["event"],
-        "body": p.get("body", ""),
-    })
-    return {"state": result["state"]}
-
-def action_push_files(p):
-    owner, repo = p["owner"], p["repo"]
-    branch = p["branch"]
-    message = p["message"]
-    files = p["files"]
-    # Build tree
-    tree_items = []
-    for f in files:
-        blob = api("POST", f"/repos/{owner}/{repo}/git/blobs", {
-            "content": f["content"],
-            "encoding": "utf-8",
-        })
-        tree_items.append({
-            "path": f["path"],
-            "mode": "100644",
-            "type": "blob",
-            "sha": blob["sha"],
-        })
-    tree = api("POST", f"/repos/{owner}/{repo}/git/trees", {"tree": tree_items})
-    # Get parent commit
-    ref = api("GET", f"/repos/{owner}/{repo}/git/ref/heads/{branch}")
-    parent_sha = ref["object"]["sha"]
-    # Create commit
-    commit = api("POST", f"/repos/{owner}/{repo}/git/commits", {
-        "message": message,
-        "tree": tree["sha"],
-        "parents": [parent_sha],
-    })
-    # Update ref
-    api("PATCH", f"/repos/{owner}/{repo}/git/refs/heads/{branch}", {
-        "sha": commit["sha"],
-    })
-    return {"pushed": True, "sha": commit["sha"], "files": len(files)}
-
-ACTIONS = {
-    "create_issue": action_create_issue,
-    "create_pr": action_create_pr,
-    "merge_pr": action_merge_pr,
-    "create_or_update_file": action_create_or_update_file,
-    "create_branch": action_create_branch,
-    "add_issue_comment": action_add_issue_comment,
-    "review_pr": action_review_pr,
-    "push_files": action_push_files,
-}
-
-class GitHubHandler(BaseHTTPRequestHandler):
-    def _send(self, data, status=200):
-        body = json.dumps(data, default=str).encode()
-        self.send_response(status)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(body)))
-        self.end_headers()
-        self.wfile.write(body)
-    
-    def do_GET(self):
-        if self.path == "/health":
-            self._send({
-                "ok": True,
-                "bridge": "github_bridge",
-                "protocol": "rest_api",
-                "apa_version": "1.0",
-                "auth_configured": bool(TOKEN),
-                "status": "READY" if TOKEN else "AWAITING_TOKEN",
-            })
-        else:
-            self._send({"error": "not found"}, 404)
-    
-    def do_POST(self):
-        try:
-            length = int(self.headers.get("Content-Length", 0))
-            body = json.loads(self.rfile.read(length)) if length else {}
-            mode = body.get("mode")
-            if mode not in ACTIONS:
-                self._send({"ok": False, "error": f"Unknown mode: {mode}"}, 400)
-                return
-            result = ACTIONS[mode](body)
-            self._send({"ok": True, "mode": mode, "result": result})
-        except Exception as e:
-            log.error(f"Error in {body.get('mode', '?')}: {e}")
-            self._send({"ok": False, "error": str(e)}, 500)
-    
-    def log_message(self, format, *args):
-        log.info(f"{self.client_address[0]} - {format % args}")
-
-if __name__ == "__main__":
-    port = int(os.environ.get("GITHUB_BRIDGE_PORT", "18095"))
-    server = HTTPServer(("127.0.0.1", port), GitHubHandler)
-    log.info(f"APA GitHub Bridge listening on 127.0.0.1:{port}")
-    server.serve_forever()
-```
-
-### 2.3 Deployment
-
-```bash
-# Token already exists in env (GITHUB_TOKEN from gh CLI)
-# Verify: echo $GITHUB_TOKEN
-
-# Copy bridge
-cp github_bridge.py /root/A-FORGE/scripts/github_bridge.py
-
-# Systemd service
-cat > /etc/systemd/system/apa-github-bridge.service << 'EOF'
-[Unit]
-Description=APA GitHub Bridge — Sovereign REST API (A-FORGE forge_github)
-After=network.target
-[Service]
-Type=simple
-ExecStart=/usr/bin/python3 /root/A-FORGE/scripts/github_bridge.py
-Restart=on-failure
-Environment=GITHUB_BRIDGE_PORT=18095
-EnvironmentFile=/root/.env
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl daemon-reload
-systemctl enable --now apa-github-bridge
-curl http://127.0.0.1:18095/health
 ```
 
 ---
 
-## 3. F1-F13 GATE MATRIX
+## 6. Live deployment anchors (T1)
 
-| Verb | F1 | F2 | F3 | F7 | F8 | F11 | F13 |
-|------|----|----|----|----|----|----|----|
-| create_issue | ✅ rev | DER tag | — | .85 | REST POST | receipt | — |
-| create_pr | ✅ rev | DER tag | — | .85 | REST POST | receipt | — |
-| **merge_pr** | ⚠️ **irrev** | DER tag | **W³** | .80 | REST PUT | **full** | **ack** |
-| create_or_update_file | ✅ rev | DER tag | — | .85 | REST PUT | receipt | — |
-| create_branch | ✅ rev | DER tag | — | .85 | REST POST | receipt | — |
-| add_issue_comment | ✅ rev | DER tag | — | .85 | REST POST | receipt | — |
-| **review_pr** | ⚠️ **irrev** | DER tag | — | .85 | REST POST | **full** | **ack** |
-| push_files | ✅ rev | DER tag | — | .85 | Git tree API | receipt | — |
-
----
-
-## 4. DEVELOPER TRIAD — Complete
-
-| # | Connector | MCP Tool | Protocol | Status |
-|---|-----------|----------|----------|:------:|
-| 1 | Email | `forge_email` | IMAP/SMTP | 🟢 LIVE |
-| 2 | Calendar | `forge_calendar` | CalDAV | 🟢 LIVE |
-| 3 | GitHub | `forge_github` (extended) | REST API | 📋 SPEC |
-| 4 | Document | `forge_document` | pandoc | Pending |
-| 5 | Reminder | `forge_remind` | cron+Hermes | Pending |
+| Component | Path / endpoint |
+|-----------|-----------------|
+| Bridge script | `/root/A-FORGE/scripts/github_bridge.py` |
+| Systemd | `apa-github-bridge.service` |
+| Health | `GET http://127.0.0.1:18095/health` |
+| Manifest | `GET http://127.0.0.1:18095/manifest` |
+| Execute | `POST http://127.0.0.1:18095` `{"mode","lease_id?",…}` |
+| A-FORGE MCP | `:7072` `forge_github*` tools |
+| Secrets | env file / GITHUB_TOKEN — never in chat |
 
 ---
 
-*DITEMPA BUKAN DIBERI — Developer sovereignty is forged.*
-*APA GitHub v2.0 · 2026-07-09 · FORGE (000Ω) for Arif (F13)*
+## 7. Forced pattern for Slack / Drive / Notion / …
+
+Every new connector **MUST** ship:
+
+1. **§0 Bridge Theorem** statement (ART → KERNEL → APA → ACT → VAULT999)  
+2. **§2 Full manifest** with action_class + lease_scope + act phases per verb  
+3. **§3 Lease matrix** (read / mutate / irreversible scopes)  
+4. **§4 ACT phase machine** (including ROLLBACK = NOT_AVAILABLE where true)  
+5. **§5 Envelope** with result_sha256 + vault_anchor_material  
+6. **Localhost bridge** + systemd `apa-*-bridge`  
+7. **Smoke:** health → OBSERVE → MUTATE+lease → receipt  
+
+If any of 1–7 is missing → **not APA**. It is ad-hoc tooling.
+
+### Naming discipline
+
+| Layer | Name form |
+|-------|-----------|
+| APA verb | `snake_case` mode on bridge |
+| Lease scope | `<connector>.read\|mutate\|merge` |
+| MCP tool | `forge_<connector>` or `forge_<connector>_<verb>` |
+| Unit | `apa-<connector>-bridge.service` |
+
+---
+
+## 8. Why GitHub is the canonical example
+
+| Property | Proof |
+|----------|--------|
+| OBSERVE live | search_repos / get_repo smoke on :18095 |
+| MUTATE live | create_issue / close_issue proven against real repos |
+| IRREVERSIBLE defined | merge_pr with short TTL + ACK |
+| Open protocol | HTTPS REST (not vendor MCP custody) |
+| Secret custody | PAT local; never returned |
+| Reflex complete | ART class → kernel floors → APA lease → ACT phases → vault material |
+
+Email/Calendar clone this document structure; only protocol adapter and verb names change.
+
+---
+
+## 9. Anti-patterns (reject as non-APA)
+
+- Skip ART → raw tool call  
+- Skip KERNEL → lease without judgment on high blast  
+- Bridge that self-SEALs VAULT999  
+- OAuth token in LLM context  
+- “Production” without RECEIPT phase on MUTATE  
+- Merge without ACK  
+- 846-tool catalog as “manifest”  
+
+---
+
+## 10. One-line seal
+
+**APA-GitHub is the complete reflex arc made concrete:**  
+ART classifies · KERNEL judges · APA leases and manifests · ACT phases touch GitHub · VAULT999 remembers.
+
+All future sovereign connectors are **isomorphic copies** of this file.
+
+---
+
+**DITEMPA BUKAN DIBERI** — the reflex is forged into the connector, not hoped into the agent.
