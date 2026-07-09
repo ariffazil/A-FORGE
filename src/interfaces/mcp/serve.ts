@@ -109,6 +109,14 @@ const STATELESS_TOOLS = new Set([
   "forge_fetch_metadata", // proxy → forge_fetch(mode=metadata)
   "forge_fetch_links",    // proxy → forge_fetch(mode=links)
 
+  // ── GitHub OBSERVE (2026-07-09) — search/read only; multi-client HTTP ──
+  // MUTATE github (create_issue/pr/file) stays session-owned. R0 OBSERVE
+  // search must not require transport session ownership — same class as forge_fetch.
+  "forge_github",
+  "forge_github_search_code",
+  "forge_github_search_repos",
+  "forge_github_get_file",
+
   // ── DARWIN FIX 1c: stateless mutate primitives ────────────────────
   // Needed so forge_session_init's auto-minted lease + setActor can be
   // exercised via the HTTP transport without stdio session setup.
