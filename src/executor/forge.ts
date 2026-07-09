@@ -5,9 +5,10 @@
  * forge_* tool execution. Returns an execution report to the kernel.
  *
  * A-FORGE never:
- *   - judges (kernel does that)
- *   - seals (VAULT999 does that)
+ *   - judges (Python constitutional judgment engine does that)
+ *   - seals (VAULT999 does that; F13 remains sovereign)
  *   - bypasses 888
+ *   - runs without a complete ExecutorReceipt (hard-fail)
  *
  * DITEMPA BUKAN DIBERI — Forged, Not Given.
  */
@@ -132,17 +133,22 @@ export interface ReceiptValidation {
  * Validate a kernel receipt before execution.
  * Hard-fails if any required field is missing or invalid.
  *
- * Required fields:
- *   receipt_id, ccId, verdict, authority.actorId, authority.validUntil,
- *   allowedActions (non-empty), bounds.blastRadius, bounds.reversible,
- *   bounds.maxTools, lineage.evidenceIds, lineage.collapseTimestamp
+ * Hard-fail set (command-runner ban — sovereign 2026-07-09):
+ *   receiptId, kernelSignature, verdict, authority_scope/actor/session,
+ *   allowedActions, toolName, blastRadius, reversibility, inputHash,
+ *   validUntil (lease expiry), ccId, lineage
  */
 export function validateReceipt(receipt: ExecutorReceipt): ReceiptValidation {
   const violations: string[] = [];
 
-  // Identity
+  // Identity + kernel binding
+  if (!receipt.receiptId) violations.push("Missing receiptId");
+  if (!receipt.kernelSignature) violations.push("Missing kernelSignature");
   if (!receipt.ccId) violations.push("Missing ccId (constitutional chain ID)");
-  if (!receipt.lineage?.collapseTimestamp) violations.push("Missing lineage.collapseTimestamp");
+  if (!receipt.inputHash) violations.push("Missing inputHash");
+  if (!receipt.lineage?.collapseTimestamp) {
+    violations.push("Missing lineage.collapseTimestamp");
+  }
 
   // Verdict
   if (!receipt.verdict) violations.push("Missing verdict");
@@ -150,24 +156,40 @@ export function validateReceipt(receipt: ExecutorReceipt): ReceiptValidation {
     violations.push(`Invalid verdict: ${receipt.verdict}`);
   }
 
-  // Authority
+  // Authority / lease
   if (!receipt.authority?.actorId) violations.push("Missing authority.actorId");
   if (!receipt.authority?.sessionId) violations.push("Missing authority.sessionId");
-  if (!receipt.authority?.validUntil) violations.push("Missing authority.validUntil");
+  if (!receipt.authority?.validUntil) violations.push("Missing authority.validUntil (lease)");
   else if (new Date(receipt.authority.validUntil) < new Date()) {
     violations.push("Authority lease expired");
   }
+  if (!receipt.authority?.scope && !receipt.authority?.leaseId) {
+    // scope OR leaseId required as authority band / lease anchor
+    violations.push("Missing authority.scope or authority.leaseId");
+  }
 
-  // Allowed actions
+  // Tool + allowed actions
+  if (!receipt.toolName) violations.push("Missing toolName");
   if (!receipt.allowedActions || receipt.allowedActions.length === 0) {
     violations.push("No allowedActions — nothing to execute");
+  } else if (receipt.toolName && !receipt.allowedActions.includes(receipt.toolName)) {
+    violations.push(`toolName '${receipt.toolName}' not in allowedActions`);
   }
 
   // Bounds
   if (!receipt.bounds?.blastRadius) violations.push("Missing bounds.blastRadius");
-  if (receipt.bounds?.reversible === undefined) violations.push("Missing bounds.reversible");
+  if (receipt.bounds?.reversible === undefined) {
+    violations.push("Missing bounds.reversible");
+  }
   if (!receipt.bounds?.maxTools || receipt.bounds.maxTools < 1) {
     violations.push("bounds.maxTools must be >= 1");
+  }
+  // CRITICAL blast without reversibility is not auto-executable
+  if (
+    receipt.bounds?.blastRadius === "CRITICAL" &&
+    receipt.bounds?.reversible === false
+  ) {
+    violations.push("CRITICAL irreversible action requires F13 sovereign path — not auto forgeExecute");
   }
 
   // Lineage
@@ -210,13 +232,14 @@ export async function forgeExecute(
         succeeded: 0,
         failed: 0,
         totalDurationMs: 0,
-        verdict: "FAILURE",
+        verdict: "REFUSED",
       },
+      refusalReasons: validation.violations,
       timestamp: new Date().toISOString(),
     };
   }
 
-  // Only SEAL or SABAR can execute
+  // Only SEAL or SABAR can execute (kernel already collapsed; F13 still supreme)
   if (receipt.verdict !== "SEAL" && receipt.verdict !== "SABAR") {
     return {
       receipt,
@@ -226,8 +249,11 @@ export async function forgeExecute(
         succeeded: 0,
         failed: 0,
         totalDurationMs: 0,
-        verdict: "FAILURE",
+        verdict: "REFUSED",
       },
+      refusalReasons: [
+        `Verdict ${receipt.verdict} is not executable — only SEAL|SABAR after 888`,
+      ],
       timestamp: new Date().toISOString(),
     };
   }
