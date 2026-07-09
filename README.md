@@ -116,6 +116,8 @@ MIND (Hermes:8644) and MEMORY (VAULT999) are separate federation services — A-
 
 Full doctrine: [GENESIS/040_APEX_STACK.md](https://github.com/ariffazil/arifos/blob/main/GENESIS/040_APEX_STACK.md)
 
+**Orthogonal CANON:** [ariffazil/CANON.md](https://github.com/ariffazil/ariffazil/blob/main/CANON.md) — this repo owns **APA + ACT + VAULT999 read/types**. arifOS owns ART + KERNEL + seal write. AAA owns doctrine. Product space: ART × KERNEL × APA × ACT → VAULT999.
+
 ---
 
 ## One-Sentence Identity
