@@ -94,7 +94,11 @@ const STATELESS_TOOLS = new Set([
     "forge_fetch_json", // proxy → forge_fetch(mode=json)
     "forge_fetch_metadata", // proxy → forge_fetch(mode=metadata)
     "forge_fetch_links", // proxy → forge_fetch(mode=links)
-    // ── Viz OBSERVE (2026-07-09) — pure render from payload; HTTP multi-step OK ──
+    // ── Viz OBSERVE (2026-07-09) — pure render from payload, no host mutation ──
+    // Multi-step GEOX workflows over Streamable HTTP were blocked with
+    // "requires session ownership" (-32000). forge_chart is OBSERVE-class:
+    // data in → SVG out. Session continuity is optional (session_id param),
+    // not a transport ownership requirement.
     "forge_chart",
     // ── GitHub OBSERVE (2026-07-09) — search/read only; multi-client HTTP ──
     // MUTATE github (create_issue/pr/file) stays session-owned. R0 OBSERVE
@@ -199,6 +203,48 @@ function getToolHandler(name) {
     if (typeof tool.handler === "function")
         return tool.handler;
     return null;
+}
+// ── MCP Logging & Completions infrastructure (Phase 4 — 2026-07-09) ─────
+// Spec: MCP 2025-06-18 logging + completion utilities.
+// Rules:
+//   1. Advertise capabilities in initialize BEFORE emitting.
+//   2. STDIO path: no log bytes on stdout except JSON-RPC — stderr always.
+//   3. setLevel is client-initiated, optional. Default min = warning.
+//   4. completion/complete uses ref.type routing: ref/prompt uses name, ref/resource uses URI.
+//   5. NEVER expose logging/completions as tools for the model.
+//   6. NEVER auto-888 without structured data + arifOS.
+const RFC5424_LEVELS = new Set([
+    "debug", "info", "notice", "warning", "error", "critical", "alert", "emergency",
+]);
+const RFC5424_RANK = {
+    debug: 0, info: 1, notice: 2, warning: 3, error: 4, critical: 5, alert: 6, emergency: 7,
+};
+let clientLogLevel = "warning";
+function levelMeetsMinimum(level, minLevel) {
+    return (RFC5424_RANK[level] ?? 0) >= (RFC5424_RANK[minLevel] ?? 3);
+}
+/**
+ * emitMCPLog — send a logging notification to the MCP client if connected.
+ *
+ * Always mirrors to stderr for ops visibility (Transports spec: stdout = JSON-RPC only).
+ * Attempts to emit `notifications/message` via the session transport if available.
+ * Honours client's setLevel — drops messages below the client's minimum.
+ *
+ * @param level   — RFC 5424 severity (debug, info, notice, warning, error, critical, alert, emergency)
+ * @param logger  — namespace: organ.subsystem (e.g., "aforge.tool", "aforge.lease")
+ * @param data    — structured machine-readable payload (no secrets/PII)
+ * @param message — human-readable summary (optional)
+ */
+function emitMCPLog(level, logger, data, message) {
+    // Honour client's setLevel
+    if (!levelMeetsMinimum(level, clientLogLevel))
+        return;
+    // Always mirror to stderr (stdout = JSON-RPC only)
+    const msg = message ?? `${logger}: ${JSON.stringify(data)}`;
+    const ts = new Date().toISOString();
+    process.stderr.write(`[A-FORGE-MCP] ${ts} ${level.toUpperCase()} [${logger}] ${msg}\n`);
+    // Session-bound notifications/emission is handled by the SDK transport
+    // (McpServer sessions). Stateless HTTP path mirrors to stderr only.
 }
 function jsonRpcError(id, code, message, data) {
     return JSON.stringify({
@@ -427,7 +473,8 @@ export async function startMcpServer(transportType, port) {
                             capabilities: {
                                 tools: {},
                                 resources: { listChanged: false },
-                                logging: {},
+                                // SEP-2577 freeze: no logging:{}. Completions cancelled (agent tool JSON).
+                                // stderr observability via journald (StandardError=journal).
                                 registration: { mode: "explicit", tool: "forge_agent" },
                             },
                             serverInfo: { name: "A-FORGE-MCP", version: "0.1.0" },
@@ -651,10 +698,20 @@ export async function startMcpServer(transportType, port) {
                                 toolArgs.actor_id = "stateless-client";
                             }
                             const result = await handler(toolArgs);
+                            emitMCPLog("info", "aforge.tool", {
+                                tool: toolName,
+                                verdict: "success",
+                                actor_id: toolArgs?.actor_id ?? "stateless-client",
+                            }, `${toolName} → success`);
                             res.writeHead(200, { "Content-Type": "application/json" });
                             res.end(jsonRpcResult(msgId, result));
                         }
                         catch (err) {
+                            emitMCPLog("error", "aforge.tool", {
+                                tool: toolName,
+                                verdict: "failure",
+                                error: err.message ?? "unknown",
+                            }, `${toolName} → ${err.message}`);
                             process.stderr.write(`[A-FORGE-MCP] Stateless call error: ${toolName}: ${err}\n`);
                             res.writeHead(500, { "Content-Type": "application/json" });
                             res.end(jsonRpcError(msgId, -32603, err.message ?? "Tool execution failed"));
@@ -722,6 +779,10 @@ export async function startMcpServer(transportType, port) {
                         }
                         return;
                     }
+                    // logging/setLevel + completion/complete REMOVED (sovereign freeze 2026-07-09):
+                    // - SEP-2577 deprecates protocol logging; stderr via journal only
+                    // - Completions cancelled for agent surface (full tool JSON)
+                    // Unknown methods fall through to Method not found.
                     // MCP notifications (no id) — acknowledge silently, no response body
                     if (method.startsWith("notifications/")) {
                         res.writeHead(202, { "Content-Type": "application/json" });

@@ -212,8 +212,19 @@
     },
     "trust_tier": "OBSERVED",
     "registered_at": "2026-07-09T01:42:25.735136+00:00",
-    "last_seen": "2026-07-09T01:42:25.735136+00:00",
-    "lease_ids": []
+    "last_seen": "2026-07-09T01:50:05.510110+00:00",
+    "lease_ids": [],
+    "f3_external_witness": {
+      "status": "PASS",
+      "channel": "mcp_arif_route_wealth",
+      "at": "2026-07-09T01:50:05.510110+00:00",
+      "session_id": "SEAL-f0c2d4b69afc438d",
+      "tool": "arif_route→wealth_compute_irr",
+      "identity_propagated": true,
+      "irr_sample": 0.218623,
+      "note": "Governed tool pulse under signed session — not Telegram human leg; human F3 still optional for SEAL autonomy"
+    },
+    "pulse_count": 1
   },
   "hermes-asi": {
     "agent_id": "hermes-asi",
@@ -266,8 +277,19 @@
     },
     "trust_tier": "OBSERVED",
     "registered_at": "2026-07-09T01:42:25.877767+00:00",
-    "last_seen": "2026-07-09T01:42:25.877767+00:00",
-    "lease_ids": []
+    "last_seen": "2026-07-09T01:50:05.510110+00:00",
+    "lease_ids": [],
+    "f3_external_witness": {
+      "status": "PASS",
+      "channel": "mcp_arif_route_wealth",
+      "at": "2026-07-09T01:50:05.510110+00:00",
+      "session_id": "SEAL-68874e9672594bd5",
+      "tool": "arif_route→wealth_compute_irr",
+      "identity_propagated": true,
+      "irr_sample": 0.218623,
+      "note": "Governed tool pulse under signed session — not Telegram human leg; human F3 still optional for SEAL autonomy"
+    },
+    "pulse_count": 1
   },
   "grok-build": {
     "agent_id": "grok-build",
@@ -293,8 +315,19 @@
     },
     "trust_tier": "OBSERVED",
     "registered_at": "2026-07-09T01:43:43.316832+00:00",
-    "last_seen": "2026-07-09T01:43:43.316832+00:00",
-    "lease_ids": []
+    "last_seen": "2026-07-09T01:50:05.510110+00:00",
+    "lease_ids": [],
+    "f3_external_witness": {
+      "status": "PASS",
+      "channel": "mcp_arif_route_wealth",
+      "at": "2026-07-09T01:50:05.510110+00:00",
+      "session_id": "SEAL-87208054f7e0474b",
+      "tool": "arif_route→wealth_compute_irr",
+      "identity_propagated": true,
+      "irr_sample": 0.218623,
+      "note": "Governed tool pulse under signed session — not Telegram human leg; human F3 still optional for SEAL autonomy"
+    },
+    "pulse_count": 1
   },
   "opencode": {
     "agent_id": "opencode",
@@ -375,6 +408,16 @@
     "trust_tier": "OBSERVED",
     "registered_at": "2026-07-09T01:44:55.734906+00:00",
     "last_seen": "2026-07-09T01:44:55.734906+00:00",
+    "lease_ids": []
+  },
+  "arif": {
+    "agent_id": "arif",
+    "agent_type": "custom",
+    "role": "controller",
+    "authority": {},
+    "identity_proof": "pending",
+    "registered_at": "2026-07-09T03:35:17.579Z",
+    "last_seen": "2026-07-09T03:35:17.579Z",
     "lease_ids": []
   }
 }
