@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://arif-fazil.com/schemas/apa/github/create_issue",
+  "title": "APA GitHub — Create Issue",
+  "description": "Sovereign GitHub issue creation. Requires lease (scope: github.mutate). APA-gated.",
+  "type": "object",
+  "properties": {
+    "lease_id": {
+      "type": "string",
+      "description": "Active APA lease with scope github.mutate"
+    },
+    "owner": {
+      "type": "string",
+      "description": "Repository owner (username or organization)"
+    },
+    "repo": {
+      "type": "string",
+      "description": "Repository name"
+    },
+    "title": {
+      "type": "string",
+      "description": "Issue title"
+    },
+    "body": {
+      "type": "string",
+      "description": "Issue body (markdown)"
+    },
+    "labels": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "assignees": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "actor_id": {
+      "type": "string",
+      "default": "333-AGI"
+    },
+    "session_id": {
+      "type": "string"
+    }
+  },
+  "required": ["lease_id", "owner", "repo", "title"]
+}
