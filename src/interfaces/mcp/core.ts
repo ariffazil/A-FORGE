@@ -852,12 +852,23 @@ server.tool(
     await telemetryInvoke("forge_session_init");
     return runStage("000_INIT" as MetabolicStage, async () => {
       try {
-	// Proxy to kernel's arif_session_init (mode=light for fast bootstrap)
-        const kernelResponse = await callMCP("arifos.arif_session_init", {
-          actor_id,
-          intent: intent ?? "aforge session",
-          mode: "light",
-        });
+	// Proxy to kernel arif_init (canonical 000). arif_session_init is alias;
+        // prefer arif_init — REST path was broken by SealType.REJECT (fixed 2026-07-09).
+        let kernelResponse: unknown;
+        try {
+          kernelResponse = await callMCP("arifos.arif_init", {
+            actor_id,
+            intent: intent ?? "aforge session",
+            mode: "light",
+          });
+        } catch (primaryErr) {
+          // Backward-compat fallback for older kernels still exposing session_init only
+          kernelResponse = await callMCP("arifos.arif_session_init", {
+            actor_id,
+            intent: intent ?? "aforge session",
+            mode: "light",
+          });
+        }
         const response = kernelResponse as Record<string, unknown>;
 	// Extract session_id from kernel response (nested in session object or result object)
         const sessionObj = response.session as Record<string, unknown> | undefined;
