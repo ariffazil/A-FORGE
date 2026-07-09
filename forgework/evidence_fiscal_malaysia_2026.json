@@ -1,0 +1,157 @@
+{
+  "$schema_version": "evidence-ledger-v0.2",
+  "title": "Evidence Ledger — Malaysia Fiscal 2026",
+  "version": "0.3-draft",
+  "created": "2026-07-09",
+  "created_by": "FORGE-000Ω",
+  "session": "SEAL-533821c0d6f94b72",
+  "valid_until": "2026-08-09",
+  "requires_refresh_after_days": 30,
+  "status": "DRAFT_ONLY",
+  "not_sealed_notice": "All USER_SUPPLIED entries require public source verification before any SEAL promotion. Confidence caps: USER_SUPPLIED=0.65, DERIVED_FROM_USER=0.60, PUBLIC_VERIFIED=0.90.",
+  "evidence_layer": "L2/L3",
+  "runtime_health_snapshot": {
+    "wealth": "registered_but_origin_blocked",
+    "geox": "session_required",
+    "arifos": "alive_observing",
+    "vault999": "not_sealed"
+  },
+  "source_bundle_status": "INCOMPLETE",
+  "required_source_fields": [
+    "source_title",
+    "publisher",
+    "publication_date",
+    "accessed_date",
+    "url",
+    "exact_figure_used",
+    "claim_scope",
+    "confidence",
+    "expiry"
+  ],
+  "evidence": [
+    {
+      "id": "E001",
+      "claim": "Malaysia fuel subsidy cost RM3–5 billion per month",
+      "figure_observed": "RM3-5b/month",
+      "figure_numeric_myr_b": {"low": 3, "high": 5, "unit": "MYR_b_per_month"},
+      "source": "USER_SUPPLIED",
+      "source_type": "human_input",
+      "source_actor": "Arif (F13)",
+      "date_supplied": "2026-07-09",
+      "confidence": 0.65,
+      "confidence_basis": "USER_SUPPLIED, no public corroboration in workspace",
+      "expiry": "requires_refresh_on_new_MOF_disclosure",
+      "status": "UNVERIFIED",
+      "url": null,
+      "source_title": null,
+      "publisher": null,
+      "publication_date": null,
+      "accessed_date": "2026-07-09",
+      "exact_figure_used": "RM3-5b/month",
+      "claim_scope": "Malaysia fuel subsidy monthly burden",
+      "tags": ["subsidy", "monthly_burn"]
+    },
+    {
+      "id": "E002",
+      "claim": "2026 subsidy burden projection ~RM40 billion",
+      "figure_observed": "RM40b projected 2026",
+      "figure_numeric_myr_b": 40,
+      "source": "USER_SUPPLIED",
+      "source_type": "human_input",
+      "source_actor": "Arif (F13)",
+      "date_supplied": "2026-07-09",
+      "confidence": 0.55,
+      "confidence_basis": "USER_SUPPLIED projection, not measurement; depends on Brent path",
+      "expiry": "requires_refresh_on_2027_budget_or_MOF_update",
+      "status": "UNVERIFIED",
+      "url": null,
+      "source_title": null,
+      "publisher": null,
+      "publication_date": null,
+      "accessed_date": "2026-07-09",
+      "exact_figure_used": "RM40b projected 2026",
+      "claim_scope": "Malaysia annual subsidy burden projection",
+      "tags": ["subsidy", "annual_projection"]
+    },
+    {
+      "id": "E003",
+      "claim": "Per US$10/bbl Brent move: +RM3.0b PETRONAS revenue, -RM3.5b subsidy",
+      "figure_observed": "+RM3.0b revenue / -RM3.5b subsidy per US$10 Brent",
+      "figure_numeric_myr_b_per_10usd": {"petronas_revenue": 3.0, "subsidy_cost": -3.5},
+      "source": "DERIVED_FROM_USER_INPUT",
+      "source_type": "derived",
+      "source_actor": "FORGE-000Ω (sensitivity computation)",
+      "date_computed": "2026-07-09",
+      "confidence": 0.60,
+      "confidence_basis": "DERIVED; depends on PETRONAS production mix + subsidy policy elasticities (not in workspace)",
+      "expiry": "requires_refresh_on_production_or_policy_change",
+      "status": "UNVERIFIED_DERIVED",
+      "url": null,
+      "source_title": null,
+      "publisher": null,
+      "publication_date": null,
+      "accessed_date": "2026-07-09",
+      "exact_figure_used": "+RM3.0b revenue / -RM3.5b subsidy per US$10 Brent",
+      "claim_scope": "Illustrative sensitivity, not public verified measurement",
+      "tags": ["sensitivity", "brent", "subsidy", "petronas"]
+    },
+    {
+      "id": "E004",
+      "claim": "MOF subsidy breakeven ~US$90–100 per barrel",
+      "figure_observed": "US$90-100/bbl breakeven",
+      "figure_numeric_usd_bbl": {"low": 90, "high": 100},
+      "source": "USER_SUPPLIED",
+      "source_type": "human_input",
+      "source_actor": "Arif (F13)",
+      "date_supplied": "2026-07-09",
+      "confidence": 0.55,
+      "confidence_basis": "USER_SUPPLIED; MOF disclosure needed for verification",
+      "expiry": "requires_refresh_on_new_MOF_disclosure",
+      "status": "UNVERIFIED",
+      "url": null,
+      "source_title": null,
+      "publisher": null,
+      "publication_date": null,
+      "accessed_date": "2026-07-09",
+      "exact_figure_used": "US$90-100/bbl breakeven",
+      "claim_scope": "MOF-linked fuel subsidy breakeven band",
+      "tags": ["breakeven", "brent", "mof"]
+    }
+  ],
+  "verification_targets": [
+    {
+      "claim_id": "E001",
+      "needed_from": ["MOF", "Parliamentary written reply", "major newswire"],
+      "replace_with_status": "PUBLIC_VERIFIED"
+    },
+    {
+      "claim_id": "E002",
+      "needed_from": ["MOF", "Budget speech", "official fiscal outlook"],
+      "replace_with_status": "PUBLIC_VERIFIED"
+    },
+    {
+      "claim_id": "E003",
+      "needed_from": ["PETRONAS annual report", "MOF sensitivity tables", "backtest worksheet"],
+      "replace_with_status": "PUBLIC_VERIFIED_OR_MODEL_VALIDATED"
+    },
+    {
+      "claim_id": "E004",
+      "needed_from": ["MOF statement", "official subsidy disclosure"],
+      "replace_with_status": "PUBLIC_VERIFIED"
+    }
+  ],
+  "verification_gaps": [
+    "No MOF or PETRONAS annual report URLs verified in workspace",
+    "No third-party news source bundle for July 2026 figures",
+    "No historical backtest of sensitivity claim against prior years",
+    "No FX/LNG calibration data for Malaysia-specific terms",
+    "No PETRONAS production mix / capex floor / liquidity data"
+  ],
+  "promotion_path_to_seal": [
+    "Replace USER_SUPPLIED entries with PUBLIC_VERIFIED entries (URL + date + quoted figure)",
+    "Add PETRONAS 2021-2025 annual report datapack (production, capex, dividends, net cash, taxes, reserves)",
+    "Add USD/MYR historical sensitivity",
+    "Add LNG contract linkage assumptions",
+    "Once evidence_layer >= L4 and all confidence >= 0.70, route through arif_judge"
+  ]
+}

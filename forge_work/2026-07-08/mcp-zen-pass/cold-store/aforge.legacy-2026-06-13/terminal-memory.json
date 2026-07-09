@@ -1,0 +1,42 @@
+[
+  {
+    "id": "running-summary",
+    "summary": "[evicted: 2026-06-05T09:35:33.447Z] [read_file]: Tool error: ENOENT: no such file or directory, stat '/root/A-FORGE/types/tool.ts'\n---\n[evicted: 2026-06-05T09:35:34.690Z] [Context summary unavailable]\n---\n[evicted: 2026-06-05T09:35:34.708Z] [grep_text]: /root/A-FORGE/docs/ZOO_CONTROL_MATRIX.md:59:| **Privilege bleed** — elevated permissions leak across contexts | F13 Sovereign | `ToolPermissionContext`, `ToolRegistry` | `arifos_privilege_bleed_total`\n---\n[evicted: 2026-06-05T09:35:35.818Z] [Context summary unavailable]\n---\n[evicted: 2026-06-05T09:35:35.821Z] [read_file]: export type ToolRiskLevel = \"safe\" | \"guarded\" | \"dangerous\";\n---\n[evicted: 2026-06-05T09:41:22.202Z] [User]: what the fuck is thois\n---\n[evicted: 2026-06-05T09:41:23.525Z] [list_files]: dir\t.agents\n---\n[evicted: 2026-06-05T09:41:24.436Z] [read_file]: # A-FORGE — Vision Execution Shell\n---\n[evicted: 2026-06-05T09:41:25.413Z] [read_file]: {\n---\n[evicted: 2026-06-05T09:41:25.416Z] [Context summary unavailable]\n---\n[evicted: 2026-06-05T09:41:26.498Z] [list_files]: dir\ta2a\n---\n[evicted: 2026-06-05T09:41:26.501Z] [Context summary unavailable]\n---\n[evicted: 2026-06-05T09:41:27.879Z] [Context summary unavailable]\n---\n[evicted: 2026-06-05T09:41:28.765Z] [list_files]: dir\ta2a\n---\n[evicted: 2026-06-05T09:41:28.768Z] [Context summary unavailable]\n---\n[evicted: 2026-06-05T09:41:29.860Z] [Context summary unavailable]\n---\n[evicted: 2026-06-05T09:41:31.326Z] [list_files]: Tool error: ENOENT: no such file or directory, scandir '/root/A-FORGE/types'\n---\n[evicted: 2026-06-05T09:41:31.330Z] [list_files]: Tool error: ENOENT: no such file or directory, scandir '/root/A-FORGE/types'\n---\n[evicted: 2026-06-05T09:41:32.685Z] [list_files]: dir\t.agents\n---\n[evicted: 2026-06-05T09:41:33.730Z] [Context summary unavailable]\n---\n[evicted: 2026-06-05T09:41:33.733Z] [list_files]: dir\ta2a\n---\n[evicted: 2026-06-05T09:41:34.594Z] [list_files]: dir\t00_META\n---\n[evicted: 2026-06-05T09:41:34.598Z] [Context summary unavailable]\n---\n[evicted: 2026-06-05T09:41:35.998Z] [Context summary unavailable]\n---\n[evicted: 2026-06-05T09:41:37.627Z] [list_files]: Tool error: ENOENT: no such file or directory, scandir '/root/A-FORGE/types'\n---\n[evicted: 2026-06-05T09:41:37.631Z] [Context summary unavailable]",
+    "keywords": [
+      "running-summary",
+      "context",
+      "evicted"
+    ],
+    "createdAt": "2026-06-05T09:41:37.633Z",
+    "metadata": {
+      "source": "ShortTermMemory eviction"
+    }
+  },
+  {
+    "id": "7dea0350-f00f-408b-8c5c-760119239d18",
+    "summary": "[BUDGET] Session terminated: token budget exhausted (≥95%). No further LLM calls permitted.\n\n[888_JUDGE APEX: G=0.872 | A=0.98 P=0.98 X=0.96 E=0.97 | SEAL]",
+    "keywords": [
+      "arif",
+      "tell",
+      "everything",
+      "about",
+      "a-forge",
+      "budget",
+      "session",
+      "terminated",
+      "token",
+      "exhausted",
+      "further",
+      "calls",
+      "permitted",
+      "888_judge",
+      "apex",
+      "seal"
+    ],
+    "createdAt": "2026-06-05T09:35:35.825Z",
+    "metadata": {
+      "profile": "fix",
+      "turnCount": 29
+    }
+  }
+]

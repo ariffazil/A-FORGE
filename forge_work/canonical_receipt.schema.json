@@ -1,0 +1,393 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://arifos.federation/schemas/canonical_receipt/v1.0.0",
+  "title": "Canonical Receipt — arifOS Federation Organ Handoff Envelope",
+  "description": "Every organ handoff (GEOX, WEALTH, WELL, AAA, arifOS, OPENCLAW, VAULT999) must emit and consume this envelope before the next stage is trusted. No required identity field may be nullable. No organ may emit L1 unless vault999_status is SEALED. No LLM/AAA output may emit SEALED.",
+  "type": "object",
+  "required": [
+    "receipt_id",
+    "session_id",
+    "actor_id",
+    "principal_id",
+    "operator_id",
+    "agent_id",
+    "tool_id",
+    "organ",
+    "tool_name",
+    "action_class",
+    "authority_scope",
+    "input_hash",
+    "output_hash",
+    "timestamp",
+    "epistemic_status",
+    "evidence_layer",
+    "authority_claim",
+    "reversibility",
+    "mutation",
+    "external_side_effect",
+    "witnesses",
+    "dependencies",
+    "floor_results",
+    "verdict_request",
+    "vault999_status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "receipt_id": {
+      "type": "string",
+      "pattern": "^receipt_[a-zA-Z0-9_-]{16,64}$",
+      "description": "Unique receipt identifier. Format: receipt_<uuid> or receipt_<hash>"
+    },
+    "session_id": {
+      "type": "string",
+      "minLength": 8,
+      "description": "Constitutional session ID from arif_init. Non-nullable."
+    },
+    "actor_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identity of the actor who initiated the action. Non-nullable. Cannot be blank."
+    },
+    "principal_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The sovereign or human principal (e.g., ARIF). Cannot be inferred. Non-nullable."
+    },
+    "operator_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The executing operator: human, agent, or service. Non-nullable."
+    },
+    "agent_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The specific executing agent (e.g., FORGE, AUDITOR, GEOX). Non-nullable."
+    },
+    "tool_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The specific invoked tool (e.g., geox_compute, wealth_npv). Non-nullable."
+    },
+    "organ": {
+      "type": "string",
+      "enum": ["arifOS", "A-FORGE", "GEOX", "WEALTH", "WELL", "AAA", "VAULT999", "OPENCLAW"],
+      "description": "The organ emitting this receipt."
+    },
+    "tool_name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Canonical tool name (same as tool_id in most cases)."
+    },
+    "action_class": {
+      "type": "string",
+      "enum": ["OBSERVE", "COMPUTE", "RECOMMEND", "MUTATE", "SEAL_REQUEST"],
+      "description": "Classification of the action being performed."
+    },
+    "authority_scope": {
+      "type": "string",
+      "enum": ["observe", "compute", "recommend", "reversible_mutate", "irreversible_request", "seal_request"],
+      "description": "Authority scope granted for this action."
+    },
+    "input_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hash of the input data. Non-nullable."
+    },
+    "output_hash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hash of the output data. Non-nullable."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of receipt creation."
+    },
+    "epistemic_status": {
+      "type": "string",
+      "enum": ["OBS", "DER", "INT", "SPEC"],
+      "description": "Epistemic classification of the output. OBS=observed, DER=derived, INT=interpreted, SPEC=speculated."
+    },
+    "evidence_layer": {
+      "type": "string",
+      "enum": ["L1_GROUND_TRUTH", "L2_VERIFIED_STATE", "L3_CACHED_STATE", "L4_INFERRED"],
+      "description": "Evidence layer classification. L1 requires vault999_status=SEALED."
+    },
+    "authority_claim": {
+      "type": "string",
+      "enum": ["NONE", "ADVISORY", "RECOMMENDATION", "VERDICT_REQUEST", "SEAL_REQUEST", "SEALED_RECEIPT"],
+      "description": "Level of authority claimed by this receipt."
+    },
+    "reversibility": {
+      "type": "string",
+      "enum": ["REVERSIBLE", "COSTLY_REVERSIBLE", "IRREVERSIBLE"],
+      "description": "Reversibility classification of the action."
+    },
+    "mutation": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["none", "filesystem", "database", "network", "config", "state", "vault"],
+          "description": "Type of mutation performed."
+        },
+        "scope": {
+          "type": "string",
+          "enum": ["local", "organ", "federation", "external"],
+          "description": "Scope of the mutation."
+        },
+        "reversible": {
+          "type": "boolean",
+          "description": "Whether the mutation is reversible."
+        },
+        "rollback_path": {
+          "type": ["string", "null"],
+          "description": "Path or command to rollback the mutation. Null if irreversible."
+        }
+      },
+      "required": ["type", "scope", "reversible"],
+      "description": "Mutation details if action_class is MUTATE."
+    },
+    "external_side_effect": {
+      "type": "object",
+      "properties": {
+        "present": {
+          "type": "boolean",
+          "description": "Whether external side effects exist."
+        },
+        "description": {
+          "type": ["string", "null"],
+          "description": "Description of external side effects."
+        },
+        "blast_radius": {
+          "type": "string",
+          "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+          "description": "Blast radius of side effects."
+        }
+      },
+      "required": ["present"],
+      "description": "External side effect assessment."
+    },
+    "witnesses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "witness_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique witness identifier."
+          },
+          "witness_type": {
+            "type": "string",
+            "enum": [
+              "EXECUTION_TRACE",
+              "DOMAIN_ORGAN",
+              "INDEPENDENT_AI_MODEL",
+              "INDEPENDENT_HUMAN",
+              "EARTH_MEASUREMENT",
+              "CAPITAL_EVIDENCE",
+              "SOVEREIGN_ARIF_F13",
+              "VAULT999_RECEIPT"
+            ],
+            "description": "Type of witness."
+          },
+          "independence_class": {
+            "type": "string",
+            "enum": [
+              "SAME_TOOL",
+              "SAME_AGENT",
+              "SAME_MODEL",
+              "SAME_PROVIDER",
+              "DIFFERENT_MODEL",
+              "DIFFERENT_PROVIDER",
+              "HUMAN",
+              "INSTRUMENT",
+              "VAULT999"
+            ],
+            "description": "Independence class of the witness."
+          },
+          "signature": {
+            "type": ["string", "null"],
+            "description": "Cryptographic signature if available. Null for unsigned traces."
+          },
+          "evidence": {
+            "type": ["string", "null"],
+            "description": "Evidence provided by witness."
+          }
+        },
+        "required": ["witness_id", "witness_type", "independence_class"],
+        "additionalProperties": false
+      },
+      "description": "Array of witnesses. Non-empty for VERDICT_REQUEST and SEAL_REQUEST."
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "prior_receipt_id": {
+            "type": "string",
+            "description": "Receipt ID of the dependency."
+          },
+          "relationship": {
+            "type": "string",
+            "enum": ["input_from", "validated_by", "witnessed_by", "sealed_by"],
+            "description": "Relationship to prior receipt."
+          }
+        },
+        "required": ["prior_receipt_id"],
+        "additionalProperties": false
+      },
+      "description": "Hash-linked prior receipt IDs. Empty array if no dependencies."
+    },
+    "floor_results": {
+      "type": "object",
+      "properties": {
+        "F1": {
+          "$ref": "#/definitions/floor_result",
+          "description": "AMANAH — Reversibility check."
+        },
+        "F2": {
+          "$ref": "#/definitions/floor_result",
+          "description": "TRUTH — Evidence layer declared."
+        },
+        "F3": {
+          "$ref": "#/definitions/floor_result",
+          "description": "WITNESS — Alignment with intent and evidence."
+        },
+        "F4": {
+          "$ref": "#/definitions/floor_result",
+          "description": "CLARITY — Verdict is explicit."
+        },
+        "F5": {
+          "$ref": "#/definitions/floor_result",
+          "description": "PEACE — No unnecessary escalation."
+        },
+        "F6": {
+          "$ref": "#/definitions/floor_result",
+          "description": "MARUAH — Dignity preserved."
+        },
+        "F7": {
+          "$ref": "#/definitions/floor_result",
+          "description": "HUMILITY — Unknowns declared."
+        },
+        "F8": {
+          "$ref": "#/definitions/floor_result",
+          "description": "LAW — Action is safe and legal."
+        },
+        "F9": {
+          "$ref": "#/definitions/floor_result",
+          "description": "ANTI-HANTU — No hallucinated artifacts."
+        },
+        "F10": {
+          "$ref": "#/definitions/floor_result",
+          "description": "ONTOLOGY — No false consciousness claims."
+        },
+        "F11": {
+          "$ref": "#/definitions/floor_result",
+          "description": "AUDIT — Authority sufficient."
+        },
+        "F12": {
+          "$ref": "#/definitions/floor_result",
+          "description": "INJECTION — No bypass attempt."
+        },
+        "F13": {
+          "$ref": "#/definitions/floor_result",
+          "description": "SOVEREIGN — Human veto respected."
+        }
+      },
+      "required": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13"],
+      "additionalProperties": false,
+      "description": "Floor-by-floor PASS/HOLD/VOID results. All 13 floors required."
+    },
+    "verdict_request": {
+      "type": "object",
+      "properties": {
+        "requested": {
+          "type": "boolean",
+          "description": "Whether a verdict is being requested."
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "description": "Reason for verdict request."
+        }
+      },
+      "required": ["requested"],
+      "description": "Verdict request details."
+    },
+    "vault999_status": {
+      "type": "string",
+      "enum": ["NONE", "DRAFT_ONLY", "REQUESTED", "SEALED"],
+      "description": "VAULT999 seal status. SEALED only by VAULT999 owner."
+    }
+  },
+  "definitions": {
+    "floor_result": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["PASS", "HOLD", "VOID"],
+          "description": "Floor verdict status."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Reason for the floor verdict."
+        }
+      },
+      "required": ["status", "reason"],
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "authority_claim": {
+            "enum": ["VERDICT_REQUEST", "SEAL_REQUEST"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "witnesses": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "evidence_layer": {
+            "const": "L1_GROUND_TRUTH"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "vault999_status": {
+            "const": "SEALED"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "vault999_status": {
+            "const": "SEALED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "organ": {
+            "const": "VAULT999"
+          }
+        }
+      }
+    }
+  ]
+}

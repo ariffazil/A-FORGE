@@ -1,0 +1,1350 @@
+{
+  "schema_version": "arifos.sot/v1",
+  "invariants": {
+    "organs": [
+      "arifOS",
+      "A-FORGE",
+      "AAA",
+      "GEOX",
+      "WEALTH",
+      "WELL",
+      "VAULT999"
+    ],
+    "canonical_floors": [
+      "F1",
+      "F2",
+      "F3",
+      "F4",
+      "F5",
+      "F6",
+      "F7",
+      "F8",
+      "F9",
+      "F10",
+      "F11",
+      "F12",
+      "F13"
+    ],
+    "tool_status_values": [
+      "canonical",
+      "deprecated",
+      "experimental"
+    ],
+    "organ_status_values": [
+      "healthy",
+      "degraded",
+      "unreachable",
+      "maintenance"
+    ],
+    "mcp_protocol": "2025-03-26",
+    "transport": "streamable-http"
+  },
+  "dynamic_state": {
+    "last_verified_utc": "2026-07-08T16:11:39.419920+00:00",
+    "schema_drift": [
+      "arifOS/arif_init: unmarked",
+      "arifOS/arif_triage: unmarked",
+      "arifOS/arif_observe: unmarked",
+      "arifOS/arif_think: unmarked",
+      "arifOS/arif_route: unmarked",
+      "arifOS/arif_bridge_connect: unmarked",
+      "arifOS/arif_critique: unmarked",
+      "arifOS/arif_memory: unmarked",
+      "arifOS/arif_judge: unmarked",
+      "arifOS/arif_forge: unmarked",
+      "arifOS/arif_compose: unmarked",
+      "arifOS/arif_seal: unmarked",
+      "A-FORGE/forge_session_init: unmarked",
+      "A-FORGE/forge_health_check: unmarked",
+      "A-FORGE/forge_heart_critique: unmarked",
+      "A-FORGE/forge_check_governance: unmarked",
+      "A-FORGE/forge_execute: unmarked",
+      "A-FORGE/forge_approve: unmarked",
+      "A-FORGE/forge_judge_proxy: unmarked",
+      "A-FORGE/forge_transfer_confirm: unmarked",
+      "A-FORGE/forge_send_confirm: unmarked",
+      "A-FORGE/forge_vault: unmarked",
+      "A-FORGE/forge_wealth: unmarked",
+      "A-FORGE/forge_systemctl: unmarked",
+      "A-FORGE/forge_journalctl: unmarked",
+      "A-FORGE/forge_well: unmarked",
+      "A-FORGE/forge_chart: unmarked",
+      "A-FORGE/forge_probe: unmarked",
+      "A-FORGE/forge_scan: unmarked",
+      "A-FORGE/forge_filesystem: unmarked",
+      "A-FORGE/forge_filesystem_read: unmarked",
+      "A-FORGE/forge_filesystem_write: unmarked",
+      "A-FORGE/forge_filesystem_patch: unmarked",
+      "A-FORGE/forge_filesystem_tree: unmarked",
+      "A-FORGE/forge_filesystem_search: unmarked",
+      "A-FORGE/forge_filesystem_stat: unmarked",
+      "A-FORGE/forge_filesystem_move: unmarked",
+      "A-FORGE/forge_filesystem_delete: unmarked",
+      "A-FORGE/forge_postgres: unmarked",
+      "A-FORGE/forge_memory: unmarked",
+      "A-FORGE/forge_git: unmarked",
+      "A-FORGE/forge_github: unmarked",
+      "A-FORGE/forge_docker: unmarked",
+      "A-FORGE/forge_fetch: unmarked",
+      "A-FORGE/forge_fetch_url: unmarked",
+      "A-FORGE/forge_fetch_json: unmarked",
+      "A-FORGE/forge_fetch_metadata: unmarked",
+      "A-FORGE/forge_fetch_links: unmarked",
+      "A-FORGE/forge_agent: unmarked",
+      "A-FORGE/forge_lease: unmarked",
+      "A-FORGE/forge_registry_status: unmarked",
+      "A-FORGE/forge_fingerprint_check: unmarked",
+      "A-FORGE/forge_shell: unmarked",
+      "A-FORGE/forge_shell_dryrun: unmarked",
+      "A-FORGE/forge_shell_status: unmarked",
+      "A-FORGE/forge_shell_ledger: unmarked",
+      "A-FORGE/forge_shell_alert_history: unmarked",
+      "A-FORGE/forge_job: unmarked",
+      "A-FORGE/forge_status: unmarked",
+      "A-FORGE/forge_abort: unmarked",
+      "A-FORGE/forge_vps_ports: unmarked",
+      "A-FORGE/forge_vps_services: unmarked",
+      "A-FORGE/forge_vps_cron: unmarked",
+      "A-FORGE/forge_boundaries_assert: unmarked",
+      "A-FORGE/forge_verify_timeline: unmarked",
+      "A-FORGE/forge_skill: unmarked",
+      "A-FORGE/forge_seal: unmarked",
+      "A-FORGE/forge_registry: unmarked",
+      "A-FORGE/forge_evaluate: unmarked",
+      "A-FORGE/forge_witness: unmarked",
+      "A-FORGE/forge_scar: unmarked",
+      "A-FORGE/forge_register: unmarked",
+      "A-FORGE/forge_reality_loop: unmarked",
+      "A-FORGE/forge_probe_site: unmarked",
+      "A-FORGE/forge_receipt_draft: unmarked",
+      "A-FORGE/forge_research: unmarked",
+      "A-FORGE/forge_search: unmarked",
+      "A-FORGE/forge_docs_lookup: unmarked",
+      "A-FORGE/forge_browser_navigate: unmarked",
+      "A-FORGE/forge_browser_click: unmarked",
+      "A-FORGE/forge_browser_type: unmarked",
+      "A-FORGE/forge_browser_screenshot: unmarked",
+      "A-FORGE/forge_browser_extract_text: unmarked",
+      "A-FORGE/forge_browser_evaluate_js: unmarked",
+      "A-FORGE/forge_github_search_code: unmarked",
+      "A-FORGE/forge_github_search_repos: unmarked",
+      "A-FORGE/forge_github_get_file: unmarked",
+      "A-FORGE/forge_github_create_or_update_file: unmarked",
+      "A-FORGE/forge_github_create_issue: unmarked",
+      "A-FORGE/forge_github_create_pull_request: unmarked",
+      "A-FORGE/forge_worktree: unmarked",
+      "A-FORGE/forge_netdata_alarms: unmarked",
+      "A-FORGE/forge_netdata_metrics: unmarked",
+      "A-FORGE/forge_minimax_search: unmarked",
+      "A-FORGE/forge_synthesize: unmarked",
+      "A-FORGE/forge_stage: unmarked",
+      "A-FORGE/forge_sandbox_run: unmarked",
+      "A-FORGE/forge_scar_scan: unmarked",
+      "A-FORGE/forge_skillstore_write: unmarked",
+      "A-FORGE/forge_skillstore_read: unmarked",
+      "A-FORGE/forge_tier_bind: unmarked",
+      "A-FORGE/forge_docket_prep: unmarked",
+      "A-FORGE/forge_execute_sealed: unmarked",
+      "A-FORGE/forge_document_ingest: unmarked",
+      "A-FORGE/forge_policy: unmarked",
+      "A-FORGE/forge_surface_guard: unmarked",
+      "A-FORGE/forge_surface_audit: unmarked",
+      "A-FORGE/forge_predict: unmarked",
+      "A-FORGE/forge_isomorphism_check: unmarked",
+      "A-FORGE/forge_lock: unmarked",
+      "A-FORGE/forge_pipeline_run: unmarked",
+      "WELL/well_health_check: unmarked",
+      "WELL/well_medical_boundary: unmarked",
+      "WELL/well_readiness: unmarked",
+      "WELL/well_signal_coverage: unmarked",
+      "WELL/well_classify_substrate: unmarked",
+      "WELL/well_trace_lineage: unmarked",
+      "WELL/well_detect_boundary: unmarked",
+      "WELL/well_measure_gradient: unmarked",
+      "WELL/well_assess_metabolism: unmarked",
+      "WELL/well_assess_homeostasis: unmarked",
+      "WELL/well_check_repair: unmarked",
+      "WELL/well_validate_vitality: unmarked",
+      "WELL/well_assess_livelihood: unmarked",
+      "WELL/well_assess_reliability: unmarked",
+      "WELL/well_compute_metabolic_flux: unmarked",
+      "WELL/well_assess_sovereign_entropy: unmarked",
+      "WELL/well_guard_dignity: unmarked",
+      "WELL/well_registry_status: unmarked"
+    ],
+    "unreachable_organs": [
+      "GEOX"
+    ],
+    "organs": {
+      "arifOS": {
+        "endpoint": "http://127.0.0.1:8088/mcp",
+        "port": 8088,
+        "protocol": "mcp",
+        "status": "healthy",
+        "tool_count": 12,
+        "canonical_count": 0,
+        "deprecated_count": 0,
+        "experimental_count": 0,
+        "version": "kanon-b55f78b",
+        "identity_hash_prefix": "afb9c0a4",
+        "tools": [
+          {
+            "name": "arif_init",
+            "status": "unmarked",
+            "title": "Init Session",
+            "description_excerpt": "START HERE. Bind governed session before any arif_* call. Without session_id, no governed action possible. Returns: sess"
+          },
+          {
+            "name": "arif_triage",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Session status, priority queue, and preflight checks. Modes: status (active session count + stage) | preflight (pre-sess"
+          },
+          {
+            "name": "arif_observe",
+            "status": "unmarked",
+            "title": "Sense & Observe",
+            "description_excerpt": "Reality grounding: web search, URL fetch, vitals, repo map, entropy. Select when: answer requires data not in your conte"
+          },
+          {
+            "name": "arif_think",
+            "status": "unmarked",
+            "title": "Mind Reason",
+            "description_excerpt": "Cognitive engine: reason, plan, reflect, critique, synthesize. Select when: problem needs decomposition, plan generation"
+          },
+          {
+            "name": "arif_route",
+            "status": "unmarked",
+            "title": "Route",
+            "description_excerpt": "Canonical intent router. Select when: you know what you want but not which tool or organ to call. Routes natural-languag"
+          },
+          {
+            "name": "arif_bridge_connect",
+            "status": "unmarked",
+            "title": "Bridge Connect",
+            "description_excerpt": "Low-level direct organ tool call. Bypasses intent routing \u2014 caller must specify organ and tool_name. Select when: both o"
+          },
+          {
+            "name": "arif_critique",
+            "status": "unmarked",
+            "title": "Heart Critique",
+            "description_excerpt": "Ethical risk + human impact assessment. Select when: action is sensitive, irreversible, dignity-affecting, or blast_radi"
+          },
+          {
+            "name": "arif_memory",
+            "status": "unmarked",
+            "title": "Memory Governor",
+            "description_excerpt": "Store, retrieve, and govern memory across the 6-layer stack. Select when: you need to recall past session context, store"
+          },
+          {
+            "name": "arif_judge",
+            "status": "unmarked",
+            "title": "Judge Deliberate",
+            "description_excerpt": "Constitutional verdict gate. Select when: evidence gathered, plan ready, floor compliance needs verification. Returns: S"
+          },
+          {
+            "name": "arif_forge",
+            "status": "unmarked",
+            "title": "Forge Execute",
+            "description_excerpt": "Prepare execution (dry-run capable) of an action via A-FORGE. Select when: you have a prior arif_judge SEAL and need to "
+          },
+          {
+            "name": "arif_compose",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Governed response composition \u2014 formats final output for Arif with citations and tone calibration. Call as the LAST step"
+          },
+          {
+            "name": "arif_seal",
+            "status": "unmarked",
+            "title": "Vault Seal",
+            "description_excerpt": "Immutable ledger append (VAULT999). Select when: SEAL verdict needs permanent anchoring or execution result needs audit "
+          }
+        ]
+      },
+      "A-FORGE": {
+        "endpoint": "http://127.0.0.1:7072/mcp",
+        "port": 7072,
+        "protocol": "mcp",
+        "status": "healthy",
+        "tool_count": 99,
+        "canonical_count": 0,
+        "deprecated_count": 0,
+        "experimental_count": 0,
+        "version": "0.1.0",
+        "identity_hash_prefix": "e7749f22",
+        "tools": [
+          {
+            "name": "forge_session_init",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Constitutional session ignition. Proxies to arifOS kernel \u2014 A-FORGE no longer mints independent sessions. (Stage 000 INI"
+          },
+          {
+            "name": "forge_health_check",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Return A-FORGE server health and constitutional genome (v2.0) status."
+          },
+          {
+            "name": "forge_heart_critique",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Risk assessment and ethical review \u2014 delegates to arifOS 666 HEART pipeline. A-FORGE does NOT adjudicate floors locally."
+          },
+          {
+            "name": "forge_check_governance",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Constitutional governance check \u2014 delegates to arifOS. A-FORGE NEVER adjudicates constitutional floors."
+          },
+          {
+            "name": "forge_execute",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Execution and motor cortex (Stage 777 FORGE). Use this to execute an action plan. Requires cc_id for mutations (INV-4)."
+          },
+          {
+            "name": "forge_approve",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Refuses approval \u2014 A-FORGE cannot self-authorize. Route to arifOS arif_judge_deliberate via forge_judge_proxy instead."
+          },
+          {
+            "name": "forge_judge_proxy",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Proxy forwarder to canonical arifOS constitutional judge."
+          },
+          {
+            "name": "forge_transfer_confirm",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until user accept/decline/can"
+          },
+          {
+            "name": "forge_send_confirm",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensitive credentials). F"
+          },
+          {
+            "name": "forge_vault",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "VAULT999 primitive. Modes: read, list, write, seal."
+          },
+          {
+            "name": "forge_wealth",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Route to WEALTH capital intelligence organ. Modes: emv, conservation, flow, runway, wisdom."
+          },
+          {
+            "name": "forge_systemctl",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "[DEPRECATED] Query systemd. Use forge_shell('systemctl ...') instead. Modes: status, list_units."
+          },
+          {
+            "name": "forge_journalctl",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Query systemd journal logs (read-only, PII-redacted). Modes: logs, errors, tail, grep."
+          },
+          {
+            "name": "forge_well",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "WELL human readiness primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors, anchor."
+          },
+          {
+            "name": "forge_chart",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Agentic charting + quantum eureka discovery margin patterns. Input data series or records; returns SVG + summary + eurek"
+          },
+          {
+            "name": "forge_probe",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill."
+          },
+          {
+            "name": "forge_scan",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Security scan a file or directory before code execution. Detects dangerous patterns. OBSERVE-class. P2.5 canonical gap f"
+          },
+          {
+            "name": "forge_filesystem",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Canonical governed filesystem primitive. Modes: read, write, patch, glob, grep, stat, tree, move, delete, restore. F8 sc"
+          },
+          {
+            "name": "forge_filesystem_read",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Read a file or list a directory. OBSERVE-class, no lease required. F8 scoped to /root, /tmp, /data, /var/log."
+          },
+          {
+            "name": "forge_filesystem_write",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Create or overwrite a file. EXECUTE-class, requires lease. F1 AMANAH: backup before overwrite."
+          },
+          {
+            "name": "forge_filesystem_patch",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Surgical text replacement in a file. EXECUTE-class, requires lease. Returns diff preview in dry_run mode."
+          },
+          {
+            "name": "forge_filesystem_tree",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "List directory tree structure. OBSERVE-class, no lease required."
+          },
+          {
+            "name": "forge_filesystem_search",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Search file contents by regex pattern. OBSERVE-class, no lease required."
+          },
+          {
+            "name": "forge_filesystem_stat",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Get file/directory metadata including sha256 hash. OBSERVE-class, no lease required."
+          },
+          {
+            "name": "forge_filesystem_move",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Move a file or directory. EXECUTE-class, requires lease. Reversible."
+          },
+          {
+            "name": "forge_filesystem_delete",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Delete a file (quarantine by default). IRREVERSIBLE for hard delete \u2014 requires 888_HOLD."
+          },
+          {
+            "name": "forge_postgres",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Canonical Postgres primitive. Modes: query, schema. Writes require mutate=true and remain floor-gated."
+          },
+          {
+            "name": "forge_memory",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Canonical memory primitive. Modes: recall. Reads VAULT999 local files, then vault999-api fallback."
+          },
+          {
+            "name": "forge_git",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Canonical git primitive. Modes: status, diff, log, commit. Mutating modes are floor-gated by A-FORGE MCP ingress."
+          },
+          {
+            "name": "forge_github",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Canonical GitHub primitive. Modes: search, pr. Use type for search variants instead of separate tools."
+          },
+          {
+            "name": "forge_docker",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Canonical Docker primitive. Modes: ps, logs, exec, images. Destructive operations stay out of this read/exec surface."
+          },
+          {
+            "name": "forge_fetch",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Governed URL evidence intake + self-hosted web search. Modes: html, markdown, text, json, readable, metadata, links, sea"
+          },
+          {
+            "name": "forge_fetch_url",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Fetch a URL and return content as markdown. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=readable)."
+          },
+          {
+            "name": "forge_fetch_json",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Fetch a URL and parse as JSON. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=json)."
+          },
+          {
+            "name": "forge_fetch_metadata",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Fetch URL metadata (title, author, description, dates, links). OBSERVE-class, SSRF-protected. Equivalent to forge_fetch("
+          },
+          {
+            "name": "forge_fetch_links",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Extract all links from a URL. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=links)."
+          },
+          {
+            "name": "forge_agent",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Agent identity management. Modes: register, status, list, kill. F11 AUTH."
+          },
+          {
+            "name": "forge_lease",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Lease lifecycle. Modes: request, status, revoke. A-FORGE does not self-issue leases \u2014 arifOS mints them."
+          },
+          {
+            "name": "forge_registry_status",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Full A-FORGE tool registry: callable, blocked, degraded, and drift status for all registered tools. Includes tool finger"
+          },
+          {
+            "name": "forge_fingerprint_check",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Compute and verify tool fingerprints. Detects duplicate tools (same name + schema) and schema drift."
+          },
+          {
+            "name": "forge_shell",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Canonical governed shell execution. Executes commands through constitutional gate (ArifJudge) + hash-chain audit (ArifSe"
+          },
+          {
+            "name": "forge_shell_dryrun",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Preview a shell command's output WITHOUT executing it. Returns what WOULD happen. F1 AMANAH: no mutation, pure dry-run. "
+          },
+          {
+            "name": "forge_shell_status",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Check forge_shell subsystem health: ledger state, judge pattern count, defaults."
+          },
+          {
+            "name": "forge_shell_ledger",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Query recent ArifSeal hash-chain ledger entries. Read-only, paged. Returns last N records with chain integrity status."
+          },
+          {
+            "name": "forge_shell_alert_history",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "View recent ArifJudge alert history (DENY/GATE/self-modification events). Read-only."
+          },
+          {
+            "name": "forge_job",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Background job system. Modes: submit, status."
+          },
+          {
+            "name": "forge_status",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Active execution state: jobs, leases, agents. INFRA-class. P2.2 canonical gap fill."
+          },
+          {
+            "name": "forge_abort",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Safe stop + rollback for running execution. Requires lease or session auth. P2.3 canonical gap fill."
+          },
+          {
+            "name": "forge_vps_ports",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Machine Constitution port registry. Scans listening ports and classifies each as public, internal, or unknown. OBSERVE-c"
+          },
+          {
+            "name": "forge_vps_services",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Machine Constitution service registry. Lists running systemd services and Docker containers. OBSERVE-class; does not mut"
+          },
+          {
+            "name": "forge_vps_cron",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Machine Constitution cron registry. Lists cron jobs from root crontab, /etc/crontab, and /etc/cron.d. OBSERVE-class; doe"
+          },
+          {
+            "name": "forge_boundaries_assert",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Machine Constitution drift detector. Asserts live ports/services/cron against the saved Machine Constitution registry an"
+          },
+          {
+            "name": "forge_verify_timeline",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Verify timeline claims require minimum 2 independent sources.\nTIMELINE_MIN_SOURCES invariant: No timeline claim with few"
+          },
+          {
+            "name": "forge_skill",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Dynamic tool forge (APEX Epoch 34\u03a9). Generates a new MCP tool via LLM, gated by HARAM scan + Decision Field (G=Q\u00b7V\u00b7\u03a8\u00b7\u03a6),"
+          },
+          {
+            "name": "forge_seal",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills cannot be deleted, demote"
+          },
+          {
+            "name": "forge_registry",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Dynamic skill registry. Modes: list (all generated tools + Decision Field), get (one tool manifest), scars (Scar Law his"
+          },
+          {
+            "name": "forge_evaluate",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "APEX v36\u03a9 evaluation gate. Computes G = A\u00b7P\u00b7E\u00b7X\u00b7\u03a6 (Nash bargaining product) and C_dark = A\u00b7(1-P)\u00b7(1-X) for a candidate t"
+          },
+          {
+            "name": "forge_witness",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "APEX v36\u03a9 tri-witness consensus gate. Computes W\u00b3 = \u221b(Human \u00d7 AI \u00d7 External) via geometric mean (Nash 1950). Returns CON"
+          },
+          {
+            "name": "forge_scar",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "APEX v36\u03a9 scar metabolization gate. Seals failures as permanent constitutional constraints. Modes: seal (record failure)"
+          },
+          {
+            "name": "forge_register",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "APEX v36\u03a9 gated registration gate. Registers a tool ONLY after all gates pass: SEAL verdict from forge_evaluate, CONSENS"
+          },
+          {
+            "name": "forge_reality_loop",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Intent compiler: 7-stage state-tracking ledger (MEANING\u2192OBSERVE\u2192ENCODE\u2192IMPROVE\u2192VERIFY\u2192SEAL\u2192RETURN). Modes: start | advan"
+          },
+          {
+            "name": "forge_probe_site",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Probe a web site or cockpit surface for federation resilience and compliance checks. Returns status, static fallbacks, a"
+          },
+          {
+            "name": "forge_receipt_draft",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Draft a structured compliance receipt for a deployment or change. Output is standard markdown formatted for arifOS VAULT"
+          },
+          {
+            "name": "forge_research",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Governed research across web sources. OBSERVE-class."
+          },
+          {
+            "name": "forge_search",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Governed web search via Brave. OBSERVE-class."
+          },
+          {
+            "name": "forge_docs_lookup",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Governed docs lookup via Context7. OBSERVE-class."
+          },
+          {
+            "name": "forge_browser_navigate",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Navigate browser to URL. OBSERVE-class."
+          },
+          {
+            "name": "forge_browser_click",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Click a browser element. OBSERVE-class."
+          },
+          {
+            "name": "forge_browser_type",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Type text into a browser element. OBSERVE-class."
+          },
+          {
+            "name": "forge_browser_screenshot",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Take a browser screenshot. OBSERVE-class."
+          },
+          {
+            "name": "forge_browser_extract_text",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Extract text from browser page. OBSERVE-class."
+          },
+          {
+            "name": "forge_browser_evaluate_js",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Evaluate JS in browser context. OBSERVE-class."
+          },
+          {
+            "name": "forge_github_search_code",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Search GitHub code. OBSERVE-class."
+          },
+          {
+            "name": "forge_github_search_repos",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Search GitHub repositories. OBSERVE-class."
+          },
+          {
+            "name": "forge_github_get_file",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Read a file from GitHub. OBSERVE-class."
+          },
+          {
+            "name": "forge_github_create_or_update_file",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Create or update a file on GitHub. MUTATE \u2014 lease required."
+          },
+          {
+            "name": "forge_github_create_issue",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Create a GitHub issue. MUTATE \u2014 lease required."
+          },
+          {
+            "name": "forge_github_create_pull_request",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Create a GitHub pull request. MUTATE \u2014 lease required."
+          },
+          {
+            "name": "forge_worktree",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Local git physics sensor. Returns branch, dirty state, stash, conflicts, in-progress ops, blast radius, and actionable r"
+          },
+          {
+            "name": "forge_netdata_alarms",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Read Netdata alarms. OBSERVE-class."
+          },
+          {
+            "name": "forge_netdata_metrics",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Read Netdata chart data. OBSERVE-class."
+          },
+          {
+            "name": "forge_minimax_search",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Search the web via MiniMax. OBSERVE-class."
+          },
+          {
+            "name": "forge_synthesize",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Create artifact from intent. Code goes to temporary buffer ONLY \u2014 never touches filesystem."
+          },
+          {
+            "name": "forge_stage",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Move artifact to quarantine staging. Spec becomes IMMUTABLE after staging."
+          },
+          {
+            "name": "forge_sandbox_run",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Execute staged artifact in isolated sandbox. ABSOLUTE timeout \u2014 cannot be overridden."
+          },
+          {
+            "name": "forge_scar_scan",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Check artifact against SCAR database. A-FORGE detects but CANNOT judge \u2014 arifOS judges."
+          },
+          {
+            "name": "forge_skillstore_write",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Store artifact with provenance. WRITE mode only. Two-layer retention with SCAR immunization."
+          },
+          {
+            "name": "forge_skillstore_read",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Query artifact store. Semantic search with tag filtering."
+          },
+          {
+            "name": "forge_tier_bind",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Set trust tier LOWER BOUND only. A-FORGE cannot promote \u2014 only arifOS sets actual tier."
+          },
+          {
+            "name": "forge_docket_prep",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Package all evidence and hand off to arifOS. A-FORGE RELINQUISHES CONTROL \u2014 docket is read-only."
+          },
+          {
+            "name": "forge_execute_sealed",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Execute with VAULT999 seal. FAILS HARD without valid seal \u2014 no self-authorization possible."
+          },
+          {
+            "name": "forge_document_ingest",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Document intelligence engine \u2014 layout-first parsing with bounding-box provenance.\n\nModes:\n  analyze  \u2014 Layout analysis o"
+          },
+          {
+            "name": "forge_policy",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Governed MCP Policy Engine. Modes: check (simulate call), set (add/update policy, sovereign-only), remove (delete policy"
+          },
+          {
+            "name": "forge_surface_guard",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "MCP Surface Guard \u2014 schema fingerprinting + drift detection. Modes: check (run federation drift check), status (get cach"
+          },
+          {
+            "name": "forge_surface_audit",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Audit MCP tool surface: compare live registry vs affordances.yaml to detect phantom entries, missing tools, description "
+          },
+          {
+            "name": "forge_predict",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Pre-action simulation layer (prediction bridge). GEOX/WEALTH forward models run BEFORE forge_execute. Result attached as"
+          },
+          {
+            "name": "forge_isomorphism_check",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "J\u2011space manifold stability check. Verifies GEOX \u2194 arifOS isomorphism pairs (Identity, Authority, Irreversibility) throug"
+          },
+          {
+            "name": "forge_lock",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Amanah/F1 lock primitive. Modes: acquire (reversible F1 gate before mutation), release (free lock)."
+          },
+          {
+            "name": "forge_pipeline_run",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "Autonomous intelligence pipeline (canonical). Routes organs, evidence\u2192compute\u2192(optional judge+seal). Requires cc_id/hold"
+          }
+        ]
+      },
+      "AAA": {
+        "endpoint": "http://127.0.0.1:3001",
+        "port": 3001,
+        "protocol": "a2a",
+        "status": "healthy",
+        "tool_count": 0,
+        "canonical_count": 0,
+        "deprecated_count": 0,
+        "experimental_count": 0,
+        "version": "1.0.0",
+        "identity_hash_prefix": null,
+        "tools": [],
+        "note": "A2A gateway \u2014 tools governed via agent cards, not MCP list_tools"
+      },
+      "GEOX": {
+        "endpoint": "http://127.0.0.1:8081/mcp",
+        "port": 8081,
+        "protocol": "mcp",
+        "status": "unreachable",
+        "tool_count": 0,
+        "canonical_count": 0,
+        "deprecated_count": 0,
+        "experimental_count": 0,
+        "version": "unknown",
+        "identity_hash_prefix": null,
+        "tools": []
+      },
+      "WEALTH": {
+        "endpoint": "http://127.0.0.1:18082/mcp",
+        "port": 18082,
+        "protocol": "mcp",
+        "status": "healthy",
+        "tool_count": 50,
+        "canonical_count": 50,
+        "deprecated_count": 0,
+        "experimental_count": 0,
+        "version": "2026.06.15",
+        "identity_hash_prefix": null,
+        "tools": [
+          {
+            "name": "wealth_wisdom_evaluate",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Evaluate a capital allocation proposal across 6 wisdom dimensions.\nReturns dignity impact, sovereignty effect, resilienc"
+          },
+          {
+            "name": "wealth_power_audit",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Audit the power dynamics of a capital scenario.\nReturns incentive map, capture risk, rent extraction score,\nopacity leve"
+          },
+          {
+            "name": "wealth_capture_scan",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Scan AI-generated financial advice for capture signals.\nDetects: hidden incentives, omitted downsides, false precision,\n"
+          },
+          {
+            "name": "wealth_compute_npv",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute Net Present Value of a series of cash flows."
+          },
+          {
+            "name": "wealth_compute_irr",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute Internal Rate of Return.\n\nStandard: pass all cash flows including initial investment in\ncash_flows (cash_flows[0"
+          },
+          {
+            "name": "wealth_conservation_check",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute capital conservation: net worth, asset/liability totals."
+          },
+          {
+            "name": "wealth_flow_check",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute cash flow: net, income, expenses, monthly burn."
+          },
+          {
+            "name": "wealth_runway_check",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute financial runway in months."
+          },
+          {
+            "name": "wealth_compute_emv",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute Expected Monetary Value with variance and std dev."
+          },
+          {
+            "name": "wealth_emv_compute",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "[LEGACY ALIAS] Compute Expected Monetary Value. Use wealth_compute_emv."
+          },
+          {
+            "name": "wealth_monte_carlo_simulate",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Run Monte Carlo simulation for value projection.\n\nSOCIAL-SYMBOLIC extension (population_mode):\n  When True, models colle"
+          },
+          {
+            "name": "wealth_monte_carlo",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "[LEGACY ALIAS] Use wealth_monte_carlo_simulate."
+          },
+          {
+            "name": "wealth_compute_evoi",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute Expected Value of Information (EVOI).\nWhen robust=True: max-min over uncertainty set, returns worst-case EVOI + "
+          },
+          {
+            "name": "wealth_evoi_compute",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "[LEGACY ALIAS] Compute EVOI. Use wealth_compute_evoi."
+          },
+          {
+            "name": "wealth_confluence_check",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Detect false confluence \u2014 indicators measuring the same signal."
+          },
+          {
+            "name": "wealth_asymmetry_check",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute risk asymmetry \u2014 is the distribution skewed?"
+          },
+          {
+            "name": "wealth_fiscal_breakeven",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute oil price at which Malaysia's fiscal path becomes unsustainable.\n\nReturns breakeven price, fiscal pressure class"
+          },
+          {
+            "name": "wealth_stock_analysis",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "D4 Stock Analysis \u2014 17-mode capital-risk governance.\nmode='nash_multi_factor' uses Nash product (APEX Pillar IV).\nmode='"
+          },
+          {
+            "name": "wealth_personal_finance",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "D1 Personal Finance \u2014 cashflow, runway, net worth, EPF, zakat.\nDelegates to internal/personal_finance.py engines."
+          },
+          {
+            "name": "wealth_market_data",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "D3 Market Data \u2014 FX rates, commodities, macro indicators.\nDelegates to internal/market_data.py engines."
+          },
+          {
+            "name": "wealth_omni_wisdom",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Unified capital intelligence \u2014 synthesis + deal + hysteresis.\nModes:\n  - synthesize: monolith synthesis (default)\n  - de"
+          },
+          {
+            "name": "wealth_agent_path",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Sovereign Intent Router \u2014 classifies tasks into L1/L2 paths.\nDelegates to monolith's agent_path implementation."
+          },
+          {
+            "name": "wealth_reason_agent",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "[LEGACY ALIAS] Sovereign Intent Router. Use wealth_agent_path."
+          },
+          {
+            "name": "wealth_vault_write",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Write a transaction to the VAULT999 ledger.\n\nAuthority: draft_receipt only unless arifOS judge approval.\nIrreversible \u2014 "
+          },
+          {
+            "name": "wealth_vault_query",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Query the VAULT999 ledger for portfolio memory and transactions.\n\nAuthority: read_only observe. WEALTH never mutates vau"
+          },
+          {
+            "name": "wealth_registry_status",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Registry truth diagnostic \u2014 intended vs registered vs callable."
+          },
+          {
+            "name": "wealth_system_registry_status",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "[LEGACY ALIAS] Registry truth diagnostic. Use wealth_registry_status."
+          },
+          {
+            "name": "wealth_boundary_governance",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "\u03a9-WEALTH-11: Boundary \u2014 constitutional floors, maruah, stewardship, constraint.\n\nChecks F1-F13 compliance, reversibility"
+          },
+          {
+            "name": "wealth_survival_engine",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "\u03a9-SURVIVAL-ENGINE: Unified survival intelligence \u2014 cashflow, runway, burn, liquidity.\n\nPhysics analogy: metabolic engine"
+          },
+          {
+            "name": "wealth_collapse_signature_scan",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "[LEGACY \u2014 EXTRACTIVE-ONLY] Scan for extraction-based collapse.\n\n\u26a0 DEPRECATED: Calibrated exclusively on extraction-fraud"
+          },
+          {
+            "name": "wealth_beautiful_mouse_scan",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Scan a narrative for Calhoun Phase C (Beautiful Mouse) signatures.\n\nDetects 6 indicators:\n1. PERFECT_PERFORMANCE  \u2014 no f"
+          },
+          {
+            "name": "wealth_judge_handoff",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Prepare (or submit) a WEALTH verdict for arifOS 888_JUDGE."
+          },
+          {
+            "name": "wealth_markowitz_frontier",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute Markowitz mean-variance optimal portfolio.\n\nSolves: max \u03bc\u1d40x - (\u03b3/2)\u00b7x\u1d40\u03a3x  s.t. \u03a3x\u1d62=1, x\u22650\nAPEX Organ: Reality (\u0394"
+          },
+          {
+            "name": "wealth_kelly_sizing",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute Kelly criterion optimal bet fraction.\n\nMaximizes expected log-growth: E[log(1 + f\u00b7R)]\nAPEX Organ: Execution (W) "
+          },
+          {
+            "name": "wealth_robust_portfolio",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute robust optimal portfolio under uncertainty.\n\nSolves: max min_{z\u2208Z} (\u03bc+z)\u1d40x  s.t. \u03a3x\u1d62=1, x\u22650\nAPEX Organ: Governan"
+          },
+          {
+            "name": "wealth_chance_constrained",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute chance-constrained optimal portfolio (VaR/CVaR).\n\nSolves: max \u03bc\u1d40x  s.t. P(r\u1d40x \u2264 threshold) \u2264 (1-confidence)\nAPEX"
+          },
+          {
+            "name": "wealth_two_stage_recourse",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Two-stage stochastic optimization with recourse.\n\nFirst stage: decide x (here-and-now decisions)\nSecond stage: after sce"
+          },
+          {
+            "name": "wealth_bid_surface",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Score a competitive bid surface for resource allocation.\nComputes bid ranking, bidder surplus, competitive intensity, an"
+          },
+          {
+            "name": "wealth_optimize_mwc",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Compute optimal Minimum Winning Coalition (MWC) for resource allocation.\nUses cooperative game theory: finds the smalles"
+          },
+          {
+            "name": "wealth_institutional_stress_index",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Composite institutional stress index (0-1).\n\nConnects financial, governance, workforce, legal, and external\nexploitation"
+          },
+          {
+            "name": "wealth_cascade_model",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Model feedback loops between institutional stress dimensions.\n\nDetects spiral vs linear decline vs recovery. Projects tr"
+          },
+          {
+            "name": "wealth_governance_capacity",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Monitor board governance capacity relative to stress level.\n\nAnalyzes board composition, committee structure, and identi"
+          },
+          {
+            "name": "wealth_external_exploitation_detect",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Detect 'simulative neutral' counterparty behavior.\n\nIdentifies rational exploitation of institutional weakness \u2014\nwhere e"
+          },
+          {
+            "name": "capital_primitive",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Deductive capital math primitives. Pure computation \u2014 no inference, no governance verdict. Every mode is golden-tested a"
+          },
+          {
+            "name": "capital_health",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Financial health metrics. Deductive computation from structured inputs. No inference, no governance verdict.\n\nModes: con"
+          },
+          {
+            "name": "capital_diagnose",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Abductive institutional diagnostics \u2014 inference from partial evidence. REQUIRED: domain_scope declares calibration domai"
+          },
+          {
+            "name": "capital_wisdom",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Capital wisdom synthesis \u2014 evaluates proposals across dignity, sovereignty, resilience, inequality, ecological cost, and"
+          },
+          {
+            "name": "capital_market",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "Market data and stock analysis. Live/cached financial data with source attribution. Observational only \u2014 no governance v"
+          },
+          {
+            "name": "capital_ledger",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "VAULT999 immutable ledger access. Query is read-only (no ack required). Write requires explicit human acknowledgment (ac"
+          },
+          {
+            "name": "capital_registry",
+            "status": "canonical",
+            "title": null,
+            "description_excerpt": "WEALTH meta/introspection. Registry status, tool schema, domain index, health check. Observational only.\n\nModes: status "
+          }
+        ]
+      },
+      "WELL": {
+        "endpoint": "http://127.0.0.1:18083/mcp",
+        "port": 18083,
+        "protocol": "mcp",
+        "status": "degraded",
+        "tool_count": 18,
+        "canonical_count": 0,
+        "deprecated_count": 0,
+        "experimental_count": 0,
+        "version": "2026.05.15-\u03a9WELL+GWELL+FEDERATION",
+        "identity_hash_prefix": "1b1f46b3",
+        "tools": [
+          {
+            "name": "well_health_check",
+            "status": "unmarked",
+            "title": "WELL Health Check",
+            "description_excerpt": "WELL organ health check with provenance and schema version.\nCanonical name: well_health_check. Legacy alias: mcp_health_"
+          },
+          {
+            "name": "well_medical_boundary",
+            "status": "unmarked",
+            "title": "Medical Boundary",
+            "description_excerpt": "Explicit non-diagnosis guard for WELL.\nWELL is not a doctor, therapist, or diagnostic authority.\nIt tracks readiness sig"
+          },
+          {
+            "name": "well_readiness",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "ZEN: Single readiness verdict. One tool, one answer.\n\nReturns:\n  - color: GREEN | YELLOW | RED | STALE\n  - score: 0-100\n"
+          },
+          {
+            "name": "well_signal_coverage",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "DREAM ENGINE: Audit WELL's coverage of canonical human substrate\nsignals. Returns per-signal status (active/partial/miss"
+          },
+          {
+            "name": "well_classify_substrate",
+            "status": "unmarked",
+            "title": "Classify Substrate",
+            "description_excerpt": "\u03a9-WELL-01: Substrate classification and boundary sensing."
+          },
+          {
+            "name": "well_trace_lineage",
+            "status": "unmarked",
+            "title": "Trace Lineage",
+            "description_excerpt": "\u03a9-WELL-02: Memory, trend, ledger, and vault chain tracing."
+          },
+          {
+            "name": "well_detect_boundary",
+            "status": "unmarked",
+            "title": "Detect Boundary",
+            "description_excerpt": "\u03a9-WELL-03: Boundary detection across membrane, body, machine, and federation."
+          },
+          {
+            "name": "well_measure_gradient",
+            "status": "unmarked",
+            "title": "Measure Gradient",
+            "description_excerpt": "\u03a9-WELL-04: Measure chemical, energy, pressure, attention, and compute gradients."
+          },
+          {
+            "name": "well_assess_metabolism",
+            "status": "unmarked",
+            "title": "Assess Metabolism",
+            "description_excerpt": "\u03a9-WELL-05: Assess biological metabolism and system throughput across substrates."
+          },
+          {
+            "name": "well_assess_homeostasis",
+            "status": "unmarked",
+            "title": "Assess Homeostasis",
+            "description_excerpt": "\u03a9-WELL-06: Assess regulation, stability, and empathic balance under change.\n\nWhen mode=\"fatigue\", accepts biometric over"
+          },
+          {
+            "name": "well_check_repair",
+            "status": "unmarked",
+            "title": "Check Repair",
+            "description_excerpt": "\u03a9-WELL-07: Check repair, recovery, resilience, and forge cycle integrity."
+          },
+          {
+            "name": "well_validate_vitality",
+            "status": "unmarked",
+            "title": "Validate Vitality",
+            "description_excerpt": "\u03a9-WELL-08: Validate vitality, readiness, and NIAT. (Floor compliance removed \u2014 arifOS adjudicates floors.)"
+          },
+          {
+            "name": "well_assess_livelihood",
+            "status": "unmarked",
+            "title": "Assess Livelihood",
+            "description_excerpt": "\u03a9-WELL-09: Assess human wellness, role, dignity, support, and meaning."
+          },
+          {
+            "name": "well_assess_reliability",
+            "status": "unmarked",
+            "title": "Assess Reliability",
+            "description_excerpt": "\u03a9-WELL-10: Assess machine, tool, institution, and operational reliability."
+          },
+          {
+            "name": "well_compute_metabolic_flux",
+            "status": "unmarked",
+            "title": "Compute Metabolic Flux",
+            "description_excerpt": "\u03a9-WELL-10b: Compute metabolic_flux \u2014 unified thermodynamic entropy rate.\n\nComputes cognitive_entropy_rate + machine_entr"
+          },
+          {
+            "name": "well_assess_sovereign_entropy",
+            "status": "unmarked",
+            "title": "Assess Sovereign Entropy",
+            "description_excerpt": "\u03a9-WELL-SE: Measure the sovereign's resistance to behavioral modeling.\n\nSOVEREIGNTY ENTROPY = how unpredictable and there"
+          },
+          {
+            "name": "well_guard_dignity",
+            "status": "unmarked",
+            "title": "Guard Dignity",
+            "description_excerpt": "\u03a9-WELL-12: Guard soul, personhood, meaning, and symbolic boundaries."
+          },
+          {
+            "name": "well_registry_status",
+            "status": "unmarked",
+            "title": null,
+            "description_excerpt": "WELL registry truth diagnostic \u2014 blueprint canonical format.\n\nPerforms live callable tests against all known WELL tool n"
+          }
+        ]
+      },
+      "VAULT999": {
+        "endpoint": "ledger://VAULT999",
+        "protocol": "ledger",
+        "status": "maintenance",
+        "tool_count": 0,
+        "canonical_count": 0,
+        "deprecated_count": 0,
+        "experimental_count": 0,
+        "version": "ledger",
+        "identity_hash_prefix": null,
+        "tools": []
+      }
+    }
+  }
+}

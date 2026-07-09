@@ -652,3 +652,15 @@ One URL, one panel, all metrics:
 DITEMPA BUKAN DIBERI 🔒
 Forged 2026-07-08 by FORGE-000Ω (v0.1) → v0.2 patch by FORGE-000Ω
 for Muhammad Arif bin Fazil, F13 SOVEREIGN
+
+---
+
+## SUPERSEDED — 2026-07-08T22:30Z
+
+This DRAFT has been superseded by **MEMBRANE_CONTRACT v0.3** at:
+`/root/AAA/docs/MEMBRANE_CONTRACT_v0.3.json`
+
+Status: **RATIFIED** by F13 SOVEREIGN at 2026-07-08T22:30:42Z.
+The v0.3 schema has 15 properties, 7 definitions, 7 validation rules.
+Membrane Gate Hook deployed at `/root/.openclaw/hooks/membrane-gate/`.
+OpenClaw gateway running (PID 909341).

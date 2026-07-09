@@ -1,0 +1,84 @@
+{
+  "$schema_version": "manifest-v0.1",
+  "title": "Artifact Manifest — Malaysia Fiscal Fix Cycle",
+  "session": "SEAL-533821c0d6f94b72",
+  "created": "2026-07-09T00:07:25Z",
+  "created_by": "FORGE-000Ω",
+  "root_path": "/root/A-FORGE/forgework/",
+  "verification_rule": "sha256(file_contents) MUST match manifest_hash for canonical reference. Re-run `sha256sum <path>` to verify.",
+  "status": "DRAFT_ONLY",
+  "not_sealed_notice": "Manifest anchors DRAFT_ONLY artifacts. No VAULT999 seal obtained. Promotion to L1 requires arif_judge SEAL + actor_verified=true.",
+  "artifacts": [
+    {
+      "path": "fusionreceipt.md",
+      "sha256": "e2c528cc4131d3875087799e784447842587764e6beec38a59ed6913634ab875",
+      "bytes": 4918,
+      "status": "DRAFT",
+      "purpose": "Canonical anchor — Malaysia fiscal / PETRONAS stress v0.3"
+    },
+    {
+      "path": "evidence_fiscal_malaysia_2026.json",
+      "sha256": "a4c676321b1c8755080c5a81cda2a3788888ff89bad8c66c4d3f4b705d249b39",
+      "bytes": 6087,
+      "status": "DRAFT",
+      "purpose": "Evidence ledger — sources, dates, confidence, expiry"
+    },
+    {
+      "path": "petronas_stress_curve.schema.json",
+      "sha256": "3dc93108b57d5f34ad7c6ecce2f80fdeeefa9f23256aa0568d77c9f6c7e57080",
+      "bytes": 6442,
+      "status": "PROPOSAL_NOT_IMPLEMENTED",
+      "purpose": "JSON Schema for proposed WEALTH mode=sovereign_resource_stewardship"
+    },
+    {
+      "path": "petronas_datapack_2021_2025.json",
+      "sha256": "2a896b7e206400ac91f4b1f0e034228232ebf302ebd24d64e81133d890919032",
+      "bytes": 3704,
+      "status": "DRAFT_SKELETON",
+      "purpose": "PETRONAS annual-report grounding contract for 2021-2025"
+    },
+    {
+      "path": "malaysia_fiscal_scenarios_v0_2.csv",
+      "sha256": "8be3840988b78c8e71b61a55424be82626e654129ec8ca7f59df1311a6bb70a4",
+      "bytes": 1723,
+      "status": "ILLUSTRATIVE_NOT_DATA",
+      "purpose": "Scenario table — 9 illustrative cases for stress curve logic"
+    },
+    {
+      "path": "AAA_COCKPIT_CARD.md",
+      "sha256": "ee08c2c42def74ca65d1b5b94b7f4271bb43a9d0e74458de9e84af6b8dd286a0",
+      "bytes": 2789,
+      "status": "LIVE",
+      "purpose": "Tool health + evidence layer dashboard"
+    },
+    {
+      "path": "KERNEL_STATE_2026-07-09.md",
+      "sha256": "24d123445d4584998a8beae39efdbe350bd7ff74cf88d4f469035de2567ae428",
+      "bytes": 2766,
+      "status": "SEALED-TO-FS",
+      "purpose": "SCAR-KERNEL-INIT-2026-07-08 closure note + actor verification gate state"
+    }
+  ],
+  "totals": {
+    "files": 7,
+    "bytes": 28429,
+    "all_draft_or_proposal": true
+  },
+  "promotion_blockers": [
+    "WEALTH MCP origin policy (DNS rebinding) — P0",
+    "GEOX session bootstrap path missing — P0",
+    "arifOS actor_verified=false — P0",
+    "Evidence layer L2/L3 — needs L4 (PUBLIC_VERIFIED sources) before SEAL",
+    "No arif_judge SEAL obtained — pre-kernel-level HOLD only"
+  ],
+  "promotion_path": [
+    "1. Sovereign verifies FORGE-000Ω actor (identity_proof)",
+    "2. WEALTH maintainer adds origin allowlist + healthcheck tool",
+    "3. GEOX maintainer surfaces session bootstrap path",
+    "4. Analyst replaces USER_SUPPLIED entries with PUBLIC_VERIFIED entries",
+    "5. Model replays through WEALTH domain calls",
+    "6. arif_judge returns SEAL on fusionreceipt.md",
+    "7. arif_seal writes manifest hash to VAULT999",
+    "8. promotion_status: L2/L3 → L1 (canonical)"
+  ]
+}

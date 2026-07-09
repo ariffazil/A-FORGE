@@ -3,6 +3,8 @@
 *Forged: 2026-07-08T03:11Z by FORGE-000Ω*
 *Session: SEAL-5136bf2d486342d4 (OBSERVE_ONLY — actor unverified)*
 *Supersedes: `web_tools_contrast_matrix.md` v1 (auto-emitted same minute, fewer live tests)*
+*Extended by: `web_tools_browser_fingerprinting_addendum.md` (browser fingerprinting + anti-bot surface, 2026-07-08)*  
+*Real implementation: `web_tools_browser_fingerprinting_REAL.md` (working code + live detector tests)*
 *Verification artefact — read-only, not a verdict. Adjudication routes to arifOS.*
 
 ---

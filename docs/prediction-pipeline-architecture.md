@@ -25,7 +25,7 @@ forge_predict (pre-action simulation layer)
           │
           ▼
 forge_judge_proxy (or internal in forge_execute)
-  └─ forwards prediction_context to arifos.arif_judge_deliberate
+  └─ forwards prediction_context to arifos.arif_judge
           │
           ▼
 arif_judge (888_JUDGE)
@@ -42,7 +42,7 @@ forge_execute
 1. Elicitation gate (human consent for high impact)
 2. **Auto prediction step** (if auto_predict && geox/wealth domain detected in task) — calls bridge directly, attaches result.
 3. Build judgeBody with candidate + prediction_context + evidence_receipt
-4. callMCP arif_judge_deliberate
+4. callMCP arif_judge
 5. If not SEAL → HOLD, no execute
 6. Landauer + Mesa gates
 7. AgentEngine execute

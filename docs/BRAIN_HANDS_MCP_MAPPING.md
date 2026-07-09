@@ -119,7 +119,7 @@ From constitutional eureka (this session):
 
 ## Enforcement in A-FORGE (Current State)
 
-- `src/interfaces/mcp/core.ts` and `forgeTools.ts`: Many high-risk paths call `arif_judge_deliberate` or require lease.
+- `src/interfaces/mcp/core.ts` and `forgeTools.ts`: Many high-risk paths call `arif_judge` or require lease.
 - `GovernanceBridge.ts`, `FloorEnforcer.ts`: Inline constitutional gates.
 - Leases: `forge_lease_request` scopes actions; high blast-radius require arifOS.
 - Telemetry: Tagged with originating agent + geometry + prior judgment status (instrumented per plan).

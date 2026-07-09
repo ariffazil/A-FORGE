@@ -1,6 +1,6 @@
 <!-- SOT-MANIFEST
 federation_release: v2026.07.04-MCP-A2A
-last_verified: 2026-07-08
+last_verified: 2026-07-09
 changelog: /root/CHANGELOG-2026-07-04.md
 a2a_agent_json: /root/A-FORGE/.well-known/agent.json
 -->
@@ -24,13 +24,20 @@ MCP: 79 tools at `mcp.arif-fazil.com`. A2A: routing mesh via AAA cockpit.
 > **Canonical contract:** [ariffazil/arifos/FEDERATION_CONTRACT.md](https://github.com/ariffazil/arifos/blob/main/FEDERATION_CONTRACT.md)
 > **Kernel canon:** [ariffazil/arifos/GENESIS/000_KERNEL_CANON.md](https://github.com/ariffazil/arifos/blob/main/GENESIS/000_KERNEL_CANON.md)
 
-A-FORGE is the **governed execution shell** of the arifOS Federation — one of 7 sovereign organs running bare-metal on VPS `af-forge` (72.62.71.199). It executes governed plans across the federation.
+A-FORGE is the **governed execution shell** of the arifOS Federation (EXECUTION / MUTATION axis per Trinity Orthogonal Map).
+
+**Trinity:**
+- arifOS = LAW / JUDGMENT ("May this happen?")
+- AAA = STATE / ROUTING / VISIBILITY ("Where does it go? What can Arif see?")
+- A-FORGE = EXECUTION / MUTATION ("How do we safely do it?")
+
+One of 7 sovereign organs. Hands do not judge.
 
 ### Federation Context (read all 3 for full picture)
 
 | Read this | For | Link |
 |-----------|-----|------|
-| **arifOS** | Constitutional kernel. 7 public verbs (`arif_init`→`arif_observe`→`arif_think`→`arif_route`→`arif_judge`→`arif_act`→`arif_seal`). 13 floors. The judge. | [`ariffazil/arifos`](https://github.com/ariffazil/arifos) |
+| **arifOS** | Constitutional kernel. 12 canonical public verbs. 13 floors. The judge (LAW/JUDGMENT axis). See docs/TRINITY_ORTHOGONAL_MAP.md in arifOS. | [`ariffazil/arifos`](https://github.com/ariffazil/arifos) |
 | **A-FORGE** (this repo) | Executor. 79 MCP tools (21 stateless HTTP, rest session-bound). Shell, git, docker, browser, vault. Gates + A-THINK law at border. | ← you are here |
 | **AAA** | Cockpit. A2A mesh. Agent registry. React 19 dashboard. What Arif reads. | [`ariffazil/AAA`](https://github.com/ariffazil/AAA) |
 
@@ -98,6 +105,14 @@ MIND (Hermes:8644) and MEMORY (VAULT999) are separate federation services — A-
 > APEX THEORY defines the constitutional dynamics of governed intelligence through ΔΩΨ. arifOS compiles those dynamics into an AGI substrate kernel. AAA renders the substrate as visible ASI civilization state. A-FORGE gives the system governed hands. GEOX, WEALTH, and WELL anchor those hands to earth, capital, and human reality. VAULT999 preserves consequence. Arif/F13 remains the sovereign witness and final veto.
 
 **A-FORGE must never:** self-authorize a SEAL, skip 888_JUDGE, or execute without a valid constitutional chain from arifOS.
+
+### Trinity Orthogonal Role (SATU PERMUKAAN)
+**A-FORGE = EXECUTION / MUTATION**
+- Primary question: **"How do we safely do it?"**
+- Owns: build, mutation (edit/deploy/shell/git/docker/browser), rehearsal (dry-run), supply chain (scan/sign/prove).
+- Must not: judge, issue verdicts, self-authorize, display to operator as cockpit.
+- See also: arifOS (LAW/JUDGMENT), AAA (STATE/ROUTING/VISIBILITY)
+- One-line: arifOS is the judge; AAA is the cockpit; A-FORGE is the hand.
 
 Full doctrine: [GENESIS/040_APEX_STACK.md](https://github.com/ariffazil/arifos/blob/main/GENESIS/040_APEX_STACK.md)
 

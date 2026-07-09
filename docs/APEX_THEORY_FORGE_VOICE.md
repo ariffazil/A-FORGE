@@ -80,7 +80,7 @@ vault        → seal receipts
 
 ```bash
 # 1. Seal protocol in VAULT999
-arif_vault_seal --mode seal --payload @/root/arifOS/GENESIS/013_APEX_FALSIFICATION_PROTOCOL.md
+arif_seal --mode seal --payload @/root/arifOS/GENESIS/013_APEX_FALSIFICATION_PROTOCOL.md
 
 # 2. Execute battery
 python run_apex_battery.py --protocol v1 --models ilmu-nano,ilmu-super,gpt-4o,claude,qwen,llama
