@@ -1,6 +1,7 @@
 # APA-GitHub — Canonical Connector Template
 
-> **This is the living template for every APA connector.**  
+> **Short form.** Full reflex-arc canon (ART→KERNEL→APA→ACT→VAULT999) is:  
+> **`APA-GITHUB-SOVEREIGN-CONNECTOR.md`** — clone that for Slack/Drive/Notion.  
 > **Forged:** 2026-07-09 · **Bridge:** `scripts/github_bridge.py` :18095  
 > **Status:** PRODUCTION TEMPLATE · service `apa-github-bridge`
 
