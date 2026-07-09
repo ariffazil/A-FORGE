@@ -32,7 +32,7 @@ import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "../../a
 import { WEALTH_TOOLS } from "../../infrastructure/tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../../infrastructure/tools/MiniMaxTools.js";
 import { getMiniMaxClient } from "../../infrastructure/tools/MiniMaxMcpClient.js";
-import { systemctlWrapper } from "../../infrastructure/tools/infra/systemctl_wrapper.js";
+// systemctlWrapper unregistered 2026-07-09 — use forge_shell for systemctl
 import { dockerWrapper } from "../../infrastructure/tools/infra/docker_wrapper.js";
 import { journalctlWrapper } from "../../infrastructure/tools/infra/journalctl_wrapper.js";
 import { registerCoreResources } from "./resources.js";
@@ -1699,18 +1699,9 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
 // Read-only wrappers for systemd/docker/journalctl. Write variants remain
 // unregistered until the E7 lease executor is wired and tested.
 
-// DEPRECATED (2026-07-03): forge_systemctl — use forge_shell('systemctl ...') instead.
-// forge_journalctl handles log queries. forge_shell handles full systemctl.
-// Merged: forge_systemctl — single tool with mode parameter (kept for backward compat)
-// Replaces: forge_systemctl_status, forge_systemctl_is_active, forge_systemctl_list_units
-server.tool("forge_systemctl", "[DEPRECATED] Query systemd. Use forge_shell('systemctl ...') instead. Modes: status, list_units.", { service: z.string().optional(), mode: z.enum(["status", "list_units"]).default("status"), pattern: z.string().optional() }, async (args) => {
-  if (args.mode === "list_units") {
-    const res = await systemctlWrapper.listUnits(args.pattern ?? "*");
-    return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
-  }
-  const res = await systemctlWrapper.status(args.service ?? "");
-  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
-});
+// REMOVED 2026-07-09: forge_systemctl — fully unregistered from live surface.
+// Canonical path: forge_shell('systemctl status|list-units ...')
+// systemctlWrapper kept for internal use; do not re-register as MCP tool.
 
 // NOTE: forge_docker_ps/logs/exec/images registered by registerDockerTools (proxyTools.ts).
 // forge_docker_inspect and forge_docker_stats REMOVED — use forge_docker with mode or direct CLI.

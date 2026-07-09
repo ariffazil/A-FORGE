@@ -87,7 +87,7 @@
     "job",
     "confirm"
   ],
-  "tool_count": 99,
+  "tool_count": 98,
   "tools": [
     {
       "name": "forge_abort",
@@ -183,10 +183,10 @@
       ]
     },
     {
-      "name": "forge_boundaries_assert",
+      "name": "forge_security_drift_scan",
       "status": "ACTIVE",
       "affordance_class": "probe",
-      "capability_surface": "aforge.probe.boundaries_assert",
+      "capability_surface": "aforge.probe.security_drift_scan",
       "kernel_verb": "111_OBSERVE",
       "kernel_wire": "arif_observe",
       "mutation_class": "OBSERVE",
@@ -199,7 +199,7 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Machine Constitution drift detector. Asserts live ports/services/cron against the saved Machine Cons",
+      "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Production security telemetry (renamed from forge_boundaries_assert).",
       "description_live": "Machine Constitution drift detector. Asserts live ports/services/cron against the saved Machine Constitution registry and reports unregistered mutations. OBSERVE-class; does not mutate.",
       "description_canonical": "ACTUATOR \u00b7 probe \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Machine Constitution drift detector. Asserts live ports/services/cron against the saved Machine Constitution registry and reports unregistered mutations. OBSERV",
       "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
@@ -211,7 +211,8 @@
         "WELL",
         "OpenClaw",
         "arifOS"
-      ]
+      ],
+      "former_name": "forge_boundaries_assert"
     },
     {
       "name": "forge_browser_click",
@@ -2787,27 +2788,6 @@
       ]
     },
     {
-      "name": "forge_systemctl",
-      "status": "DEPRECATED",
-      "redirect_to": "forge_shell",
-      "affordance_class": "vps",
-      "capability_surface": "aforge.vps.systemctl_deprecated",
-      "kernel_verb": "777_FORGE",
-      "mutation_class": "MUTATE",
-      "gates": {
-        "requires_session": true,
-        "requires_lease": true,
-        "requires_gate": true,
-        "requires_seal": false,
-        "requires_human_approval": true,
-        "min_mode": "GOVERN",
-        "risk_label": "R3"
-      },
-      "purpose": "ACTUATOR [vps/MUTATE] supervised by kernel 777_FORGE. forge_systemctl",
-      "contrast_note": "Do not alias silently; explicit deprecation",
-      "description_canonical": "ACTUATOR \u00b7 vps \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE. Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. "
-    },
-    {
       "name": "forge_tier_bind",
       "status": "ACTIVE",
       "affordance_class": "registry",
@@ -3153,6 +3133,7 @@
     "Each tool has unique capability_surface",
     "No silent aliasing \u2014 deprecations must declare redirect_to",
     "Mode-split tools (filesystem_*, fetch_*, github_*) keep distinct surfaces",
-    "forge_systemctl is DEPRECATED \u2192 forge_shell"
+    "forge_systemctl REMOVED 2026-07-09 \u2192 forge_shell('systemctl ...')",
+    "forge_boundaries_assert RENAMED 2026-07-09 \u2192 forge_security_drift_scan"
   ]
 }

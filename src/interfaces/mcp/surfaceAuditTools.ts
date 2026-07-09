@@ -187,7 +187,7 @@ export function registerSurfaceAuditTools(server: McpServer): void {
           "forge_session_init", "forge_check_governance", "forge_heart_critique",
           "forge_judge_proxy", "forge_approve", "forge_reality_loop",
           "forge_worktree", "forge_chart", "forge_document_ingest",
-          "forge_vault", "forge_systemctl", "forge_journalctl", "forge_shell_status",
+          "forge_vault", "forge_journalctl", "forge_shell_status", "forge_security_drift_scan",
           "forge_shell_ledger", "forge_shell_alert_history", "forge_netdata_alarms",
           "forge_netdata_metrics", "forge_memory", "forge_policy",
           "forge_surface_guard", "forge_surface_audit",

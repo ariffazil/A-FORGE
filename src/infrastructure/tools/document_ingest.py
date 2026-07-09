@@ -38,6 +38,7 @@ Constitutional:
 DITEMPA BUKAN DIBERI — Forged, Not Given.
 """
 
+import os
 import sys
 import json
 import hashlib
@@ -45,6 +46,28 @@ import subprocess
 import argparse
 from pathlib import Path
 from typing import Any
+
+
+# Prefer service-writable staging (PrivateTmp makes host /tmp invisible under systemd).
+_STAGING_DIR = Path(
+    os.environ.get("AFORGE_DOC_STAGING", "/root/A-FORGE/data/document-ingest-staging")
+)
+_STAGING_DIR.mkdir(parents=True, exist_ok=True)
+
+# Binary formats handled by pymupdf / OCR
+_BINARY_EXTS = {
+    ".pdf", ".xps", ".epub", ".mobi", ".fb2", ".cbz",
+    ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".gif", ".webp",
+}
+# Everything else is treated as text (json/md/yaml/source/logs/…)
+_FORCE_TEXT_EXTS = {
+    ".txt", ".md", ".markdown", ".rst", ".json", ".jsonl", ".yaml", ".yml",
+    ".toml", ".ini", ".cfg", ".csv", ".tsv", ".xml", ".html", ".htm",
+    ".log", ".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
+    ".go", ".rs", ".java", ".c", ".h", ".cpp", ".hpp", ".sh", ".bash",
+    ".env", ".conf", ".sql", ".r", ".rb", ".php", ".css", ".scss",
+    ".vue", ".svelte", ".lock", ".gitignore", ".dockerignore",
+}
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -60,6 +83,12 @@ def sha256_hex(path: str) -> str:
     return h.hexdigest()
 
 
+def _staging_tmp(name: str) -> str:
+    """Writable temp path under A-FORGE data (not host /tmp — PrivateTmp safe)."""
+    p = _STAGING_DIR / name
+    return str(p)
+
+
 def ocr_page(image_path: str, lang: str = "eng+msa") -> str:
     """Run tesseract OCR on an image, return text."""
     try:
@@ -72,6 +101,159 @@ def ocr_page(image_path: str, lang: str = "eng+msa") -> str:
         return f"[OCR_ERROR: {e}]"
 
 
+def is_text_document(path: str) -> bool:
+    """True when we should use the text pipeline (not pymupdf)."""
+    ext = Path(path).suffix.lower()
+    if ext in _FORCE_TEXT_EXTS:
+        return True
+    if ext in _BINARY_EXTS:
+        return False
+    # Sniff: if mostly printable UTF-8, treat as text
+    try:
+        raw = Path(path).read_bytes()[:4096]
+        if not raw:
+            return True
+        # PDF magic
+        if raw.startswith(b"%PDF"):
+            return False
+        # image magic
+        if raw[:8] in (b"\x89PNG\r\n\x1a\n",) or raw[:2] in (b"\xff\xd8", b"BM"):
+            return False
+        sample = raw.decode("utf-8", errors="replace")
+        printable = sum(1 for c in sample if c.isprintable() or c in "\n\r\t")
+        return (printable / max(len(sample), 1)) >= 0.85
+    except OSError:
+        return False
+
+
+def analyze_text(path: str) -> dict:
+    """Layout-ish analyze for plain text / JSON / Markdown / source files."""
+    p = Path(path)
+    try:
+        text = p.read_text(encoding="utf-8", errors="replace")
+    except OSError as e:
+        raise FileNotFoundError(f"Cannot read text document: {path} ({e})") from e
+
+    lines = text.splitlines()
+    elements: list[dict] = []
+    y = 0.0
+    for i, line in enumerate(lines[:5000]):  # hard cap elements
+        if not line.strip():
+            y += 14
+            continue
+        elements.append({
+            "type": "text",
+            "bbox": [0.0, y, 612.0, y + 12.0],
+            "text": line[:500],
+            "font": "monospace",
+            "size": 11,
+            "line": i + 1,
+        })
+        y += 14
+
+    return {
+        "mode": "analyze",
+        "file": path,
+        "source_sha256": sha256_hex(path),
+        "total_pages": 1,
+        "pages_analyzed": 1,
+        "format": "text",
+        "extension": p.suffix.lower(),
+        "layout_tree": [{
+            "page": 1,
+            "width": 612,
+            "height": max(y, 72),
+            "element_count": len(elements),
+            "elements": elements,
+        }],
+        "summary": {
+            "has_text": bool(elements),
+            "has_tables": False,
+            "has_images": False,
+            "line_count": len(lines),
+            "char_count": len(text),
+            "dominant_fonts": ["monospace"],
+        },
+    }
+
+
+def extract_text(path: str, pages: list[int] | None = None, ocr: bool = False) -> dict:
+    """Full extract pipeline for text documents (OCR unused)."""
+    del pages, ocr  # text has no pages; keep signature parity
+    p = Path(path)
+    text = p.read_text(encoding="utf-8", errors="replace")
+    lines = text.splitlines()
+    structured: list[dict] = []
+    for i, line in enumerate(lines):
+        if not line.strip():
+            continue
+        structured.append({
+            "type": "paragraph",
+            "bbox": [0.0, float(i * 14), 612.0, float(i * 14 + 12)],
+            "page": 1,
+            "text": line,
+            "confidence": 1.0,
+            "font": "monospace",
+            "size": 11,
+            "flags": 0,
+            "line": i + 1,
+        })
+    return {
+        "mode": "extract",
+        "file": path,
+        "source_sha256": sha256_hex(path),
+        "format": "text",
+        "extension": p.suffix.lower(),
+        "metadata": {
+            "pages": 1,
+            "title": p.name,
+            "author": "",
+            "format": "text",
+        },
+        "structured_content": structured,
+        "full_text": text,
+        "text_by_page": {"1": text},
+        "provenance": {
+            "source_sha256": sha256_hex(path),
+            "extraction_method": "text_native",
+            "ocr_engine": None,
+        },
+        "summary": {
+            "total_elements": len(structured),
+            "paragraphs": len(structured),
+            "tables": 0,
+            "images": 0,
+            "char_count": len(text),
+            "line_count": len(lines),
+        },
+    }
+
+
+def ensure_readable(path: str) -> str:
+    """
+    Ensure path is openable by this process.
+    systemd PrivateTmp hides host /tmp — stage into A-FORGE data when needed.
+    """
+    p = Path(path)
+    if p.is_file() and os.access(path, os.R_OK):
+        return str(p.resolve())
+
+    # Common alternate: host path visible via /root drops
+    candidates = [
+        path,
+        path.replace("/tmp/", "/root/A-FORGE/data/document-ingest-staging/"),
+        f"/root/A-FORGE/data/document-ingest-staging/{p.name}",
+    ]
+    for c in candidates:
+        if c and Path(c).is_file() and os.access(c, os.R_OK):
+            return str(Path(c).resolve())
+
+    raise FileNotFoundError(
+        f"File not found or not accessible under service FS namespace: {path}. "
+        f"Place under /root or /root/A-FORGE (host /tmp is PrivateTmp-isolated)."
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # ANALYZE — Layout Analysis (Structure Tree)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -81,6 +263,10 @@ def analyze(path: str, pages: list[int] | None = None) -> dict:
     Layout-first analysis. Returns structure tree without full text extraction.
     Identifies: headers, paragraphs, columns, tables, figures, their bounding boxes.
     """
+    path = ensure_readable(path)
+    if is_text_document(path):
+        return analyze_text(path)
+
     import pymupdf
 
     doc = pymupdf.open(path)
@@ -184,6 +370,10 @@ def extract(path: str, pages: list[int] | None = None, ocr: bool = False) -> dic
     Full extraction pipeline.
     Returns structured JSON with typed elements + bounding-box provenance.
     """
+    path = ensure_readable(path)
+    if is_text_document(path):
+        return extract_text(path, pages=pages, ocr=ocr)
+
     import pymupdf
 
     doc = pymupdf.open(path)
@@ -237,7 +427,7 @@ def extract(path: str, pages: list[int] | None = None, ocr: bool = False) -> dic
                     # Extract image and OCR it
                     try:
                         pix = pymupdf.Pixmap(doc, block.get("xref", 0) if block.get("xref") else 0)
-                        tmp_path = f"/tmp/aforge_ocr_page{page_num}_{page_idx}.png"
+                        tmp_path = _staging_tmp(f"aforge_ocr_page{page_num}_{page_idx}.png")
                         if pix.n >= 5:
                             pix = pymupdf.Pixmap(pymupdf.csRGB, pix)
                         pix.save(tmp_path)

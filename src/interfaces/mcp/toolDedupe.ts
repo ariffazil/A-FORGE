@@ -69,7 +69,7 @@ const KNOWN_DEPRECATED = [
 const KNOWN_ALIAS_GROUPS: Record<string, string[]> = {
   "forge_filesystem": ["forge_filesystem_read", "forge_filesystem_write", "forge_filesystem_patch", "forge_filesystem_tree", "forge_filesystem_search", "forge_filesystem_stat", "forge_filesystem_move", "forge_filesystem_delete"],
   "forge_fetch": ["forge_fetch_url", "forge_fetch_json", "forge_fetch_metadata", "forge_fetch_links"],
-  "forge_systemctl": [], // deprecated, kept for backward compat
+  // forge_systemctl removed 2026-07-09 — use forge_shell('systemctl ...')
 };
 
 /**
