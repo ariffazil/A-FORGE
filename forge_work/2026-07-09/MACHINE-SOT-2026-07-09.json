@@ -1,16 +1,33 @@
 {
-  "generated_at": "2026-07-09T04:50:24Z",
+  "generated_at": "2026-07-09T11:05:46Z",
   "actor": "grok-build",
   "sovereign": "Arif F13",
-  "intent": "machine optimize + SOT refresh + redeploy all services/MCPs",
-  "host": {
-    "loadavg": [
-      "4.51",
-      "3.98",
-      "3.88"
-    ],
-    "disk_root_pct": 47.6,
-    "mem_available_gb": 17.4
+  "intent": "Spine P0 release wrap \u2014 sct_v1 inhabit + audit removal + SOT/deploy",
+  "tag": "v2026.07.09",
+  "github_release": "https://github.com/ariffazil/arifos/releases/tag/v2026.07.09",
+  "arifOS": {
+    "repo": "/root/arifOS",
+    "commit": "2fc00895e",
+    "commit_full": "2fc00895e555f0362ba0b8ec6d8a10e28bf660e5",
+    "port": 8088,
+    "health": {
+      "status": "healthy",
+      "version": "kanon-2fc0089",
+      "git_commit": "2fc0089",
+      "tools_exposed_via_mcp": 11,
+      "canonical_tools_loaded": 17,
+      "total_declared_tools": 58,
+      "runtime_path": "/opt/arifos/app",
+      "release_name": "v2026.07.04-MARHIN"
+    },
+    "spine_p0": {
+      "sct_wire": "sct_v1",
+      "birth_apex": "UNMEASURED",
+      "arif_triage": "DEPRECATED \u2192 arif_init(mode=preflight|triage)",
+      "arif_act": "internal_only",
+      "store_delete_loop": "proven"
+    },
+    "runtime_drift": true
   },
   "units": {
     "arifos": "active",
@@ -18,123 +35,27 @@
     "a-forge-mcp": "active",
     "aaa-a2a": "active",
     "geox-mcp": "active",
-    "wealth-organ": "activating",
+    "wealth-organ": "active",
     "well": "active",
-    "1mcp": "active",
     "vault999-api": "active",
     "vault999-writer": "active"
   },
   "organs": {
-    "arifOS": {
-      "port": 8088,
-      "repo": "/root/arifOS",
-      "health": {
-        "status": "healthy",
-        "version": "kanon-1bfeaba",
-        "git_commit": "1bfeaba",
-        "tools_exposed": 12,
-        "owner_summary": "GREEN",
-        "runtime_drift": false
-      },
-      "repo_sha": "1bfeaba3e",
-      "repo_subject": "docs: freeze orthogonal CANON \u2014 ART\u00d7KERNEL\u00d7APA\u00d7ACT\u2192VAULT999"
-    },
-    "A-FORGE": {
-      "port": 7071,
-      "repo": "/root/A-FORGE",
-      "health": {
-        "status": "healthy",
-        "version": "0.1.0",
-        "git_commit": "e7749f22ea48df3811fa0567b728d3163596c9cb62170f83a44b2330abefb526",
-        "tools_exposed": null,
-        "owner_summary": "GREEN",
-        "runtime_drift": null
-      },
-      "repo_sha": "a86ac7a",
-      "repo_subject": "G3 SEAL: apa/core/schemas.py \u2014 canonical VAULT999Receipt + APAResponse Pydantic models"
-    },
-    "A-FORGE-MCP": {
-      "port": 7072,
-      "repo": "/root/A-FORGE",
-      "health": {
-        "status": "healthy",
-        "version": "0.1.0",
-        "git_commit": null,
-        "tools_exposed": 49,
-        "owner_summary": null,
-        "runtime_drift": null
-      },
-      "repo_sha": "a86ac7a",
-      "repo_subject": "G3 SEAL: apa/core/schemas.py \u2014 canonical VAULT999Receipt + APAResponse Pydantic models"
-    },
-    "AAA": {
-      "port": 3001,
-      "repo": "/root/AAA",
-      "health": {
-        "status": "healthy",
-        "version": "1.0.0",
-        "git_commit": null,
-        "tools_exposed": null,
-        "owner_summary": null,
-        "runtime_drift": null
-      },
-      "repo_sha": "a71976a2",
-      "repo_subject": "chore: organize AAA repo layout \u2014 thin root, lanes, archive"
-    },
-    "GEOX": {
-      "port": 8081,
-      "repo": "/root/geox",
-      "health": {
-        "status": "healthy",
-        "version": "v2026.07.06-phase3.1-rsi-pipeline",
-        "git_commit": "geox-d1aec520",
-        "tools_exposed": null,
-        "owner_summary": "GREEN",
-        "runtime_drift": null
-      },
-      "repo_sha": "d1aec520",
-      "repo_subject": "docs: freeze orthogonal CANON \u2014 ART\u00d7KERNEL\u00d7APA\u00d7ACT\u2192VAULT999"
-    },
-    "WEALTH": {
-      "port": 18082,
-      "repo": "/root/wealth",
-      "health": {
-        "status": "ALIVE",
-        "version": "2026.06.15",
-        "git_commit": null,
-        "tools_exposed": null,
-        "owner_summary": null,
-        "runtime_drift": null
-      },
-      "repo_sha": "6adefdb",
-      "repo_subject": "docs: freeze orthogonal CANON \u2014 ART\u00d7KERNEL\u00d7APA\u00d7ACT\u2192VAULT999"
-    },
-    "WELL": {
-      "port": 18083,
-      "repo": "/root/WELL",
-      "health": {
-        "status": "degraded",
-        "version": "2026.05.15-\u03a9WELL+GWELL+FEDERATION",
-        "git_commit": "1b1f46b3e0896994e27b354dfca58efd3f088e58f1428773ac3c45c2b5f3195a",
-        "tools_exposed": 22,
-        "owner_summary": "RED",
-        "runtime_drift": null
-      },
-      "repo_sha": "9eb8951",
-      "repo_subject": "docs: freeze orthogonal CANON \u2014 ART\u00d7KERNEL\u00d7APA\u00d7ACT\u2192VAULT999"
-    }
+    "arifOS": "healthy",
+    "A-FORGE": "healthy",
+    "GEOX": "healthy",
+    "WEALTH": "ALIVE",
+    "WELL": "degraded",
+    "AAA": "healthy"
   },
-  "optimizations": [
-    "killed stuck grok PID 3437860 (3d+ @96% CPU since Jul05)",
-    "reclaimed /tmp geox/test artifact dirs ~400MB",
-    "make deploy-local arifOS \u2192 /opt/arifos/app @1bfeaba (runtime_drift=false GREEN)",
-    "rsync /root/wealth \u2192 /root/WEALTH runtime path @6adefdb",
-    "systemctl daemon-reload + restart all organs + APA bridges + 1mcp"
-  ],
-  "anomalies_honest": [
-    "WELL owner_summary RED \u2014 state.json timestamp 2026-04-30 (SELF_REPORT stale, not sensor)",
-    "WEALTH health version string still 2026.06.15 (banner lag; code synced 6adefdb)",
-    "1mcp reports 2/15 unhealthy servers (auth-gated remote MCP)",
-    "VAULT999 chain_integrity DEGRADED note in conformance (historical gaps sovereign-ruled non-issue)"
+  "surfaces_updated": [
+    "arifOS README SOT-MANIFEST",
+    "CHANGELOG v2026.07.09",
+    "llms.txt + /var/www mirrors",
+    ".well-known/agent.json",
+    "PUBLIC_SURFACE_CANON.md",
+    "AAA deprecation-registry.json",
+    "AGENTS.md SOT spine_p0",
+    "GitHub tag+release v2026.07.09"
   ]
 }

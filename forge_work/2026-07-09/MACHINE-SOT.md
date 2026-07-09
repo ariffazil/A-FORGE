@@ -1,29 +1,35 @@
-# Machine SOT — 2026-07-09
+# MACHINE SOT — 2026-07-09 Spine P0
 
-**Sovereign:** Arif (F13) · **Actor:** grok-build · **Verified:** 2026-07-09T04:50Z
+**Generated:** 2026-07-09T11:05:46Z  
+**Tag:** v2026.07.09  
+**arifOS commit:** `2fc00895e`  
+**Live health:** healthy / kanon-2fc0089  
+**MCP tools exposed:** 11  
+**runtime_drift:** True
 
-## Optimize
-- Reaped stuck `grok` PID 3437860 (3d+ @ ~97% CPU since Jul 5)
-- Reclaimed `/tmp` geox/test artifact dirs
-- `systemctl daemon-reload` after unit on-disk changes
+## Spine P0
+- sct_v1 inhabit live
+- arif_triage → arif_init(mode=preflight|triage)
+- arif_act internal_only
+- birth apex UNMEASURED
 
-## Redeploy
-| Unit | Result |
-|------|--------|
-| arifos (`make deploy-local` → `/opt/arifos/app` @1bfeaba) | healthy GREEN, runtime_drift=false |
-| a-forge / a-forge-mcp | healthy (49 stateless tools on :7072) |
-| aaa-a2a | healthy, vault CONNECTED |
-| geox-mcp | healthy GREEN |
-| wealth-organ | ALIVE (code synced wealth→WEALTH @6adefdb) |
-| well | active, degraded RED (stale SELF_REPORT state) |
-| APA bridges + 1mcp + vault999-* | restarted |
+## Units
+- arifos: active
+- a-forge: active
+- a-forge-mcp: active
+- aaa-a2a: active
+- geox-mcp: active
+- wealth-organ: active
+- well: active
+- vault999-api: active
+- vault999-writer: active
 
-## Docs updated
-- `/root/CONTEXT.md`, `/root/AGENTS.md` SOT, `/root/RUNBOOK.md`
-- READMEs: arifOS, A-FORGE, AAA, geox, wealth/WEALTH, WELL
-- Snapshot JSON: `MACHINE-SOT-2026-07-09.json`
+## Organs
+- arifOS: healthy
+- A-FORGE: healthy
+- GEOX: healthy
+- WEALTH: ALIVE
+- WELL: degraded
+- AAA: healthy
 
-## Still open
-1. WELL biometrics inject by Arif (no invented vitals)
-2. WEALTH health version banner cosmetic lag
-3. 1mcp 2/15 auth-gated remotes unhealthy
+Release: https://github.com/ariffazil/arifos/releases/tag/v2026.07.09
