@@ -1,0 +1,284 @@
+# Federation systemd organ tags — machine-readable companion to geometry.md
+# Canonical ledger: VPS seal_chain.jsonl (not this file)
+# Probe: 2026-07-09T04:30Z approx
+
+schema_version: "2026.07.09"
+parent_canon: "https://github.com/ariffazil/ariffazil/blob/main/CANON.md"
+host_unit_files_total: 343
+host_running_services_approx: 70
+federation_units_classified: 39
+
+iron_rules:
+  - never_let_forge_outrun_kernel
+  - vault999_canonical_path: /root/.local/share/arifos/vault999/seal_chain.jsonl
+  - vault999_write: arifos
+  - vault999_read_types: a-forge
+  - vault999_doctrine: aaa
+  - systemd_is_psi_supervision_only
+
+units:
+  # ART / KERNEL
+  - unit: arifos.service
+    organ: KERNEL
+    also: [ART]
+    axes: [Ω, Ψ]
+    repo: arifos
+    active: active
+    enabled: enabled
+  - unit: arifosd.service
+    organ: KERNEL
+    axes: [Ω, Ψ]
+    repo: arifos
+    active: active
+    enabled: enabled
+    note: constitutional_daemon
+  - unit: arifos-mcp.service
+    organ: KERNEL
+    axes: [Ω, Ψ]
+    repo: arifos
+    active: inactive
+    enabled: disabled
+    note: standby_or_collapsed_alias
+  - unit: arifOS-NATS-heartbeat.service
+    organ: KERNEL
+    axes: [Ψ]
+    repo: arifos
+    active: active
+    enabled: enabled
+    role: support_pulse
+  - unit: arifos-gateway.service
+    organ: ART
+    axes: [Ω, Ψ]
+    repo: arifos
+    active: inactive
+    enabled: disabled
+  - unit: arifos-observatory.service
+    organ: ART
+    axes: [Ω, Ψ]
+    repo: arifos
+    active: inactive
+    enabled: disabled
+  - unit: arifos-scar-listener.service
+    organ: KERNEL
+    axes: [Ω, Ψ]
+    repo: arifos
+    active: inactive
+    enabled: disabled
+
+  # VAULT999
+  - unit: vault999-writer.service
+    organ: VAULT999
+    axes: [Ω, Ψ]
+    repo: arifos
+    role: write_mirror_path
+    active: active
+    enabled: enabled
+  - unit: vault999-api.service
+    organ: VAULT999
+    axes: [Ω, Ψ]
+    repo: arifos
+    role: read_api
+    active: active
+    enabled: enabled
+  - unit: vault-flat-generator.service
+    organ: VAULT999
+    axes: [Ψ]
+    repo: arifos
+    role: derived_view
+    active: active
+    enabled: enabled
+
+  # APA
+  - unit: apa-telegram-bridge.service
+    organ: APA
+    axes: [Δ, Ω, Ψ]
+    delta_surface: messenger_f13
+    repo: A-FORGE
+    active: active
+    enabled: enabled
+  - unit: apa-github-bridge.service
+    organ: APA
+    axes: [Δ, Ω, Ψ]
+    delta_surface: code_identity
+    repo: A-FORGE
+    active: active
+    enabled: enabled
+  - unit: apa-email-bridge.service
+    organ: APA
+    axes: [Δ, Ω, Ψ]
+    delta_surface: communication
+    repo: A-FORGE
+    active: active
+    enabled: enabled
+  - unit: apa-calendar-bridge.service
+    organ: APA
+    axes: [Δ, Ω, Ψ]
+    delta_surface: time
+    repo: A-FORGE
+    active: active
+    enabled: enabled
+
+  # ACT
+  - unit: a-forge.service
+    organ: ACT
+    axes: [Ω, Ψ]
+    repo: A-FORGE
+    active: active
+    enabled: enabled
+  - unit: a-forge-mcp.service
+    organ: ACT
+    axes: [Ω, Ψ]
+    repo: A-FORGE
+    active: active
+    enabled: enabled
+  - unit: aforge-heartbeat.service
+    organ: ACT
+    axes: [Ψ]
+    repo: A-FORGE
+    role: support_pulse
+    active: active
+    enabled: enabled
+  - unit: hermes-dispatcher.service
+    organ: ACT
+    axes: [Ω]
+    repo: HERMES
+    active: active
+    enabled: enabled
+  - unit: mind.service
+    organ: ACT
+    axes: [Ω]
+    repo: HERMES
+    note: mind_plane_not_kernel_law
+    active: active
+    enabled: enabled
+  - unit: forge-gateway.service
+    organ: ACT
+    axes: [Ω, Ψ]
+    repo: A-FORGE
+    active: inactive
+    enabled: disabled
+
+  # AAA
+  - unit: aaa-a2a.service
+    organ: AAA
+    axes: [Ω, Δ]
+    repo: AAA
+    active: active
+    enabled: enabled
+  - unit: aaa-preforge.service
+    organ: AAA
+    axes: [Ω, Ψ]
+    repo: AAA
+    active: active
+    enabled: enabled
+
+  # Hermes gateway
+  - unit: hermes-asi-gateway.service
+    organ: HERMES
+    axes: [Δ, Ω]
+    repo: HERMES
+    role: sovereign_gateway
+    active: active
+    enabled: enabled
+  - unit: hermes-mcp.service
+    organ: HERMES
+    axes: [Ω]
+    repo: HERMES
+    active: inactive
+    enabled: disabled
+
+  # Domains
+  - unit: well.service
+    organ: WELL
+    axes: [Δ, Ψ]
+    repo: well
+    active: active
+    enabled: enabled
+  - unit: well-heartbeat.service
+    organ: WELL
+    axes: [Ψ]
+    repo: well
+    role: support_pulse
+    active: active
+    enabled: enabled
+  - unit: wealth-organ.service
+    organ: WEALTH
+    axes: [Δ, Ω]
+    repo: wealth
+    active: active
+    enabled: enabled
+  - unit: wealth.service
+    organ: WEALTH
+    axes: [Δ, Ω]
+    repo: wealth
+    active: active
+    enabled: enabled
+  - unit: wealth-heartbeat.service
+    organ: WEALTH
+    axes: [Ψ]
+    repo: wealth
+    role: support_pulse
+    active: active
+    enabled: enabled
+  - unit: geox-mcp.service
+    organ: GEOX
+    axes: [Ω]
+    repo: geox
+    active: active
+    enabled: enabled
+  - unit: geox-heartbeat.service
+    organ: GEOX
+    axes: [Ψ]
+    repo: geox
+    role: support_pulse
+    active: active
+    enabled: enabled
+  - unit: geox-static-server.service
+    organ: GEOX
+    axes: [Ψ]
+    repo: geox
+    active: active
+    enabled: enabled
+
+  # Support Ψ
+  - unit: graphiti-mcp.service
+    organ: SUBSTRATE
+    axes: [Ψ]
+    repo: substrate
+    active: active
+    enabled: enabled
+  - unit: playwright-mcp.service
+    organ: SUBSTRATE
+    axes: [Ψ]
+    repo: A-FORGE
+    active: active
+    enabled: enabled
+  - unit: 1mcp.service
+    organ: SUBSTRATE
+    axes: [Ψ]
+    repo: substrate
+    active: active
+    enabled: enabled
+  - unit: mcp-telemetry-proxy.service
+    organ: SUBSTRATE
+    axes: [Ψ]
+    repo: substrate
+    active: inactive
+    enabled: disabled
+
+  # Masked
+  - unit: arif-agent-worker.service
+    organ: RETIRED
+    axes: []
+    active: inactive
+    enabled: masked
+  - unit: arif-heartbeat.service
+    organ: RETIRED
+    axes: []
+    active: inactive
+    enabled: masked
+  - unit: arifos-backup.service
+    organ: RETIRED
+    axes: []
+    active: inactive
+    enabled: masked
