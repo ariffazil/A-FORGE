@@ -1,0 +1,19 @@
+# APA Bridge Service Template
+# Usage: systemctl enable apa-bridge@email
+#        systemctl enable apa-bridge@calendar
+#        systemctl enable apa-bridge@github
+[Unit]
+Description=APA Bridge: %i — Sovereign Protocol Adapter
+After=network.target
+Documentation=https://arif-fazil.com
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /root/A-FORGE/bridges/%i_bridge.py
+Restart=on-failure
+RestartSec=5
+Environment=BRIDGE_PORT=1809%i_port
+EnvironmentFile=/root/.env
+
+[Install]
+WantedBy=multi-user.target
