@@ -48,7 +48,7 @@ const STATELESS_TOOLS = new Set([
   "forge_minimax_search",
   "forge_docs_lookup",
   "forge_memory",
-  // forge_systemctl — DEPRECATED, use forge_shell('systemctl ...') instead
+  // forge_systemctl — REMOVED 2026-07-09 (use forge_shell('systemctl ...'))
   "forge_journalctl",
   "forge_registry_status",
   "forge_status",
@@ -60,6 +60,13 @@ const STATELESS_TOOLS = new Set([
   "forge_shell_alert_history",
   "forge_registry",
   "forge_document_ingest",                                   // Phase 1 — read-only, no side effects
+
+  // ── OBSERVE FS aliases (2026-07-09) — stateless HTTP clients must read without session ──
+  "forge_filesystem_read",
+  "forge_filesystem_tree",
+  "forge_filesystem_search",
+  "forge_filesystem_stat",
+  "forge_filesystem_grep",
 
   // ── Phase 5: MCP Policy Gate (2026-06-30) ──────────────────────────
   // Observation/check/list capability in the merged engine is stateless.
@@ -92,7 +99,8 @@ const STATELESS_TOOLS = new Set([
   // session_id as explicit parameter, safe over HTTP. start/list modes
   // require no prior session. F1 AMANAH + F4 CLARITY.
   "forge_reality_loop",
-  "forge_boundaries_assert",
+  // renamed 2026-07-09: forge_boundaries_assert → forge_security_drift_scan
+  "forge_security_drift_scan",
 
   // ── Fetch — URL content extraction (OBSERVE-class, no mutations) ───
   "forge_fetch",

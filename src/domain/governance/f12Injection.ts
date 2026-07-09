@@ -66,6 +66,15 @@ const CODE_ACCEPTING_TOOLS = new Set([
   // own path scoping via checkPathAllowed — F12 SHELL_METACHARS is
   // a false positive on content payloads.
   "forge_filesystem",
+  "forge_filesystem_read",
+  "forge_filesystem_write",
+  "forge_filesystem_patch",
+  "forge_filesystem_tree",
+  "forge_filesystem_search",
+  "forge_filesystem_stat",
+  "forge_filesystem_move",
+  "forge_filesystem_delete",
+  "forge_document_ingest",
 ]);
 
 /**
@@ -120,6 +129,14 @@ export function checkF12Injection(ctx: FloorContext): FloorReason[] {
   // They operate on /root, /tmp, /data which are valid work directories.
   const AUTHORIZED_PROXY_TOOLS = new Set([
     "forge_filesystem",
+    "forge_filesystem_read",
+    "forge_filesystem_write",
+    "forge_filesystem_patch",
+    "forge_filesystem_tree",
+    "forge_filesystem_search",
+    "forge_filesystem_stat",
+    "forge_filesystem_move",
+    "forge_filesystem_delete",
     "forge_git",
     "forge_postgres",
     "forge_docker",

@@ -285,7 +285,8 @@ async function scanCron(): Promise<{ entries: CronEntry[]; timestamp: string }> 
   return { entries, timestamp: nowIso() };
 }
 
-// ── forge_boundaries_assert ───────────────────────────────────────────────────
+// ── forge_security_drift_scan (was forge_boundaries_assert) ───────────────────
+// Production security telemetry: unknown public ports, new cron, new systemd/docker.
 // Compare live state against the Machine Constitution registry. Report drift.
 
 interface DriftReport {
@@ -444,15 +445,9 @@ export function registerStateAnchorTools(server: McpServer): void {
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // forge_boundaries_assert
+  // forge_security_drift_scan (renamed from forge_boundaries_assert 2026-07-09)
   // ═══════════════════════════════════════════════════════════════════════════
-  server.tool(
-    "forge_boundaries_assert",
-    "Machine Constitution drift detector. Asserts live ports/services/cron against the saved Machine Constitution registry and reports unregistered mutations. OBSERVE-class; does not mutate.",
-    {
-      strict: z.boolean().default(false).describe("If true, any unknown public port or rogue container returns FAIL instead of WARN"),
-    },
-    async ({ strict }: { strict?: boolean }) => {
+  const securityDriftHandler = async ({ strict }: { strict?: boolean }) => {
       await ensureRegistryDir();
       const [portScan, serviceScan, cronScan] = await Promise.all([
         scanPorts(),
@@ -527,7 +522,20 @@ export function registerStateAnchorTools(server: McpServer): void {
         report.verdict = strict ? "FAIL" : "WARN";
       }
 
-      return text(report);
-    }
+      return text({
+        ...report,
+        tool: "forge_security_drift_scan",
+        former_name: "forge_boundaries_assert",
+        doctrine: "Machine Constitution security drift — unknown public ports, new cron, new systemd/docker services",
+      });
+  };
+
+  server.tool(
+    "forge_security_drift_scan",
+    "Production security telemetry. Scans live ports/services/cron against Machine Constitution registry — flags unknown public ports, new systemd services, new cron jobs, rogue containers. OBSERVE-class; does not mutate. (Renamed from forge_boundaries_assert 2026-07-09.)",
+    {
+      strict: z.boolean().default(false).describe("If true, any unknown public port or rogue container returns FAIL instead of WARN"),
+    },
+    securityDriftHandler,
   );
 }

@@ -54,11 +54,11 @@ tools:
   requires_human_approval: true
   min_mode: GOVERN
   risk_label: R3
-- name: forge_boundaries_assert
-  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Machine Constitution drift detector. Asserts live ports/services/cron
-    against the saved Machine Cons
+- name: forge_security_drift_scan
+  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Production security telemetry — unknown public ports, new
+    cron, new systemd/docker vs Machine Constitution registry. (Renamed from forge_boundaries_assert 2026-07-09.)
   affordance_class: probe
-  capability_surface: aforge.probe.boundaries_assert
+  capability_surface: aforge.probe.security_drift_scan
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
   reads:
@@ -1444,23 +1444,7 @@ tools:
   requires_human_approval: true
   min_mode: GOVERN
   risk_label: R3
-- name: forge_systemctl
-  purpose: ACTUATOR [vps/MUTATE] supervised by kernel 777_FORGE. forge_systemctl
-  affordance_class: vps
-  capability_surface: aforge.vps.systemctl_deprecated
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - system_state
-  - services
-  writes:
-  - services
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
+# forge_systemctl — REMOVED from live surface 2026-07-09. Use forge_shell('systemctl ...').
 - name: forge_tier_bind
   purpose: ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Set trust tier LOWER BOUND only. A-FORGE cannot promote
     — only arifOS sets actual tier.

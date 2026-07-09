@@ -136,10 +136,14 @@ const OBSERVE_TOOLS = new Set([
   "forge_health_check",       // health check — read-only
   "forge_probe",              // federation organ liveness — read-only (hits /health endpoints)
   "forge_memory_recall",      // memory read — read-only
-  "forge_filesystem_read",    // file read — read-only
+  "forge_filesystem_read",    // file read — read-only (stateless HTTP OK)
+  "forge_filesystem_tree",    // dir tree — read-only
+  "forge_filesystem_search",  // content search alias — read-only
   "forge_filesystem_glob",    // file search — read-only
   "forge_filesystem_grep",    // content search — read-only
   "forge_filesystem_stat",    // file metadata — read-only
+  "forge_document_ingest",    // document intelligence — read-only
+  "forge_security_drift_scan", // Machine Constitution security drift — read-only
   "forge_git_status",         // git status — read-only
   "forge_git_log",            // git log — read-only
   "forge_git_diff",           // git diff — read-only

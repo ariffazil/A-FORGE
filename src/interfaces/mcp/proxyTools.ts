@@ -229,37 +229,49 @@ function sha256(content: string | Buffer): string {
 }
 
 export function registerFilesystemTools(server: McpServer): void {
-  server.registerTool("forge_filesystem", {
-    description: "Canonical governed filesystem primitive. Modes: read, write, patch, glob, grep, stat, tree, move, delete, restore. F8 scoped to /root, /tmp, /data, /var/log. delete defaults to quarantine (not hard delete).",
-    inputSchema: z.object({
-      mode: z.enum(["read", "write", "patch", "glob", "grep", "stat", "tree", "move", "delete", "restore"]),
-      path: z.string().default("/root"),
-      content: z.string().optional(),
-      overwrite: z.boolean().default(false),
-      pattern: z.string().optional(),
-      include: z.string().optional(),
-      offset: z.number().optional(),
-      limit: z.number().optional(),
-      // patch mode
-      old_text: z.string().optional(),
-      new_text: z.string().optional(),
-      expected_occurrences: z.number().optional(),
-      // tree mode
-      max_depth: z.number().optional(),
-      max_entries: z.number().optional(),
-      include_hidden: z.boolean().default(false),
-      // move mode
-      destination: z.string().optional(),
-      // delete mode
-      delete_mode: z.enum(["quarantine", "hard"]).default("quarantine"),
-      // restore mode
-      quarantine_id: z.string().optional(),
-      // shared
-      dry_run: z.boolean().default(false),
-      // elicitation — external client confirmation
-      confirm: z.boolean().default(false).describe("Set true to confirm governed write/move/delete. Required for external HTTP clients on sensitive paths."),
-    }),
-  }, async ({ mode, path: inputPath, content, overwrite, pattern, include, offset, limit, old_text, new_text, expected_occurrences, max_depth, max_entries, include_hidden, destination, delete_mode, dry_run, quarantine_id, confirm }) => {
+  // Shared executor — aliases MUST call this (server._callTool does not exist on McpServer).
+  const executeFilesystem = async (args: {
+    mode: string;
+    path?: string;
+    content?: string;
+    overwrite?: boolean;
+    pattern?: string;
+    include?: string;
+    offset?: number;
+    limit?: number;
+    old_text?: string;
+    new_text?: string;
+    expected_occurrences?: number;
+    max_depth?: number;
+    max_entries?: number;
+    include_hidden?: boolean;
+    destination?: string;
+    delete_mode?: "quarantine" | "hard";
+    dry_run?: boolean;
+    quarantine_id?: string;
+    confirm?: boolean;
+  }) => {
+    const {
+      mode,
+      path: inputPath,
+      content,
+      overwrite = false,
+      pattern,
+      include,
+      offset,
+      limit,
+      old_text,
+      new_text,
+      expected_occurrences,
+      max_depth,
+      max_entries,
+      include_hidden = false,
+      destination,
+      delete_mode = "quarantine",
+      dry_run = false,
+      quarantine_id,
+      confirm = false,
+    } = args;
     try {
       const pathVal = inputPath ?? "/root";
       const check = checkPathAllowed(pathVal);
@@ -493,22 +505,52 @@ export function registerFilesystemTools(server: McpServer): void {
     } catch (err: any) {
       return text(`Error: ${err.message}`, true);
     }
-  });
+  };
+
+  server.registerTool("forge_filesystem", {
+    description: "Canonical governed filesystem primitive. Modes: read, write, patch, glob, grep, stat, tree, move, delete, restore. F8 scoped to /root, /tmp, /data, /var/log. delete defaults to quarantine (not hard delete).",
+    inputSchema: z.object({
+      mode: z.enum(["read", "write", "patch", "glob", "grep", "stat", "tree", "move", "delete", "restore"]),
+      path: z.string().default("/root"),
+      content: z.string().optional(),
+      overwrite: z.boolean().default(false),
+      pattern: z.string().optional(),
+      include: z.string().optional(),
+      offset: z.number().optional(),
+      limit: z.number().optional(),
+      // patch mode
+      old_text: z.string().optional(),
+      new_text: z.string().optional(),
+      expected_occurrences: z.number().optional(),
+      // tree mode
+      max_depth: z.number().optional(),
+      max_entries: z.number().optional(),
+      include_hidden: z.boolean().default(false),
+      // move mode
+      destination: z.string().optional(),
+      // delete mode
+      delete_mode: z.enum(["quarantine", "hard"]).default("quarantine"),
+      // restore mode
+      quarantine_id: z.string().optional(),
+      // shared
+      dry_run: z.boolean().default(false),
+      // elicitation — external client confirmation
+      confirm: z.boolean().default(false).describe("Set true to confirm governed write/move/delete. Required for external HTTP clients on sensitive paths."),
+    }),
+  }, async (args) => executeFilesystem(args as any));
 
   // ── External aliases — MCP-friendly tool surface ─────────────────────────────
-  // These route into forge_filesystem(mode=X) for external discoverability.
+  // Call executeFilesystem directly (server._callTool does NOT exist on McpServer).
+  // OBSERVE aliases are in STATELESS_TOOLS + F12 AUTHORIZED_PROXY_TOOLS.
 
   server.registerTool("forge_filesystem_read", {
-    description: "Read a file or list a directory. OBSERVE-class, no lease required. F8 scoped to /root, /tmp, /data, /var/log.",
+    description: "Read a file or list a directory. OBSERVE-class, no lease, no session required (stateless HTTP OK). F8 scoped to /root, /tmp, /data, /var/log.",
     inputSchema: z.object({
       path: z.string(),
       offset: z.number().optional(),
       limit: z.number().optional(),
     }),
-  }, async ({ path, offset, limit }) => {
-    const server2 = server as any;
-    return server2._callTool("forge_filesystem", { mode: "read", path, offset, limit });
-  });
+  }, async ({ path, offset, limit }) => executeFilesystem({ mode: "read", path, offset, limit }));
 
   server.registerTool("forge_filesystem_write", {
     description: "Create or overwrite a file. EXECUTE-class, requires lease. F1 AMANAH: backup before overwrite.",
@@ -518,10 +560,8 @@ export function registerFilesystemTools(server: McpServer): void {
       overwrite: z.boolean().default(false),
       dry_run: z.boolean().default(false),
     }),
-  }, async ({ path, content, overwrite, dry_run }) => {
-    const server2 = server as any;
-    return server2._callTool("forge_filesystem", { mode: "write", path, content, overwrite, dry_run });
-  });
+  }, async ({ path, content, overwrite, dry_run }) =>
+    executeFilesystem({ mode: "write", path, content, overwrite, dry_run }));
 
   server.registerTool("forge_filesystem_patch", {
     description: "Surgical text replacement in a file. EXECUTE-class, requires lease. Returns diff preview in dry_run mode.",
@@ -532,45 +572,36 @@ export function registerFilesystemTools(server: McpServer): void {
       expected_occurrences: z.number().optional(),
       dry_run: z.boolean().default(true),
     }),
-  }, async ({ path, old_text, new_text, expected_occurrences, dry_run }) => {
-    const server2 = server as any;
-    return server2._callTool("forge_filesystem", { mode: "patch", path, old_text, new_text, expected_occurrences, dry_run });
-  });
+  }, async ({ path, old_text, new_text, expected_occurrences, dry_run }) =>
+    executeFilesystem({ mode: "patch", path, old_text, new_text, expected_occurrences, dry_run }));
 
   server.registerTool("forge_filesystem_tree", {
-    description: "List directory tree structure. OBSERVE-class, no lease required.",
+    description: "List directory tree structure. OBSERVE-class, no session required (stateless HTTP OK).",
     inputSchema: z.object({
       path: z.string().default("/root"),
       max_depth: z.number().default(3),
       max_entries: z.number().default(500),
       include_hidden: z.boolean().default(false),
     }),
-  }, async ({ path, max_depth, max_entries, include_hidden }) => {
-    const server2 = server as any;
-    return server2._callTool("forge_filesystem", { mode: "tree", path, max_depth, max_entries, include_hidden });
-  });
+  }, async ({ path, max_depth, max_entries, include_hidden }) =>
+    executeFilesystem({ mode: "tree", path, max_depth, max_entries, include_hidden }));
 
   server.registerTool("forge_filesystem_search", {
-    description: "Search file contents by regex pattern. OBSERVE-class, no lease required.",
+    description: "Search file contents by regex pattern. OBSERVE-class, no session required (stateless HTTP OK).",
     inputSchema: z.object({
       path: z.string(),
       pattern: z.string(),
       include: z.string().optional(),
     }),
-  }, async ({ path, pattern, include }) => {
-    const server2 = server as any;
-    return server2._callTool("forge_filesystem", { mode: "grep", path, pattern, include });
-  });
+  }, async ({ path, pattern, include }) =>
+    executeFilesystem({ mode: "grep", path, pattern, include }));
 
   server.registerTool("forge_filesystem_stat", {
-    description: "Get file/directory metadata including sha256 hash. OBSERVE-class, no lease required.",
+    description: "Get file/directory metadata including sha256 hash. OBSERVE-class, no session required (stateless HTTP OK).",
     inputSchema: z.object({
       path: z.string(),
     }),
-  }, async ({ path }) => {
-    const server2 = server as any;
-    return server2._callTool("forge_filesystem", { mode: "stat", path });
-  });
+  }, async ({ path }) => executeFilesystem({ mode: "stat", path }));
 
   server.registerTool("forge_filesystem_move", {
     description: "Move a file or directory. EXECUTE-class, requires lease. Reversible.",
@@ -579,10 +610,8 @@ export function registerFilesystemTools(server: McpServer): void {
       destination: z.string(),
       dry_run: z.boolean().default(false),
     }),
-  }, async ({ path, destination, dry_run }) => {
-    const server2 = server as any;
-    return server2._callTool("forge_filesystem", { mode: "move", path, destination, dry_run });
-  });
+  }, async ({ path, destination, dry_run }) =>
+    executeFilesystem({ mode: "move", path, destination, dry_run }));
 
   server.registerTool("forge_filesystem_delete", {
     description: "Delete a file (quarantine by default). IRREVERSIBLE for hard delete — requires 888_HOLD.",
@@ -591,10 +620,8 @@ export function registerFilesystemTools(server: McpServer): void {
       delete_mode: z.enum(["quarantine", "hard"]).default("quarantine"),
       dry_run: z.boolean().default(false),
     }),
-  }, async ({ path, delete_mode, dry_run }) => {
-    const server2 = server as any;
-    return server2._callTool("forge_filesystem", { mode: "delete", path, delete_mode, dry_run });
-  });
+  }, async ({ path, delete_mode, dry_run }) =>
+    executeFilesystem({ mode: "delete", path, delete_mode, dry_run }));
 }
 
 export function registerPostgresTools(server: McpServer): void {
