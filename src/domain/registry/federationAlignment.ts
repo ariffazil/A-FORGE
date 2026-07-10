@@ -96,6 +96,7 @@ export function getActuator(name: string): ActuatorEntry | undefined {
 /**
  * Rewrite MCP tool description as ACTUATOR contrast (not plugin, not kernel verb).
  * Keeps original detail after the constitutional header.
+ * Binding 3 (mcp-builder-doctrine v1.1.0): appends "Use when..." from purpose field.
  */
 export function enrichActuatorDescription(
   name: string,
@@ -103,18 +104,21 @@ export function enrichActuatorDescription(
 ): string {
   const entry = getActuator(name);
   const base = (originalDescription ?? "").trim();
+  const trigger = entry?.purpose
+    ? ` Use when: ${entry.purpose}.`
+    : "";
   if (!entry) {
     // Still mark unknown tools as actuators so they never read as plugins.
-    return `ACTUATOR · A-FORGE hands · supervised by kernel 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. ${base}`.trim();
+    return `ACTUATOR · A-FORGE hands · supervised by kernel 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. ${base}${trigger}`.trim();
   }
   if (entry.status === "DEPRECATED" && entry.redirect_to) {
     return (
       `ACTUATOR [DEPRECATED] → use ${entry.redirect_to}. ` +
-      `class=${entry.affordance_class} · surface=${entry.capability_surface}. ${base}`
+      `class=${entry.affordance_class} · surface=${entry.capability_surface}. ${base}${trigger}`
     ).trim();
   }
   if (entry.description_canonical && entry.description_canonical.length > 40) {
-    return entry.description_canonical;
+    return `${entry.description_canonical}${trigger}`;
   }
   const g = entry.gates;
   return (
@@ -126,7 +130,7 @@ export function enrichActuatorDescription(
     `lease=${g.requires_lease ? "Y" : "N"} gate=Y ` +
     `seal=${g.requires_seal ? "Y" : "N"} ` +
     `approval=${g.requires_human_approval ? "Y" : "N"}. ` +
-    base
+    base + trigger
   ).trim();
 }
 

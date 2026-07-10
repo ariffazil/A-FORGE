@@ -29,6 +29,7 @@ export interface MCPBridgeResponse {
 /** Tool name mapping: A-FORGE internal → canonical arifOS tool name */
 export const TOOL_NAME_MAP: Record<string, string> = {
   apex_judge: "arif_judge",
+  truth_gate: "arif_claim_gate",
 };
 
 /** Namespace routing map: which env var / default URL per namespace */
