@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-09T11:07:20Z",
+  "generated_at": "2026-07-09T11:29:02Z",
   "actor": "grok-build",
   "sovereign": "Arif F13",
   "intent": "Spine P0 release wrap \u2014 sct_v1 inhabit + audit removal + SOT/deploy",
@@ -7,18 +7,16 @@
   "github_release": "https://github.com/ariffazil/arifos/releases/tag/v2026.07.09",
   "arifOS": {
     "repo": "/root/arifOS",
-    "commit": "2fc00895e",
-    "commit_full": "2fc00895e555f0362ba0b8ec6d8a10e28bf660e5",
+    "commit": "5dfca63",
+    "commit_full": "5dfca6344",
     "port": 8088,
     "health": {
       "status": "healthy",
-      "version": "kanon-2fc0089",
-      "git_commit": "2fc0089",
+      "version": "kanon-5dfca63",
+      "git_commit": "5dfca63",
       "tools_exposed_via_mcp": 11,
       "canonical_tools_loaded": 17,
-      "total_declared_tools": 58,
-      "runtime_path": "/opt/arifos/app",
-      "release_name": "v2026.07.04-MARHIN"
+      "runtime_path": "/opt/arifos/app"
     },
     "spine_p0": {
       "sct_wire": "sct_v1",
@@ -28,7 +26,7 @@
       "store_delete_loop": "proven"
     },
     "runtime_drift": false,
-    "commit_short7": "2fc0089"
+    "commit_short7": "5dfca63"
   },
   "units": {
     "arifos": "active",
@@ -59,5 +57,12 @@
     "AGENTS.md SOT spine_p0",
     "GitHub tag+release v2026.07.09"
   ],
-  "owner_summary": "GREEN"
+  "owner_summary": "GREEN",
+  "chaos_cut": {
+    "at": "2026-07-09T11:29:02Z",
+    "tmp_before_mb": 3240,
+    "tmp_after_mb": 818,
+    "wealth_dual_masked": true,
+    "self_heal_failures": 0
+  }
 }
