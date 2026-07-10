@@ -1424,6 +1424,57 @@ const judgeProxyHandler = async (args: Record<string, unknown>) => {
         };
       }
 
+      // ── TRUTH GATE (2026-07-10): Every claim entering arif_judge must pass truth_enforcement ──
+      // Replaces execSync Python bridge with async MCP call to arifOS arif_claim_gate
+      // Gate first. Receipt second. Flow protocol third.
+      const wargaId = typeof args.actor_id === "string" ? args.actor_id : "opencode";
+      const irreversible = args.action_tier === "IRREVERSIBLE" || args.action_tier === "CRITICAL";
+      try {
+        const gateResult = await callMCP("arifos_mcp.arif_claim_gate", {
+          warga_id: wargaId,
+          claim_text: candidateStr.slice(0, 1000),
+          irreversible,
+        }) as { allowed: boolean; verdict: string; evidence_layer: string; reason: string; receipt_id: string; instruction: string };
+        if (!gateResult.allowed) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "TRUTH_GATE_HOLD",
+                gate: "truth_enforcement",
+                verdict: gateResult.verdict,
+                evidence_layer: gateResult.evidence_layer,
+                reason: gateResult.reason,
+                receipt_id: gateResult.receipt_id,
+                instruction: gateResult.instruction,
+                candidate: candidateStr.slice(0, 200),
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+        // Gate passed — attach receipt to args for audit trail
+        args._truth_gate_receipt = {
+          receipt_id: gateResult.receipt_id,
+          evidence_layer: gateResult.evidence_layer,
+          verdict: gateResult.verdict,
+        };
+      } catch (gateErr: any) {
+        // Gate execution failure — do not forward claim without gate check
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "TRUTH_GATE_ERROR",
+              gate: "truth_enforcement",
+              error: gateErr?.message ?? String(gateErr),
+              instruction: "HALT — truth gate failed. Cannot forward claim to judge without gate check.",
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+
       // Wire prediction context into judge submission (prediction bridge requirement)
       const judgeArgs = { ...args };
       if (args.prediction_context) {
