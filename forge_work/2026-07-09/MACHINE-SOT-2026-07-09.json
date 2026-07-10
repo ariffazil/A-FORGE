@@ -64,5 +64,10 @@
     "tmp_after_mb": 818,
     "wealth_dual_masked": true,
     "self_heal_failures": 0
-  }
+  },
+  "seal_chain": {
+    "seq": 8,
+    "head": "orthogonal-geometry-seal"
+  },
+  "last_verified": "2026-07-10"
 }

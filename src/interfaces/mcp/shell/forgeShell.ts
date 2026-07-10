@@ -60,33 +60,8 @@ function checkAuthorityFromActionClass(actionClass: ActionClass): {
 // format directly (bounded by localhost MCP transport via Caddy F8 gate).
 //
 // F8 LAW: SEAL auto-accept is bounded by localhost transport.
-// F11 AUTH: Authority is verified by token format, not redundant kernel round-trip.
 
 const SEAL_SESSION_PATTERN = /^SEAL-[a-f0-9]{16}$/;
-const READONLY_SHELL_COMMANDS = new Set([
-  "sha256sum", "sha1sum", "md5sum", "shasum",
-  "cat", "head", "tail", "less", "more",
-  "ls", "stat", "file", "wc", "du", "df", "tree",
-  "date", "echo", "printf", "env", "pwd", "whoami", "hostname", "uname",
-  "which", "whereis", "type",
-  "find", "grep", "rg", "ag",
-  "jq", "yq", "xmllint",
-  "test", "[", "true", "false",
-  "mkdir", "touch", "ln", "cp",
-]);
-
-function isReadonlyShellCommand(command: string): boolean {
-  const trimmed = command.trim();
-  const firstToken = trimmed.split(/\s+/)[0]?.replace(/^["'`]/, "") ?? "";
-  const baseCmd = firstToken.split("/").pop() ?? firstToken;
-  if (READONLY_SHELL_COMMANDS.has(baseCmd)) {
-    return true;
-  }
-  if (baseCmd === "curl") {
-    return !/\b(-X\s*(POST|PUT|PATCH|DELETE)|--request\s*(POST|PUT|PATCH|DELETE)|--data(?:-binary)?|-d\b|--upload-file\b|--form\b)\b/i.test(command);
-  }
-  return false;
-}
 
 /**
  * Authority envelope issued by arifOS constitutional kernel.
