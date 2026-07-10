@@ -192,10 +192,11 @@ function loadAffordances(): Map<string, AffordanceCard> {
 }
 
 // DARWIN FIX 3+5: hoisted readonly shell command set — used by both the
-// FAST→GOVERN reclassification (line ~290) and the GOVERN+HOLD exemption
-// (line ~390). Reading-only commands (sha256sum, cat, ls, curl, etc.)
-// cannot mutate state and should reach the inner arifJudge for proper
-// DENY/GATE/ALLOW classification instead of being HOLD-blocked here.
+// FAST→GOVERN reclassification. Reading-only commands (sha256sum, cat, ls,
+// curl with read-only verbs, etc.) are safe to budget in FAST mode and must
+// reach the inner arifJudge for proper DENY/GATE/ALLOW classification.
+// NOTE: mkdir/touch/cp/ln are MUTATION — they are intentionally excluded here.
+// The execution gate is in forgeShell.ts (classifyShellCommandRisk).
 const READONLY_SHELL_COMMANDS = new Set([
       "sha256sum", "sha1sum", "md5sum", "shasum",
       "cat", "head", "tail", "less", "more",
@@ -205,7 +206,7 @@ const READONLY_SHELL_COMMANDS = new Set([
       "find", "grep", "rg", "ag",
       "jq", "yq", "xmllint",
       "test", "[", "true", "false",
-      "mkdir", "touch", "ln", "cp",
+      // mkdir, touch, cp, ln are MUTATION — handled by forgeShell.ts gate
     ]);
 
 function isReadonlyShellCommand(baseCmd: string, command: string): boolean {
