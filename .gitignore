@@ -129,7 +129,6 @@ scratch/
 # GitHub Copilot workspace — not VPS-aware, do not commit
 Copilot/
 forge_work/identity-drift-watchdog/DRIFT.flag.json
-.registry/fingerprints.json
 forge_work/2026-07-08/browser-fingerprinting/
 forge_work/**/*.COMPROMISED_PEM_EXPOSED
 forge_work/**/*.key
