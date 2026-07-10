@@ -1,594 +1,594 @@
 {
   "version": 1,
-  "generated_at": "2026-07-10T08:00:08.376Z",
+  "generated_at": "2026-07-10T08:02:13.431Z",
   "tools": {
     "forge_session_init": {
       "name": "forge_session_init",
       "hash": "332ce1fc322f1560",
       "schema_summary": "object(actor_id,intent,mode,session_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_health_check": {
       "name": "forge_health_check",
       "hash": "c23f523005bb6914",
       "schema_summary": "object(session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_heart_critique": {
       "name": "forge_heart_critique",
       "hash": "4cad736a4d33e3d2",
       "schema_summary": "object(task,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_check_governance": {
       "name": "forge_check_governance",
       "hash": "0c329c3049a1bbc3",
       "schema_summary": "object(task,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_execute": {
       "name": "forge_execute",
       "hash": "855d48687d947920",
       "schema_summary": "object(task,mode,evidence_receipt,peer_contract_id,constitutional_chain_id,prediction_context,auto_predict,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_approve": {
       "name": "forge_approve",
       "hash": "525d2c9d241c3e29",
       "schema_summary": "object(holdId,reason,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_judge_proxy": {
       "name": "forge_judge_proxy",
       "hash": "4b38ce9bdbe7be2d",
       "schema_summary": "object(mode,candidate,session_id,actor_id,constitutional_chain_id,vault_entry_id,cooldown_entry_id,action_tier,heart_critique,niat_params,context_source,peer_contract_id,measurement,prediction_context,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_transfer_confirm": {
       "name": "forge_transfer_confirm",
       "hash": "cb50131227ab0f47",
       "schema_summary": "object(amount,recipient,currency,memo,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_send_confirm": {
       "name": "forge_send_confirm",
       "hash": "bc2578e738b45752",
       "schema_summary": "object(destination,payload_summary,sensitive,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_vault": {
       "name": "forge_vault",
       "hash": "5fa30bd2c4e79ef8",
       "schema_summary": "object(mode,name,category,limit,value,content,reason,tier,tags,metadata,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_wealth": {
       "name": "forge_wealth",
       "hash": "9c24ef52c24de147",
       "schema_summary": "object(mode,outcomes,probabilities,assets,liabilities,proposal,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.426Z"
     },
     "forge_journalctl": {
       "name": "forge_journalctl",
       "hash": "09f258215f6dfefc",
       "schema_summary": "object(service,mode,since,lines,pattern,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_well": {
       "name": "forge_well",
       "hash": "f9d173736910034c",
       "schema_summary": "object(mode,sessionId,agentId,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_chart": {
       "name": "forge_chart",
       "hash": "a183cca8a41e5021",
       "schema_summary": "object(type,data,title,x_field,y_field,width,height,return_format,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_probe": {
       "name": "forge_probe",
       "hash": "262f1ce0e676c037",
       "schema_summary": "object(organs,include_latency,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_scan": {
       "name": "forge_scan",
       "hash": "d4a9de74df4942ab",
       "schema_summary": "object(target,depth,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_filesystem": {
       "name": "forge_filesystem",
       "hash": "2e0b115f2e3da15a",
       "schema_summary": "object(mode,path,content,overwrite,pattern,include,offset,limit,old_text,new_text,expected_occurrences,max_depth,max_entries,include_hidden,destination,delete_mode,quarantine_id,dry_run,confirm,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_filesystem_read": {
       "name": "forge_filesystem_read",
       "hash": "ae0779314c2aa581",
       "schema_summary": "object(path,offset,limit,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_filesystem_write": {
       "name": "forge_filesystem_write",
       "hash": "af4b8b0482d3e282",
       "schema_summary": "object(path,content,overwrite,dry_run,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.371Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_filesystem_patch": {
       "name": "forge_filesystem_patch",
       "hash": "9851b7ed11ca2d6e",
       "schema_summary": "object(path,old_text,new_text,expected_occurrences,dry_run,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_filesystem_tree": {
       "name": "forge_filesystem_tree",
       "hash": "dd79891be4b147ae",
       "schema_summary": "object(path,max_depth,max_entries,include_hidden,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_filesystem_search": {
       "name": "forge_filesystem_search",
       "hash": "e2a5b5943bf7302b",
       "schema_summary": "object(path,pattern,include,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_filesystem_stat": {
       "name": "forge_filesystem_stat",
       "hash": "e501b5b8537de19b",
       "schema_summary": "object(path,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_filesystem_move": {
       "name": "forge_filesystem_move",
       "hash": "86f924c383c131c7",
       "schema_summary": "object(path,destination,dry_run,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_filesystem_delete": {
       "name": "forge_filesystem_delete",
       "hash": "b16f26b18c8bd5a8",
       "schema_summary": "object(path,delete_mode,dry_run,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_postgres": {
       "name": "forge_postgres",
       "hash": "8380a1311655a1ac",
       "schema_summary": "object(mode,query,mutate,schema,detail,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_memory": {
       "name": "forge_memory",
       "hash": "8c6d38f2b3be633c",
       "schema_summary": "object(mode,query,limit,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_git": {
       "name": "forge_git",
       "hash": "318c6be6a21f1906",
       "schema_summary": "object(mode,repo,staged,limit,count,message,files,push,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_github": {
       "name": "forge_github",
       "hash": "5902b4935dce4aa0",
       "schema_summary": "object(mode,query,type,limit,repo,action,pr_number,title,body,head,base,state,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_docker": {
       "name": "forge_docker",
       "hash": "b213e72f339523cf",
       "schema_summary": "object(mode,all,container,command,interactive,tail,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.427Z"
     },
     "forge_fetch": {
       "name": "forge_fetch",
       "hash": "7e0178843e2a98e6",
       "schema_summary": "object(url,query,searxng_url,num_results,mode,max_chars,start_index,timeout_ms,follow_redirects,include_links,include_metadata,scan_injection,disable_readability,max_response_bytes,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_fetch_url": {
       "name": "forge_fetch_url",
       "hash": "8adcb739ef29c9b7",
       "schema_summary": "object(url,max_chars,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_fetch_json": {
       "name": "forge_fetch_json",
       "hash": "520ec96a3a37ac56",
       "schema_summary": "object(url,max_chars,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_fetch_metadata": {
       "name": "forge_fetch_metadata",
       "hash": "dd6644a4235af0d4",
       "schema_summary": "object(url,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_fetch_links": {
       "name": "forge_fetch_links",
       "hash": "550ae47293479c1c",
       "schema_summary": "object(url,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_agent": {
       "name": "forge_agent",
       "hash": "54ddfc554449b3a5",
       "schema_summary": "object(mode,agent_id,actor_id,lease_id,reason,agent_type,role,authority,identity_proof,session_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_lease": {
       "name": "forge_lease",
       "hash": "22c4caf620b39dde",
       "schema_summary": "object(mode,lease_id,agent_id,scope,max_action_class,ttl_seconds,forbidden,reason,session_id,actor_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_registry_status": {
       "name": "forge_registry_status",
       "hash": "5ffe0b5e1fd39456",
       "schema_summary": "object(session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_fingerprint_check": {
       "name": "forge_fingerprint_check",
       "hash": "2780dc040c8172ed",
       "schema_summary": "object(session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_shell": {
       "name": "forge_shell",
       "hash": "bdc48e29897203e2",
       "schema_summary": "object(command,cwd,timeout,session_id,lease_id,actor_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_shell_dryrun": {
       "name": "forge_shell_dryrun",
       "hash": "c9c0bc29733701a6",
       "schema_summary": "object(command,timeout,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_shell_status": {
       "name": "forge_shell_status",
       "hash": "0bf86da990c6e310",
       "schema_summary": "object(session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_shell_ledger": {
       "name": "forge_shell_ledger",
       "hash": "146d5fafd8381670",
       "schema_summary": "object(limit,offset,verify_chain,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_shell_alert_history": {
       "name": "forge_shell_alert_history",
       "hash": "d91e8700d55621f7",
       "schema_summary": "object(limit,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.372Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_job": {
       "name": "forge_job",
       "hash": "f5ba3a5098c6b2b6",
       "schema_summary": "object(mode,job_id,agent_id,tool,args,description,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_status": {
       "name": "forge_status",
       "hash": "56b65b7e2049acc2",
       "schema_summary": "object(mode,limit,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_abort": {
       "name": "forge_abort",
       "hash": "b81a035c5825b607",
       "schema_summary": "object(target,target_id,reason,rollback,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_vps_ports": {
       "name": "forge_vps_ports",
       "hash": "06f8481f7fd4d27e",
       "schema_summary": "object(mode,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_vps_services": {
       "name": "forge_vps_services",
       "hash": "bf115bff7b73c92d",
       "schema_summary": "object(mode,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_vps_cron": {
       "name": "forge_vps_cron",
       "hash": "b8f2852c2093d0a1",
       "schema_summary": "object(mode,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_security_drift_scan": {
       "name": "forge_security_drift_scan",
       "hash": "b2264e013a2a18c6",
       "schema_summary": "object(strict,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_verify_timeline": {
       "name": "forge_verify_timeline",
       "hash": "9fe14fdae8c78e8a",
       "schema_summary": "object(timeline_items,min_sources,require_independent,mode,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_skill": {
       "name": "forge_skill",
       "hash": "5836a7c88d37ff17",
       "schema_summary": "object(intent,domain,target_tool_name,llm_endpoint,execute_after_register,actor_id,session_id,seal_verdict_id,staging,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_seal": {
       "name": "forge_seal",
       "hash": "162ec99fbefb3714",
       "schema_summary": "object(skill_name,human_approval_token,tri_witness_evidence,actor_id,session_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.428Z"
     },
     "forge_registry": {
       "name": "forge_registry",
       "hash": "5fdaeb50fda0d2be",
       "schema_summary": "object(mode,tool_name,domain,status_filter,include_theta,code_to_scan,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_evaluate": {
       "name": "forge_evaluate",
       "hash": "de23056e6d22d3d0",
       "schema_summary": "object(tool_name,description,domain,implementation,input_schema,declared_side_effects,required_permissions,proposed_by,evaluator_count,estimated_cost,max_recursion_depth,session_id,seal_verdict_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_witness": {
       "name": "forge_witness",
       "hash": "0058fb93deb35003",
       "schema_summary": "object(tool_name,target_fingerprint,h_confidence,h_evidence,h_source,ai_confidence,ai_evidence,ai_source,ext_confidence,ext_evidence,ext_source,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_scar": {
       "name": "forge_scar",
       "hash": "31e3644e8c5c5888",
       "schema_summary": "object(mode,failure_mode,severity,scar_pressure,domain,detection_method,constraint_imposed,sealed_by,fingerprint,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_register": {
       "name": "forge_register",
       "hash": "ca982356ffeb8a1e",
       "schema_summary": "object(tool_name,domain,description,implementation,input_schema,registered_by,gate_verdict,gate_G,gate_C_dark,witness_verdict,witness_W3,haram_findings,scar_pressure,scars_consulted,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_reality_loop": {
       "name": "forge_reality_loop",
       "hash": "42758dd2a2edfcc8",
       "schema_summary": "object(mode,session_id,intent,config,record_stage,record_type,record_value,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_probe_site": {
       "name": "forge_probe_site",
       "hash": "1413ab223431888e",
       "schema_summary": "object(url,timeout_ms,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_receipt_draft": {
       "name": "forge_receipt_draft",
       "hash": "3f03a836d907a06b",
       "schema_summary": "object(actor_id,session_id,action_details,evidence,verdict,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_research": {
       "name": "forge_research",
       "hash": "9c7fd0d89854bc36",
       "schema_summary": "object(query,depth,sources,time_horizon,max_results,include_citations,request_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_search": {
       "name": "forge_search",
       "hash": "7e1ca053bb3fa684",
       "schema_summary": "object(query,count,freshness,safesearch,request_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_docs_lookup": {
       "name": "forge_docs_lookup",
       "hash": "8204bd032339a812",
       "schema_summary": "object(query,corpus,max_results,request_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_browser_navigate": {
       "name": "forge_browser_navigate",
       "hash": "80ae3d7984cb80c7",
       "schema_summary": "object(url,wait_until,timeout_ms,request_id,task_context,page_context,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_browser_click": {
       "name": "forge_browser_click",
       "hash": "cc86279d4ac1e2a9",
       "schema_summary": "object(selector,button,request_id,task_context,page_context,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_browser_type": {
       "name": "forge_browser_type",
       "hash": "4010227c961bb337",
       "schema_summary": "object(selector,text,submit,request_id,task_context,page_context,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_browser_screenshot": {
       "name": "forge_browser_screenshot",
       "hash": "52c8bd6eb13e91d9",
       "schema_summary": "object(selector,full_page,request_id,task_context,page_context,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_browser_extract_text": {
       "name": "forge_browser_extract_text",
       "hash": "a621b0159452c219",
       "schema_summary": "object(selector,max_chars,request_id,task_context,page_context,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_browser_evaluate_js": {
       "name": "forge_browser_evaluate_js",
       "hash": "9bba1198ffd395e8",
       "schema_summary": "object(script,request_id,task_context,page_context,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_github_search_code": {
       "name": "forge_github_search_code",
       "hash": "e6e310f300ed9160",
       "schema_summary": "object(q,per_page,page,request_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_github_search_repos": {
       "name": "forge_github_search_repos",
       "hash": "adf04cad85f48efc",
       "schema_summary": "object(q,per_page,page,request_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_github_get_file": {
       "name": "forge_github_get_file",
       "hash": "a68e90cc2564330c",
       "schema_summary": "object(owner,repo,path,branch,request_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_github_create_or_update_file": {
       "name": "forge_github_create_or_update_file",
       "hash": "be18da8fd0b34bb3",
       "schema_summary": "object(owner,repo,path,branch,content,message,sha,create_pr,pr_base,request_id,lease_id,session_id,actor_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.373Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_github_create_issue": {
       "name": "forge_github_create_issue",
       "hash": "3ace6ff414e4f1c3",
       "schema_summary": "object(owner,repo,title,body,labels,assignees,request_id,lease_id,session_id,actor_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_github_create_pull_request": {
       "name": "forge_github_create_pull_request",
       "hash": "2958e455662cb67a",
       "schema_summary": "object(owner,repo,title,body,head,base,draft,request_id,lease_id,session_id,actor_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_worktree": {
       "name": "forge_worktree",
       "hash": "ac6b7f1e561e49d5",
       "schema_summary": "object(cwd,request_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_netdata_alarms": {
       "name": "forge_netdata_alarms",
       "hash": "bd40652e793477d0",
       "schema_summary": "object(host,status,request_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_netdata_metrics": {
       "name": "forge_netdata_metrics",
       "hash": "e055250c79553813",
       "schema_summary": "object(host,chart,after,before,points,request_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_minimax_search": {
       "name": "forge_minimax_search",
       "hash": "16d3ec0979dd7779",
       "schema_summary": "object(query,max_results,request_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_synthesize": {
       "name": "forge_synthesize",
       "hash": "deaa502e9b88c387",
       "schema_summary": "object(intent,constraints,context,decision_class,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_stage": {
       "name": "forge_stage",
       "hash": "fa757d69da696941",
       "schema_summary": "object(artifact_id,dependencies,resource_requirements,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_sandbox_run": {
       "name": "forge_sandbox_run",
       "hash": "5add51979a809e5e",
       "schema_summary": "object(stage_id,test_suite,resource_limits,absolute_timeout_ms,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_scar_scan": {
       "name": "forge_scar_scan",
       "hash": "e965e6f6b75bb687",
       "schema_summary": "object(artifact_id,scan_depth,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.429Z"
     },
     "forge_skillstore_write": {
       "name": "forge_skillstore_write",
       "hash": "ae3407e4c17e1c54",
       "schema_summary": "object(operation,artifact_id,artifact,tags,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_skillstore_read": {
       "name": "forge_skillstore_read",
       "hash": "f12f87458188fee3",
       "schema_summary": "object(operation,query,limit,filter_by_tags,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_tier_bind": {
       "name": "forge_tier_bind",
       "hash": "7c9612c29e7f478e",
       "schema_summary": "object(artifact_id,trust_tier_lower_bound,execution_scope,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_docket_prep": {
       "name": "forge_docket_prep",
       "hash": "d74cd53bb52d7246",
       "schema_summary": "object(artifact_id,stage_id,evidence_package,justification,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_execute_sealed": {
       "name": "forge_execute_sealed",
       "hash": "4bc2df7c4e529241",
       "schema_summary": "object(docket_id,vault_seal_id,vault_seal_signature,vault_seal_timestamp,execution_parameters,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_document_ingest": {
       "name": "forge_document_ingest",
       "hash": "3dc33c3bc71ebf1e",
       "schema_summary": "object(file_path,content_base64,mode,pages,ocr,chunk_strategy,chunk_size,overlap,compare_with,output_format,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_policy": {
       "name": "forge_policy",
       "hash": "8ff911525847cfb4",
       "schema_summary": "object(mode,actor_id,tool_name,arguments,policy_id,role,description,allow_by_default,allowed_mcp_servers,denied_mcp_servers,session_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_surface_guard": {
       "name": "forge_surface_guard",
       "hash": "1a44d7f36992decc",
       "schema_summary": "object(mode,organ_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_surface_audit": {
       "name": "forge_surface_audit",
       "hash": "208d1aa0879e3015",
       "schema_summary": "object(organ,mode,affordance_path,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_predict": {
       "name": "forge_predict",
       "hash": "52203caaa3c4920a",
       "schema_summary": "object(domain,proposed_action,params,mode,actor_id,session_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_isomorphism_check": {
       "name": "forge_isomorphism_check",
       "hash": "5529dbdaff9f1558",
       "schema_summary": "object(session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_lock": {
       "name": "forge_lock",
       "hash": "87cf0c0768a1c6a4",
       "schema_summary": "object(mode,resource_id,actor_id,justification,lock_id,release_reason,session_id,ttl_seconds,constitutional_chain_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.374Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     },
     "forge_pipeline_run": {
       "name": "forge_pipeline_run",
       "hash": "a66be6ef2af2febf",
       "schema_summary": "object(task,mode,hold_id,constitutional_chain_id,session_id,actor_id,lease_id)",
-      "fingerprinted_at": "2026-07-10T08:00:08.375Z"
+      "fingerprinted_at": "2026-07-10T08:02:13.430Z"
     }
   }
 }
