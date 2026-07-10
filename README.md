@@ -15,7 +15,7 @@ machine_sot: /root/A-FORGE/forge_work/2026-07-09/MACHINE-SOT-2026-07-09.json
 
 Governed execution shell for the arifOS Federation. Hands do not judge. Brain does not execute. Each organ stays in its lane.
 
-MCP: **49 stateless tools** live on `:7072` (`a-forge-mcp.service`); full session-bound surface via MCP gateway. Public door: `mcp.arif-fazil.com`. A2A: routing mesh via AAA cockpit.
+MCP: **49 stateless tools** live on `:7072` (`a-forge-mcp.service`); **98 total** across stateless + session-bound. Public door: `mcp.arif-fazil.com`. A2A: routing mesh via AAA cockpit.
 
 [![Agentic CI](https://github.com/ariffazil/A-FORGE/actions/workflows/agentic-ci.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/agentic-ci.yml)
 [![Boundary Guard](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml)
@@ -44,7 +44,7 @@ One of 7 sovereign organs. Hands do not judge.
 | Read this | For | Link |
 |-----------|-----|------|
 | **arifOS** | Constitutional kernel. 12 canonical public verbs. 13 floors. The judge (LAW/JUDGMENT axis). See docs/TRINITY_ORTHOGONAL_MAP.md in arifOS. | [`ariffazil/arifos`](https://github.com/ariffazil/arifos) |
-| **A-FORGE** (this repo) | Executor. 79 MCP tools (21 stateless HTTP, rest session-bound). Shell, git, docker, browser, vault. Gates + A-THINK law at border. | ← you are here |
+| **A-FORGE** (this repo) | Executor. 98 MCP tools. Shell, git, docker, browser, vault. Gates + A-THINK law at border. | ← you are here |
 | **AAA** | Cockpit. A2A mesh. Agent registry. React 19 dashboard. What Arif reads. | [`ariffazil/AAA`](https://github.com/ariffazil/AAA) |
 
 MIND (Hermes:8644) and MEMORY (VAULT999) are separate federation services — A-FORGE does not host them. A-FORGE does not judge, does not compute domain logic, and **executes** only within bounded constitutional gates, with full audit trail, and never without upstream authorization.
@@ -89,7 +89,7 @@ MIND (Hermes:8644) and MEMORY (VAULT999) are separate federation services — A-
                          │   Port 7071 (HTTP)        │
                          │   Port 7072 (MCP)         │
                          │   4-layer forge gate      │
-                         │   79 MCP tools registered │
+                         │   98 MCP tools registered │
                          │                           │
                          │   "Do it, safely, with    │
                          │         evidence."        │
@@ -433,7 +433,7 @@ A-FORGE enforces three constitutional floors as its **runtime mandate**. The rem
 
 ## Architecture
 
-A-FORGE source is organized as **5 top-level layers** with Hexagonal Architecture (domain / application / infrastructure / interfaces separation, forged in v2026.06.30-HEXAGON).
+A-FORGE source is organized as **5 top-level layers** with Hexagonal Architecture (domain / application / infrastructure / interfaces separation, forged in v2026.07.09-HEXAGON).
 
 ```
 A-FORGE/
@@ -563,7 +563,7 @@ A-FORGE/
 ├── CODEOWNERS                       ← Ownership map
 ├── Makefile                         ← build, test, install, clean
 ├── tsconfig.json                    ← TypeScript 6.0 config
-├── package.json                     ← v2026.06.30, AGPL-3.0
+├── package.json                     ← v2026.07.09, AGPL-3.0
 ├── smithery.yaml                    ← Smithery MCP registry entry
 └── Dockerfile                       ← Production container build
 ```
@@ -746,7 +746,7 @@ A-FORGE is one of **6 active organs** in the arifOS Federation. APEX (port 3002)
 |-------|-----------|------|------|
 | **arifOS** | [ariffazil/arifos](https://github.com/ariffazil/arifos) | Constitutional Kernel · Judge | 8088 |
 | **A-FORGE** | [ariffazil/A-FORGE](https://github.com/ariffazil/A-FORGE) | Execution Shell · Forge | 7071/7072 |
-| **AAA** | [ariffazil/aaa](https://github.com/ariffazil/aaa) | Control Plane · Cockpit | 3001 |
+| **AAA** | [ariffazil/AAA](https://github.com/ariffazil/AAA) | Control Plane · Cockpit | 3001 |
 | **GEOX** | [ariffazil/geox](https://github.com/ariffazil/geox) | Earth Intelligence | 8081 |
 | **WEALTH** | [ariffazil/wealth](https://github.com/ariffazil/wealth) | Capital Intelligence | 18082 |
 | **WELL** | [ariffazil/well](https://github.com/ariffazil/well) | Human Readiness | 18083 |
@@ -853,7 +853,7 @@ Connect to A-FORGE via the Model Context Protocol:
 |----------|-------|
 | **Endpoint** | `https://forge.arif-fazil.com/mcp` |
 | **Transport** | Streamable HTTP (JSON-RPC 2.0) |
-| **Tools** | 78 `forge_*` tools |
+| **Tools** | 98 `forge_*` tools |
 | **Health** | `https://forge.arif-fazil.com/health` |
 
 ### Claude Code / Cursor
@@ -910,5 +910,5 @@ F13 SOVEREIGN: Muhammad Arif bin Fazil holds absolute veto over all execution pa
 
 <p align="center">
   <strong>DITEMPA BUKAN DIBERI — Forged, Not Given.</strong><br>
-  <sub>999 SEAL ALIVE · arifOS Federation · v2026.06.30</sub>
+  <sub>999 SEAL ALIVE · arifOS Federation · v2026.07.09</sub>
 </p>
