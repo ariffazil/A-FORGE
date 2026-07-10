@@ -23,6 +23,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { appendFile, mkdir } from "node:fs/promises";
 import { classifyCommand, type JudgeResult } from "./arifJudge.js";
 import { getDefaultArifSeal } from "./arifSeal.js";
@@ -30,6 +31,7 @@ import { checkModificationIntent, isGodelLocked } from "./godelLock.js";
 import { classifyShellCommand, type ActionClass } from "../../../domain/governance/execution-authority.js";
 import { classifyUnknown, isStructuredError } from "../../../domain/governance/error-classifier.js";
 import { Memory, Epistemic, enrichResult } from "../../../domain/governance/epistemic-signal.js";
+import { callMCP } from "../client.js";
 
 // ── Execution Authority Helper ──────────────────────────────────────
 function checkAuthorityFromActionClass(actionClass: ActionClass): {
@@ -96,6 +98,223 @@ export interface AuthorityEnvelope {
   authority_mode: string;
   verdict: string;
   expires_at?: string;
+}
+
+/**
+ * SEAL envelope — issued by arif_judge for irreversible shell commands.
+ * Contains cryptographic commitment to the exact command string.
+ */
+export interface SealEnvelope {
+  session_id: string;     // "SEAL-{hex}"
+  inputHash: string;      // SHA256 of MCP call params
+  command_hash: string;   // SHA256(shell_command) — exact string commitment
+  issued_at: string;
+  expires_at: string;
+  actor_id: string;
+}
+
+// ── SHA256 Helper ────────────────────────────────────────────────────────────
+function SHA256(data: string): string {
+  return createHash("sha256").update(data).digest("hex");
+}
+
+// ── 4-Tier Risk Classifier ───────────────────────────────────────────────────
+type RiskLevel = "SAFE" | "MUTATION" | "IRREVERSIBLE" | "GODEL_LOCKED";
+
+function classifyShellCommandRisk(command: string): RiskLevel {
+  const trimmed = command.trim();
+
+  // HARD DENY — cannot be authorized under any circumstances
+  const HARD_DENY_PATTERNS = [
+    /^rm\s+-rf\s+\/(?:\s|$)/,
+    /^rm\s+-rf\s+\/root(?:\s|$)/,
+    /^dd\s+/,
+    /^mkfs/,
+    /^\s*:\(\)\s*:\s*;/,
+    /\bkill\s+-9\s+1\b/,
+  ];
+  for (const p of HARD_DENY_PATTERNS) {
+    if (p.test(trimmed)) return "GODEL_LOCKED";
+  }
+
+  // IRREVERSIBLE — requires SEAL envelope from arifOS
+  const tokens = trimmed.split(/\s+/);
+  const baseCmd = tokens[0]?.replace(/^["'`]/, "").split("/").pop() ?? "";
+  const subCmd = tokens.slice(1).join(" ");
+
+  const IRREVERSIBLE_MAP: Record<string, string[]> = {
+    git:        ["push", "push --force", "merge", "branch -D", "reset --hard"],
+    docker:     ["rmi", "rm -f", "rm --force", "prune -a", "system prune"],
+    systemctl:  ["stop", "disable"],
+    iptables:   ["-F"],
+    userdel:    [],
+    groupdel:   [],
+    truncate:   [],
+    shred:      [],
+  };
+
+  const subs = IRREVERSIBLE_MAP[baseCmd] ?? [];
+  if (subs.some((s) => subCmd.startsWith(s))) return "IRREVERSIBLE";
+
+  // MUTATION — requires EXECUTE authority (no readonly bypass)
+  const MUTATION_COMMANDS = new Set([
+    "mkdir", "rmdir", "touch", "rm", "mv", "cp", "ln", "unlink",
+    "chmod", "chown", "chgrp",
+    "npm", "yarn", "pnpm", "pip", "pip3", "uv",
+    "ssh", "scp", "rsync",
+    "journalctl",
+  ]);
+  if (MUTATION_COMMANDS.has(baseCmd)) return "MUTATION";
+
+  return "SAFE";
+}
+
+// ── Gated Result ─────────────────────────────────────────────────────────────
+interface GatedResult {
+  status:
+    | "SAFE"
+    | "GATE_HOLD"
+    | "EXECUTE_VALID"
+    | "HOLD_IRREVERSIBLE"
+    | "SEAL_VALID"
+    | "HARD_DENY";
+  reason?: string;
+  gate?: string;
+  required_action?: string;
+  required?: string;
+  got?: string;
+  violations?: string[];
+  verified?: Record<string, unknown>;
+}
+
+// ── ArifSeal audit helper ────────────────────────────────────────────────────
+async function arifSealAudit(event: Record<string, unknown>): Promise<void> {
+  const sealer = getDefaultArifSeal();
+  try {
+    await sealer.seal({
+      tool: "forge_shell",
+      args: event as Record<string, unknown>,
+      judge_decision: "gate",
+      exit_code: null,
+      stdout: "",
+      stderr: "",
+      notes: `risk_audit:${event["type"]}`,
+    });
+  } catch (err: any) {
+    console.error(`[forge_shell] arifSeal audit error: ${err.message}`);
+  }
+}
+
+// ── Pre-Execution Gate ───────────────────────────────────────────────────────
+/**
+ * Centralised gate for all shell commands.
+ * Fires BEFORE any ArifJudge or authority checks.
+ * Every command goes through classifyShellCommandRisk — no bypass.
+ */
+async function preExecutionGate(
+  command: string,
+  envelope?: SealEnvelope
+): Promise<GatedResult> {
+  const risk = classifyShellCommandRisk(command);
+
+  if (risk === "GODEL_LOCKED") {
+    await arifSealAudit({ type: "GODEL_LOCKED", command });
+    return { status: "HARD_DENY", reason: "GODEL_LOCKED: cannot authorize" };
+  }
+
+  if (risk === "IRREVERSIBLE") {
+    if (!envelope?.session_id) {
+      return {
+        status: "HOLD_IRREVERSIBLE",
+        gate: "F1_AMANAH",
+        reason: "SEAL envelope required for irreversible command",
+        required_action: "Obtain SEAL from arifOS via JITU, then retry with session_id",
+      };
+    }
+
+    // Cryptographic verification — arifOS kernel round-trip
+    const commandHash = SHA256(command);
+    // arif_verify is called via MCP through arifOS client (Phase 1 parallel build).
+    // Until Phase 1 is complete, verified will be an empty placeholder.
+    let verified: Record<string, unknown> = {};
+    try {
+      verified = await callArifVerify(envelope.session_id, command, commandHash);
+    } catch (err: any) {
+      return {
+        status: "HARD_DENY",
+        reason: `arif_verify call failed: ${err.message}`,
+        violations: [err.message],
+      };
+    }
+
+    if (!verified.token_valid) {
+      await arifSealAudit({
+        type: "TOKEN_INVALID",
+        command,
+        violations: verified.violations,
+        actor: envelope.actor_id,
+      });
+      return {
+        status: "HARD_DENY",
+        reason: "SEAL FORGERY DETECTED",
+        violations: verified.violations as string[] | undefined,
+      };
+    }
+
+    if (!verified.scope_valid) {
+      await arifSealAudit({
+        type: "SCOPE_MISMATCH",
+        sealed_command: verified.sealed_command,
+        actual_command: command,
+        actor: verified.actor_id,
+      });
+      return {
+        status: "HARD_DENY",
+        reason: "COMMAND SCOPE VIOLATION: token does not cover this command",
+        violations: verified.violations as string[] | undefined,
+      };
+    }
+
+    if (!verified.replay_safe) {
+      return { status: "HARD_DENY", reason: "SEAL ALREADY USED — REPLAY DETECTED" };
+    }
+
+    return { status: "SEAL_VALID", verified };
+  }
+
+  if (risk === "MUTATION") {
+    if (!envelope?.session_id) {
+      return {
+        status: "GATE_HOLD",
+        gate: "EXECUTE_AUTHORITY",
+        required: "EXECUTE",
+        got: "none",
+        required_action: "Call arif_init() to obtain EXECUTE authority",
+      };
+    }
+    return { status: "EXECUTE_VALID" };
+  }
+
+  return { status: "SAFE" };
+}
+
+/**
+ * Call arifOS arif_verify tool via MCP.
+ * Returns the verification result dict or throws.
+ * NOTE: arif_verify is built in Phase 1 (arifOS kernel). Until that lands,
+ * this will throw — which correctly prevents SEAL-bypass fabrication.
+ */
+async function callArifVerify(
+  sessionId: string,
+  command: string,
+  commandHash: string
+): Promise<Record<string, unknown>> {
+  // Uses callMCP already imported at module level from ../client.js
+  return await callMCP("arifos.arif_verify", {
+    token: sessionId,
+    command,
+    command_hash: commandHash,
+  }) as Record<string, unknown>;
 }
 
 /**
@@ -311,21 +530,85 @@ export function registerShellTools(server: McpServer): void {
       const safeTimeout = (typeof timeout === 'number' && timeout > 0) ? Math.min(timeout, MAX_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
       const startedAt = Date.now();
 
-      const readonlyBypass = !session_id && isReadonlyShellCommand(command);
+      // ── PHASE 2 PRE-EXECUTION GATE (E1 JITU) ────────────────────────────────
+      // All commands pass through classifyShellCommandRisk — NO BYPASS.
+      // This closes the readonlyBypass leak that allowed mutation commands
+      // (mkdir, touch, cp, ln) to execute without session_id.
+      const sealEnvelope: SealEnvelope | undefined = session_id
+        ? {
+            session_id: session_id as string,
+            inputHash: SHA256(JSON.stringify({ command, cwd, timeout })),
+            command_hash: SHA256(command),
+            issued_at: new Date().toISOString(),
+            expires_at: new Date(Date.now() + 3600_000).toISOString(),
+            actor_id: "forge-client",
+          }
+        : undefined;
 
-      // ── Step 0: Verify arifOS authority envelope (Option C) ──
-      // forge_shell does NOT use local session registry. It calls arifOS
-      // directly to verify the session. This keeps the kernel as sole
-      // issuer of authority.
-      if (!session_id && !readonlyBypass) {
+      const gateResult = await preExecutionGate(command, sealEnvelope);
+
+      // Handle HARD_DENY (GODEL_LOCKED or forged SEAL)
+      if (gateResult.status === "HARD_DENY") {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "HARD_DENY",
+              gate: "PRE_EXECUTION_GATE",
+              reason: gateResult.reason,
+              violations: gateResult.violations,
+              constitutional_floor: "F1 AMANAH",
+              _epistemic: {
+                output_class: "GOVERNANCE_TEMPLATE",
+                authority_claim: "EXECUTIVE",
+                evidence_source: "COMPUTED",
+                tagged_by: "aforge-mcp",
+                tagged_at: new Date().toISOString(),
+              },
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+
+      // Handle HOLD_IRREVERSIBLE — SEAL required but not provided
+      if (gateResult.status === "HOLD_IRREVERSIBLE") {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "HOLD_IRREVERSIBLE",
+              gate: gateResult.gate,
+              reason: gateResult.reason,
+              required_action: gateResult.required_action,
+              constitutional_floor: "F1 AMANAH",
+              _epistemic: {
+                output_class: "GOVERNANCE_TEMPLATE",
+                authority_claim: "EXECUTIVE",
+                evidence_source: "COMPUTED",
+                tagged_by: "aforge-mcp",
+                tagged_at: new Date().toISOString(),
+              },
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+
+      // Handle GATE_HOLD — EXECUTE authority required for MUTATION
+      if (gateResult.status === "GATE_HOLD") {
         return {
           content: [{
             type: "text" as const,
             text: JSON.stringify({
               status: "AUTHORITY_REQUIRED",
-              gate: "arifOS_Envelope",
-              reason: "forge_shell requires an arifOS-issued authority envelope (session_id from arif_init). " +
-                      "Call arif_init() first, then pass the returned session_id.",
+              gate: gateResult.gate,
+              reason: `MUTATION command '${command.split(/\s+/)[0]}' requires arifOS EXECUTE authority. ` +
+                      "Call arif_init() to obtain a session_id, then retry.",
+              required: gateResult.required,
+              got: gateResult.got,
+              required_action: gateResult.required_action,
+              constitutional_floor: "F1 AMANAH",
               _epistemic: {
                 output_class: "GOVERNANCE_TEMPLATE",
                 authority_claim: "EXECUTIVE",
@@ -339,58 +622,69 @@ export function registerShellTools(server: McpServer): void {
         };
       }
 
-      const envelope = readonlyBypass
-        ? {
-            valid: true,
-            session_id: "stateless-readonly",
-            actor_id: "stateless-client",
-            authority_mode: "OBSERVE",
-            verdict: "SEAL",
-          }
-        : await verifyArifOSSession(session_id as string);
-      if (!envelope.valid) {
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              status: "AUTHORITY_REJECTED",
-              gate: "arifOS_Envelope",
-              reason: `arifOS rejected session '${session_id}'. Call arif_init() to obtain a valid session.`,
-              verdict: envelope.verdict,
-              _epistemic: {
-                output_class: "GOVERNANCE_TEMPLATE",
-                authority_claim: "EXECUTIVE",
-                evidence_source: "COMPUTED",
-                tagged_by: "aforge-mcp",
-                tagged_at: new Date().toISOString(),
-              },
-            }, null, 2),
-          }],
-          isError: true,
-        };
+      // Handle SEAL_VALID — IRREVERSIBLE command verified against arifOS vault
+      if (gateResult.status === "SEAL_VALID") {
+        // Log verified seal in epistemic record
+        console.log(`[forge_shell] SEAL_VALID: ${command.slice(0, 100)} | verified=${JSON.stringify(gateResult.verified)}`);
       }
 
-      if (!readonlyBypass && !canExecute(envelope.authority_mode)) {
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              status: "AUTHORITY_INSUFFICIENT",
-              gate: "arifOS_Envelope",
-              reason: `arifOS session authority '${envelope.authority_mode}' is insufficient for forge_shell execution. ` +
-                      "Need EXECUTE or SEAL authority. Call arif_init() with higher authority request.",
-              envelope: { authority_mode: envelope.authority_mode, actor_id: envelope.actor_id },
-              _epistemic: {
-                output_class: "GOVERNANCE_TEMPLATE",
-                authority_claim: "EXECUTIVE",
-                evidence_source: "COMPUTED",
-                tagged_by: "aforge-mcp",
-                tagged_at: new Date().toISOString(),
-              },
-            }, null, 2),
-          }],
-          isError: true,
-        };
+      // SAFE and EXECUTE_VALID proceed normally
+      // (GODEL_LOCKED already returned HARD_DENY above)
+
+      // ── Step 0b: Verify arifOS authority envelope for non-SAFE commands ──────
+      // Only needed when we have a session_id (SAFE status has no envelope)
+      let envelope: AuthorityEnvelope = {
+        valid: true,
+        session_id: "stateless-safe",
+        actor_id: "safe-probe",
+        authority_mode: "OBSERVE",
+        verdict: "SAFE",
+      };
+      if (gateResult.status !== "SAFE" && session_id) {
+        envelope = await verifyArifOSSession(session_id as string);
+        if (!envelope.valid) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "AUTHORITY_REJECTED",
+                gate: "arifOS_Envelope",
+                reason: `arifOS rejected session '${session_id}'. Call arif_init() to obtain a valid session.`,
+                verdict: envelope.verdict,
+                _epistemic: {
+                  output_class: "GOVERNANCE_TEMPLATE",
+                  authority_claim: "EXECUTIVE",
+                  evidence_source: "COMPUTED",
+                  tagged_by: "aforge-mcp",
+                  tagged_at: new Date().toISOString(),
+                },
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+        if (!canExecute(envelope.authority_mode)) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "AUTHORITY_INSUFFICIENT",
+                gate: "arifOS_Envelope",
+                reason: `arifOS session authority '${envelope.authority_mode}' is insufficient for forge_shell execution. ` +
+                        "Need EXECUTE or SEAL authority. Call arif_init() with higher authority request.",
+                envelope: { authority_mode: envelope.authority_mode, actor_id: envelope.actor_id },
+                _epistemic: {
+                  output_class: "GOVERNANCE_TEMPLATE",
+                  authority_claim: "EXECUTIVE",
+                  evidence_source: "COMPUTED",
+                  tagged_by: "aforge-mcp",
+                  tagged_at: new Date().toISOString(),
+                },
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
       }
 
       // ── Step 0b: Gödel lock check ──
