@@ -222,10 +222,13 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     // Check for session_id in args — if present, check session verdict state
     const sessionId = argsRecord.session_id as string | undefined;
     if (!sessionId) {
-      throw new Error(
+      const err = new Error(
         `MCP Bridge: ${actionClass} tool "${canonicalTool}" requires a governed session. ` +
         `888_HOLD: No session_id provided. Call arif_session_init first.`
-      );
+      ) as Error & { error_code: string; source_layer: string };
+      err.error_code = "SESSION_REQUIRED";
+      err.source_layer = "A-FORGE::BRIDGE";
+      throw err;
     }
 
     // Attempt to read session verdict from arifOS
@@ -255,22 +258,32 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
 
       const precondition = checkVerdictPrecondition(actionClass, sessionState);
       if (!precondition.permitted) {
-        throw new Error(
+        const err = new Error(
           `MCP Bridge: Verdict precondition failed for "${canonicalTool}". ` +
           `${precondition.reason} ` +
           `AC_Risk: ${acRisk.toFixed(2)} | Breakers: [${circuitBreakers.join(', ')}]`
-        );
+        ) as Error & { error_code: string; source_layer: string; precondition_reason: string };
+        err.error_code = "VERDICT_PRECONDITION_FAILED";
+        err.source_layer = "A-FORGE::BRIDGE";
+        err.precondition_reason = precondition.reason;
+        throw err;
       }
     } catch (err) {
       // If we can't reach arifOS for verdict check, block conservatively
+      if (err instanceof Error && (err as any).error_code === 'VERDICT_PRECONDITION_FAILED') {
+        throw err; // Re-throw precondition failures with structured data
+      }
       if (err instanceof Error && err.message.includes('Verdict precondition failed')) {
-        throw err; // Re-throw precondition failures
+        throw err; // Re-throw precondition failures (backward compat)
       }
       // Network errors = cautious block
-      throw new Error(
+      const netErr = new Error(
         `MCP Bridge: Cannot verify verdict precondition for "${canonicalTool}". ` +
         `888_HOLD: Kernel unreachable for verdict query. Action requires SEAL.`
-      );
+      ) as Error & { error_code: string; source_layer: string };
+      netErr.error_code = "KERNEL_UNREACHABLE";
+      netErr.source_layer = "A-FORGE::BRIDGE";
+      throw netErr;
     }
   }
   
@@ -285,10 +298,14 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     });
   } catch (networkErr) {
     const msg = networkErr instanceof Error ? networkErr.message : String(networkErr);
-    throw new Error(
+    const netErr = new Error(
       `MCP Bridge: Network error calling ${namespace} kernel at ${url}. ` +
         `888_HOLD: Kernel unreachable. Detail: ${msg}`,
-    );
+    ) as Error & { error_code: string; source_layer: string; downstream_error: string };
+    netErr.error_code = "NETWORK_ERROR";
+    netErr.source_layer = `A-FORGE::BRIDGE::${namespace.toUpperCase()}`;
+    netErr.downstream_error = msg;
+    throw netErr;
   }
 
   let payload: Record<string, unknown>;
@@ -302,7 +319,7 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     );
   }
 
-  // Kernel error handling
+  // Kernel error handling — structured rejection envelope
   if (!response.ok || payload.status === "error" || payload.verdict === "HOLD") {
     const errorMsg =
       (payload.error as string) ??
@@ -310,10 +327,15 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
       `Kernel returned HTTP ${response.status}`;
     const floor = (payload.failed_floor as string) ?? (payload.floor as string) ?? "F13";
     const verdict = (payload.verdict as string) ?? "HOLD";
-    throw new Error(
+    const err = new Error(
       `MCP Bridge: Kernel error for ${canonicalTool}. ` +
         `${floor} | ${verdict} | ${errorMsg}`,
-    );
+    ) as Error & { error_code: string; source_layer: string; downstream_error: string; payload: Record<string, unknown> };
+    err.error_code = (payload.error_code as string) ?? "KERNEL_HOLD";
+    err.source_layer = `A-FORGE::BRIDGE::${namespace.toUpperCase()}`;
+    err.downstream_error = errorMsg;
+    err.payload = payload;
+    throw err;
   }
 
   // Unwrap the kernel's result envelope
