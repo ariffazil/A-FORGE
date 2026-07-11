@@ -11,25 +11,25 @@ skill | AAA | .agents | archive
 entropy-thermo-zen       | NO  | NO  | YES  ← was already archived
 tool-fitness-compiler   | NO  | NO  | YES  ← was already archived
 tool-creation-gate     | NO  | NO  | YES  ← was already archived
-meta-mesa-skill-atlas   | YES | NO  | YES  ← DUAL (archived + still in AAA)
-service-health-triage   | YES | NO  | NO   ← MERGED+ARCHIVED
-federation-health-scan  | YES | NO  | NO   ← MERGED+ARCHIVED
-drift-response         | YES | NO  | NO   ← MERGED+ARCHIVED
-infra-guardian         | YES | NO  | NO   ← ARCHIVED (orphaned)
-docker-guardian        | YES | NO  | NO   ← ARCHIVED (orphaned)
-mcp-smoke-test         | YES | NO  | NO   ← ARCHIVED (orphaned) ← LIVE IN AAA (has callers)
-repo-hygiene-audit     | YES | NO  | NO   ← MERGED+ARCHIVED
-active-maintenance     | YES | NO  | NO   ← ARCHIVED (orphaned)
-constitutional-auditor | YES | NO  | NO   ← ARCHIVED (orphaned)
-arifos-recursive-audit| YES | NO  | NO   ← **LIVE IN AAA** (has callers)
-tool-health-check      | YES | NO  | NO   ← ARCHIVED (orphaned)
-meta-mesa-skill-atlas  | YES | NO  | NO   ← MERGED+ARCHIVED
-unified-skill-binding  | YES | NO  | NO   ← ARCHIVED (orphaned)
-mcp-lifeguard         | YES | NO  | NO   ← ARCHIVED (orphaned)
-model-fallback-monitor | YES | NO  | NO   ← ARCHIVED (orphaned)
-recursive-skill-forge  | YES | NO  | NO   ← MERGED+ARCHIVED
-tool-creation-gate     | YES | NO  | NO   ← ARCHIVED (orphaned)
-skill-trigger-linter   | YES | NO  | NO   ← **LIVE IN AAA** (has callers)
+meta-mesa-skill-atlas   | YES | NO  | YES  ← absorbed/resolved (archived copy + AAA residue)
+service-health-triage   | YES | NO  | NO   ← absorbed/resolved
+federation-health-scan  | YES | NO  | NO   ← absorbed/resolved
+drift-response          | YES | NO  | NO   ← absorbed/resolved
+infra-guardian          | YES | NO  | NO   ← absorbed/resolved
+docker-guardian         | YES | NO  | NO   ← absorbed/resolved
+mcp-smoke-test          | YES | NO  | NO   ← still blocked (external AAA callers)
+repo-hygiene-audit      | YES | NO  | NO   ← absorbed/resolved
+active-maintenance      | YES | NO  | NO   ← absorbed/resolved
+constitutional-auditor  | YES | NO  | NO   ← absorbed/resolved
+arifos-recursive-audit  | YES | NO  | NO   ← still blocked (external AAA callers)
+tool-health-check       | YES | NO  | NO   ← absorbed/resolved
+meta-mesa-skill-atlas   | YES | NO  | NO   ← absorbed/resolved
+unified-skill-binding   | YES | NO  | NO   ← absorbed/resolved
+mcp-lifeguard           | YES | NO  | NO   ← absorbed/resolved
+model-fallback-monitor  | YES | NO  | NO   ← absorbed/resolved
+recursive-skill-forge   | YES | NO  | NO   ← absorbed/resolved
+tool-creation-gate      | YES | NO  | NO   ← absorbed/resolved
+skill-trigger-linter    | YES | NO  | NO   ← still blocked (external AAA callers)
 ```
 
 ## Phase 1 — Archive (12 skills)
@@ -46,7 +46,7 @@ Unique sections merged into canonical targets:
 ## Phase 3 — Delete from AAA
 Deleted orphaned absorbed skills from AAA/skills: active-maintenance, infra-guardian, docker-guardian, model-fallback-monitor, tool-health-check, constitutional-auditor, unified-skill-binding, mcp-lifeguard.
 
-## 4 blockers remain
+## 3 blockers remain (external AAA callers)
 `mcp-smoke-test`, `arifos-recursive-audit`, `skill-trigger-linter` — have external AAA callers. Cannot delete until callers updated to canonical equivalents.
 
 ## Archive count

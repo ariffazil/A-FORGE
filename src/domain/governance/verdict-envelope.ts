@@ -145,6 +145,45 @@ export function errorVerdict(
 }
 
 /**
+ * Bridge rejection envelope — structured error for ALL blocked bridge calls.
+ * Matches the pattern GEOX ingest already uses (MISSING_SOURCE, MISSING_FILENAME).
+ *
+ * Every blocked call from the bridge boundary MUST use this envelope so the
+ * emitting layer, error_code, and trace_id are always present.
+ */
+export function bridgeError(
+  errorCode: string,
+  message: string,
+  options?: {
+    tool?: string;
+    actor?: string;
+    session?: string;
+    sourceLayer?: string;
+    downstreamError?: string;
+    apx_G?: number;
+    apx_C_dark?: number;
+    trace_id?: string;
+  },
+): VerdictEnvelope {
+  const data: Record<string, unknown> = {
+    status: "ERROR",
+    error_code: errorCode,
+    source_layer: options?.sourceLayer ?? "A-FORGE::BRIDGE",
+    message,
+  };
+  if (options?.downstreamError) data.downstream_error = options.downstreamError;
+  if (options?.trace_id) data.trace_id = options.trace_id;
+  if (options?.apx_G !== undefined || options?.apx_C_dark !== undefined) {
+    data.apx_block = {
+      G: options.apx_G ?? 0.0,
+      C_dark: options.apx_C_dark ?? 0.0,
+      reason: `Bridge blocked: ${errorCode}`,
+    };
+  }
+  return errorVerdict(message, { ...options, data });
+}
+
+/**
  * Helper untuk SEAL verdict — standardized success envelope.
  */
 export function sealVerdict(

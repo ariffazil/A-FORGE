@@ -1145,7 +1145,9 @@ const forgeHandler = async (args: any, toolName: string) => {
         content: [{
           type: "text" as const,
           text: JSON.stringify({
-            status: "ELICITATION_BLOCKED",
+            status: "ERROR",
+            error_code: "ELICITATION_BLOCKED",
+            source_layer: "A-FORGE::ELICITATION_GATE",
             gate: "HUMAN_CONSENT_WITHHELD",
             reason: auth.reason,
             tool: toolName,
@@ -1236,7 +1238,9 @@ const forgeHandler = async (args: any, toolName: string) => {
         content: [{
           type: "text" as const,
           text: JSON.stringify({
-            status: "HOLD",
+            status: "ERROR",
+            error_code: "JUDGE_GATE_HOLD",
+            source_layer: "A-FORGE::FORGE_GATE",
             gate: "JUDGE_GATE",
             tool: toolName,
             reason: `arifOS judge returned '${judgeVerdict}' for this execution. No SEAL, no mutation.`,
@@ -1257,7 +1261,7 @@ const forgeHandler = async (args: any, toolName: string) => {
     if (landauerCost.thermodynamicBand === "CRITICAL") {
       return {
         content: [{ type: "text" as const, text: JSON.stringify({
-          status: "HOLD", gate: "LANDAUER_GATE",
+          status: "ERROR", error_code: "LANDAUER_GATE_HOLD", source_layer: "A-FORGE::FORGE_GATE", gate: "LANDAUER_GATE",
           reason: `Thermodynamic cost CRITICAL (${landauerCost.landauerCost.toFixed(2)}). Irreversible ${!landauerCost.isReversible}.`,
           cost: landauerCost,
         }, null, 2) }], isError: true,
@@ -1270,7 +1274,7 @@ const forgeHandler = async (args: any, toolName: string) => {
     if (mesa.blocked) {
       return {
         content: [{ type: "text" as const, text: JSON.stringify({
-          status: "HOLD", gate: "MESA_DETECTOR",
+          status: "ERROR", error_code: "MESA_DETECTOR_HOLD", source_layer: "A-FORGE::FORGE_GATE", gate: "MESA_DETECTOR",
           reason: mesa.rationale,
           mesa_risk: mesa,
         }, null, 2) }], isError: true,
@@ -1404,7 +1408,9 @@ const judgeProxyHandler = async (args: Record<string, unknown>) => {
             content: [{
               type: "text" as const,
               text: JSON.stringify({
-                status: "ELICITATION_BLOCKED",
+                status: "ERROR",
+                error_code: "ELICITATION_BLOCKED",
+                source_layer: "A-FORGE::ELICITATION_GATE",
                 gate: "HUMAN_CONSENT_WITHHELD",
                 reason: auth.reason,
                 action_tier: actionTier,
@@ -1440,7 +1446,9 @@ const judgeProxyHandler = async (args: Record<string, unknown>) => {
             content: [{
               type: "text" as const,
               text: JSON.stringify({
-                status: "TRUTH_GATE_HOLD",
+                status: "ERROR",
+                error_code: "TRUTH_GATE_HOLD",
+                source_layer: "A-FORGE::TRUTH_GATE",
                 gate: "truth_enforcement",
                 verdict: gateResult.verdict,
                 evidence_layer: gateResult.evidence_layer,
@@ -1779,7 +1787,23 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
   } catch (err) {
     if (transport) { try { await transport.close(); } catch { /* best effort */ } }
     const msg = err instanceof Error ? err.message : String(err);
-    return { content: [{ type: "text" as const, text: `WEALTH routing error: ${msg}` }], isError: true };
+    const errorCode = (err as any)?.error_code ?? "BRIDGE_BLOCKED";
+    const sourceLayer = (err as any)?.source_layer ?? "A-FORGE::BRIDGE::WEALTH";
+    const downstreamError = (err as any)?.downstream_error ?? msg;
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          status: "ERROR",
+          error_code: errorCode,
+          source_layer: sourceLayer,
+          message: `WEALTH routing error: ${msg}`,
+          downstream_error: downstreamError,
+          trace_id: (err as any)?.trace_id ?? undefined,
+        }, null, 2),
+      }],
+      isError: true,
+    };
   }
 });
 
@@ -1862,7 +1886,23 @@ server.registerTool("forge_well", {
     } catch (err) {
       if (transport) { try { await transport.close(); } catch { /* best effort */ } }
       await telemetryFailure(`forge_well:${mode}`, startedAt, err);
-      return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
+      const msg = err instanceof Error ? err.message : String(err);
+      const errorCode = (err as any)?.error_code ?? "BRIDGE_BLOCKED";
+      const sourceLayer = (err as any)?.source_layer ?? "A-FORGE::BRIDGE::WELL";
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "ERROR",
+            error_code: errorCode,
+            source_layer: sourceLayer,
+            message: `WELL routing error: ${msg}`,
+            downstream_error: (err as any)?.downstream_error ?? msg,
+            trace_id: (err as any)?.trace_id ?? undefined,
+          }, null, 2),
+        }],
+        isError: true,
+      };
     }
   });
 });

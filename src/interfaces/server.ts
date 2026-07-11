@@ -39,7 +39,6 @@ import { readRuntimeConfig } from "./config/RuntimeConfig.js";
 import { AgentEngine } from "../domain/engine/AgentEngine.js";
 import { ToolRegistry } from "../infrastructure/tools/ToolRegistry.js";
 import { LongTermMemory } from "../application/memory/LongTermMemory.js";
-import { createA2ARouter } from "../application/a2a/index.js";
 import {
   createHumanExpertRouter,
   createOperatorRouter,
@@ -293,7 +292,7 @@ export function createApp(): express.Express {
   app.use(mcpRouter);
 
   // Rest of Express app (existing routes)
-  app.use(createA2ARouter());
+  // A2A router removed — AAA is sole A2A gateway (E2 entropy fix)
 
   const requireOperatorAuth = createOperatorAuthMiddleware(ensureOperatorTokenPolicy());
   app.use("/operator", requireOperatorAuth);
@@ -785,7 +784,7 @@ app.get("/contract", (_req: Request, res: Response) => {
     endpoints: {
       GEOX_log_interpreter: "POST /GEOX/log_interpreter",
       GEOX_contract: "GET /GEOX/contract",
-      a2a: "POST /a2a",
+      // a2a removed — AAA is sole A2A gateway,
       a2a_agent_card: "GET /.well-known/agent-card.json",
       python_mcp: "GEOX-mcp:8081",
       bridge: "A-FORGE-bridge:7071",
@@ -1201,7 +1200,7 @@ export async function startServer(): Promise<void> {
     console.error(`    POST /sense          - Sense + Judge evaluation`);
     console.error(`    POST /route          - Federal Coordinator Routing`);
     console.error(`    POST /execute        - Federation MCP proxy`);
-    console.error(`    POST /a2a            - A2A JSON-RPC gateway`);
+    console.error(`    // /a2a removed — AAA is sole A2A gateway`);
     console.error(`    GET  /health         - Health check`);
     console.error(`    GET  /ready          - Readiness probe`);
     console.error(`    GET  /.well-known/agent-card.json - A2A Agent Card`);
