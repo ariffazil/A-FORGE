@@ -285,6 +285,8 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
+  grounding: [control_theory, information_theory, moral_philosophy]
+  reference: "G = A·P·E·X·Φ — Nash bargaining product"
 - name: forge_execute
   purpose: ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Execution and motor cortex (Stage 777 FORGE). Use this
     to execute an action plan. Requires cc_id for

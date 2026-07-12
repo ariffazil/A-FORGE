@@ -302,6 +302,24 @@ function jsonRpcResult(id: any, result: any): string {
   return JSON.stringify({ jsonrpc: "2.0", id: id ?? null, result });
 }
 
+/**
+ * Phase A3 (2026-07-12) — MCP tool-level failures MUST be successful JSON-RPC
+ * with `result.isError: true` (CallToolResult), not HTTP 4xx / RPC error.
+ * Spec: tool failures are application-level, recoverable by the agent.
+ * Protocol errors (parse, method not found) still use jsonRpcError.
+ */
+function toolIsErrorResult(
+  id: any,
+  message: string,
+  extra?: Record<string, unknown>,
+): string {
+  const payload = extra ? { message, ...extra } : { message };
+  return jsonRpcResult(id, {
+    content: [{ type: "text", text: JSON.stringify(payload) }],
+    isError: true,
+  });
+}
+
 // ── Session ID generation ──────────────────────────────────────────────
 export async function startMcpServer(transportType: "stdio" | "sse" | "streamable-http" | "http", port?: number): Promise<void> {
   const approvalBoundary = getApprovalBoundary();
@@ -518,6 +536,8 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           const msgId = parsed.id ?? null;
 
           if (method === "initialize") {
+            // Phase A4: tools remains {} — do NOT declare listChanged unless we
+            // emit notifications/tools/list_changed to clients (we don't; poll tools/list).
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(jsonRpcResult(msgId, {
               protocolVersion: "2025-11-25",
@@ -668,17 +688,26 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             const toolArgs = parsed.params?.arguments ?? {};
 
             if (!toolName) {
+              // Missing params = protocol-level invalid params (keep RPC error)
               res.writeHead(400, { "Content-Type": "application/json" });
               res.end(jsonRpcError(msgId, -32602, "Missing tool name"));
               return;
             }
 
-            // Check whitelist
+            // Check whitelist — tool-level denial → isError envelope (Phase A3)
             if (!STATELESS_TOOLS.has(toolName)) {
               const msg = `Tool "${toolName}" requires session ownership. Use session-based connection or connect via stdio.`;
               process.stderr.write(`[A-FORGE-MCP] Rejected stateless call: ${toolName}\n`);
-              res.writeHead(403, { "Content-Type": "application/json" });
-              res.end(jsonRpcError(msgId, -32000, msg));
+              res.writeHead(200, {
+                "Content-Type": "application/json",
+                "X-AForge-Gate": "SESSION_REQUIRED",
+              });
+              res.end(toolIsErrorResult(msgId, msg, {
+                error_class: "SESSION_REQUIRED",
+                recoverability: "AGENT_CAN_RETRY",
+                tool: toolName,
+                gate: "STATELESS_WHITELIST",
+              }));
               return;
             }
 
@@ -698,16 +727,17 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             }
             const aThinkVerdict = aThinkCheck(toolName, aThinkUserInput);
             if (!aThinkVerdict.allowed) {
-              const errResp = aThinkErrorResponse(aThinkVerdict);
               process.stderr.write(
                 `[A-FORGE-MCP] A-THINK ${aThinkVerdict.status} (stateless): ${toolName} — ${aThinkVerdict.reason}\n`,
               );
-              res.writeHead(403, {
+              res.writeHead(200, {
                 "Content-Type": "application/json",
                 "X-AThink-Gate": aThinkVerdict.status,
                 "X-AThink-Mode": aThinkVerdict.mode,
               });
-              res.end(jsonRpcError(msgId, -32011, `A-THINK guard: ${aThinkVerdict.status}`, {
+              res.end(toolIsErrorResult(msgId, `A-THINK guard: ${aThinkVerdict.status}`, {
+                error_class: "A_THINK_GUARD",
+                recoverability: "AGENT_CAN_RETRY",
                 status: aThinkVerdict.status,
                 gate: "A_THINK_GUARD",
                 mode: aThinkVerdict.mode,
@@ -728,17 +758,20 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               process.stderr.write(
                 `[A-FORGE-MCP] Policy DENY (stateless) actor=${actorHint} tool=${toolName} reasons=${policyVerdict.reasons.join(",")}\n`,
               );
-              res.writeHead(403, {
+              res.writeHead(200, {
                 "Content-Type": "application/json",
                 "X-Policy-Gate": "DENY",
                 "X-Policy-Id": policyVerdict.policy_id,
               });
-              res.end(jsonRpcError(msgId, -32010, "MCP Policy Gate denied the request", {
+              res.end(toolIsErrorResult(msgId, "MCP Policy Gate denied the request", {
+                error_class: "POLICY_DENY",
+                recoverability: "AGENT_CAN_RETRY",
                 verdict: policyVerdict.verdict,
                 policy_id: policyVerdict.policy_id,
                 reasons: policyVerdict.reasons,
                 layers: policyVerdict.layers,
                 violated_regex: policyVerdict.violated_regex,
+                tool: toolName,
               }));
               return;
             }
@@ -748,8 +781,12 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             try {
               const handler = getToolHandler(toolName);
               if (!handler) {
-                res.writeHead(404, { "Content-Type": "application/json" });
-                res.end(jsonRpcError(msgId, -32602, `Tool "${toolName}" not found`));
+                res.writeHead(200, { "Content-Type": "application/json" });
+                res.end(toolIsErrorResult(msgId, `Tool "${toolName}" not found`, {
+                  error_class: "TOOL_NOT_FOUND",
+                  recoverability: "AGENT_CAN_RETRY",
+                  tool: toolName,
+                }));
                 return;
               }
 
@@ -759,13 +796,18 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 toolArgs.actor_id = "stateless-client";
               }
               const result = await handler(toolArgs);
+              // Ensure schema/policy denies from handlers always surface isError
+              const normalized =
+                result && typeof result === "object" && result.isError === true
+                  ? result
+                  : result;
               emitMCPLog("info", "aforge.tool", {
                 tool: toolName,
-                verdict: "success",
+                verdict: normalized?.isError ? "failure" : "success",
                 actor_id: toolArgs?.actor_id ?? "stateless-client",
-              }, `${toolName} → success`);
+              }, `${toolName} → ${normalized?.isError ? "isError" : "success"}`);
               res.writeHead(200, { "Content-Type": "application/json" });
-              res.end(jsonRpcResult(msgId, result));
+              res.end(jsonRpcResult(msgId, normalized));
             } catch (err: any) {
               emitMCPLog("error", "aforge.tool", {
                 tool: toolName,
@@ -773,8 +815,12 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 error: err.message ?? "unknown",
               }, `${toolName} → ${err.message}`);
               process.stderr.write(`[A-FORGE-MCP] Stateless call error: ${toolName}: ${err}\n`);
-              res.writeHead(500, { "Content-Type": "application/json" });
-              res.end(jsonRpcError(msgId, -32603, err.message ?? "Tool execution failed"));
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(toolIsErrorResult(msgId, err.message ?? "Tool execution failed", {
+                error_class: "TOOL_EXECUTION_ERROR",
+                recoverability: "AGENT_CAN_RETRY",
+                tool: toolName,
+              }));
             }
             return;
           }

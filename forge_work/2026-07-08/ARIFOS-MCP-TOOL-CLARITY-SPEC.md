@@ -1,3 +1,5 @@
+> **PROMOTED 2026-07-12** → `/root/arifOS/docs/ARIFOS-MCP-TOOL-CLARITY-CHECKLIST.md`
+
 # arifOS MCP Tool Clarity Spec (draft)
 
 **Date:** 2026-07-08  
