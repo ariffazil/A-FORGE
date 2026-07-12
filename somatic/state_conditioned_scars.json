@@ -1,0 +1,173 @@
+{
+  "state_conditioned_scars": [
+    {
+      "id": "SC-S001",
+      "failure_mode": "HIGH_BLAST_MUTATE: attempted high-blast mutation while degraded",
+      "state_conditions": {
+        "regulatory_state.state": {
+          "operator": "in",
+          "value": [
+            "CAUTION",
+            "PROTECTIVE",
+            "SHUTDOWN"
+          ]
+        },
+        "action_class": {
+          "operator": "in",
+          "value": [
+            "MUTATE",
+            "EXECUTE",
+            "IRREVERSIBLE"
+          ]
+        }
+      },
+      "constraint": "Downgrade action to OBSERVE_ONLY. Require explicit F13 ack for any mutation while in degraded regulatory state.",
+      "auto_fire": true,
+      "scar_pressure": 0.7,
+      "counterexamples": [
+        "regulatory_state.state == NOMINAL",
+        "action_class == OBSERVE"
+      ],
+      "expiry": null,
+      "source": "somatic-kernel P2 \u2014 regulatory protection"
+    },
+    {
+      "id": "SC-S002",
+      "failure_mode": "ERROR_CASCADE: executing while error rate is critical",
+      "state_conditions": {
+        "interoception.tool_error_rate": {
+          "operator": ">",
+          "value": 0.3
+        },
+        "action_class": {
+          "operator": "in",
+          "value": [
+            "EXECUTE",
+            "MUTATE"
+          ]
+        }
+      },
+      "constraint": "HOLD execution. Run health-sweep to diagnose error source. Do not proceed until error_rate < 0.1.",
+      "auto_fire": true,
+      "scar_pressure": 0.6,
+      "counterexamples": [
+        "interoception.tool_error_rate <= 0.1",
+        "action_class == OBSERVE"
+      ],
+      "expiry": null,
+      "source": "somatic-kernel P2 \u2014 cascade prevention"
+    },
+    {
+      "id": "SC-S003",
+      "failure_mode": "CONTEXT_SATURATION: near-full context while attempting complex work",
+      "state_conditions": {
+        "interoception.context_utilization": {
+          "operator": ">",
+          "value": 0.85
+        },
+        "interoception.narrative_heat": {
+          "operator": ">",
+          "value": 0.5
+        }
+      },
+      "constraint": "Compress output. Defer non-essential detail. Prioritize VERDICT + EVIDENCE only.",
+      "auto_fire": true,
+      "scar_pressure": 0.4,
+      "counterexamples": [
+        "interoception.context_utilization <= 0.7",
+        "interoception.narrative_heat <= 0.3"
+      ],
+      "expiry": null,
+      "source": "somatic-kernel P2 \u2014 entropy management"
+    },
+    {
+      "id": "SC-S004",
+      "failure_mode": "ORGAN_DEGRADED: critical organ down during execution",
+      "state_conditions": {
+        "capability_schema.organs_down": {
+          "operator": "length_>",
+          "value": 0
+        }
+      },
+      "constraint": "Identify which organs are down. Route around degraded organs. Do not assume healthy state.",
+      "auto_fire": true,
+      "scar_pressure": 0.8,
+      "counterexamples": [
+        "capability_schema.organs_down is empty"
+      ],
+      "expiry": null,
+      "source": "somatic-kernel P2 \u2014 organ resilience"
+    },
+    {
+      "id": "SC-S005",
+      "failure_mode": "IDENTITY_DRIFT: actor not verified while attempting mutation",
+      "state_conditions": {
+        "capability_schema.actor_verified": {
+          "operator": "==",
+          "value": false
+        },
+        "action_class": {
+          "operator": "in",
+          "value": [
+            "MUTATE",
+            "EXECUTE",
+            "IRREVERSIBLE"
+          ]
+        }
+      },
+      "constraint": "HOLD. Require Ed25519 crypto bind before any mutation. Block until actor_verified=true.",
+      "auto_fire": true,
+      "scar_pressure": 0.9,
+      "counterexamples": [
+        "capability_schema.actor_verified == true",
+        "action_class == OBSERVE"
+      ],
+      "expiry": null,
+      "source": "somatic-kernel P2 \u2014 identity protection"
+    },
+    {
+      "id": "SC-S006",
+      "failure_mode": "LOW_CONFIDENCE_HIGH_ACTION: attempting high-impact action with low confidence cap",
+      "state_conditions": {
+        "regulatory_state.confidence_cap": {
+          "operator": "<",
+          "value": 0.6
+        },
+        "action_class": {
+          "operator": "in",
+          "value": [
+            "MUTATE",
+            "EXECUTE"
+          ]
+        }
+      },
+      "constraint": "Reduce action scope. Seek additional evidence before proceeding. Cap output at confidence_cap.",
+      "auto_fire": true,
+      "scar_pressure": 0.5,
+      "counterexamples": [
+        "regulatory_state.confidence_cap >= 0.8",
+        "action_class == OBSERVE"
+      ],
+      "expiry": null,
+      "source": "somatic-kernel P2 \u2014 confidence guard"
+    },
+    {
+      "id": "SC-S007",
+      "failure_mode": "LATENCY_SPIKE: network/organ latency abnormally high",
+      "state_conditions": {
+        "interoception.latency_ms": {
+          "operator": ">",
+          "value": 2000
+        }
+      },
+      "constraint": "Switch to degraded mode. Reduce tool call frequency. Cache aggressively.",
+      "auto_fire": true,
+      "scar_pressure": 0.3,
+      "counterexamples": [
+        "interoception.latency_ms <= 500"
+      ],
+      "expiry": null,
+      "source": "somatic-kernel P2 \u2014 latency guard"
+    }
+  ]
+}
