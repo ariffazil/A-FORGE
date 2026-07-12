@@ -2,6 +2,7 @@
 
 **Date:** 2026-07-09  
 **Status:** **FREEZE logging expansion** (SEP-2577 Final) · Completions **NOT building** (agents use full tool JSON) · Multi-organ native  
+**Phase C seal:** 2026-07-12 — A-FORGE removed false `logging:{}` / `completions:{}` capability force (`core.ts`). Stateless `serve.ts` already omitted both. `completion/complete` not served.
 **Spec:** MCP base lifecycle MUST · Logging deprecated · Completions MAY for human UI only
 
 ---

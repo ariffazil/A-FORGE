@@ -103,31 +103,11 @@ export const server = new McpServer({
   version: "0.1.0",
 });
 
-// ── Phase 4: Force MCP logging + completions capabilities (2026-07-09) ──
-// The SDK auto-declares completions only when Completable schemas are used
-// and does not declare logging at all. We force both to satisfy the spec:
-// capabilities MUST be declared before any emission.
-try {
-  const internalServer = (server as any).server;
-  if (internalServer?.registerCapabilities) {
-    internalServer.registerCapabilities({
-      logging: {},
-      completions: {},
-    });
-  }
-  // Also force the completion handler to be initialized (for prompt completions)
-  if ((server as any)._completionHandlerInitialized === false) {
-    (server as any)._completionHandlerInitialized = true;
-    // Register a minimal completion handler that delegates to our resolvers
-    (server as any).server?.setRequestHandler?.(
-      // The SDK's CompleteRequestSchema is imported when completions are used
-      // For now, the stateless HTTP handler covers completion/complete.
-      // SDK path delegations happen through serve.ts stateless path.
-    );
-  }
-} catch {
-  // Non-blocking — capabilities are advisory
-}
+// ── Phase C (2026-07-12): KILL false capability ads ────────────────────
+// Completions: agents use full tool JSON — do NOT declare completions: {}.
+// Logging protocol: SEP-2577 FREEZE — do NOT declare logging: {} without
+// setLevel + emit path. Ops = stderr + journald + tool receipts only.
+// Prior Phase 4 (2026-07-09) forced empty logging/completions caps; removed.
 
 // ── Schema strictification guard ──────────────────────────────────────────
 // Every tool's inputSchema MUST have additionalProperties: false to prevent

@@ -526,9 +526,11 @@ export function registerForge8Verbs(server: McpServer) {
   );
 
   // VERB 6: forge_tier_bind
+  // Phase C (2026-07-12): kept for FORGE8 chain (optional "unregister" rejected —
+  // load-bearing step 6). Prefer arifOS lease/session authority for tier truth.
   server.tool(
     "forge_tier_bind",
-    "Set trust tier LOWER BOUND only. A-FORGE cannot promote — only arifOS sets actual tier.",
+    "[FORGE8#6] Set trust tier LOWER BOUND only. A-FORGE cannot promote — only arifOS sets actual tier. Phase C: not unregistered (pipeline load-bearing); agents should not call ad-hoc outside FORGE8 flow.",
     ForgeTierBindRequestSchema.shape,
     forgeTierBindHandler
   );
