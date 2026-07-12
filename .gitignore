@@ -135,3 +135,4 @@ forge_work/
 
 # local ARA logs
 duties/logs/
+.registry/fingerprints.json
