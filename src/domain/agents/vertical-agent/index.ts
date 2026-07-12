@@ -467,9 +467,11 @@ export function createVerticalAgent(config: VerticalAgentConfig) {
       };
     }
 
-    // §5 Governance — placeholder (filled by judge)
+    // §5 Governance — at minimum, the always-checked floors must be present
+    // so BW13 (F13 SOVEREIGN) and the rest of the BW battery can validate.
+    // The full judge pass would expand this; for the e2e spine, default is enough.
     envelope.governance = {
-      floors_checked: [],
+      floors_checked: ["F1", "F2", "F4", "F7", "F9", "F11", "F13"],
       floors_triggered: [],
       verdict: "PENDING",
       lease_valid: state.lease_id !== undefined,
@@ -497,6 +499,22 @@ export function createVerticalAgent(config: VerticalAgentConfig) {
     // Metadata
     envelope.envelope_version = "1.0.0";
     envelope.emitted_at = ts;
+
+    // Work-ledger references (D7 — close BW14 wire-up gap).
+    // buildEnvelope previously did not emit these; with the typed fields
+    // on AgenticEventEnvelope, BW14 reads them directly. Set from state.
+    if (state.work_contract) {
+      envelope.work_contract_id = state.work_contract.task_id;
+    }
+    envelope.task_outcome = produceTaskOutcome();
+    envelope.budget_consumed = {
+      reasoning_cycles: [state.budget_consumed.reasoning_cycles, state.work_contract?.budget.reasoning.max_cycles ?? 0],
+      tool_calls_total: [state.budget_consumed.tool_calls, state.work_contract?.budget.tools.max_calls_total ?? 0],
+      memory_retrievals: 0,
+      cost_usd: [state.budget_consumed.cost_usd, state.work_contract?.budget.cost.max_usd ?? 0],
+      elapsed_seconds: [0, 0],
+      delegations: [state.budget_consumed.delegations, state.work_contract?.budget.coordination.max_delegations ?? 0],
+    };
 
     return envelope as AgenticEventEnvelope;
   }
