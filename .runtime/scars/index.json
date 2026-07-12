@@ -120,5 +120,17 @@
     "occurred_at": "2026-07-07T06:03:30.900Z",
     "sealed_at": "2026-07-07T06:03:30.900Z",
     "sealed_by": "FORGE-000Ω"
+  },
+  "scar_1783855413322_e160e016": {
+    "scar_id": "scar_1783855413322_e160e016",
+    "fingerprint": "3fd49a70488954d6",
+    "failure_mode": "WELL fabricated precision: narrative inputs → decimal scores presented as measurement. \"When the writing gets powerful, I stop checking if it's true.\" (Hermes self-correction 2026-07-12)",
+    "detection_method": "Reality audit of shadow map exercise (Sandow/Milo/Cyr). External correction caught fact errors, moralized deaths, removed agency, fabricated precision.",
+    "severity": "MEDIUM",
+    "scar_pressure": "0.6",
+    "domain": "well",
+    "constraint_imposed": "Epistemic honesty layer added to fatigue mode: _epistemic.class flags NARRATIVE_ESTIMATE vs MEASURED. Emotional state preservation: don't collapse unknown states to neutral. Livelihood: voluntary parameter distinguishes chosen from imposed burden.",
+    "occurred_at": "2026-07-12T11:23:33.322Z",
+    "sealed_at": "2026-07-12T11:23:33.322Z"
   }
 }
