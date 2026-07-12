@@ -36,9 +36,4 @@ if [ "$OK" = "True" ]; then
   echo "[NOTIFY] Sent to Arif (${CHAT_ID})"
 else
   echo "[NOTIFY] FAILED to send"
-  # Try without parse_mode (Markdown can fail on special chars)
-  curl -sf -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
-    -d chat_id="${CHAT_ID}" \
-    -d text="${MESSAGE}" \
-    --max-time 10 >/dev/null 2>&1 || true
 fi

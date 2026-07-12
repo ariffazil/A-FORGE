@@ -30,12 +30,12 @@
 
 | Organ | Status | Latency |
 |-------|--------|---------|
-| arifos | ✅ UP | 17ms |
-| aforge | ✅ UP | 18ms |
-| aaa | ✅ UP | 20ms |
-| geox | ✅ UP | 56ms |
-| wealth | ✅ UP | 20ms |
-| well | ✅ UP | 20ms |
+| arifos | ✅ UP | 16ms |
+| aforge | ✅ UP | 17ms |
+| aaa | ✅ UP | 21ms |
+| geox | ✅ UP | 45ms |
+| wealth | ✅ UP | 15ms |
+| well | ✅ UP | 17ms |
 
 ## Entropy Details
 
@@ -48,7 +48,7 @@
 ## Capability Drift
 
 - Registered tools: 98
-- Uncommitted files across repos: 5
+- Uncommitted files across repos: 1
 
 ## Registry Scars
 
