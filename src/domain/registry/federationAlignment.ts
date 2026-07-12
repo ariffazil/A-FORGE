@@ -94,42 +94,49 @@ export function getActuator(name: string): ActuatorEntry | undefined {
 }
 
 /**
- * Rewrite MCP tool description as ACTUATOR contrast (not plugin, not kernel verb).
- * Keeps original detail after the constitutional header.
- * Binding 3 (mcp-builder-doctrine v1.1.0): appends "Use when..." from purpose field.
+ * Rewrite MCP tool description as ACTUATOR contrast.
+ * Zen v2026-07-12: stripped boilerplate. Format:
+ *   ACTUATOR • <affordance> • <mutation>. <canonical|base> Use when: <purpose>.
  */
+/** Strip old-format ACTUATOR boilerplate prefixes from description strings */
+function stripActuatorPrefix(text: string): string {
+  return text
+    .replace(/^ACTUATOR\s*[·•]\s*\w+\s*[·•]\s*\w+(\s*[·•]\s*kernel-supervised by[^.]*\.\s*)?/i, "")
+    .replace(/^ACTUATOR\s*\[[^\]]*\]\s*supervised by kernel\s*\w+[.\s]*/i, "")
+    .replace(/^ACTUATOR\s*[·•]\s*\w+\s*[·•]\s*\w+\s*[·•]\s*/i, "")
+    .replace(/^\.\s*/, "")  // clean leading period after strip
+    .trim();
+}
+
 export function enrichActuatorDescription(
   name: string,
   originalDescription: string | undefined,
 ): string {
   const entry = getActuator(name);
-  const base = (originalDescription ?? "").trim();
-  const trigger = entry?.purpose
-    ? ` Use when: ${entry.purpose}.`
-    : "";
+  let base = stripActuatorPrefix(originalDescription ?? "");
+  let trigger = "";
+  if (entry?.purpose) {
+    const clean = stripActuatorPrefix(entry.purpose).replace(/\.+$/, "").trim();
+    // Only add trigger if purpose is different from base (many registry entries duplicate them)
+    if (clean && !base.toLowerCase().startsWith(clean.toLowerCase().slice(0, 30))) {
+      trigger = ` Use when: ${clean}.`;
+    }
+  }
   if (!entry) {
-    // Still mark unknown tools as actuators so they never read as plugins.
-    return `ACTUATOR · A-FORGE hands · supervised by kernel 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. ${base}${trigger}`.trim();
+    return `${base}${trigger}`.trim();
   }
   if (entry.status === "DEPRECATED" && entry.redirect_to) {
     return (
       `ACTUATOR [DEPRECATED] → use ${entry.redirect_to}. ` +
-      `class=${entry.affordance_class} · surface=${entry.capability_surface}. ${base}${trigger}`
+      `${entry.affordance_class} · ${entry.capability_surface}. ${base}${trigger}`
     ).trim();
   }
-  if (entry.description_canonical && entry.description_canonical.length > 40) {
-    return `${entry.description_canonical}${trigger}`;
+  if (entry.description_canonical && !entry.description_canonical.includes("Not a plugin")) {
+    const cleanCanon = stripActuatorPrefix(entry.description_canonical);
+    if (cleanCanon) return `${cleanCanon}${trigger}`;
   }
-  const g = entry.gates;
   return (
-    `ACTUATOR · ${entry.affordance_class} · ${entry.mutation_class} · ` +
-    `kernel-supervised by ${entry.kernel_verb}` +
-    (entry.kernel_wire ? ` (${entry.kernel_wire})` : "") +
-    `. Not a plugin. Not a kernel verb. A-FORGE hands only. ` +
-    `Gates: session=${g.requires_session ? "Y" : "N"} ` +
-    `lease=${g.requires_lease ? "Y" : "N"} gate=Y ` +
-    `seal=${g.requires_seal ? "Y" : "N"} ` +
-    `approval=${g.requires_human_approval ? "Y" : "N"}. ` +
+    `ACTUATOR · ${entry.affordance_class} · ${entry.mutation_class}. ` +
     base + trigger
   ).trim();
 }

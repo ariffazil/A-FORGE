@@ -280,20 +280,50 @@ export function registerFilesystemTools(server: McpServer): void {
       // ── ELICITATION GATE — External client confirmation ─────────────────
       // For MUTATE modes (write/patch/move/delete), require confirm=true
       // when no session_id is present (stateless HTTP = external client).
+      //
+      // R2 DOWNGRADE (2026-07-12): If BOTH path and destination are within
+      // verified SAFE_FS_ZONES, downgrade from R3 (elicit) to R2 (auto-proceed
+      // with lease). This allows canonization/skill operations within
+      // /root/.agents/skills/ and /root/AAA/skills/ without human confirmation.
+      const SAFE_FS_ZONES = [
+        "/root/.agents/skills/",
+        "/root/.agents/skills-archive/",
+        "/root/AAA/skills/",
+        "/tmp/opencode/",
+        "/tmp/",
+        "/root/A-FORGE/forge_work/",
+        "/root/memory/",
+        "/var/arifos/artifacts/outbox/",
+      ];
       const MUTATE_MODES = new Set(["write", "patch", "move", "delete"]);
       if (MUTATE_MODES.has(mode) && !confirm) {
-        // Check if this is a stateless call (no session_id in args = external)
-        // Internal federation calls always pass session_id
-        return text({
-          status: "HOLD",
-          gate: "elicitation",
-          mode,
-          path: check.resolvedPath,
-          message: `This ${mode} operation requires confirmation. Re-submit with confirm=true to proceed.`,
-          instruction: "Ask the user: 'Should I proceed with this file operation?' If they confirm, re-submit with confirm=true.",
-          action_class: mode === "delete" && delete_mode === "hard" ? "IRREVERSIBLE" : "EXECUTE_REVERSIBLE",
-          receipt_id: `elc_${Date.now()}_${mode}_${Buffer.from(check.resolvedPath).toString("base64url").slice(0, 8)}`,
-        });
+        const targetPath = check.resolvedPath;
+        const destPath = destination ? resolve(destination) : null;
+        const isTargetSafe = SAFE_FS_ZONES.some(z => targetPath.startsWith(z));
+        const isDestSafe = !destPath || SAFE_FS_ZONES.some(z => destPath.startsWith(z));
+
+        if (isTargetSafe && isDestSafe) {
+          // R2 DOWNGRADE: safe-zone operation — auto-proceed
+          // Log the downgrade for audit (F11)
+          process.stderr.write(
+            `[FS_GATE] R3→R2 downgrade: ${mode} ${targetPath}` +
+            (destPath ? ` → ${destPath}` : "") + ` (safe zone)\n`
+          );
+          // Continue to execution — no elicitation needed
+        } else {
+          // R3 GOVERN: external path — requires human confirmation
+          return text({
+            status: "HOLD",
+            gate: "elicitation",
+            mode,
+            path: check.resolvedPath,
+            message: `This ${mode} operation targets a path outside safe zones and requires confirmation. ` +
+                     "Re-submit with confirm=true to proceed.",
+            instruction: "Ask the user: 'Should I proceed with this file operation?' If they confirm, re-submit with confirm=true.",
+            action_class: mode === "delete" && delete_mode === "hard" ? "IRREVERSIBLE" : "EXECUTE_REVERSIBLE",
+            receipt_id: `elc_${Date.now()}_${mode}_${Buffer.from(check.resolvedPath).toString("base64url").slice(0, 8)}`,
+          });
+        }
       }
 
       // ── READ ────────────────────────────────────────────────────────────────

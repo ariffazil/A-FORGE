@@ -94,7 +94,7 @@ test("D8 — VerticalAgentEngine runs 000→999 and produces BW14-valid envelope
     const r = agent.advance();
     advances.push({ ok: r.success, to: r.transition?.to ?? "?" });
     if (r.success && r.transition?.to === "999_SEAL") break;
-    if (!r.success && r.blockedBy) break;
+    if (!r.success && r.block_reason) break;
   }
 
   // Get the built envelope (typed, after D7)
