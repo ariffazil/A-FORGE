@@ -1,6 +1,6 @@
 <!-- SOT-MANIFEST
 federation_release: v2026.07.04-MCP-A2A
-last_verified: 2026-07-11T04:50Z
+last_verified: 2026-07-12T04:50Z
 live_commit: a86ac7a
 sense_port: 7071
 mcp_port: 7072
