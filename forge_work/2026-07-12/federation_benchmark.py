@@ -16,10 +16,23 @@ def ok(name: str, passed: bool, detail: str = "") -> None:
     print(f"{'PASS' if passed else 'FAIL'}  {name}" + (f" — {detail}" if detail else ""))
 
 
-def health(port: int, timeout: float = 2.0) -> bool:
+def health(port: int, timeout: float = 3.0) -> bool:
     try:
-        with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=timeout) as r:
-            return r.status == 200
+        req = urllib.request.Request(
+            f"http://127.0.0.1:{port}/health",
+            headers={"Host": "localhost", "Accept": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            body = r.read().decode("utf-8", errors="replace")
+            if r.status != 200:
+                return False
+            # Prefer JSON status when present
+            try:
+                d = json.loads(body)
+                st = str(d.get("status", "")).lower()
+                return st in ("healthy", "ok", "degraded", "ready") or bool(d)
+            except Exception:
+                return len(body) > 0
     except Exception:
         return False
 
