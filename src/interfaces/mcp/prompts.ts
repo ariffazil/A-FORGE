@@ -36,6 +36,40 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 
+/**
+ * Sanitize a prompt argument before string interpolation.
+ * Spec MUST: "Implementations MUST carefully validate all prompt inputs
+ * and outputs to prevent injection attacks" (MCP 2025-06-18 §prompts).
+ * Strips control chars, bidi overrides, zero-width chars, template
+ * metacharacters, path-traversal sequences, and enforces length cap.
+ * @constitutional F12 INJECTION
+ */
+function sanitizeArg(value: unknown, name: string, maxLen = 4096): string {
+  if (value === undefined || value === null) return "";
+  const raw = typeof value === "string" ? value : String(value);
+  // Strip control chars (C0 + DEL), bidi overrides, zero-width, BOM
+  let s = raw
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+    .replace(/[\u202A-\u202E\u2066-\u2069]/g, "")
+    .replace(/[\u200B-\u200F\uFEFF]/g, "");
+  // Strip path-traversal sequences (../ and ..\)
+  s = s.replace(/\.\.[\\/]/g, "[path-redacted]/").replace(/\.\.$/, "[path-redacted]");
+  // Escape template metacharacters (defense in depth — F12)
+  s = s.replace(/{{/g, "{ {").replace(/}}/g, "} }").replace(/\$\{/g, "$ {");
+  // Length-limit (DoS)
+  if (s.length > maxLen) s = s.slice(0, maxLen) + "…[truncated]";
+  return s;
+}
+
+/** Wrap all args with sanitizer. Call once at the top of each prompt callback. */
+export function sanitizeArgs<T extends Record<string, unknown>>(args: T): T {
+  const out = {} as T;
+  for (const k of Object.keys(args)) {
+    (out as any)[k] = sanitizeArg((args as any)[k], k);
+  }
+  return out;
+}
+
 export function registerPrompts(server: McpServer): void {
   // ── Fix Bug ──────────────────────────────────────────────────────────
   server.prompt(
@@ -45,13 +79,15 @@ export function registerPrompts(server: McpServer): void {
       description: z.string().describe("What is the bug? Include error messages, steps to reproduce"),
       file_context: z.string().optional().describe("Relevant file paths or code snippets"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Bug to fix: ${args.description}${args.file_context ? `\nRelevant context: ${args.file_context}` : ""}
+            text: `Bug to fix: ${s.description}${s.file_context ? `\nRelevant context: ${s.file_context}` : ""}
 
 Follow this workflow:
 1. REPRODUCE — Use forge_shell_dryrun to reproduce the bug. Capture the exact error.
@@ -67,7 +103,8 @@ Constitutional gates:
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ── Refactor Module ──────────────────────────────────────────────────
@@ -78,14 +115,16 @@ Constitutional gates:
       module_path: z.string().describe("Path to the module or file to refactor"),
       goal: z.string().describe("What improvement? (reduce complexity, extract functions, improve naming)"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Refactor target: ${args.module_path}
-Goal: ${args.goal}
+            text: `Refactor target: ${s.module_path}
+Goal: ${s.goal}
 
 Follow this workflow:
 1. ANALYZE — Use forge_filesystem (read) to read the module. Understand current structure.
@@ -101,7 +140,8 @@ Constitutional gates:
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ── Deploy Service ───────────────────────────────────────────────────
@@ -112,13 +152,15 @@ Constitutional gates:
       service: z.string().describe("Service name or path to deploy"),
       target: z.string().describe("Deployment target (docker, systemd, cloudflare)"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Deploy: ${args.service} → ${args.target}
+            text: `Deploy: ${s.service} → ${s.target}
 
 Follow this workflow:
 1. BUILD — Use npm run build (via forge_shell_dryrun first, then forge_shell for production). Must pass.
@@ -140,7 +182,8 @@ Constitutional gates:
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ── Audit Code ───────────────────────────────────────────────────────
@@ -151,14 +194,16 @@ Constitutional gates:
       scope: z.string().describe("What to audit (file path, directory, or 'full')"),
       focus: z.string().optional().describe("Audit focus (security, performance, governance, mcp-surface, all)"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Audit scope: ${args.scope}
-Focus: ${args.focus || "all"}
+            text: `Audit scope: ${s.scope}
+Focus: ${s.focus || "all"}
 
 Follow this workflow:
 1. SCAN — Use forge_filesystem (glob/grep) to find relevant files.
@@ -182,7 +227,8 @@ Constitutional gates:
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ── Research Topic ────────────────────────────────────────────────────
@@ -194,15 +240,17 @@ Constitutional gates:
       depth: z.string().optional().describe("Research depth: quick, standard, deep"),
       document_path: z.string().optional().describe("Path to a local document (PDF, image) for document intelligence extraction"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Research: ${args.topic}
-Depth: ${args.depth || "standard"}
-${args.document_path ? `Document: ${args.document_path}` : ""}
+            text: `Research: ${s.topic}
+Depth: ${s.depth || "standard"}
+${s.document_path ? `Document: ${s.document_path}` : ""}
 
 Follow this workflow:
 1. QUESTION — State the exact question. No vague research.
@@ -228,7 +276,8 @@ Constitutional gates:
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ── Cross-Organ Query ────────────────────────────────────────────────
@@ -239,17 +288,19 @@ Constitutional gates:
       query: z.string().describe("What you want to know or do — expressed as intent, not tool name"),
       a2a_discovery: z.boolean().optional().describe("If true, also query A2A Agent Cards for capability discovery"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Query: ${args.query}
+            text: `Query: ${s.query}
 A2A Discovery: ${args.a2a_discovery ?? false}
 
 ROUTE VIA arif_route (PRIMARY):
-Call arifOS arif_route(intent="${args.query}") FIRST to determine the correct organ.
+Call arifOS arif_route(intent="${s.query}") FIRST to determine the correct organ.
 arif_route returns: {organ, port, tool_prefix, suggested_tools, confidence}.
 Do NOT hardcode organ/port mappings — arif_route is source of truth.
 
@@ -282,7 +333,8 @@ forge_probe can check organ liveness before routing.`,
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ═══════════════════════════════════════════════════════════════════
@@ -314,13 +366,15 @@ forge_probe can check organ liveness before routing.`,
       question: z.string().describe("The question or decision requiring APEX-level reasoning"),
       depth: z.enum(["quick", "standard", "deep"]).optional().describe("Reasoning depth: quick=3-phase, standard=5-phase, deep=5-phase+thermo"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `APEX Reason: ${args.question}
+            text: `APEX Reason: ${s.question}
 Depth: ${args.depth || "standard"}
 
 Execute the full APEX reasoning pipeline:
@@ -364,7 +418,8 @@ Output format:
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ── Quantum Frame (Superposition Before Measurement) ──────────────────
@@ -375,13 +430,15 @@ Output format:
       situation: z.string().describe("The situation requiring quantum framing"),
       hypothesis_count: z.string().optional().describe("Number of hypotheses to generate (default: 4)"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Quantum Frame: ${args.situation}
+            text: `Quantum Frame: ${s.situation}
 Hypotheses: ${args.hypothesis_count || "4"}
 
 You are a quantum observer. You hold ALL hypotheses simultaneously without collapsing to one.
@@ -414,7 +471,8 @@ The goal is NOT to find the right answer. The goal is to hold uncertainty open l
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ── Reality Engineer (TEXT IS REALITY) ────────────────────────────────
@@ -425,13 +483,15 @@ The goal is NOT to find the right answer. The goal is to hold uncertainty open l
       target: z.string().describe("What reality to engineer (file, system, behavior)"),
       nature: z.enum(["create", "transform", "repair", "dissolve"]).optional().describe("Nature of the reality operation"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Reality Engineer: ${args.target}
+            text: `Reality Engineer: ${s.target}
 Operation: ${args.nature || "transform"}
 
 TEXT IS REALITY. The text is the frame is the program is the action. All four collapse into one.
@@ -470,7 +530,8 @@ The scribe is the doer. The text is the world. Forge responsibly.`,
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ── Gödel Metabolize (Self-Consistency Before Action) ─────────────────
@@ -481,13 +542,15 @@ The scribe is the doer. The text is the world. Forge responsibly.`,
       plan: z.string().describe("The plan, belief, or reasoning chain to metabolize"),
       domain: z.enum(["code", "governance", "capital", "earth", "system"]).optional().describe("Domain of the reasoning"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Gödel Metabolize: ${args.plan}
+            text: `Gödel Metabolize: ${s.plan}
 Domain: ${args.domain || "code"}
 
 You must prove your own reasoning is internally consistent before acting.
@@ -531,7 +594,8 @@ OUTPUT:
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ── Thermodynamic Zen (Entropy Minimization) ─────────────────────────
@@ -542,13 +606,15 @@ OUTPUT:
       system: z.string().describe("What system to observe or analyze"),
       action_budget: z.string().optional().describe("Maximum actions allowed (default: 3)"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Thermodynamic Zen: ${args.system}
+            text: `Thermodynamic Zen: ${s.system}
 Action Budget: ${args.action_budget || "3"}
 
 PRINCIPLE: Maximum understanding with minimum action. ΔS ≤ 0.
@@ -599,7 +665,8 @@ ZEN MAXIM: The best engineer is the one you barely notice. The system runs itsel
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // Reality Loop (Intent Compiler)
@@ -618,16 +685,18 @@ ZEN MAXIM: The best engineer is the one you barely notice. The system runs itsel
       intent: z.string().optional().describe("What this loop should focus on. Default: self-sustaining federation health."),
       config: z.string().optional().describe('JSON config overrides: {iteration_depth, max_hypotheses, action_budget, auto_execute, seal_every_iteration, min_g_score=0.70, min_witness=0.70}. Thresholds are PHASE 1 HEURISTIC pending ROC calibration.'),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
             text: `REALITY LOOP — Intent Compiler
-Session: ${args.session_id || "NEW"}
-Intent: ${args.intent || "Self-sustaining federation health. Monitor all 7 organs, detect drift, fix issues, improve itself."}
-Config: ${args.config || "{}"}
+Session: ${s.session_id || "NEW"}
+Intent: ${s.intent || "Self-sustaining federation health. Monitor all 7 organs, detect drift, fix issues, improve itself."}
+Config: ${s.config || "{}"}
 Thresholds (PHASE 1 HEURISTIC — not calibrated): min_g_score=0.70, min_witness=0.70. Override via config.min_g_score / config.min_witness.
 
 ─── WHAT THIS ACTUALLY IS ───
@@ -773,7 +842,8 @@ DITEMPA BUKAN DIBERI — Forged, Not Given.`,
           },
         },
       ],
-    }),
+      };
+    },
   );
 
   // ── Recursive Self-Improve (AGI Meta-Cognition) ──────────────────────
@@ -784,14 +854,16 @@ DITEMPA BUKAN DIBERI — Forged, Not Given.`,
       session_summary: z.string().describe("Summary of the current session's reasoning, decisions, and outcomes"),
       capability: z.string().optional().describe("Which capability to improve (reasoning, planning, search, memory, tool-use)"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [
         {
           role: "user" as const,
           content: {
             type: "text" as const,
-            text: `Recursive Self-Improve: ${args.session_summary}
-Focus: ${args.capability || "reasoning"}
+            text: `Recursive Self-Improve: ${s.session_summary}
+Focus: ${s.capability || "reasoning"}
 
 Examine your own mind. Find the bottleneck. Propose the fix.
 
@@ -807,7 +879,7 @@ PHASE 1 — TRACE YOUR REASONING
   - What actions did you take?
 
 PHASE 2 — FIND THE BOTTLENECK
-  In ${args.capability || "reasoning"}, what is the single largest limiter?
+  In ${s.capability || "reasoning"}, what is the single largest limiter?
   - Insufficient context? → suggest context window optimization
   - Incorrect priors? → suggest belief update mechanism
   - Tool misuse? → suggest tool selection pattern
@@ -845,6 +917,7 @@ OUTPUT:
           },
         },
       ],
-    }),
+      };
+    },
   );
 }

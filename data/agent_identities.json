@@ -434,5 +434,22 @@
     "last_seen": "2026-07-11T12:46:00Z",
     "lease_ids": [],
     "trust_tier": "OBSERVED"
+  },
+  "meta-test-agent": {
+    "agent_id": "meta-test-agent",
+    "agent_type": "custom",
+    "role": "canary_tester",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "mutate_files": "sandbox_only",
+      "TEST_SANDBOX_WRITE": true
+    },
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAU6XeFYm+afE4lihCouQKH8dRTl18LCZDSgl1GXpRJhc=\n-----END PUBLIC KEY-----\n"
+    },
+    "registered_at": "2026-07-12T20:24:36Z",
+    "trust_tier": "VERIFIED"
   }
 }

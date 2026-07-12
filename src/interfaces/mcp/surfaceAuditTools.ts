@@ -27,6 +27,7 @@ import { resolve } from "node:path";
 import { glob } from "node:fs/promises";
 import { parse as parseYaml } from "yaml";
 import { queryRegistry } from "../../domain/forge/register.js";
+import { sanitizeArgs } from "./prompts.js";
 
 type AffordanceEntry = {
   name: string;
@@ -269,16 +270,18 @@ export function registerSurfaceAuditTools(server: McpServer): void {
       auto_fix: z.boolean().optional().default(false)
         .describe("If true, apply suggested fixes automatically after audit"),
     },
-    (args) => ({
+    (args) => {
+      const s = sanitizeArgs(args);
+      return {
       messages: [{
         role: "user" as const,
         content: {
           type: "text" as const,
-          text: `Surface Audit: ${args.organ}
+          text: `Surface Audit: ${s.organ}
 Auto-fix: ${args.auto_fix ?? false}
 
 Workflow:
-1. AUDIT — Run forge_surface_audit(organ="${args.organ}", mode=audit)
+1. AUDIT — Run forge_surface_audit(organ="${s.organ}", mode=audit)
    This compares the live MCP tool registry against affordances.yaml.
 
 2. REVIEW — Check each finding:
@@ -300,6 +303,7 @@ Constitutional gates:
 The pattern is simple: phantom rot accumulates when code evolves but docs don't. This tool catches it before next audit cycle.`,
         },
       }],
-    }),
+      };
+    },
   );
 }

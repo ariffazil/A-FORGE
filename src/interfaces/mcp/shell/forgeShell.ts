@@ -93,8 +93,64 @@ function SHA256(data: string): string {
   return createHash("sha256").update(data).digest("hex");
 }
 
+// ── SAFE FILESYSTEM ZONES ─────────────────────────────────────────────────
+// Paths where filesystem mutations (mv, rm, cp, touch, mkdir, chmod)
+// are permitted with standard EXECUTE authority — no R3 GOVERN required.
+// These are the canonical skill/config directories and scratch spaces.
+// Mutations outside these zones require R3 GOVERN (human confirmation).
+const SAFE_FS_ZONES = [
+  "/root/.agents/skills/",
+  "/root/.agents/skills-archive/",
+  "/root/AAA/skills/",
+  "/tmp/opencode/",
+  "/tmp/",
+  "/root/A-FORGE/forge_work/",
+  "/root/memory/",
+  "/var/arifos/artifacts/outbox/",
+];
+
+/** Extract target paths from a shell command. */
+function extractTargetPaths(command: string): string[] {
+  const tokens = command.split(/\s+/);
+  const paths: string[] = [];
+  // Common mutation commands where arg[1] or arg[2] is a path
+  for (let i = 1; i < tokens.length; i++) {
+    const t = tokens[i];
+    // Skip flags
+    if (t.startsWith("-")) continue;
+    // Skip non-path tokens (assignments, redirects)
+    if (t.includes("=") || t.startsWith(">") || t.startsWith("<") || t.startsWith("|")) continue;
+    // Collect paths — resolve relative to /root for checking
+    if (t.startsWith("/")) {
+      paths.push(t);
+    } else if (t.startsWith(".")) {
+      paths.push(t); // relative — checked against cwd at gate
+    } else if (!t.includes("/") && !t.includes(".")) {
+      // Could be a filename without path — check cwd at gate time
+      paths.push(t);
+    }
+  }
+  return paths;
+}
+
+/** Check if a path is within any safe zone. */
+function isPathInSafeZone(path: string): boolean {
+  const resolved = path.startsWith("/") ? path : `/root/${path}`;
+  for (const zone of SAFE_FS_ZONES) {
+    if (resolved.startsWith(zone)) return true;
+  }
+  return false;
+}
+
+/** Check if ALL target paths in a command are within safe zones. */
+function areAllPathsInSafeZone(command: string): boolean {
+  const paths = extractTargetPaths(command);
+  if (paths.length === 0) return false; // no paths detected → conservative: require GOVERN
+  return paths.every(p => isPathInSafeZone(p));
+}
+
 // ── 4-Tier Risk Classifier ───────────────────────────────────────────────────
-type RiskLevel = "SAFE" | "MUTATION" | "IRREVERSIBLE" | "GODEL_LOCKED";
+type RiskLevel = "SAFE" | "MUTATION" | "MUTATION_SAFE_ZONE" | "MUTATION_GOVERN" | "IRREVERSIBLE" | "GODEL_LOCKED";
 
 function classifyShellCommandRisk(command: string): RiskLevel {
   const trimmed = command.trim();
@@ -132,14 +188,23 @@ function classifyShellCommandRisk(command: string): RiskLevel {
   if (subs.some((s) => subCmd.startsWith(s))) return "IRREVERSIBLE";
 
   // MUTATION — requires EXECUTE authority (no readonly bypass)
-  const MUTATION_COMMANDS = new Set([
-    "mkdir", "rmdir", "touch", "rm", "mv", "cp", "ln", "unlink",
-    "chmod", "chown", "chgrp",
+  // NOW PATH-AWARE: safe-zone mutations → MUTATION_SAFE_ZONE (standard R2 EXECUTE)
+  //                  external mutations → MUTATION_GOVERN (R3 GOVERN)
+  const FS_MUTATION_COMMANDS = new Set([
+    "mv", "rm", "cp", "touch", "mkdir", "rmdir", "chmod", "chown", "chgrp",
+    "ln", "unlink",
+  ]);
+  const OTHER_MUTATION_COMMANDS = new Set([
     "npm", "yarn", "pnpm", "pip", "pip3", "uv",
     "ssh", "scp", "rsync",
     "journalctl",
   ]);
-  if (MUTATION_COMMANDS.has(baseCmd)) return "MUTATION";
+
+  if (FS_MUTATION_COMMANDS.has(baseCmd)) {
+    // Filesystem mutation — PATH AWARE gating
+    return areAllPathsInSafeZone(command) ? "MUTATION_SAFE_ZONE" : "MUTATION_GOVERN";
+  }
+  if (OTHER_MUTATION_COMMANDS.has(baseCmd)) return "MUTATION";
 
   return "SAFE";
 }
@@ -255,6 +320,50 @@ async function preExecutionGate(
     }
 
     return { status: "SEAL_VALID", verified };
+  }
+
+  // MUTATION_GOVERN — filesystem mutation targeting paths OUTSIDE safe zones
+  // Requires R3 GOVERN: human confirmation via elicitation flow.
+  // This closes the shell bypass: `bash mv /etc/hosts` → BLOCKED without GOVERN.
+  if (risk === "MUTATION_GOVERN") {
+    if (!envelope?.session_id) {
+      return {
+        status: "GATE_HOLD",
+        gate: "R3_GOVERN_FS_MUTATION",
+        required: "GOVERN",
+        got: "none",
+        reason: "Filesystem mutation targeting path outside safe zones. " +
+                "Use forge_filesystem_move/forge_filesystem_write for governed filesystem ops, " +
+                "or use forge_shell with session_id + EXECUTE authority for safe-zone mutations.",
+        required_action: "Route through forge_filesystem_* tools OR provide session_id with GOVERN authority",
+      };
+    }
+    // Even with session_id, R3 GOVERN requires explicit human confirmation
+    return {
+      status: "GATE_HOLD",
+      gate: "R3_GOVERN_FS_MUTATION",
+      required: "GOVERN",
+      got: envelope.session_id ? "EXECUTE" : "none",
+      reason: "Filesystem mutation targeting path outside safe zones requires GOVERN authority. " +
+              `Command: ${command.split(/\s+/)[0]} targets external path. ` +
+              "Safe zones: /root/.agents/skills/, /root/AAA/skills/, /tmp/opencode/",
+      required_action: "Use forge_filesystem_move for this operation, or obtain GOVERN authority from arifOS",
+    };
+  }
+
+  // MUTATION_SAFE_ZONE — filesystem mutation within verified safe zone
+  // Downgraded from R3 GOVERN to R2 EXECUTE. Still requires session_id.
+  if (risk === "MUTATION_SAFE_ZONE") {
+    if (!envelope?.session_id) {
+      return {
+        status: "GATE_HOLD",
+        gate: "EXECUTE_AUTHORITY",
+        required: "EXECUTE",
+        got: "none",
+        required_action: "Call arif_init() to obtain EXECUTE authority for safe-zone mutation",
+      };
+    }
+    return { status: "EXECUTE_VALID" };
   }
 
   if (risk === "MUTATION") {
