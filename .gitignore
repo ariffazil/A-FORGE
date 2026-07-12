@@ -131,3 +131,4 @@ Copilot/
 
 # forge_work — session receipts, working notes, local artifacts
 forge_work/
+.audit_output.txt
