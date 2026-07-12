@@ -1,21 +1,22 @@
 <!-- SOT-MANIFEST
 federation_release: v2026.07.12-CONSOLIDATION-EPOCH
-last_verified: 2026-07-12T04:50Z
-live_commit: a86ac7a
+last_verified: 2026-07-12T23:38Z
+live_commit: 27fbfb8
 sense_port: 7071
 mcp_port: 7072
-mcp_stateless_tools: 52
+mcp_tools_live: 102
 owner_summary: GREEN
 changelog: /root/CHANGELOG-2026-07-04.md
 a2a_agent_json: /root/A-FORGE/.well-known/agent.json
-machine_sot: /root/A-FORGE/forge_work/2026-07-09/MACHINE-SOT-2026-07-09.json
+machine_sot: /root/.claude/jobs/5d0ce6b2/tmp/artifacts/FEDERATION-SOT-20260712/MACHINE-SOT-2026-07-12.json
+truth_rule: MCP tools/list on :7072 beats any static count in prose
 -->
 
 # A-FORGE — Governed Execution Shell
 
 Governed execution shell for the arifOS Federation. Hands do not judge. Brain does not execute. Each organ stays in its lane.
 
-MCP: **52 stateless tools** live on `:7072` (`a-forge-mcp.service`); **98 total** across stateless + session-bound. Public door: `mcp.arif-fazil.com`. A2A: routing mesh via AAA cockpit.
+MCP: **102 tools** live on `:7072` (`a-forge-mcp.service`); **98 total** across stateless + session-bound. Public door: `mcp.arif-fazil.com`. A2A: routing mesh via AAA cockpit.
 
 [![Agentic CI](https://github.com/ariffazil/A-FORGE/actions/workflows/agentic-ci.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/agentic-ci.yml)
 [![Boundary Guard](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml)
