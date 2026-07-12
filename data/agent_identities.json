@@ -219,10 +219,10 @@
       "channel": "mcp_arif_route_wealth",
       "at": "2026-07-09T01:50:05.510110+00:00",
       "session_id": "SEAL-f0c2d4b69afc438d",
-      "tool": "arif_route→wealth_compute_irr",
+      "tool": "arif_route\u2192wealth_compute_irr",
       "identity_propagated": true,
       "irr_sample": 0.218623,
-      "note": "Governed tool pulse under signed session — not Telegram human leg; human F3 still optional for SEAL autonomy"
+      "note": "Governed tool pulse under signed session \u2014 not Telegram human leg; human F3 still optional for SEAL autonomy"
     },
     "pulse_count": 1
   },
@@ -284,10 +284,10 @@
       "channel": "mcp_arif_route_wealth",
       "at": "2026-07-09T01:50:05.510110+00:00",
       "session_id": "SEAL-68874e9672594bd5",
-      "tool": "arif_route→wealth_compute_irr",
+      "tool": "arif_route\u2192wealth_compute_irr",
       "identity_propagated": true,
       "irr_sample": 0.218623,
-      "note": "Governed tool pulse under signed session — not Telegram human leg; human F3 still optional for SEAL autonomy"
+      "note": "Governed tool pulse under signed session \u2014 not Telegram human leg; human F3 still optional for SEAL autonomy"
     },
     "pulse_count": 1
   },
@@ -322,10 +322,10 @@
       "channel": "mcp_arif_route_wealth",
       "at": "2026-07-09T01:50:05.510110+00:00",
       "session_id": "SEAL-87208054f7e0474b",
-      "tool": "arif_route→wealth_compute_irr",
+      "tool": "arif_route\u2192wealth_compute_irr",
       "identity_propagated": true,
       "irr_sample": 0.218623,
-      "note": "Governed tool pulse under signed session — not Telegram human leg; human F3 still optional for SEAL autonomy"
+      "note": "Governed tool pulse under signed session \u2014 not Telegram human leg; human F3 still optional for SEAL autonomy"
     },
     "pulse_count": 1
   },
@@ -412,12 +412,27 @@
   },
   "arif": {
     "agent_id": "arif",
-    "agent_type": "custom",
-    "role": "controller",
-    "authority": {},
-    "identity_proof": "pending",
-    "registered_at": "2026-07-09T03:35:17.579Z",
-    "last_seen": "2026-07-09T03:35:17.579Z",
-    "lease_ids": []
+    "agent_type": "sovereign",
+    "role": "sovereign_principal",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "always",
+      "shell_exec": "always",
+      "git_commit": "always",
+      "deploy": "always",
+      "vault_seal": "always"
+    },
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA/8srcNdnITCuEYrwgqO0MsMAMt4h35z1w6+39Tuptrc=\n-----END PUBLIC KEY-----",
+      "registered_at": "2026-07-11T12:46:00Z",
+      "note": "Sovereign principal \u2014 F13 authority"
+    },
+    "registered_at": "2026-07-11T12:46:00Z",
+    "last_seen": "2026-07-11T12:46:00Z",
+    "lease_ids": [],
+    "trust_tier": "OBSERVED"
   }
 }
