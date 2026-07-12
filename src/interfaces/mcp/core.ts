@@ -77,6 +77,7 @@ import { registerSurfaceGuardTools } from "./surfaceGuardTools.js";
 import { registerSurfaceAuditTools } from "./surfaceAuditTools.js";
 import { registerStateAnchorTools } from "./stateAnchorTools.js";
 import { registerVerifyTimelineTools } from "./verifyTimelineTools.js";
+import { registerParallelTools } from "./parallelTools.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { elicitUser, tradeConfirmationSchema, isGenuineAuthorization } from "./elicitation.js";
 import {
@@ -2128,6 +2129,12 @@ registerGovernedTools(server);
 // ── Phase 4: Reality Loop — Intent Compiler ────────────────────────────────
 // 7-stage state-tracking ledger; agent orchestrates MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN.
 registerRealityLoopTools(server);
+
+// ── Phase 8: Parallel Orchestration — A2A task groups ─────────────────────
+// forge_parallel: fan-out N concurrent A2A tasks with bounded concurrency,
+// timeout, cancellation propagation, and Δ receipts. Thin layer over existing
+// A2A verbs (message/send, tasks/get, tasks/cancel). No new primitives.
+registerParallelTools(server);
 
 // ── Resilience Tools — AAA-FORGE-RESILIENCE-v0.1 ────────────────────────────
 registerResilienceTools(server);

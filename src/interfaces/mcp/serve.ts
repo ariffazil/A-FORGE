@@ -81,6 +81,12 @@ const STATELESS_TOOLS = new Set([
   // All modes are read-only (audit, scan). fix mode produces DRAFT only.
   "forge_surface_audit",
 
+  // ── Phase 8: Parallel Orchestration (2026-07-11) ────────────────────
+  // Read-only status/list tools. forge_parallel and forge_parallel_cancel
+  // are MUTATE and require session ownership.
+  "forge_parallel_list",
+  "forge_parallel_status",
+
   // ── Phase 8: P0 Machine Constitution Layer (2026-07-04) ─────────
   // VPS state-anchor tools. All modes are read-only observation.
   // F1 AMANAH: never mutate, only sense. F2 TRUTH: labeled outputs.

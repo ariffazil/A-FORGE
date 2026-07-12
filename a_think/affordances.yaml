@@ -1629,3 +1629,68 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
+- name: forge_parallel
+  purpose: "ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Spawn N concurrent A2A tasks with bounded concurrency, timeout, cancellation propagation, and Δ receipts. Thin orchestration over existing A2A verbs."
+  affordance_class: orchestration
+  capability_surface: aforge.execute.parallel
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - session
+  - a2a_tasks
+  writes:
+  - a2a_tasks
+  - task_groups
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: FORGE
+  risk_label: R2
+- name: forge_parallel_status
+  purpose: "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Query the status of a parallel task group by group_id. Returns member states, outputs, and Δ anchors."
+  affordance_class: orchestration
+  capability_surface: aforge.registry.parallel_status
+  kernel_verb: 000_TRIAGE
+  mutation_class: OBSERVE
+  reads:
+  - task_groups
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_parallel_cancel
+  purpose: "ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Cancel all running agents in a parallel task group. Propagates tasks/cancel to each non-terminal member."
+  affordance_class: orchestration
+  capability_surface: aforge.execute.parallel_cancel
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - task_groups
+  - a2a_tasks
+  writes:
+  - a2a_tasks
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: FORGE
+  risk_label: R1
+- name: forge_parallel_list
+  purpose: "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. List all task groups with their status. For monitoring and debugging."
+  affordance_class: orchestration
+  capability_surface: aforge.registry.parallel_list
+  kernel_verb: 000_TRIAGE
+  mutation_class: OBSERVE
+  reads:
+  - task_groups
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0

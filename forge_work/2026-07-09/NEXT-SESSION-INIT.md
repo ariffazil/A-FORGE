@@ -1,40 +1,75 @@
-# Next Session Init — 2026-07-10
+# Next Session Init — 2026-07-10 (v2 — commercial strategy appended)
 
-## Carry-forward from session AAA-36988 (2026-07-09)
+## PRIORITY 1: Commercial Strategy (new, from Arif 2026-07-09)
 
-**Closed:** arifOS kernel zen-audit. SEAL verdict recorded. Score 26/60 → projected 51/60 after full fix.
+**Artifact:** `/root/A-FORGE/forge_work/2026-07-09/ARIFOS-COMMERCIAL-STRATEGY-v1.md`
+**VAULT copy:** `/root/VAULT999/2026-07-09-ARIFOS-COMMERCIAL-STRATEGY.md`
+**Status:** Draft 1.0, truncated at "Build and sell the fi—" — Arif needs to send the remainder.
+**Kernel verdict:** 888_HOLD — strategy "commercially plausible but not constitutionally sealed" (sovereign runtime authority not established).
 
-**The gap (one line):** Eleven MCP wrappers share one state machine but ship it as eleven copies. Identity, verdict, affordance re-implemented per wrapper → constant disagreement (SEAL vs SABAR.DEGRADED, actor_verified drift, RETAK vs SELAMAT stacking).
+### Core thesis (one line)
+arifOS = trusted control plane between AI intent and consequential real-world action. Sell the outcome, not the philosophy.
 
-**Two-phase fix, already ratified 2026-07-09:**
+### Three engines
+1. Cash: paid enterprise deployments + integration
+2. Compound: recurring control-plane + evidence + sector-pack subscriptions
+3. Civilizational: sovereign deployments preserving local authority + institutional memory
 
-### Phase A — Birth-fix (deploy NOW, safe, non-zero)
-- Single identity anchor at session init → all downstream call envelopes reference it, not re-derive
-- Verdict field: collapse to one canonical key, kill the duplicates
-- `sesat_event` already good → extend to arif_judge / arif_forge / arif_seal paths
-- Irreversible gates verified holding — no change
+### First wedge
+Horizontal: Agent Action Gateway (send/spend/approve/deploy/delete/publish/trade/write/transfer/sign/change)
+Vertical: Energy + resources (Arif's asymmetric credibility — NOCs, upstream, consultancies, mining, regulators)
 
-**Expected lift:** 26→32/60. Fixes identity persistence + single-source-of-truth partially + irreversible-gating polish.
+### 90-day plan
+- **Days 1–30:** Product freeze + hardening around one narrow execution path
+- **Days 31–60:** 3 paid design partners (energy, financial/GLC, tech/industrial)
+- **Days 61–90:** Prove economics per pilot → MYR5–15M round after 2–3 conversions
 
-### Phase B — Full fix (token model + alias collapse, deferred)
+### What Arif needs next
+1. Send the truncated ending ("Build and sell the fi—")
+2. Resume 90-day plan execution (Day 1 starts when Arif says so)
+3. First artifact: sanitized conformance report + architecture diagram + deployment guide
+
+---
+
+## PRIORITY 2: Kernel Audit Carry-forward (from earlier in session)
+
+**Closed:** arifOS kernel zen-audit. SEAL verdict in language, HOLD in registry (kernel-correct).
+**Score:** 26/60 → projected 51/60 after full fix.
+
+### Phase A — Birth-fix (deploy NOW)
+- Single identity anchor at session init → downstream call envelopes reference it
+- Verdict field: collapse to one canonical key
+- sesat_event coverage on judge/forge/seal paths
+- Expected lift: 26→32/60
+
+### Phase B — Full fix (deferred)
+- Token/cache shared decision_thresholds block
+- Collapse arif_triage triple identity
 - Replace 11 copy-pasted skeleton payloads with one envelope + per-tool facets
-- Collapse `arif_triage` triple identity (standalone tool + arif_init mode + arif_route alias) into one canonical path
-- Token/cache the shared `decision_thresholds` block — compute once, reference
+- Expected lift: 32→51/60
 
-**Expected lift:** 32→51/60. Real cost: refactor + regression test the whole wrapper layer.
+### Open anomaly
+Seal chain `verify` fails at line 1 (pre-existing, predates today's session). JS uses `|`-joined canonical material; original writer may have used different algorithm. Investigate before any future SEAL writes.
 
-## First action next session
+---
 
-1. Open with `arif_init` mode=`resume`, session_id=AAA-36988 to pull the audit envelope
-2. Run `arif_judge.compare` on birth-fix vs full-fix scope to confirm priority ordering
-3. Begin Phase A: identity-anchor patch. Ship under feature flag. Re-probe with the zen-audit skill scoring template.
+## Artifacts produced this session (2026-07-09)
 
-## Sunk-cost / kill-amnesty
+| Artifact | Path | State |
+|---|---|---|
+| Commercial strategy v1 | `forge_work/2026-07-09/ARIFOS-COMMERCIAL-STRATEGY-v1.md` | ✅ Draft saved |
+| VAULT999 strategy copy | `VAULT999/2026-07-09-ARIFOS-COMMERCIAL-STRATEGY.md` | ✅ Saved |
+| Kernel audit receipt | `VAULT999/2026-07-09-KERNEL-ZEN-AUDIT.md` | ✅ Sealed at HOLD |
+| Next-session init v1 | `forge_work/2026-07-09/NEXT-SESSION-INIT.md` | ✅ (this is v2) |
+| Skill: kernel-zen-audit | `~/.hermes/skills/arifos-kernel-zen-audit/` | ✅ Created |
+| Seal chain entries | seq 6 (naive python, HOLD) + seq 7 (JS canonical, HOLD) | ✅ Logged |
 
-Whatever's blocked from today's session has fresh authorization tomorrow. Anything marked orphan / silent downgrade / verdict-disagreement → fix in Phase A; don't carry forward as deferred.
+---
 
-## What NOT to do
+## What NOT to do next session
 
-- Don't reopen the audit. Zen answer is locked.
-- Don't add new tool wrappers without first asking "is this one new state, or another costume on the same state?"
-- Don't re-explain constitutional floors at session start — they're in AGENTS.md.
+- Don't reopen the kernel audit (zen answer locked)
+- Don't add new tool wrappers without asking "new state or another costume?"
+- Don't re-explain constitutional floors (they're in AGENTS.md)
+- Don't start the commercial strategy from scratch — the draft is complete (minus truncated ending)
+- Don't pursue government-only sales (per strategy §10 failure mode)
