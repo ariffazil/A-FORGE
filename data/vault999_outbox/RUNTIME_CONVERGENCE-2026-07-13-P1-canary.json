@@ -1,0 +1,16 @@
+{
+  "receipt_id": "rcpt-5760f3fc937a1fb6673cd9f1",
+  "event_type": "RUNTIME_CONVERGENCE",
+  "payload_hash": "sha256:17b6ee05b2ab0289485a8f6a85c0e88e57a89d24293a2ee08276b652cf7b6e7c",
+  "previous_hash": "sha256:5edbc61",
+  "writer_identity": "agi-agent",
+  "key_id": "sovereign",
+  "timestamp": "2026-07-13T01:45:32.828905+00:00",
+  "schema_version": "v1",
+  "signature": "tyIN8y9zadG3gWU4xA+YVbE4ndtQ9TPTcNV5pLgpKoDmpMgMrZhWALATeowDLo6Jjvl8Y30/4AX83aJPFCUVCA=="
+}{
+  "vault_chain_hash": "391fb2203757f768",
+  "vault_record_id": "7f1de4cc-19cf-49dd-8148-a6cf797c96ac",
+  "chain_appended_at": "2026-07-13T01:46:38Z",
+  "seal_status": "written_to_vault"
+}
