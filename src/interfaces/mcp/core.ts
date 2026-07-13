@@ -78,6 +78,8 @@ import { registerSurfaceAuditTools } from "./surfaceAuditTools.js";
 import { registerStateAnchorTools } from "./stateAnchorTools.js";
 import { registerVerifyTimelineTools } from "./verifyTimelineTools.js";
 import { registerParallelTools } from "./parallelTools.js";
+import { registerCoolingVerbs } from "./coolingVerbs.js";
+import { registerRuntimeVerifyTool } from "./runtimeVerify.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { elicitUser, tradeConfirmationSchema, isGenuineAuthorization } from "./elicitation.js";
 import {
@@ -2166,6 +2168,16 @@ startupFingerprintCheck(server);
 
 // Register J‑space manifold stability check tool
 registerIsomorphismTools(server);
+
+// ── EUREKA P1: Cooling Verbs — forge_cool_drift + forge_cool_pattern ─────────────
+// Routes through seal_chain.js validateCooling() → VAULT999 append.
+// INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK. INV-C4: explicit governance.
+registerCoolingVerbs(server);
+
+// ── EUREKA P1: Runtime Verify — forge_runtime_verify ─────────────────────────────
+// Compares git commit vs installed wheel vs import path.
+// Returns MATCH | DRIFT | UNKNOWN. Fail-closed on DRIFT.
+registerRuntimeVerifyTool(server);
 
 // Run startup isomorphism check — verifies GEOX ↔ arifOS witness functions
 startupIsomorphismCheck();

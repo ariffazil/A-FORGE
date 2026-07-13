@@ -170,6 +170,9 @@ const OBSERVE_TOOLS = new Set([
   "forge_shell_alert_history", // shell alert history — read-only
   "forge_shell",              // shell execution — authority verified by handler via arifOS
   "forge_worktree",           // local git physics sensor — read-only, OBSERVE
+  "forge_runtime_verify",     // runtime hash verification — read-only, OBSERVE
+  "forge_cool_drift",         // cooling receipt drift — read-only, OBSERVE
+  "forge_cool_pattern",       // cooling receipt pattern — read-only, OBSERVE
 ]);
 
 /**
