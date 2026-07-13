@@ -19,7 +19,9 @@
 
 import * as crypto from "node:crypto";
 import * as fs from "node:fs/promises";
+import * as fsSync from "node:fs";
 import * as path from "node:path";
+import { randomUUID } from "node:crypto";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -111,6 +113,40 @@ function computeHmac(data: string, secret: string): string {
   return crypto.createHmac("sha256", secret).update(data, "utf-8").digest("hex");
 }
 
+// ── File-based lock for concurrent-safe append ─────────────────────────────
+// Uses mkdir atomicity: only one process can create the lock directory.
+// Lock dir is relative to ledger path: <ledger>.lock/
+
+const LOCK_RETRY_MS = 50;
+const LOCK_MAX_RETRIES = 40; // 2s total timeout
+
+async function acquireLock(lockDir: string, holder: string): Promise<void> {
+  for (let i = 0; i < LOCK_MAX_RETRIES; i++) {
+    try {
+      await fs.mkdir(lockDir, { recursive: false });
+      // Write holder info (advisory)
+      await fs.writeFile(path.join(lockDir, "holder"), holder, "utf-8");
+      return;
+    } catch (err: any) {
+      if (err.code === "EEXIST") {
+        // Lock held — wait and retry
+        await new Promise(r => setTimeout(r, LOCK_RETRY_MS));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error(`Lock timeout after ${LOCK_MAX_RETRIES * LOCK_RETRY_MS}ms: ${lockDir}`);
+}
+
+async function releaseLock(lockDir: string): Promise<void> {
+  try {
+    await fs.rm(lockDir, { recursive: true, force: true });
+  } catch {
+    // Best-effort release
+  }
+}
+
 // ── ArifSeal class ─────────────────────────────────────────────────────────
 
 export class ArifSeal {
@@ -163,6 +199,7 @@ export class ArifSeal {
 
   /**
    * Seal a tool execution result into the hash chain.
+   * Uses file-level lock for concurrent-safe appends.
    * Returns the SealRecord that was appended.
    */
   async seal(params: {
@@ -175,58 +212,83 @@ export class ArifSeal {
     exit_code: number | null;
     notes?: string;
   }): Promise<SealRecord> {
-    await this.open();
+    const lockDir = this.config.ledgerPath + ".lock";
+    const holder = `forge_shell-${randomUUID().slice(0, 8)}`;
 
-    this.seq += 1;
+    await acquireLock(lockDir, holder);
+    try {
+      await this.open();
 
-    const stdoutHash = computeHash(params.stdout);
-    const stderrHash = computeHash(params.stderr);
+      // Re-read last record under lock — catch any concurrent writes
+      try {
+        const content = await fs.readFile(this.config.ledgerPath, "utf-8");
+        const lines = content.trim().split("\n").filter(Boolean);
+        if (lines.length > 0) {
+          const lastLine = lines[lines.length - 1];
+          const lastRecord = JSON.parse(lastLine) as SealRecord;
+          // Update to latest if concurrent write landed before our lock
+          if (lastRecord.seq >= this.seq) {
+            this.seq = lastRecord.seq;
+            this.lastHash = lastRecord.hash;
+          }
+        }
+      } catch {
+        // Ledger does not exist yet — start from genesis
+      }
 
-    const recordBase: Omit<SealRecord, "hash"> = {
-      seq: this.seq,
-      ts: new Date().toISOString(),
-      tool: params.tool,
-      args: redactSecrets(params.args),
-      judge_decision: params.judge_decision,
-      exit_code: params.exit_code,
-      stdout_sha256: stdoutHash,
-      stderr_sha256: stderrHash,
-      prev_hash: this.lastHash,
-    };
-    if (params.approver) recordBase.approver = params.approver;
-    if (params.notes) recordBase.notes = params.notes;
+      this.seq += 1;
 
-    // Compute self-hash
-    const canonical = canonicalSerialize(recordBase);
-    const selfHash = computeHash(canonical);
+      const stdoutHash = computeHash(params.stdout);
+      const stderrHash = computeHash(params.stderr);
 
-    // If HMAC secret is set, sign the record
-    let hmacSig: string | undefined;
-    if (this.config.hmacSecret) {
-      hmacSig = computeHmac(canonical, this.config.hmacSecret);
+      const recordBase: Omit<SealRecord, "hash"> = {
+        seq: this.seq,
+        ts: new Date().toISOString(),
+        tool: params.tool,
+        args: redactSecrets(params.args),
+        judge_decision: params.judge_decision,
+        exit_code: params.exit_code,
+        stdout_sha256: stdoutHash,
+        stderr_sha256: stderrHash,
+        prev_hash: this.lastHash,
+      };
+      if (params.approver) recordBase.approver = params.approver;
+      if (params.notes) recordBase.notes = params.notes;
+
+      // Compute self-hash
+      const canonical = canonicalSerialize(recordBase);
+      const selfHash = computeHash(canonical);
+
+      // If HMAC secret is set, sign the record
+      let hmacSig: string | undefined;
+      if (this.config.hmacSecret) {
+        hmacSig = computeHmac(canonical, this.config.hmacSecret);
+      }
+
+      const record: SealRecord = {
+        ...recordBase,
+        hash: selfHash,
+      };
+
+      // Append to ledger (JSONL)
+      const line = JSON.stringify(record) + "\n";
+      await this.ledger!.write(line);
+      await this.ledger!.sync();
+
+      // Update chain state
+      this.lastHash = selfHash;
+
+      // Forward to VAULT999 if hook set
+      if (this.config.vaultForwarder) {
+        this.config.vaultForwarder(record).catch((err) => {
+          console.error(`[ArifSeal] VAULT999 forward failed: ${err}`);
+        });
+      }
+
+      return record;
+    } finally {
+      await releaseLock(lockDir);
     }
-
-    const record: SealRecord = {
-      ...recordBase,
-      hash: selfHash,
-    };
-
-    // Append to ledger (JSONL)
-    const line = JSON.stringify(record) + "\n";
-    await this.ledger!.write(line);
-    await this.ledger!.sync();
-
-    // Update chain state
-    this.lastHash = selfHash;
-
-    // Forward to VAULT999 if hook set
-    if (this.config.vaultForwarder) {
-      this.config.vaultForwarder(record).catch((err) => {
-        console.error(`[ArifSeal] VAULT999 forward failed: ${err}`);
-      });
-    }
-
-    return record;
   }
 
   /**
