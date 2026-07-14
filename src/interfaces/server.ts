@@ -941,11 +941,14 @@ app.get("/health", (_req: Request, res: Response) => {
 
   const now = new Date().toISOString();
 
+  // FEDERATION SCHEMA ALIGNMENT L2 (canonical: arifOS/arifosmcp/schemas/federation_enums.py)
+  // See: /root/AAA/governance/FEDERATION_SCHEMA_ALIGNMENT.md
   res.json({
     ok: true,
     service: "A-FORGE-sense",
     status: "healthy",
     version: "0.1.0",
+    federation_schema_version: "2.0.0",
     // P5 (2026-06-13): Substrate doctrine — A-FORGE is the substrate engineering organ.
     // Profile bounded by F13; options: enterprise | agentic | sovereign | civilization.
     profile: "enterprise",
