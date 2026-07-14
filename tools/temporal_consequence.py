@@ -803,7 +803,9 @@ def main():
         "recommendation": ledger_record["recommendation"],
         "ledger_id": ledger_record["_meta"]["consequence_id"],
         "_epistemic": {
-            "output_class": "DERIVED",
+            # CANONICAL SOURCE: /root/arifOS/arifosmcp/schemas/federation_enums.py
+            # Should import OutputClass.DOMAIN_COMPUTATION when available
+            "output_class": "DOMAIN_COMPUTATION",
             "confidence": round(min(0.85, 0.5 + 0.05 * cadence["event_count"]), 2),
             "evidence_source": f"seal_chain ({len(seal_entries)} entries) + shell_ledger ({len(shell_entries)} entries)",
             "authority_claim": "ADVISORY",

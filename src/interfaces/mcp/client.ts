@@ -293,7 +293,10 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
   try {
     response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Federation-Schema-Version": "2.0.0",
+      },
       body: JSON.stringify(body),
     });
   } catch (networkErr) {
