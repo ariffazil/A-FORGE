@@ -50,9 +50,13 @@ export function isMoreSevere(a: ActionClass, b: ActionClass): boolean {
 // ── Tool Classifications ───────────────────────────────────────────────────
 
 // Tools that seal, approve, or cause irreversible / high-blast-radius effects.
+// arif_seal and arif_judge are KERNEL tools (constitutional, not bypass) —
+// they are the LEGAL path to irreversible action, not a bypass.
 const IRREVERSIBLE_TOOLS = new Set([
   "arif_vault_seal",
+  "arif_seal",
   "forge_vault_seal",
+  "forge_kernel_seal",
   "forge_approve",
   "arif_forge_execute",
   "docker_container_remove",
@@ -68,7 +72,12 @@ const IRREVERSIBLE_TOOLS = new Set([
 ]);
 
 // Tools that execute high-impact operations (deploy, data mutation, billing)
+// arif_judge is a KERNEL constitutional tool — it is the LEGAL path to SEAL, not a bypass.
 const HIGH_IMPACT_TOOLS = new Set([
+  "arif_judge",
+  "arif_forge",
+  "forge_kernel_judge",
+  "forge_kernel_forge",
   "forge_execute",
   "docker_container_start",
   "docker_container_restart",
@@ -83,7 +92,19 @@ const HIGH_IMPACT_TOOLS = new Set([
 ]);
 
 // Tools that execute reversible operations
+// arif_init/observe/think/route/memory are KERNEL constitutional tools.
+// They are the LEGAL path to governance, not bypass attempts.
 const REVERSIBLE_EXEC_TOOLS = new Set([
+  "arif_init",
+  "arif_observe",
+  "arif_think",
+  "arif_route",
+  "arif_memory",
+  "forge_kernel_init",
+  "forge_kernel_observe",
+  "forge_kernel_think",
+  "forge_kernel_route",
+  "forge_kernel_memory",
   "write",
   "edit",
   "bash",

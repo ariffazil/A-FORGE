@@ -871,6 +871,7 @@ server.tool(
             mode: "light",
           });
         } catch (primaryErr) {
+          console.error(`[forge_session_init] primary arif_init failed:`, primaryErr instanceof Error ? primaryErr.message : primaryErr);
           // Backward-compat fallback for older kernels still exposing session_init only
           kernelResponse = await callMCP("arifos.arif_session_init", {
             actor_id,
@@ -1917,6 +1918,99 @@ server.registerTool("forge_well", {
   });
 });
 
+// ── Kernel Proxy (Tier 03 — arifOS Constitutional Bridge) ──────────────────────
+// forge_kernel — proxies to arifOS kernel at :8088/mcp.
+// Constitutional path: the kernel IS the governance layer. Calling it is not a bypass.
+// Provides access to: arif_init, arif_observe, arif_think, arif_route, arif_memory,
+//   arif_judge, arif_forge, arif_seal.
+// Classification in actionClassifier.ts: init/observe/think/route/memory = EXECUTE_REVERSIBLE.
+// judge/forge = HIGH_IMPACT. seal = IRREVERSIBLE.
+
+server.tool(
+  "forge_kernel",
+  "Constitutional kernel proxy. Routes to arifOS at :8088/mcp. "
+  + "Modes: init | observe | think | route | memory | judge | forge | seal. "
+  + "This is the LEGAL constitutional path — not a governance bypass. "
+  + "Requires session ownership for seal/judge/forge modes.",
+  {
+    mode: z.enum([
+      "init", "observe", "think", "route", "memory",
+      "judge", "forge", "seal",
+    ]).describe("arifOS kernel tool to invoke"),
+    arguments: z.string().default("{}").describe("JSON string of tool arguments"),
+  },
+  async ({ mode, arguments: argsStr }) => {
+    const startedAt = Date.now();
+    await telemetryInvoke(`forge_kernel:${mode}`);
+
+    // Tool name mapping
+    const toolName = `arif_${mode}`;
+
+    let args: Record<string, unknown>;
+    try {
+      args = JSON.parse(argsStr);
+    } catch {
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({ error: `Invalid JSON in arguments: ${argsStr}` }) }],
+        isError: true,
+      };
+    }
+
+    let transport: StreamableHTTPClientTransport | undefined;
+    try {
+      const client = new Client(
+        { name: "A-FORGE-kernel", version: "0.1.0" },
+        { capabilities: {} },
+      );
+      transport = new StreamableHTTPClientTransport(
+        new URL("http://localhost:8088/mcp"),
+      );
+      await client.connect(transport);
+
+      // Forward actor_id and session_id if available (identity binding)
+      const actorToUse = (args as any).actor_id || (args as any).actor || "FORGE";
+      const sessionToUse = (args as any).session_id || undefined;
+
+      // Merge identity into arguments
+      const kernelArgs = {
+        ...args,
+        actor_id: actorToUse,
+        ...(sessionToUse ? { session_id: sessionToUse } : {}),
+      };
+
+      const upstreamResult = await client.callTool({ name: toolName, arguments: kernelArgs });
+      await transport.close();
+      transport = undefined;
+      await telemetrySuccess(`forge_kernel:${mode}`, startedAt);
+
+      const text = Array.isArray(upstreamResult.content) && typeof upstreamResult.content[0]?.text === "string"
+        ? upstreamResult.content[0].text
+        : JSON.stringify(upstreamResult);
+
+      return { content: [{ type: "text" as const, text: resultAsJson(text) }] };
+    } catch (err) {
+      if (transport) {
+        try { await transport.close(); } catch { /* best effort */ }
+      }
+      await telemetryFailure(`forge_kernel:${mode}`, startedAt, err);
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "ERROR",
+            error_code: "KERNEL_BRIDGE_BLOCKED",
+            source_layer: "A-FORGE::BRIDGE::KERNEL",
+            message: `Kernel routing error (${toolName}): ${msg}`,
+            downstream_error: msg,
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+  },
+);
+
 // ── Visualization: forge_chart — cross-organ agentic data viz + eureka margins ──
 // All domain organs use via A-FORGE (forge_wealth data -> chart, GEOX logs -> scatter, WELL trends).
 // Returns SVG (text-embeddable) + stats + eureka_candidates (turning points / deviation margins).
@@ -2156,6 +2250,16 @@ registerGatewayTools(server);
 // skillstore_sync → tier_bind → docket_prep → execute
 // Each verb has enforced boundaries. forge_execute requires VAULT999 SEAL.
 registerForge8Verbs(server);
+
+// P2.6 canonical gap fill — forge_git_commit, forge_entropy_sweep, forge_canonize
+import {
+  registerForgeGitCommit,
+  registerForgeEntropySweep,
+  registerForgeCanonize,
+} from "./forgeGitEntropyCanonize.js";
+registerForgeGitCommit(server);
+registerForgeEntropySweep(server);
+registerForgeCanonize(server);
 
 	// ── Document Intelligence: layout-first parsing + semantic chunking ──────────
 	// Phase 1 MVP. Modes: analyze, extract, chunk, compare.
