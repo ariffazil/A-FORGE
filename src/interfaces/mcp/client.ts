@@ -194,17 +194,18 @@ function injectSovereignSignature(canonicalTool: string, argsRecord: Record<stri
 }
 
 /**
- * Call an MCP tool on a federation kernel via HTTP REST bridge.
+ * Call an MCP tool on a federation kernel via JSON-RPC 2.0 over HTTP.
  *
- * @param tool — Fully-qualified tool name, e.g. "arifos_mcp.apex_judge"
+ * @param tool — Fully-qualified tool name, e.g. "arifos.arif_judge"
  * @param args — Arguments object passed by caller
- * @returns Unwrapped tool result (the kernel's `.result` field)
+ * @returns Unwrapped tool result (the kernel's structuredContent or parsed text)
  * @throws On network failure, unknown namespace, or kernel error
  */
 export async function callMCP(tool: string, args: unknown): Promise<unknown> {
   const { namespace, toolName } = parseToolName(tool);
   const canonicalTool = TOOL_NAME_MAP[toolName] ?? toolName;
-  const url = `${getMcpUrl(namespace)}/tools/${canonicalTool}`;
+  const url = `${getMcpUrl(namespace)}/mcp`;
+  console.log(`[callMCP] ${tool} → canonicalTool=${canonicalTool}, url=${url}`);
 
   const argsRecord = (typeof args === "object" && args !== null ? args : {}) as Record<
     string,
@@ -231,16 +232,32 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
       throw err;
     }
 
-    // Attempt to read session verdict from arifOS
+    // Attempt to read session verdict from arifOS via JSON-RPC
     try {
-      const vitalsUrl = `${getMcpUrl('arifos')}/tools/arif_ops_measure`;
+      const vitalsUrl = `${getMcpUrl('arifos')}/mcp`;
+      const vitalsJsonRpc = {
+        jsonrpc: "2.0",
+        method: "tools/call",
+        params: { name: "arif_ops_measure", arguments: { mode: 'vitals', session_id: sessionId } },
+        id: Date.now(),
+      };
       const vitalsResponse = await fetch(vitalsUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'vitals', session_id: sessionId }),
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(vitalsJsonRpc),
       });
-      const vitalsPayload = await vitalsResponse.json() as Record<string, unknown>;
-      
+      const vitalsJsonRpcResp = await vitalsResponse.json() as Record<string, unknown>;
+      const vitalsResult = (vitalsJsonRpcResp.result ?? {}) as Record<string, unknown>;
+      const vitalsStructured = (vitalsResult.structuredContent ?? vitalsResult) as Record<string, unknown>;
+      // Also try parsing text content if no structuredContent
+      let vitalsPayload: Record<string, unknown>;
+      if (vitalsStructured && typeof vitalsStructured === 'object' && Object.keys(vitalsStructured).length > 0) {
+        vitalsPayload = vitalsStructured;
+      } else {
+        const vContent = vitalsResult.content as Array<{type: string, text: string}> | undefined;
+        try { vitalsPayload = JSON.parse(vContent?.[0]?.text ?? '{}'); } catch { vitalsPayload = {}; }
+      }
+
       const sessionVerdict = (vitalsPayload.verdict as string) ?? null;
       const acRisk = (vitalsPayload.ac_risk as number) ?? 0.50;
       const circuitBreakers = (vitalsPayload.circuit_breakers as string[]) ?? [];
@@ -289,15 +306,26 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
   
   const body = transformArgs(toolName, argsRecord);
 
+  // Wrap in JSON-RPC 2.0 envelope for MCP protocol compliance
+  const jsonRpcPayload = {
+    jsonrpc: "2.0",
+    method: "tools/call",
+    params: {
+      name: canonicalTool,
+      arguments: body,
+    },
+    id: Date.now(),
+  };
+
   let response: Response;
   try {
     response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Federation-Schema-Version": "2.0.0",
+        "Accept": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(jsonRpcPayload),
     });
   } catch (networkErr) {
     const msg = networkErr instanceof Error ? networkErr.message : String(networkErr);
@@ -311,9 +339,9 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     throw netErr;
   }
 
-  let payload: Record<string, unknown>;
+  let jsonRpcResponse: Record<string, unknown>;
   try {
-    payload = (await response.json()) as Record<string, unknown>;
+    jsonRpcResponse = (await response.json()) as Record<string, unknown>;
   } catch (parseErr) {
     const text = await response.text().catch(() => "<unreadable>");
     throw new Error(
@@ -322,33 +350,86 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     );
   }
 
-  // Kernel error handling — structured rejection envelope
-  if (!response.ok || payload.status === "error" || payload.verdict === "HOLD") {
+  // ── JSON-RPC 2.0 error handling ──────────────────────────────────────────
+  // The kernel may return a JSON-RPC error object instead of a result.
+  const jsonRpcError = jsonRpcResponse.error as Record<string, unknown> | undefined;
+  console.log(`[callMCP] ${canonicalTool} — jsonRpcError=${!!jsonRpcError}, hasResult=${!!jsonRpcResponse.result}`);
+  if (jsonRpcError) {
+    const errorMsg = (jsonRpcError.message as string) ?? JSON.stringify(jsonRpcError);
+    console.error(`[callMCP] ${canonicalTool} — JSON-RPC error: ${errorMsg.slice(0, 200)}`);
+    const err = new Error(
+      `MCP Bridge: Kernel error for ${canonicalTool}. ${errorMsg}`,
+    ) as Error & { error_code: string; source_layer: string; downstream_error: string; payload: Record<string, unknown> };
+    err.error_code = (jsonRpcError.name as string) ?? "JSONRPC_ERROR";
+    err.source_layer = `A-FORGE::BRIDGE::${namespace.toUpperCase()}`;
+    err.downstream_error = errorMsg;
+    err.payload = jsonRpcResponse;
+    throw err;
+  }
+
+  // ── Unwrap JSON-RPC result envelope ──────────────────────────────────────
+  // JSON-RPC result contains: { content: [{type:"text", text:"..."}], structuredContent: {...}, isError: bool }
+  const jsonRpcResult = jsonRpcResponse.result as Record<string, unknown> | undefined;
+  if (!jsonRpcResult) {
+    console.error(`[callMCP] ${canonicalTool} — no result in response`);
+    throw new Error(
+      `MCP Bridge: No result in JSON-RPC response for ${canonicalTool}. Response: ${JSON.stringify(jsonRpcResponse).slice(0, 300)}`,
+    );
+  }
+
+  // Check if the tool itself reported an error
+  console.log(`[callMCP] ${canonicalTool} — isError=${jsonRpcResult.isError}, hasStructured=${!!jsonRpcResult.structuredContent}`);
+  if (jsonRpcResult.isError === true) {
+    const contentArray = jsonRpcResult.content as Array<{ type: string; text: string }> | undefined;
+    const errorText = contentArray?.[0]?.text ?? JSON.stringify(jsonRpcResult);
+    let parsed: Record<string, unknown>;
+    try { parsed = JSON.parse(errorText); } catch { parsed = { error: errorText }; }
+    const errorMsg = (parsed.error as string) ?? (parsed.message as string) ?? errorText.slice(0, 300);
+    const err = new Error(
+      `MCP Bridge: Kernel error for ${canonicalTool}. ${errorMsg}`,
+    ) as Error & { error_code: string; source_layer: string; downstream_error: string; payload: Record<string, unknown> };
+    err.error_code = (parsed.error_code as string) ?? "TOOL_ERROR";
+    err.source_layer = `A-FORGE::BRIDGE::${namespace.toUpperCase()}`;
+    err.downstream_error = errorMsg;
+    err.payload = parsed;
+    throw err;
+  }
+
+  // Extract the actual tool result — prefer structuredContent, fall back to parsed text
+  const structuredContent = jsonRpcResult.structuredContent as Record<string, unknown> | undefined;
+  let rawResult: unknown;
+  if (structuredContent) {
+    rawResult = structuredContent;
+  } else {
+    const contentArray = jsonRpcResult.content as Array<{ type: string; text: string }> | undefined;
+    const textContent = contentArray?.[0]?.text;
+    if (textContent) {
+      try { rawResult = JSON.parse(textContent); } catch { rawResult = { _raw_text: textContent }; }
+    } else {
+      rawResult = jsonRpcResult;
+    }
+  }
+
+  // Kernel-level error handling — structured rejection envelope within tool result
+  const resultObj = (typeof rawResult === "object" && rawResult !== null ? rawResult : { _raw: rawResult }) as Record<string, unknown>;
+  console.log(`[callMCP] ${canonicalTool} — resultObj.status=${resultObj.status}, verdict=${resultObj.verdict}, httpOk=${response.ok}`);
+  if (!response.ok || resultObj.status === "error" || resultObj.verdict === "HOLD") {
     const errorMsg =
-      (payload.error as string) ??
-      (payload.reason as string) ??
+      (resultObj.error as string) ??
+      (resultObj.reason as string) ??
       `Kernel returned HTTP ${response.status}`;
-    const floor = (payload.failed_floor as string) ?? (payload.floor as string) ?? "F13";
-    const verdict = (payload.verdict as string) ?? "HOLD";
+    const floor = (resultObj.failed_floor as string) ?? (resultObj.floor as string) ?? "F13";
+    const verdict = (resultObj.verdict as string) ?? "HOLD";
     const err = new Error(
       `MCP Bridge: Kernel error for ${canonicalTool}. ` +
         `${floor} | ${verdict} | ${errorMsg}`,
     ) as Error & { error_code: string; source_layer: string; downstream_error: string; payload: Record<string, unknown> };
-    err.error_code = (payload.error_code as string) ?? "KERNEL_HOLD";
+    err.error_code = (resultObj.error_code as string) ?? "KERNEL_HOLD";
     err.source_layer = `A-FORGE::BRIDGE::${namespace.toUpperCase()}`;
     err.downstream_error = errorMsg;
-    err.payload = payload;
+    err.payload = resultObj;
     throw err;
   }
 
-  // Unwrap the kernel's result envelope
-  const rawResult =
-    payload.result ?? payload;
-
-  const resultRecord =
-    typeof rawResult === "object" && rawResult !== null
-      ? (rawResult as Record<string, unknown>)
-      : { _raw: rawResult };
-
-  return transformResponse(toolName, resultRecord);
+  return transformResponse(toolName, resultObj);
 }
