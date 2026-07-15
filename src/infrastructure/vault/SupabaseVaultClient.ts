@@ -92,6 +92,16 @@ export class SupabaseVaultClient implements VaultClient {
   }
 
   async write(record: Omit<VaultRecord, "created_at" | "updated_at">): Promise<VaultRecord> {
+    // F1 AMANAH + F11 AUDIT: Append-only. Refuse overwrites.
+    const existing = await this.read(record.name);
+    if (existing) {
+      throw new Error(
+        `VAULT999_APPEND_ONLY: Record '${record.name}' already exists. ` +
+        `Refusing overwrite to preserve chain integrity. ` +
+        `Existing created_at=${existing.created_at}. ` +
+        `To update, use a new name or append a versioned record.`
+      );
+    }
     const { data, error } = await this.sb.rpc("vault_write", {
       p_name: record.name,
       p_category: record.category,
@@ -116,8 +126,15 @@ export class SupabaseVaultClient implements VaultClient {
   }
 
   async delete(name: string): Promise<void> {
-    const { error } = await this.sb.rpc("vault_delete", { p_name: name });
-    if (error) throw error;
+    // F1 AMANAH: Delete is IRREVERSIBLE. Refuse by default.
+    // To actually delete, caller must pass ack_irreversible=true via the MCP tool gate.
+    // This method is the last-resort internal path — the MCP forge_vault tool
+    // should block delete at the governance layer, not here.
+    throw new Error(
+      `VAULT999_IMMUTABLE: Delete of '${name}' refused. ` +
+      `VAULT999 records are append-only. No delete capability exists. ` +
+      `This is a constitutional invariant (F1 AMANAH + F11 AUDIT).`
+    );
   }
 
   async query(options?: {
