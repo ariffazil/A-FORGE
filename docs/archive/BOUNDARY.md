@@ -7,9 +7,9 @@
 > 
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-07-14
+last_verified: 2026-07-15
 valid_from: 2026-05-19
-valid_until: 2026-08-13
+valid_until: 2026-08-14
 confidence: high
 scope: /
 -->
