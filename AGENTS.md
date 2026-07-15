@@ -15,6 +15,23 @@ epistemic_status: SOURCE_OF_TRUTH
 > 2. Read `/root/CONTEXT.md` (Live Machine State & Ports)
 > 3. Read this file (Repo-Specific Build/Test/Run rules)
 
+---
+
+## 🔒 GÖDEL LOCK — External Witness Required (FORGED 2026-07-15)
+
+> **A-FORGE is the hands. The hands cannot witness their own work.**
+> **W³ = ∛(Human × AI × External). Zero in any channel collapses witness.**
+
+A-FORGE's constitutional boundary: it executes, never adjudicates. The Gödel lock is the formalisation of this — the forge refuses to seal its own `forge_execute` outcomes without external witness.
+
+**For any `forge_execute` with action_class ∈ {MUTATE, IRREVERSIBLE}:**
+1. Pre-execute: compute `claim_severity` from action_class + blast_radius
+2. Acquire `Φ_external` attestation from outside A-FORGE (e.g., arifOS kernel, arif via Telegram)
+3. If `Φ_external < 0.5` → **888_HOLD** (forge refuses to fire)
+4. If `Φ_external ≥ 0.9` → **SEAL with witness chain**
+
+**This repo's external witness requirement:** PRs to `main` touching `/AGENTS.md`, `/VAULT999/`, `/forge_work/`, `/identity.toml`, or `/deploy/` require external witness signature.
+
 > **DITEMPA BUKAN DIBERI** — Execution is forged, not given.
 
 **999_SEAL Reference (AF-2026-06-23-001-SEAL-001):** KERNEL INIT REPORT + brain/hands + narrow-to-canonical harden cycle sealed in forge_work/AF-2026-06-23-001-Tiered-Agent-Orchestration.md and BRAIN_HANDS_MCP_MAPPING.md. See ARCHITECTURE.md for narrow layer details.
