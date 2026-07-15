@@ -3,12 +3,22 @@
 import { appendFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import type { AgentMessage } from "../../domain/types/agent.js";
+import { aaaMemoryGate, type MemoryReceipt } from "../../domain/aaa/AaaMemoryLinkage.js";
 
 export interface ShortTermMemoryOptions {
   maxMessages?: number;
   maxTokens?: number;
   onEvict?: (summary: string) => void | Promise<void>;
   archivePath?: string;
+}
+
+/**
+ * Memory operation options — AAA binding.
+ * All fields optional for backward compatibility.
+ */
+export interface StmMemoryOpts {
+  actorId?: string;
+  sessionId?: string;
 }
 
 export class ShortTermMemory {
@@ -18,41 +28,101 @@ export class ShortTermMemory {
   private readonly maxTokens: number;
   private readonly onEvict?: (summary: string) => void | Promise<void>;
   private readonly archivePath?: string;
+  /** AAA: default actor for memory ops */
+  private readonly defaultActor: string;
+  /** AAA: default session for memory ops */
+  private readonly defaultSession: string;
 
   constructor(options?: ShortTermMemoryOptions) {
     this.maxMessages = options?.maxMessages ?? 20;
     this.maxTokens = options?.maxTokens ?? 16384;
     this.onEvict = options?.onEvict;
     this.archivePath = options?.archivePath;
+    this.defaultActor = "a-forge::short-term-memory";
+    this.defaultSession = "SEAL-5eed5eed5eed5eed";
   }
 
-  append(message: AgentMessage): void {
+  /**
+   * Append a message to short-term memory.
+   *
+   * AAA: governed — write binds to 555-ASI (MEMORY).
+   * Mutation stays synchronous so prompt assembly cannot race the gate.
+   */
+  append(message: AgentMessage, opts?: StmMemoryOpts): Promise<{
+    allowed: boolean;
+    receipt: MemoryReceipt | null;
+    reason: string;
+  }> {
     this.transcript.push(message);
     this.enforceLimits();
+    return this.auditMemoryOp(
+      "memory:write",
+      message,
+      `STM append: ${message.role}`,
+      "ShortTermMemory.append",
+      opts,
+    );
   }
 
-  appendMany(messages: AgentMessage[]): void {
+  async appendMany(messages: AgentMessage[], opts?: StmMemoryOpts): Promise<void> {
     for (const message of messages) {
-      this.transcript.push(message);
+      await this.append(message, opts);
     }
-    this.enforceLimits();
   }
 
   /**
    * Pin a sacred/system message so it is never evicted.
    * Pinned messages always appear first in getMessages().
+   *
+   * AAA: governed — pin binds to 555-ASI (MEMORY).
+   * Mutation stays synchronous so pinned messages are immediately visible.
    */
-  pin(message: AgentMessage): void {
+  pin(message: AgentMessage, opts?: StmMemoryOpts): Promise<{
+    allowed: boolean;
+    receipt: MemoryReceipt | null;
+    reason: string;
+  }> {
     this.pinned.push(message);
+    return this.auditMemoryOp(
+      "memory:pin",
+      message,
+      `STM pin: ${message.role}`,
+      "ShortTermMemory.pin",
+      opts,
+    );
   }
 
   getMessages(): AgentMessage[] {
     return [...this.pinned, ...this.transcript];
   }
 
-  clear(): void {
+  /**
+   * Clear all messages (both transcript and pinned).
+   *
+   * AAA: governed — clear = memory:delete, binds to 888-APEX (JUDGE).
+   * Requires session + readiness check due to destructive nature.
+   */
+  async clear(opts?: StmMemoryOpts): Promise<{
+    allowed: boolean;
+    receipt: MemoryReceipt | null;
+    reason: string;
+  }> {
+    const gate = await aaaMemoryGate({
+      action: "memory:delete",
+      actorId: opts?.actorId ?? this.defaultActor,
+      sessionId: opts?.sessionId ?? this.defaultSession,
+      toolName: "ShortTermMemory.clear",
+      description: "Clear all STM messages",
+    });
+
+    if (!gate.allowed) {
+      console.error(`[AAA-MEM] ShortTermMemory.clear blocked: ${gate.reason}`);
+      return { allowed: false, receipt: null, reason: gate.reason };
+    }
+
     this.transcript.length = 0;
     this.pinned.length = 0;
+    return { allowed: true, receipt: gate.receipt, reason: gate.reason };
   }
 
   /**
@@ -77,6 +147,34 @@ export class ShortTermMemory {
       this.transcript.length >= this.maxMessages ||
       this.estimateTokens() >= this.maxTokens
     );
+  }
+
+  private async auditMemoryOp(
+    action: "memory:write" | "memory:pin",
+    message: AgentMessage,
+    description: string,
+    toolName: string,
+    opts?: StmMemoryOpts,
+  ): Promise<{
+    allowed: boolean;
+    receipt: MemoryReceipt | null;
+    reason: string;
+  }> {
+    const gate = await aaaMemoryGate({
+      action,
+      actorId: opts?.actorId ?? this.defaultActor,
+      sessionId: opts?.sessionId ?? this.defaultSession,
+      content: message.content,
+      toolName,
+      description,
+    });
+
+    if (!gate.allowed) {
+      console.error(`[AAA-MEM] ${toolName} blocked after local write: ${gate.reason}`);
+      return { allowed: false, receipt: null, reason: gate.reason };
+    }
+
+    return { allowed: true, receipt: gate.receipt, reason: gate.reason };
   }
 
   private enforceLimits(): void {

@@ -1,0 +1,511 @@
+{
+  "arifOS": {
+    "url": "http://127.0.0.1:8088/mcp",
+    "http": 200,
+    "session_id": null,
+    "sessionish_headers": {},
+    "protocolVersion": "2025-06-18",
+    "serverInfo": {
+      "name": "ARIFOS MCP",
+      "version": "kanon-2026.07.09+3db06a4",
+      "websiteUrl": "https://mcp.arif-fazil.com"
+    },
+    "tools_cap": {
+      "listChanged": true
+    },
+    "logging_cap": true,
+    "completions_cap": false,
+    "pre_initialized": {
+      "http": 200,
+      "tool_count": 12,
+      "error": null,
+      "allowed_tools_before_init": true
+    },
+    "initialized_notify_http": 202,
+    "post_initialized_tool_count": 12,
+    "tool_quality": {
+      "sampled": 12,
+      "vague_or_empty_schema_in_sample": 0,
+      "samples": [
+        {
+          "name": "arif_init",
+          "desc_len": 539,
+          "props": 26,
+          "prefix_ok": true,
+          "desc_head": "KERNEL 000 \u00b7 Session ignition \u2014 not a helper app. Binds actor, floors, and audit before an"
+        },
+        {
+          "name": "arif_triage",
+          "desc_len": 310,
+          "props": 6,
+          "prefix_ok": true,
+          "desc_head": "KERNEL 000 \u00b7 Session preflight / immune status \u2014 not intent routing. Select to read active"
+        },
+        {
+          "name": "arif_observe",
+          "desc_len": 376,
+          "props": 8,
+          "prefix_ok": true,
+          "desc_head": "KERNEL 111 \u00b7 Sense reality into evidence (not reasoning, not judgment). Web/URL/vitals/rep"
+        },
+        {
+          "name": "arif_think",
+          "desc_len": 429,
+          "props": 7,
+          "prefix_ok": true,
+          "desc_head": "KERNEL 333 \u00b7 Mind \u2014 structure reasoning under F2/F7 (not a chat model, not a verdict). Pla"
+        },
+        {
+          "name": "arif_route",
+          "desc_len": 351,
+          "props": 8,
+          "prefix_ok": true,
+          "desc_head": "KERNEL 444 \u00b7 Intent\u2192organ router (default path to GEOX/WEALTH/WELL/A-FORGE). Select when y"
+        },
+        {
+          "name": "arif_bridge_connect",
+          "desc_len": 283,
+          "props": 6,
+          "prefix_ok": true,
+          "desc_head": "KERNEL 444-direct \u00b7 Low-level organ call (organ + tool_name required). Bypasses intent rou"
+        },
+        {
+          "name": "arif_critique",
+          "desc_len": 418,
+          "props": 6,
+          "prefix_ok": true,
+          "desc_head": "KERNEL 555 \u00b7 Heart \u2014 ethical/dignity/risk stress before judgment (not SEAL). Select when b"
+        },
+        {
+          "name": "arif_memory",
+          "desc_len": 295,
+          "props": 54,
+          "prefix_ok": true,
+          "desc_head": "KERNEL memory governor \u00b7 L1\u2013L6 stack under F1/F2/F4/F11 (not a free notepad). Recall/inspe"
+        }
+      ]
+    },
+    "error_probe": {
+      "tool": "arif_init",
+      "http": 200,
+      "shape": {
+        "kind": "tool_result",
+        "isError": false,
+        "has_content": true,
+        "content_head": "[{'type': 'text', 'text': '{\"status\":\"OK\",\"tool\":\"arif_init\",\"verdict\":\"OBSERVE_ONLY\",\"result\":{\"session_id\":\"SEAL-4cea440953064c99\",\"actor_verified\":false,\"authority\":\"OBSERVE_ONLY\",\"init_mode\":\"ligh"
+      }
+    },
+    "forged_session": {
+      "http": 200,
+      "error": null,
+      "got_tools": true
+    }
+  },
+  "A-FORGE": {
+    "url": "http://127.0.0.1:7072/mcp",
+    "http": 200,
+    "session_id": null,
+    "sessionish_headers": {
+      "mcp-protocol-version": "2025-11-25"
+    },
+    "protocolVersion": "2025-11-25",
+    "serverInfo": {
+      "name": "A-FORGE-MCP",
+      "version": "0.1.0"
+    },
+    "tools_cap": {},
+    "logging_cap": false,
+    "completions_cap": false,
+    "pre_initialized": {
+      "http": 200,
+      "tool_count": 98,
+      "error": null,
+      "allowed_tools_before_init": true
+    },
+    "initialized_notify_http": 202,
+    "post_initialized_tool_count": 98,
+    "tool_quality": {
+      "sampled": 20,
+      "vague_or_empty_schema_in_sample": 0,
+      "samples": [
+        {
+          "name": "forge_session_init",
+          "desc_len": 303,
+          "props": 5,
+          "prefix_ok": true,
+          "desc_head": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 000_INIT (arif_init). Not a plugin."
+        },
+        {
+          "name": "forge_health_check",
+          "desc_len": 252,
+          "props": 3,
+          "prefix_ok": true,
+          "desc_head": "ACTUATOR \u00b7 health \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugi"
+        },
+        {
+          "name": "forge_heart_critique",
+          "desc_len": 309,
+          "props": 4,
+          "prefix_ok": true,
+          "desc_head": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 555_CRITIQUE (arif_critique). Not a"
+        },
+        {
+          "name": "forge_check_governance",
+          "desc_len": 292,
+          "props": 4,
+          "prefix_ok": true,
+          "desc_head": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 555_CRITIQUE (arif_critique). Not a"
+        },
+        {
+          "name": "forge_execute",
+          "desc_len": 298,
+          "props": 10,
+          "prefix_ok": true,
+          "desc_head": "ACTUATOR \u00b7 execute \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. N"
+        },
+        {
+          "name": "forge_approve",
+          "desc_len": 300,
+          "props": 5,
+          "prefix_ok": true,
+          "desc_head": "ACTUATOR \u00b7 governance \u00b7 MUTATE \u00b7 kernel-supervised by 888_JUDGE (arif_judge). Not a plugin"
+        },
+        {
+          "name": "forge_judge_proxy",
+          "desc_len": 240,
+          "props": 15,
+          "prefix_ok": true,
+          "desc_head": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 888_JUDGE (arif_judge). Not a plugi"
+        },
+        {
+          "name": "forge_transfer_confirm",
+          "desc_len": 303,
+          "props": 7,
+          "prefix_ok": true,
+          "desc_head": "ACTUATOR \u00b7 confirm \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. N"
+        }
+      ]
+    },
+    "error_probe": {
+      "tool": "forge_session_init",
+      "http": 200,
+      "shape": {
+        "kind": "tool_result",
+        "isError": null,
+        "has_content": true,
+        "content_head": "[{'type': 'text', 'text': '{\\n  \"status\": \"SEAL\",\\n  \"data\": {\\n    \"status\": \"SEAL\",\\n    \"session_id\": \"SEAL-fc7e1fa5759641c0\",\\n    \"kernel_origin\": true,\\n    \"epoch\": \"2026-07-09\",\\n    \"actor_id"
+      }
+    },
+    "forged_session": {
+      "http": null,
+      "error": null,
+      "got_tools": false
+    }
+  },
+  "GEOX": {
+    "url": "http://127.0.0.1:8081/mcp",
+    "http": 200,
+    "session_id": "516cda6e6e9f46f08e7d0f9be8a68f64",
+    "sessionish_headers": {
+      "mcp-session-id": "516cda6e6e9f46f08e7d0f9be8a68f64"
+    },
+    "protocolVersion": "2025-06-18",
+    "serverInfo": {
+      "name": "GEOX",
+      "version": "v2026.07.06-phase3.1-rsi-pipeline"
+    },
+    "tools_cap": {
+      "listChanged": true
+    },
+    "logging_cap": true,
+    "completions_cap": false,
+    "pre_initialized": {
+      "http": 200,
+      "tool_count": 71,
+      "error": null,
+      "allowed_tools_before_init": true
+    },
+    "initialized_notify_http": 202,
+    "post_initialized_tool_count": 71,
+    "tool_quality": {
+      "sampled": 20,
+      "vague_or_empty_schema_in_sample": 0,
+      "samples": [
+        {
+          "name": "geox_egs_query_entity",
+          "desc_len": 76,
+          "props": 6,
+          "prefix_ok": true,
+          "desc_head": "Query earth graph entities by type, name, bbox, or ID. Pure read-only query."
+        },
+        {
+          "name": "geox_egs_query_claim",
+          "desc_len": 81,
+          "props": 6,
+          "prefix_ok": true,
+          "desc_head": "Query claim envelopes by status, domain, entity, or author. Pure read-only query."
+        },
+        {
+          "name": "geox_egs_query_uncertainty",
+          "desc_len": 75,
+          "props": 2,
+          "prefix_ok": true,
+          "desc_head": "Query uncertainty associated with an entity or claim. Pure read-only query."
+        },
+        {
+          "name": "geox_egs_query_provenance",
+          "desc_len": 61,
+          "props": 3,
+          "prefix_ok": true,
+          "desc_head": "Query provenance history for an entity. Pure read-only query."
+        },
+        {
+          "name": "geox_egs_claim_create",
+          "desc_len": 75,
+          "props": 8,
+          "prefix_ok": "Create a new geologi",
+          "desc_head": "Create a new geological claim with typed evidence structure and provenance."
+        },
+        {
+          "name": "geox_egs_claim_challenge",
+          "desc_len": 86,
+          "props": 5,
+          "prefix_ok": "Challenge an existin",
+          "desc_head": "Challenge an existing claim with contradictory evidence. Updates status to CHALLENGED."
+        },
+        {
+          "name": "geox_egs_evidence_attach",
+          "desc_len": 73,
+          "props": 8,
+          "prefix_ok": "Attach evidence to a",
+          "desc_head": "Attach evidence to an existing claim. Can be supporting or contradictory."
+        },
+        {
+          "name": "geox_egs_evidence_reason",
+          "desc_len": 71,
+          "props": 3,
+          "prefix_ok": "Analyze evidence for",
+          "desc_head": "Analyze evidence for a claim. Synthesize or grade the evidence quality."
+        }
+      ]
+    },
+    "error_probe": {
+      "tool": "geox_egs_query_entity",
+      "http": 200,
+      "shape": {
+        "kind": "tool_result",
+        "isError": true,
+        "has_content": true,
+        "content_head": "[{'type': 'text', 'text': '1 validation error for call[egs_query_entity]\\n__definitely_invalid__\\n  Unexpected keyword argument [type=unexpected_keyword_argument, input_value=True, input_type=bool]\\n "
+      }
+    },
+    "forged_session": {
+      "http": null,
+      "error": null,
+      "got_tools": false
+    }
+  },
+  "WEALTH": {
+    "url": "http://127.0.0.1:18082/mcp",
+    "http": 200,
+    "session_id": null,
+    "sessionish_headers": {},
+    "protocolVersion": "2025-06-18",
+    "serverInfo": {
+      "name": "WEALTH Federated Domain",
+      "version": "2026.06.15"
+    },
+    "tools_cap": {
+      "listChanged": true
+    },
+    "logging_cap": true,
+    "completions_cap": false,
+    "pre_initialized": {
+      "http": 200,
+      "tool_count": 50,
+      "error": null,
+      "allowed_tools_before_init": true
+    },
+    "initialized_notify_http": 202,
+    "post_initialized_tool_count": 50,
+    "tool_quality": {
+      "sampled": 20,
+      "vague_or_empty_schema_in_sample": 1,
+      "samples": [
+        {
+          "name": "wealth_wisdom_evaluate",
+          "desc_len": 241,
+          "props": 3,
+          "prefix_ok": "Evaluate a capital a",
+          "desc_head": "Evaluate a capital allocation proposal across 6 wisdom dimensions.\nReturns dignity impact,"
+        },
+        {
+          "name": "wealth_power_audit",
+          "desc_len": 491,
+          "props": 4,
+          "prefix_ok": "Audit the power dyna",
+          "desc_head": "Audit the power dynamics of a capital scenario.\nReturns incentive map, capture risk, rent "
+        },
+        {
+          "name": "wealth_capture_scan",
+          "desc_len": 178,
+          "props": 2,
+          "prefix_ok": "Scan AI-generated fi",
+          "desc_head": "Scan AI-generated financial advice for capture signals.\nDetects: hidden incentives, omitte"
+        },
+        {
+          "name": "wealth_compute_npv",
+          "desc_len": 52,
+          "props": 2,
+          "prefix_ok": true,
+          "desc_head": "Compute Net Present Value of a series of cash flows."
+        },
+        {
+          "name": "wealth_compute_irr",
+          "desc_len": 268,
+          "props": 2,
+          "prefix_ok": true,
+          "desc_head": "Compute Internal Rate of Return.\n\nStandard: pass all cash flows including initial investme"
+        },
+        {
+          "name": "wealth_conservation_check",
+          "desc_len": 64,
+          "props": 2,
+          "prefix_ok": true,
+          "desc_head": "Compute capital conservation: net worth, asset/liability totals."
+        },
+        {
+          "name": "wealth_flow_check",
+          "desc_len": 55,
+          "props": 2,
+          "prefix_ok": true,
+          "desc_head": "Compute cash flow: net, income, expenses, monthly burn."
+        },
+        {
+          "name": "wealth_runway_check",
+          "desc_len": 35,
+          "props": 3,
+          "prefix_ok": true,
+          "desc_head": "Compute financial runway in months."
+        }
+      ]
+    },
+    "error_probe": {
+      "tool": "wealth_wisdom_evaluate",
+      "http": 200,
+      "shape": {
+        "kind": "tool_result",
+        "isError": true,
+        "has_content": true,
+        "content_head": "[{'type': 'text', 'text': '{\"isError\": true, \"error_class\": \"MISSING_REQUIRED_FIELD\", \"recoverability\": \"AGENT_CAN_RETRY\", \"suspected_layer\": \"input_validation\", \"severity\": \"RECOVERABLE\", \"message\": "
+      }
+    },
+    "forged_session": {
+      "http": 200,
+      "error": null,
+      "got_tools": true
+    }
+  },
+  "WELL": {
+    "url": "http://127.0.0.1:18083/mcp",
+    "http": 200,
+    "session_id": null,
+    "sessionish_headers": {},
+    "protocolVersion": "2025-06-18",
+    "serverInfo": {
+      "name": "WELL",
+      "version": "2026.05.15",
+      "websiteUrl": "https://well.arif-fazil.com"
+    },
+    "tools_cap": {
+      "listChanged": true
+    },
+    "logging_cap": true,
+    "completions_cap": false,
+    "pre_initialized": {
+      "http": 200,
+      "tool_count": 18,
+      "error": null,
+      "allowed_tools_before_init": true
+    },
+    "initialized_notify_http": 202,
+    "post_initialized_tool_count": 18,
+    "tool_quality": {
+      "sampled": 18,
+      "vague_or_empty_schema_in_sample": 4,
+      "samples": [
+        {
+          "name": "well_health_check",
+          "desc_len": 126,
+          "props": 0,
+          "prefix_ok": true,
+          "desc_head": "WELL organ health check with provenance and schema version.\nCanonical name: well_health_ch"
+        },
+        {
+          "name": "well_medical_boundary",
+          "desc_len": 247,
+          "props": 0,
+          "prefix_ok": "Explicit non-diagnos",
+          "desc_head": "Explicit non-diagnosis guard for WELL.\nWELL is not a doctor, therapist, or diagnostic auth"
+        },
+        {
+          "name": "well_readiness",
+          "desc_len": 482,
+          "props": 0,
+          "prefix_ok": "ZEN: Single readines",
+          "desc_head": "ZEN: Single readiness verdict. One tool, one answer.\n\nReturns:\n  - color: GREEN | YELLOW |"
+        },
+        {
+          "name": "well_signal_coverage",
+          "desc_len": 412,
+          "props": 1,
+          "prefix_ok": "DREAM ENGINE: Audit ",
+          "desc_head": "DREAM ENGINE: Audit WELL's coverage of canonical human substrate\nsignals. Returns per-sign"
+        },
+        {
+          "name": "well_classify_substrate",
+          "desc_len": 57,
+          "props": 6,
+          "prefix_ok": "\u03a9-WELL-01: Substrate",
+          "desc_head": "\u03a9-WELL-01: Substrate classification and boundary sensing."
+        },
+        {
+          "name": "well_trace_lineage",
+          "desc_len": 58,
+          "props": 6,
+          "prefix_ok": "\u03a9-WELL-02: Memory, t",
+          "desc_head": "\u03a9-WELL-02: Memory, trend, ledger, and vault chain tracing."
+        },
+        {
+          "name": "well_detect_boundary",
+          "desc_len": 77,
+          "props": 5,
+          "prefix_ok": "\u03a9-WELL-03: Boundary ",
+          "desc_head": "\u03a9-WELL-03: Boundary detection across membrane, body, machine, and federation."
+        },
+        {
+          "name": "well_measure_gradient",
+          "desc_len": 80,
+          "props": 4,
+          "prefix_ok": "\u03a9-WELL-04: Measure c",
+          "desc_head": "\u03a9-WELL-04: Measure chemical, energy, pressure, attention, and compute gradients."
+        }
+      ]
+    },
+    "error_probe": {
+      "tool": "well_health_check",
+      "http": 200,
+      "shape": {
+        "kind": "tool_result",
+        "isError": true,
+        "has_content": true,
+        "content_head": "[{'type': 'text', 'text': '1 validation error for call[well_health_check]\\n__definitely_invalid__\\n  Unexpected keyword argument [type=unexpected_keyword_argument, input_value=True, input_type=bool]\\n"
+      }
+    },
+    "forged_session": {
+      "http": 200,
+      "error": null,
+      "got_tools": true
+    }
+  }
+}

@@ -1,0 +1,73 @@
+# APA Manifest: Gmail (Sovereign IMAP/SMTP)
+connector:
+  name: gmail
+  mcp_tool: forge_email
+  version: "1.0.0"
+  domain: communication.email
+  protocol: imap+smtp
+  provider: google
+  auth:
+    method: app_password
+    credential_file: /root/.secrets/email/gmail.json
+
+verbs:
+  - name: search
+    class: OBSERVE
+    blast_radius: LOW
+    description: Search inbox with Gmail query syntax
+    requires_lease: false
+  - name: read
+    class: OBSERVE
+    blast_radius: LOW
+    description: Read a specific email by ID
+    requires_lease: false
+  - name: list_labels
+    class: OBSERVE
+    blast_radius: LOW
+    description: List Gmail labels
+    requires_lease: false
+  - name: draft
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    description: Create a draft email
+    requires_lease: true
+    lease_scope: email.mutate
+  - name: modify_labels
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    description: Add/remove labels (archive, star, mark read)
+    requires_lease: true
+    lease_scope: email.mutate
+  - name: send
+    class: IRREVERSIBLE
+    blast_radius: HIGH
+    reversible: false
+    description: Send an email
+    requires_lease: true
+    requires_ack: true
+    requires_witness: true
+    lease_scope: email.send
+    lease_ttl: 300
+
+leases:
+  - scope: email.read
+    verbs: [search, read, list_labels]
+    note: "OBSERVE — no lease required"
+  - scope: email.mutate
+    verbs: [draft, modify_labels]
+    ttl_default: 3600
+  - scope: email.send
+    verbs: [send]
+    ttl_default: 300
+    note: "IRREVERSIBLE — short TTL + ACK"
+
+gates:
+  pre_execute: [F1_AMANAH, F2_TRUTH, F8_GENIUS]
+  pre_mutate: [F1_AMANAH, F13_SOVEREIGN]
+  pre_irreversible: [F1_AMANAH, F3_WITNESS, F13_SOVEREIGN]
+  post_execute: [F11_AUDIT, F4_CLARITY]
+
+envelope:
+  required_fields: [ok, connector, verb, verdict, evidence_tag, confidence, receipt.timestamp]

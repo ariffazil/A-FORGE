@@ -87,8 +87,8 @@ export function parseServeArgs(argv: string[]): {
       i++;
     } else if (arg === "--transport" && args[i + 1]) {
       const t = args[i + 1];
-      if (t === "stdio" || t === "sse" || t === "streamable-http") {
-        transport = t;
+      if (t === "stdio" || t === "sse" || t === "streamable-http" || t === "http") {
+        transport = t === "http" ? "streamable-http" : t;
       }
       i++;
     } else if (arg === "--port" && args[i + 1]) {

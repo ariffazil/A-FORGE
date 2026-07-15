@@ -1,0 +1,49 @@
+{
+  "benchmark": "MARMOUSI2-KNOWN-ANSWER-WELL-TIE",
+  "timestamp_utc": "2026-07-09T05:54:33.499228+00:00",
+  "overall": "PARTIAL",
+  "pipeline_pass_count": 2,
+  "wells_tested": 3,
+  "results": [
+    {
+      "well_id": "MARMOUSI2-X1500",
+      "x_m": 1500.0,
+      "trace": 240,
+      "x_trace_m": 1500.0,
+      "corr": 0.7376,
+      "mistie_ms": 8.0,
+      "wavelet_hz": 45,
+      "polarity": "REVERSED",
+      "quality": "MODERATE (POLARITY_REVERSED)",
+      "pipeline_validate": "PASS",
+      "strong_pass": true
+    },
+    {
+      "well_id": "MARMOUSI2-X5000",
+      "x_m": 5000.0,
+      "trace": 800,
+      "x_trace_m": 5000.0,
+      "corr": 0.2663,
+      "mistie_ms": 76.0,
+      "wavelet_hz": 45,
+      "polarity": "REVERSED",
+      "quality": "POOR (POLARITY_REVERSED)",
+      "pipeline_validate": "FAIL",
+      "strong_pass": false
+    },
+    {
+      "well_id": "MARMOUSI2-X10000",
+      "x_m": 10000.0,
+      "trace": 1600,
+      "x_trace_m": 10000.0,
+      "corr": 0.7449,
+      "mistie_ms": 8.0,
+      "wavelet_hz": 45,
+      "polarity": "REVERSED",
+      "quality": "MODERATE (POLARITY_REVERSED)",
+      "pipeline_validate": "PASS",
+      "strong_pass": true
+    }
+  ],
+  "note": "x5000 is structural core of Marmousi \u2014 lower corr expected; flank wells are primary pipeline gates"
+}

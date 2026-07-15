@@ -1,0 +1,73 @@
+{
+  "generated_at": "2026-07-09T11:29:02Z",
+  "actor": "grok-build",
+  "sovereign": "Arif F13",
+  "intent": "Spine P0 release wrap \u2014 sct_v1 inhabit + audit removal + SOT/deploy",
+  "tag": "v2026.07.09",
+  "github_release": "https://github.com/ariffazil/arifos/releases/tag/v2026.07.09",
+  "arifOS": {
+    "repo": "/root/arifOS",
+    "commit": "5dfca63",
+    "commit_full": "5dfca6344",
+    "port": 8088,
+    "health": {
+      "status": "healthy",
+      "version": "kanon-5dfca63",
+      "git_commit": "5dfca63",
+      "tools_exposed_via_mcp": 11,
+      "canonical_tools_loaded": 17,
+      "runtime_path": "/opt/arifos/app"
+    },
+    "spine_p0": {
+      "sct_wire": "sct_v1",
+      "birth_apex": "UNMEASURED",
+      "arif_triage": "DEPRECATED \u2192 arif_init(mode=preflight|triage)",
+      "arif_act": "internal_only",
+      "store_delete_loop": "proven"
+    },
+    "runtime_drift": false,
+    "commit_short7": "5dfca63"
+  },
+  "units": {
+    "arifos": "active",
+    "a-forge": "active",
+    "a-forge-mcp": "active",
+    "aaa-a2a": "active",
+    "geox-mcp": "active",
+    "wealth-organ": "active",
+    "well": "active",
+    "vault999-api": "active",
+    "vault999-writer": "active"
+  },
+  "organs": {
+    "arifOS": "healthy",
+    "A-FORGE": "healthy",
+    "GEOX": "healthy",
+    "WEALTH": "ALIVE",
+    "WELL": "degraded",
+    "AAA": "healthy"
+  },
+  "surfaces_updated": [
+    "arifOS README SOT-MANIFEST",
+    "CHANGELOG v2026.07.09",
+    "llms.txt + /var/www mirrors",
+    ".well-known/agent.json",
+    "PUBLIC_SURFACE_CANON.md",
+    "AAA deprecation-registry.json",
+    "AGENTS.md SOT spine_p0",
+    "GitHub tag+release v2026.07.09"
+  ],
+  "owner_summary": "GREEN",
+  "chaos_cut": {
+    "at": "2026-07-09T11:29:02Z",
+    "tmp_before_mb": 3240,
+    "tmp_after_mb": 818,
+    "wealth_dual_masked": true,
+    "self_heal_failures": 0
+  },
+  "seal_chain": {
+    "seq": 8,
+    "head": "orthogonal-geometry-seal"
+  },
+  "last_verified": "2026-07-10"
+}

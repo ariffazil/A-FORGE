@@ -16,7 +16,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { randomUUID } from "node:crypto";
 import { mkdir, appendFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, join } from "node:path";
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import {
   type TaskContext,
   type PageContext,
@@ -28,7 +30,6 @@ import {
 
 const PLAYWRIGHT_MCP_URL = process.env.PLAYWRIGHT_MCP_URL ?? "http://localhost:8931/mcp";
 const MINIMAX_MCP_URL = process.env.MINIMAX_MCP_URL ?? "http://localhost:18091/mcp";
-const MINIMAX_MEDIA_MCP_URL = process.env.MINIMAX_MEDIA_MCP_URL ?? "http://localhost:18090/mcp";
 const NETDATA_URL = process.env.NETDATA_URL ?? "http://localhost:19999";
 const CONTEXT7_MCP_URL = process.env.CONTEXT7_MCP_URL ?? "https://mcp.context7.com/mcp";
 const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY ?? "";
@@ -617,6 +618,127 @@ async function ghPut(path: string, body: unknown): Promise<any> {
   return JSON.parse(text);
 }
 
+// ── Handler: Git Worktree (local physics sensor) ─────────────────────────────
+
+async function runGit(args: string[], cwd: string): Promise<string> {
+  return execFileSync("git", args, {
+    encoding: "utf-8",
+    cwd,
+    timeout: 10000,
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+}
+
+function gitDirExists(p: string): boolean {
+  try { return existsSync(p); } catch { return false; }
+}
+
+export async function handleForgeWorktree(args: any) {
+  const { cwd, request_id } = args;
+  const workdir = cwd ?? process.cwd();
+
+  try {
+    // 1. Current branch
+    const branch = await runGit(["branch", "--show-current"], workdir);
+
+    // 2. Ahead/behind vs tracking remote
+    let ahead = 0, behind = 0, upstream: string | null = null;
+    try {
+      const upstreamRef = (await runGit(["rev-parse", "--abbrev-ref", "@{upstream}"], workdir)).trim();
+      if (upstreamRef) {
+        upstream = upstreamRef;
+        ahead  = parseInt((await runGit(["rev-list", "--count", `${upstreamRef}..${branch.trim()}`], workdir)).trim() || "0");
+        behind = parseInt((await runGit(["rev-list", "--count", `${branch.trim()}..${upstreamRef}`], workdir)).trim() || "0");
+      }
+    } catch { /* no upstream */ }
+
+    // 3. Porcelain status — single shot for all dirty signals
+    const status = await runGit(["status", "--porcelain=v1"], workdir);
+    const staged: string[] = [], unstaged: string[] = [], untracked: string[] = [], ignored: string[] = [];
+
+    for (const line of status.split("\n").filter(Boolean)) {
+      if (line.startsWith("warning:")) continue;
+      const [idx, wksp, ...rest] = line;
+      const file = rest.join("").replace(/^"(.*)"$/, "$1"); // unquote
+      if (idx === "?" && wksp === "?") untracked.push(file);
+      else if (idx === "!" && wksp === "!") ignored.push(file);
+      else if (idx !== " " && idx !== "?") staged.push(file);
+      else if (wksp !== " " && wksp !== "?") unstaged.push(file);
+    }
+
+    // 4. Stash list
+    const stashOut = await runGit(["stash", "list"], workdir);
+    const stash_list = stashOut.split("\n").filter(Boolean).map((line) => {
+      const m = line.match(/^(stash@\{(\d+)\}): (.*)$/);
+      return m ? { ref: m[1], index: parseInt(m[2]), message: m[3].trim() } : null;
+    }).filter(Boolean);
+
+    // 5. Diff summary
+    const diffSummary: { file: string; change: string }[] = [];
+    try {
+      const diffOut = await runGit(["diff", "--stat", "--summary"], workdir);
+      diffSummary.push(...diffOut.split("\n")
+        .filter((l) => l.includes("|"))
+        .map((l) => { const p = l.trim().split("|"); return { file: p[0].trim(), change: p[1].trim() }; }));
+    } catch { /* no diff */ }
+
+    // 6. In-progress operations
+    const gitDir = (await runGit(["rev-parse", "--git-dir"], workdir)).trim();
+    const in_progress_ops: string[] = [];
+    if (gitDir) {
+      if (gitDirExists(join(gitDir, "rebase-merge")) || gitDirExists(join(gitDir, "rebase-apply"))) in_progress_ops.push("rebase");
+      if (gitDirExists(join(gitDir, "MERGE_HEAD"))) in_progress_ops.push("merge");
+      if (gitDirExists(join(gitDir, "CHERRY_PICK_HEAD"))) in_progress_ops.push("cherry-pick");
+      if (gitDirExists(join(gitDir, "BISECT_LOG"))) in_progress_ops.push("bisect");
+      if (gitDirExists(join(gitDir, "REVERT_HEAD"))) in_progress_ops.push("revert");
+    }
+
+    // 7. Conflicts
+    const conflicts: string[] = [];
+    if (in_progress_ops.includes("merge") || in_progress_ops.includes("rebase")) {
+      const conflictOut = await runGit(["diff", "--name-only", "--diff-filter=U"], workdir);
+      conflicts.push(...conflictOut.split("\n").filter(Boolean));
+    }
+
+    // 8. Blast radius assessment
+    let blast_radius = "low", blast_reason = "clean";
+    if (conflicts.length > 0)          { blast_radius = "critical"; blast_reason = "conflicts_unresolved"; }
+    else if (in_progress_ops.some((op) => ["rebase","cherry-pick","revert"].includes(op))) { blast_radius = "high"; blast_reason = "in_progress_operation"; }
+    else if (staged.length + unstaged.length + untracked.length > 0) { blast_radius = "medium"; blast_reason = "uncommitted_changes"; }
+
+    // 9. Recommendations (OBSERVE — never mutate)
+    const recommendations: string[] = [];
+    if (conflicts.length > 0)                        recommendations.push("resolve_conflicts");
+    if (in_progress_ops.includes("rebase"))           recommendations.push("abort_rebase");
+    if (in_progress_ops.includes("merge"))             recommendations.push("abort_merge");
+    if (stash_list.length > 0)                       recommendations.push("inspect_stash");
+    if (staged.length > 0)                           recommendations.push("review_staged");
+    if (unstaged.length > 0)                         recommendations.push("review_unstaged");
+    if (untracked.length > 0)                        recommendations.push("consider_gitignore");
+
+    const receipt_id = await recordReceipt({
+      tool: "forge_worktree", cwd: workdir, branch: branch.trim(),
+      blast_radius, staged_count: staged.length, unstaged_count: unstaged.length,
+    });
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          request_id, workdir, branch: branch.trim() || null, ahead, behind, upstream,
+          staged_files: staged, unstaged_files: unstaged, untracked_files: untracked, ignored_files: ignored,
+          stash_list, diff_summary: diffSummary, conflicts, in_progress_ops,
+          blast_radius, blast_reason, recommendations,
+          is_dirty: staged.length + unstaged.length + untracked.length + conflicts.length > 0,
+          scope: "local_only", receipt_id,
+        }, null, 2),
+      }],
+    };
+  } catch (err: any) {
+    return gatewayError(request_id, `worktree failed: ${err?.message ?? String(err)}`, { tool: "forge_worktree", cwd: workdir });
+  }
+}
+
 // ── Handlers: Netdata ─────────────────────────────────────────────────────────
 
 export async function handleForgeNetdataAlarms(args: any) {
@@ -677,90 +799,6 @@ export async function handleForgeMinimaxSearch(args: any) {
   }
 }
 
-// ── Handler: MiniMax media tools (low/medium-risk only) ───────────────────────
-// risk_tier: LOW — text_to_image, text_to_audio, music_generation
-// HIGH-TIER GATED (NOT registered): voice_clone, generate_video, image_to_video, voice_design
-
-export async function handleForgeMinimaxTextToImage(args: any) {
-  const { prompt, aspect_ratio, request_id } = args;
-  try {
-    const res = (await callHttpMcp(MINIMAX_MEDIA_MCP_URL, "text_to_image", {
-      prompt,
-      aspect_ratio: aspect_ratio ?? "1:1",
-    })) as any;
-    const text = typeof res === "string" ? res : res?.content?.[0]?.text ?? JSON.stringify(res);
-    const receipt_id = await recordReceipt({ tool: "forge_minimax_text_to_image", prompt: prompt.slice(0, 100), risk_tier: "LOW" });
-    return {
-      content: [{
-        type: "text" as const,
-        text: JSON.stringify({ request_id, result: text, risk_tier: "LOW", receipt_id }, null, 2),
-      }],
-    };
-  } catch (err: any) {
-    return gatewayError(request_id, `MiniMax text_to_image failed: ${err?.message ?? String(err)}`, { tool: "forge_minimax_text_to_image", risk_tier: "LOW" });
-  }
-}
-
-export async function handleForgeMinimaxTextToAudio(args: any) {
-  const { text, voice_id, request_id } = args;
-  try {
-    const res = (await callHttpMcp(MINIMAX_MEDIA_MCP_URL, "text_to_audio", {
-      text,
-      voice_id: voice_id ?? "female-shaonv",
-    })) as any;
-    const result = typeof res === "string" ? res : res?.content?.[0]?.text ?? JSON.stringify(res);
-    const receipt_id = await recordReceipt({ tool: "forge_minimax_text_to_audio", text_len: text.length, risk_tier: "LOW" });
-    return {
-      content: [{
-        type: "text" as const,
-        text: JSON.stringify({ request_id, result, risk_tier: "LOW", receipt_id }, null, 2),
-      }],
-    };
-  } catch (err: any) {
-    return gatewayError(request_id, `MiniMax text_to_audio failed: ${err?.message ?? String(err)}`, { tool: "forge_minimax_text_to_audio", risk_tier: "LOW" });
-  }
-}
-
-export async function handleForgeMinimaxMusicGeneration(args: any) {
-  const { prompt, lyrics, request_id } = args;
-  try {
-    const res = (await callHttpMcp(MINIMAX_MEDIA_MCP_URL, "music_generation", {
-      prompt,
-      lyrics: lyrics ?? "",
-    })) as any;
-    const result = typeof res === "string" ? res : res?.content?.[0]?.text ?? JSON.stringify(res);
-    const receipt_id = await recordReceipt({ tool: "forge_minimax_music_generation", prompt: prompt.slice(0, 100), risk_tier: "LOW" });
-    return {
-      content: [{
-        type: "text" as const,
-        text: JSON.stringify({ request_id, result, risk_tier: "LOW", receipt_id }, null, 2),
-      }],
-    };
-  } catch (err: any) {
-    return gatewayError(request_id, `MiniMax music_generation failed: ${err?.message ?? String(err)}`, { tool: "forge_minimax_music_generation", risk_tier: "LOW" });
-  }
-}
-
-export async function handleForgeMinimaxUnderstandImage(args: any) {
-  const { image_source, prompt, request_id } = args;
-  try {
-    const res = (await callHttpMcp(MINIMAX_MCP_URL, "understand_image", {
-      image_source,
-      prompt,
-    })) as any;
-    const result = typeof res === "string" ? res : res?.content?.[0]?.text ?? JSON.stringify(res);
-    const receipt_id = await recordReceipt({ tool: "forge_minimax_understand_image", prompt: prompt.slice(0, 100), risk_tier: "LOW" });
-    return {
-      content: [{
-        type: "text" as const,
-        text: JSON.stringify({ request_id, result, risk_tier: "LOW", receipt_id }, null, 2),
-      }],
-    };
-  } catch (err: any) {
-    return gatewayError(request_id, `MiniMax understand_image failed: ${err?.message ?? String(err)}`, { tool: "forge_minimax_understand_image", risk_tier: "LOW" });
-  }
-}
-
 // ── Registration ──────────────────────────────────────────────────────────────
 
 export function registerGatewayTools(server: McpServer): void {
@@ -774,7 +812,14 @@ export function registerGatewayTools(server: McpServer): void {
     include_citations: z.boolean().default(true).describe("Include citations"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeResearch);
-  // NOTE: forge_search REMOVED — duplicate of forge_research (which wraps Brave search internally).
+
+  server.tool("forge_search", "Governed web search via Brave. OBSERVE-class.", {
+    query: z.string().max(400).describe("Search query"),
+    count: z.number().min(1).max(20).default(10).describe("Result count"),
+    freshness: z.enum(["any", "day", "week", "month", "year"]).default("any").describe("Freshness"),
+    safesearch: z.enum(["off", "moderate", "strict"]).default("moderate").describe("SafeSearch"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeSearch);
 
   server.tool("forge_docs_lookup", "Governed docs lookup via Context7. OBSERVE-class.", {
     query: z.string().describe("Docs query"),
@@ -783,39 +828,70 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeDocsLookup);
 
-  // Browser — consolidated into forge_browser with mode
-  server.tool("forge_browser", "Browser automation. Modes: navigate, click, type, screenshot, extract_text, evaluate_js. OBSERVE-class.", {
-    mode: z.enum(["navigate", "click", "type", "screenshot", "extract_text", "evaluate_js"]).describe("Browser action"),
-    url: z.string().optional().describe("URL (navigate mode)"),
-    wait_until: z.enum(["load", "domcontentloaded", "networkidle"]).default("networkidle").describe("Wait condition (navigate)"),
-    timeout_ms: z.number().min(1000).max(30000).default(15000).describe("Timeout ms (navigate)"),
-    selector: z.string().optional().describe("Element selector (click/type/screenshot/extract)"),
-    button: z.enum(["left", "right", "middle"]).default("left").describe("Mouse button (click)"),
-    text: z.string().optional().describe("Text to type (type mode)"),
-    submit: z.boolean().default(false).describe("Submit after typing (type mode)"),
-    full_page: z.boolean().default(false).describe("Full page screenshot (screenshot mode)"),
-    max_chars: z.number().default(50000).describe("Max chars (extract_text mode)"),
-    script: z.string().optional().describe("JavaScript to evaluate (evaluate_js mode)"),
+  // Browser
+  server.tool("forge_browser_navigate", "Navigate browser to URL. OBSERVE-class.", {
+    url: z.string().describe("URL to navigate to"),
+    wait_until: z.enum(["load", "domcontentloaded", "networkidle"]).default("networkidle").describe("Wait condition"),
+    timeout_ms: z.number().min(1000).max(30000).default(15000).describe("Timeout ms"),
     request_id: z.string().describe("Caller request ID"),
     task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
     page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, async (args) => {
-    try {
-      checkBrowserSentinel({ task_context: args.task_context, page_context: args.page_context, tool_name: `forge_browser:${args.mode}` });
-    } catch (e: any) { return browserSentinelErrorResponse(args.request_id, e.message); }
-    switch (args.mode) {
-      case "navigate": return handleForgeBrowserNavigate(args);
-      case "click": return handleForgeBrowserClick(args);
-      case "type": return handleForgeBrowserType(args);
-      case "screenshot": return handleForgeBrowserScreenshot(args);
-      case "extract_text": return handleForgeBrowserExtractText(args);
-      case "evaluate_js": return handleForgeBrowserEvaluateJs(args);
-    }
-  });
+  }, handleForgeBrowserNavigate);
 
-  // GitHub (get_file, create_or_update_file, create_issue — not in proxyTools forge_github)
-  // NOTE: forge_github_search_code, forge_github_search_repos, forge_github_create_pull_request REMOVED
-  //       — use forge_github (proxyTools) with mode=search/type=code|repositories or mode=pr/action=create.
+  server.tool("forge_browser_click", "Click a browser element. OBSERVE-class.", {
+    selector: z.string().describe("Element selector"),
+    button: z.enum(["left", "right", "middle"]).default("left").describe("Mouse button"),
+    request_id: z.string().describe("Caller request ID"),
+    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
+    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
+  }, handleForgeBrowserClick);
+
+  server.tool("forge_browser_type", "Type text into a browser element. OBSERVE-class.", {
+    selector: z.string().describe("Element selector"),
+    text: z.string().max(1000).describe("Text to type"),
+    submit: z.boolean().default(false).describe("Submit after typing"),
+    request_id: z.string().describe("Caller request ID"),
+    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
+    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
+  }, handleForgeBrowserType);
+
+  server.tool("forge_browser_screenshot", "Take a browser screenshot. OBSERVE-class.", {
+    selector: z.string().optional().describe("Element selector (omit for full page)"),
+    full_page: z.boolean().default(false).describe("Full page screenshot"),
+    request_id: z.string().describe("Caller request ID"),
+    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
+    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
+  }, handleForgeBrowserScreenshot);
+
+  server.tool("forge_browser_extract_text", "Extract text from browser page. OBSERVE-class.", {
+    selector: z.string().optional().describe("Element selector (omit for body)"),
+    max_chars: z.number().default(50000).describe("Max characters"),
+    request_id: z.string().describe("Caller request ID"),
+    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
+    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
+  }, handleForgeBrowserExtractText);
+
+  server.tool("forge_browser_evaluate_js", "Evaluate JS in browser context. OBSERVE-class.", {
+    script: z.string().max(2000).describe("JavaScript to evaluate"),
+    request_id: z.string().describe("Caller request ID"),
+    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
+    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
+  }, handleForgeBrowserEvaluateJs);
+
+  // GitHub
+  server.tool("forge_github_search_code", "Search GitHub code. OBSERVE-class.", {
+    q: z.string().describe("GitHub code search query"),
+    per_page: z.number().min(1).max(100).default(30).describe("Results per page"),
+    page: z.number().default(1).describe("Page"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeGitHubSearchCode);
+
+  server.tool("forge_github_search_repos", "Search GitHub repositories. OBSERVE-class.", {
+    q: z.string().describe("Repository search query"),
+    per_page: z.number().min(1).max(100).default(30).describe("Results per page"),
+    page: z.number().default(1).describe("Page"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeGitHubSearchRepos);
 
   server.tool("forge_github_get_file", "Read a file from GitHub. OBSERVE-class.", {
     owner: z.string().describe("Repository owner"),
@@ -849,22 +925,40 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().describe("Caller request ID"),
     lease_id: z.string().describe("Kernel-issued lease ID"),
   }, handleForgeGitHubCreateIssue);
-  // NOTE: forge_github_create_pull_request REMOVED — use forge_github (proxyTools) with mode=pr/action=create.
 
-  // Netdata — consolidated into forge_netdata with mode
-  server.tool("forge_netdata", "Query Netdata monitoring. Modes: alarms, metrics. OBSERVE-class.", {
-    mode: z.enum(["alarms", "metrics"]).default("alarms").describe("Query mode"),
-    host: z.string().default("localhost").describe("Netdata host"),
-    status: z.enum(["all", "raised", "clear", "warning", "critical"]).default("raised").describe("Alarm status filter (alarms mode)"),
-    chart: z.string().optional().describe("Chart name (metrics mode)"),
-    after: z.number().optional().describe("Unix timestamp start (metrics mode)"),
-    before: z.number().optional().describe("Unix timestamp end (metrics mode)"),
-    points: z.number().default(100).describe("Data points (metrics mode)"),
+  server.tool("forge_github_create_pull_request", "Create a GitHub pull request. MUTATE — lease required.", {
+    owner: z.string().describe("Repository owner"),
+    repo: z.string().describe("Repository name"),
+    title: z.string().describe("PR title"),
+    body: z.string().describe("PR body"),
+    head: z.string().describe("Head branch"),
+    base: z.string().default("main").describe("Base branch"),
+    draft: z.boolean().default(true).describe("Draft PR"),
     request_id: z.string().describe("Caller request ID"),
-  }, async (args) => {
-    if (args.mode === "alarms") return handleForgeNetdataAlarms(args);
-    return handleForgeNetdataMetrics(args);
-  });
+    lease_id: z.string().describe("Kernel-issued lease ID"),
+  }, handleForgeGitHubCreatePullRequest);
+
+  // Worktree
+  server.tool("forge_worktree", "Local git physics sensor. Returns branch, dirty state, stash, conflicts, in-progress ops, blast radius, and actionable recommendations. OBSERVE-class — never mutates.", {
+    cwd: z.string().optional().describe("Working directory (defaults to process cwd)"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeWorktree);
+
+  // Netdata
+  server.tool("forge_netdata_alarms", "Read Netdata alarms. OBSERVE-class.", {
+    host: z.string().default("localhost").describe("Netdata host"),
+    status: z.enum(["all", "raised", "clear", "warning", "critical"]).default("raised").describe("Alarm status filter"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeNetdataAlarms);
+
+  server.tool("forge_netdata_metrics", "Read Netdata chart data. OBSERVE-class.", {
+    host: z.string().default("localhost").describe("Netdata host"),
+    chart: z.string().describe("Chart name"),
+    after: z.number().optional().describe("Unix timestamp start"),
+    before: z.number().optional().describe("Unix timestamp end"),
+    points: z.number().default(100).describe("Data points"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeNetdataMetrics);
 
   // MiniMax
   server.tool("forge_minimax_search", "Search the web via MiniMax. OBSERVE-class.", {
@@ -872,30 +966,4 @@ export function registerGatewayTools(server: McpServer): void {
     max_results: z.number().min(1).max(20).default(10).describe("Max results"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeMinimaxSearch);
-
-  // MiniMax Multimodal — LOW risk tier only
-  // HIGH-TIER GATED: voice_clone, generate_video, image_to_video, voice_design (require 888_HOLD)
-  server.tool("forge_minimax_text_to_image", "Generate image from text prompt via MiniMax. LOW risk_tier.", {
-    prompt: z.string().max(1000).describe("Image description prompt"),
-    aspect_ratio: z.enum(["1:1", "16:9", "4:3", "3:2", "2:3", "3:4", "9:16"]).default("1:1").describe("Image aspect ratio"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeMinimaxTextToImage);
-
-  server.tool("forge_minimax_text_to_audio", "Convert text to speech via MiniMax TTS. LOW risk_tier.", {
-    text: z.string().max(5000).describe("Text to convert to speech"),
-    voice_id: z.string().default("female-shaonv").describe("Voice ID (e.g. female-shaonv, male-qn-qingse)"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeMinimaxTextToAudio);
-
-  server.tool("forge_minimax_music_generation", "Generate music from prompt and lyrics via MiniMax. LOW risk_tier.", {
-    prompt: z.string().max(300).describe("Music style/mood description"),
-    lyrics: z.string().max(600).describe("Song lyrics with [Verse] [Chorus] structure"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeMinimaxMusicGeneration);
-
-  server.tool("forge_minimax_understand_image", "Analyze or describe an image via MiniMax vision. LOW risk_tier.", {
-    image_source: z.string().describe("Image URL or local file path"),
-    prompt: z.string().min(1).describe("Question or instruction about the image"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeMinimaxUnderstandImage);
 }

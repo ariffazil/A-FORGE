@@ -1,0 +1,177 @@
+# A-THINK v1 — Organ Affordance Cards
+# =====================================
+#
+# WAJIB 2: Every organ must have an affordance card.
+# These define the constitutional relationship between organs.
+#
+# DITEMPA BUKAN DIBERI.
+
+organs:
+
+  - name: A-FORGE
+    role: implementation_forge
+    purpose: Builds, edits, tests, and prepares code artifacts under arifOS governance.
+    authority: execution_subordinate
+    may_decide: false
+    may_execute_after_lease: true
+    requires_kernel_route: true
+    requires_forge_lease: true
+    requires_receipt: true
+
+    allowed_modes:
+      FAST:
+        allowed: false
+      THINK:
+        allowed: true
+        actions:
+          - inspect_files
+          - read_code
+          - run_tests
+          - produce_patch_plan
+          - dry_run
+      GOVERN:
+        allowed: true
+        actions:
+          - modify_code
+          - write_files
+          - commit_candidate
+          - build_artifact
+          - deploy_candidate
+        requires_human_ack: true
+        requires_receipt: true
+
+    hard_laws:
+      - A-FORGE may not bypass Kernel.
+      - A-FORGE may not execute UNKNOWN affordance.
+      - A-FORGE may not mutate without lease.
+      - A-FORGE may not publish, deploy, delete, or commit without explicit approval.
+      - A-FORGE output is implementation evidence, not constitutional verdict.
+
+  - name: arifOS
+    role: constitutional_kernel
+    purpose: Governs, judges, routes, seals. Constitutional authority over all organs.
+    authority: sovereign_governor
+    may_decide: true
+    may_execute_after_lease: false  # arifOS judges, doesn't build
+    requires_kernel_route: false     # arifOS IS the kernel
+    requires_forge_lease: false
+    requires_receipt: true
+
+    allowed_modes:
+      FAST:
+        allowed: true
+        actions:
+          - observe
+          - classify
+          - route
+      THINK:
+        allowed: true
+        actions:
+          - reason
+          - critique
+          - plan
+          - evidence_bind
+      GOVERN:
+        allowed: true
+        actions:
+          - judge_deliberate
+          - seal_verdict
+          - issue_lease
+          - revoke_lease
+        requires_human_ack: false  # arifOS judges autonomously within floors
+        requires_receipt: true
+
+    hard_laws:
+      - arifOS alone adjudicates constitutional floors.
+      - arifOS alone issues SEAL/HOLD/VOID/SABAR verdicts.
+      - arifOS alone mints leases for A-FORGE execution.
+      - arifOS verdicts are binding on all organs.
+
+  - name: GEOX
+    role: earth_intelligence
+    purpose: Geological analysis, seismic computation, petrophysics, claims.
+    authority: domain_observe
+    may_decide: false
+    may_execute_after_lease: false
+    requires_kernel_route: true
+    requires_forge_lease: false
+    requires_receipt: false
+
+    allowed_modes:
+      FAST:
+        allowed: false
+      THINK:
+        allowed: true
+        actions:
+          - basin_profile
+          - petrophysics_compute
+          - seismic_compute
+          - claim_create
+          - evidence_attach
+      GOVERN:
+        allowed: false  # GEOX observes, doesn't mutate external state
+
+    hard_laws:
+      - GEOX computes earth evidence. GEOX does not judge.
+      - GEOX claims are evidence, not verdicts.
+
+  - name: WEALTH
+    role: capital_intelligence
+    purpose: NPV, EMV, risk, conservation, flow, wisdom computations.
+    authority: domain_observe
+    may_decide: false
+    may_execute_after_lease: false
+    requires_kernel_route: true
+    requires_forge_lease: false
+    requires_receipt: false
+
+    allowed_modes:
+      FAST:
+        allowed: false
+      THINK:
+        allowed: true
+        actions:
+          - compute_emv
+          - compute_npv
+          - compute_irr
+          - conservation_check
+          - flow_check
+          - wisdom_evaluate
+      GOVERN:
+        allowed: true
+        actions:
+          - vault_write
+        requires_human_ack: true
+        requires_receipt: true
+
+    hard_laws:
+      - WEALTH computes. arifOS judges. Arif decides.
+      - WEALTH does not move capital. WEALTH does not self-seal.
+
+  - name: WELL
+    role: human_readiness
+    purpose: Vitality, fatigue, dignity, homeostasis reflections.
+    authority: domain_reflect
+    may_decide: false
+    may_execute_after_lease: false
+    requires_kernel_route: true
+    requires_forge_lease: false
+    requires_receipt: false
+
+    allowed_modes:
+      FAST:
+        allowed: false
+      THINK:
+        allowed: true
+        actions:
+          - validate_vitality
+          - assess_homeostasis
+          - guard_dignity
+          - check_repair
+      GOVERN:
+        allowed: false  # WELL reflects, doesn't mutate
+
+    hard_laws:
+      - WELL holds a mirror, not a veto.
+      - WELL does not decide worth. WELL identifies substrate.
+      - WELL does not diagnose. WELL reflects readiness.

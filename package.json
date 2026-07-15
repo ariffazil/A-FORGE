@@ -1,19 +1,21 @@
 {
   "name": "@ariffazil/a-forge",
-  "version": "2026.06.14",
+  "version": "2026.06.30",
   "description": "A-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
   "type": "module",
   "bin": {
     "agent": "./dist/src/interfaces/cli.js",
-    "arifos-mcp": "./dist/src/interfaces/mcp/cli.js"
+    "arifos-mcp": "./dist/src/interfaces/mcp/cli.js",
+    "arifos-mcp-server": "./dist/src/interfaces/mcp/server.js",
+    "arifos-mcp-stdio": "./dist/src/interfaces/mcp/stdio.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "start": "node dist/src/interfaces/server.js",
     "test": "node dist/test/AgentEngine.test.js",
     "example:explore": "node dist/examples/runExploreExample.js",
-    "mcp:stdio": "node dist/src/mcp/cli.js serve --transport stdio",
-    "mcp:http": "node dist/src/mcp/cli.js serve --transport http --port 3000",
+    "mcp:stdio": "FORGE_STDIO_ACTOR_ID=opencode node dist/src/interfaces/mcp/cli.js serve --transport stdio",
+    "mcp:http": "node dist/src/interfaces/mcp/cli.js serve --transport http --port 3000",
     "terminal": "node dist/src/cli/terminal.js",
     "terminal:dev": "npx tsx src/cli/terminal.ts",
     "tui": "npx tsx src/infrastructure/tui/forge-tui.ts",
@@ -21,27 +23,26 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.9.0",
+    "@mozilla/readability": "^0.6.0",
     "@supabase/supabase-js": "^2.108.1",
+    "@types/jsdom": "^28.0.3",
+    "@types/turndown": "^5.0.6",
     "blessed": "^0.1.81",
-    "blessed-contrib": "^4.8.13",
+    "blessed-contrib": "^4.11.0",
     "express": "^5.1.0",
     "glob": "^11.0.2",
-    "pg": "^8.22.0",
+    "hash-wasm": "^4.12.0",
+    "jose": "^6.1.3",
+    "jsdom": "^29.1.1",
+    "pg": "^8.21.0",
     "prom-client": "^15.1.3",
-    "zod": "^4.4.3"
-  },
-  "overrides": {
-    "blessed-contrib": {
-      "marked": "^4.3.0",
-      "map-canvas": {
-        "xml2js": "^0.6.2"
-      }
-    }
+    "turndown": "^7.2.4",
+    "zod": "~3.25.76"
   },
   "devDependencies": {
     "@types/blessed": "^0.1.27",
     "@types/express": "^5.0.6",
-    "@types/node": "^26.0.1",
+    "@types/node": "^26.1.0",
     "@types/pg": "^8.20.0",
     "pyright": "^1.1.411",
     "typescript": "^6.0.3",

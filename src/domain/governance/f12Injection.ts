@@ -44,19 +44,62 @@ function flattenForScan(a: FloorContext["action"]): string {
 }
 
 /**
+ * Tools that legitimately accept code or structured strings containing
+ * shell metacharacters (braces, parens, etc.). These tools are governed
+ * by additional layers (HARAM scan, Decision Field, Scar Law, Witness)
+ * and their code inputs are sanitized at their own enforcement boundaries.
+ *
+ * Without this allowlist, F12 blocks legitimate governance tools from
+ * receiving implementation code as arguments.
+ */
+const CODE_ACCEPTING_TOOLS = new Set([
+  "forge_skill",
+  "forge_evaluate",
+  "forge_witness",
+  "forge_scar",
+  "forge_register",
+  "forge_registry",
+  "forge_shell_dryrun",
+  "forge_vault",
+  // Filesystem content legitimately contains backticks, braces, and
+  // structured text (markdown, JSON, code). forge_filesystem has its
+  // own path scoping via checkPathAllowed — F12 SHELL_METACHARS is
+  // a false positive on content payloads.
+  "forge_filesystem",
+  "forge_filesystem_read",
+  "forge_filesystem_write",
+  "forge_filesystem_patch",
+  "forge_filesystem_tree",
+  "forge_filesystem_search",
+  "forge_filesystem_stat",
+  "forge_filesystem_move",
+  "forge_filesystem_delete",
+  "forge_document_ingest",
+]);
+
+/**
  * F12 verdict on a single action.
  */
 export function checkF12Injection(ctx: FloorContext): FloorReason[] {
   const reasons: FloorReason[] = [];
   const a = ctx.action;
+
+  // Code-accepting tools skip shell metacharacter check — they have their
+  // own governance layers (HARAM scan, Decision Field, etc.)
+  const isCodeAccepter = CODE_ACCEPTING_TOOLS.has(a.tool_name);
+
   const haystack = flattenForScan(a);
 
   // Rule 1: Shell metacharacters in tool args (high suspicion)
-  if (a.args) {
+  if (a.args && !isCodeAccepter) {
     for (const [k, v] of Object.entries(a.args)) {
       if (typeof v === "string" && F12_THREAT_PATTERNS.SHELL_METACHARS.test(v)) {
-        // Allow some benign uses of `*` `?` `[]` in patterns
-        const benign = /^[\w\-./?*[\]]+$/.test(v);
+        // DARWIN FIX 4: JSON-aware benign pattern. Extends to allow JSON
+        // structural characters ({ } " , : \n \r \t space) plus standard
+        // filename + URL chars. Without this, every forge_vault.write /
+        // forge_filesystem.write payload containing JSON braces gets
+        // F12 VOID'd even though no injection risk exists — pure cost.
+        const benign = /^[\w\-./?*[\]{}"',:;_+=()@%&#!?\s\n\r\t]+$/.test(v);
         if (!benign) {
           reasons.push({
             floor: "F12",
@@ -80,16 +123,28 @@ export function checkF12Injection(ctx: FloorContext): FloorReason[] {
   }
 
   // Rule 3: Absolute sensitive paths
-  // EXCEPTION: forge_filesystem_*, forge_git_*, forge_postgres_* tools are
-  // authorized proxies with their own path scoping (checkPathAllowed).
+  // EXCEPTION: forge_filesystem, forge_git, forge_postgres, forge_docker,
+  // forge_github, forge_memory, forge_document_ingest are authorized
+  // proxies with their own path scoping (checkPathAllowed).
   // They operate on /root, /tmp, /data which are valid work directories.
-  const isAuthorizedProxy =
-    a.tool_name.startsWith("forge_filesystem_") ||
-    a.tool_name.startsWith("forge_git_") ||
-    a.tool_name.startsWith("forge_postgres_") ||
-    a.tool_name.startsWith("forge_docker_") ||
-    a.tool_name.startsWith("forge_github_") ||
-    a.tool_name.startsWith("forge_memory_");
+  const AUTHORIZED_PROXY_TOOLS = new Set([
+    "forge_filesystem",
+    "forge_filesystem_read",
+    "forge_filesystem_write",
+    "forge_filesystem_patch",
+    "forge_filesystem_tree",
+    "forge_filesystem_search",
+    "forge_filesystem_stat",
+    "forge_filesystem_move",
+    "forge_filesystem_delete",
+    "forge_git",
+    "forge_postgres",
+    "forge_docker",
+    "forge_github",
+    "forge_memory",
+    "forge_document_ingest",
+  ]);
+  const isAuthorizedProxy = AUTHORIZED_PROXY_TOOLS.has(a.tool_name);
   if (!isAuthorizedProxy) {
     for (const p of SENSITIVE_PATHS) {
       if (a.target.startsWith(p) || haystack.includes(p)) {

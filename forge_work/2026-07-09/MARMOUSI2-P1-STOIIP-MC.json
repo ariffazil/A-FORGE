@@ -1,0 +1,101 @@
+{
+  "phase": "P1_MONTE_CARLO_STOIIP",
+  "doctrine": "GENESIS/014 \u2014 after P0 LAS physics",
+  "timestamp_utc": "2026-07-09T05:57:21.798979+00:00",
+  "trap_geometry_note": "SPEC fixed synthetic trap \u2014 volume factors stress-test \u03c6/NTG from Marmousi logs, not a real prospect map",
+  "anti_hantu": [
+    "STOIIP is not grid GRV",
+    "POS is INT assumption 0.30",
+    "Marmousi is known-answer elastic model \u2014 \u03c6 high is model water+soft sediment, not Malay Basin reservoir"
+  ],
+  "wells": [
+    {
+      "well_id": "MARMOUSI2-X1500",
+      "las": "marmousi-well-x1500.las",
+      "phi_e": {
+        "p10": 0.4,
+        "p50": 0.3358,
+        "p90": 0.1552,
+        "source": "DER_FROM_LAS_CURVES"
+      },
+      "ntg_log": 0.9625,
+      "stoiip_mmstb": {
+        "p90": 178.929,
+        "p50": 388.641,
+        "p10": 835.086
+      },
+      "recoverable_mmstb": {
+        "p90": 53.679,
+        "p50": 116.592,
+        "p10": 250.526
+      },
+      "emv_usd_mm": 385.69481,
+      "pos": 0.3,
+      "epistemic": {
+        "phi_ntg": "DER",
+        "trap_geometry": "SPEC",
+        "pos": "INT",
+        "emv": "DER"
+      }
+    },
+    {
+      "well_id": "MARMOUSI2-X5000",
+      "las": "marmousi-well-x5000.las",
+      "phi_e": {
+        "p10": 0.4,
+        "p50": 0.2897,
+        "p90": 0.1224,
+        "source": "DER_FROM_LAS_CURVES"
+      },
+      "ntg_log": 0.9407,
+      "stoiip_mmstb": {
+        "p90": 139.581,
+        "p50": 329.97,
+        "p10": 752.246
+      },
+      "recoverable_mmstb": {
+        "p90": 41.874,
+        "p50": 98.991,
+        "p10": 225.674
+      },
+      "emv_usd_mm": 331.58249,
+      "pos": 0.3,
+      "epistemic": {
+        "phi_ntg": "DER",
+        "trap_geometry": "SPEC",
+        "pos": "INT",
+        "emv": "DER"
+      }
+    },
+    {
+      "well_id": "MARMOUSI2-X10000",
+      "las": "marmousi-well-x10000.las",
+      "phi_e": {
+        "p10": 0.4,
+        "p50": 0.2679,
+        "p90": 0.1061,
+        "source": "DER_FROM_LAS_CURVES"
+      },
+      "ntg_log": 0.935,
+      "stoiip_mmstb": {
+        "p90": 121.034,
+        "p50": 309.795,
+        "p10": 737.846
+      },
+      "recoverable_mmstb": {
+        "p90": 36.31,
+        "p50": 92.939,
+        "p10": 221.354
+      },
+      "emv_usd_mm": 315.4238,
+      "pos": 0.3,
+      "epistemic": {
+        "phi_ntg": "DER",
+        "trap_geometry": "SPEC",
+        "pos": "INT",
+        "emv": "DER"
+      }
+    }
+  ],
+  "overall": "PASS"
+}

@@ -172,7 +172,7 @@ test("FloorEnforcer: destructive with rollback plan → CAUTION (F5)", () => {
   const v = checkAll(makeContext(action));
   // CAUTION means: passes the HARD check (F1 has rollback), still allowed
   // with caution. Should be CAUTION, not HOLD.
-  assert.equal(v.final, "CAUTION");
+  assert.equal(v.final, "SABAR"); // CAUTION canonicalizes to SABAR
   assert.equal(v.allowed, true);
 });
 

@@ -1,28 +1,337 @@
 {
-  "seal-agent": {
-    "agent_id": "seal-agent",
+  "FORGE": {
+    "agent_id": "FORGE",
+    "agent_type": "opencode",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": "sha256:smoke-test-session-4ef85d4c4d5246c5",
+    "registered_at": "2026-06-28T14:09:42.195Z",
+    "last_seen": "2026-06-28T14:09:42.195Z",
+    "lease_ids": []
+  },
+  "kimi-code-fi008": {
+    "agent_id": "kimi-code-fi008",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {},
+    "identity_proof": {
+      "type": "unverified",
+      "reason": "migrated_from_pending",
+      "migrated_at": "2026-07-09T01:16:00.100006+00:00"
+    },
+    "registered_at": "2026-06-29T15:47:51.036Z",
+    "last_seen": "2026-06-29T15:47:51.036Z",
+    "lease_ids": [],
+    "trust_tier": "UNVERIFIED"
+  },
+  "FI-008": {
+    "agent_id": "FI-008",
     "agent_type": "custom",
     "role": "governed_coder",
     "authority": {
       "observe": true,
       "dry_run": true,
       "propose_patch": true,
-      "mutate_files": "never",
-      "shell_exec": "never",
-      "git_commit": "never",
+      "mutate_files": "always",
+      "shell_exec": "always",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "always"
+    },
+    "identity_proof": {
+      "type": "unverified",
+      "reason": "migrated_from_pending",
+      "migrated_at": "2026-07-09T01:16:00.100023+00:00"
+    },
+    "registered_at": "2026-07-01T17:22:18.751Z",
+    "last_seen": "2026-07-01T17:22:18.751Z",
+    "lease_ids": [],
+    "trust_tier": "UNVERIFIED"
+  },
+  "arifbench-eval": {
+    "agent_id": "arifbench-eval",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "always",
+      "shell_exec": "always",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "always"
+    },
+    "identity_proof": "sha256:arifbench-eval-ijcai-2026",
+    "registered_at": "2026-07-03T15:00:00.000Z",
+    "last_seen": "2026-07-03T15:00:00.000Z",
+    "lease_ids": []
+  },
+  "arif-f13-darwin-test": {
+    "agent_id": "arif-f13-darwin-test",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "unverified",
+      "reason": "migrated_from_pending",
+      "migrated_at": "2026-07-09T01:16:00.100027+00:00"
+    },
+    "registered_at": "2026-07-04T15:21:42.147Z",
+    "last_seen": "2026-07-04T15:21:42.147Z",
+    "lease_ids": [],
+    "trust_tier": "UNVERIFIED"
+  },
+  "agent-b-rerun2": {
+    "agent_id": "agent-b-rerun2",
+    "agent_type": "opencode",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "always",
+      "shell_exec": "always",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "unverified",
+      "reason": "migrated_from_pending",
+      "migrated_at": "2026-07-09T01:16:00.100029+00:00"
+    },
+    "registered_at": "2026-07-04T15:50:38.472Z",
+    "last_seen": "2026-07-04T15:50:38.472Z",
+    "lease_ids": [],
+    "trust_tier": "UNVERIFIED"
+  },
+  "darwin-e2e": {
+    "agent_id": "darwin-e2e",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {},
+    "identity_proof": {
+      "type": "unverified",
+      "reason": "migrated_from_pending",
+      "migrated_at": "2026-07-09T01:16:00.100031+00:00"
+    },
+    "registered_at": "2026-07-04T15:52:12.105Z",
+    "last_seen": "2026-07-04T15:52:12.105Z",
+    "lease_ids": [],
+    "trust_tier": "UNVERIFIED"
+  },
+  "darwin-final": {
+    "agent_id": "darwin-final",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {},
+    "identity_proof": {
+      "type": "unverified",
+      "reason": "migrated_from_pending",
+      "migrated_at": "2026-07-09T01:16:00.100033+00:00"
+    },
+    "registered_at": "2026-07-04T15:55:30.418Z",
+    "last_seen": "2026-07-04T15:55:30.418Z",
+    "lease_ids": [],
+    "trust_tier": "UNVERIFIED"
+  },
+  "arif-forge-fix-2026-07-05": {
+    "agent_id": "arif-forge-fix-2026-07-05",
+    "agent_type": "custom",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
       "deploy": "never",
       "vault_seal": "never"
     },
-    "identity_proof": "pending",
-    "registered_at": "2026-06-14T13:06:01.228Z",
-    "last_seen": "2026-06-14T13:06:01.229Z",
-    "lease_ids": [
-      "4ebd539b-4e4b-4480-8aa3-4c88616ca1fa"
-    ]
+    "identity_proof": "aforge-fix-2026-07-05-001",
+    "registered_at": "2026-07-05T08:10:20.398Z",
+    "last_seen": "2026-07-05T08:10:20.398Z",
+    "lease_ids": []
   },
-  "test-agent-002": {
-    "agent_id": "test-agent-002",
-    "agent_type": "custom",
+  "FORGE-STRESSTEST-2026-07-08": {
+    "agent_id": "FORGE-STRESSTEST-2026-07-08",
+    "agent_type": "claude-code-forge-sibling",
+    "role": "forge-worker-bounded-stresstest",
+    "authority": "OBSERVE_AND_COMPUTE",
+    "identity_proof": {
+      "type": "unverified",
+      "reason": "migrated_from_pending",
+      "migrated_at": "2026-07-09T01:16:00.100035+00:00"
+    },
+    "registered_at": "2026-07-08T15:30:00.222Z",
+    "last_seen": "2026-07-08T15:30:00.222Z",
+    "lease_ids": [],
+    "trust_tier": "UNVERIFIED"
+  },
+  "hermes": {
+    "agent_id": "hermes",
+    "agent_type": "external",
+    "role": "telegram_agent",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "888_HOLD",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_fingerprint": "sha256:c1f0481c08d3c611bb37b7ae98da122c39fd54a36f34af0f05aefbc149e41c78",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAB3WHKlwUiIu0cVz/JnrOecoB0cqvfXkHvZpwOJJlOYA=\n-----END PUBLIC KEY-----",
+      "registered_at": "2026-07-09T01:42:25.735136+00:00",
+      "verification_method": "sovereign_approval",
+      "verified_by": "sovereign"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-07-09T01:42:25.735136+00:00",
+    "last_seen": "2026-07-09T01:50:05.510110+00:00",
+    "lease_ids": [],
+    "f3_external_witness": {
+      "status": "PASS",
+      "channel": "mcp_arif_route_wealth",
+      "at": "2026-07-09T01:50:05.510110+00:00",
+      "session_id": "SEAL-f0c2d4b69afc438d",
+      "tool": "arif_route\u2192wealth_compute_irr",
+      "identity_propagated": true,
+      "irr_sample": 0.218623,
+      "note": "Governed tool pulse under signed session \u2014 not Telegram human leg; human F3 still optional for SEAL autonomy"
+    },
+    "pulse_count": 1
+  },
+  "hermes-asi": {
+    "agent_id": "hermes-asi",
+    "agent_type": "external",
+    "role": "telegram_asi_gateway",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "888_HOLD",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_fingerprint": "sha256:c1f0481c08d3c611bb37b7ae98da122c39fd54a36f34af0f05aefbc149e41c78",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAB3WHKlwUiIu0cVz/JnrOecoB0cqvfXkHvZpwOJJlOYA=\n-----END PUBLIC KEY-----",
+      "registered_at": "2026-07-09T01:42:25.807639+00:00",
+      "verification_method": "sovereign_approval",
+      "verified_by": "sovereign"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-07-09T01:42:25.807639+00:00",
+    "last_seen": "2026-07-09T01:42:25.807639+00:00",
+    "lease_ids": []
+  },
+  "openclaw": {
+    "agent_id": "openclaw",
+    "agent_type": "external",
+    "role": "agi_runtime",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "888_HOLD",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_fingerprint": "sha256:5eef4f66c26a8d61808c3e782c89e4468b489d5a245cd11070d31d4e79ae10e3",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA1zhS3w4WAJvu48saUx3D8p4rygiB7wC82Xisy2foBIo=\n-----END PUBLIC KEY-----",
+      "registered_at": "2026-07-09T01:42:25.877767+00:00",
+      "verification_method": "sovereign_approval",
+      "verified_by": "sovereign"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-07-09T01:42:25.877767+00:00",
+    "last_seen": "2026-07-09T01:50:05.510110+00:00",
+    "lease_ids": [],
+    "f3_external_witness": {
+      "status": "PASS",
+      "channel": "mcp_arif_route_wealth",
+      "at": "2026-07-09T01:50:05.510110+00:00",
+      "session_id": "SEAL-68874e9672594bd5",
+      "tool": "arif_route\u2192wealth_compute_irr",
+      "identity_propagated": true,
+      "irr_sample": 0.218623,
+      "note": "Governed tool pulse under signed session \u2014 not Telegram human leg; human F3 still optional for SEAL autonomy"
+    },
+    "pulse_count": 1
+  },
+  "grok-build": {
+    "agent_id": "grok-build",
+    "agent_type": "external",
+    "role": "build_harness",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_fingerprint": "sha256:ea122a2e823ca213de3219dec18dc149e2e8a21b8c2c657b7c05b10d8beaff48",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAMQVRh7AMbgrnqKQNJDDM3f2OD/MemQoYnzkQS6oCcSg=\n-----END PUBLIC KEY-----",
+      "registered_at": "2026-07-09T01:43:43.316832+00:00",
+      "verification_method": "sovereign_approval",
+      "verified_by": "sovereign"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-07-09T01:43:43.316832+00:00",
+    "last_seen": "2026-07-09T01:50:05.510110+00:00",
+    "lease_ids": [],
+    "f3_external_witness": {
+      "status": "PASS",
+      "channel": "mcp_arif_route_wealth",
+      "at": "2026-07-09T01:50:05.510110+00:00",
+      "session_id": "SEAL-87208054f7e0474b",
+      "tool": "arif_route\u2192wealth_compute_irr",
+      "identity_propagated": true,
+      "irr_sample": 0.218623,
+      "note": "Governed tool pulse under signed session \u2014 not Telegram human leg; human F3 still optional for SEAL autonomy"
+    },
+    "pulse_count": 1
+  },
+  "opencode": {
+    "agent_id": "opencode",
+    "agent_type": "opencode",
     "role": "governed_coder",
     "authority": {
       "observe": true,
@@ -34,14 +343,22 @@
       "deploy": "888_HOLD",
       "vault_seal": "888_HOLD"
     },
-    "identity_proof": "pending",
-    "registered_at": "2026-06-14T14:28:44.336Z",
-    "last_seen": "2026-06-14T14:28:44.336Z",
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_fingerprint": "sha256:0c781338d412db5cbe9556d527006c715806c4785e0dbff45319de4288f7eec4",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEALpkZ7yT3+EP65tbpQKud1U1OZCNYUnxObbioU0tIHRk=\n-----END PUBLIC KEY-----",
+      "registered_at": "2026-07-09T01:44:55.590961+00:00",
+      "verification_method": "sovereign_approval",
+      "verified_by": "sovereign"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-07-09T01:44:55.590961+00:00",
+    "last_seen": "2026-07-09T01:44:55.590961+00:00",
     "lease_ids": []
   },
-  "test-agent-003": {
-    "agent_id": "test-agent-003",
-    "agent_type": "custom",
+  "kimi-code": {
+    "agent_id": "kimi-code",
+    "agent_type": "opencode",
     "role": "governed_coder",
     "authority": {
       "observe": true,
@@ -53,14 +370,22 @@
       "deploy": "888_HOLD",
       "vault_seal": "888_HOLD"
     },
-    "identity_proof": "pending",
-    "registered_at": "2026-06-14T14:29:19.875Z",
-    "last_seen": "2026-06-14T14:29:19.875Z",
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_fingerprint": "sha256:6b3e78cc53c79f053e0067f6c54bdd9aa801770c1bebbfa7b0a2fba3d06d8e04",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA5F7QAHtTtXxQrLIfspwNMy7EEOuJxWMZSYrNWPYLQ50=\n-----END PUBLIC KEY-----",
+      "registered_at": "2026-07-09T01:44:55.654235+00:00",
+      "verification_method": "sovereign_approval",
+      "verified_by": "sovereign"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-07-09T01:44:55.654235+00:00",
+    "last_seen": "2026-07-09T01:44:55.654235+00:00",
     "lease_ids": []
   },
-  "test-agent-005": {
-    "agent_id": "test-agent-005",
-    "agent_type": "custom",
+  "codex": {
+    "agent_id": "codex",
+    "agent_type": "opencode",
     "role": "governed_coder",
     "authority": {
       "observe": true,
@@ -72,123 +397,59 @@
       "deploy": "888_HOLD",
       "vault_seal": "888_HOLD"
     },
-    "identity_proof": "pending",
-    "registered_at": "2026-06-14T14:34:13.891Z",
-    "last_seen": "2026-06-14T14:34:13.891Z",
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_fingerprint": "sha256:15b610f45b106fa3eb2ace63f7f1faa8d6618d924ae7ac58a78a3682a6303c5a",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAoL60lcoNZOo9HwK7NiJByvCIdjwA8pFeHA2sncJ9708=\n-----END PUBLIC KEY-----",
+      "registered_at": "2026-07-09T01:44:55.734906+00:00",
+      "verification_method": "sovereign_approval",
+      "verified_by": "sovereign"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-07-09T01:44:55.734906+00:00",
+    "last_seen": "2026-07-09T01:44:55.734906+00:00",
     "lease_ids": []
   },
-  "test-agent-mcp": {
-    "agent_id": "test-agent-mcp",
+  "arif": {
+    "agent_id": "arif",
+    "agent_type": "sovereign",
+    "role": "sovereign_principal",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "always",
+      "shell_exec": "always",
+      "git_commit": "always",
+      "deploy": "always",
+      "vault_seal": "always"
+    },
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA/8srcNdnITCuEYrwgqO0MsMAMt4h35z1w6+39Tuptrc=\n-----END PUBLIC KEY-----",
+      "registered_at": "2026-07-11T12:46:00Z",
+      "note": "Sovereign principal \u2014 F13 authority"
+    },
+    "registered_at": "2026-07-11T12:46:00Z",
+    "last_seen": "2026-07-11T12:46:00Z",
+    "lease_ids": [],
+    "trust_tier": "OBSERVED"
+  },
+  "meta-test-agent": {
+    "agent_id": "meta-test-agent",
     "agent_type": "custom",
-    "role": "governed_coder",
+    "role": "canary_tester",
     "authority": {
       "observe": true,
       "dry_run": true,
-      "propose_patch": true,
-      "mutate_files": "lease_required",
-      "shell_exec": "lease_required",
-      "git_commit": "888_HOLD",
-      "deploy": "888_HOLD",
-      "vault_seal": "888_HOLD"
+      "mutate_files": "sandbox_only",
+      "TEST_SANDBOX_WRITE": true
     },
-    "identity_proof": "pending",
-    "registered_at": "2026-06-14T14:45:22.524Z",
-    "last_seen": "2026-06-14T14:45:22.524Z",
-    "lease_ids": []
-  },
-  "gateway-e2e-agent": {
-    "agent_id": "gateway-e2e-agent",
-    "agent_type": "custom",
-    "role": "governed_coder",
-    "authority": {
-      "observe": true,
-      "dry_run": true,
-      "propose_patch": true,
-      "mutate_files": "lease_required",
-      "shell_exec": "lease_required",
-      "git_commit": "888_HOLD",
-      "deploy": "888_HOLD",
-      "vault_seal": "888_HOLD"
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAU6XeFYm+afE4lihCouQKH8dRTl18LCZDSgl1GXpRJhc=\n-----END PUBLIC KEY-----\n"
     },
-    "identity_proof": "pending",
-    "registered_at": "2026-06-14T14:57:39.530Z",
-    "last_seen": "2026-06-14T14:57:39.530Z",
-    "lease_ids": []
-  },
-  "kimi-cli-forge": {
-    "agent_id": "kimi-cli-forge",
-    "agent_type": "custom",
-    "role": "governed_coder",
-    "authority": {
-      "observe": true,
-      "dry_run": true,
-      "propose_patch": true,
-      "mutate_files": "lease_required",
-      "shell_exec": "lease_required",
-      "git_commit": "888_HOLD",
-      "deploy": "888_HOLD",
-      "vault_seal": "888_HOLD"
-    },
-    "identity_proof": "kimi-cli-forge-session-SEAL-ff2eb2a3dd00405b",
-    "registered_at": "2026-06-20T14:57:44.310Z",
-    "last_seen": "2026-06-20T14:57:44.310Z",
-    "lease_ids": []
-  },
-  "kimi-code-aaa": {
-    "agent_id": "kimi-code-aaa",
-    "agent_type": "hermes",
-    "role": "governed_coder",
-    "authority": {
-      "observe": true,
-      "dry_run": true,
-      "propose_patch": true,
-      "mutate_files": "lease_required",
-      "shell_exec": "lease_required",
-      "git_commit": "888_HOLD",
-      "deploy": "888_HOLD",
-      "vault_seal": "888_HOLD"
-    },
-    "identity_proof": "pending",
-    "registered_at": "2026-06-23T05:26:50.208Z",
-    "last_seen": "2026-06-23T05:26:50.208Z",
-    "lease_ids": []
-  },
-  "audit-agent-01": {
-    "agent_id": "audit-agent-01",
-    "agent_type": "custom",
-    "role": "observer",
-    "authority": {
-      "observe": true,
-      "dry_run": true,
-      "propose_patch": true,
-      "mutate_files": "lease_required",
-      "shell_exec": "lease_required",
-      "git_commit": "888_HOLD",
-      "deploy": "888_HOLD",
-      "vault_seal": "888_HOLD"
-    },
-    "identity_proof": "pending",
-    "registered_at": "2026-06-24T01:19:13.889Z",
-    "last_seen": "2026-06-24T01:19:13.889Z",
-    "lease_ids": []
-  },
-  "forge-test-001": {
-    "agent_id": "forge-test-001",
-    "agent_type": "custom",
-    "role": "governed_coder",
-    "authority": {
-      "observe": true,
-      "dry_run": true,
-      "propose_patch": true,
-      "mutate_files": "lease_required",
-      "shell_exec": "lease_required",
-      "git_commit": "888_HOLD",
-      "deploy": "888_HOLD",
-      "vault_seal": "888_HOLD"
-    },
-    "identity_proof": "pending",
-    "registered_at": "2026-06-24T05:13:42.612Z",
-    "last_seen": "2026-06-24T05:13:42.612Z",
-    "lease_ids": []
+    "registered_at": "2026-07-12T20:24:36Z",
+    "trust_tier": "VERIFIED"
   }
 }

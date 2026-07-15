@@ -48,7 +48,7 @@ Caddy-proxied traffic unaffected. No fix required for production.
 - Merge `feat/geox-well-desk-path` — human approval required.
 - GEOX container volume update — human deployment decision.
 - GEOX MCP tool registration fix — next epoch work.
-- Langfuse instrumentation for `arif_forge_execute` + `arif_vault_seal`.
+- Langfuse instrumentation for `arif_forge_execute` + `arif_seal`.
 - outputSchema enforcement for remaining 9 tools.
 
 ## Artifacts from today

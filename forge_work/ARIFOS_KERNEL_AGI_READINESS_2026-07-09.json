@@ -1,0 +1,122 @@
+{
+  "receipt_type": "arifOS_kernel_deployment_AGI_substrate_readiness",
+  "probed_at_utc": "2026-07-09T02:30:37Z",
+  "actor": "grok-build",
+  "epistemic": "OBSERVED",
+  "overall_verdict": "YELLOW_PARTIAL",
+  "honest_level": "kernel LIVE and governing; AGI substrate NOT full green",
+  "deployment": {
+    "service": "arifos.service active",
+    "status": "healthy",
+    "deployment_source": "native",
+    "runtime_path": "/opt/arifos/app",
+    "deployed_commit": "7951e56-dirty",
+    "repo_HEAD": "c0f8834",
+    "origin_main": "c0f8834",
+    "runtime_drift": true,
+    "runtime_matches_build": false,
+    "release_name": "v2026.07.04-MARHIN",
+    "build_time": "2026-07-09T02:05:37Z",
+    "floors_active": 13,
+    "floors_enforcement": "active",
+    "surface_consistency": "CONSISTENT",
+    "registry_truth": "VERIFIED",
+    "contract_drift": false,
+    "tools_public_mcp": 12,
+    "canonical_tools_loaded": 17,
+    "total_declared_tools": 58,
+    "vault999_health": "healthy",
+    "boot_attestation": true,
+    "mcp_protocol": "2025-11-25"
+  },
+  "federation_organs": {
+    "arifos_8088": "healthy",
+    "aforge_7071": "healthy",
+    "aaa_3001": "healthy",
+    "geox_8081": "healthy",
+    "wealth_18082": "ALIVE",
+    "well_18083": "degraded (WELL_HOLD, metrics STALE ~1682h, owner_summary RED)"
+  },
+  "live_kernel_verbs": {
+    "mcp_tools_list": 12,
+    "canonical_12": [
+      "arif_init",
+      "arif_observe",
+      "arif_think",
+      "arif_route",
+      "arif_critique",
+      "arif_judge",
+      "arif_forge",
+      "arif_compose",
+      "arif_seal",
+      "arif_triage",
+      "arif_memory",
+      "arif_bridge_connect"
+    ],
+    "arif_init_light": "OK / OBSERVE_ONLY / session mint works (SABAR.DEGRADED: profiles deferred)",
+    "arif_triage_with_session": "OK / SYUBHAH",
+    "arif_observe_vitals": "OK",
+    "arif_think_axioms": "SEAL/OBSERVE_ONLY",
+    "arif_route": "OK \u2192 ARIFOS",
+    "arif_judge_unauth": "888_HOLD SOVEREIGN required (F13 correct)",
+    "arif_seal_verify_unauth": "888_HOLD SOVEREIGN required (F13 correct)",
+    "arif_memory_attest": "VOID \u2014 RuntimeStatus missing SABAR (code bug)"
+  },
+  "tests": {
+    "deployment_health_pack": "24 passed, 1 failed (runtime_drift must be False on native)",
+    "agi_kernel_readiness_partial": "10 passed then FAIL test_005 (verdict OBSERVE_ONLY not in SEAL|HOLD|VOID)",
+    "run_gate_py": "BROKEN \u2014 ModuleNotFoundError tests.agi_kernel_readiness (path/import bug)"
+  },
+  "blockers_P0": [
+    {
+      "id": "runtime_drift",
+      "detail": "Deployed 7951e56 vs repo c0f8834; health reports runtime_drift=True",
+      "fix": "make deploy-local from synced main (after HEAD==origin/main clean)"
+    },
+    {
+      "id": "seal_chain_prev_hash_mismatch",
+      "detail": "node seal_chain.js verify \u2192 ok:false prev_hash mismatch",
+      "fix": "audit seal_chain.jsonl continuity; do NOT rewrite \u2014 append diagnostic only after F13 if repair needed"
+    }
+  ],
+  "blockers_P1": [
+    {
+      "id": "well_stale",
+      "detail": "WELL owner_summary RED, biometric/metrics age ~1682h expired",
+      "fix": "refresh WELL telemetry (human substrate)"
+    },
+    {
+      "id": "memory_attest_RuntimeStatus_SABAR",
+      "detail": "SAFE_VOID_FALLBACK: RuntimeStatus has no attribute SABAR",
+      "fix": "patch RuntimeStatus enum + memory attest path"
+    },
+    {
+      "id": "agi_test_005_verdict_shape",
+      "detail": "mind reason returns OBSERVE_ONLY; test expects SEAL|HOLD|VOID",
+      "fix": "align verdict lattice vs test contract"
+    },
+    {
+      "id": "init_degraded_profiles",
+      "detail": "alignment_profile_not_loaded, adversarial_profile_not_loaded, belief_scaffold_deferred",
+      "fix": "load profiles at boot or document deferred as expected"
+    },
+    {
+      "id": "run_gate_import_path",
+      "detail": "run_gate.py cannot import tests.agi_kernel_readiness",
+      "fix": "PYTHONPATH=. or package tests for gate runner"
+    }
+  ],
+  "agi_substrate_readiness": {
+    "constitutional_floors": "ACTIVE (13)",
+    "governance_gate_f13": "WORKING (judge/seal hold without sovereign)",
+    "public_surface": "CONSISTENT 12 tools",
+    "session_bootstrap": "WORKING (degraded profiles)",
+    "memory_plane": "DEGRADED (attest VOID bug)",
+    "human_substrate_WELL": "NOT READY (stale RED)",
+    "immutable_audit_VAULT999_service": "healthy health-flag",
+    "seal_chain_integrity": "BROKEN (prev_hash)",
+    "deploy_sync": "DRIFTED",
+    "verdict": "PARTIAL \u2014 usable as governed kernel OBSERVE/THINK/ROUTE; not full AGI-green for seal/mutate/human-loop"
+  },
+  "recommendation": "1) redeploy arifOS HEAD c0f8834 to clear runtime_drift 2) diagnose seal_chain prev_hash (no rewrite) 3) fix RuntimeStatus.SABAR + re-run agi_kernel_readiness suite 4) refresh WELL metrics before claiming full AGI substrate"
+}

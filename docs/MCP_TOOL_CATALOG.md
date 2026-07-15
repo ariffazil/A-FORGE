@@ -1,4 +1,4 @@
-# A-FORGE MCP Tool Catalog — 77 Tools by Cognitive Function
+# A-FORGE MCP Tool Catalog — 78 Tools by Cognitive Function
 
 > **Purpose:** Give agents (and humans) a single-page map of the A-FORGE MCP surface so the right tool is chosen for the right intent.  
 > **Canonical source:** `A-FORGE/src/interfaces/mcp/core.ts` + `proxyTools.ts` + `forgeTools.ts` + `gatewayTools.ts`.  
@@ -21,11 +21,11 @@ A-FORGE is **the hands** of the federation. It does not make constitutional law;
 
 ### Typical agent flow
 
-1. **Bootstrap identity** — `arif_session_init` (arifOS)
-2. **Think / observe / critique** — `arif_mind_reason`, `arif_sense_observe`, `arif_heart_critique` (arifOS)
-3. **Get authority** — `forge_lease_request` + `forge_judge_proxy` / `arif_judge_deliberate` (arifOS)
+1. **Bootstrap identity** — `arif_init` (arifOS)
+2. **Think / observe / critique** — `arif_think`, `arif_observe`, `arif_critique` (arifOS)
+3. **Get authority** — `forge_lease_request` + `forge_judge_proxy` / `arif_judge` (arifOS)
 4. **Execute** — `forge_run`, `forge_filesystem_write`, `forge_git_commit`, `forge_browser_navigate` (A-FORGE)
-5. **Seal the record** — `arif_vault_seal` (arifOS)
+5. **Seal the record** — `arif_seal` (arifOS)
 
 > **One-line rule:** arifOS decides what is lawful. A-FORGE forges what is permitted under law. They are separated so governance cannot be bypassed by execution power.
 
@@ -41,10 +41,10 @@ A-FORGE is **the hands** of the federation. It does not make constitutional law;
 | **Use When** | Agent-level intent → tool mapping. |
 
 **Iron rules:**
-- `IRREVERSIBLE` and `EXECUTE_HIGH_IMPACT` tools require an `arif_judge_deliberate` SEAL + kernel lease.
+- `IRREVERSIBLE` and `EXECUTE_HIGH_IMPACT` tools require an `arif_judge` SEAL + kernel lease.
 - `EXECUTE_REVERSIBLE` tools require a kernel lease (issued via `forge_lease_request`).
 - `OBSERVE` tools may run without a lease unless they touch sensitive surfaces.
-- Always start a session with `arif_session_init` before lease-gated work.
+- Always start a session with `arif_init` before lease-gated work.
 
 ---
 
@@ -54,13 +54,13 @@ The arifOS bridge inside A-FORGE. Use these when the task is about governance, s
 
 | Tool | Class | Lease? | Use When |
 |------|-------|--------|----------|
-| `arif_session_init` | `EXECUTE_REVERSIBLE` | No | Start any governed session. Returns `session_id`. |
+| `arif_init` | `EXECUTE_REVERSIBLE` | No | Start any governed session. Returns `session_id`. |
 | `arif_health_check` | `OBSERVE` | No | Ping A-FORGE / check constitutional genome status. |
-| `arif_sense_observe` | `OBSERVE` | No | Ground a query in reality before acting. |
-| `arif_mind_reason` | `SUGGEST` | No | Synthesize grounded facts into a reasoning path. |
-| `arif_heart_critique` | `OBSERVE` | No | Run F3/F6/F9/W0 risk critique on a proposed task. |
-| `forge_check_governance` | `OBSERVE` | No | Alias for `arif_heart_critique`; use either. |
-| `forge_judge_proxy` | `EXECUTE_HIGH_IMPACT` | Yes | Forward a candidate action to arifOS `arif_judge_deliberate`. |
+| `arif_observe` | `OBSERVE` | No | Ground a query in reality before acting. |
+| `arif_think` | `SUGGEST` | No | Synthesize grounded facts into a reasoning path. |
+| `arif_critique` | `OBSERVE` | No | Run F3/F6/F9/W0 risk critique on a proposed task. |
+| `forge_check_governance` | `OBSERVE` | No | Alias for `arif_critique`; use either. |
+| `forge_judge_proxy` | `EXECUTE_HIGH_IMPACT` | Yes | Forward a candidate action to arifOS `arif_judge`. |
 
 ---
 
@@ -83,7 +83,7 @@ Use these to read/write the federation memory graph and VAULT999 ledger.
 
 | Tool | Class | Lease? | Use When |
 |------|-------|--------|----------|
-| `arif_vault_seal` | `IRREVERSIBLE` | Yes | Seal a terminal verdict to VAULT999. |
+| `arif_seal` | `IRREVERSIBLE` | Yes | Seal a terminal verdict to VAULT999. |
 | `forge_vault_seal` | `IRREVERSIBLE` | Yes | Lower-level VAULT999 seal with full telemetry. |
 | `forge_remember` | `EXECUTE_REVERSIBLE` | Yes | Store a memory entry. |
 | `forge_memory_store` | `EXECUTE_REVERSIBLE` | Yes | Store value in federation memory (arifOS + VAULT999 fallback). |
@@ -137,7 +137,7 @@ Direct Postgres access to the local vault999 database.
 
 ---
 
-## 7. Git — Local Repo Operations (4 tools)
+## 7. Git — Local Repo Operations (5 tools)
 
 Read + commit git state in allowed repo roots (`/root/arifOS`, `/root/A-FORGE`, `/root/AAA`, `/root/geox`, `/root/WEALTH`, `/root/WELL`, `/root/APEX`).
 
@@ -147,6 +147,7 @@ Read + commit git state in allowed repo roots (`/root/arifOS`, `/root/A-FORGE`, 
 | `forge_git_diff` | `OBSERVE` | No | Uncommitted diff (optionally staged). |
 | `forge_git_log` | `OBSERVE` | No | Recent commit history. |
 | `forge_git_commit` | `EXECUTE_REVERSIBLE` | Yes | Stage and commit; `push=true` requires 888_HOLD. |
+| `forge_worktree` | `OBSERVE` | No | Git physics sensor — branch, dirty state, stash, conflicts, in-progress ops, blast radius, recommendations. |
 
 ---
 
@@ -222,6 +223,20 @@ Read federation health, logs, and Netdata metrics.
 
 ---
 
+## 12.5. Visualization & Agentic Data Analysis (1 tool)
+
+Shared surface for all domain organs. Agentic charts + automatic "eureka margin" detection (turning points, high deviation, curvature). Enables GEOX crossplots, WEALTH time-series + distributions, WELL vitality trends, and quantum discovery pattern finding without each organ owning viz code.
+
+| Tool | Class | Lease? | Use When |
+|------|-------|--------|----------|
+| `forge_chart` | `OBSERVE` | No | Generate SVG chart from data + receive eureka_candidates (reversals/outliers/curvature as discovery margins). Types: line, bar, scatter, pie, area, histogram. |
+
+**Pattern:** query data (forge_postgres / forge_wealth / raw series) → forge_chart → agent sees SVG + margins → iterate / eureka.
+
+**Upstream reference:** antvis/mcp-server-chart (25+ @antv charts) — this is the A-FORGE canonical always-on subset for federation unity.
+
+---
+
 ## 13. Domain Organs — WEALTH & WELL (7 tools)
 
 A-FORGE's native wrappers for capital and human-readiness evidence.
@@ -255,8 +270,8 @@ Diagnostics, dry-run, and background job plumbing.
 
 | I want to... | Start here |
 |--------------|------------|
-| Begin a governed session | `arif_session_init` |
-| Check if an action is safe | `arif_heart_critique` → `forge_judge_proxy` |
+| Begin a governed session | `arif_init` |
+| Check if an action is safe | `arif_critique` → `forge_judge_proxy` |
 | Read code/files | `forge_filesystem_read` / `forge_filesystem_grep` |
 | Edit code/files | `forge_filesystem_write` (lease) |
 | Search the web | `forge_search` or `forge_research` |
@@ -265,11 +280,11 @@ Diagnostics, dry-run, and background job plumbing.
 | Open a GitHub issue/PR | `forge_github_create_issue` / `forge_github_create_pull_request` (lease) |
 | Run shell commands safely | `forge_shell_dryrun` first, then `arif_forge_execute` with SEAL |
 | Store a memory | `forge_remember` or `forge_memory_store` (lease) |
-| Seal a final verdict | `arif_vault_seal` (lease + JUDGE SEAL) |
+| Seal a final verdict | `arif_seal` (lease + JUDGE SEAL) |
 | Check system health | `arif_health_check`, `forge_log_tail`, `forge_netdata_alarms` |
 
 ---
 
 ## Governance Reminder for Agents
 
-> **A-FORGE is not a free-for-all.** Every `EXECUTE_*` call leaves a receipt. Every lease is minted by arifOS, not by A-FORGE. When in doubt, run `arif_heart_critique` first, then request a lease scoped to exactly the tools you need.
+> **A-FORGE is not a free-for-all.** Every `EXECUTE_*` call leaves a receipt. Every lease is minted by arifOS, not by A-FORGE. When in doubt, run `arif_critique` first, then request a lease scoped to exactly the tools you need.

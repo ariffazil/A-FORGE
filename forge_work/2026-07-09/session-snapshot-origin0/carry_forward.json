@@ -1,0 +1,66 @@
+{
+  "generated_at": "2026-07-09T01:00:02Z",
+  "session_anchor": "unknown",
+  "last_seal": {
+    "actor": "grok-build",
+    "verdict": "SEAL",
+    "epoch": "2026-07-09T00:52:08.503Z"
+  },
+  "identity_drift": "PASS",
+  "next_safe_action": "PROCEED_OR_SABAR",
+  "prior_session": {
+    "file": "session-2026-07-04-drift-close.md",
+    "date": "2026-07-04",
+    "intent": " Close surface drift + heal conformance spine"
+  },
+  "active_scars": {
+    "count": 2,
+    "directories": "2026-06-15,2026-06-30",
+    "surface": [
+  {
+    "date": "2026-06-15",
+    "primary_file": "artifact1_wisdom.md",
+    "lesson_first_line": "This is not a CV. It is not a complaint. It is not a resignation letter.",
+    "floors_cited": [
+      "F1",
+      "F13",
+      "F2"
+    ]
+  },
+  {
+    "date": "2026-06-30",
+    "primary_file": "scar-manifest.yaml",
+    "lesson_first_line": "AAA TREE777 v2 + reality-engineering rename map Phase 1",
+    "floors_cited": [
+      "F1"
+    ]
+  }
+]
+  },
+  "never_patterns": [
+  {
+    "pattern": "rm -rf /root/AAA",
+    "severity": "VOID",
+    "reason": "F1 AMANAH: Destructive deletion of AAA cockpit",
+    "sealed_at": "2026-06-26T10:50:36.879667+00:00"
+  }
+],
+  "recent_seals": [
+  {
+    "seq": 90,
+    "actor": "aaa-bridge",
+    "verdict": "HOLD"
+  },
+  {
+    "seq": 91,
+    "actor": "aaa-bridge",
+    "verdict": "HOLD"
+  },
+  {
+    "seq": 92,
+    "actor": "grok-build",
+    "verdict": "SEAL"
+  }
+],
+  "wake_protocol": "Read /root/CONTEXT.md + /root/.claude/projects/-root/memory/session-state.md + this file. Identity drift MUST be PASS before any irreversible action."
+}

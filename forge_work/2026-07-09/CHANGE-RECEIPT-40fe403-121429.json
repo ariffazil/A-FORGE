@@ -1,0 +1,25 @@
+{
+  "receipt_type": "GIT_CHANGE_RECEIPT",
+  "receipt_id": "change-2026-07-09-40fe403-121429",
+  "timestamp_utc": "2026-07-09T12:14:29Z",
+  "actor": "grok-build",
+  "session_id": "SEAL-b70f48e6ab5f4b9e",
+  "note": "post-commit 40fe403 spine-p0 SCT wire + llms + receipt emitter",
+  "repo": {
+    "path": "/root/arifOS",
+    "remote": "git@github.com:ariffazil/arifos.git",
+    "branch": "main",
+    "head": "40fe403ccbe4ac46a7719db02f3ca5c840184144",
+    "short": "40fe403",
+    "tree_hash": "99809b19b3ca0ee71bcecb355558503d82d8d70d",
+    "working_tree_content_hash_sha256": "711b9b3f0c4466cc7edfac59b6e481c8ca840326b960e6f0f964d61ef3130529",
+    "files_hashed": 3232,
+    "dirty": true,
+    "dirty_paths": [
+      "GENESIS/048_QUBIT_RUNTIME_DOCTRINE.md",
+      "arifosmcp/packages/npm/arifos-mcp/src/kernel/",
+      "arifosmcp/runtime/kernel/"
+    ]
+  },
+  "receipt_sha256": "8beadb22bcfefe9036e76cf59534f932d80f234d12e8eb1bd969e75b5c38b0e8"
+}

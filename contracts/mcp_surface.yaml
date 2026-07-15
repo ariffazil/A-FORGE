@@ -2,7 +2,7 @@ schema_version: 1
 kind: arifos.mcp_surface
 owner_repo: A-FORGE
 status: contract
-last_verified: "2026-05-19"
+last_verified: "2026-06-30"
 runtime_surface:
   primary_role: execution_substrate
   primary_port: 7071
@@ -14,6 +14,18 @@ authority:
     - rollback_plan
     - ops_cost
     - execution_receipts
+  resources_owned:
+    - forge://governance/floors
+    - forge://approvals/pending
+    - forge://memory/working
+    - forge://vault/records
+    - forge://vault/categories
+    - forge://well/state
+    - forge://execution/leases/status
+    - forge://execution/reality/snapshot
+    - forge://execution/receipts/recent
+    - forge://execution/manifests
+    - forge://execution/forge_work/pointers
   excludes:
     - final_verdict
     - constitutional_law

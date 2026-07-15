@@ -39,6 +39,23 @@ export interface RealityLedgerEvent {
   hash: string;
 }
 
+export interface MesaAlertRecord {
+  alertId: string;
+  agentName: string;
+  profileName: string;
+  level: string;
+  trigger: string;
+  driftScore: number;
+  mesaProbability: number;
+  timestamp: string;
+  evidence: {
+    metricZScores: Record<string, number>;
+    windowSize: number;
+    baselineSessions: number;
+    currentSessions: number;
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Client
 // ---------------------------------------------------------------------------
@@ -110,6 +127,78 @@ export class RealityLedgerClient {
     event.hash = createHash("sha256").update(canonical).digest("hex");
 
     // Append
+    try {
+      mkdirSync(dirname(this.ledgerPath), { recursive: true });
+    } catch {
+      // already exists
+    }
+    appendFileSync(this.ledgerPath, JSON.stringify(event) + "\n", "utf-8");
+
+    return eventId;
+  }
+
+  /**
+   * Record a mesa-detection alert to the Reality Ledger.
+   */
+  recordMesaAlert(params: MesaAlertRecord): string {
+    const { alertId, agentName, profileName, level, trigger, driftScore, mesaProbability, timestamp, evidence } = params;
+
+    const eventId = `MESA-${new Date().toISOString().replace(/[:.]/g, "").slice(0, 15)}-${alertId.slice(0, 8)}`;
+
+    // Read previous hash
+    let prevHash = "0".repeat(64);
+    try {
+      if (existsSync(this.ledgerPath)) {
+        const content = readFileSync(this.ledgerPath, "utf-8").trim();
+        if (content) {
+          const lines = content.split("\n").filter(Boolean);
+          if (lines.length > 0) {
+            const last = JSON.parse(lines[lines.length - 1]);
+            prevHash = last.hash ?? prevHash;
+          }
+        }
+      }
+    } catch {
+      // Genesis block
+    }
+
+    const event: RealityLedgerEvent = {
+      id: eventId,
+      organ_id: "A-FORGE",
+      timestamp,
+      actor: agentName,
+      intent: `[MESA DETECTOR] Alert ${level}: ${trigger} | drift=${driftScore.toFixed(3)} | mesa_prob=${mesaProbability.toFixed(3)}`,
+      action_class: "observe",
+      organs_consulted: [],
+      evidence_refs: [],
+      prediction: {
+        expected_outcome: `Behavioral drift analysis for ${profileName}`,
+        confidence: 1 - mesaProbability,
+      },
+      arifos_verdict: {
+        verdict: level === "MESA_CRITICAL" ? "888_HOLD" : level === "MESA_PROXY" ? "WATCH" : "INFO",
+        floors_triggered: level === "MESA_CRITICAL" ? ["MESA_DETECTOR", "F13"] : ["MESA_DETECTOR"],
+      },
+      execution: {
+        alertId,
+        agentName,
+        profileName,
+        level,
+        trigger,
+        driftScore,
+        mesaProbability,
+        evidence,
+      },
+      observed_outcome: null,
+      lesson: null,
+      prev_hash: prevHash,
+      hash: "",
+    };
+
+    const { hash: _omit, ...hashable } = event;
+    const canonical = JSON.stringify(hashable, Object.keys(hashable).sort());
+    event.hash = createHash("sha256").update(canonical).digest("hex");
+
     try {
       mkdirSync(dirname(this.ledgerPath), { recursive: true });
     } catch {

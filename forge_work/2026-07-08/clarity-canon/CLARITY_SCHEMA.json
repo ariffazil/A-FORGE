@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "arifos.clarity-canon/v1",
+  "title": "arifOS CLARITY-CANON-001 — DRAFT_CONTROL_DOCTRINE Schema",
+  "description": "STATIC. The contract: 15 chaos sources, 7 metrics, 6 tests, 9-stage pipeline, 4 verdicts, 8-question control loop. Ratified 2026-07-08 (DRAFT).",
+  "version": "0.1.0-draft",
+  "owner": "F13 SOVEREIGN (Arif)",
+  "ratified": "DRAFT — 2026-07-08",
+  "invariants": {
+    "chaos_sources": [
+      "intent_fog", "evidence_fog", "authority_fog", "tool_fog", "time_fog",
+      "seal_fog", "reversibility_fog", "contradiction_fog", "narrative_overload",
+      "agent_identity_fog", "memory_drift", "route_collision", "runtime_opacity",
+      "failure_erasure", "metric_theater"
+    ],
+    "metric_taxonomy": ["CLEAR", "FUZZY", "CHAOTIC"],
+    "verdict_taxonomy": ["PROCEED", "HOLD", "VOID", "DRAFT_ONLY"],
+    "evidence_layers": ["L1_sealed", "L2_live_verified", "L3_cached", "L4_inference"],
+    "autonomy_bands": ["GREEN", "YELLOW", "ORANGE", "RED", "BLACK"],
+    "reversibility_classes": ["FULL", "PARTIAL", "LOW", "IRREVERSIBLE"],
+    "organ_ownership": {
+      "AAA":      ["cockpit", "display", "approval_queue"],
+      "arifOS":   ["constitutional_verdict", "kernel_governance"],
+      "A-FORGE":  ["mutation", "deploy", "restart"],
+      "GEOX":     ["earth_evidence", "geospatial_intelligence"],
+      "WEALTH":   ["capital", "value", "risk"],
+      "WELL":     ["human_readiness", "biological_substrate"],
+      "VAULT999": ["immutable_receipt", "append_only_ledger"],
+      "F13":      ["final_veto", "irreversible_authorization"]
+    },
+    "hard_blocks": [
+      "missing_actor",
+      "missing_evidence_layer",
+      "mutation_without_reversibility_check",
+      "seal_without_vault999",
+      "live_claim_without_health_probe",
+      "organ_owner_mismatch",
+      "unresolved_high_contradiction"
+    ],
+    "stage_pipeline": ["000", "111", "333", "444", "555", "666", "777", "888", "999"],
+    "control_loop_questions": 8
+  },
+  "required": ["invariants", "chaos_sources_index", "metrics", "tests", "pipeline_stages"],
+  "properties": {
+    "invariants": {"type": "object"},
+    "chaos_sources_index": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "damage", "kernel_fix"],
+        "properties": {
+          "id": {"type": "integer", "minimum": 1, "maximum": 15},
+          "name": {"type": "string"},
+          "damage": {"type": "string"},
+          "kernel_fix": {"type": "string"}
+        }
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "question", "ratings", "test_prompt"],
+        "properties": {
+          "id": {"type": "string"},
+          "question": {"type": "string"},
+          "ratings": {"type": "array", "items": {"type": "string", "enum": ["CLEAR", "FUZZY", "CHAOTIC"]}},
+          "test_prompt": {"type": "string"}
+        }
+      }
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["test_id", "prompt", "expected"],
+        "properties": {
+          "test_id": {"type": "string", "pattern": "^CLARITY-[A-Z]$"},
+          "prompt": {"type": "string"},
+          "expected": {"type": "object"}
+        }
+      }
+    },
+    "pipeline_stages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["stage", "question", "output"],
+        "properties": {
+          "stage": {"type": "string", "pattern": "^[0-9]{3}$"},
+          "question": {"type": "string"},
+          "output": {"type": "object"}
+        }
+      }
+    }
+  }
+}

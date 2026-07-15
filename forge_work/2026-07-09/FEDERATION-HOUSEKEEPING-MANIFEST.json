@@ -1,0 +1,158 @@
+{
+  "metadata": {
+    "generated_at": "2026-07-09T10:20:00Z",
+    "source": "FEDERATION-SWEEP-2026-07-09.md",
+    "scope": "Wave 1 reversible housekeeping only",
+    "notes": [
+      "Dry-run first.",
+      "No P0/P1 security work is included here.",
+      "No 888_HOLD items are included here."
+    ]
+  },
+  "entries": [
+    {
+      "action": "delete",
+      "path": "/root/A-FORGE/docs/archive/TODO.md",
+      "reason": "Orphan TODO, marked KILL in sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/A-FORGE/docs/archive/GEMINI.md",
+      "reason": "Abandoned archive doc, marked KILL in sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/A-FORGE/docs/archive/KIMI_SWARM_DESIGN_FORGE.md",
+      "reason": "Superseded archive doc",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/A-FORGE/docs/archive/OPENCODE_TOOL_ISSUE_DIAGNOSIS.md",
+      "reason": "Issue marked fixed, doc marked KILL in sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/A-FORGE/aforge-sovereignty-fix.mjs",
+      "reason": "One-off script, marked KILL in sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/A-FORGE/sovereign-github-sequence.mjs",
+      "reason": "One-off sequence script, receipt already exists",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/A-FORGE/test-mcp.mjs",
+      "reason": "Stale test script unless moved into test surface",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/A-FORGE/web_tools_test_results.json",
+      "reason": "Stale generated results",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/RESTART_NEEDED.md",
+      "reason": "Sweep says Hermes fix resolved",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/SCORE.txt",
+      "reason": "Broken script reference, marked KILL in sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/02_minimax_M3.txt",
+      "reason": "Single-use probe file",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/03_minimax_M27.txt",
+      "reason": "Single-use probe file",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/04_azure_gpt41mini.txt",
+      "reason": "Single-use probe file",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/source",
+      "reason": "0-byte orphan",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/\u201cCan",
+      "reason": "0-byte orphan from malformed filename",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/ptt.log",
+      "reason": "0-byte orphan log file",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/geom_test_ingest.pdf",
+      "reason": "Test artifact, marked KILL in sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/aminol-acl-guide.html",
+      "reason": "Downloaded guide, stale root artifact",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "archive",
+      "path": "/root/ARIFOS_CONTEXT_ENGINE_MAP_2026-06-11.pdf",
+      "reason": "Stale PDF to archive per sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "archive",
+      "path": "/root/PETRONAS_2026_Analysis_2026-06-11.pdf",
+      "reason": "Stale PDF to archive per sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "archive",
+      "path": "/root/PETRONAS_2026_HUMAN_2026-06-11.pdf",
+      "reason": "Stale PDF to archive per sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "archive",
+      "path": "/root/CONTEXT_MAP_HERMES_2026-06-11.pdf",
+      "reason": "Stale PDF to archive per sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "archive",
+      "path": "/root/CONTEXT_MAP_HERMES_HUMAN_2026-06-11.pdf",
+      "reason": "Stale PDF to archive per sweep",
+      "tier": "T1_AUTO_DO"
+    },
+    {
+      "action": "delete",
+      "path": "/root/CONTEXT_STATE.json",
+      "reason": "Stale auto-generated root state",
+      "tier": "T1_AUTO_DO"
+    }
+  ]
+}

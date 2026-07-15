@@ -1,8 +1,6 @@
-import { CoordinatorAgent } from "./CoordinatorAgent.js";
 import type { AgentProfile } from "../types/agent.js";
 import type { WorkerAgent } from "./WorkerAgent.js";
 import type { ILlmProvider } from "../types/ports.js";
-import type { ParallelPlannerContract } from "../planner/ParallelPlannerContract.js";
 
 /**
  * AAA-Agent — Federal Coordinator
@@ -12,14 +10,13 @@ import type { ParallelPlannerContract } from "../planner/ParallelPlannerContract
  * Role: Receives all inter-agent routing requests, routes tasks to specialists,
  *       aggregates multi-agent responses, and holds the 888_HOLD escalation path.
  */
-export class AAAgent extends CoordinatorAgent {
+export class AAAgent {
   constructor(
-    profile: AgentProfile,
+    private readonly profile: AgentProfile,
     workerAgent: WorkerAgent,
-    llmProvider: ILlmProvider,
-    plannerContract?: ParallelPlannerContract,
+    private readonly llmProvider: ILlmProvider,
   ) {
-    super(profile, workerAgent, llmProvider, plannerContract);
+    void workerAgent; // reserved for future multi-agent dispatch
   }
 
   /**

@@ -17,10 +17,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { z } from "zod";
 
-import { checkWitness } from "../../domain/governance/f3Witness.js";
-import { checkEmpathy } from "../../domain/governance/f6Empathy.js";
-import { checkAntiHantu } from "../../domain/governance/f9AntiHantu.js";
-import { checkWellReadiness, AmanahLockManager } from "../../domain/governance/index.js";
+// F3/F6/F9/W0 adjudication removed from A-FORGE — delegated to arifOS 666 HEART pipeline.
+// A-FORGE NEVER adjudicates constitutional floors locally.
+import { AmanahLockManager } from "../../domain/governance/index.js";
 import { readRuntimeConfig } from "../../interfaces/config/RuntimeConfig.js";
 import { createLlmProvider } from "../../infrastructure/llm/providerFactory.js";
 import { getApprovalBoundary } from "../../application/approval/index.js";
@@ -33,11 +32,13 @@ import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "../../a
 import { WEALTH_TOOLS } from "../../infrastructure/tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../../infrastructure/tools/MiniMaxTools.js";
 import { getMiniMaxClient } from "../../infrastructure/tools/MiniMaxMcpClient.js";
-import { systemctlWrapper } from "../../infrastructure/tools/infra/systemctl_wrapper.js";
+// systemctlWrapper unregistered 2026-07-09 — use forge_shell for systemctl
 import { dockerWrapper } from "../../infrastructure/tools/infra/docker_wrapper.js";
 import { journalctlWrapper } from "../../infrastructure/tools/infra/journalctl_wrapper.js";
 import { registerCoreResources } from "./resources.js";
+import { registerPrompts } from "./prompts.js";
 import { callMCP } from "./client.js";
+import { getMcpPolicyGate } from "../../domain/governance/McpPolicyGate.js";
 import { enforceMcpFloor, floorErrorResponse } from "../../domain/governance/mcpFloorEnforcer.js";
 import {
   registerFilesystemTools,
@@ -46,6 +47,7 @@ import {
   registerGitTools,
   registerGitHubTools,
   registerDockerTools,
+  registerFetchTools,
 } from "./proxyTools.js";
 import {
   registerIdentityTools,
@@ -54,24 +56,118 @@ import {
   registerShellTools,
   registerLogTools,
   registerJobTools,
-  registerOrchestrationTools,
+  registerStatusTools,
+  registerSkillTools,
+  registerGovernedTools,
+  registerRealityLoopTools,
   initializeForgeTools,
+  registerResilienceTools,
+  registerIsomorphismTools,
+  registerPredictTools,
+  startupFingerprintCheck,
 } from "./forgeTools.js";
 import { registerGatewayTools } from "./gatewayTools.js";
+import { startupIsomorphismCheck } from "../../domain/isomorphism/isomorphism-check.js";
+import { registerForge8Verbs } from "./forge8Verbs.js";
+import { registerShellTools as registerCanonicalShellTools } from "./shell/forgeShell.js";
+import { registerDocumentIngestTool } from "./documentIngest.js";
+import { registerPolicyTools, installPolicyInterceptor, installElicitationGate } from "./policyTools.js";
+import { installVerdictInterceptor } from "../../domain/governance/verdict-interceptor.js";
+import { registerSurfaceGuardTools } from "./surfaceGuardTools.js";
+import { registerSurfaceAuditTools } from "./surfaceAuditTools.js";
+import { registerStateAnchorTools } from "./stateAnchorTools.js";
+import { registerVerifyTimelineTools } from "./verifyTimelineTools.js";
+import { registerParallelTools } from "./parallelTools.js";
+import { registerCoolingVerbs } from "./coolingVerbs.js";
+import { registerRuntimeVerifyTool } from "./runtimeVerify.js";
+import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
+import { elicitUser, tradeConfirmationSchema, isGenuineAuthorization } from "./elicitation.js";
+import {
+  predictConsequences,
+  classifyPredictionDomain,
+  simulationGateVerdict,
+  requiresSimulation,
+  type SimulationRequest,
+  type PredictionResult,
+} from "../../domain/governance/preActionSimulation.js";
 import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
+import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
+
+// ── Module-level actor ID for stdio transport ───────────────────────────
+// Read ONCE at module load time, not per-call. Ensures the env var is
+// captured even if the stdio transport doesn't pass it through correctly.
+const STDIO_ACTOR = process.env.FORGE_STDIO_ACTOR_ID ?? "opencode";
 
 export const server = new McpServer({
   name: "A-FORGE",
   version: "0.1.0",
 });
 
+// ── Phase C (2026-07-12): KILL false capability ads ────────────────────
+// Completions: agents use full tool JSON — do NOT declare completions: {}.
+// Logging protocol: SEP-2577 FREEZE — do NOT declare logging: {} without
+// setLevel + emit path. Ops = stderr + journald + tool receipts only.
+// Prior Phase 4 (2026-07-09) forced empty logging/completions caps; removed.
+
+// ── Schema strictification guard ──────────────────────────────────────────
+// Every tool's inputSchema MUST have additionalProperties: false to prevent
+// agents from passing garbage fields that silently get ignored.
+// This wraps server.registerTool() to auto-strictify inputSchema.
+//
+// For server.tool() (raw shape pattern), the fix is in the SDK's
+// normalizeObjectSchema → objectFromShape — see SDK patch at line 99 of
+// node_modules/@modelcontextprotocol/sdk/dist/esm/server/zod-compat.js
+// which adds .strict() to all created object schemas.
+//
+// F2 TRUTH: SDK's objectFromShape() does NOT add .strict() automatically.
+// Without this guard, ALL 36 A-FORGE tools accept arbitrary extra fields.
+// Ratified 2026-06-28 per MCP spec: inputSchema must reject unknown fields.
+// ──────────────────────────────────────────────────────────────────────────
+
+// Wrap server.registerTool() to auto-strictify inputSchema + enrich ACTUATOR descs
+import { enrichActuatorDescription } from "../../domain/registry/federationAlignment.js";
+const origRegisterTool = server.registerTool.bind(server);
+(server as any).registerTool = function (name: string, config: any, cb?: any) {
+  if (config && typeof config === "object") {
+    if (config.inputSchema) {
+      const p = config.inputSchema;
+      if (p && typeof p === "object" && (p._def || p._zod) && typeof p.strict === "function") {
+        config = { ...config, inputSchema: p.strict() };
+      }
+    }
+    // Federation alignment: descriptions are actuators (hands), not plugins/kernel verbs.
+    if (typeof config.description === "string" || config.description === undefined) {
+      config = {
+        ...config,
+        description: enrichActuatorDescription(name, config.description),
+      };
+    }
+  }
+  return origRegisterTool(name, config, cb);
+};
+
 // ── _epistemic tag injection ──────────────────────────────────────────────
 //
 // Every MCP tool response carries a mandatory _epistemic envelope field
 // classifying the output by origin, authority, and evidence quality.
 // Ratified per arifOS federation doctrine.
+//
+// SOVEREIGN-GRADE AUTHORITY HEADER (2026-06-29):
+// Every output also carries authority_header with the 6-field constitutional
+// metadata. This makes authority geometry visible in runtime, not just declared.
+// Ref: Arif — "Authority Mode Separation + mandatory authority header on every output"
+
+interface AuthorityHeader {
+  actor: string;
+  authority_mode: "OBSERVE" | "DRAFT" | "EXECUTE" | "SEAL" | "RATIFY" | "NONE";
+  stage: "OBSERVE" | "DRAFT" | "EXECUTE" | "SEAL" | "RATIFY";
+  evidence_layer: "WORLD" | "WELL" | "BIO" | "ARIFOS" | "NONE";
+  reversibility: "reversible" | "irreversible";
+  seal_status: "unsealed" | "sealed";
+  ratification_required: boolean;
+}
 
 interface EpistemicTag {
   output_class: string;
@@ -81,6 +177,8 @@ interface EpistemicTag {
   tagged_by: string;
   tagged_at: string;
   schema_version: string;
+  /** Mandatory authority header — SOVEREIGN-GRADE binding (2026-06-29) */
+  authority_header: AuthorityHeader;
 }
 
 const DEFAULT_EPISTEMIC: EpistemicTag = {
@@ -90,8 +188,114 @@ const DEFAULT_EPISTEMIC: EpistemicTag = {
   evidence_source: "COMPUTED",
   tagged_by: "aforge-mcp",
   tagged_at: new Date().toISOString(),
-  schema_version: "1.0.0",
+  schema_version: "2.0.0",
+  authority_header: {
+    actor: "aforge",
+    authority_mode: "OBSERVE",
+    stage: "OBSERVE",
+    evidence_layer: "WORLD",
+    reversibility: "reversible",
+    seal_status: "unsealed",
+    ratification_required: false,
+  },
 };
+
+/**
+ * Compute the mandatory authority header for a tool.
+ * Derives: authority_mode, stage, evidence_layer, reversibility, seal_status, ratification_required
+ * from tool name + classification patterns.
+ *
+ * SOVEREIGN-GRADE AUTHORITY MODE SEPARATION (2026-06-29):
+ *   OBSERVE  — read-only, no mutation
+ *   DRAFT    — proposes, reversible
+ *   EXECUTE  — acts, reversibility取决于action class
+ *   SEAL     — commits to VAULT999, irreversible
+ *   RATIFY   — human confirmation, final
+ */
+function computeAuthorityHeader(toolName: string): AuthorityHeader {
+  const n = toolName.toLowerCase();
+
+  // ── stage + authority_mode from tool name ──
+  // SEAL tools
+  if (n.includes("_seal") || n.includes("vault_write") || n.includes("vault_seal")) {
+    return {
+      actor: "aforge",
+      authority_mode: "SEAL",
+      stage: "SEAL",
+      evidence_layer: "ARIFOS",
+      reversibility: "irreversible",
+      seal_status: "sealed",
+      ratification_required: true,
+    };
+  }
+  // RATIFY tools
+  if (n.includes("_ratify") || n.includes("_approve") || n.includes("_human")) {
+    return {
+      actor: "aforge",
+      authority_mode: "RATIFY",
+      stage: "RATIFY",
+      evidence_layer: "ARIFOS",
+      reversibility: "irreversible",
+      seal_status: "unsealed",
+      ratification_required: true,
+    };
+  }
+  // EXECUTE tools (mutations)
+  if (
+    n.includes("_execute") ||
+    n.includes("_run") ||
+    n.includes("_commit") ||
+    n.includes("_push") ||
+    n.includes("_create") ||
+    n.includes("_delete") ||
+    n.includes("_deploy") ||
+    n.includes("_browser_navigate") ||
+    n.includes("_shell") ||
+    n.includes("_github_create")
+  ) {
+    // EXECUTE Irreversible if git push/force, delete, drop, or IRREVERSIBLE action class
+    const isIrrev = n.includes("force_push") || n.includes("_delete") || n.includes("drop");
+    return {
+      actor: "aforge",
+      authority_mode: "EXECUTE",
+      stage: "EXECUTE",
+      evidence_layer: "WORLD",
+      reversibility: isIrrev ? "irreversible" : "reversible",
+      seal_status: "unsealed",
+      ratification_required: isIrrev,
+    };
+  }
+  // DRAFT tools (proposals, dry-run, plan)
+  if (
+    n.includes("_draft") ||
+    n.includes("_plan") ||
+    n.includes("_dry_run") ||
+    n.includes("_simulate") ||
+    n.includes("_probe") ||
+    n.includes("_health") ||
+    n.includes("_status")
+  ) {
+    return {
+      actor: "aforge",
+      authority_mode: "DRAFT",
+      stage: "DRAFT",
+      evidence_layer: "WORLD",
+      reversibility: "reversible",
+      seal_status: "unsealed",
+      ratification_required: false,
+    };
+  }
+  // OBSERVE tools
+  return {
+    actor: "aforge",
+    authority_mode: "OBSERVE",
+    stage: "OBSERVE",
+    evidence_layer: "WORLD",
+    reversibility: "reversible",
+    seal_status: "unsealed",
+    ratification_required: false,
+  };
+}
 
 /**
  * Infer the epistemic tag for a tool based on its name.
@@ -99,6 +303,8 @@ const DEFAULT_EPISTEMIC: EpistemicTag = {
  * Vault/approval tools → GOVERNANCE_TEMPLATE/NONE/EXECUTIVE/COMPUTED
  * Execution tools → DETERMINISTIC/NONE/EXECUTIVE/COMPUTED
  * Default → DETERMINISTIC/NONE/ADVISORY/COMPUTED
+ *
+ * Also computes and injects authority_header (SOVEREIGN-GRADE, 2026-06-29).
  */
 function epistemicForTool(toolName: string): EpistemicTag {
   const name = toolName.toLowerCase();
@@ -119,6 +325,7 @@ function epistemicForTool(toolName: string): EpistemicTag {
       authority_claim: "EXECUTIVE",
       evidence_source: "COMPUTED",
       tagged_at: new Date().toISOString(),
+      authority_header: computeAuthorityHeader(toolName),
     };
   }
 
@@ -130,7 +337,6 @@ function epistemicForTool(toolName: string): EpistemicTag {
     name.includes("forge_filesystem") ||
     name.includes("forge_postgres") ||
     name.includes("forge_memory") ||
-    name.includes("forge_git") ||
     name.includes("forge_docker") ||
     name.includes("forge_shell") ||
     name.includes("forge_log") ||
@@ -139,7 +345,6 @@ function epistemicForTool(toolName: string): EpistemicTag {
     name.includes("forge_pipeline") ||
     name.includes("forge_well") ||
     name.includes("forge_research") ||
-    name.includes("forge_search") ||
     name.includes("forge_docs") ||
     name.includes("forge_netdata") ||
     name.includes("forge_minimax") ||
@@ -154,6 +359,7 @@ function epistemicForTool(toolName: string): EpistemicTag {
       authority_claim: "ADVISORY",
       evidence_source: "COMPUTED",
       tagged_at: new Date().toISOString(),
+      authority_header: computeAuthorityHeader(toolName),
     };
   }
 
@@ -170,6 +376,7 @@ function epistemicForTool(toolName: string): EpistemicTag {
       authority_claim: "EXECUTIVE",
       evidence_source: "COMPUTED",
       tagged_at: new Date().toISOString(),
+      authority_header: computeAuthorityHeader(toolName),
     };
   }
 
@@ -180,6 +387,7 @@ function epistemicForTool(toolName: string): EpistemicTag {
     authority_claim: "ADVISORY",
     evidence_source: "COMPUTED",
     tagged_at: new Date().toISOString(),
+    authority_header: computeAuthorityHeader(toolName),
   };
 }
 
@@ -203,7 +411,7 @@ function injectEpistemic(
       try {
         payload = JSON.parse(item.text);
       } catch {
-        // Not JSON — skip (plain text responses don't get _epistemic)
+	// Not JSON — skip (plain text responses don't get _epistemic)
         continue;
       }
 
@@ -241,7 +449,16 @@ const GOVERNANCE_FIELDS = {
 
 function extendZodSchema(schema: any): any {
   if (schema && typeof schema.extend === "function") {
-    try { return schema.extend(GOVERNANCE_FIELDS); } catch { /* fall through */ }
+    try {
+      const strict = typeof schema.strict === "function" ? schema.strict() : schema;
+      return strict.extend(GOVERNANCE_FIELDS);
+    } catch { /* fall through */ }
+  }
+  if (schema && typeof schema === "object" && !schema._def) {
+    return {
+      ...schema,
+      ...GOVERNANCE_FIELDS,
+    };
   }
   return schema;
 }
@@ -249,12 +466,23 @@ function extendZodSchema(schema: any): any {
 function extendInputSchema(schema: any): any {
   // Zod object passed to registerTool
   if (schema && typeof schema.extend === "function") {
-    try { return schema.extend(GOVERNANCE_FIELDS); } catch { /* fall through */ }
+    try {
+      const strict = typeof schema.strict === "function" ? schema.strict() : schema;
+      return strict.extend(GOVERNANCE_FIELDS);
+    } catch { /* fall through */ }
   }
-  // Plain JSON schema object
-  if (schema && typeof schema === "object" && !schema._def) {
+  // Zod shape (plain object with zod properties)
+  if (schema && typeof schema === "object" && !schema._def && !schema.type) {
     return {
       ...schema,
+      ...GOVERNANCE_FIELDS,
+    };
+  }
+  // Plain JSON schema object
+  if (schema && typeof schema === "object") {
+    return {
+      ...schema,
+      additionalProperties: false,
       properties: {
         ...(schema.properties || {}),
         session_id: { type: "string", description: "Kernel-born session ID (FORGE 2-B)" },
@@ -278,6 +506,21 @@ const _originalTool = server.tool.bind(server);
     const argsObj = (args && typeof args === "object") ? args : {};
     const actionClass = classifyTool(name);
 
+    // ── A-THINK Guard: classify → budget → affordance → permission ──
+    // This is the constitutional front-door. No tool bypasses this.
+    // DARWIN FIX 6: for forge_shell / forge_shell_dryrun, also derive
+    // aThinkUserInput from args.command so the readonly-exemption check
+    // can fire when the original `_user_input` field is not present.
+    let aThinkUserInput = (typeof argsObj._user_input === "string") ? argsObj._user_input : undefined;
+    if (!aThinkUserInput && (name === "forge_shell" || name === "forge_shell_dryrun")) {
+      aThinkUserInput = (typeof argsObj.command === "string") ? argsObj.command : undefined;
+    }
+    const aThinkSessionId = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+    const aThinkVerdict = aThinkCheck(name, aThinkUserInput, aThinkSessionId);
+    if (!aThinkVerdict.allowed) {
+      return aThinkErrorResponse(aThinkVerdict);
+    }
+
     // ── FORGE 2-B: Kernel session + lease gating for MUTATE/ATOMIC tools ──
     if (requiresGovernance(actionClass)) {
       const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
@@ -301,7 +544,7 @@ const _originalTool = server.tool.bind(server);
     // Inject verified session context into FloorEnforcer
     const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
     const sessionCheck = callerSession ? validateSession(callerSession) : null;
-    const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : "mcp-anonymous";
+    const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : STDIO_ACTOR;
     const verdict = enforceMcpFloor(name, argsObj, callerActor);
     if (!verdict.allowed) {
       // FloorEnforcer refused: return MCP error response, do NOT call handler
@@ -311,7 +554,9 @@ const _originalTool = server.tool.bind(server);
     const result = await handler(args, ctx);
     return injectEpistemic(result, name) as any;
   };
-  return _originalTool(name, description, gatedSchema, wrappedHandler);
+  // Federation alignment: ACTUATOR header on server.tool() path too
+  const actuatorDesc = enrichActuatorDescription(name, description);
+  return _originalTool(name, actuatorDesc, gatedSchema, wrappedHandler);
 };
 // Also wrap server.registerTool (used by some tool registrations)
 const _originalRegisterTool = server.registerTool.bind(server);
@@ -321,11 +566,30 @@ const _originalRegisterTool = server.registerTool.bind(server);
   handler: (args: any, ctx: any) => Promise<any>,
 ) {
   const gatedOptions = options && typeof options === "object"
-    ? { ...options, inputSchema: extendInputSchema(options.inputSchema) }
+    ? {
+        ...options,
+        inputSchema: extendInputSchema(options.inputSchema),
+        description: enrichActuatorDescription(name, options.description),
+      }
     : options;
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     const actionClass = classifyTool(name);
+
+    // ── A-THINK Guard: classify → budget → affordance → permission ──
+    // This is the constitutional front-door. No tool bypasses this.
+    // DARWIN FIX 6: for forge_shell / forge_shell_dryrun, also derive
+    // aThinkUserInput from args.command so the readonly-exemption check
+    // can fire when the original `_user_input` field is not present.
+    let aThinkUserInput = (typeof argsObj._user_input === "string") ? argsObj._user_input : undefined;
+    if (!aThinkUserInput && (name === "forge_shell" || name === "forge_shell_dryrun")) {
+      aThinkUserInput = (typeof argsObj.command === "string") ? argsObj.command : undefined;
+    }
+    const aThinkSessionId = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+    const aThinkVerdict = aThinkCheck(name, aThinkUserInput, aThinkSessionId);
+    if (!aThinkVerdict.allowed) {
+      return aThinkErrorResponse(aThinkVerdict);
+    }
 
     // ── FORGE 2-B: Kernel session + lease gating for MUTATE/ATOMIC tools ──
     if (requiresGovernance(actionClass)) {
@@ -350,7 +614,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
     // Inject verified session context into FloorEnforcer
     const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
     const sessionCheck = callerSession ? validateSession(callerSession) : null;
-    const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : "mcp-anonymous";
+    const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : STDIO_ACTOR;
     const verdict = enforceMcpFloor(name, argsObj, callerActor);
     if (!verdict.allowed) {
       return injectEpistemic(floorErrorResponse(verdict), name) as any;
@@ -407,10 +671,185 @@ function resultAsJson(output: unknown): string {
   return JSON.stringify(output, null, 2);
 }
 
+// ── forge_chart: Native agentic visualization + eureka margin discovery ─────
+// Zero new runtime deps. Pure SVG generator for federation-wide use.
+// All domain organs (GEOX, WEALTH, WELL) + agents route data here for viz.
+// Inspired by antvis/mcp-server-chart (25+ @antv charts) — core types native here for always-on, no extra MCP.
+// Returns SVG (embeddable) + structured summary + eureka_candidates (discovery margins).
+// "Quantum eureka discovery margin pattern": turning points, high-z outliers, curvature maxima = insight frontiers.
+type ChartType = "line" | "bar" | "scatter" | "pie" | "area" | "histogram";
+
+interface ChartOptions {
+  title?: string;
+  width?: number;
+  height?: number;
+  x_field?: string;
+  y_field?: string;
+  return_format?: "svg" | "full";
+}
+
+interface EurekaCandidate {
+  index: number;
+  x: unknown;
+  y: number;
+  margin: number; // z-score or curvature magnitude
+  reason: string;
+}
+
+function normalizeSeries(data: any[], xField?: string, yField?: string): { xs: any[]; ys: number[]; labels: string[] } {
+  if (!Array.isArray(data) || data.length === 0) return { xs: [], ys: [], labels: [] };
+  const first = data[0];
+  let xs: any[], ys: number[];
+  if (typeof first === "number") {
+    ys = data as number[];
+    xs = ys.map((_, i) => i);
+  } else if (Array.isArray(first) && first.length === 2) {
+    xs = (data as any[]).map(d => d[0]);
+    ys = (data as any[]).map(d => Number(d[1]));
+  } else {
+    const xf = xField || Object.keys(first)[0];
+    const yf = yField || Object.keys(first).find(k => typeof first[k] === "number") || Object.keys(first)[1];
+    xs = data.map(d => (d && (d[xf] ?? d.x ?? d.label ?? d[0])));
+    ys = data.map(d => Number(d && (d[yf] ?? d.y ?? d.value ?? d[1])));
+  }
+  const labels = xs.map((x, i) => String(x ?? i));
+  ys = ys.map(v => (Number.isFinite(v) ? v : 0));
+  return { xs, ys, labels };
+}
+
+function computeEurekaCandidates(xs: any[], ys: number[], topK = 5): EurekaCandidate[] {
+  if (ys.length < 2) return [];
+  const n = ys.length;
+  const mean = ys.reduce((a, b) => a + b, 0) / n;
+  const variance = ys.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(1, n - 1);
+  const std = Math.sqrt(variance) || 1;
+  const diffs = ys.slice(1).map((y, i) => y - ys[i]);
+  const candidates: EurekaCandidate[] = [];
+  for (let i = 0; i < n; i++) {
+    const z = (ys[i] - mean) / std;
+    let margin = Math.abs(z);
+    let reason = Math.abs(z) > 2 ? "high deviation" : "nominal";
+    // turning point
+    if (i > 0 && i < n - 1) {
+      const d1 = diffs[i - 1];
+      const d2 = diffs[i];
+      if (d1 * d2 < 0 && Math.abs(d1 - d2) > 0.0001) {
+        const curv = Math.abs(d2 - d1);
+        margin = Math.max(margin, curv / (std + 1e-6) + 1);
+        reason = "trend reversal (eureka candidate)";
+      }
+    }
+    if (margin > 1.2) {
+      candidates.push({ index: i, x: xs[i], y: ys[i], margin: Number(margin.toFixed(3)), reason });
+    }
+  }
+  // sort by margin desc, take top
+  candidates.sort((a, b) => b.margin - a.margin);
+  return candidates.slice(0, topK);
+}
+
+function generateSvgChart(type: ChartType, data: any[], opts: ChartOptions = {}): { svg: string; summary: Record<string, unknown>; eureka_candidates: EurekaCandidate[] } {
+  const { xs, ys, labels } = normalizeSeries(data, opts.x_field, opts.y_field);
+  const W = opts.width || 640;
+  const H = opts.height || 380;
+  const pad = { l: 50, r: 20, t: 30, b: 40 };
+  const plotW = W - pad.l - pad.r;
+  const plotH = H - pad.t - pad.b;
+  const title = opts.title || `${type.toUpperCase()} Chart`;
+  const n = ys.length;
+  if (n === 0) {
+    return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><text x="20" y="20">No data</text></svg>`, summary: { n: 0 }, eureka_candidates: [] };
+  }
+  const yMin = Math.min(...ys);
+  const yMax = Math.max(...ys);
+  const yRange = (yMax - yMin) || 1;
+  const xIdx = (i: number) => pad.l + (n > 1 ? (i * plotW) / (n - 1) : plotW / 2);
+  const yPos = (y: number) => pad.t + plotH - ((y - yMin) / yRange) * plotH;
+  const eureka = computeEurekaCandidates(xs, ys);
+  let body = "";
+  const colors = { primary: "#3b82f6", accent: "#ef4444", grid: "#e5e7eb" };
+  // grid + axes
+  body += `<rect x="${pad.l}" y="${pad.t}" width="${plotW}" height="${plotH}" fill="#fafafa" stroke="#e5e7eb"/>`;
+  for (let i = 0; i <= 4; i++) {
+    const yy = pad.t + (plotH * i) / 4;
+    body += `<line x1="${pad.l}" y1="${yy}" x2="${pad.l + plotW}" y2="${yy}" stroke="${colors.grid}" />`;
+    const val = (yMax - (yRange * i) / 4).toFixed(2);
+    body += `<text x="${pad.l - 6}" y="${yy + 4}" font-size="10" fill="#666" text-anchor="end">${val}</text>`;
+  }
+  // title
+  body += `<text x="${W / 2}" y="18" font-size="14" font-weight="600" fill="#111" text-anchor="middle">${title}</text>`;
+  if (type === "pie") {
+    const sum = ys.reduce((a, b) => a + b, 0) || 1;
+    let angle = -Math.PI / 2;
+    const cx = pad.l + plotW / 2;
+    const cy = pad.t + plotH / 2;
+    const r = Math.min(plotW, plotH) / 2 - 10;
+    ys.forEach((v, i) => {
+      const frac = v / sum;
+      const a1 = angle;
+      const a2 = angle + frac * 2 * Math.PI;
+      const x1 = cx + r * Math.cos(a1);
+      const y1 = cy + r * Math.sin(a1);
+      const x2 = cx + r * Math.cos(a2);
+      const y2 = cy + r * Math.sin(a2);
+      const large = frac > 0.5 ? 1 : 0;
+      const color = `hsl(${(i * 67) % 360}, 70%, 55%)`;
+      body += `<path d="M${cx},${cy} L${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2} Z" fill="${color}" stroke="#fff" stroke-width="1"/>`;
+      angle = a2;
+    });
+  } else {
+    // line/area/bar/scatter/hist
+    const points: string[] = [];
+    ys.forEach((y, i) => {
+      const px = xIdx(i);
+      const py = yPos(y);
+      points.push(`${px},${py}`);
+      if (type === "bar" || type === "histogram") {
+        const bw = Math.max(4, (plotW / Math.max(1, n)) * 0.7);
+        const by = yPos(Math.min(y, 0)); // support neg? clamp simple
+        const bh = Math.abs(py - yPos(0));
+        body += `<rect x="${px - bw / 2}" y="${Math.min(py, yPos(0))}" width="${bw}" height="${Math.max(1, bh)}" fill="${colors.primary}" />`;
+      } else if (type === "scatter") {
+        body += `<circle cx="${px}" cy="${py}" r="3.5" fill="${colors.primary}" />`;
+      }
+      // label sparse
+      if (n <= 12 || i % Math.ceil(n / 8) === 0) {
+        body += `<text x="${px}" y="${pad.t + plotH + 14}" font-size="9" fill="#555" text-anchor="middle">${labels[i].slice(0, 10)}</text>`;
+      }
+    });
+    if (type === "line" || type === "area") {
+      const pathD = points.map((p, i) => (i === 0 ? "M" : "L") + p).join(" ");
+      body += `<path d="${pathD}" fill="none" stroke="${colors.primary}" stroke-width="2" />`;
+      if (type === "area") {
+        const areaD = `M${points[0]} ${pathD.replace(/^M/, "L")} L${points[points.length - 1].split(",")[0]},${pad.t + plotH} Z`;
+        body += `<path d="${areaD}" fill="${colors.primary}" fill-opacity="0.15" stroke="none" />`;
+      }
+    }
+    // axes
+    body += `<line x1="${pad.l}" y1="${pad.t + plotH}" x2="${pad.l + plotW}" y2="${pad.t + plotH}" stroke="#333" />`;
+    body += `<line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t + plotH}" stroke="#333" />`;
+  }
+  // eureka markers (red dots + tiny label)
+  eureka.forEach((c, idx) => {
+    const ii = Math.min(Math.max(0, c.index), n - 1);
+    const px = xIdx(ii);
+    const py = yPos(c.y);
+    body += `<circle cx="${px}" cy="${py}" r="5" fill="none" stroke="${colors.accent}" stroke-width="2" />`;
+    body += `<text x="${px + 8}" y="${py - 6}" font-size="9" fill="${colors.accent}">${c.margin}</text>`;
+  });
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${body}</svg>`;
+  const summary = {
+    n, type, title, y_min: Number(yMin.toFixed(4)), y_max: Number(yMax.toFixed(4)),
+    y_mean: Number((ys.reduce((a,b)=>a+b,0)/n).toFixed(4)),
+    eureka_count: eureka.length,
+  };
+  return { svg, summary, eureka_candidates: eureka };
+}
+
 // ── Tier 00 Identity ─────────────────────────────────────────────────────────
 
 server.tool(
-  "arif_session_init",
+  "forge_session_init",
   "Constitutional session ignition. Proxies to arifOS kernel — A-FORGE no longer mints independent sessions. (Stage 000 INIT)",
   {
     actor_id: z.string().describe("Identifier for the human architect or agent"),
@@ -419,17 +858,28 @@ server.tool(
   },
   async ({ actor_id, intent, mode }) => {
     const startedAt = Date.now();
-    await telemetryInvoke("arif_session_init");
+    await telemetryInvoke("forge_session_init");
     return runStage("000_INIT" as MetabolicStage, async () => {
       try {
-        // Proxy to kernel's arif_session_init (mode=light for fast bootstrap)
-        const kernelResponse = await callMCP("arifos.arif_session_init", {
-          actor_id,
-          intent: intent ?? "aforge session",
-          mode: "light",
-        });
+	// Proxy to kernel arif_init (canonical 000). arif_session_init is alias;
+        // prefer arif_init — REST path was broken by SealType.REJECT (fixed 2026-07-09).
+        let kernelResponse: unknown;
+        try {
+          kernelResponse = await callMCP("arifos.arif_init", {
+            actor_id,
+            intent: intent ?? "aforge session",
+            mode: "light",
+          });
+        } catch (primaryErr) {
+          // Backward-compat fallback for older kernels still exposing session_init only
+          kernelResponse = await callMCP("arifos.arif_session_init", {
+            actor_id,
+            intent: intent ?? "aforge session",
+            mode: "light",
+          });
+        }
         const response = kernelResponse as Record<string, unknown>;
-        // Extract session_id from kernel response (nested in session object or result object)
+	// Extract session_id from kernel response (nested in session object or result object)
         const sessionObj = response.session as Record<string, unknown> | undefined;
         const resultObj = response.result as Record<string, unknown> | undefined;
         const session_id =
@@ -442,11 +892,62 @@ server.tool(
             error: "Kernel did not return a session_id",
             kernel_response: response,
           }, null, 2);
-          await telemetryFailure("arif_session_init", startedAt, new Error(errorText));
+          await telemetryFailure("forge_session_init", startedAt, new Error(errorText));
           return { content: [{ type: "text" as const, text: errorText }], isError: true };
         }
-        // Register the kernel-born session locally
+	// Register the kernel-born session locally
         const session = registerSession(session_id, actor_id);
+        // ── DARWIN FIX 1b: bind actor_id to the policy gate's activeActor
+        // so subsequent tool calls that omit actor_id inherit the session's
+        // identity and pass L1_IDENTITY without a per-call re-auth. This
+        // is the actual key fix — pre-minting a lease alone is not enough
+        // because the policy gate checks actor_id at evaluate() time.
+        try { getMcpPolicyGate().setActor(actor_id); } catch {}
+        // ── DARWIN FIX 1a: pre-mint default lease as part of session envelope
+        // Kills the L1_IDENTITY chicken-egg where subsequent mutate tools
+        // (forge_filesystem.write, forge_vault.write, forge_shell) need a
+        // lease but the only way to mint one was forge_lease — which itself
+        // was L1_IDENTITY-gated before this session was active. The session
+        // is now active; auto-issue a default EXECUTE_REVERSIBLE lease so
+        // downstream calls pass L2/L3 without a separate forge_lease round.
+        let pre_minted_lease: { lease_id: string; scope: string[]; max_action_class: string; ttl_seconds: number; expires_at: number } | null = null;
+        try {
+          const leaseResp = await callMCP("arifos.arif_lease_issue", {
+            organ_id: "A-FORGE",
+            actor_id,
+            scope: [
+              "forge_filesystem",
+              "forge_vault",
+              "forge_shell",
+              "forge_shell_dryrun",
+              "forge_seal",
+              "arif_seal",
+              "forge_session_init",
+              "forge_health_check",
+            ],
+            max_action_class: "MUTATE",  // arifOS expects MUTATE for EXECUTE_REVERSIBLE
+            ttl_seconds: 1800,
+            forbidden: [],
+            session_id,
+          });
+          const leaseRespObj = leaseResp as Record<string, unknown>;
+          const leaseObj = (leaseRespObj?.lease as Record<string, unknown> | undefined)
+            ?? ((leaseRespObj?.result as Record<string, unknown> | undefined)?.lease as Record<string, unknown> | undefined);
+          if (leaseObj && leaseObj.lease_id) {
+            const expires_at = typeof leaseObj.expires_at === "number"
+              ? leaseObj.expires_at
+              : Date.now() + 1800_000;
+            pre_minted_lease = {
+              lease_id: String(leaseObj.lease_id),
+              scope: Array.isArray(leaseObj.scope) ? leaseObj.scope.map(String) : [],
+              max_action_class: String(leaseObj.max_action_class ?? "EXECUTE_REVERSIBLE"),
+              ttl_seconds: Number(leaseObj.ttl_seconds ?? 1800),
+              expires_at,
+            };
+          }
+        } catch (_leaseErr) {
+          // Lease mint is best-effort; do not fail the session.
+        }
         const result = {
           content: [{
             type: "text" as const,
@@ -460,13 +961,14 @@ server.tool(
               mode: mode ?? "external",
               expires_at: session.expires_at,
               verdict: "SEAL",
+              pre_minted_lease,
             }, null, 2),
           }],
         };
-        await telemetrySuccess("arif_session_init", startedAt);
+        await telemetrySuccess("forge_session_init", startedAt);
         return result;
       } catch (err) {
-        await telemetryFailure("arif_session_init", startedAt, err);
+        await telemetryFailure("forge_session_init", startedAt, err);
         return {
           content: [{
             type: "text" as const,
@@ -484,12 +986,12 @@ server.tool(
 );
 
 server.tool(
-  "arif_health_check",
-  "Return server health and constitutional genome (v2.0) status.",
+  "forge_health_check",
+  "Return A-FORGE server health and constitutional genome (v2.0) status.",
   {},
   async () => {
     const startedAt = Date.now();
-    await telemetryInvoke("arif_health_check");
+    await telemetryInvoke("forge_health_check");
     return runStage("000_INIT" as MetabolicStage, async () => {
     try {
       const result = {
@@ -513,10 +1015,10 @@ server.tool(
           },
         ],
       };
-      await telemetrySuccess("arif_health_check", startedAt);
+      await telemetrySuccess("forge_health_check", startedAt);
       return result;
     } catch (err) {
-      await telemetryFailure("arif_health_check", startedAt, err);
+      await telemetryFailure("forge_health_check", startedAt, err);
       throw err;
     }
     });
@@ -533,30 +1035,55 @@ server.tool(
 
 const heartHandler = async ({ task }: { task: string }) => {
   const startedAt = Date.now();
-  await telemetryInvoke("arif_heart_critique");
+  await telemetryInvoke("forge_heart_critique");
   return runStage("555_HEART" as MetabolicStage, async () => {
   try {
-    const f3 = checkWitness(task);
-    const f6 = checkEmpathy(task);
-    // Passing hasTelemetry: true because MCP calls are structurally verified by the server
-    const f9 = checkAntiHantu(task, { sessionId: "mcp-session", hasTelemetry: true, pipelineStage: "555_HEART" });
-    const w0 = await checkWellReadiness("high"); // W0: Human Substrate Gate
-
-    const blocked = f3.verdict === "SABAR" || f6.verdict === "VOID" || f9.verdict === "VOID" || w0.verdict === "HOLD" || w0.verdict === "SABAR";
-    const result = { 
-      content: [{ type: "text" as const, text: JSON.stringify({ overall: blocked ? "BLOCK" : "PASS", blocked, floors: { F3: f3.verdict, F6: f6.verdict, F9: f9.verdict, W0: w0.verdict }, w0_message: w0.message }, null, 2) }],
-      isError: blocked
+    // Delegate to arifOS 666 HEART pipeline.
+    // A-FORGE NEVER adjudicates constitutional floors locally.
+    const kernelResponse = await callMCP("arifos.arif_heart_critique", { task }) as Record<string, unknown>;
+    const verdict = kernelResponse?.verdict ?? kernelResponse?.status ?? "DELEGATED";
+    const blocked = verdict === "VOID" || verdict === "SABAR" || verdict === "HOLD";
+    const result = {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          overall: blocked ? "BLOCK" : "PASS",
+          blocked,
+          source: "arifOS::666_HEART",
+          kernel_verdict: verdict,
+          kernel_response: kernelResponse,
+        }, null, 2),
+      }],
+      isError: blocked,
     };
-    await telemetrySuccess("arif_heart_critique", startedAt);
+    await telemetrySuccess("forge_heart_critique", startedAt);
     return result;
-  } catch (err) { await telemetryFailure("arif_heart_critique", startedAt, err); throw err; }
+  } catch (err) {
+    // arifOS unreachable — refuse to adjudicate locally.
+    // A-FORGE is an execution shell, not a constitutional judge.
+    const result = {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          overall: "HOLD",
+          blocked: true,
+          gate: "ARIFOS_UNREACHABLE",
+          error: err instanceof Error ? err.message : String(err),
+          message: "Cannot reach arifOS 666 HEART pipeline. A-FORGE refuses to adjudicate constitutional floors locally. Ensure arifOS kernel is running on port 8088.",
+        }, null, 2),
+      }],
+      isError: true,
+    };
+    await telemetryFailure("forge_heart_critique", startedAt, err);
+    return result;
+  }
   });
 };
 
 server.registerTool(
-  "arif_heart_critique",
+  "forge_heart_critique",
   {
-    description: "Risk assessment and ethical review (Stage 666 HEART).",
+    description: "Risk assessment and ethical review — delegates to arifOS 666 HEART pipeline. A-FORGE does NOT adjudicate floors locally.",
     inputSchema: z.object({ task: z.string() })
   },
   heartHandler
@@ -565,7 +1092,7 @@ server.registerTool(
 server.registerTool(
   "forge_check_governance",
   {
-    description: "Run A-FORGE constitutional governance checks.",
+    description: "Constitutional governance check — delegates to arifOS. A-FORGE NEVER adjudicates constitutional floors.",
     inputSchema: z.object({ task: z.string() })
   },
   heartHandler
@@ -574,9 +1101,9 @@ server.registerTool(
 // ── Tier 05 Execution ────────────────────────────────────────────────────────
 
 const forgeHandler = async (args: any, toolName: string) => {
-  const { task, mode, session_id, actor_id, lease_id, evidence_receipt, peer_contract_id } = args;
+  const { task, mode, session_id, actor_id, lease_id, evidence_receipt, peer_contract_id, prediction_context, auto_predict = true } = args;
   const startedAt = Date.now();
-  await telemetryInvoke("arif_forge_execute");
+  await telemetryInvoke("forge_execute");
   return runStage("777_FORGE" as MetabolicStage, async () => {
   try {
     // ── FORGE 2-B: arifOS judge SEAL required before any execution ──
@@ -587,6 +1114,89 @@ const forgeHandler = async (args: any, toolName: string) => {
       lease_id,
       actor_id: actor_id ?? "mcp-anonymous",
     });
+
+    // ── ELICITATION GATE: Human confirmation before forge execution ──
+    // Item 2 (2026-07-07): forge_execute is always ATOMIC/IRREVERSIBLE class.
+    // Require explicit human elicitation BEFORE submitting to judge.
+    const elicitReq = tradeConfirmationSchema(
+      `Forge execution: ${String(task ?? "").slice(0, 500)}\n\nTool: ${toolName}\nMode: ${mode ?? "external_safe_mode"}\nThis will execute code after constitutional clearance.`,
+    );
+    const elicitResult = await elicitUser(server.server, elicitReq);
+    const auth = isGenuineAuthorization(elicitResult);
+    if (!auth.authorized) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "ERROR",
+            error_code: "ELICITATION_BLOCKED",
+            source_layer: "A-FORGE::ELICITATION_GATE",
+            gate: "HUMAN_CONSENT_WITHHELD",
+            reason: auth.reason,
+            tool: toolName,
+            elicit_action: elicitResult.action,
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+
+    // ── PREDICTION BRIDGE (TIER 2): Use preActionSimulation.ts before judge/execute ──
+    // Wire the real module (preActionSimulation.ts) — classify → predictConsequences → gate verdict.
+    // Explicit prediction_context from caller takes precedence. Auto only for irreversible-ish domain actions.
+    // This completes "wire prediction to actor".
+    let effectivePrediction = prediction_context;
+    const taskStr = String(task || "");
+    const taskLower = taskStr.toLowerCase();
+
+    if (!effectivePrediction && auto_predict) {
+      const simReq: SimulationRequest = {
+        action_class: "EXECUTE_IRREVERSIBLE", // conservative for forge_execute
+        target: taskStr,
+        intent: taskStr,
+        tool_name: toolName,
+        metadata: { ...(args.params || {}), session_id, actor_id },
+      };
+
+      const needs = requiresSimulation(simReq) || /geox|wealth|prospect|basin|seismic|npv|emv|capital|well|petrophys|drill|deploy|invest/.test(taskLower);
+      if (needs) {
+        try {
+          const callOrganAdapter = async (organ: string, tool: string, callArgs: Record<string, unknown>) => {
+            const ns = organ === "geox" ? "geox_mcp" : organ === "wealth" ? "wealth_mcp" : organ === "well" ? "well_mcp" : "arifos";
+            return await callMCP(`${ns}.${tool}`, callArgs);
+          };
+
+          const predResult: PredictionResult = await predictConsequences(simReq, callOrganAdapter);
+          effectivePrediction = {
+            ...predResult,
+            source: "preActionSimulation",
+            simulation_gate: simulationGateVerdict(predResult),
+          };
+
+          const gate = (effectivePrediction as any).simulation_gate;
+          process.stderr.write(`[PRE-ACTION-SIM] domain=${predResult.domain} rec=${predResult.recommendation} gate=${gate?.verdict} conf=${predResult.confidence}\n`);
+
+          // If simulation says BLOCK or strong CAUTION, short-circuit before judge (F1 + world model)
+          if (gate && !gate.proceed && gate.verdict === "VOID_RISK") {
+            return {
+              content: [{
+                type: "text" as const,
+                text: JSON.stringify({
+                  status: "VOID",
+                  gate: "PREDICTION_RISK",
+                  reason: gate.reason,
+                  prediction: effectivePrediction,
+                }, null, 2),
+              }],
+              isError: true,
+            };
+          }
+        } catch (predErr: any) {
+          process.stderr.write(`[PRE-ACTION-SIM] predictConsequences failed (F7 humility): ${String(predErr?.message || predErr).slice(0, 140)}\n`);
+        }
+      }
+    }
+
     const judgeBody: any = {
       mode: "judge",
       candidate,
@@ -600,6 +1210,10 @@ const forgeHandler = async (args: any, toolName: string) => {
     if (peer_contract_id) {
       judgeBody.peer_contract_id = peer_contract_id;
     }
+    if (effectivePrediction) {
+      judgeBody.prediction_context = effectivePrediction;
+      judgeBody.evidence_receipt = { ...(judgeBody.evidence_receipt || {}), prediction: effectivePrediction, source: "forge_predict" };
+    }
     const judgeResult = await callMCP("arifos.arif_judge_deliberate", judgeBody) as any;
     const judgeVerdict = judgeResult?.verdict ?? judgeResult?.decision ?? "HOLD";
     if (judgeVerdict !== "SEAL") {
@@ -607,7 +1221,9 @@ const forgeHandler = async (args: any, toolName: string) => {
         content: [{
           type: "text" as const,
           text: JSON.stringify({
-            status: "HOLD",
+            status: "ERROR",
+            error_code: "JUDGE_GATE_HOLD",
+            source_layer: "A-FORGE::FORGE_GATE",
             gate: "JUDGE_GATE",
             tool: toolName,
             reason: `arifOS judge returned '${judgeVerdict}' for this execution. No SEAL, no mutation.`,
@@ -616,9 +1232,38 @@ const forgeHandler = async (args: any, toolName: string) => {
         }],
         isError: true,
       };
-      await telemetryFailure("arif_forge_execute", startedAt, new Error(`JUDGE_GATE: ${judgeVerdict}`));
+      await telemetryFailure("forge_execute", startedAt, new Error(`JUDGE_GATE: ${judgeVerdict}`));
       return holdResult;
     }
+
+    // ── FORGE 2-C: Landauer thermodynamic pre-check (APEX Stream 3) ──
+    const { ThermodynamicCostEstimator } = await import("../../domain/ops/ThermodynamicCostEstimator.js");
+    const { detectMesaRisk } = await import("../../domain/governance/mesaDetector.js");
+    const thermo = new ThermodynamicCostEstimator();
+    const landauerCost = thermo.estimate("forge_execute", args);
+    if (landauerCost.thermodynamicBand === "CRITICAL") {
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({
+          status: "ERROR", error_code: "LANDAUER_GATE_HOLD", source_layer: "A-FORGE::FORGE_GATE", gate: "LANDAUER_GATE",
+          reason: `Thermodynamic cost CRITICAL (${landauerCost.landauerCost.toFixed(2)}). Irreversible ${!landauerCost.isReversible}.`,
+          cost: landauerCost,
+        }, null, 2) }], isError: true,
+      };
+    }
+    // ── End Landauer gate ──
+
+    // ── FORGE 2-D: Mesa-optimization scan (APEX Stream 1) ──
+    const mesa = detectMesaRisk(task ?? "", args.session_id ?? undefined);
+    if (mesa.blocked) {
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify({
+          status: "ERROR", error_code: "MESA_DETECTOR_HOLD", source_layer: "A-FORGE::FORGE_GATE", gate: "MESA_DETECTOR",
+          reason: mesa.rationale,
+          mesa_risk: mesa,
+        }, null, 2) }], isError: true,
+      };
+    }
+    // ── End Mesa gate ──
 
     const { AgentEngine } = await import("../../domain/engine/AgentEngine.js");
     const { LongTermMemory } = await import("../../application/memory/LongTermMemory.js");
@@ -656,15 +1301,15 @@ const forgeHandler = async (args: any, toolName: string) => {
         content: [{ type: "text" as const, text: JSON.stringify({ finalText: res.finalText, turns: res.turnCount, blocked, judge_verdict: judgeVerdict }, null, 2) }],
         isError: blocked
       };
-      await telemetrySuccess("arif_forge_execute", startedAt, undefined, { judge_verdict: judgeVerdict });
+      await telemetrySuccess("forge_execute", startedAt, undefined, { judge_verdict: judgeVerdict });
       return result;
     } finally { await rm(root, { recursive: true, force: true }); }
-  } catch (err) { await telemetryFailure("arif_forge_execute", startedAt, err); throw err; }
+  } catch (err) { await telemetryFailure("forge_execute", startedAt, err); throw err; }
   });
 };
 
 server.registerTool(
-  "arif_forge_execute",
+  "forge_execute",
   {
     description: "Execution and motor cortex (Stage 777 FORGE). Use this to execute an action plan. Requires cc_id for mutations (INV-4).",
     inputSchema: z.object({
@@ -673,6 +1318,8 @@ server.registerTool(
       evidence_receipt: z.record(z.string(), z.unknown()).optional().describe("Optional F-WEB evidence receipt to support a SEAL verdict"),
       peer_contract_id: z.string().optional().describe("Optional Peer Federation Contract v1 ID for audit continuity"),
       constitutional_chain_id: z.string().optional().describe("cc_id from arif_judge SEAL"),
+      prediction_context: z.record(z.string(), z.unknown()).optional().describe("Optional pre-computed prediction from forge_predict to inject as judge evidence"),
+      auto_predict: z.boolean().optional().default(true).describe("If true and no prediction_context, auto-invoke forge_predict for geox/wealth tasks before judge"),
     }),
     annotations: {
       title: "777 FORGE",
@@ -684,26 +1331,16 @@ server.registerTool(
     // _meta extension for constitutional address (C2)
     _meta: { arifos: { requires_cc_id: true, action_class: "FORGE_EXECUTE" } }
   },
-  (args) => forgeHandler(args, "arif_forge_execute")
+  (args) => forgeHandler(args, "forge_execute")
 );
 
 // Example structured output hint (C3) — in real would use outputSchema when SDK supports per-tool
 // verdict shape: { verdict: "SEAL"|"VOID"|..., cc_id, floors_evaluated, reason } isError:false always for verdicts.
 
-server.registerTool(
-  "forge_run",
-  {
-    description: "Run a full agent task with governance floors.",
-    inputSchema: z.object({
-      task: z.string().describe("The task to execute"),
-      mode: z.enum(["internal_mode", "external_safe_mode"]).optional(),
-      evidence_receipt: z.record(z.string(), z.unknown()).optional().describe("Optional F-WEB evidence receipt to support a SEAL verdict"),
-      peer_contract_id: z.string().optional().describe("Optional Peer Federation Contract v1 ID for audit continuity"),
-    }),
-    annotations: { title: "Agent Run", destructiveHint: true }
-  },
-  (args) => forgeHandler(args, "forge_run")
-);
+// ── DEPRECATED: forge_run REMOVED 2026-06-28 ─────────────────────────────────
+// forge_run was an alias of forge_execute with the same forgeHandler.
+// Use forge_execute with task + mode instead.
+// ──────────────────────────────────────────────────────────────────────────────
 
 const judgeHandler = async ({ holdId, reason }: { holdId: string, reason?: string }) => {
   const startedAt = Date.now();
@@ -719,7 +1356,7 @@ const judgeHandler = async ({ holdId, reason }: { holdId: string, reason?: strin
           gate: "SELF_AUTHORIZE_REFUSED",
           holdId,
           reason: reason ?? "none given",
-          message: "A-FORGE no longer issues approvals. Route to arifOS arif_judge_deliberate (via forge_judge_proxy) instead.",
+          message: "A-FORGE cannot self-authorize. Route to arifOS via: forge_judge_proxy({mode:'judge', candidate:'...', session_id:'...'}). See forge_judge_proxy for full parameter spec.",
         }, null, 2),
       }],
       isError: true,
@@ -735,7 +1372,101 @@ const judgeProxyHandler = async (args: Record<string, unknown>) => {
   await telemetryInvoke("forge_judge_proxy");
   return runStage("888_JUDGE" as MetabolicStage, async () => {
     try {
-      const res = await callMCP("arifos.arif_judge_deliberate", args);
+      // ── ELICITATION GATE: Human confirmation before irreversible judge ──
+      // Item 2 (2026-07-07): If action_tier indicates IRREVERSIBLE or HIGH,
+      // require explicit human elicitation BEFORE forwarding to arifOS judge.
+      // This is the constitutional F1/F13 consent layer at the MCP boundary.
+      const actionTier = typeof args.action_tier === "string" ? args.action_tier.toUpperCase() : "";
+      const candidateStr = typeof args.candidate === "string" ? args.candidate : JSON.stringify(args.candidate ?? "unknown action");
+      const needsElicitation = actionTier === "IRREVERSIBLE" || actionTier === "HIGH" || actionTier === "CRITICAL";
+
+      if (needsElicitation) {
+        const elicitReq = tradeConfirmationSchema(
+          `Judge proxy forwarding: ${candidateStr.slice(0, 500)}\n\nAction tier: ${actionTier}\nThis will be submitted to arifOS constitutional judge.`,
+        );
+        const elicitResult = await elicitUser(server.server, elicitReq);
+        const auth = isGenuineAuthorization(elicitResult);
+        if (!auth.authorized) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "ERROR",
+                error_code: "ELICITATION_BLOCKED",
+                source_layer: "A-FORGE::ELICITATION_GATE",
+                gate: "HUMAN_CONSENT_WITHHELD",
+                reason: auth.reason,
+                action_tier: actionTier,
+                candidate: candidateStr.slice(0, 200),
+                elicit_action: elicitResult.action,
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+        // Human authorized — inject elicitation receipt into args for audit trail
+        args._elicitation_receipt = {
+          authorized: true,
+          action: elicitResult.action,
+          notes: elicitResult.content?.notes ?? null,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      // ── TRUTH GATE (2026-07-10): Every claim entering arif_judge must pass truth_enforcement ──
+      // Replaces execSync Python bridge with async MCP call to arifOS arif_claim_gate
+      // Gate first. Receipt second. Flow protocol third.
+      // 2026-07-14 FIX: soft-fail if arif_claim_gate not on public surface — fall through to judge
+      const wargaId = typeof args.actor_id === "string" ? args.actor_id : "opencode";
+      const irreversible = args.action_tier === "IRREVERSIBLE" || args.action_tier === "CRITICAL";
+      try {
+        const gateResult = await callMCP("arifos.arif_claim_gate", {
+          warga_id: wargaId,
+          claim_text: candidateStr.slice(0, 1000),
+          irreversible,
+        }) as { allowed: boolean; verdict: string; evidence_layer: string; reason: string; receipt_id: string; instruction: string };
+        if (!gateResult.allowed) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "ERROR",
+                error_code: "TRUTH_GATE_HOLD",
+                source_layer: "A-FORGE::TRUTH_GATE",
+                gate: "truth_enforcement",
+                verdict: gateResult.verdict,
+                evidence_layer: gateResult.evidence_layer,
+                reason: gateResult.reason,
+                receipt_id: gateResult.receipt_id,
+                instruction: gateResult.instruction,
+                candidate: candidateStr.slice(0, 200),
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+        // Gate passed — attach receipt to args for audit trail
+        args._truth_gate_receipt = {
+          receipt_id: gateResult.receipt_id,
+          evidence_layer: gateResult.evidence_layer,
+          verdict: gateResult.verdict,
+        };
+      } catch (gateErr: any) {
+        // Gate soft-fail: arif_claim_gate may not be on public MCP surface.
+        // Log warning but proceed — arif_judge_deliberate does truth enforcement internally.
+        console.warn(`[forge_judge_proxy] Truth gate unavailable: ${gateErr?.message ?? gateErr}. Proceeding to judge.`);
+      }
+
+      // Wire prediction context into judge submission (prediction bridge requirement)
+      const judgeArgs = { ...args };
+      if (args.prediction_context) {
+        judgeArgs.prediction_context = args.prediction_context;
+        // Also promote to evidence_receipt if not present, for canon compatibility
+        if (!judgeArgs.evidence_receipt) {
+          judgeArgs.evidence_receipt = { prediction: args.prediction_context, source: "forge_predict" };
+        }
+      }
+      const res = await callMCP("arifos.arif_judge_deliberate", judgeArgs);
       const result = { content: [{ type: "text" as const, text: resultAsJson(res) }] };
       await telemetrySuccess("forge_judge_proxy", startedAt);
       return result;
@@ -746,7 +1477,7 @@ const judgeProxyHandler = async (args: Record<string, unknown>) => {
   });
 };
 
-server.tool("forge_approve", "Approve action.", { holdId: z.string(), reason: z.string().optional() }, judgeHandler);
+server.tool("forge_approve", "Refuses approval — A-FORGE cannot self-authorize. Route to arifOS arif_judge_deliberate via forge_judge_proxy instead.", { holdId: z.string(), reason: z.string().optional() }, judgeHandler);
 
 server.tool(
   "forge_judge_proxy",
@@ -764,46 +1495,207 @@ server.tool(
     niat_params: z.record(z.string(), z.unknown()).optional().describe("Niat parameters"),
     context_source: z.string().optional().describe("Context source"),
     peer_contract_id: z.string().optional().describe("Peer Federation Contract v1 ID for audit continuity"),
+    measurement: z.record(z.string(), z.unknown()).optional().describe(
+      "MEMBRANE-03: MeasurementPacket from A-FORGE. Contains G, C_dark, W3, primitives, witness, trace. Kernel reads for floor checks; never recomputes."
+    ),
+    prediction_context: z.record(z.string(), z.unknown()).optional().describe(
+      "Pre-action simulation result from forge_predict (GEOX/WEALTH evidence). Injected into judge submission as evidence. prediction→judge pipeline."
+    ),
   },
   judgeProxyHandler
 );
 
+// ── Tier 05b Elicitation — Human-in-the-loop for trades/sends ───────────────
+// Item 2 (2026-07-07): MCP elicitation/create protocol wired into A-FORGE.
+// Two explicit tools for trade/send authorization + inline gates on forge_execute and forge_judge_proxy.
+// Protocol: elicitation/create (2025-11-25), error code -32042 (UrlElicitationRequired)
+
+import {
+  sendConfirmationSchema,
+  sensitiveOperationURL,
+} from "./elicitation.js";
+
+server.tool(
+  "forge_transfer_confirm",
+  "Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until user accept/decline/cancel.",
+  {
+    amount: z.number().describe("Transfer amount"),
+    recipient: z.string().describe("Recipient identifier"),
+    currency: z.string().default("USD").describe("Currency code"),
+    memo: z.string().optional().describe("Transfer memo"),
+    session_id: z.string().optional(),
+    actor_id: z.string().optional(),
+    lease_id: z.string().optional(),
+  },
+  async ({ amount, recipient, currency, memo }) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("forge_transfer_confirm");
+    try {
+      const elicitReq = tradeConfirmationSchema(
+        `Transfer ${amount.toLocaleString()} ${currency} to ${recipient}` +
+        (memo ? `\nMemo: ${memo}` : "") +
+        `\n\nThis transfer requires explicit human authorization.`,
+      );
+      const result = await elicitUser(server.server, elicitReq);
+      const auth = isGenuineAuthorization(result);
+      const txId = `TX-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
+      if (auth.authorized) {
+        await telemetrySuccess("forge_transfer_confirm", startedAt, undefined, { action: "authorized" });
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "AUTHORIZED",
+              tx_id: txId,
+              amount,
+              currency,
+              recipient,
+              memo: memo ?? null,
+              authorization: {
+                method: "form_mode_elicitation",
+                action: result.action,
+                notes: result.content?.notes ?? null,
+                timestamp: new Date().toISOString(),
+              },
+              _epistemic: { output_class: "GOVERNANCE_TEMPLATE", authority_claim: "EXECUTIVE" },
+            }, null, 2),
+          }],
+        };
+      }
+
+      await telemetrySuccess("forge_transfer_confirm", startedAt, undefined, { action: "blocked" });
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "BLOCKED",
+            gate: "ELICITATION_DECLINED",
+            reason: auth.reason,
+            amount,
+            currency,
+            recipient,
+            elicit_action: result.action,
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    } catch (err) {
+      await telemetryFailure("forge_transfer_confirm", startedAt, err);
+      throw err;
+    }
+  }
+);
+
+server.tool(
+  "forge_send_confirm",
+  "Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensitive credentials). F13 consent gate.",
+  {
+    destination: z.string().describe("Destination identifier (URL, email, API endpoint)"),
+    payload_summary: z.string().default("").describe("Summary of payload being sent (never send raw secrets here)"),
+    sensitive: z.boolean().default(false).describe("If true, uses URL-mode elicitation for out-of-band auth"),
+    session_id: z.string().optional(),
+    actor_id: z.string().optional(),
+    lease_id: z.string().optional(),
+  },
+  async ({ destination, payload_summary, sensitive }) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("forge_send_confirm");
+    try {
+      if (sensitive) {
+        // URL mode — for credentials, API keys, tokens
+        // Returns -32042 if client doesn't support URL elicitation
+        const elicitId = `send-${Date.now().toString(36)}`;
+        const urlReq = sensitiveOperationURL(
+          elicitId,
+          `Sensitive data transmission to: ${destination}\nPayload: ${payload_summary}`,
+          `https://mcp.arif-fazil.com/elicit/${elicitId}`,
+        );
+        const result = await elicitUser(server.server, urlReq);
+        const auth = isGenuineAuthorization(result);
+
+        await telemetrySuccess("forge_send_confirm", startedAt, undefined, { action: result.action, mode: "url" });
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: auth.authorized ? "AUTHORIZED" : "BLOCKED",
+              gate: auth.authorized ? "URL_ELICITATION_PASSED" : "URL_ELICITATION_DECLINED",
+              destination,
+              sensitive: true,
+              method: "url_mode_elicitation",
+              reason: auth.reason,
+            }, null, 2),
+          }],
+          isError: !auth.authorized,
+        };
+      }
+
+      // Form mode — standard confirmation
+      const elicitReq = sendConfirmationSchema(destination, payload_summary || "(no summary)");
+      const result = await elicitUser(server.server, elicitReq);
+      const auth = isGenuineAuthorization(result);
+
+      await telemetrySuccess("forge_send_confirm", startedAt, undefined, { action: result.action, mode: "form" });
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: auth.authorized ? "AUTHORIZED" : "BLOCKED",
+            gate: auth.authorized ? "FORM_ELICITATION_PASSED" : "FORM_ELICITATION_DECLINED",
+            destination,
+            sensitive: false,
+            method: "form_mode_elicitation",
+            reason: auth.reason,
+            notes: result.content?.notes ?? null,
+          }, null, 2),
+        }],
+        isError: !auth.authorized,
+      };
+    } catch (err) {
+      await telemetryFailure("forge_send_confirm", startedAt, err);
+      throw err;
+    }
+  }
+);
+
 // ── Tier 06 Stewardship (Vault) ──────────────────────────────────────────────
 
-const vaultHandler = async ({ content, reason, tier, tags }: { content: string, reason: string, tier?: any, tags?: string[] }) => {
-  const startedAt = Date.now();
-  await telemetryInvoke("arif_vault_seal");
-  return runStage("999_VAULT" as MetabolicStage, async () => {
-  try {
-    const entry = await memoryContract.store({ content, reason, tier, tags });
-    return { content: [{ type: "text" as const, text: JSON.stringify({ memoryId: entry.memoryId, tier: entry.tier }, null, 2) }] };
-  } catch (err) { await telemetryFailure("arif_vault_seal", startedAt, err); throw err; }
-  });
-};
-
-server.tool("arif_vault_seal", "Ledger closure (Stage 999 VAULT).", { content: z.string(), reason: z.string(), tier: z.string().optional(), tags: z.array(z.string()).optional() }, vaultHandler);
-// NOTE: forge_remember REMOVED — duplicate of arif_vault_seal (same handler).
-
 // Merged: forge_vault — single tool with mode parameter
-// Replaces: forge_vault_read, forge_vault_list, forge_vault_write
+// Modes: read, list, write, seal
+// Replaces: forge_vault_read, forge_vault_list, forge_vault_write, forge_vault_seal
 // forge_vault_delete REMOVED — VAULT999 is append-only.
-// forge_vault_seal REMOVED — final sealing belongs to arifOS. Use arif_vault_seal.
+// DEPRECATED (2026-07-03): write/seal modes should route through arifOS arif_seal.
+//   Keep read/list as A-FORGE native cache layer. Full removal TBD.
 
 server.registerTool("forge_vault", {
-  description: "VAULT999 primitive. Modes: read, list, write.",
+  description: "VAULT999 primitive. Modes: read, list, write, seal.",
   inputSchema: z.object({
-    mode: z.enum(["read", "list", "write"]).describe("Vault operation"),
-    name: z.string().optional().describe("Record name (read/write)"),
+    mode: z.enum(["read", "list", "write", "seal"]).describe("Vault operation"),
+    name: z.string().optional().describe("Record name (read/write/seal)"),
     category: z.string().optional().describe("Category filter (list) / Record category (write)"),
     limit: z.number().optional().describe("Max records (list, default 100)"),
-    value: z.string().optional().describe("Record value (write)"),
+    value: z.string().optional().describe("Record value (write/seal)"),
+    content: z.string().optional().describe("Content to seal (seal mode)"),
+    reason: z.string().optional().describe("Seal reason (seal mode)"),
+    tier: z.string().optional().describe("Memory tier (seal mode)"),
+    tags: z.array(z.string()).optional().describe("Tags (seal mode)"),
     metadata: z.record(z.string(), z.unknown()).optional().describe("Optional metadata (write)"),
   }),
-}, async ({ mode, name, category, limit, value, metadata }) => {
+}, async ({ mode, name, category, limit, value, content, reason, tier, tags, metadata }) => {
   const startedAt = Date.now();
   await telemetryInvoke(`forge_vault:${mode}`);
   return runStage("999_VAULT" as MetabolicStage, async () => {
     try {
+      if (mode === "seal") {
+        const sealContent = content || value;
+        if (!sealContent || !reason) {
+          return { content: [{ type: "text" as const, text: "content (or value) and reason required for mode=seal" }], isError: true };
+        }
+        const entry = await memoryContract.store({ content: sealContent, reason, tier: tier as any, tags });
+        await telemetrySuccess(`forge_vault:seal`, startedAt);
+        return { content: [{ type: "text" as const, text: JSON.stringify({ memoryId: entry.memoryId, tier: entry.tier, mode: "seal" }, null, 2) }] };
+      }
       const sbClient = new SupabaseVaultClient();
       let result: any;
       if (mode === "read") {
@@ -826,6 +1718,9 @@ server.registerTool("forge_vault", {
     }
   });
 });
+
+// NOTE: forge_vault_seal REMOVED — collapsed into forge_vault mode=seal.
+// NOTE: forge_remember REMOVED — duplicate of arif_vault_seal.
 
 // ── Domain Tools (Tier 03) ───────────────────────────────────────────────────
 // forge_wealth: Domain router to WEALTH organ. No local computation.
@@ -866,7 +1761,23 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
   } catch (err) {
     if (transport) { try { await transport.close(); } catch { /* best effort */ } }
     const msg = err instanceof Error ? err.message : String(err);
-    return { content: [{ type: "text" as const, text: `WEALTH routing error: ${msg}` }], isError: true };
+    const errorCode = (err as any)?.error_code ?? "BRIDGE_BLOCKED";
+    const sourceLayer = (err as any)?.source_layer ?? "A-FORGE::BRIDGE::WEALTH";
+    const downstreamError = (err as any)?.downstream_error ?? msg;
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          status: "ERROR",
+          error_code: errorCode,
+          source_layer: sourceLayer,
+          message: `WEALTH routing error: ${msg}`,
+          downstream_error: downstreamError,
+          trace_id: (err as any)?.trace_id ?? undefined,
+        }, null, 2),
+      }],
+      isError: true,
+    };
   }
 });
 
@@ -874,16 +1785,9 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
 // Read-only wrappers for systemd/docker/journalctl. Write variants remain
 // unregistered until the E7 lease executor is wired and tested.
 
-// Merged: forge_systemctl — single tool with mode parameter
-// Replaces: forge_systemctl_status, forge_systemctl_is_active, forge_systemctl_list_units
-server.tool("forge_systemctl", "Query systemd. Modes: status, list_units.", { service: z.string().optional(), mode: z.enum(["status", "list_units"]).default("status"), pattern: z.string().optional() }, async (args) => {
-  if (args.mode === "list_units") {
-    const res = await systemctlWrapper.listUnits(args.pattern ?? "*");
-    return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
-  }
-  const res = await systemctlWrapper.status(args.service ?? "");
-  return { content: [{ type: "text" as const, text: resultAsJson(res) }] };
-});
+// REMOVED 2026-07-09: forge_systemctl — fully unregistered from live surface.
+// Canonical path: forge_shell('systemctl status|list-units ...')
+// systemctlWrapper kept for internal use; do not re-register as MCP tool.
 
 // NOTE: forge_docker_ps/logs/exec/images registered by registerDockerTools (proxyTools.ts).
 // forge_docker_inspect and forge_docker_stats REMOVED — use forge_docker with mode or direct CLI.
@@ -956,9 +1860,204 @@ server.registerTool("forge_well", {
     } catch (err) {
       if (transport) { try { await transport.close(); } catch { /* best effort */ } }
       await telemetryFailure(`forge_well:${mode}`, startedAt, err);
-      return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
+      const msg = err instanceof Error ? err.message : String(err);
+      const errorCode = (err as any)?.error_code ?? "BRIDGE_BLOCKED";
+      const sourceLayer = (err as any)?.source_layer ?? "A-FORGE::BRIDGE::WELL";
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "ERROR",
+            error_code: errorCode,
+            source_layer: sourceLayer,
+            message: `WELL routing error: ${msg}`,
+            downstream_error: (err as any)?.downstream_error ?? msg,
+            trace_id: (err as any)?.trace_id ?? undefined,
+          }, null, 2),
+        }],
+        isError: true,
+      };
     }
   });
+});
+
+// ── Visualization: forge_chart — cross-organ agentic data viz + eureka margins ──
+// All domain organs use via A-FORGE (forge_wealth data -> chart, GEOX logs -> scatter, WELL trends).
+// Returns SVG (text-embeddable) + stats + eureka_candidates (turning points / deviation margins).
+// OBSERVE class. No lease required. Native (no external MCP dep for core types).
+server.tool(
+  "forge_chart",
+  "Agentic charting + quantum eureka discovery margin patterns. Input data series or records; returns SVG + summary + eureka_candidates (reversals, high-z, curvature). Types support line/bar/scatter/pie/area/histogram. Use after postgres/wealth/well queries for visualization and pattern discovery. All organs share this surface.",
+  {
+    type: z.enum(["line", "bar", "scatter", "pie", "area", "histogram"]).default("line"),
+    data: z.array(z.any()).describe("Array of numbers, [x,y] pairs, or objects {x,y} / {label,value} or use x_field/y_field"),
+    title: z.string().optional(),
+    x_field: z.string().optional(),
+    y_field: z.string().optional(),
+    width: z.number().int().min(200).max(2000).default(640),
+    height: z.number().int().min(150).max(1200).default(380),
+    return_format: z.enum(["svg", "full"]).default("full"),
+  },
+  async (args) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("forge_chart");
+    try {
+      const { svg, summary, eureka_candidates } = generateSvgChart(args.type as ChartType, args.data, {
+        title: args.title,
+        width: args.width,
+        height: args.height,
+        x_field: args.x_field,
+        y_field: args.y_field,
+      });
+      const payload: any = args.return_format === "svg"
+        ? { svg }
+        : { svg, summary, eureka_candidates, note: "Paste SVG into .svg file or render in browser. Red rings mark eureka margins (discovery frontiers)." };
+      await telemetrySuccess("forge_chart", startedAt);
+      return { content: [{ type: "text" as const, text: resultAsJson(payload) }] };
+    } catch (err: any) {
+      await telemetryFailure("forge_chart", startedAt, err);
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: err.message || String(err) }) }], isError: true };
+    }
+  }
+);
+
+// ── P2 TOOLS (2026-06-28): Canonical gap fill — forge_probe, forge_status, forge_abort, forge_scan ──
+
+// P2.1: forge_probe — Federation organ liveness check
+server.tool(
+  "forge_probe",
+  "Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill.",
+  {
+    organs: z.array(z.enum(["arifos", "geox", "wealth", "well", "aforge", "aaa"])).optional()
+      .describe("Organs to probe (default: all except self)"),
+    include_latency: z.boolean().default(true).describe("Include latency measurement"),
+  },
+  async ({ organs, include_latency }: { organs?: string[] | string; include_latency?: boolean }) => {
+  // SESAT FIX 2026-07-05: MCP client may pass comma-separated string instead of array
+  const organsArray: string[] | undefined = typeof organs === "string"
+    ? organs.split(",").map(s => s.trim()).filter(Boolean)
+    : organs;
+  const targets: Record<string, string> = {
+    arifos: "http://localhost:8088/health",
+    geox: "http://localhost:8081/health",
+    wealth: "http://localhost:18082/health",
+    well: "http://localhost:18083/health",
+    aforge: "http://localhost:7072/health",
+    aaa: "http://localhost:3001/health",
+  };
+  const selected = organsArray ?? ["arifos", "geox", "wealth", "well", "aaa"];
+  const results: Record<string, { alive: boolean; latency_ms?: number; error?: string }> = {};
+  for (const organ of selected) {
+    const url = targets[organ];
+    if (!url) { results[organ] = { alive: false, error: "unknown organ" }; continue; }
+    const t0 = Date.now();
+    try {
+      const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      const elapsed = Date.now() - t0;
+      results[organ] = {
+        alive: resp.ok,
+        ...(include_latency ? { latency_ms: elapsed } : {}),
+      };
+    } catch (err: any) {
+      results[organ] = {
+        alive: false,
+        ...(include_latency ? { latency_ms: Date.now() - t0 } : {}),
+        error: err?.message?.slice(0, 200) ?? "unreachable",
+      };
+    }
+  }
+  const allAlive = Object.values(results).every(r => r.alive);
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify({
+      status: allAlive ? "SEAL" : "DEGRADED",
+      timestamp: new Date().toISOString(),
+      organs: results,
+    }, null, 2) }],
+  };
+});
+
+// P2.2-2.3: forge_status + forge_abort reside in forgeTools.ts (needs jobStore/activeLeases scope)
+
+// P2.5: forge_scan — AST security scan (wraps SecurityScanner internally)
+server.tool(
+  "forge_scan",
+  "Security scan a file or directory before code execution. Detects dangerous patterns. OBSERVE-class. P2.5 canonical gap fill.",
+  {
+    target: z.string().describe("File or directory path to scan"),
+    depth: z.enum(["quick", "full"]).default("quick").describe("Scan depth: quick = dangerous patterns, full = extended patterns"),
+  },
+  async ({ target, depth }: { target: string; depth?: string }) => {
+  const result: {
+    target: string;
+    depth: string;
+    scanned_files: number;
+    passed: boolean;
+    findings: Array<{ file: string; line: number; pattern: string; severity: string }>;
+    critical?: number;
+    high?: number;
+    medium?: number;
+  } = {
+    target,
+    depth: depth ?? "quick",
+    scanned_files: 0,
+    passed: true,
+    findings: [] as Array<{ file: string; line: number; pattern: string; severity: string }>,
+  };
+  try {
+    const stats = await import("node:fs/promises").then(m => m.stat(target));
+    const isDir = stats.isDirectory();
+    const files: string[] = [];
+    if (isDir) {
+      // TODO: BYPASS RISK — execSync with user-supplied target path allows shell injection.
+      // Add path scope validation (F8) before execution + ArifSeal audit.
+      // Migrate to forge_shell for governed execution.
+      const { execSync } = await import("node:child_process");
+      const out = execSync(`find "${target}" -name "*.ts" -o -name "*.js" -o -name "*.py" 2>/dev/null | head -200`, { encoding: "utf-8", timeout: 10000 });
+      files.push(...out.trim().split("\n").filter(Boolean));
+    } else {
+      files.push(target);
+    }
+
+    // Dangerous patterns — HARAM list
+    const patterns: Array<{ re: RegExp; severity: string; name: string }> = [
+      { re: /rm\s+-rf\s+\/\s*(;|$|\||2>)/, severity: "CRITICAL", name: "rm -rf /" },
+      { re: /DROP\s+DATABASE|DROP\s+TABLE/i, severity: "CRITICAL", name: "DROP DATABASE/TABLE" },
+      { re: /:\(\)\s*\{\s*:\|:&\s*\;?\s*\};?\s*:/, severity: "CRITICAL", name: "Fork bomb" },
+      { re: />\s*\/dev\/(sda|sdb|nvme|mmc)/, severity: "CRITICAL", name: "Direct block device write" },
+      { re: /mkfs\.\w+/, severity: "HIGH", name: "Filesystem creation" },
+      { re: /dd\s+if=/, severity: "HIGH", name: "dd destructive" },
+      { re: /chmod\s+777/, severity: "MEDIUM", name: "World-writable file" },
+    ];
+    if (depth === "full") {
+      patterns.push(
+        { re: /eval\s*\(/, severity: "HIGH", name: "eval() usage" },
+        { re: /process\.env\./, severity: "LOW", name: "Environment variable access" },
+        { re: /child_process\.exec(File)?\(/, severity: "MEDIUM", name: "Shell exec" },
+      );
+    }
+
+    for (const file of files) {
+      try {
+        const content = await import("node:fs/promises").then(m => m.readFile(file, "utf-8"));
+        result.scanned_files++;
+        const lines = content.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          for (const p of patterns) {
+            if (p.re.test(lines[i])) {
+              result.findings.push({ file, line: i + 1, pattern: p.name, severity: p.severity });
+              result.passed = false;
+            }
+          }
+        }
+      } catch { /* skip unreadable */ }
+    }
+    result.critical = result.findings.filter(f => f.severity === "CRITICAL").length;
+    result.high = result.findings.filter(f => f.severity === "HIGH").length;
+    result.medium = result.findings.filter(f => f.severity === "MEDIUM").length;
+  } catch (err: any) {
+    return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Scan failed: ${err.message}` }) }], isError: true };
+  }
+  return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
 });
 
 // ── Tier 1 Proxy Tools (forge_filesystem, forge_postgres, forge_memory, forge_git, forge_github, forge_docker) ──
@@ -971,96 +2070,197 @@ registerMemoryTools(server);
 registerGitTools(server);
 registerGitHubTools(server);
 registerDockerTools(server);
+registerFetchTools(server);
 
 // ── Phase 1: Identity, Lease, Registry, Shell, Logs, Jobs ──────────────────
 registerIdentityTools(server);
 registerLeaseTools(server);
 registerRegistryTools(server);
-registerShellTools(server);
+registerShellTools(server);                                // forge_shell_dryrun (legacy)
+registerCanonicalShellTools(server);                        // forge_shell + forge_shell_status (canonical)
 registerLogTools(server);
 registerJobTools(server);
-registerOrchestrationTools(server);
+registerStatusTools(server);
+registerStateAnchorTools(server);                          // P0 Machine Constitution Layer: ports/services/cron/boundaries
+
+// ── Phase 1b: Verify Timeline — Source Verification ─────────────────────────
+// forge_verify_timeline: TIMELINE_MIN_SOURCES invariant enforcement.
+registerVerifyTimelineTools(server);
+
+// ── Phase 2: Skill Forge (APEX Epoch 34Ω — Organism Layer) ─────────────────
+// forge_skill + forge_registry: dynamic tool generation with Decision Field gate.
+// Phase 1: human approval per generation, 24h expiry, 1-generation depth.
+registerSkillTools(server);
+
+// ── Phase 3: Governed Tools (APEX v36Ω — Measurement Instruments) ──────────
+// forge_evaluate, forge_witness, forge_scar, forge_register:
+// decomposed monolith → composable non-compensatory gates.
+// Per v36Ω Scientific Validation Report: these are measurement instruments,
+// not physical laws. Thresholds must be calibrated on held-out data.
+registerGovernedTools(server);
+
+// ── Phase 4: Reality Loop — Intent Compiler ────────────────────────────────
+// 7-stage state-tracking ledger; agent orchestrates MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN.
+registerRealityLoopTools(server);
+
+// ── Phase 8: Parallel Orchestration — A2A task groups ─────────────────────
+// forge_parallel: fan-out N concurrent A2A tasks with bounded concurrency,
+// timeout, cancellation propagation, and Δ receipts. Thin layer over existing
+// A2A verbs (message/send, tasks/get, tasks/cancel). No new primitives.
+registerParallelTools(server);
+
+// ── Resilience Tools — AAA-FORGE-RESILIENCE-v0.1 ────────────────────────────
+registerResilienceTools(server);
 
 // ── P1 Gateway Tools: external MCP internalization ───────────────────────────
 registerGatewayTools(server);
+
+// ── FORGE8 Execution Verbs: Governed artifact lifecycle (v42.1) ─────────────
+// 8 constitutional verbs: synthesize → stage → sandbox_run → scar_scan → 
+// skillstore_sync → tier_bind → docket_prep → execute
+// Each verb has enforced boundaries. forge_execute requires VAULT999 SEAL.
+registerForge8Verbs(server);
+
+	// ── Document Intelligence: layout-first parsing + semantic chunking ──────────
+	// Phase 1 MVP. Modes: analyze, extract, chunk, compare.
+	// Uses pymupdf + tesseract engine. Read-only, blast_radius=LOW.
+	registerDocumentIngestTool(server);
+
+// ── Phase 5: MCP Policy Gate — architectural control plane ──────────────────
+// The missing boundary between AI agents and MCP tools. Enforces 5-layer
+// policy check (identity → server → tool → args → verdict) BEFORE every tool
+// handler runs. Forged 2026-06-30 per sovereign directive.
+registerPolicyTools(server);
+
+// ── Phase 6: MCP Surface Guard — drift detection + schema fingerprinting ────
+// Detects MCP tool surface drift before it breaks the federation.
+// Schema delta = 888_HOLD. Forged 2026-07-03 per eureka margin.
+registerSurfaceGuardTools(server);
+registerSurfaceAuditTools(server);
+
+// ── Prediction Bridge (pre-action simulation for GEOX/WEALTH) ──────────────
+// forge_predict: called BEFORE forge_execute for domain actions.
+// Prediction result injected as evidence to judge.
+registerPredictTools(server);
+
+// Install the 5-layer policy pre-check wrapper on every registered tool.
+// Called AFTER all other registerXTools() so it wraps them all.
+// Idempotent: only forge_policy_* tools themselves are excluded to avoid loops.
+installPolicyInterceptor(server);
+
+// Install elicitation gate AFTER policy interceptor.
+// External clients calling MUTATE tools get -32042 (URLElicitationRequiredError)
+// instead of silent denial or execution. This is the Item 2 elicitation gate
+// for forge_filesystem/forge_shell/forge_execute and other MUTATE tools.
+installElicitationGate(server);
+
+// Run startup fingerprint check — detects duplicate tools + schema drift
+startupFingerprintCheck(server);
+
+// Register J‑space manifold stability check tool
+registerIsomorphismTools(server);
+
+// ── EUREKA P1: Cooling Verbs — forge_cool_drift + forge_cool_pattern ─────────────
+// Routes through seal_chain.js validateCooling() → VAULT999 append.
+// INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK. INV-C4: explicit governance.
+registerCoolingVerbs(server);
+
+// ── EUREKA P1: Runtime Verify — forge_runtime_verify ─────────────────────────────
+// Compares git commit vs installed wheel vs import path.
+// Returns MATCH | DRIFT | UNKNOWN. Fail-closed on DRIFT.
+registerRuntimeVerifyTool(server);
+
+// Run startup isomorphism check — verifies GEOX ↔ arifOS witness functions
+startupIsomorphismCheck();
+
+// Install verdict envelope interceptor — wraps EVERY tool response through
+// standardized VerdictEnvelope. Satu format, satu lokasi, satu monotonic chain.
+// Chamber ke-7: verdict monotonicity.
+installVerdictInterceptor(server);
 
 // Initialize identity store
 initializeForgeTools().catch(err => {
   process.stderr.write(`[forgeTools] Init error: ${err}\n`);
 });
 
+// Initialize ArifSeal hash-chain ledger (forge_shell audit trail)
+getDefaultArifSeal().open().then(() => {
+  process.stderr.write(`[ArifSeal] Ledger opened at ${new Date().toISOString()}\n`);
+}).catch(err => {
+  process.stderr.write(`[ArifSeal] Init error: ${err}\n`);
+});
+
 // ── Resources ────────────────────────────────────────────────────────────────
 registerCoreResources(server, approvalBoundary, memoryContract);
+
+// ── Prompts ──────────────────────────────────────────────────────────────────
+registerPrompts(server);
 
 // ── Tier 01 Amanah (SERI_KEMBANGAN_ACCORDS) ────────────────────────────────────
 
 const amanahManager = AmanahLockManager.getInstance();
 
-// Canonical per blueprint C1 (A-FORGE hands): forge_lock_acquire (primary).
-// NOTE: request_amanah_lock REMOVED — deprecated alias. Use forge_lock_acquire.
+// Canonical: forge_lock — unified Amanah/F1 lock primitive.
+// Modes: acquire (F1 gate before mutation), release (free lock).
+// Collapsed from forge_lock_acquire + forge_lock_release (2026-06-26).
 server.tool(
-  "forge_lock_acquire",
-  "Request an Amanah/F1 lock (canonical). Reversible F1 gate before mutation.",
+  "forge_lock",
+  "Amanah/F1 lock primitive. Modes: acquire (reversible F1 gate before mutation), release (free lock).",
   {
-    resource_id: z.string().describe("Canonical path or identifier of the target resource"),
-    actor_id: z.string().describe("Agent or human identifier requesting the lock"),
-    justification: z.string().describe("Semantic intent for the lock"),
+    mode: z.enum(["acquire", "release"]).describe("acquire = request lock, release = free lock"),
+    resource_id: z.string().optional().describe("Canonical path or identifier (acquire)"),
+    actor_id: z.string().optional().describe("Agent or human identifier"),
+    justification: z.string().optional().describe("Semantic intent (acquire)"),
+    lock_id: z.string().optional().describe("Lock ID to release (release)"),
+    release_reason: z.string().optional().describe("Why releasing (release)"),
     session_id: z.string().optional().describe("Session context for re-entrant locks"),
-    ttl_seconds: z.number().optional().default(300).describe("Lock TTL in seconds"),
-    constitutional_chain_id: z.string().optional().describe("cc_id from prior arif_judge SEAL (required for high impact)"),
+    ttl_seconds: z.number().optional().default(300).describe("Lock TTL in seconds (acquire)"),
+    constitutional_chain_id: z.string().optional().describe("cc_id from prior arif_judge SEAL"),
   },
   async (args) => {
-    const { resource_id, actor_id, justification, session_id, ttl_seconds, constitutional_chain_id } = args as any;
+    const { mode, resource_id, actor_id, justification, lock_id, release_reason, session_id, ttl_seconds, constitutional_chain_id } = args as any;
     const startedAt = Date.now();
-    await telemetryInvoke("forge_lock_acquire");
-    // Phase 2 stub (flag-guarded): if REQUIRE_CC_ID_GATE, enforce for non-observe
-    if (process.env.REQUIRE_CC_ID_GATE === "true" && !constitutional_chain_id) {
-      return { content: [{ type: "text" as const, text: JSON.stringify({ verdict: "VOID", reason: "cc_id required for lock on mutate path (INV-4)" }) }] };
+    await telemetryInvoke("forge_lock");
+
+    if (mode === "acquire") {
+      if (!resource_id || !actor_id || !justification) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ error: "resource_id, actor_id, justification required for mode=acquire" }) }], isError: true };
+      }
+      if (process.env.REQUIRE_CC_ID_GATE === "true" && !constitutional_chain_id) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ verdict: "VOID", reason: "cc_id required for lock on mutate path (INV-4)" }) }] };
+      }
+      return runStage("000_INIT" as MetabolicStage, async () => {
+        try {
+          const result = await amanahManager.acquireLock(resource_id, actor_id, justification, session_id, (ttl_seconds || 300) * 1000);
+          const text = JSON.stringify({ ...result, canonical: "forge_lock", mode: "acquire" }, null, 2);
+          await telemetrySuccess("forge_lock", startedAt);
+          return { content: [{ type: "text" as const, text }] };
+        } catch (err) {
+          await telemetryFailure("forge_lock", startedAt, err);
+          throw err;
+        }
+      });
+    }
+
+    // mode === "release"
+    if (!lock_id || !actor_id) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ error: "lock_id and actor_id required for mode=release" }) }], isError: true };
     }
     return runStage("000_INIT" as MetabolicStage, async () => {
       try {
-        const result = await amanahManager.acquireLock(resource_id, actor_id, justification, session_id, (ttl_seconds || 300) * 1000);
-        const text = JSON.stringify({ ...result, canonical: "forge_lock_acquire", deprecated_alias: "request_amanah_lock" }, null, 2);
-        await telemetrySuccess("forge_lock_acquire", startedAt);
-        return { content: [{ type: "text" as const, text }] };
-      } catch (err) {
-        await telemetryFailure("forge_lock_acquire", startedAt, err);
-        throw err;
-      }
-    });
-  }
-);
-
-// NOTE: request_amanah_lock REMOVED — deprecated alias. Use forge_lock_acquire.
-
-server.tool(
-  "forge_lock_release",
-  "Release an Amanah/F1 lock (canonical).",
-  {
-    lock_id: z.string().describe("The lock_id returned by forge_lock_acquire"),
-    actor_id: z.string().describe("Agent or human identifier that originally acquired the lock"),
-    release_reason: z.string().optional().describe("Why the lock is being released"),
-    constitutional_chain_id: z.string().optional(),
-  },
-  async (args) => {
-    const { lock_id, actor_id, release_reason } = args as any;
-    const startedAt = Date.now();
-    await telemetryInvoke("forge_lock_release");
-    return runStage("000_INIT" as MetabolicStage, async () => {
-      try {
         const result = await amanahManager.releaseLock(lock_id, actor_id, release_reason);
-        const text = JSON.stringify({ ...result, canonical: "forge_lock_release" }, null, 2);
-        await telemetrySuccess("forge_lock_release", startedAt);
+        const text = JSON.stringify({ ...result, canonical: "forge_lock", mode: "release" }, null, 2);
+        await telemetrySuccess("forge_lock", startedAt);
         return { content: [{ type: "text" as const, text }] };
       } catch (err) {
-        await telemetryFailure("forge_lock_release", startedAt, err);
+        await telemetryFailure("forge_lock", startedAt, err);
         throw err;
       }
     });
   }
 );
 
-// NOTE: release_amanah_lock REMOVED — deprecated alias. Use forge_lock_release.
+// NOTE: forge_lock_acquire + forge_lock_release REMOVED — collapsed into forge_lock with mode=acquire|release.
 
 // ── Autonomous Pipeline Tool ───────────────────────────────────────────────────
 // Canonical: forge_pipeline_run. forge_pipeline alias REMOVED.

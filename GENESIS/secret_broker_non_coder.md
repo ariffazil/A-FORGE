@@ -209,7 +209,7 @@ Behind the scenes:
 
 ```
 Your raw key (only you see this):
-  sk-ant-xxxxxxxxxxxxxxxxxxxxxxxx
+  [YOUR_ANTHROPIC_KEY_PLACEHOLDER]
 
 Agent sees (capability token):
   broker:anthropic:chat:a8f3c2

@@ -3,7 +3,7 @@
  *
  * FEDERATION MEMORY ADOPTION — 2026-06-03
  * Per FEDERATION_MEMORY_CONTRACT.md R1:
- *   "All organs write memory through arif_memory_recall(mode='store').
+ *   "All organs write memory through arif_memory(mode='store').
  *    No organ writes directly to Qdrant, Supabase, or Graphiti."
  *
  * This module USED TO write directly to Qdrant collection `federation_shared`.
@@ -21,6 +21,9 @@ import { dirname } from "node:path";
 import type { TaskMemoryRecord } from "../../domain/types/memory.js";
 import { arifosStore, arifosSearch } from "./ArifOSMemoryClient.js";
 import { logFederationFailure } from "./LongTermMemoryFailureLog.js";
+import { aaaMemoryGate, type MemoryReceipt } from "../../domain/aaa/AaaMemoryLinkage.js";
+
+const AUTONOMOUS_KERNEL_SESSION = "SEAL-17a17a17a17a17a1";
 
 interface FederationRecord {
   id: string;
@@ -38,9 +41,34 @@ export class LongTermMemory {
    * Append a summary fragment to the running summary log.
    * [P0|Q2] Sliding window eviction bridge with token cap — 2026-05-05
    *
+   * AAA: governed. Gate runs BEFORE local file write. If gate fails,
+   * the operation is blocked entirely — no local fallback write.
+   *
    * FEDERATION: local file write retained; cross-organ upsert via arifOS MCP.
    */
-  async appendRunningSummary(summary: string, maxSummaryTokens = 2048): Promise<void> {
+  async appendRunningSummary(
+    summary: string,
+    maxSummaryTokens = 2048,
+    opts?: { actorId?: string; sessionId?: string },
+  ): Promise<void> {
+    const actorId = opts?.actorId ?? "a-forge::long-term-memory";
+    const sessionId = opts?.sessionId ?? AUTONOMOUS_KERNEL_SESSION;
+
+    // AAA Gate FIRST — BEFORE any file write
+    const gate = await aaaMemoryGate({
+      action: "memory:write",
+      actorId,
+      sessionId,
+      content: summary,
+      toolName: "LongTermMemory.appendRunningSummary",
+      description: "Append running summary from STM eviction",
+    });
+
+    if (!gate.allowed) {
+      console.error(`[AAA-MEM] LongTermMemory.appendRunningSummary blocked: ${gate.reason}`);
+      return; // Do NOT write locally if gate fails
+    }
+
     const records = await this.readAll();
     const existingIndex = records.findIndex((r) => r.id === "running-summary");
 
@@ -78,13 +106,14 @@ export class LongTermMemory {
       content: `[A-FORGE running-summary] ${latestChunk}`,
       tags: ["a-forge", "running-summary", "context", "federation_adoption"],
       tier: "session",
-      session_id: "a-forge-running-summary",
+      session_id: sessionId,
       summary: "A-FORGE running summary eviction",
       context: "normal",
       metadata: {
         writer_bot: "A-FORGE",
         federation_leg: "via_arifos_mcp",
         record_id: "running-summary",
+        aaa_receipt_id: gate.receipt?.receiptId, // AAA: traceable receipt lineage
       },
     });
     if (!arifosResult.stored) {
@@ -108,8 +137,29 @@ export class LongTermMemory {
   /**
    * Persist a task memory record. Local file is internal cache;
    * cross-organ substrate is arifOS MCP.
+   *
+   * AAA: governed. Gate runs BEFORE local file write.
    */
-  async store(record: TaskMemoryRecord): Promise<void> {
+  async store(record: TaskMemoryRecord, opts?: { actorId?: string; sessionId?: string }): Promise<void> {
+    const actorId = opts?.actorId ?? "a-forge::long-term-memory";
+    const sessionId = opts?.sessionId ?? AUTONOMOUS_KERNEL_SESSION;
+
+    // AAA Gate FIRST — BEFORE any file write
+    const gate = await aaaMemoryGate({
+      action: "memory:write",
+      actorId,
+      sessionId,
+      content: record.summary,
+      memoryId: record.id,
+      toolName: "LongTermMemory.store",
+      description: `Store task memory: ${record.id}`,
+    });
+
+    if (!gate.allowed) {
+      console.error(`[AAA-MEM] LongTermMemory.store blocked: ${gate.reason}`);
+      return; // Do NOT write locally if gate fails
+    }
+
     // Local file write — A-FORGE internal cache
     const records = await this.readAll();
     records.push(record);
@@ -120,7 +170,7 @@ export class LongTermMemory {
       content: `[A-FORGE:${record.id}] ${record.summary}`,
       tags: ["a-forge", ...(record.keywords ?? []), "federation_adoption"],
       tier: "canon",
-      session_id: `a-forge-store-${record.id}`,
+      session_id: sessionId,
       summary: record.summary,
       context: "normal",
       metadata: {
@@ -128,6 +178,7 @@ export class LongTermMemory {
         federation_leg: "via_arifos_mcp",
         record_id: record.id,
         record_metadata: record.metadata ?? {},
+        aaa_receipt_id: gate.receipt?.receiptId, // AAA: traceable receipt lineage
       },
     });
     if (!arifosResult.stored) {

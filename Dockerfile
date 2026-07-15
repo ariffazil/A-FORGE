@@ -25,5 +25,12 @@ COPY --from=builder --chown=arifos:arifos /app/dist ./dist
 
 USER arifos
 
+LABEL org.opencontainers.image.source="https://github.com/ariffazil/A-FORGE" \
+      org.opencontainers.image.description="Execution shell — 75 forge_* governed tools" \
+      org.opencontainers.image.version="kanon-1.0.0" \
+      org.opencontainers.image.licenses="BSL-1.1" \
+      arifos.organ="A-FORGE" \
+      arifos.authority="F13_SOVEREIGN"
+
 EXPOSE 7071
 CMD ["node", "dist/src/interfaces/server.js"]

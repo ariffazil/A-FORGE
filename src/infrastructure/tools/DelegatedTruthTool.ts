@@ -1,92 +1,98 @@
 /**
  * Delegated Truth Tool
  *
- * Optional upstream delegation to external MCP truth lanes (WEALTH, GEOX, etc.).
- * A-FORGE remains the execution shell; when the upstream lane is unavailable or
- * does not expose the requested tool, delegation returns an error and the caller
- * (a subclass) may fall back to a local computation model.
+ * Implements the 4+1 Architecture by delegating truth logic (math, physical models)
+ * to external MCP servers. This ensures A-FORGE remains a "shell only" runtime.
  *
  * @module tools/DelegatedTruthTool
  */
 
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { BaseTool } from "./base.js";
-import type { ToolResult } from "../../domain/types/tool.js";
+import type { ToolResult, ToolExecutionContext } from "../../domain/types/tool.js";
 
-/** Canonical mapping from A-FORGE names to upstream WEALTH names where they differ. */
-const WEALTH_NAME_MAP: Record<string, string> = {
-  wealth_compute_EMV: "wealth_compute_emv",
-};
-
-function resolveUpstreamName(name: string): string {
-  return WEALTH_NAME_MAP[name] ?? name;
+interface JsonRpcError {
+  message?: unknown;
+  [key: string]: unknown;
 }
 
-function extractToolText(result: unknown): string | undefined {
-  if (!result || typeof result !== "object") return undefined;
-  const r = result as { content?: Array<{ type?: string; text?: string; data?: unknown }> };
-  const first = r.content?.[0];
-  if (!first) return undefined;
-  if (typeof first.text === "string") return first.text;
-  if (typeof first.data === "string") return first.data;
-  return undefined;
+interface JsonRpcResult {
+  content?: Array<{ text?: unknown }>;
+}
+
+interface JsonRpcToolResponse {
+  error?: JsonRpcError;
+  result?: JsonRpcResult;
+}
+
+function parseJsonRpcResponse(payload: unknown): JsonRpcToolResponse {
+  if (!payload || typeof payload !== "object") {
+    return {};
+  }
+  return payload as JsonRpcToolResponse;
 }
 
 export abstract class DelegatedTruthTool extends BaseTool {
   /**
-   * The base URL of the remote truth lane MCP server (e.g. WEALTH).
+   * The base URL of the remote truth lane MCP server (e.g. GEOX or WEALTH).
    */
   abstract readonly laneBaseUrl: string;
 
   /**
-   * Attempts to delegate the tool execution to the remote truth lane using
-   * streamable-http MCP. Returns ok=true only when the upstream tool exists and
-   * returns a structured result. Callers must implement a local fallback if they
-   * want degraded operation when delegation fails.
+   * Delegates the tool execution to the remote truth lane.
    */
   protected async delegate(method: string, params: Record<string, unknown>): Promise<ToolResult> {
-    const upstreamName = resolveUpstreamName(method);
-    const base = this.laneBaseUrl.replace(/\/$/, "");
-    const url = `${base}/mcp`;
-
-    let transport: StreamableHTTPClientTransport | undefined;
+    const url = `${this.laneBaseUrl.replace(/\/$/, "")}/mcp`;
+    
     try {
-      const client = new Client(
-        { name: "A-FORGE-delegated-truth", version: "0.1.0" },
-        { capabilities: {} },
-      );
-      transport = new StreamableHTTPClientTransport(new URL(url));
-      await client.connect(transport);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: `tools/call`,
+          params: {
+            name: method,
+            arguments: params
+          },
+          id: Date.now()
+        }),
+      });
 
-      const result = await client.callTool({ name: upstreamName, arguments: params });
-      const text = extractToolText(result);
-      if (text === undefined) {
+      if (!response.ok) {
         return {
           ok: false,
-          output: `[DELEGATION_ERROR] Upstream tool ${upstreamName} returned no text content`,
+          output: `[DELEGATION_ERROR] Truth Lane ${this.laneBaseUrl} returned ${response.status}`,
         };
       }
 
+      const body = parseJsonRpcResponse(await response.json());
+      if (body.error) {
+         const message =
+          typeof body.error.message === "string"
+            ? body.error.message
+            : JSON.stringify(body.error);
+         return {
+          ok: false,
+          output: `[TRUTH_ERROR] ${message}`,
+         };
+      }
+
+      const text = body.result?.content?.[0]?.text;
+      const output = typeof text === "string" ? text : JSON.stringify(body.result ?? {});
+
       return {
         ok: true,
-        output: text,
-        metadata: { delegated: true, lane: this.laneBaseUrl, upstreamTool: upstreamName },
+        output,
+        metadata: { delegated: true, lane: this.laneBaseUrl }
       };
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       return {
         ok: false,
-        output: `[DELEGATION_FAILED] ${upstreamName} @ ${url}: ${msg}`,
+        output: `[DELEGATION_FAILED] Could not reach Truth Lane: ${msg}`,
       };
-    } finally {
-      if (transport) {
-        try {
-          await transport.close();
-        } catch {
-          // best-effort cleanup
-        }
-      }
     }
   }
 }
+
+

@@ -25,9 +25,9 @@ node dist/test/PlanValidator.test.js
 A-FORGE is the **governed execution shell** of the arifOS Federation. It:
 
 - **Executes** approved plans through the 4-layer forge gate (F1 → Model → Governance → Irreversibility)
-- **Auto-discovers** 62+ tools across 5 MCP surfaces (arifOS, GEOX, WEALTH, WELL, A-FORGE)
+- **Auto-discovers** tools across live federation MCP surfaces (arifOS, GEOX, WEALTH, WELL, A-FORGE); A-FORGE :7072 exposes 72 tools
 - **Bridges** arifOS SEAL authorization to execution substrates
-- **Hosts** MIND:51001 & MEMORY:51002 federated intelligence services
+- **Bridges** to MIND (Hermes:8644) and MEMORY (VAULT999 + tiered L1-L6 storage) — A-FORGE does NOT host them
 - **Terminal forge** — interactive streaming-LLM interface with session persistence
 
 **A-FORGE NEVER:** geoscience (GEOX), economics (WEALTH), verdicts (arifOS), NumPy/Pandas.
@@ -97,7 +97,7 @@ npm run mcp:stdio
 - **Tests run from `dist/test/`** — rebuild before testing
 - **Tool risk tiers:** low → auto | medium → advisory | high/critical → 888_HOLD
 - **`FloorEnforcer`** emits canonical `SABAR` not legacy `CAUTION` (fix per `9ded584`)
-- **STALE SOT FILES:** CLAUDE.md ✅ Updated 2026-06-21
+- **STALE SOT FILES:** CLAUDE.md ✅ Updated 2026-07-01
 
 ---
 
@@ -114,9 +114,11 @@ npm run mcp:stdio
 
 ## 7. 888_HOLD BEFORE
 
-- `rm -rf` unknown dirs | `git push --force` | `git rebase`
+- `rm -rf` unknown dirs
 - Production deploy without test pass
 - Destructive DB ops | Secret rotation
+
+> **Note:** `git push --force` on feature branches and production redeploys are DIGITAL NORMAL per root AGENTS.md §10. Probe T1 state, do the thing.
 
 ---
 

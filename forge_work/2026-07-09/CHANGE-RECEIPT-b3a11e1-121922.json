@@ -1,0 +1,23 @@
+{
+  "receipt_type": "GIT_CHANGE_RECEIPT",
+  "receipt_id": "change-2026-07-09-b3a11e1-121922",
+  "timestamp_utc": "2026-07-09T12:19:22Z",
+  "actor": "grok-build",
+  "session_id": null,
+  "note": "formal kernel geometry b3a11e1 three-layer seal",
+  "repo": {
+    "path": "/root/arifOS",
+    "remote": "git@github.com:ariffazil/arifos.git",
+    "branch": "main",
+    "head": "b3a11e140fc8fd47fecee01f453a41b40380ccb5",
+    "short": "b3a11e1",
+    "tree_hash": "c706eb8118649512219d8f80ee77a205e303a221",
+    "working_tree_content_hash_sha256": "bc7c4a9b83505a23e460866e583e07852833fbbf0eb85be8f23e9d203601b9fa",
+    "files_hashed": 3233,
+    "dirty": true,
+    "dirty_paths": [
+      "GENESIS/048_QUBIT_RUNTIME_DOCTRINE.md"
+    ]
+  },
+  "receipt_sha256": "37848c2d3dafec4f54b1f2dcf717f62b4d6932aa98334e1b14dd602098e2ccbf"
+}

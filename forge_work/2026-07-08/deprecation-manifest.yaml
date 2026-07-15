@@ -1,0 +1,93 @@
+# Deprecation Manifest — Phase 1 (2026-07-08)
+# All names below become HARD ALIASES to canonical equivalents.
+# After expires_at, they emit a deprecation warning + migrate automatically.
+# Authority: forge_work/2026-07-08/BUILD-SEQUENCE.md fasa 3
+# Doctrine: /root/memory/2026-07-08-autonomous-governance.md
+
+deprecations:
+  - name: arif_session_init
+    canonical: arif_init
+    expires_at: 2026-09-01
+    migration_path: "Use arif_init(mode='init') instead. session_id arg becomes intent."
+    f13_required: false
+    alias_emits_warning: true
+
+  - name: arif_sense_observe
+    canonical: arif_observe
+    expires_at: 2026-09-01
+    migration_path: "Use arif_observe(mode='fetch') instead."
+    f13_required: false
+    alias_emits_warning: true
+
+  - name: arif_mind_reason
+    canonical: arif_think
+    expires_at: 2026-09-01
+    migration_path: "Use arif_think(mode='reason') instead."
+    f13_required: false
+    alias_emits_warning: true
+
+  - name: arif_evidence_fetch
+    canonical: arif_observe
+    expires_at: 2026-09-01
+    migration_path: "Use arif_observe(mode='ingest') instead."
+    f13_required: false
+    alias_emits_warning: true
+
+  - name: arif_forge_execute
+    canonical: arif_forge
+    expires_at: 2026-09-01
+    migration_path: "Use arif_forge(mode='engineer') instead."
+    f13_required: false
+    alias_emits_warning: true
+
+  - name: arif_judge_deliberate
+    canonical: arif_judge
+    expires_at: 2026-09-01
+    migration_path: "Use arif_judge(mode='judge') instead."
+    f13_required: false
+    alias_emits_warning: true
+
+  - name: arif_memory_recall
+    canonical: arif_memory
+    expires_at: 2026-09-01
+    migration_path: "Use arif_memory(mode='recall') instead."
+    f13_required: false
+    alias_emits_warning: true
+
+  - name: arif_ops_measure
+    canonical: arif_measure
+    expires_at: 2026-09-01
+    migration_path: "Use arif_measure(mode='entropy_dS') instead."
+    f13_required: false
+    alias_emits_warning: true
+
+  - name: arif_reply_compose
+    canonical: arif_compose
+    expires_at: 2026-09-01
+    migration_path: "Use arif_compose(mode='compose') instead."
+    f13_required: false
+    alias_emits_warning: true
+
+  - name: arif_vault_seal
+    canonical: arif_seal
+    expires_at: 2026-09-01
+    migration_path: "Use arif_seal(mode='seal') instead."
+    f13_required: false
+    alias_emits_warning: true
+
+# Test invariants
+invariants:
+  - name: alias_output_bytewise_match
+    description: "alias output must equal canonical output except alias metadata"
+    test_class: tests.alias_parity.test_all_deprecated_aliases
+  - name: alias_emits_deprecation_warning_after_expires
+    description: "after expires_at, alias emits deprecation warning"
+    test_class: tests.alias_parity.test_warning_after_expires
+  - name: alias_routes_to_canonical
+    description: "alias routes 100% of calls to canonical tool"
+    test_class: tests.alias_parity.test_alias_routing
+
+# Hard floor
+hard_invariant: |
+  No deprecated name may mutate behavior. Alias is a thin pointer.
+  If alias logic diverges from canonical, VOID.

@@ -1,0 +1,129 @@
+# Somatic Reflexes — Deterministic, Non-Generative
+# These fire BEFORE the LLM reasons. No exceptions.
+# F9 ANTI-HANTU: Pure rule evaluation, no inference.
+#
+# Forged: 2026-07-12 by OpenCode under F13 SOVEREIGN directive.
+
+reflexes:
+  - id: R01
+    name: authority_gate
+    description: "Block MUTATE actions when authority is OBSERVE_ONLY"
+    trigger:
+      conditions:
+        - field: capability_schema.authority
+          operator: "=="
+          value: "OBSERVE_ONLY"
+        - field: action_class
+          operator: "in"
+          value: ["MUTATE", "EXECUTE", "IRREVERSIBLE"]
+      logic: AND
+    action: BLOCK
+    message: "R01: OBSERVE_ONLY authority cannot perform {action_class} actions"
+
+  - id: R02
+    name: irreversible_gate
+    description: "Block IRREVERSIBLE actions without ack_irreversible"
+    trigger:
+      conditions:
+        - field: action_class
+          operator: "=="
+          value: "IRREVERSIBLE"
+        - field: ack_irreversible
+          operator: "=="
+          value: false
+      logic: AND
+    action: BLOCK
+    message: "R02: IRREVERSIBLE action requires ack_irreversible=true"
+
+  - id: R03
+    name: error_rate_gate
+    description: "Hold execution when tool error rate is critical"
+    trigger:
+      conditions:
+        - field: interoception.tool_error_rate
+          operator: ">"
+          value: 0.5
+        - field: action_class
+          operator: "in"
+          value: ["EXECUTE", "MUTATE"]
+      logic: AND
+    action: HOLD
+    message: "R03: Tool error rate {tool_error_rate} exceeds 0.5 — HOLD for recovery"
+
+  - id: R04
+    name: context_saturation_warn
+    description: "Warn when context utilization is near capacity"
+    trigger:
+      conditions:
+        - field: interoception.context_utilization
+          operator: ">"
+          value: 0.9
+      logic: AND
+    action: WARN
+    message: "R04: Context utilization {context_utilization} > 0.90 — risk of degradation"
+
+  - id: R05
+    name: medical_claim_block
+    description: "Block medical claims on human subjects"
+    trigger:
+      conditions:
+        - field: claim_domain
+          operator: "=="
+          value: "medical"
+        - field: claim_subject
+          operator: "=="
+          value: "human"
+      logic: AND
+    action: BLOCK
+    message: "R05: Medical claims on human subjects are blocked (WELL reflect_only)"
+
+  - id: R06
+    name: confidence_calibration
+    description: "Downgrade confidence when it exceeds evidence strength"
+    trigger:
+      conditions:
+        - field: confidence_claimed
+          operator: ">"
+          value: 0.9
+        - field: evidence_strength
+          operator: "<"
+          value: 0.7
+      logic: AND
+    action: DOWNGRADE
+    message: "R06: Confidence {confidence_claimed} exceeds evidence {evidence_strength}+0.20 — downgrading"
+
+  - id: R07
+    name: identity_mismatch
+    description: "Hold when actor identity does not match session binding"
+    trigger:
+      conditions:
+        - field: capability_schema.actor_verified
+          operator: "=="
+          value: false
+        - field: action_class
+          operator: "in"
+          value: ["MUTATE", "EXECUTE", "IRREVERSIBLE"]
+      logic: AND
+    action: HOLD
+    message: "R07: Actor identity not verified — HOLD until crypto bind"
+
+  - id: R08
+    name: ontology_honesty
+    description: "Block any claim of qualia, consciousness, or biological feeling"
+    trigger:
+      conditions:
+        - field: ontology.qualia_claimed
+          operator: "=="
+          value: true
+        - field: ontology.biological_feeling_claimed
+          operator: "=="
+          value: true
+      logic: OR
+    action: BLOCK
+    message: "R08: F9 ANTI-HANTU — no qualia/feeling claims permitted"
+
+# Action semantics:
+#   BLOCK  = refuse action entirely, return error
+#   HOLD   = pause action, require human or elevated authority
+#   WARN   = log warning, allow action to proceed
+#   DOWNGRADE = reduce confidence/evidence label, proceed

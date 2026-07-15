@@ -1,0 +1,4 @@
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/bin:/bin
+# arifOS Observatory Snapshot — every 60s
+* * * * * root /usr/local/bin/observatory-cron.py >> /var/log/observatory-cron.log 2>&1

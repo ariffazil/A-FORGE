@@ -23,13 +23,17 @@ import { resolve } from "node:path";
 
 const pgUrl = process.env.POSTGRES_URL ?? process.env.DATABASE_URL ?? "";
 
-async function main() {
-  if (!pgUrl) {
-    console.error("POSTGRES_URL not set");
-    process.exit(1);
+export interface RunVerifyOptions {
+  postgresUrl?: string;
+}
+
+export async function runVerify(options: RunVerifyOptions = {}): Promise<{ ok: boolean; text: string }> {
+  const url = options.postgresUrl ?? pgUrl;
+  if (!url) {
+    return { ok: false, text: "POSTGRES_URL not set" };
   }
 
-  const vault = getPostgresVaultClient(pgUrl);
+  const vault = getPostgresVaultClient(url);
   const merkle = new MerkleV3Service(vault);
   const checks = { ok: true, items: [] as string[] };
 
@@ -159,17 +163,29 @@ async function main() {
     checks.items.push(`❌ Tool lattice: ${e}`);
   }
 
-  // Print results
-  console.error("\nA-FORGE System Verification");
-  console.error("════════════════════════════════");
-  for (const item of checks.items) console.error(item);
-  console.error("════════════════════════════════");
-  console.error(`Overall: ${checks.ok ? "✅ SEAL" : "❌ HOLD"}\n`);
-  process.exit(checks.ok ? 0 : 1);
+  const text = [
+    "",
+    "A-FORGE System Verification",
+    "════════════════════════════════",
+    ...checks.items,
+    "════════════════════════════════",
+    `Overall: ${checks.ok ? "✅ SEAL" : "❌ HOLD"}`,
+    "",
+  ].join("\n");
+
+  return { ok: checks.ok, text };
 }
 
-main().catch((e) => {
-  console.error(`Fatal: ${e}`);
-  process.exit(1);
-});
+async function main() {
+  const { ok, text } = await runVerify();
+  console.error(text);
+  process.exit(ok ? 0 : 1);
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((e) => {
+    console.error(`Fatal: ${e}`);
+    process.exit(1);
+  });
+}
 

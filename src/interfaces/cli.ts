@@ -114,6 +114,7 @@ async function main(): Promise<void> {
     createEngine,
     createProvider,
     runtimeConfig,
+    process.argv,
   );
   process.stdout.write(`${text}\n`);
 }

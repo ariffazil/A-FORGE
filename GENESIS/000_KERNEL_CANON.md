@@ -1,1 +1,1 @@
-/root/arifOS/GENESIS/000_KERNEL_CANON.md
+../../arifOS/GENESIS/000_KERNEL_CANON.md
