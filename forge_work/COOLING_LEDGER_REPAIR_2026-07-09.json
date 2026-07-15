@@ -1,0 +1,33 @@
+{
+  "receipt_type": "cooling_ledger_repair_and_conformance_rerun",
+  "probed_at_utc": "2026-07-09T02:34:40Z",
+  "actor": "grok-build",
+  "prior_verdict": "HOLD_8_of_9_cooling_ledger_fail",
+  "post_repair": {
+    "vault999_api": {
+      "port": 8100,
+      "status": "healthy",
+      "vault_seals_total": 298,
+      "was": "stub_on_5000"
+    },
+    "cooling_ledger": "PASS",
+    "conformance_score": "9/9",
+    "substrate_gate": "GREEN",
+    "all_green": true,
+    "verdict": "SEAL"
+  },
+  "repairs": [
+    "Replaced /root/compose/vault999/server.py stub (port 5000) with real Supabase-backed API on 8100",
+    "systemd drop-in port-8100.conf + EnvironmentFile vault999-api.env",
+    "Added arif_ops_measure\u2192arif_measure alias in contracts/tools.yaml; recompiled capability_graph",
+    "WELL transition heartbeat wrote local writer seal id=8 (dual-ledger residual \u2014 writer local \u2260 API supabase)"
+  ],
+  "residual_risks": [
+    "Dual ledger: vault999-writer :5001 writes local postgres (now 8 seals); API reads Supabase (298 seals). Heartbeat did not land on API tip.",
+    "chain_integrity DEGRADED (103 historical gaps; tip_linked; sovereign non-issue for migration gaps)",
+    "WELL organ still degraded/stale RED on /health \u2014 cooling_ledger PASS via historical well_entropy last_seal on Supabase, not live WELL metrics",
+    "arif_ops_measure runtime VOID may need kernel process rebuild of capability_registry if it does not read contracts alias_map live",
+    "runtime_drift still true (deployed 7951e56 vs repo c0f8834) \u2014 separate deploy task"
+  ],
+  "next_safe_action": "Unify writer DSN to Supabase (or document dual-path); schedule WELL bridge heartbeat; clear runtime_drift via deploy-local"
+}

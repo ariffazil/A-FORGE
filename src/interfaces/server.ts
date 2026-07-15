@@ -39,7 +39,6 @@ import { readRuntimeConfig } from "./config/RuntimeConfig.js";
 import { AgentEngine } from "../domain/engine/AgentEngine.js";
 import { ToolRegistry } from "../infrastructure/tools/ToolRegistry.js";
 import { LongTermMemory } from "../application/memory/LongTermMemory.js";
-import { createA2ARouter } from "../application/a2a/index.js";
 import {
   createHumanExpertRouter,
   createOperatorRouter,
@@ -63,6 +62,7 @@ import { randomUUID } from "node:crypto";
 import { getApprovalBoundary } from "../application/approval/index.js";
 import { getMemoryContract } from "../domain/memory-contract/index.js";
 import { telemetry } from "./mcp/telemetry.js";
+import { getDpopMode, verifyRequestDpop } from "./middleware/dpop.js";
 
 let cachedConstitution: FloorRule[] = [];
 
@@ -117,6 +117,58 @@ export function createApp(): express.Express {
   // req.body already parsed by app.use(express.json()) above.
   const mcpRouter = express.Router();
 
+  // ── DNS Rebinding Protection (2026-07-08) ──────────────────────────
+  // MCPJam conformance: localhost servers must reject requests with
+  // non-localhost Host/Origin headers to prevent DNS rebinding attacks.
+  const LOCALHOST_HOSTS = new Set([
+    "localhost", "127.0.0.1", "[::1]", "::1",
+    "localhost:7071", "127.0.0.1:7071", "[::1]:7071",
+    "localhost:7072", "127.0.0.1:7072", "[::1]:7072",
+  ]);
+  mcpRouter.use((req: Request, res: Response, next: NextFunction) => {
+    const host = (req.headers["host"] || "").toString().toLowerCase();
+    const origin = (req.headers["origin"] || "").toString().toLowerCase();
+    // Only check on initialize requests (POST /mcp with method=initialize)
+    if (req.method === "POST" && req.url === "/mcp") {
+      const body = req.body as any;
+      if (body?.method === "initialize") {
+        // Check Host header — must be localhost if present
+        if (host && !LOCALHOST_HOSTS.has(host) && !host.startsWith("localhost:") && !host.startsWith("127.0.0.1:") && !host.startsWith("[::1]:")) {
+          res.status(403).json({ error: "Invalid Origin", detail: "DNS rebinding protection" });
+          return;
+        }
+        // Check Origin header — must be localhost if present
+        if (origin && !origin.includes("localhost") && !origin.includes("127.0.0.1") && !origin.includes("[::1]")) {
+          res.status(403).json({ error: "Invalid Origin", detail: "DNS rebinding protection" });
+          return;
+        }
+      }
+    }
+    next();
+  });
+
+  mcpRouter.use(async (req: Request, res: Response, next: NextFunction) => {
+    const dpopMode = getDpopMode();
+    if (dpopMode === "off" || !req.headers.authorization) {
+      next();
+      return;
+    }
+    const dpop = await verifyRequestDpop(req);
+    if (!dpop.ok) {
+      if (dpopMode === "enforce") {
+        res.status(401).json({ error: dpop.error ?? "DPoP verification failed" });
+        return;
+      }
+      res.setHeader("X-DPoP-Status", `OBSERVE:${dpop.error ?? "failed"}`);
+      next();
+      return;
+    }
+    if (dpop.jwkThumbprint) {
+      res.setHeader("X-DPoP-Status", "VERIFIED");
+    }
+    next();
+  });
+
   // GET /mcp — conditional routing based on Accept header.
   // Standards-compliant MCP clients (Claude Code, Claude Desktop) send
   // Accept: text/event-stream and expect SSE — those MUST reach the MCP SDK.
@@ -142,27 +194,67 @@ export function createApp(): express.Express {
 
   // ── A-FORGE MCP transport middleware ──
   // Session ID injection: MCP SDK 1.29.0 StreamableHTTPServerTransport requires
-  // Mcp-Session-Id header on every POST. Claude Code's MCP client doesn't send
-  // one on first contact. Inject a generated session ID so the transport never
-  // sees a missing header.
+  // Mcp-Session-Id header on every POST EXCEPT initialize requests.
+  // Initialize requests must NOT have a session ID — the SDK creates a new
+  // session for each initialize. Injecting a session ID causes "Server already
+  // initialized" rejection (the SDK sees it as re-initialization).
   // Accept header patching is done in mcpHandler directly (after the middleware
   // because the SDK's getRequestListener reads from the raw IncomingMessage).
   mcpRouter.use((req: Request, _res: Response, next: NextFunction) => {
     const hasSessionId = req.headers["mcp-session-id"] || req.query.sessionId || req.query.session_id;
     if (req.method === "POST" && !hasSessionId) {
-      const generatedId = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-      req.headers["mcp-session-id"] = generatedId;
+      // Skip session ID injection for initialize requests — let the SDK
+      // create a fresh session. For all other POSTs, inject if missing.
+      const body = req.body as any;
+      const isInitialize = body?.method === "initialize";
+      if (!isInitialize) {
+        const generatedId = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        req.headers["mcp-session-id"] = generatedId;
+      }
     }
     next();
   });
 
   const mcpHandler = async (req: Request, res: Response) => {
-    if (!mcpTransport) {
-      res.status(503).json({ error: "MCP transport not initialized" });
+    // MCP SDK 1.29.0 StreamableHTTPServerTransport rejects re-initialization
+    // because _initialized is a global flag. Fix: detect initialize requests
+    // and create a fresh transport for each one.
+    const body = req.body as any;
+    const isInitialize = req.method === "POST" && body?.method === "initialize";
+
+    if (isInitialize) {
+      // Create a fresh transport for each initialize request.
+      // The SDK's _initialized flag is per-transport-instance, so a new
+      // transport allows a new session to be created.
+      // Must close old transport first — McpServer only supports one connection.
+      console.error(`[A-FORGE] MCP: fresh initialize — creating new transport`);
+      try {
+        if (mcpTransport) {
+          try { await mcpServer.close(); } catch {}
+        }
+        const freshTransport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID(),
+          enableJsonResponse: true,
+        });
+        await mcpServer.connect(freshTransport);
+        mcpTransport = freshTransport;
+        await freshTransport.handleRequest(req, res, req.body);
+      } catch (err) {
+        console.error("[A-FORGE] MCP initialize error:", err);
+        if (!res.headersSent) {
+          res.status(500).json({ error: "MCP initialize failed" });
+        }
+      }
       return;
     }
-    // MCP SDK 1.9.0 StreamableHTTPServerTransport requires Mcp-Session-Id header
-    // on every POST. Inject a session ID if none is present in query or headers.
+
+    if (!mcpTransport) {
+      res.status(503).json({ error: "MCP transport not initialized. Send initialize first." });
+      return;
+    }
+
+    // MCP SDK 1.29.0 StreamableHTTPServerTransport requires Mcp-Session-Id header
+    // on every POST EXCEPT initialize requests (see middleware above).
     const hasSessionId = req.headers["mcp-session-id"] || req.query.sessionId || req.query.session_id;
     if (req.method === "POST" && !hasSessionId) {
       req.headers["mcp-session-id"] = `aforge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -200,7 +292,7 @@ export function createApp(): express.Express {
   app.use(mcpRouter);
 
   // Rest of Express app (existing routes)
-  app.use(createA2ARouter());
+  // A2A router removed — AAA is sole A2A gateway (E2 entropy fix)
 
   const requireOperatorAuth = createOperatorAuthMiddleware(ensureOperatorTokenPolicy());
   app.use("/operator", requireOperatorAuth);
@@ -610,6 +702,8 @@ app.post("/execute", async (req: Request, res: Response) => {
           content: JSON.stringify({ tool, actionClass, session_id, timestamp: new Date().toISOString() }),
           reason: `auto-seal: ${tool}`,
           tier: requires888Hold(actionClass) ? "CRITICAL" : "STANDARD",
+          actor_id,
+          session_id,
         });
         console.error(`[ADAT] Auto-sealed ${tool} (${actionClass}) → vault`);
       } catch (sealErr) {
@@ -642,124 +736,6 @@ app.post("/execute", async (req: Request, res: Response) => {
       },
       action_class: actionClassErr,
       adat_enforced: true,
-    });
-  }
-});
-
-/**
- * POST /skills/run
- * Governed skill execution — AAA ingress dispatch target.
- *
- * Accepts: { capsule, skill_id, agent_pool, authority_tier, floor_gates }
- * Loads SKILL.md, pins skill_sha256, executes via AgentEngine, signs receipt.
- */
-app.post("/skills/run", async (req: Request, res: Response) => {
-  try {
-    const { capsule, skill_id, agent_pool, authority_tier, floor_gates } = req.body;
-    if (!skill_id || typeof skill_id !== "string") {
-      res.status(400).json({ ok: false, error: "skill_id is required" });
-      return;
-    }
-
-    // Dynamically import SkillRunner (avoids circular deps at module load)
-    const { loadSkill, buildSkillTask, signSkillReceipt } = await import(
-      "../domain/engine/SkillRunner.js"
-    );
-
-    const skill = loadSkill(skill_id);
-    if (!skill) {
-      res.status(404).json({
-        ok: false,
-        verdict: "VOID",
-        error: `Skill not found: ${skill_id}`,
-      });
-      return;
-    }
-
-    // Build the governed task prompt
-    const task = buildSkillTask(
-      skill,
-      capsule || {},
-      authority_tier || "Tier0",
-      floor_gates || [],
-    );
-
-    // Execute via AgentEngine
-    const config = readRuntimeConfig();
-    const llmProvider = createLlmProvider(config);
-    const toolRegistry = new ToolRegistry();
-    const longTermMemory = new LongTermMemory(config.memoryPath || "/tmp/aforge-memory");
-    const profile = buildAAAProfile("external_safe_mode");
-    const engine = new AgentEngine(profile, {
-      llmProvider,
-      toolRegistry,
-      longTermMemory,
-    });
-
-    const sessionId = capsule?.event_id
-      ? `skill-${skill_id}-${capsule.event_id.substring(0, 16)}`
-      : `skill-${skill_id}-${Date.now()}`;
-
-    const runResult = await engine.run({
-      task,
-      sessionId,
-      intentModel: "execution",
-      riskLevel: skill.frontmatter?.risk_tier === "critical" ? "high" : "medium",
-      metadata: {
-        capsule_id: capsule?.event_id,
-        skill_id,
-        skill_sha256: skill.sha256,
-      },
-    });
-
-    // Sign the receipt
-    const receiptInput = {
-      skill_id,
-      skill_sha256: skill.sha256,
-      capsule_id: capsule?.event_id ?? "unknown",
-      authority_tier: authority_tier ?? "Tier0",
-      steps: [],
-      final_text: runResult.finalText,
-      turn_count: runResult.turnCount,
-      total_tokens: runResult.totalEstimatedTokens,
-      verdict: (runResult.finalText.toUpperCase().includes("VERDICT: SEAL")
-        ? "SEAL"
-        : runResult.finalText.toUpperCase().includes("VERDICT: HOLD")
-          ? "HOLD"
-          : runResult.finalText.toUpperCase().includes("VERDICT: VOID")
-            ? "VOID"
-            : "UNKNOWN") as "SEAL" | "HOLD" | "VOID" | "SABAR" | "UNKNOWN",
-      session_id: sessionId,
-      started_at: new Date().toISOString(),
-      completed_at: new Date().toISOString(),
-    };
-
-    const receiptSig = signSkillReceipt(receiptInput);
-
-    console.error(
-      `[A-FORGE] Skill ${skill_id} | sha256=${skill.sha256.substring(0, 12)} | ` +
-      `verdict=${receiptInput.verdict} | turns=${runResult.turnCount} | ` +
-      `tokens=${runResult.totalEstimatedTokens}`,
-    );
-
-    res.json({
-      ok: true,
-      verdict: receiptInput.verdict,
-      skill_id,
-      skill_sha256: skill.sha256,
-      capsule_id: capsule?.event_id ?? "unknown",
-      receipt_signature: receiptSig,
-      session_id: sessionId,
-      final_text: runResult.finalText.substring(0, 2000), // Truncate for response
-      turn_count: runResult.turnCount,
-      total_tokens: runResult.totalEstimatedTokens,
-    });
-  } catch (error) {
-    console.error("[A-FORGE] /skills/run error:", error);
-    res.status(500).json({
-      ok: false,
-      verdict: "VOID",
-      error: error instanceof Error ? error.message : String(error),
     });
   }
 });
@@ -808,7 +784,7 @@ app.get("/contract", (_req: Request, res: Response) => {
     endpoints: {
       GEOX_log_interpreter: "POST /GEOX/log_interpreter",
       GEOX_contract: "GET /GEOX/contract",
-      a2a: "POST /a2a",
+      // a2a removed — AAA is sole A2A gateway,
       a2a_agent_card: "GET /.well-known/agent-card.json",
       python_mcp: "GEOX-mcp:8081",
       bridge: "A-FORGE-bridge:7071",
@@ -965,11 +941,14 @@ app.get("/health", (_req: Request, res: Response) => {
 
   const now = new Date().toISOString();
 
+  // FEDERATION SCHEMA ALIGNMENT L2 (canonical: arifOS/arifosmcp/schemas/federation_enums.py)
+  // See: /root/AAA/governance/FEDERATION_SCHEMA_ALIGNMENT.md
   res.json({
     ok: true,
     service: "A-FORGE-sense",
     status: "healthy",
     version: "0.1.0",
+    federation_schema_version: "2.0.0",
     // P5 (2026-06-13): Substrate doctrine — A-FORGE is the substrate engineering organ.
     // Profile bounded by F13; options: enterprise | agentic | sovereign | civilization.
     profile: "enterprise",
@@ -1042,7 +1021,7 @@ app.get("/api/federation-probe", (_req: Request, res: Response) => {
     WELL:      { url: "http://127.0.0.1:18083/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
     GEOX:      { url: "http://127.0.0.1:8081/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
     "A-FORGE": { url: "http://127.0.0.1:7071/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
-    APEX:      { url: "http://127.0.0.1:3002/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
+    AAA:       { url: "http://127.0.0.1:3001/health",  status: "down", http_status: 0, latency_ms: 0, sample: "" },
     OpenClaw:  { url: "http://127.0.0.1:18789/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
     "cn-organ":{ url: "http://127.0.0.1:18795/health", status: "down", http_status: 0, latency_ms: 0, sample: "" },
   };
@@ -1224,8 +1203,7 @@ export async function startServer(): Promise<void> {
     console.error(`    POST /sense          - Sense + Judge evaluation`);
     console.error(`    POST /route          - Federal Coordinator Routing`);
     console.error(`    POST /execute        - Federation MCP proxy`);
-    console.error(`    POST /skills/run     - Governed skill execution 🆕`);
-    console.error(`    POST /a2a            - A2A JSON-RPC gateway`);
+    console.error(`    // /a2a removed — AAA is sole A2A gateway`);
     console.error(`    GET  /health         - Health check`);
     console.error(`    GET  /ready          - Readiness probe`);
     console.error(`    GET  /.well-known/agent-card.json - A2A Agent Card`);

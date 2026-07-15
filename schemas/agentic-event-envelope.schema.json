@@ -1,0 +1,588 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aforge.arif-fazil.com/schemas/agentic-event-envelope.schema.json",
+  "title": "Agentic Event Envelope",
+  "description": "Canonical event envelope for every action in the A-FORGE governed agentic system. Seven sections plus measurement spine. No exceptions. Forged, Not Given.",
+  "type": "object",
+  "required": [
+    "identity",
+    "intent",
+    "epistemic",
+    "action",
+    "governance",
+    "lineage"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "identity": {
+      "$ref": "#/definitions/IdentitySection",
+      "description": "Who is acting: actor, session, lease, correlation"
+    },
+    "intent": {
+      "$ref": "#/definitions/IntentSection",
+      "description": "Why: purpose, goal, expected_outcome"
+    },
+    "epistemic": {
+      "$ref": "#/definitions/EpistemicSection",
+      "description": "What class: fact/belief/hypothesis, confidence, sources"
+    },
+    "action": {
+      "$ref": "#/definitions/ActionSection",
+      "description": "What: type, classification, tool, parameters"
+    },
+    "governance": {
+      "$ref": "#/definitions/GovernanceSection",
+      "description": "Gates: floors checked, lease status, authority chain"
+    },
+    "lineage": {
+      "$ref": "#/definitions/LineageSection",
+      "description": "Where from: parent event, trigger, causal chain"
+    },
+    "metabolic": {
+      "$ref": "#/definitions/MetabolicSection",
+      "description": "What changed: scars, cooling state, phase (conditional)"
+    },
+    "envelope_version": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Envelope schema version"
+    },
+    "emitted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of envelope emission"
+    },
+    "work_contract_id": {
+      "type": "string",
+      "description": "Reference to the WorkContract governing this run (AF-001)"
+    },
+    "task_outcome": {
+      "$ref": "#/definitions/TaskOutcomeSection",
+      "description": "Task outcome receipt \u2014 immutable accounting of the run (999 RECEIPT)"
+    },
+    "budget_consumed": {
+      "$ref": "#/definitions/BudgetConsumedSection",
+      "description": "Budget consumed at the time this envelope was emitted"
+    }
+  },
+  "definitions": {
+    "IdentitySection": {
+      "type": "object",
+      "required": [
+        "actor_id",
+        "session_id",
+        "emitted_by"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "actor_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Unique identifier of the acting entity (organ, agent, human)"
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Kernel-born session ID (FORGE 2-B format)"
+        },
+        "lease_id": {
+          "type": "string",
+          "description": "Governed lease ID authorizing this action (if lease-gated)"
+        },
+        "correlation_id": {
+          "type": "string",
+          "description": "Cross-organ correlation for distributed traces"
+        },
+        "emitted_by": {
+          "type": "string",
+          "enum": [
+            "arifos",
+            "aforge",
+            "geox",
+            "wealth",
+            "well",
+            "aaa",
+            "human"
+          ],
+          "description": "Organ or entity that emitted this envelope"
+        },
+        "authority_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Specific capabilities authorized for this action"
+        }
+      }
+    },
+    "IntentSection": {
+      "type": "object",
+      "required": [
+        "purpose"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "string",
+          "minLength": 10,
+          "description": "Natural-language description of why this action exists (F4 CLARITY: must be specific)"
+        },
+        "goal_id": {
+          "type": "string",
+          "description": "Reference to the higher-level goal this action serves"
+        },
+        "expected_outcome": {
+          "type": "string",
+          "description": "What success looks like \u2014 declared before execution (B8)"
+        },
+        "failure_outcome": {
+          "type": "string",
+          "description": "What failure looks like \u2014 declared before execution (B8)"
+        },
+        "reversible": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether this action can be reversed (F1 AMANAH: reversible-first)"
+        }
+      }
+    },
+    "EpistemicSection": {
+      "type": "object",
+      "required": [
+        "truth_class",
+        "confidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "truth_class": {
+          "type": "string",
+          "enum": [
+            "FACT",
+            "BELIEF",
+            "HYPOTHESIS",
+            "ESTIMATE",
+            "UNKNOWN"
+          ],
+          "description": "Epistemic classification of the claims in this envelope (B3)"
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Confidence level of the claims (F7 HUMILITY: must reflect uncertainty)"
+        },
+        "evidence_sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "source_id",
+              "source_type"
+            ],
+            "properties": {
+              "source_id": {
+                "type": "string",
+                "description": "Unique identifier of the evidence source"
+              },
+              "source_type": {
+                "type": "string",
+                "enum": [
+                  "direct_observation",
+                  "tool_output",
+                  "human_input",
+                  "database_query",
+                  "web_fetch",
+                  "inference",
+                  "prior_memory"
+                ],
+                "description": "How this evidence was obtained"
+              },
+              "reliability": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Reliability score of this source"
+              },
+              "observed_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When this evidence was observed"
+              }
+            }
+          },
+          "description": "Independent evidence sources supporting the claims"
+        },
+        "contradiction_status": {
+          "type": "string",
+          "enum": [
+            "NONE",
+            "RESOLVED",
+            "UNRESOLVED"
+          ],
+          "default": "NONE",
+          "description": "Whether this envelope contradicts prior observations"
+        }
+      }
+    },
+    "ActionSection": {
+      "type": "object",
+      "required": [
+        "action_type",
+        "classification"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "action_type": {
+          "type": "string",
+          "enum": [
+            "observe",
+            "reason",
+            "plan",
+            "execute",
+            "verify",
+            "seal",
+            "correct",
+            "metabolize"
+          ],
+          "description": "Type of action being performed"
+        },
+        "classification": {
+          "type": "string",
+          "enum": [
+            "OBSERVE",
+            "SUGGEST",
+            "SIMULATE",
+            "DRAFT",
+            "QUEUE",
+            "EXECUTE_REVERSIBLE",
+            "EXECUTE_HIGH_IMPACT",
+            "IRREVERSIBLE"
+          ],
+          "description": "Governance classification (B5): determines floor requirements"
+        },
+        "tool_name": {
+          "type": "string",
+          "pattern": "^forge_[a-z0-9_]+$",
+          "description": "Name of the tool being invoked (if tool call)"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Action parameters (tool-specific)"
+        },
+        "side_effects_declared": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "filesystem",
+              "network",
+              "shell",
+              "database",
+              "vault",
+              "none"
+            ]
+          },
+          "description": "Declared side effects of this action"
+        },
+        "dry_run": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether this is a dry-run (no actual mutation)"
+        }
+      }
+    },
+    "GovernanceSection": {
+      "type": "object",
+      "required": [
+        "floors_checked",
+        "verdict"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "floors_checked": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^F[0-9]{1,2}$"
+          },
+          "description": "Floor IDs that were checked (F1-F13)"
+        },
+        "floors_triggered": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^F[0-9]{1,2}$"
+          },
+          "description": "Floor IDs that triggered (raised concern)"
+        },
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "SEAL",
+            "HOLD",
+            "SABAR",
+            "VOID",
+            "PENDING"
+          ],
+          "description": "Constitutional verdict for this action"
+        },
+        "lease_valid": {
+          "type": "boolean",
+          "description": "Whether the governing lease is currently valid (B6)"
+        },
+        "authority_chain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Chain of authority from sovereign to actor (B7)"
+        },
+        "benda_wajib_result": {
+          "$ref": "#/definitions/BendaWajibResult",
+          "description": "Result of Benda Wajib validation"
+        }
+      }
+    },
+    "LineageSection": {
+      "type": "object",
+      "required": [
+        "created_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "parent_event_id": {
+          "type": "string",
+          "description": "ID of the event that triggered this action (B9)"
+        },
+        "trigger": {
+          "type": "string",
+          "description": "What caused this state transition (B9)"
+        },
+        "causal_chain": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Ordered list of event IDs forming the causal chain"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of envelope creation"
+        },
+        "previous_envelope_hash": {
+          "type": "string",
+          "description": "Hash of the previous envelope in this chain (monotonic chain)"
+        }
+      }
+    },
+    "MetabolicSection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "metabolic_state": {
+          "type": "string",
+          "enum": [
+            "IDLE",
+            "COOLING",
+            "LEARNING",
+            "SCARRED"
+          ],
+          "description": "Current metabolic phase"
+        },
+        "scars_produced": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of scars produced by this action"
+        },
+        "scars_consulted": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of scars consulted before this action"
+        },
+        "cooling_state": {
+          "$ref": "#/definitions/CoolingState"
+        },
+        "wisdom_delta": {
+          "type": "number",
+          "description": "Change in Phi (wisdom) resulting from this action"
+        }
+      }
+    },
+    "BendaWajibResult": {
+      "type": "object",
+      "required": [
+        "passed",
+        "violated"
+      ],
+      "properties": {
+        "passed": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 13
+          },
+          "description": "Benda Wajib invariants that passed (1-13)"
+        },
+        "violated": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 13
+          },
+          "description": "Benda Wajib invariants that were violated"
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Non-blocking warnings from Benda Wajib checks"
+        }
+      }
+    },
+    "CoolingState": {
+      "type": "string",
+      "enum": [
+        "FRESH",
+        "WARM",
+        "COOL",
+        "FROZEN"
+      ],
+      "description": "Memory cooling state: FRESH=newest, FROZEN=oldest/stable"
+    },
+    "TruthClass": {
+      "type": "string",
+      "enum": [
+        "FACT",
+        "BELIEF",
+        "HYPOTHESIS",
+        "ESTIMATE",
+        "UNKNOWN"
+      ]
+    },
+    "TaskOutcomeSection": {
+      "type": "object",
+      "required": [
+        "task_id",
+        "objective_met",
+        "budgets",
+        "verification"
+      ],
+      "properties": {
+        "task_id": {
+          "type": "string",
+          "description": "Task identifier matching WorkContract.task_id"
+        },
+        "objective_met": {
+          "type": "boolean",
+          "description": "Whether the objective was achieved"
+        },
+        "outcome_verified": {
+          "type": "boolean",
+          "description": "Whether the outcome was independently verified"
+        },
+        "budgets": {
+          "type": "object",
+          "description": "Budget consumption [used, max]",
+          "properties": {
+            "reasoning_cycles": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[used, max]"
+            },
+            "tool_calls": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[used, max]"
+            },
+            "delegations": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[used, max]"
+            },
+            "cost_usd": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[used, max]"
+            }
+          }
+        },
+        "verification": {
+          "type": "object",
+          "description": "Verification accounting",
+          "properties": {
+            "proposals": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "tested": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "verified": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "falsified": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "termination_reason": {
+          "type": "string",
+          "description": "Why the run terminated"
+        }
+      }
+    },
+    "BudgetConsumedSection": {
+      "type": "object",
+      "description": "Budget consumed at this envelope emission point",
+      "properties": {
+        "reasoning_cycles": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tool_calls": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "delegations": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cost_usd": {
+          "type": "number",
+          "minimum": 0
+        },
+        "input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "output_tokens": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

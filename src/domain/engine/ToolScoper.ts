@@ -71,18 +71,18 @@ export interface ScopedToolSurface {
 const DEFAULT_ACTION_TOOL_MAP: Record<ActionClass, string[]> = {
   OBSERVE: [
     "arif_ping",
-    "arif_sense_observe",
-    "arif_ops_measure",
-    "arif_memory_recall",
+    "arif_observe",
+    "arif_measure",
+    "arif_memory",
     "forge_query",
     "geox_*",
     "wealth_*",
     "well_*",
   ],
   READ: [
-    "arif_sense_observe",
-    "arif_ops_measure",
-    "arif_memory_recall",
+    "arif_observe",
+    "arif_measure",
+    "arif_memory",
     "forge_query",
     "geox_basin_profile",
     "geox_system_registry_status",
@@ -92,9 +92,9 @@ const DEFAULT_ACTION_TOOL_MAP: Record<ActionClass, string[]> = {
     "well_trace_lineage",
   ],
   THINK: [
-    "arif_mind_reason",
-    "arif_judge_deliberate",
-    "arif_heart_critique",
+    "arif_think",
+    "arif_judge",
+    "arif_critique",
     "geox_evidence_reason",
     "wealth_wisdom_evaluate",
     "wealth_omni_wisdom",
@@ -102,26 +102,26 @@ const DEFAULT_ACTION_TOOL_MAP: Record<ActionClass, string[]> = {
     "well_assess_homeostasis",
   ],
   DRAFT: [
-    "arif_reply_compose",
+    "arif_compose",
     "forge_dry_run",
     "forge_plan",
-    "arif_heart_critique",
-    "arif_vault_seal",
+    "arif_critique",
+    "arif_seal",
   ],
   MUTATE: [
-    "arif_vault_seal",
+    "arif_seal",
     "forge_execute",
     "forge_approve",
-    "arif_forge_execute",
+    "arif_forge",
     "arif_memory",
     "write",
     "edit",
     "forge_remember",
   ],
   IRREVERSIBLE: [
-    "arif_vault_seal",
+    "arif_seal",
     "forge_execute",
-    "arif_forge_execute",
+    "arif_forge",
   ],
 };
 
@@ -130,8 +130,8 @@ const DEFAULT_ACTION_TOOL_MAP: Record<ActionClass, string[]> = {
  * These are typically LLM-heavy or API-costly tools.
  */
 const EXPENSIVE_TOOLS: readonly string[] = [
-  "arif_judge_deliberate",
-  "arif_mind_reason",
+  "arif_judge",
+  "arif_think",
   "geox_evidence_reason",
   "wealth_wisdom_evaluate",
   "wealth_omni_wisdom",
@@ -146,16 +146,16 @@ const EXPENSIVE_TOOLS: readonly string[] = [
  * unless the action class already permits them.
  */
 const PIPELINE_STAGE_TOOLS: Partial<Record<PipelineStage, string[]>> = {
-  "000_CLARIFY": ["arif_ping", "arif_sense_observe", "arif_mind_reason"],
-  "111_OBSERVE": ["arif_ping", "arif_sense_observe", "arif_ops_measure", "arif_memory_recall", "forge_query"],
-  "222_EVIDENCE": ["arif_evidence_fetch", "geox_evidence_reason", "geox_data_qc_bundle", "arif_memory_recall"],
-  "333_REASON": ["arif_mind_reason", "arif_judge_deliberate", "geox_evidence_reason", "wealth_wisdom_evaluate"],
-  "444_COMPOSE": ["arif_reply_compose"],
+  "000_CLARIFY": ["arif_ping", "arif_observe", "arif_think"],
+  "111_OBSERVE": ["arif_ping", "arif_observe", "arif_measure", "arif_memory", "forge_query"],
+  "222_EVIDENCE": ["arif_fetch", "geox_evidence_reason", "geox_data_qc_bundle", "arif_memory"],
+  "333_REASON": ["arif_think", "arif_judge", "geox_evidence_reason", "wealth_wisdom_evaluate"],
+  "444_COMPOSE": ["arif_compose"],
   "555_ROUTE": ["arif_kernel_route", "arif_gateway_connect"],
-  "666_HEART": ["arif_heart_critique", "well_guard_dignity"],
-  "777_EXECUTE": ["forge_execute", "arif_forge_execute", "forge_approve"],
-  "888_JUDGE": ["arif_judge_deliberate", "arif_vault_seal"],
-  "999_SEAL": ["arif_vault_seal"],
+  "666_HEART": ["arif_critique", "well_guard_dignity"],
+  "777_EXECUTE": ["forge_execute", "arif_forge", "forge_approve"],
+  "888_JUDGE": ["arif_judge", "arif_seal"],
+  "999_SEAL": ["arif_seal"],
 };
 
 // ─── Stage-to-Action-Class Alignment ───────────────────────────────────

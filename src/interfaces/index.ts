@@ -25,7 +25,6 @@ export {
 } from "../domain/policy/sense.js";
 
 // Agents
-export { CoordinatorAgent } from "../domain/agents/CoordinatorAgent.js";
 export { WorkerAgent } from "../domain/agents/WorkerAgent.js";
 export { buildExploreProfile, buildFixProfile, buildTestProfile, buildCoordinatorProfile, buildWorkerProfile } from "../domain/agents/profiles.js";
 
@@ -103,8 +102,6 @@ export type { RouteApprovalOptions } from "../application/approval/ApprovalRoute
 
 // Config
 export { readRuntimeConfig } from "../interfaces/config/RuntimeConfig.js";
-export { createA2ARouter } from "../application/a2a/index.js";
-export type { A2ATask, A2AMessage, JsonRpcRequest } from "../application/a2a/index.js";
 
 // Flags
 export type { FeatureFlags } from "../interfaces/config/featureFlags.js";

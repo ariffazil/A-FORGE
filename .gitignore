@@ -125,3 +125,14 @@ build/
 *.pyc
 scratch/
 
+
+# GitHub Copilot workspace — not VPS-aware, do not commit
+Copilot/
+
+# forge_work — session receipts, working notes, local artifacts
+forge_work/
+.audit_output.txt
+
+# local ARA logs
+duties/logs/
+.registry/fingerprints.json

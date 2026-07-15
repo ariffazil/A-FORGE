@@ -1,0 +1,15 @@
+{
+  "event_id": "EUREKA-2026-07-13",
+  "timestamp": "2026-07-13T00:40:00Z",
+  "type": "constitutional.doctrine",
+  "verdict": "SEALED",
+  "actor": "AGI",
+  "session_id": "session:EUREKA-ratification",
+  "file": "/root/AAA/docs/EUREKA-2026-07-13.md",
+  "sha256": "7e54518dca62d8def0c2325ea9b7bb8c8a9a2779d4b9bc06969d8c00a8ba61f5",
+  "size_bytes": 17472,
+  "lines": 565,
+  "f13_ratified": true,
+  "seal_grade": "SOVEREIGN",
+  "chain_position": "post-COOLING_SPEC"
+}

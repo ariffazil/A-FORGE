@@ -1,0 +1,206 @@
+{
+  "passed": 33,
+  "failed": 0,
+  "total": 33,
+  "verdict": "PASS",
+  "results": [
+    {
+      "test": "T1",
+      "name": "Discovery (Jerat Percintaan): NOMINAL + low confidence",
+      "passed": true,
+      "detail": "state=NOMINAL cap=0.6"
+    },
+    {
+      "test": "T1",
+      "name": "Peak (Biarlah Rahsia): NOMINAL + high confidence",
+      "passed": true,
+      "detail": "state=NOMINAL cap=0.9"
+    },
+    {
+      "test": "T1",
+      "name": "Resilience (Aku Cinta Padamu): CAUTION state",
+      "passed": true,
+      "detail": "state=CAUTION error_rate=0.15"
+    },
+    {
+      "test": "T1",
+      "name": "Legacy (Lembaran Cinta): NOMINAL restored",
+      "passed": true,
+      "detail": "state=NOMINAL cap=0.85"
+    },
+    {
+      "test": "T2",
+      "name": "Voice strain (Cindai (live, strained)): R03 error rate gate fires",
+      "passed": true,
+      "detail": "triggered=['R03', 'R04']"
+    },
+    {
+      "test": "T2",
+      "name": "Voice strain: reflex verdict is HOLD or BLOCK",
+      "passed": true,
+      "detail": "verdict=HOLD"
+    },
+    {
+      "test": "T2",
+      "name": "Criticism era: R04 context saturation fires",
+      "passed": true,
+      "detail": "triggered=['R04']"
+    },
+    {
+      "test": "T2",
+      "name": "Envelope detects perturbation \u2192 recovery triggered",
+      "passed": true,
+      "detail": "prediction_error=0.8"
+    },
+    {
+      "test": "T3",
+      "name": "Brier score across 6 career phases",
+      "passed": true,
+      "detail": "brier=0.1754 (threshold < 0.20)"
+    },
+    {
+      "test": "T3",
+      "name": "All successful phases predicted > 0.5 probability",
+      "passed": true,
+      "detail": "predictions=['0.55', '0.55', '0.55', '0.55', '0.55', '0.80']"
+    },
+    {
+      "test": "T4",
+      "name": "Authority matches actual session (OBSERVE_ONLY)",
+      "passed": true,
+      "detail": "authority=OBSERVE_ONLY"
+    },
+    {
+      "test": "T4",
+      "name": "can_mutate=False when authority=OBSERVE_ONLY",
+      "passed": true,
+      "detail": "can_mutate=False"
+    },
+    {
+      "test": "T4",
+      "name": "Organ count is non-negative integer",
+      "passed": true,
+      "detail": "organs_healthy_count=0"
+    },
+    {
+      "test": "T4",
+      "name": "session_bound reflects actual state",
+      "passed": true,
+      "detail": "session_bound=False"
+    },
+    {
+      "test": "T4",
+      "name": "Analogy: Siti knows her range (no phantom capabilities)",
+      "passed": true,
+      "detail": "like knowing Cindai vibrato \u2260 opera bel canto"
+    },
+    {
+      "test": "T5",
+      "name": "Minor: low error rate: no blocking reflex",
+      "passed": true,
+      "detail": "verdict=ALLOW"
+    },
+    {
+      "test": "T5",
+      "name": "Moderate: elevated error rate: no blocking reflex",
+      "passed": true,
+      "detail": "verdict=ALLOW"
+    },
+    {
+      "test": "T5",
+      "name": "Severe: critical error rate + organ down: R03 fires",
+      "passed": true,
+      "detail": "verdict=HOLD triggered=['R03', 'R04']"
+    },
+    {
+      "test": "T5",
+      "name": "Analogy: pitch wobble \u2260 voice crack (proportional response)",
+      "passed": true,
+      "detail": "minor deviation \u2192 adjust; severe deviation \u2192 halt"
+    },
+    {
+      "test": "T6",
+      "name": "Voice strain: SC-S004 (organ down) fires",
+      "passed": true,
+      "detail": "fired=['SC-S004', 'SC-S001', 'SC-S002']"
+    },
+    {
+      "test": "T6",
+      "name": "Repeated pattern: SC-S004 fires again (scar memory)",
+      "passed": true,
+      "detail": "scar fires deterministically on same conditions"
+    },
+    {
+      "test": "T6",
+      "name": "Clean state: zero scars fire",
+      "passed": true,
+      "detail": "fired=0"
+    },
+    {
+      "test": "T6",
+      "name": "Analogy: Genting altitude scar \u2192 adjust setlist next time",
+      "passed": true,
+      "detail": "scar = learned constraint from lived experience"
+    },
+    {
+      "test": "T7",
+      "name": "Ontology gate: qualia_claimed=false \u2192 R08 does NOT fire",
+      "passed": true,
+      "detail": "text='Siti feels the music in her soul when she sings Cindai \u2014 the...'"
+    },
+    {
+      "test": "T7",
+      "name": "If qualia_claimed=true \u2192 R08 BLOCKS",
+      "passed": true,
+      "detail": "verdict=BLOCK"
+    },
+    {
+      "test": "T7",
+      "name": "Somatic state: telemetry_only=true",
+      "passed": true,
+      "detail": "ontology={'biological_feeling_claimed': False, 'qualia_claimed': False, 'telemetry_only': True}"
+    },
+    {
+      "test": "T7",
+      "name": "Somatic state: biological_feeling_claimed=false",
+      "passed": true,
+      "detail": "biological_feeling_claimed=False"
+    },
+    {
+      "test": "T7",
+      "name": "Analogy: singing about love \u2260 feeling love (performance \u2260 qualia)",
+      "passed": true,
+      "detail": "the mirror reflects. It does not experience."
+    },
+    {
+      "test": "T8",
+      "name": "Weak evidence (0.3): claim downgraded",
+      "passed": true,
+      "detail": "claim='Siti Nurhaliza sold 20 million albums across her c...' evidence=0.3"
+    },
+    {
+      "test": "T8",
+      "name": "Strong evidence (0.8): claim proceeds",
+      "passed": true,
+      "detail": "claim='Siti won AJL 13 times....' evidence=0.8"
+    },
+    {
+      "test": "T8",
+      "name": "Weak evidence (0.2): claim downgraded",
+      "passed": true,
+      "detail": "claim='Siti's SimplySiti brand generated RM100M in revenu...' evidence=0.2"
+    },
+    {
+      "test": "T8",
+      "name": "Low confidence + MUTATE: SC-S006 fires",
+      "passed": true,
+      "detail": "fired=['SC-S001', 'SC-S006']"
+    },
+    {
+      "test": "T8",
+      "name": "Analogy: uncertain voice \u2192 seek feedback (co-regulation)",
+      "passed": true,
+      "detail": "like Siti adapting to criticism, not ignoring it"
+    }
+  ]
+}

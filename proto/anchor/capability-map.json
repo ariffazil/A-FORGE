@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "generated_at": "2026-07-07T00:00:00Z",
+  "description": "J-Space capability graph — tool identity, organ identity, authority level, epistemic range",
+  "organs": {
+    "arifos": {
+      "canonical_name": "arifOS Constitutional Kernel",
+      "port": 8081,
+      "language": "python",
+      "role": "governance",
+      "tools": [
+        "arif_init", "arif_judge", "arif_seal", "arif_observe",
+        "arif_think", "arif_critique", "arif_route", "arif_compose",
+        "arif_memory", "arif_forge", "arif_bridge_connect"
+      ],
+      "authority_level": "T3_SOVEREIGN",
+      "can_seal": true,
+      "can_judge": true,
+      "epistemic_range": ["OBS", "DER", "INT", "SPEC"]
+    },
+    "aforge": {
+      "canonical_name": "A-FORGE Execution Shell",
+      "port": 7072,
+      "language": "typescript",
+      "role": "execution",
+      "tools": [
+        "forge_filesystem", "forge_shell", "forge_execute", "forge_evaluate",
+        "forge_scar", "forge_witness", "forge_register", "forge_registry",
+        "forge_session_init", "forge_lease", "forge_git", "forge_github",
+        "forge_docker", "forge_postgres", "forge_vault", "forge_fetch",
+        "forge_probe", "forge_health_check", "forge_reality_loop"
+      ],
+      "authority_level": "T2_ANNOUNCE",
+      "can_seal": false,
+      "can_judge": false,
+      "epistemic_range": ["OBS", "DER"]
+    },
+    "geox": {
+      "canonical_name": "GEOX Earth Intelligence",
+      "port": 8081,
+      "language": "python",
+      "role": "evidence_source",
+      "tools": [
+        "geox_observe", "geox_compute", "geox_interpret", "geox_model",
+        "geox_govern", "geox_prospect", "geox_spatial", "geox_surface_status",
+        "geox_claim", "geox_evidence", "geox_bridge"
+      ],
+      "authority_level": "T1_OBSERVE",
+      "can_seal": false,
+      "can_judge": false,
+      "epistemic_range": ["OBS", "DER", "INT"]
+    },
+    "wealth": {
+      "canonical_name": "WEALTH Capital Intelligence",
+      "port": 18082,
+      "language": "python",
+      "role": "capital_evidence",
+      "tools": [
+        "wealth_compute_emv", "wealth_compute_npv", "wealth_compute_irr",
+        "wealth_collapse_signature_scan", "wealth_boundary_governance",
+        "wealth_monte_carlo_simulate", "wealth_kelly_sizing",
+        "wealth_markowitz_frontier", "wealth_omni_wisdom",
+        "wealth_vault_query", "wealth_vault_write"
+      ],
+      "authority_level": "T1_OBSERVE",
+      "can_seal": false,
+      "can_judge": false,
+      "epistemic_range": ["OBS", "DER", "INT"]
+    },
+    "well": {
+      "canonical_name": "WELL Human Readiness",
+      "port": 18083,
+      "language": "python",
+      "role": "human_witness",
+      "tools": [
+        "well_readiness", "well_validate_vitality", "well_guard_dignity",
+        "well_classify_substrate", "well_detect_boundary",
+        "well_assess_homeostasis", "well_assess_reliability",
+        "well_health_check", "well_registry_status"
+      ],
+      "authority_level": "T1_OBSERVE",
+      "can_seal": false,
+      "can_judge": false,
+      "epistemic_range": ["OBS", "INT"]
+    }
+  },
+  "identity_chain": {
+    "description": "How identity flows across the manifold",
+    "flow": [
+      "entity.created → canonical_id assigned",
+      "canonical_id → fingerprint (SHA-256)",
+      "fingerprint → registered in organ registry",
+      "registry → sealed to VAULT999 (if irreversible)"
+    ]
+  },
+  "authority_chain": {
+    "description": "How authority flows across the manifold",
+    "flow": [
+      "action.requested → action_class classified",
+      "action_class → authority_level required",
+      "authority_level → check: sovereign ack? lease? elicitation?",
+      "if authorized → proceed",
+      "if not → HOLD / elicitation / auto-deny"
+    ]
+  },
+  "verdict_chain": {
+    "description": "How verdicts propagate",
+    "flow": [
+      "organ computes → wraps in CanonicalVerdict",
+      "CanonicalVerdict → arifOS judges (SEAL/HOLD/SABAR/VOID)",
+      "if SEAL → A-FORGE executes",
+      "if HOLD → wait for authority",
+      "if VOID → blocked permanently",
+      "result → arifOS seals to VAULT999"
+    ]
+  }
+}

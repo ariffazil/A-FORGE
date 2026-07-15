@@ -1,0 +1,56 @@
+# Somatic State Packet — auto-generated
+# Generated: 2026-07-12T11:48:13.907217+00:00
+# Cache TTL: 60s
+# Evidence: OBS (probed) / DER (computed)
+# F9: telemetry_only=true — no biological claims
+#
+somatic_state:
+  timestamp: "2026-07-12T11:48:13.907217+00:00"
+  cache_ttl_s: 60
+  interoception:
+    context_utilization: 1.000
+    tool_error_rate: 0.000
+    latency_ms: 232
+    contradiction_count: 0
+    entropy_delta: 0.000
+    narrative_heat: 0.000
+    evidence_class: OBS/DER
+  proprioception:
+    tools_known: 0
+    tools_reachable: 0
+    tools_authorized: 0
+    blast_radius: LOW
+    reversibility: FULL
+    loop_stage: 000
+    identity_drift: PASS
+    evidence_class: OBS/DER
+  capability_schema:
+    session_bound: false
+    actor_verified: false
+    authority: OBSERVE_ONLY
+    organs_healthy:
+      - arifos
+      - aforge
+      - aaa
+      - geox
+      - wealth
+      - well
+    organs_degraded:
+    organs_down:
+    well_state: unknown
+    well_score: null
+    last_seal_seq: 57
+    evidence_class: OBS
+  regulatory_state:
+    state: CAUTION
+    cognitive_mode: FOCUSED
+    confidence_cap: 0.700
+  somatic_markers:
+  prediction:
+    proposed_action: none
+    expected_outcome: n/a
+    risk: LOW
+  ontology:
+    biological_feeling_claimed: false
+    qualia_claimed: false
+    telemetry_only: true

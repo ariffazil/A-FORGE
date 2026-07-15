@@ -134,7 +134,12 @@ export function dispatchPreflight(workflow: ValidatedWorkflow): void {
       throw new WorkflowError(
         "workflow_parse_error" as WorkflowErrorClass,
         "codex.command is required for dispatch",
-        { filePath: workflow.filePath, hint: "Set `codex.command: codex app-server`." },
+        {
+          filePath: workflow.filePath,
+          hint:
+            `Set codex.command to ` +
+            `codex --config shell_environment_policy.inherit=all --config 'model="gpt-5.5"' --config model_reasoning_effort=xhigh app-server.`,
+        },
       );
     }
   } else {

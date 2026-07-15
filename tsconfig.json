@@ -12,9 +12,7 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "forceConsistentCasingInFileNames": true,
-    "incremental": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo"
+    "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*.ts", "examples/**/*.ts", "test/**/*.ts", "scripts/**/*.ts"],
   "exclude": ["**/*.legacy.ts", "examples/field_optimization_loop.ts", "test/engine.test.ts"]

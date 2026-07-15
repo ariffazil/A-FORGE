@@ -1,0 +1,188 @@
+{
+  "screen": "ScreenFingerprint(availHeight=1032, availWidth=1920, availTop=0, availLeft=1920, colorDepth=32, height=1080, pixelDepth=32, width=1920, devicePixelRatio=1, pageXOffset=0, pageYOffset=0, innerHeight=0, outerHeight=1032, outerWidth=1920, innerWidth=0, screenX=1920, clientWidth=0, clientHeight=18, hasHDR=False)",
+  "navigator": "NavigatorFingerprint(userAgent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', userAgentData={'brands': [{'brand': 'Microsoft Edge', 'version': '147'}, {'brand': 'Not.A/Brand', 'version': '8'}, {'brand': 'Chromium', 'version': '147'}], 'mobile': False, 'platform': 'Windows', 'architecture': 'x86', 'bitness': '64', 'model': '', 'platformVersion': '19.0.0', 'uaFullVersion': '147.0.3912.86', 'fullVersionList': [{'brand': 'Microsoft Edge', 'version': '147.0.3912.86'}, {'brand': 'Not.A/Brand', 'version': '8.0.0.0'}, {'brand': 'Chromium', 'version': '147.0.7727.118'}]}, doNotTrack='1', appCodeName='Mozilla', appName='Netscape', appVersion='5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0', oscpu=None, webdriver=False, language='en-US', languages=['en-US'], platform='Win32', deviceMemory=4, hardwareConcurrency=8, product='Gecko', productSub='20030107', vendor='Google Inc.', vendorSub=None, maxTouchPoints=10, extraProperties={'vendorFlavors': ['chrome'], 'globalPrivacyControl': None, 'pdfViewerEnabled': True, 'installedApps': []})",
+  "headers": {
+    "sec-ch-ua": "\"Microsoft Edge\";v=\"147\", \"Not.A/Brand\";v=\"8\", \"Chromium\";v=\"147\"",
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": "\"Windows\"",
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+    "Sec-Fetch-Site": "?1",
+    "Sec-Fetch-Mode": "same-site",
+    "Sec-Fetch-User": "document",
+    "Sec-Fetch-Dest": "navigate",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Accept-Language": "en-US;q=1.0"
+  },
+  "videoCodecs": {
+    "ogg": "",
+    "h264": "probably",
+    "webm": "probably"
+  },
+  "audioCodecs": {
+    "ogg": "probably",
+    "mp3": "probably",
+    "wav": "probably",
+    "m4a": "maybe",
+    "aac": "probably"
+  },
+  "pluginsData": {
+    "plugins": [
+      {
+        "name": "PDF Viewer",
+        "description": "Portable Document Format",
+        "filename": "internal-pdf-viewer",
+        "mimeTypes": [
+          {
+            "type": "application/pdf",
+            "suffixes": "pdf",
+            "description": "Portable Document Format",
+            "enabledPlugin": "PDF Viewer"
+          },
+          {
+            "type": "text/pdf",
+            "suffixes": "pdf",
+            "description": "Portable Document Format",
+            "enabledPlugin": "PDF Viewer"
+          }
+        ]
+      },
+      {
+        "name": "Chrome PDF Viewer",
+        "description": "Portable Document Format",
+        "filename": "internal-pdf-viewer",
+        "mimeTypes": [
+          {
+            "type": "application/pdf",
+            "suffixes": "pdf",
+            "description": "Portable Document Format",
+            "enabledPlugin": "Chrome PDF Viewer"
+          },
+          {
+            "type": "text/pdf",
+            "suffixes": "pdf",
+            "description": "Portable Document Format",
+            "enabledPlugin": "Chrome PDF Viewer"
+          }
+        ]
+      },
+      {
+        "name": "Chromium PDF Viewer",
+        "description": "Portable Document Format",
+        "filename": "internal-pdf-viewer",
+        "mimeTypes": [
+          {
+            "type": "application/pdf",
+            "suffixes": "pdf",
+            "description": "Portable Document Format",
+            "enabledPlugin": "Chromium PDF Viewer"
+          },
+          {
+            "type": "text/pdf",
+            "suffixes": "pdf",
+            "description": "Portable Document Format",
+            "enabledPlugin": "Chromium PDF Viewer"
+          }
+        ]
+      },
+      {
+        "name": "Microsoft Edge PDF Viewer",
+        "description": "Portable Document Format",
+        "filename": "internal-pdf-viewer",
+        "mimeTypes": [
+          {
+            "type": "application/pdf",
+            "suffixes": "pdf",
+            "description": "Portable Document Format",
+            "enabledPlugin": "Microsoft Edge PDF Viewer"
+          },
+          {
+            "type": "text/pdf",
+            "suffixes": "pdf",
+            "description": "Portable Document Format",
+            "enabledPlugin": "Microsoft Edge PDF Viewer"
+          }
+        ]
+      },
+      {
+        "name": "WebKit built-in PDF",
+        "description": "Portable Document Format",
+        "filename": "internal-pdf-viewer",
+        "mimeTypes": [
+          {
+            "type": "application/pdf",
+            "suffixes": "pdf",
+            "description": "Portable Document Format",
+            "enabledPlugin": "WebKit built-in PDF"
+          },
+          {
+            "type": "text/pdf",
+            "suffixes": "pdf",
+            "description": "Portable Document Format",
+            "enabledPlugin": "WebKit built-in PDF"
+          }
+        ]
+      }
+    ],
+    "mimeTypes": [
+      "Portable Document Format~~application/pdf~~pdf",
+      "Portable Document Format~~text/pdf~~pdf"
+    ]
+  },
+  "battery": {
+    "charging": true,
+    "chargingTime": 0,
+    "dischargingTime": null,
+    "level": 1
+  },
+  "videoCard": "VideoCard(renderer='ANGLE (Intel, Intel(R) Iris(R) Xe Graphics (0x00009A49) Direct3D11 vs_5_0 ps_5_0, D3D11)', vendor='Google Inc. (Intel)')",
+  "multimediaDevices": {
+    "speakers": [
+      {
+        "deviceId": "",
+        "kind": "audiooutput",
+        "label": "",
+        "groupId": ""
+      }
+    ],
+    "micros": [
+      {
+        "deviceId": "",
+        "kind": "audioinput",
+        "label": "",
+        "groupId": ""
+      }
+    ],
+    "webcams": [
+      {
+        "deviceId": "",
+        "kind": "videoinput",
+        "label": "",
+        "groupId": ""
+      }
+    ]
+  },
+  "fonts": [
+    "Agency FB",
+    "Calibri",
+    "Century",
+    "Century Gothic",
+    "Franklin Gothic",
+    "Haettenschweiler",
+    "Leelawadee",
+    "Lucida Bright",
+    "Lucida Sans",
+    "MS Outlook",
+    "MS Reference Specialty",
+    "MS UI Gothic",
+    "MT Extra",
+    "Marlett",
+    "Microsoft Uighur",
+    "Monotype Corsiva",
+    "Pristina",
+    "Segoe UI Light"
+  ],
+  "mockWebRTC": false,
+  "slim": false
+}

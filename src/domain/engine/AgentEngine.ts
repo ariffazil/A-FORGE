@@ -41,6 +41,7 @@ import {
   SealService,
   calculateGeniusFromFloors,
   type FloorScores13,
+  checkWellReadiness,
 } from "../governance/index.js";
 import { callMCP } from "../../interfaces/mcp/client.js";
 import { getAdaptiveThresholds } from "../governance/thresholds.js";
@@ -58,6 +59,7 @@ import type { MemoryContract } from "../memory-contract/index.js";
 import { getMemoryContract } from "../memory-contract/index.js";
 import { ThermodynamicCostEstimator } from "../ops/ThermodynamicCostEstimator.js";
 import { routeIntent, type RoutingDecision } from "./IntentRouter.js";
+import type { MesaDetector } from "../agents/mesa-detector/index.js";
 // @fixme Phase3: inject organ bridges via deps (IWealthBridge port)
 import { WealthEngineBridge } from "../../infrastructure/bridges/wealthBridge.js";
 import type { ToolAction, TokenBudget, StressState } from "../types/wealth.js";
@@ -65,6 +67,8 @@ import type { ToolAction, TokenBudget, StressState } from "../types/wealth.js";
 import { getScenarios } from "../../infrastructure/bridges/geoxBridge.js";
 import { evaluateWithConfidence, calculateConfidenceEstimate } from "../policy/confidence.js";
 import { ArifOSKernel } from "./ArifOSKernel.js";
+import { getCoolingGate } from "../governance/CoolingGate.js";
+import { recordCoolingLedgerEvent } from "../../infrastructure/governance/CoolingLedgerRegistry.js";
 
 export type AgentEngineDependencies = {
   llmProvider: ILlmProvider;
@@ -91,6 +95,10 @@ export type AgentEngineDependencies = {
   wealthBridge?: WealthEngineBridge;
   /** GEOX scenario loader (Phase 3 hexagonal) */
   geoxScenarioLoader?: typeof getScenarios;
+  /** MesaDetector — behavioral mesa-objective detection (APEX Theory §4) */
+  mesaDetector?: import("../agents/mesa-detector/index.js").MesaDetector;
+  wellReadinessCheck?: typeof checkWellReadiness;
+  coolingLedgerRecorder?: typeof recordCoolingLedgerEvent;
 };
 
 export class AgentEngine {
@@ -99,11 +107,14 @@ export class AgentEngine {
   private _wealthAllocations: Array<{ id: string; maruahScore: number }> = [];
   private _kernel: ArifOSKernel | null = null;
   private _pipeline?: import("./PipelineCoordinator.js").PipelineCoordinator;
+  private _mesaDetector?: MesaDetector;
 
   constructor(
     private readonly profile: AgentProfile,
     private readonly dependencies: AgentEngineDependencies,
-  ) {}
+  ) {
+    this._mesaDetector = this.dependencies.mesaDetector;
+  }
 
   async run(options: EngineRunOptions): Promise<AgentRunResult> {
     const startedAt = new Date();
@@ -232,6 +243,56 @@ export class AgentEngine {
         transcript: [],
         metrics: this.buildEmptyMetrics(options, startedAt, "F1", "ackIrreversible not set"),
       };
+    }
+
+    const requiresWellGate = (
+      riskLevel === "high" ||
+      riskLevel === "critical" ||
+      intentModel === "execution"
+    );
+    if (requiresWellGate) {
+      const wellReadinessCheck = this.dependencies.wellReadinessCheck ?? checkWellReadiness;
+      const wellResult = await wellReadinessCheck(riskLevel);
+      if (wellResult.verdict !== "PASS") {
+        const coolingGate = getCoolingGate();
+        const coolingEntry = await coolingGate.propose({
+          artifact_ref: sessionId,
+          description: `WELL ${wellResult.verdict} gate: ${options.task.slice(0, 160)}`,
+          risk_tier: riskLevel,
+        });
+        const coolingLedgerRecorder = this.dependencies.coolingLedgerRecorder ?? recordCoolingLedgerEvent;
+        const coolingLedgerPath = coolingLedgerRecorder({
+          sessionId,
+          task: options.task,
+          verdict: wellResult.verdict,
+          riskLevel,
+          intentModel,
+          message: wellResult.message,
+          signal: wellResult.signal,
+          truthStatus: wellResult.truthStatus,
+          freshnessBand: wellResult.freshnessBand,
+          stateAgeHours: wellResult.stateAgeHours,
+          source: wellResult.source,
+          cooldownEntryId: coolingEntry.entry_id,
+        });
+        const summary = [
+          `${wellResult.verdict}: ${wellResult.message}`,
+          `cooldown=${coolingEntry.entry_id}`,
+          `ledger=${coolingLedgerPath}`,
+          wellResult.signal ? `signal=${wellResult.signal}` : null,
+          wellResult.truthStatus ? `truth=${wellResult.truthStatus}` : null,
+          wellResult.freshnessBand ? `freshness=${wellResult.freshnessBand}` : null,
+          wellResult.stateAgeHours !== null ? `age_h=${wellResult.stateAgeHours.toFixed(1)}` : null,
+        ].filter(Boolean).join(" | ");
+        return {
+          sessionId,
+          finalText: summary,
+          turnCount: 0,
+          totalEstimatedTokens: 0,
+          transcript: [],
+          metrics: this.buildEmptyMetrics(options, startedAt, "W0", summary),
+        };
+      }
     }
 
     // === Model Capability Gate (Governance Spine — Execution Layer) ===
@@ -945,6 +1006,35 @@ export class AgentEngine {
         result,
         startedAt,
         metrics.llmCost,
+      );
+    }
+
+    // ── MesaDetector: Behavioral drift analysis ───────────────────────────────
+    // APEX Theory §4: Detect mesa-objective emergence via behavioral fingerprints.
+    // Non-fatal: mesa analysis failure must never block or alter the result.
+    try {
+      if (this._mesaDetector) {
+        const mesaReport = await this._mesaDetector.analyze({
+          sessionId,
+          agentName: this.profile.name,
+          profile: this.profile,
+          result,
+          floorsTriggered,
+        });
+        // Annotate result with mesa probability (informational, non-blocking)
+        if (mesaReport.mesaProbability > 0.5) {
+          result.finalText +=
+            `\n\n[MESA DETECTOR] mesa_probability=${mesaReport.mesaProbability.toFixed(3)} | ` +
+            `alerts=${mesaReport.alerts.length} | ` +
+            `baseline=${mesaReport.hasBaseline ? "established" : "insufficient_data"}`;
+        }
+      }
+    } catch (mesaErr) {
+      // Non-fatal — mesa analysis must never alter or block the agent result
+      process.stderr.write(
+        `[MESA DETECTOR] Analysis failed (non-fatal): ${
+          mesaErr instanceof Error ? mesaErr.message : String(mesaErr)
+        }\n`,
       );
     }
 

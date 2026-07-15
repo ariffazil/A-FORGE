@@ -1,7 +1,7 @@
 # A-FORGE Architecture
 
-> **Last verified:** 2026-06-05
-> **Source files:** 150 TypeScript (~24K lines)
+> **Last verified:** 2026-07-01
+> **Source files:** 260 TypeScript (~61K lines)
 > **Runtime:** Node.js 22+, Express 5, TypeScript 6
 
 ---
@@ -32,7 +32,7 @@ A-FORGE is a **governed agent runtime** — not a generic agent framework, not a
 
 ---
 
-## Module Architecture (150 files across 16 modules)
+## Module Architecture (260 files across 16 modules)
 
 ```
 src/
@@ -64,7 +64,7 @@ src/
 │
 ├── approval/           ← Approval & Escalation (7 files)
 │   ├── ApprovalBoundary.ts     — Irreversibility threshold + 888_HOLD escalation
-│   ├── ApprovalRouter.ts       — Routes HOLDs to human or APEX
+│   ├── ApprovalRouter.ts       — Routes HOLDs to human or AAA a2a-server
 │   ├── HumanEscalationClient.ts — Telegram/Webhook escalation channels
 │   └── ...
 │
@@ -172,17 +172,17 @@ Result → RunReporter → Prometheus + Supabase + VAULT999
 
 ## Federation Discovery
 
-On startup, A-FORGE discovers connected federation surfaces via A2A agent cards. The arifOS Federation has **7 organs** (arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL, APEX legacy); A-FORGE also hosts the MIND:51001 and MEMORY:51002 **services**, which are not organs.
+On startup, A-FORGE discovers connected federation surfaces via A2A agent cards. The arifOS Federation has **6 active organs** (arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL). APEX (port 3002) is decommissioned. A-FORGE also hosts the MIND:51001 **service**, which is not an organ. MEMORY:51002 is not currently responding.
 
 ```
 A-FORGE startup
-  ├── Probe arifOS  at 127.0.0.1:8088  → 13 tools registered
-  ├── Probe GEOX    at 127.0.0.1:8081  → 31 tools registered
-  ├── Probe WEALTH  at 127.0.0.1:18082 → 44 tools registered
-  ├── Probe WELL    at 127.0.0.1:18083 → 45 tools registered
+  ├── Probe arifOS  at 127.0.0.1:8088  → tools registered
+  ├── Probe GEOX    at 127.0.0.1:8081  → tools registered
+  ├── Probe WEALTH  at 127.0.0.1:18082 → tools registered
+  ├── Probe WELL    at 127.0.0.1:18083 → tools registered
   └── Probe AAA     at 127.0.0.1:3001  → A2A gateway active
   ─────────────────────────────────────
-  TOTAL: 62+ tools across 5 MCP surfaces
+  TOTAL: 72+ tools across A-FORGE + federation MCP surfaces
 ```
 
 The `/api/federation-probe` endpoint returns live status of connected surfaces.

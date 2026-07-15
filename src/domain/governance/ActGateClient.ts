@@ -8,9 +8,18 @@
  *   - Canary requirement for high blast
  *   - Human coordination for irreversible + high blast
  *   - Compensation plan requirement for irreversible
+ *   - WELL readiness gate for high/critical blast (WELL→FORGE bridge)
  *
  * This is the HOW layer, called AFTER ART (what tool) and Kernel (is it lawful).
  * Every A-FORGE execution that exceeds OBSERVE passes through this gate.
+ *
+ * WELL→FORGE Bridge (2026-06-29):
+ *   For EXECUTE_HIGH_IMPACT / IRREVERSIBLE (blast = high/critical):
+ *     → checkWellReadiness(riskLevel) is called BEFORE returning PROCEED
+ *     → WELL HOLD  → execution blocked (HUMAN_REQUIRED)
+ *     → WELL SABAR → human acknowledgment required (HUMAN_REQUIRED with WELL context)
+ *     → WELL PASS  → proceeds normally
+ *     → WELL down  → BLOCKS high/critical (fail-closed on substrate signal)
  *
  * Usage:
  *   import { actCheck, ActGateBlockedError } from "./ActGateClient.js";
@@ -27,6 +36,7 @@
  *   }
  *
  * Forged: 2026-06-21 — ACT layer, sibling of ART
+ * WELL bridge wired: 2026-06-29
  * DITEMPA BUKAN DIBERI — Execution craft is forged, not given
  */
 
@@ -34,6 +44,9 @@
 // We use the same MCP call path as other governance checks.
 const ARIFOS_MCP_URL = process.env.ARIFOS_MCP_URL || "http://127.0.0.1:8088";
 const ACT_GATE_TIMEOUT_MS = parseInt(process.env.ACT_GATE_TIMEOUT_MS || "5000", 10);
+
+// WELL→FORGE bridge — human substrate readiness gate
+import { checkWellReadiness, type WellReadinessResult } from "./wellReadiness.js";
 
 export interface ActGateRequest {
   actionClass: string;
@@ -56,6 +69,8 @@ export interface ActGateResult {
   reason: string;
   recommendedPattern?: string;
   requiredActions: string[];
+  /** WELL→FORGE bridge: populated when blast is high/critical */
+  wellResult?: WellReadinessResult;
 }
 
 export class ActGateBlockedError extends Error {
@@ -114,6 +129,10 @@ function actionClassIsReversible(actionClass: string): boolean {
  *
  * Falls back to local determination if the arifOS MCP is unreachable.
  * This ensures ACT gates are never a single point of failure.
+ *
+ * WELL→FORGE Bridge (2026-06-29):
+ *   After receiving arifOS verdict, if blast is high/critical AND verdict is "proceed",
+ *   call checkWellReadiness. Override verdict if WELL says HOLD/SABAR.
  */
 export async function actCheck(request: ActGateRequest): Promise<ActGateResult> {
   const {
@@ -132,6 +151,7 @@ export async function actCheck(request: ActGateRequest): Promise<ActGateResult> 
 
   const radius = blastRadius || actionClassToBlastRadius(actionClass);
   const reversible = isReversible !== undefined ? isReversible : actionClassIsReversible(actionClass);
+  const isHighOrCritical = radius === "high" || radius === "critical";
 
   // Try to call arifOS MCP for the ACT gate verdict
   try {
@@ -175,20 +195,98 @@ export async function actCheck(request: ActGateRequest): Promise<ActGateResult> 
     const content = data?.result?.content?.[0]?.text;
     if (content) {
       const parsed = JSON.parse(content);
-      return {
+      let result: ActGateResult = {
         allowed: parsed.verdict === "proceed",
         verdict: mapActVerdict(parsed.verdict),
         reason: parsed.reason || "ACT gate processed",
         recommendedPattern: parsed.recommended_pattern,
         requiredActions: buildRequiredActions(parsed.verdict, parsed.reason),
       };
+
+      // WELL→FORGE bridge: gate on operator readiness for high/critical blast
+      if (isHighOrCritical && result.verdict === "PROCEED") {
+        const riskLevel = radius === "critical" ? "critical" : "high";
+        const wellResult = await checkWellReadiness(riskLevel);
+        result.wellResult = wellResult;
+
+        if (wellResult.verdict === "HOLD") {
+          result = {
+            allowed: false,
+            verdict: "HOLD",
+            reason: `[WELL→FORGE] ${wellResult.message}`,
+            recommendedPattern: "wait_for_operator_recovery",
+            requiredActions: [
+              "WELL returned HOLD — operator substrate requires attention",
+              "Wait for biometric state refresh or operator acknowledgment",
+              `Score=${wellResult.score} Fatigue=${wellResult.fatigue}`,
+            ],
+            wellResult,
+          };
+          console.error(`[ACT-GATE] WELL HOLD → blocked (score=${wellResult.score} fatigue=${wellResult.fatigue})`);
+        } else if (wellResult.verdict === "SABAR") {
+          result = {
+            allowed: true,
+            verdict: "HUMAN_REQUIRED",
+            reason: `[WELL→FORGE] ${wellResult.message}`,
+            recommendedPattern: "operator_acknowledgment",
+            requiredActions: [
+              "WELL returned SABAR — operator load elevated",
+              "Confirm intent before high-impact execution",
+              `Score=${wellResult.score} Fatigue=${wellResult.fatigue}`,
+            ],
+            wellResult,
+          };
+          console.warn(`[ACT-GATE] WELL SABAR → human ack required (score=${wellResult.score} fatigue=${wellResult.fatigue})`);
+        } else {
+          console.info(`[ACT-GATE] WELL PASS → proceeding (score=${wellResult.score} fatigue=${wellResult.fatigue})`);
+        }
+      }
+
+      return result;
     }
   } catch (err) {
     console.error(`[ACT-GATE] MCP call failed (${err}) — falling back to local check`);
   }
 
   // ── Fallback: local ACT gate logic ──
-  return localActCheck(actionClass, radius, reversible, isMultiStep, humanAcknowledged);
+  const result = localActCheck(actionClass, radius, reversible, isMultiStep, humanAcknowledged);
+
+  // WELL→FORGE bridge: gate on operator readiness for high/critical blast
+  if (isHighOrCritical && result.verdict === "PROCEED") {
+    const riskLevel = radius === "critical" ? "critical" : "high";
+    const wellResult = await checkWellReadiness(riskLevel);
+    result.wellResult = wellResult;
+
+    if (wellResult.verdict === "HOLD") {
+      return {
+        allowed: false,
+        verdict: "HOLD",
+        reason: `[WELL→FORGE] ${wellResult.message}`,
+        recommendedPattern: "wait_for_operator_recovery",
+        requiredActions: [
+          "WELL returned HOLD — operator substrate requires attention",
+          "Wait for biometric state refresh or operator acknowledgment",
+          `Score=${wellResult.score} Fatigue=${wellResult.fatigue}`,
+        ],
+        wellResult,
+      };
+    } else if (wellResult.verdict === "SABAR") {
+      return {
+        allowed: true,
+        verdict: "HUMAN_REQUIRED",
+        reason: `[WELL→FORGE] ${wellResult.message}`,
+        recommendedPattern: "operator_acknowledgment",
+        requiredActions: [
+          "WELL returned SABAR — operator load elevated",
+          "Confirm intent before high-impact execution",
+          `Score=${wellResult.score} Fatigue=${wellResult.fatigue}`,
+        ],
+        wellResult,
+      };
+    }
+  }
+
+  return result;
 }
 
 /**

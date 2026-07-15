@@ -1,7 +1,7 @@
 # RUNBOOK.md — A-FORGE (Execution Shell)
 
 > **Organ:** A-FORGE | **API Port:** 7071 | **MCP Port:** 7072 | **stdio:** via `npm run mcp:stdio`
-> **Last Updated:** 2026-06-20
+> **Last Updated:** 2026-07-01
 
 ## Start / Stop
 ```bash
@@ -29,6 +29,14 @@ A-FORGE exposes three MCP surfaces. Choose the right one for the client:
 
 **Important:** Both HTTP surfaces use a single shared `McpServer` instance. A second streamable-http client that sends `initialize` will receive `Server already initialized`. For multi-client or agent use, route through **stdio**.
 
+### stdio Terminal Requirement
+`npm run mcp:stdio` does not need an interactive terminal or PTY. It uses MCP JSON-RPC over plain stdin/stdout pipes via `StdioServerTransport`.
+
+- Use a spawned child process with piped stdin/stdout.
+- A TTY is optional and not required for MCP correctness.
+- Do not expect readline prompts or terminal UI on this surface.
+- Send human logs to stderr only; stdout must stay MCP-clean.
+
 ### Restart MCP service
 ```bash
 systemctl restart a-forge-mcp.service
@@ -46,7 +54,7 @@ node -e "import('@modelcontextprotocol/sdk/client/index.js').then(({Client})=>im
 cd /root/A-FORGE
 npm install
 npm run build
-make test            # security-audit + build + 17 test suites
+make test            # security-audit + build + 48 test files
 ```
 
 ## Logs

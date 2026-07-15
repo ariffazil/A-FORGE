@@ -77,7 +77,7 @@ export function createArifOSAgentCard(baseUrl: string): A2AAgentCard {
       "and continuity across sessions. Designed for one human operator.",
     supportedInterfaces: [
       {
-        url: `${baseUrl}/a2a`,
+        url: "https://aaa.arif-fazil.com/a2a",  // AAA is sole A2A gateway
         protocolBinding: "JSONRPC",
         protocolVersion: "1.0",
       },

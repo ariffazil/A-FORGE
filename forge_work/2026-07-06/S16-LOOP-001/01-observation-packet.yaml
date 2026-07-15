@@ -1,0 +1,99 @@
+packet_type: observation_packet
+packet_id: op-20260706-001
+query: >
+  Map all chaos in /root/ that must be removed for F1 AMANAH compliance.
+  Find entropy sources: large dirs, stale data, orphaned caches, git stash, __pycache__.
+domain_hints:
+  - filesystem_entropy
+  - backup_hygiene
+  - cache_management
+  - docker_state
+observations:
+  - obs_id: obs-001
+    type: filesystem_entropy
+    entity: /root/.cache/huggingface/
+    metric: size
+    value: "5.0 GB total, 695 MB remaining after bge-m3 removal"
+    evidence: du -sh ~/.cache/huggingface/
+    confidence: 0.90
+    epistemic: OBSERVED
+  - obs_id: obs-002
+    type: filesystem_entropy
+    entity: /root/AssetOpsBench/.venv/
+    metric: size
+    value: "8.0 GB, .env present, 1 commit ahead of origin"
+    evidence: du -sh /root/AssetOpsBench/.venv/ + git status
+    confidence: 0.90
+    epistemic: OBSERVED
+  - obs_id: obs-003
+    type: filesystem_entropy
+    entity: /root/arifOS/.venv/lib/python3.12/site-packages/nvidia/
+    metric: size
+    value: "4.3 GB CUDA/NVSHMEM libs, no runtime imports found"
+    evidence: grep -r "import torch" /root/arifOS/ --include="*.py" (none outside research/)
+    confidence: 0.85
+    epistemic: DERIVED
+  - obs_id: obs-004
+    type: filesystem_entropy
+    entity: /root/backups/entropy-reduction-2026-06-30/
+    metric: size
+    value: "5.4 GB, superseded by latest backup"
+    evidence: du -sh /root/backups/
+    confidence: 0.90
+    epistemic: OBSERVED
+  - obs_id: obs-005
+    type: docker_state
+    entity: dangling docker volumes
+    metric: count
+    value: "5 orphaned volumes (not attached to running containers)"
+    evidence: docker volume ls -f dangling=true
+    confidence: 0.90
+    epistemic: OBSERVED
+  - obs_id: obs-006
+    type: filesystem_entropy
+    entity: /root/.npm/_npx/
+    metric: size
+    value: "546 MB stale npx cache, purged to 4 KB"
+    evidence: du -sh /root/.npm/_npx/
+    confidence: 0.90
+    epistemic: OBSERVED
+  - obs_id: obs-007
+    type: git_state
+    entity: git stashes across all federation repos
+    metric: count
+    value: "31 stashes total (17 in arifOS alone)"
+    evidence: git stash list in each repo
+    confidence: 0.90
+    epistemic: OBSERVED
+  - obs_id: obs-008
+    type: filesystem_entropy
+    entity: __pycache__ + .pyc files
+    metric: count
+    value: "2915 __pycache__ dirs, 7708 .pyc files system-wide"
+    evidence: find /root -name __pycache__ -type d | wc -l
+    confidence: 0.90
+    epistemic: OBSERVED
+  - obs_id: obs-009
+    type: docker_state
+    entity: running containers
+    metric: count
+    value: "11 containers running (postgres, qdrant, redis, minio, temporal, etc.)"
+    evidence: docker ps
+    confidence: 0.90
+    epistemic: OBSERVED
+  - obs_id: obs-010
+    type: filesystem_entropy
+    entity: /root/.openclaw/
+    metric: size
+    value: "2.3 GB (npm 878MB, agents 658MB, memory 536MB, logs 22MB)"
+    evidence: du -sh /root/.openclaw/*/
+    confidence: 0.90
+    epistemic: OBSERVED
+owning_organs:
+  - aforge
+next_route: opencode
+receipts:
+  - ts_utc: "2026-07-06T14:43:00Z"
+    actor: FORGE-000Ω
+    action: filesystem scan
+    tool: bash (du, find, docker ps/volume ls, git stash list)

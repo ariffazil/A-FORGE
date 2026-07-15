@@ -43,8 +43,8 @@ export interface GovernanceBridgeOptions {
 const LOCAL_TOOL_RISK_MAP: Record<string, RiskTier> = {
   // T0 INERT — read-only
   arif_session_init: "T0_INERT",
-  arif_sense_observe: "T0_INERT",
-  arif_heart_critique: "T0_INERT",
+  arif_observe: "T0_INERT",
+  arif_critique: "T0_INERT",
   arif_ops_measure: "T0_INERT",
   arif_mind_reason: "T0_INERT",
   arif_memory_recall: "T0_INERT",
@@ -217,6 +217,6 @@ export class GovernanceBridge {
     if (lowered.includes("memory") && (lowered.includes("write") || lowered.includes("store"))) {
       return "arif_memory_recall";
     }
-    return "arif_sense_observe";
+    return "arif_observe";
   }
 }

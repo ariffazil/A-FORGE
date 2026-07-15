@@ -1,0 +1,331 @@
+{
+  "seal_type": "999_RECURSIVE_HARDEN",
+  "session_id": "session-2026-07-09-recursive-harden-seal",
+  "epoch": "2026-07-09T00:32:00.569765+00:00",
+  "actor": "grok-build",
+  "actor_verified": true,
+  "authority": "SOVEREIGN_DIRECTIVE",
+  "verdict": "SEAL",
+  "git_commit": "81363294f",
+  "stack_health": {
+    "skills": {
+      "healthy": 36,
+      "missing_canonical": [],
+      "drifted": 0,
+      "canonical_present": 4
+    },
+    "kernel": {
+      "floors_active": 13,
+      "status": "healthy",
+      "git_commit": "8136329",
+      "runtime_drift": false,
+      "tools_loaded": 17,
+      "violations": []
+    },
+    "tools": {
+      "arifos_tools_loaded": 17,
+      "arifos_exposed": 12,
+      "phantom": 0,
+      "gate_drift_known": [
+        "forge_tier_bind residual BANGANG optional unregister"
+      ]
+    },
+    "prompts": {
+      "registry_count": 8,
+      "canonical_sequence": 8,
+      "missing": [],
+      "seal_prompt_chars": 7265,
+      "healthy": 8,
+      "stale": 0,
+      "runner_dry_run_export": false,
+      "tests": "8/8 prompt surface (7 registry + 1 runner dry-run)"
+    },
+    "resources": {
+      "carry_forward": true,
+      "harden_prompt": true,
+      "llms_txt": "200",
+      "manifest_txt": "404",
+      "broken": [
+        "http://127.0.0.1:8088/manifest.txt \u2192 404"
+      ]
+    },
+    "organs": {
+      "arifOS": "healthy",
+      "A-FORGE": "healthy",
+      "AAA": "healthy",
+      "GEOX": "healthy",
+      "WEALTH": "ALIVE",
+      "WELL": "degraded",
+      "litellm": "I'm alive!"
+    },
+    "seal_chain": {
+      "ok": true,
+      "length": 92,
+      "head": "sha256:856d6dc6ed5df4d1d5db8773551a78f0ab4d5d098c35260faf47b12638e6e37f"
+    }
+  },
+  "gaps_remaining": 7,
+  "gaps": [
+    {
+      "severity": "HIGH",
+      "layer": "resources",
+      "description": "arifOS /manifest.txt returns 404",
+      "evidence": "OBS: curl :8088/manifest.txt \u2192 404",
+      "fix": "Restore manifest endpoint or retarget tool_manifest_url",
+      "effort": "30\u201390 LOC",
+      "blocks_seal": false,
+      "artifact_or_path": "/manifest.txt"
+    },
+    {
+      "severity": "HIGH",
+      "layer": "well",
+      "description": "WELL state honest STALE/MOCK \u2014 no live biometrics",
+      "evidence": "OBS: state.json freshness=STALE environment=MOCK",
+      "fix": "Arif biometric feed or permanent mock banner",
+      "effort": "human substrate",
+      "blocks_seal": false,
+      "artifact_or_path": "/root/WELL/state.json"
+    },
+    {
+      "severity": "MEDIUM",
+      "layer": "doctrine",
+      "description": "3 sovereign doxes remain DRAFT_ONLY",
+      "evidence": "OBS: memory/2026-07-08 doxes",
+      "fix": "F13 word to 999_seal each dox",
+      "effort": "seal ritual",
+      "blocks_seal": false,
+      "artifact_or_path": "/root/memory/2026-07-08*.md"
+    },
+    {
+      "severity": "MEDIUM",
+      "layer": "tools",
+      "description": "Optional: forge_tier_bind + ~31 affordance desc drifts",
+      "evidence": "DER: prior polish queue",
+      "fix": "Unregister forge_tier_bind + regen affordances",
+      "effort": "1\u20132h",
+      "blocks_seal": false,
+      "artifact_or_path": "A-FORGE affordances"
+    },
+    {
+      "severity": "MEDIUM",
+      "layer": "tools",
+      "description": "A-FORGE stateless HTTP missing resources/list",
+      "evidence": "OBS: CONTEXT blocker",
+      "fix": "Implement or document intentional absence",
+      "effort": "hours",
+      "blocks_seal": false,
+      "artifact_or_path": "A-FORGE MCP :7072"
+    },
+    {
+      "severity": "LOW",
+      "layer": "prompts",
+      "description": "pytest return-bool warnings + Pydantic Config deprecations",
+      "evidence": "OBS: PytestReturnNotNoneWarning",
+      "fix": "assert not return; ConfigDict",
+      "effort": "small",
+      "blocks_seal": false,
+      "artifact_or_path": "test_prompt_registry.py"
+    },
+    {
+      "severity": "LOW",
+      "layer": "geology",
+      "description": "GEOX COT science queue deferred",
+      "evidence": "OBS: CONTEXT COT remaining",
+      "fix": "Run 000-999 when basin specified",
+      "effort": "science session",
+      "blocks_seal": false,
+      "artifact_or_path": "GEOX COT"
+    }
+  ],
+  "init_tasks": [
+    {
+      "id": "T1",
+      "priority": "HIGH",
+      "layer": "resources",
+      "task": "Restore or retarget arifOS tool manifest HTTP path (manifest.txt 404)",
+      "evidence": "curl :8088/manifest.txt \u2192 404",
+      "effort": "30-90 LOC",
+      "first_path": "/root/arifOS/arifosmcp/runtime",
+      "first_lawful_call": "curl -s http://127.0.0.1:8088/health | jq .tool_manifest_url"
+    },
+    {
+      "id": "T2",
+      "priority": "HIGH",
+      "layer": "well",
+      "task": "Refresh WELL biometrics or formalize permanent mock banner in cockpit",
+      "evidence": "state.json STALE/MOCK",
+      "effort": "human + small code",
+      "first_path": "/root/WELL/state.json",
+      "first_lawful_call": "curl -s http://127.0.0.1:18083/health"
+    },
+    {
+      "id": "T3",
+      "priority": "MEDIUM",
+      "layer": "doctrine",
+      "task": "F13 999-seal the three 2026-07-08 DRAFT doxes if canon desired",
+      "evidence": "DRAFT_ONLY overnight brief",
+      "effort": "seal ritual",
+      "first_path": "/root/memory/2026-07-08.md",
+      "first_lawful_call": "read carry_forward init_tasks"
+    },
+    {
+      "id": "T4",
+      "priority": "MEDIUM",
+      "layer": "tools",
+      "task": "Optional: unregister forge_tier_bind + regen A-FORGE affordance cards",
+      "evidence": "prior polish queue",
+      "effort": "1-2h",
+      "first_path": "/root/A-FORGE",
+      "first_lawful_call": "tools/list on :7072"
+    },
+    {
+      "id": "T5",
+      "priority": "MEDIUM",
+      "layer": "tools",
+      "task": "Document or implement A-FORGE resources/list on stateless HTTP",
+      "evidence": "CONTEXT active blocker",
+      "effort": "hours",
+      "first_path": "/root/A-FORGE",
+      "first_lawful_call": "MCP resources/list probe"
+    }
+  ],
+  "future_init_seal_pack": {
+    "top_3_priorities": [
+      "T1 manifest path",
+      "T2 WELL honesty vs live feed",
+      "T3 doctrine 999 if wanted"
+    ],
+    "inspect_first": [
+      "/root/.local/share/arifos/carry_forward.json",
+      "/root/A-FORGE/forge_work/2026-07-09/999-RECURSIVE-HARDEN-SEAL.md",
+      "http://127.0.0.1:8088/health"
+    ],
+    "first_lawful_mcp_or_http": "GET http://127.0.0.1:8088/health then read carry_forward.init_tasks",
+    "proof_anchors": {
+      "arifos_commit": "81363294f",
+      "runtime_drift": false,
+      "floors_active": 13,
+      "seal_prompt_chars": 7265,
+      "prompt_tests": "8 passed (7 registry + runner_dry_run)",
+      "chain_ok": true,
+      "chain_length": 92
+    }
+  },
+  "assumption_ledger": [
+    {
+      "assumption": "Prompt spine invariants hold for all organs without per-repo forks",
+      "if_wrong": "Domain organs need local prompt overlays again"
+    },
+    {
+      "assumption": "runtime_drift=false after prompt deploy means live MCP serves new 999_SEAL text",
+      "if_wrong": "Need prompt cache bust"
+    },
+    {
+      "assumption": "Self-heal expect_key=status remains valid for AAA/arifOS health shape",
+      "if_wrong": "15m thrash returns"
+    },
+    {
+      "assumption": "WELL mock honesty preferred over inventing biometrics",
+      "if_wrong": "Operator expects live scores"
+    },
+    {
+      "assumption": "Doctrine DRAFTs intentionally unsealed until F13 word",
+      "if_wrong": "Canon already elsewhere"
+    }
+  ],
+  "hardened_this_session": [
+    "arifOS prompts SEAL spine + invariants + GAP + INIT",
+    "prompt_registry.yaml repo-agnostic 999_seal metadata",
+    "AAA/prompts/999_RECURSIVE_HARDEN.md",
+    "RUNNER_DRY_RUN_PROMPT export restored",
+    "prompts deployed to /opt/arifos/app",
+    "digital queue P0/P1 earlier same day"
+  ],
+  "verified_healthy": [
+    "6 organs + litellm up",
+    "floors=13",
+    "runtime_drift=False",
+    "seal_chain ok",
+    "8/8 prompt tests"
+  ],
+  "still_broken": [
+    "arifOS /manifest.txt returns 404",
+    "WELL state honest STALE/MOCK \u2014 no live biometrics"
+  ],
+  "deferred_to_next_init": [
+    "T1: Restore or retarget arifOS tool manifest HTTP path (manifest.txt 404)",
+    "T2: Refresh WELL biometrics or formalize permanent mock banner in cockpit",
+    "T3: F13 999-seal the three 2026-07-08 DRAFT doxes if canon desired",
+    "T4: Optional: unregister forge_tier_bind + regen A-FORGE affordance cards",
+    "T5: Document or implement A-FORGE resources/list on stateless HTTP"
+  ],
+  "carry_forward_path": "/root/.local/share/arifos/carry_forward.json",
+  "next_000_init_load": [
+    {
+      "id": "T1",
+      "priority": "HIGH",
+      "layer": "resources",
+      "task": "Restore or retarget arifOS tool manifest HTTP path (manifest.txt 404)",
+      "evidence": "curl :8088/manifest.txt \u2192 404",
+      "effort": "30-90 LOC",
+      "first_path": "/root/arifOS/arifosmcp/runtime",
+      "first_lawful_call": "curl -s http://127.0.0.1:8088/health | jq .tool_manifest_url"
+    },
+    {
+      "id": "T2",
+      "priority": "HIGH",
+      "layer": "well",
+      "task": "Refresh WELL biometrics or formalize permanent mock banner in cockpit",
+      "evidence": "state.json STALE/MOCK",
+      "effort": "human + small code",
+      "first_path": "/root/WELL/state.json",
+      "first_lawful_call": "curl -s http://127.0.0.1:18083/health"
+    },
+    {
+      "id": "T3",
+      "priority": "MEDIUM",
+      "layer": "doctrine",
+      "task": "F13 999-seal the three 2026-07-08 DRAFT doxes if canon desired",
+      "evidence": "DRAFT_ONLY overnight brief",
+      "effort": "seal ritual",
+      "first_path": "/root/memory/2026-07-08.md",
+      "first_lawful_call": "read carry_forward init_tasks"
+    },
+    {
+      "id": "T4",
+      "priority": "MEDIUM",
+      "layer": "tools",
+      "task": "Optional: unregister forge_tier_bind + regen A-FORGE affordance cards",
+      "evidence": "prior polish queue",
+      "effort": "1-2h",
+      "first_path": "/root/A-FORGE",
+      "first_lawful_call": "tools/list on :7072"
+    },
+    {
+      "id": "T5",
+      "priority": "MEDIUM",
+      "layer": "tools",
+      "task": "Document or implement A-FORGE resources/list on stateless HTTP",
+      "evidence": "CONTEXT active blocker",
+      "effort": "hours",
+      "first_path": "/root/A-FORGE",
+      "first_lawful_call": "MCP resources/list probe"
+    }
+  ],
+  "artifacts": [
+    "/root/arifOS/arifosmcp/prompts/__init__.py",
+    "/root/arifOS/arifosmcp/registry/prompt_registry.yaml",
+    "/root/AAA/prompts/999_RECURSIVE_HARDEN.md",
+    "/root/A-FORGE/forge_work/2026-07-09/999-RECURSIVE-HARDEN-SEAL.md",
+    "/root/A-FORGE/forge_work/2026-07-09/INIT_TASKS.json"
+  ],
+  "protocol": "SEAL \u2192 RECURSIVE_HARDEN \u2192 GAP_SCAFFOLD \u2192 INIT_TASKS \u2192 VAULT999 \u2192 carry_forward.json \u2192 session close",
+  "humility": {
+    "unknowns": [
+      "MCP client prompt cache across restart",
+      "When live WELL biometrics arrive"
+    ],
+    "would_change_mind": "CRITICAL organ down or chain verify fail"
+  },
+  "seal_id": "sha256:60b7a7414fe5daadcd514f59e5106e48990ae9de472b703132a9b01921f6a344"
+}

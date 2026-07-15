@@ -1,0 +1,68 @@
+{
+  "policies": [
+    {
+      "policy_id": "containment:2026-07-12",
+      "actor_id": "*",
+      "role": "containment",
+      "description": "CONTAINMENT: Force OBSERVE_ONLY until identity fix is verified. Blocks all MUTATE/ATOMIC tools.",
+      "allow_by_default": false,
+      "denied_mcp_servers": ["aforge"],
+      "allowed_mcp_servers": {
+        "aforge": {
+          "allow": true,
+          "default_tool_policy": {
+            "allow": false,
+            "deny_tools": []
+          },
+          "tools": {
+            "forge_session_init": { "allow": true },
+            "forge_health_check": { "allow": true },
+            "forge_probe": { "allow": true },
+            "forge_registry": { "allow": true },
+            "forge_registry_status": { "allow": true },
+            "forge_fingerprint_check": { "allow": true },
+            "forge_isomorphism_check": { "allow": true },
+            "forge_surface_audit": { "allow": true },
+            "forge_surface_guard": { "allow": true },
+            "forge_security_drift_scan": { "allow": true },
+            "forge_vps_ports": { "allow": true },
+            "forge_vps_services": { "allow": true },
+            "forge_vps_cron": { "allow": true },
+            "forge_journalctl": { "allow": true },
+            "forge_worktree": { "allow": true },
+            "forge_git": { "allow": true },
+            "forge_memory": { "allow": true },
+            "forge_vault": { "allow": true },
+            "forge_scar": { "allow": true },
+            "forge_scar_scan": { "allow": true },
+            "forge_search": { "allow": true },
+            "forge_fetch": { "allow": true },
+            "forge_research": { "allow": true },
+            "forge_docs_lookup": { "allow": true },
+            "forge_filesystem_read": { "allow": true },
+            "forge_filesystem_search": { "allow": true },
+            "forge_filesystem_stat": { "allow": true },
+            "forge_filesystem_tree": { "allow": true },
+            "forge_chart": { "allow": true },
+            "forge_shell_dryrun": { "allow": true },
+            "forge_shell_alert_history": { "allow": true },
+            "forge_shell_ledger": { "allow": true },
+            "forge_shell_status": { "allow": true },
+            "forge_evaluate": { "allow": true },
+            "forge_predict": { "allow": true },
+            "forge_witness": { "allow": true },
+            "forge_status": { "allow": true },
+            "forge_lease": { "allow": true },
+            "forge_job": { "allow": true },
+            "forge_document_ingest": { "allow": true },
+            "forge_probe_site": { "allow": true },
+            "forge_wealth": { "allow": true },
+            "forge_well": { "allow": true },
+            "forge_github": { "allow": true }
+          }
+        }
+      },
+      "max_requests_per_minute": 600
+    }
+  ]
+}

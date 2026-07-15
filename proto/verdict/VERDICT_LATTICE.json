@@ -1,0 +1,257 @@
+{
+  "meta": {
+    "name": "VERDICT_LATTICE",
+    "version": "1.0",
+    "forged": "2026-07-07",
+    "forger": "FORGE (000Ω) bound to 333-AGI",
+    "status": "PROPOSAL — F13 ratification PENDING",
+    "scope": "whole /root federation + 7 GitHub repos",
+    "license": "AGPL-3.0",
+    "canonical_doc": "/root/A-FORGE/proto/verdict/VERDICTCANONv1.md",
+    "supersedes_post_ratification": [
+      "/root/arifOS/arifosmcp/models/verdicts.py:21-24 (SealType — add PARTIAL)",
+      "/root/A-FORGE/proto/bridge/verdict.ts:14 (VERDICT_TYPES — add PARTIAL)"
+    ]
+  },
+
+  "routing_compile_into_runtime": {
+    "insight": "5-state lattice restores monotonicity over half-sealed 4-state canon",
+    "organ": "F1-F13 + W³ + maruah_layer",
+    "failure_mode": "verdict drift across organ-languages; PARTIAL runtime but not canon; monotonicity break",
+    "action": "formalize 5-state canon; lay groundwork for ratification",
+    "telemetry": "VAULT999 seal_chain.jsonl; scar tissue for any pre-ratification drift",
+    "status": "REUSE_EXISTING"
+  },
+
+  "lattice": {
+    "name": "J-Space Verdict Lattice",
+    "monotone": true,
+    "ordering": ["VOID", "HOLD", "SABAR", "PARTIAL", "SEAL"],
+    "monotonicity_rule": "VOID > HOLD > SABAR > PARTIAL > SEAL (most → least restrictive)",
+    "merge_function": "max_rank(v1, v2) = verdict with higher rank; commutative and associative",
+    "rank": {
+      "VOID": 5,
+      "HOLD": 4,
+      "SABAR": 3,
+      "PARTIAL": 2,
+      "SEAL": 1
+    },
+    "terminal_verdicts": ["VOID", "SEAL"],
+    "live_verdicts": ["HOLD", "SABAR", "PARTIAL"]
+  },
+
+  "states": [
+    {
+      "name": "VOID",
+      "rank": 5,
+      "restrictive": "most",
+      "trigger": "any HARD floor violation",
+      "trigger_line": "/root/arifOS/core/laws.py:353",
+      "meaning": "constitutionally prohibited; permanent block",
+      "caller_action": "hard-stop, log, escalate (no retry)",
+      "terminal": true,
+      "substates": ["VOID_BREACH", "VOID_HANTU", "VOID_IRREVERSIBLE"]
+    },
+    {
+      "name": "HOLD",
+      "rank": 4,
+      "restrictive": "high",
+      "trigger": "risk tier CRITICAL/HIGH; SOFT + DERIVED both violated; P1 paradox",
+      "trigger_line": "/root/arifOS/core/laws.py:356, 359, 368",
+      "meaning": "pending sovereign or witness judgment; reversible pause",
+      "caller_action": "wait for sovereign ack (F11 actor + F13 arif)",
+      "terminal": false,
+      "substates": ["HOLD_888", "HOLD_UNCERTAINTY", "HOLD_TEMPORAL"]
+    },
+    {
+      "name": "SABAR",
+      "rank": 3,
+      "restrictive": "medium",
+      "trigger": "SOFT floor violated (only); P1 paradox cooling",
+      "trigger_line": "/root/arifOS/core/laws.py:362, 380",
+      "meaning": "proceed with care; retry allowed when condition resolves",
+      "caller_action": "wait for evidence refresh; retry",
+      "terminal": false,
+      "substates": ["SABAR_EPISTEMIC", "SABAR_GEOPOLITICAL"]
+    },
+    {
+      "name": "PARTIAL",
+      "rank": 2,
+      "restrictive": "low",
+      "trigger": "DERIVED floor warned (no HARD/SOFT breach)",
+      "trigger_line": "/root/arifOS/core/laws.py:365",
+      "meaning": "proceed with cooling telemetry; monitor",
+      "caller_action": "execute; emit cooling telemetry; track for scar",
+      "terminal": false,
+      "substates": ["PARTIAL_DERIVED", "PARTIAL_REVERSIBILITY"],
+      "new_canon_v1": true
+    },
+    {
+      "name": "SEAL",
+      "rank": 1,
+      "restrictive": "least",
+      "trigger": "all constitutional floors pass; W³ ≥ 0.95",
+      "trigger_line": "/root/arifOS/core/laws.py:371",
+      "meaning": "lawful; proceed; emit irreversible seal at S999",
+      "caller_action": "execute; seal to VAULT999",
+      "terminal": true,
+      "substates": ["SEAL_CANONICAL", "SEAL_QUALIFIED"]
+    }
+  ],
+
+  "monotonicity_proof_sketch": {
+    "claim": "V > H > S > P > SE is a total order on the verdict lattice",
+    "rank_assignment": {
+      "VOID": 5,
+      "HOLD": 4,
+      "SABAR": 3,
+      "PARTIAL": 2,
+      "SEAL": 1
+    },
+    "merge": "merge(v1, v2) = max(rank(v1), rank(v2))",
+    "properties": {
+      "commutative": "merge(v1, v2) == merge(v2, v1)",
+      "associative": "merge(merge(v1, v2), v3) == merge(v1, merge(v2, v3))",
+      "idempotent": "merge(v, v) == v",
+      "terminal": "VOID and SEAL cannot be transitioned out of"
+    },
+    "witness_threshold": {
+      "seal_minimum": 0.95,
+      "H_canonical": 0.42,
+      "AI_canonical": 0.32,
+      "Earth_canonical": 0.26
+    }
+  },
+
+  "manifolds": {
+    "V_g_governance": {
+      "states_count": 5,
+      "states": ["VOID", "HOLD", "SABAR", "PARTIAL", "SEAL"],
+      "monotone": true,
+      "owner": "arifOS kernel (/root/arifOS/core/laws.py)",
+      "authority": "F1-F13 floors",
+      "may_block_action": true,
+      "canonical_source": "/root/arifOS/arifosmcp/models/verdicts.py"
+    },
+    "V_d_delivery": {
+      "states_count": 4,
+      "states": ["M_CLEAN", "M_ADJUST", "M_REPAIR", "M_HOLD"],
+      "monotone": false,
+      "owner": "/root/arifOS/arifosmcp/core/maruah_layer.py",
+      "authority": "L13 SOVEREIGN (advisory overlay only)",
+      "may_block_action": false,
+      "canonical_source": "/root/arifOS/arifosmcp/core/maruah_layer.py"
+    },
+    "V_t_transport": {
+      "states_count": 5,
+      "states": ["SUCCESS", "ERROR", "TIMEOUT", "RETRY", "HOLD"],
+      "monotone": false,
+      "owner": "A-FORGE / arifOS transport (forge_shell et al.)",
+      "authority": "NONE — purely observational",
+      "may_block_action": false,
+      "canonical_source": "/root/arifOS/arifosmcp/models/verdicts.py:200-211"
+    },
+    "W3_witness": {
+      "range": [0.0, 1.0],
+      "type": "continuous",
+      "formula": "W³ = ∛(Human × AI × External)",
+      "widened_runtime": "W⁴ = ∛(Human × AI × External × Vault-Shadow)",
+      "threshold_seal": 0.95,
+      "owner": "arifOS kernel + AAA mesh",
+      "authority": "F3 WITNESS floor",
+      "may_block_action": true
+    }
+  },
+
+  "floors": {
+    "total": 13,
+    "prefix_F_user_flow": ["F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9"],
+    "prefix_L_system_substrate": ["L10", "L11", "L12", "L13"],
+    "complete_13": [
+      {"id": "F1", "alt": "L01", "name": "AMANAH", "type": "HARD"},
+      {"id": "F2", "alt": "L02", "name": "TRUTH", "type": "HARD"},
+      {"id": "F3", "alt": "L03", "name": "WITNESS", "type": "SOFT"},
+      {"id": "F4", "alt": "L04", "name": "CLARITY", "type": "SOFT"},
+      {"id": "F5", "alt": "L05", "name": "PEACE²", "type": "SOFT"},
+      {"id": "F6", "alt": "L06", "name": "MARUAH (DIGNITY)", "type": "SOFT"},
+      {"id": "F7", "alt": "L07", "name": "HUMILITY", "type": "SOFT"},
+      {"id": "F8", "alt": "L08", "name": "GENIUS", "type": "SOFT"},
+      {"id": "F9", "alt": "L09", "name": "ANTI-HANTU", "type": "HARD"},
+      {"id": "L10", "alt": null, "name": "AMANAH (FIDUCIARY)", "type": "HARD"},
+      {"id": "L11", "alt": null, "name": "IDENTITY", "type": "HARD"},
+      {"id": "L12", "alt": null, "name": "CONTINUITY", "type": "HARD"},
+      {"id": "L13", "alt": null, "name": "SOVEREIGNTY", "type": "HARD"}
+    ],
+    "L13_intersection": [
+      "V_g: L13 floor (only this floor blocks SEAL)",
+      "V_d: L13 ratifies M-Layer output",
+      "V_t: L13 ignores (transport only observes)",
+      "W³: L13 supplies the Human channel"
+    ]
+  },
+
+  "delivery_verdict_disjoint": {
+    "rule": "DeliveryVerdict (M-Layer) is DISJOINT from Verdict (governance)",
+    "M_layer_states": ["M_CLEAN", "M_ADJUST", "M_REPAIR", "M_HOLD"],
+    "governance_states": ["SEAL", "HOLD", "SABAR", "PARTIAL", "VOID"],
+    "may_m_layer_override_governance": false,
+    "may_l13_ratify_M_layer": true,
+    "M_layer_orthogonality_principle": "advisory overlay; cannot block F1-F13 output",
+    "canonical_doc": "/root/A-FORGE/proto/verdict/DELIVERYVERDICTBOUNDARY.md"
+  },
+
+  "migration_actions": [
+    {
+      "id": "M1",
+      "action": "Add PARTIAL to SealType in /root/arifOS/arifosmcp/models/verdicts.py:21-24",
+      "reversible_until_seal": true,
+      "f13_ack": true
+    },
+    {
+      "id": "M2",
+      "action": "Update monotonicity docblock at /root/arifOS/arifosmcp/models/verdicts.py:217-228 to 5-state",
+      "reversible_until_seal": true,
+      "f13_ack": true
+    },
+    {
+      "id": "M3",
+      "action": "Add PARTIAL_DERIVED and PARTIAL_REVERSIBILITY to VerdictState",
+      "reversible_until_seal": true,
+      "f13_ack": true
+    },
+    {
+      "id": "M4",
+      "action": "Update VERDICT_TYPES at /root/A-FORGE/proto/bridge/verdict.ts:14 to include \"PARTIAL\"",
+      "reversible_until_seal": true,
+      "f13_ack": true
+    },
+    {
+      "id": "M5",
+      "action": "Append '# v1.0 ratified YYYY-MM-DD' to both verdicts.py and verdict.ts",
+      "reversible_until_seal": true,
+      "f13_ack": false
+    },
+    {
+      "id": "M6",
+      "action": "Add monotonicity test suite at /root/arifOS/tests/test_verdict_lattice.py",
+      "reversible_until_seal": true,
+      "f13_ack": false
+    },
+    {
+      "id": "M7",
+      "action": "Call arif_seal(mode=seal) with payload = canonical reference → VAULT999 seq=N+1",
+      "reversible_until_seal": false,
+      "f13_ack": true,
+      "note": "the actual ignition — single keystroke"
+    }
+  ],
+
+  "receipt": {
+    "audit_id": "VERDICT_CANON::v1.0::2026-07-07::PROPOSAL",
+    "mutations": 0,
+    "files_written": 4,
+    "git_commits": 0,
+    "vault_seals": 0,
+    "verdict": "SABAR_GEOPOLITICAL — canon ready, awaiting sovereign ratification"
+  }
+}

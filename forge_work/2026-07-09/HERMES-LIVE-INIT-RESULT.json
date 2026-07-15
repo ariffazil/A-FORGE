@@ -1,0 +1,34 @@
+{
+  "live_init": {
+    "actor_id": "hermes",
+    "actor_type": "telegram_bridge",
+    "parent_organ": "AAA",
+    "capabilities": [
+      "forward_message",
+      "receive_pulse",
+      "emit_alert",
+      "a2a_relay"
+    ],
+    "requested_authority": "EXECUTE_APPROVED",
+    "fingerprint": "sha256:c1f0481c08d3c611bb37b7ae98da122c39fd54a36f34af0f05aefbc149e41c78",
+    "actor_signature_b64": "/vJjMHLyAaYbJRllevNTqGg/h2ESfWLdZ9G25JNvs01JqH/jyLcYHWcDC+CuQOuZt/1AHIFXQXkUvmkIXg7nAw==",
+    "signature_payload": "hermes:1783561032:1783561032:hermes-live-init",
+    "doctrine_ref": "114e226187be4bf4",
+    "nonce": "1783561032:hermes-live-init",
+    "timestamp": 1783561032,
+    "mode": "live"
+  },
+  "kernel_response": null,
+  "pulse_dry_run": {
+    "type": "hermes_pulse",
+    "actor": "hermes",
+    "authority": "EXECUTE_APPROVED",
+    "doctrine_ref": "114e226187be4bf4",
+    "seal_ref": "b186389f4d2844a5",
+    "message": "\ud83d\udd10 HERMES ONLINE \u2014 arifOS agent commissioned. F13 sovereign-gated. Awaiting external witness (tri-witness step 3/3).",
+    "timestamp": "2026-07-09T01:37:14.196564+00:00",
+    "dry_run": true
+  },
+  "status": "COMMISSIONED_PENDING_EXTERNAL_WITNESS",
+  "timestamp": "2026-07-09T01:37:14.196872+00:00"
+}

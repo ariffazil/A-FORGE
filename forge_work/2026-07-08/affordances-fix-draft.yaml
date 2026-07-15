@@ -1,0 +1,149 @@
+# affordances-fix-draft.yaml
+#
+# STATUS: DRAFT — awaiting sovereign ratification
+# FORGED: 2026-07-08T08:11Z by opencode@af-forge (MiMo-M3)
+# PURPOSE: Reconcile 32-drift finding from forge_surface_audit(organ=aforge, mode=audit)
+# APPLIES TO: /root/A-FORGE/a_think/affordances.yaml (CONSTITUTIONAL SURFACE)
+#
+# ----------------------------------------------------------------------
+# GOVERNANCE NOTE — DO NOT AUTO-APPLY
+# ----------------------------------------------------------------------
+# This file is a SCRATCH artifact under /root/A-FORGE/forge_work/2026-07-08/.
+# It records the *intent* to edit the constitutional surface but does not
+# perform the edit. Apply only after:
+#   1. Sovereign ack of the new affordances.yaml diff
+#   2. forge_lease succeeds with sufficient scope (currently fails:
+#      "Agent 'opencode' not registered")
+#   3. forge_filesystem_patch or forge_filesystem_write runs against the
+#      target file under a sealed session
+# The seam is documented; the seam is respected.
+# ----------------------------------------------------------------------
+
+audit:
+  tool: forge_surface_audit
+  organ: aforge
+  mode: audit
+  timestamp: 2026-07-08T08:11:54.190Z
+  registry_count: 71
+  affordance_count: 99
+  drift_count: 32
+  severity: HIGH
+  fingerprint: 95d6a368c5c081ae
+  chain_hash: 248d7b5f2b78a693
+  recommendation: Run mode=fix, OR surgically edit yaml (this file).
+
+phantom_tools:
+  # Listed in affordances.yaml but NOT in live registry. REMOVE each.
+  # 30 entries. Source: forge_surface_audit(mode=audit) findings.
+  - arif_init
+  - arif_observe
+  - arif_think
+  - arif_judge_deliberate
+  - arif_seal
+  - forge_vps_ports
+  - forge_vps_services
+  - forge_vps_cron
+  - forge_boundaries_assert
+  - forge_dry_run
+  - forge_fetch
+  - forge_fetch_url
+  - forge_fetch_json
+  - forge_fetch_metadata
+  - forge_fetch_links
+  - geox_basin
+  - geox_petrophysics
+  - geox_seismic_compute
+  - geox_claim
+  - wealth_compute_emv
+  - wealth_compute_npv
+  - wealth_vault_write
+  - well_validate_vitality
+  - well_guard_dignity
+  - forge8_execute
+  - forge_github_create_or_update_file
+  - forge_github_create_pull_request
+  - forge_scan
+  - forge_skillstore_read
+  - forge_skillstore_write
+
+missing_tools:
+  # Live in registry but NOT in affordances.yaml. ADD with full risk contracts.
+  - tool_name: forge_generated
+    description: "[TEMPLATE] do a thing now"
+    domain: hermes
+    action_class: OBSERVE
+    blast_radius: low
+    reversibility: FULL
+    governance: "SABAR (Q<0.20 — vague action potential, see forge_evaluate)"
+    scar_history: scar-law-test @ 2026-06-28T08:14:49Z
+    vault_seal_id: seal_1782634489766_614a7a38
+    notes: >-
+      Templates are placeholders for forge_skill LLM generation. Mark as
+      TEMPLATE_* in affordances.yaml so future audits don't re-flag them as
+      phantom.
+  - tool_name: forge_github_create_pr
+    description: "Live registry entry. Likely an alias for the canonical
+      forge_github_create_pull_request which is in PHANTOM list."
+    domain: aforge
+    action_class: MUTATE
+    blast_radius: medium
+    reversibility: NONE-on-merged, FULL-pre-merge
+    governance: "REQUIRES_LEASE — sovereign ack on first merge to main"
+    notes: >-
+      Resolve alias relationship with forge_github_create_pull_request.
+      Prefer canonical name; deprecate alias with redirect pointer.
+
+edit_strategy:
+  type: surgical_yaml_edit
+  preconditions:
+    - actor_verified: true
+    - sovereign_ack: present
+    - lease_id: forge_lease succeeded
+    - vault_seal: pending post-edit
+  target_file: /root/A-FORGE/a_think/affordances.yaml
+  procedure:
+    - step: 1
+      action: Read affordances.yaml with forge_filesystem_read (OBSERVE-class).
+      artefact: backup/affordances.yaml.<utc-iso>.bak stored under forge_work/.
+    - step: 2
+      action: "For each phantom_tool name, remove its block from yaml."
+    - step: 3
+      action: "For each missing_tool entry, append a yaml block honouring the existing affordance schema."
+    - step: 4
+      action: Re-run forge_surface_audit(organ=aforge, mode=audit) and verify drift_count=0.
+    - step: 5
+      action: forge_vault(mode=seal) the audit fingerprint delta with new chain_head.
+
+blocked_state:
+  as_of: 2026-07-08T08:13Z
+  blocked_calls:
+    - call: forge_lease(mode=request)
+      error: "Agent 'opencode' not registered. Use forge_agent mode=register first."
+      floor: F11
+    - call: arif_seal(mode=verify)
+      error: "888_HOLD — kernel.seal requires SOVEREIGN authority. Current: MEDIUM"
+      floor: F13
+    - call: forge_filesystem_read(/root/A-FORGE/a_think/affordances.yaml)
+      error: "requires session ownership. Use session-based connection or connect via stdio"
+      floor: F1
+  upstream_track: github.com/ariffazil/arifos/issues/560
+  requested_grant: 'forge_agent(mode=register) with identity_proof=...'
+
+ratification_path:
+  - witness: human-readable review of this file by ARIF
+  - sovereign_signal: 'any of: apply · seal · go · jalan terus (or equivalent sovereign mark)'
+  - replay: kernel re-runs forge_surface_audit and emits drift=0 fingerprint
+  - permanent_record: VAULT999 ledger entry linking old-chain-head → new-chain-head
+
+metadata:
+  forged_by: opencode@af-forge
+  model_substrate: minimax/MiMo-M3
+  session: SEAL-b6d2ab1dbed142c6
+  actor_verified: false
+  authority_at_forge: OBSERVE_ONLY
+  epistemic_labels:
+    phantom_list: OBS (live audit)
+    missing_list: OBS (live audit)
+    edit_strategy: DER (from audit recommendation + AGENTS.md F8 LAW)
+    blocked_state: OBS (live errors)
+    ratification_path: DER (from AGENTS.md F13 + forge_surface_audit fix pattern)

@@ -27,7 +27,8 @@ npm install
 npm run build
 
 # 4. Start the server
-node dist/src/server.js
+node dist/src/interfaces/server.js
+# or npm start
 ```
 
 **That's it.** The server starts on `http://localhost:7071`.
@@ -38,13 +39,13 @@ node dist/src/server.js
 # Health check
 curl http://localhost:7071/health | python3 -m json.tool
 
-# Expected: {"ok": true, "service": "A-FORGE", "version": "2026.06.06"}
+# Expected: {"ok": true, "service": "A-FORGE-sense", "version": "0.1.0", "profile": "enterprise"}
 
 # Federation probe (pings all connected organs)
 curl http://localhost:7071/api/federation-probe | python3 -m json.tool
 
-# MCP tools available through the bridge
-curl -s http://localhost:7071/tools | python3 -m json.tool | head -20
+# Federation probe (live organ status through the bridge)
+curl -s http://localhost:7071/api/federation-probe | python3 -m json.tool | head -40
 ```
 
 ## Standalone Mode
@@ -58,6 +59,8 @@ npm run mcp:stdio
 # Or start as HTTP MCP server
 npm run mcp:http
 ```
+
+`mcp:stdio` is pipe-based, not terminal-driven. Launch it as a child process with stdin/stdout attached; no PTY is required.
 
 ## What A-FORGE Does (And Doesn't Do)
 
@@ -76,7 +79,7 @@ npm run mcp:http
 | `GET /health` | Liveness check |
 | `GET /api/federation-probe` | Ping all connected organs |
 | `POST /forge` | Submit execution plan (requires JUDGE_SEAL_AUTHORIZATION) |
-| `GET /tools` | List available tools through MCP bridge |
+| `GET /api/federation-probe` | Ping all connected federation organs |
 
 ## Running Tests
 

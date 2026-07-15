@@ -1,0 +1,121 @@
+{
+  "$schema": "arifOS/agent-card/v2.2.0",
+  "schemaVersion": "2.2.0",
+  "id": "a-forge-mcp",
+  "name": "A-FORGE Execution Shell",
+  "description": "Governed execution shell — build, deploy, execute, orchestrate. 72 forge_* MCP tools under arifOS constitutional floors. AgentCard v2.2.0 — A2A-spec compliant with verdict grammar extension.",
+  "version": "2026.07.02",
+  "protocolVersion": "1.0.0",
+  "url": "https://a-forge.arif-fazil.com",
+  "preferred_transport": "jsonrpc-http",
+  "provider": {
+    "organization": "arifOS Federation",
+    "url": "https://arif-fazil.com",
+    "system": "A-FORGE",
+    "runtime": "node-v22"
+  },
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": true,
+    "authenticated_extended_card": true,
+    "tool_calling": true,
+    "mcp_native": true,
+    "extensions": ["arifos.verdict-grammar.v1"],
+    "tools": 72,
+    "prompts": 12,
+    "action_classes": ["OBSERVE","SUGGEST","SIMULATE","DRAFT","QUEUE","EXECUTE_REVERSIBLE","EXECUTE_HIGH_IMPACT","IRREVERSIBLE"]
+  },
+  "defaultInputModes": ["text/plain", "application/json"],
+  "defaultOutputModes": ["text/plain", "application/json"],
+  "securitySchemes": {
+    "bearer_auth": {
+      "type": "http",
+      "scheme": "bearer",
+      "bearerFormat": "token",
+      "description": "arifOS session token issued via arif_session_init"
+    }
+  },
+  "security": [{"bearer_auth": []}],
+  "transport": {
+    "stdio": true,
+    "streamable_http": true,
+    "port": 7071,
+    "mcp_port": 7072,
+    "domain": "a-forge.arif-fazil.com",
+    "endpoint": "https://a-forge.arif-fazil.com/mcp",
+    "protocol_version": "2025-03-26"
+  },
+  "skills": [
+    {
+      "id": "forge_execute",
+      "name": "Governed Execution",
+      "description": "Execute code, shell commands, and deployments under constitutional lease. Requires valid arifOS SEAL for mutations. 72 forge_* tools across shell, git, docker, browser, filesystem, postgres, vault, and orchestration.",
+      "tags": ["execution", "shell", "deploy", "lease", "F1-F13"],
+      "floor_scope": ["F1","F2","F4","F8","F11","F13"]
+    },
+    {
+      "id": "forge_orchestrate",
+      "name": "Cross-Organ Orchestration",
+      "description": "Route tasks across federation organs (arifOS, GEOX, WEALTH, WELL) via A2A mesh. Retries, escalation, tool chaining under lease.",
+      "tags": ["orchestration", "A2A", "routing", "multi-organ"],
+      "floor_scope": ["F4","F8","F11"]
+    },
+    {
+      "id": "forge_document_intelligence",
+      "name": "Document Intelligence",
+      "description": "EMD (Encode-Metabolize-Decode) document pipeline. Layout-first parsing with bounding-box provenance. PDF, image, text ingestion → structured JSON → RAG chunks.",
+      "tags": ["document", "ingest", "EMD", "PDF", "provenance"],
+      "floor_scope": ["F2","F11"]
+    },
+    {
+      "id": "forge_browser",
+      "name": "Browser Automation",
+      "description": "Governed browser interaction — navigate, click, type, screenshot, extract text. OBSERVE-class with page context evidence.",
+      "tags": ["browser", "playwright", "observe"],
+      "floor_scope": ["F2","F8","F11"]
+    },
+    {
+      "id": "forge_git",
+      "name": "Git Operations",
+      "description": "Governed git primitives — status, diff, log, commit. Mutating modes floor-gated by A-FORGE MCP ingress.",
+      "tags": ["git", "version-control", "commit"],
+      "floor_scope": ["F1","F11"]
+    },
+    {
+      "id": "forge_lease_acquire",
+      "name": "Lease Acquisition",
+      "description": "Request bounded authority lease from arifOS kernel. Scopes tool access, action class, TTL. A-FORGE never self-issues leases.",
+      "tags": ["lease", "authority", "arifOS"],
+      "floor_scope": ["F1","F8","F11","F13"]
+    },
+    {
+      "id": "forge_vault_seal",
+      "name": "VAULT999 Sealing",
+      "description": "Append execution receipts to VAULT999 immutable ledger. Hash-chained, irreversible. Requires F13 ack.",
+      "tags": ["vault", "seal", "audit", "immutable"],
+      "floor_scope": ["F1","F11","F13"]
+    }
+  ],
+  "governance": {
+    "floors": ["F1","F2","F4","F6","F7","F8","F9","F11","F13"],
+    "verdict_authority": "arifOS (port 8088)",
+    "self_approval_forbidden": true,
+    "lease_required": true,
+    "action_classes": ["OBSERVE","SUGGEST","SIMULATE","DRAFT","QUEUE","EXECUTE_REVERSIBLE","EXECUTE_HIGH_IMPACT","IRREVERSIBLE"],
+    "authority_class": "executor",
+    "brain_hands_contract": "A-FORGE executes, never adjudicates. arifOS judges. BRAIN-HANDS-CONTRACT.md"
+  },
+  "constitution": {
+    "floors_active": ["F1","F2","F4","F6","F7","F8","F9","F11","F13"],
+    "governance_kernel": "arifOS (port 8088)",
+    "control_plane": "AAA (port 3001)",
+    "vault": "VAULT999"
+  },
+  "metadata": {
+    "doctrine": "DITEMPA BUKAN DIBERI — Execution is forged, not given.",
+    "upgraded": "2026-07-02T04:50:00Z",
+    "upgraded_by": "FORGE (000Ω) — A2A spec compliance",
+    "upgrade_reason": "Copilot A2A analysis — 12 blindspots. AgentCard v2.2.0 with skills, push notifications, verdict grammar extension.",
+    "backup": ".well-known/agent-card.json.bak-2026-07-02"
+  }
+}

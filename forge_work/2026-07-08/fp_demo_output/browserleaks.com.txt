@@ -1,0 +1,45 @@
+Home Page
+IP Address
+JavaScript
+WebRTC Leak Test
+Canvas Fingerprint
+WebGL Report
+Font Fingerprinting
+Geolocation API
+Features Detection
+TLS Client Test
+Content Filters
+More Tools
+Settings
+Canvas Fingerprinting
+
+The Canvas API, which is designed for drawing graphics via JavaScript and HTML, can also be used for online tracking via browser fingerprinting. This technique relies on variations in how canvas images are rendered on different web browsers and platforms to create a personalized digital fingerprint of a user's browser.
+
+Canvas Support Detection
+Canvas 2D API	
+✔
+True
+Text API for Canvas	
+✔
+True
+Canvas toDataURL	
+✔
+True
+Canvas Fingerprint
+Signature	F0E4D6A116D5BF82C04294A9B34B9678
+Uniqueness	100% (The signature is unique to our database)
+Image File Details	
+
+File Size	6883 bytes
+Number of Colors	946
+PNG Headers	Chunk	Length	CRC	Content
+	IHDR	13	477A703E	PNG image header: 220×30, 8 bits/sample, truecolor+alpha, noninterlaced
+	IDAT	4096	F015730D	PNG image data
+	IDAT	2700	B1309D3E	PNG image data
+	IDAT	6	A1909B90	PNG image data
+	IEND	0	AE426082	end-of-image marker
+How Canvas Fingerprinting Works
+Further Reading
+Leave a Comment (383)
+BrowserLeaks © 2011-2026 All Rights Reserved
+moc.skaelresworb@tcatnoc:otliam

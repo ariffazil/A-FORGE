@@ -14,7 +14,7 @@
  * auto-authorized here. SandboxPolicy derived from verdict will be narrow.
  *
  * Flow:
- *   1. Constitutional Verdict (arif_judge_deliberate)  [AGI vs ASI tier already classified]
+ *   1. Constitutional Verdict (arif_judge)  [AGI vs ASI tier already classified]
  *   2. Policy Derivation (derivePolicyFromVerdict)
  *   3. Sandbox Provision (createSandbox)
  *   4. Command Execution (executeInSandbox)
