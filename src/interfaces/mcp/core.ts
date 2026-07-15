@@ -1811,9 +1811,9 @@ server.tool("forge_journalctl", "Query systemd journal logs (read-only, PII-reda
 // Doctrine: A-FORGE does NOT compute human readiness. It routes to WELL organ.
 
 server.registerTool("forge_well", {
-  description: "WELL human readiness primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors, anchor.",
+  description: "WELL relay primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors, anchor, machine_intelligence.",
   inputSchema: z.object({
-    mode: z.enum(["state", "readiness", "floors", "anchor"]).default("state"),
+    mode: z.enum(["state", "readiness", "floors", "anchor", "machine_intelligence"]).default("state"),
     sessionId: z.string().optional().describe("Session ID (anchor mode)"),
     agentId: z.string().optional().describe("Agent ID (anchor mode)"),
   }),
@@ -1839,6 +1839,42 @@ server.registerTool("forge_well", {
       const client = new Client({ name: "A-FORGE-forge-well", version: "0.1.0" }, { capabilities: {} });
       transport = new StreamableHTTPClientTransport(new URL(`${laneUrl.replace(/\/$/, "")}/mcp`));
       await client.connect(transport);
+
+      if (mode === "machine_intelligence") {
+        const resourceUris = [
+          "well://machine-intelligence/stack-catalog",
+          "well://machine-intelligence/python-glue",
+          "well://machine-intelligence/rollout-phases",
+        ];
+        const resourcePayloads: Record<string, string> = {};
+        const clientAny = client as any;
+        for (const uri of resourceUris) {
+          let resourceResult: any;
+          try {
+            resourceResult = await clientAny.readResource({ uri });
+          } catch {
+            resourceResult = await clientAny.readResource(uri);
+          }
+          const contents = resourceResult?.contents ?? resourceResult?.content ?? [];
+          const text = Array.isArray(contents)
+            ? contents.map((c: any) => (typeof c?.text === "string" ? c.text : "")).filter(Boolean).join("\n\n")
+            : JSON.stringify(resourceResult, null, 2);
+          resourcePayloads[uri] = text || JSON.stringify(resourceResult, null, 2);
+        }
+        await transport.close();
+        await telemetrySuccess(`forge_well:${mode}`, startedAt);
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              mode,
+              source: laneUrl,
+              resources: resourcePayloads,
+            }, null, 2),
+          }],
+        };
+      }
+
       const upstreamResult = await client.callTool({ name: toolName, arguments: toolArgs });
       await transport.close();
 
