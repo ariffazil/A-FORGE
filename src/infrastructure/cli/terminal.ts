@@ -6,7 +6,7 @@
  * - Real-time token streaming (SSE from DeepSeek/MiniMax/Ollama)
  * - Spinner animation during LLM thinking
  * - F1-F13 constitutional governance on EVERY action
- * - Federation MCP tool auto-discovery (62+ tools across 5 organs)
+ * - Local forge tool registry plus federation probes
  * - Session persistence (save/load/auto-save)
  * - Multi-line input (backslash continuation + /multi mode)
  * - History navigation (up/down arrows)

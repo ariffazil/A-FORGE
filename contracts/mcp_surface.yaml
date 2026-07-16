@@ -2,11 +2,31 @@ schema_version: 1
 kind: arifos.mcp_surface
 owner_repo: A-FORGE
 status: contract
-last_verified: "2026-06-30"
+last_verified: "2026-07-01"
 runtime_surface:
   primary_role: execution_substrate
   primary_port: 7071
   public_surface: ops_and_release_only
+  mcp_transports:
+    deployed_loopback_http_port: 7072
+    local_script_http_port: 3000
+    stdio_entrypoint: npm run mcp:stdio
+  executor_surface:
+    registered_tools: 75
+    stateless_http_tools: 22
+    session_required_tools: 53
+    registry_sources:
+      - src/interfaces/mcp/core.ts
+      - src/interfaces/mcp/forgeTools.ts
+      - src/interfaces/mcp/policyTools.ts
+  enforcement_surface:
+    pre_execution_spine:
+      - src/domain/governance/aThinkGuard.ts
+      - src/interfaces/mcp/policyTools.ts
+      - src/domain/governance/McpPolicyGate.ts
+    notes:
+      - No af1/SYSTEM_PROMPT_AF1.md exists in this repository
+      - AAE envelope validation is applied when an envelope is present
 authority:
   owns:
     - build_release

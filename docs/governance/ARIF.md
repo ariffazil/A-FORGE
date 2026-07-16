@@ -19,7 +19,7 @@
 
 ## 1. CURRENT FOCUS (INSTRUCTION POINTER)
 
-- **W3 Epoch Architecture forged** (FIQH Sprint 2): `src/types/epoch.ts` (Epoch, EpochEvent, EpochCheckpoint) + `src/governance/epochEngine.ts` (pure engine, 14 methods, hash-chained events) + `src/mcp/tools/arifos-epoch.ts` (8 internal MCP tools) + 10/10 tests + `docs/governance/W3_EPOCH_BLUEPRINT.md`. Branch `forge/w3-epoch-architecture-2026-06-07`.
+- **Execution surface audit forged** (2026-07-01): README + Quickstart + contract reconciled to live A-FORGE MCP surface — 75 registered tools, 22 stateless HTTP tools, A-THINK + MCP Policy Gate + optional AAE enforcement spine.
 - **W11 spec delivered in parallel**: `docs/governance/W11_TEMPORAL_M3_LONG_HORIZON.md` — governed 12-hour M3 mission charter.
 - W2 still uncommitted on `forge/w2-planning-organ-2026-06-07` (NOT committed, NOT pushed).
 - W1 FloorEnforcer (C1) on `forge/c1-floor-enforcer-2026-06-06`: full verdict composition, awaiting main merge.
@@ -35,13 +35,15 @@
 - Approval Boundary: PENDING → DISPATCHED → APPROVED/REJECTED → REPLAYED.
 - Memory Contract: 5 tiers (ephemeral, working, canon, sacred, quarantine).
 - VAULT999 client: File, Postgres, NoOp backends.
-- MCP tools: forge_check_governance, forge_run, forge_hold, forge_approve, forge_remember, forge_recall.
+- MCP surface: 75 registered tools under `src/interfaces/mcp/`; 22 stateless HTTP tools, remainder session-owned.
+- Enforcement spine: `src/domain/governance/aThinkGuard.ts`, `src/interfaces/mcp/policyTools.ts`, `src/domain/governance/McpPolicyGate.ts`, optional AAE envelope validation.
 - Upstream: arifOS kernel (constitutional doctrine).
 - Downstream: AAA workspace, GEOX, WEALTH, WELL organs.
 
 
 ## 3. THE 999 SEAL (SESSION LOG)
 
+- 2026-07-01 | Clerk | Execution surface audit reconciled docs + contract to the actual 75-tool MCP registry, 22-tool stateless HTTP allowlist, and A-THINK / policy-gate enforcement spine. Static `/mcp` probe count switched from hardcoded 59 to dynamic registry count.
 - 2026-06-07 | Omega | W3 Epoch Architecture forged. 14-method EpochEngine, hash-chained event log, F13 halt machinery, checkpoints, 10/10 tests. W11 spec delivered. Build clean.
 - 2026-06-07 | Omega | W2 Planning Organ forged. Plan schema + PlanFactory + arifos_plan_build + 10/10 tests + blueprint. Build clean. Awaiting F13 to wire live.
 - 2026-05-15 | Omega + Claude | SABAR cooldown protocol. DeepnShadow guard. Personal OS v2. Pushed to main.
@@ -86,9 +88,9 @@
 | Command | Status | Context |
 |---------|--------|---------|
 | `npm run build` | ✅ | TypeScript → dist/ (clean with W2) |
-| `npm test` | ✅ | 7/7 pre-existing pass; W2 10/10 pass via `node --test dist/test/plan-factory.test.js` |
+| `npm test` | ✅ | Main compiled `AgentEngine` suite only; broader validation lives under `make test` and individual compiled test files |
 | `make up` | ✅ | Docker Compose stack |
-| `node dist/src/server.js` | ✅ | HTTP bridge on 7071 |
+| `node dist/src/interfaces/server.js` | ✅ | HTTP bridge on 7071 |
 
 
 ## 8. PRIVILEGE ESCALATION (888 HOLD)
