@@ -23,6 +23,8 @@
  */
 
 import { z } from "zod";
+import { createHash } from "node:crypto";
+import { validateCompositeSeal, computeCompositeHash, type TriWitnessSealInput } from "./CompositeSealValidator.js";
 
 // ============================================================================
 // VERDICT STATE MACHINE
@@ -283,6 +285,68 @@ export function checkEntropyGate(entropy: EntropyState): {
   }
 
   return { pass: true };
+}
+
+// ============================================================================
+// SEAL TO VAULT999 — Pre-seal gate
+// ============================================================================
+
+/**
+ * Pre-seal gate: validates composite hash and all witnesses before sealing.
+ *
+ * This runs BEFORE arif_seal, not instead of it. If validation fails,
+ * the verdict is set to VOID with error details.
+ *
+ * F1 AMANAH: No seal without cryptographic proof of tri-witness consensus.
+ * F3 WITNESS: W³ composite_hash = SHA256(w1.hash + w2.hash + w3.hash + verdict)
+ */
+export async function sealToVault999(
+  triWitnessLedger: {
+    w1: { verdict: string; hash: string };
+    w2: { verdict: string; hash: string };
+    w3: { verdict: string; hash: string; actor_id?: string; timestamp?: string };
+  },
+  verdict: string,
+  deps: {
+    vault999Append: (record: unknown) => Promise<{ seq: number }>;
+  },
+): Promise<{ sealed: boolean; vault_seq: number; error?: string }> {
+  // Build the composite hash from witness data
+  const composite_hash = computeCompositeHash(
+    triWitnessLedger.w1.hash,
+    triWitnessLedger.w2.hash,
+    triWitnessLedger.w3.hash,
+    verdict,
+  );
+
+  // Build validator input
+  const sealInput: TriWitnessSealInput = {
+    w1: { verdict: triWitnessLedger.w1.verdict as any, hash: triWitnessLedger.w1.hash },
+    w2: { verdict: triWitnessLedger.w2.verdict as any, hash: triWitnessLedger.w2.hash },
+    w3: {
+      verdict: triWitnessLedger.w3.verdict as any,
+      hash: triWitnessLedger.w3.hash,
+      actor_id: triWitnessLedger.w3.actor_id,
+      timestamp: triWitnessLedger.w3.timestamp,
+    },
+    verdict,
+    composite_hash,
+  };
+
+  const { result, error } = await validateCompositeSeal(sealInput, deps);
+
+  if (result.verdict === "REJECTED") {
+    return {
+      sealed: false,
+      vault_seq: -1,
+      error: error ? `${error.reason}: ${error.detail}` : "SEAL_REJECTED",
+    };
+  }
+
+  return {
+    sealed: true,
+    vault_seq: result.vault_seq,
+  };
 }
 
 // ============================================================================
@@ -553,15 +617,54 @@ export async function forgeVisualQA(
   }
 
   // ─────────────────────────────────────────────────────────────
-  // PHASE 5: INTEGRATION RECEIPTS
+  // PHASE 5: INTEGRATION RECEIPTS (with composite seal validation)
   // ─────────────────────────────────────────────────────────────
-  const vaultReceipt = await deps.sealToVault({
-    verdict: currentVerdict,
-    iterations,
-    entropy_delta: entropy.delta_s,
-    screenshot_hash: input.screenshot_path,  // TODO: actual hash
-    code_diff_hash: domPayload,              // TODO: actual hash
-  });
+  let sealValidationFailed = false;
+  let vaultReceiptId: string | undefined;
+
+  // If verdict is SEALED_DEPLOY, validate composite seal BEFORE sealing
+  if (currentVerdict === "SEALED_DEPLOY") {
+    const sealResult = await sealToVault999(
+      {
+        w1: {
+          verdict: w1.status === "CONFIRMED" ? "PASS" : w1.status === "REJECTED" ? "FAIL" : "HOLD",
+          hash: createHash("sha256").update(JSON.stringify(w1.deviations)).digest("hex"),
+        },
+        w2: {
+          verdict: w2.status === "CONFIRMED" ? "PASS" : w2.status === "REJECTED" ? "FAIL" : "HOLD",
+          hash: createHash("sha256").update(JSON.stringify(w2.deviations)).digest("hex"),
+        },
+        w3: {
+          verdict: w3.status === "CONFIRMED" ? "PASS" : w3.status === "REJECTED" ? "FAIL" : "HOLD",
+          hash: createHash("sha256").update(JSON.stringify(w3.deviations)).digest("hex"),
+          actor_id: w3.notes,
+          timestamp: new Date().toISOString(),
+        },
+      },
+      currentVerdict,
+      { vault999Append: deps.sealToVault as any },
+    );
+
+    if (!sealResult.sealed) {
+      // Validation failed → set verdict to VOID with error details
+      currentVerdict = "VOID";
+      sealValidationFailed = true;
+    } else {
+      vaultReceiptId = String(sealResult.vault_seq);
+    }
+  }
+
+  // Fallback: if not SEALED_DEPLOY or seal was handled above
+  if (!sealValidationFailed && currentVerdict !== "VOID") {
+    const vaultReceipt = await deps.sealToVault({
+      verdict: currentVerdict,
+      iterations,
+      entropy_delta: entropy.delta_s,
+      screenshot_hash: input.screenshot_path,
+      code_diff_hash: domPayload,
+    });
+    vaultReceiptId = vaultReceipt.receipt_id;
+  }
 
   // WELL notification if iterations > 3 (operator fatigue signal)
   if (iterations > 3) {
