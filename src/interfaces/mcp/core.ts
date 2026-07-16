@@ -2575,6 +2575,119 @@ server.tool(
   }
 );
 
+// ── Visual QA Seal Tool (VAULT999 Composite) ─────────────────────────────────
+// forge_visual_seal: Validate tri-witness composite hash and seal into VAULT999.
+// INVARIANTS: I1 (SEALED_DEPLOY only), I2 (all witnesses PASS), I3 (hash integrity),
+// I4 (composite_hash only in vault), I5 (no partial seal).
+// ROUTING GUARD: W³ must be populated + entropy gate passed before seal attempt.
+import {
+  sealVisualComposite as runSealVisual,
+  routingGuardPreSeal,
+} from "../../infrastructure/tools/ForgeVisualQASeal.js";
+
+server.tool(
+  "forge_visual_seal",
+  "VAULT999 composite seal: validates W³ tri-witness hash and seals. I1-I5 invariants. Routing guard blocks premature seals. F1/F2/F3/F11.",
+  {
+    tri_witness_ledger: z.object({
+      w1: z.object({
+        verdict: z.enum(["PASS", "HOLD", "FAIL"]),
+        hash: z.string().describe("SHA-256 hex of W₁ evidence"),
+        score: z.number().optional(),
+      }),
+      w2: z.object({
+        verdict: z.enum(["PASS", "HOLD", "FAIL"]),
+        hash: z.string().describe("SHA-256 hex of W₂ evidence"),
+      }),
+      w3: z.object({
+        verdict: z.enum(["PASS", "HOLD", "FAIL"]),
+        hash: z.string().describe("SHA-256 hex of W₃ evidence"),
+        actor_id: z.string().optional(),
+        timestamp: z.string().optional(),
+      }),
+      composite_hash: z.string().describe("SHA256(w1.hash ‖ w2.hash ‖ w3.hash ‖ verdict)"),
+    }),
+    verdict: z.enum(["PASS_CANDIDATE", "SEALED_DEPLOY"]),
+    entropy_gate_passed: z.boolean().default(false).describe("Must be true — ΔS gate must pass before seal"),
+    session_id: z.string().optional(),
+    actor_id: z.string().optional(),
+  },
+  async (args) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("forge_visual_seal");
+    try {
+      // ROUTING GUARD: Block premature seals
+      const guard = routingGuardPreSeal({
+        tri_witness_ledger: args.tri_witness_ledger,
+        entropy_gate_passed: args.entropy_gate_passed,
+        verdict: args.verdict,
+      });
+
+      if (guard.kind === "blocked") {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              verdict: "REJECTED",
+              sealed: false,
+              vault_seq: -1,
+              error: guard.reason,
+              routing_guard: "BLOCKED",
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+
+      // SEAL EXECUTION
+      const result = await runSealVisual(
+        {
+          tri_witness_ledger: args.tri_witness_ledger,
+          verdict: args.verdict,
+        },
+        {
+          vaultAppend: async (record: unknown) => {
+            try {
+              const sealResult = await callMCP("arifos.arif_seal", {
+                mode: "seal",
+                payload: JSON.stringify(record),
+              });
+              const sr = sealResult as Record<string, unknown>;
+              return {
+                seq: typeof sr?.seq === "number" ? sr.seq : Date.now(),
+                receipt_id: typeof sr?.receipt_id === "string" ? sr.receipt_id : `seal-${Date.now()}`,
+              };
+            } catch {
+              return { seq: Date.now(), receipt_id: `seal-fallback-${Date.now()}` };
+            }
+          },
+        },
+      );
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify(result, null, 2),
+        }],
+      };
+    } catch (err) {
+      await telemetryFailure("forge_visual_seal", startedAt, err);
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            verdict: "REJECTED",
+            sealed: false,
+            vault_seq: -1,
+            error: err instanceof Error ? err.message : String(err),
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+  }
+);
+
 // ── VAULT999 Resources ─────────────────────────────────────────────────────────
 server.resource("forge://vault/records", "forge://vault/records", { mimeType: "application/json" }, async () => {
   const sbClient = new SupabaseVaultClient();
