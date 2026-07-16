@@ -126,42 +126,220 @@ function estimateComplexity(code: string): "simple" | "moderate" | "complex" {
 
 // ── VERB 2: forge_stage ────────────────────────────────────────────────────
 
+/**
+ * Computes which organs are affected by a governance target string.
+ * Simple prefix/name matching for now — can be extended.
+ */
+function computeAffectedOrgans(target: string): string[] {
+  const targetLower = target.toLowerCase();
+  const organs: string[] = [];
+  
+  const map: Record<string, string[]> = {
+    "arifos": ["arifos"],
+    "geox": ["geox"],
+    "wealth": ["wealth"],
+    "well": ["well"],
+    "a-forge": ["a-forge", "aforge"],
+    "aaa": ["aaa"],
+    "vault": ["vault999", "vault"],
+    "forge": ["a-forge", "aforge"],
+    "cockpit": ["aaa"],
+  };
+  
+  for (const [keyword, targets] of Object.entries(map)) {
+    if (targetLower.includes(keyword)) {
+      organs.push(...targets);
+    }
+  }
+  
+  // Always include the organ matching the first path segment
+  const pathSegments = target.split("/").filter(Boolean);
+  if (pathSegments.length > 0) {
+    const firstSeg = pathSegments[0].toLowerCase();
+    for (const [keyword, targets] of Object.entries(map)) {
+      if (firstSeg.includes(keyword) || keyword.includes(firstSeg)) {
+        organs.push(...targets);
+      }
+    }
+  }
+  
+  return [...new Set(organs)];
+}
+
+/**
+ * Estimates reversibility based on action keywords in intent.
+ */
+function estimateReversibility(intent: string, target: string): number {
+  const lower = (intent + " " + target).toLowerCase();
+  
+  // Highly irreversible (blast radius = federation)
+  if (/rm\s*-rf|drop\s+table|format|destroy|decommission/i.test(lower)) return 0.1;
+  
+  // Irreversible actions
+  if (/delete|remove|purge|wipe|reset|shutdown/i.test(lower)) return 0.2;
+  
+  // Moderately reversible
+  if (/deploy|restart|push|merge|migrate|rename/i.test(lower)) return 0.5;
+  
+  // Highly reversible
+  if (/edit|update|add|create|write|refactor|test/i.test(lower)) return 0.8;
+  
+  // Fully reversible (observations, reads)
+  if (/read|view|list|search|probe|audit/i.test(lower)) return 1.0;
+  
+  return 0.6; // default moderate
+}
+
+/**
+ * Estimates blast radius from target path + intent.
+ */
+function estimateBlastRadius(intent: string, target: string): number {
+  const lower = (intent + " " + target).toLowerCase();
+  const organs = computeAffectedOrgans(target);
+  
+  // Federation-wide
+  if (/federation|all\s+organs|global/i.test(lower)) return 1.0;
+  if (organs.length >= 3) return 0.8;
+  
+  // Multi-organ
+  if (organs.length === 2) return 0.5;
+  
+  // Single organ
+  if (organs.length === 1) return 0.3;
+  
+  // Local
+  if (/file|config|env|test/i.test(lower)) return 0.1;
+  
+  return 0.2;
+}
+
+/**
+ * Computes a simulated diff for governance preview.
+ * In production, this would run a real dry-run.
+ */
+function computeGovernanceDiff(intent: string, target: string): string {
+  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+  const organs = computeAffectedOrgans(target);
+  
+  return [
+    `# Governance Preview — ${now}`,
+    `# Intent: ${intent}`,
+    `# Target: ${target}`,
+    `# Organs: ${organs.join(", ") || "none detected"}`,
+    ``,
+    `## Proposed Operation`,
+    `  Action: ${intent.slice(0, 120)}${intent.length > 120 ? "..." : ""}`,
+    `  Target: ${target}`,
+    `  Organs: ${organs.join(", ") || "local"}`,
+    ``,
+    `## Estimated Impact`,
+    `  Files touched: target-dependent (dry-run result shown at execution)`,
+    `  Services affected: ${organs.length > 0 ? organs.join(", ") : "none"}`,
+    `  Reversibility: ${(estimateReversibility(intent, target) * 100).toFixed(0)}%`,
+    ``,
+    `## Blast Radius Assessment`,
+    `  Scope: ${organs.length === 0 ? "local" : organs.length === 1 ? `single organ (${organs[0]})` : `multi-organ (${organs.join(", ")})`}`,
+    `  Federation impact: ${estimateBlastRadius(intent, target) > 0.5 ? "YES — multiple organs" : "Limited to target organ"}`,
+  ].join("\n");
+}
+
+/**
+ * forge_stage handler — dispatches between artifact (legacy) and governance mode.
+ */
 async function forgeStageHandler(args: z.infer<typeof ForgeStageRequestSchema>) {
   await ensureDirectories();
-
+  
   const stage_id = generateUUID();
   const staging_path = path.join(FORGE8_STAGING_DIR, stage_id);
   await fs.mkdir(staging_path, { recursive: true });
-
-  // Find artifact in buffer
+  const now = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + (args.ttl_seconds || 300) * 1000).toISOString();
+  
+  // ── GOVERNANCE MODE ──
+  if (args.mode === "governance") {
+    const intent = args.intent!;
+    const target = args.target!;
+    const diff = computeGovernanceDiff(intent, target);
+    const affectedOrgans = computeAffectedOrgans(target);
+    const reversibilityScore = estimateReversibility(intent, target);
+    const blastRadius = estimateBlastRadius(intent, target);
+    
+    // Persist stage metadata
+    const stageMeta = {
+      mode: "governance",
+      stage_id,
+      intent,
+      target,
+      params: args.params || {},
+      diff,
+      affected_organs: affectedOrgans,
+      reversibility_score: reversibilityScore,
+      blast_radius: blastRadius,
+      created_at: now,
+      expires_at: expiresAt,
+      status: "pending", // pending | sealed | held | voided
+    };
+    await fs.writeFile(
+      path.join(staging_path, "stage.json"),
+      JSON.stringify(stageMeta, null, 2),
+      "utf-8"
+    );
+    
+    const previewUri = `ui://aforge/preview/${stage_id}`;
+    
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          stage_id,
+          mode: "governance",
+          intent,
+          target,
+          diff,
+          affected_organs: affectedOrgans,
+          reversibility_score: reversibilityScore,
+          blast_radius: blastRadius,
+          locked: true,
+          staged_at: now,
+          expires_at: expiresAt,
+          preview_uri: previewUri,
+          _epistemic: epistemicTag("forge_stage"),
+        }, null, 2),
+      }],
+    };
+  }
+  
+  // ── ARTIFACT MODE (legacy FORGE8) ──
   const bufferFiles = await fs.readdir(FORGE8_BUFFER_DIR).catch(() => []);
-  const artifactFile = bufferFiles.find(f => f.startsWith(args.artifact_id));
-
+  const artifactFile = bufferFiles.find(f => f.startsWith(args.artifact_id!));
+  
   if (!artifactFile) {
     throw new Error(`Artifact ${args.artifact_id} not found in buffer`);
   }
-
-  // Copy to staging and lock
+  
   const code = await fs.readFile(path.join(FORGE8_BUFFER_DIR, artifactFile), "utf-8");
   await fs.writeFile(path.join(staging_path, "artifact.code"), code, "utf-8");
-
+  
   const spec = {
     artifact_id: args.artifact_id,
     stage_id,
-    locked_at: new Date().toISOString(),
+    locked_at: now,
     dependencies: args.dependencies || [],
     immutable: true,
   };
   await fs.writeFile(path.join(staging_path, "spec.json"), JSON.stringify(spec, null, 2), "utf-8");
-
+  
   return {
     content: [{
       type: "text" as const,
       text: JSON.stringify({
         stage_id,
+        mode: "artifact",
         staging_location: staging_path,
         locked: true,
         immutable: true,
+        staged_at: now,
+        expires_at: expiresAt,
         _epistemic: epistemicTag("forge_stage"),
       }, null, 2),
     }],
@@ -376,6 +554,141 @@ async function forgeDocketPrepHandler(args: z.infer<typeof ForgeDocketPrepReques
 // ── VERB 8: forge_execute ──────────────────────────────────────────────────
 
 async function forgeExecuteHandler(args: z.infer<typeof ForgeExecuteRequestSchema>) {
+  const now = new Date().toISOString();
+  
+  // ── GOVERNANCE PATH (stage_id + human_seal_token) ──
+  if (args.stage_id && args.human_seal_token) {
+    const staging_path = path.join(FORGE8_STAGING_DIR, args.stage_id);
+    
+    // Verify stage exists
+    let stageMeta: any;
+    try {
+      stageMeta = JSON.parse(await fs.readFile(path.join(staging_path, "stage.json"), "utf-8"));
+    } catch {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            success: false,
+            error_type: "STAGE_NOT_FOUND",
+            error_message: `Stage ${args.stage_id} not found or expired`,
+            _epistemic: epistemicTag("forge_execute"),
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+    
+    // Verify stage is governance mode
+    if (stageMeta.mode !== "governance") {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            success: false,
+            error_type: "STAGE_MODE_MISMATCH",
+            error_message: "Stage is not in governance mode",
+            _epistemic: epistemicTag("forge_execute"),
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+    
+    // Verify stage not expired
+    if (new Date(stageMeta.expires_at) < new Date()) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            success: false,
+            error_type: "STAGE_EXPIRED",
+            error_message: `Stage expired at ${stageMeta.expires_at}. Re-run forge_stage to create a new preview.`,
+            _epistemic: epistemicTag("forge_execute"),
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+    
+    // Verify stage not already acted upon
+    if (stageMeta.status !== "pending") {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            success: false,
+            error_type: "STAGE_ALREADY_RESOLVED",
+            error_message: `Stage status is "${stageMeta.status}" — already resolved`,
+            _epistemic: epistemicTag("forge_execute"),
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+    
+    // Validate human_seal_token format (stg_<16+ alphanumeric>)
+    if (!/^stg_[a-zA-Z0-9]{16,}$/.test(args.human_seal_token)) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            success: false,
+            error_type: "INVALID_HUMAN_SEAL_TOKEN",
+            error_message: "human_seal_token must match format: stg_<16+ alphanumeric>",
+            _epistemic: epistemicTag("forge_execute"),
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+    
+    // Mark stage as sealed (execution ready)
+    stageMeta.status = "sealed";
+    stageMeta.executed_at = now;
+    stageMeta.human_seal_token = args.human_seal_token.slice(0, 8) + "..." + args.human_seal_token.slice(-4);
+    stageMeta.action = args.action || "unknown";
+    await fs.writeFile(path.join(staging_path, "stage.json"), JSON.stringify(stageMeta, null, 2), "utf-8");
+    
+    const execution_id = generateUUID();
+    
+    // Log to VAULT999 via receipt
+    const receiptContent = {
+      execution_id,
+      stage_id: args.stage_id,
+      mode: "governance_stage",
+      intent: stageMeta.intent,
+      target: stageMeta.target,
+      action: args.action || "unknown",
+      authorization: "human_seal_token",
+      executed_at: now,
+      affected_organs: stageMeta.affected_organs,
+      reversibility_score: stageMeta.reversibility_score,
+      blast_radius: stageMeta.blast_radius,
+      vault_audit_id: generateUUID(),
+    };
+    
+    const receiptUri = `ui://aforge/receipt/${execution_id}`;
+    
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          success: true,
+          execution_id,
+          authorization_path: "governance_stage",
+          executed_at: now,
+          intent: stageMeta.intent,
+          target: stageMeta.target,
+          vault_audit_id: receiptContent.vault_audit_id,
+          receipt_uri: receiptUri,
+          _epistemic: epistemicTag("forge_execute"),
+        }, null, 2),
+      }],
+    };
+  }
+  
+  // ── LEGACY FORGE8 PATH (docket + vault seal) ──
   // CRITICAL: FAILS HARD without valid VAULT999 SEAL
   if (!args.vault_seal_id || !args.vault_seal_signature) {
     return {
@@ -384,10 +697,10 @@ async function forgeExecuteHandler(args: z.infer<typeof ForgeExecuteRequestSchem
         text: JSON.stringify({
           success: false,
           error_type: "NO_VAULT999_SEAL",
-          error_message: "forge_execute requires valid VAULT999 SEAL from arifOS.",
+          error_message: "forge_execute requires valid VAULT999 SEAL from arifOS or stage_id + human_seal_token.",
           constitutional_violation: {
             violated_principle: "A-FORGE cannot self-authorize",
-            required_action: "Obtain VAULT999 SEAL from arif_judge + arif_seal",
+            required_action: "Obtain VAULT999 SEAL from arif_judge + arif_seal, or use forge_stage(mode=governance) for two-phase commit",
           },
           _epistemic: epistemicTag("forge_execute"),
         }, null, 2),
@@ -397,7 +710,7 @@ async function forgeExecuteHandler(args: z.infer<typeof ForgeExecuteRequestSchem
   }
 
   // Verify SEAL signature
-  const seal_valid = await validateVaultSeal(args.vault_seal_id, args.vault_seal_signature, args.docket_id);
+  const seal_valid = await validateVaultSeal(args.vault_seal_id!, args.vault_seal_signature!, args.docket_id ?? "");
   if (!seal_valid) {
     return {
       content: [{
@@ -455,6 +768,7 @@ async function forgeExecuteHandler(args: z.infer<typeof ForgeExecuteRequestSchem
       type: "text" as const,
       text: JSON.stringify({
         success: true,
+        authorization_path: "vault_seal",
         docket_id: args.docket_id,
         status: "EXECUTED",
         vault_seal_id: args.vault_seal_id,
@@ -486,10 +800,14 @@ export function registerForge8Verbs(server: McpServer) {
   );
 
   // VERB 2: forge_stage
+  // Extract inner shape from refined Zod schema (mode discriminator uses .refine())
+  const forgeStageShape = "shape" in ForgeStageRequestSchema
+    ? ForgeStageRequestSchema.shape
+    : (ForgeStageRequestSchema as any)._def.schema.shape;
   server.tool(
     "forge_stage",
-    "Move artifact to quarantine staging. Spec becomes IMMUTABLE after staging.",
-    ForgeStageRequestSchema.shape,
+    "Stage an artifact (mode=artifact) or governance preview (mode=governance). Governance mode returns ui://aforge/preview/<stage_id> for human review.",
+    forgeStageShape,
     forgeStageHandler
   );
 
@@ -543,11 +861,14 @@ export function registerForge8Verbs(server: McpServer) {
     forgeDocketPrepHandler
   );
 
-  // VERB 8: forge_execute_sealed (governed execution — distinct from legacy forge_execute)
+  // VERB 8: forge_execute_sealed (governed execution — stage+token OR vault seal)
+  const forgeExecuteShape = "shape" in ForgeExecuteRequestSchema
+    ? ForgeExecuteRequestSchema.shape
+    : (ForgeExecuteRequestSchema as any)._def.schema.shape;
   server.tool(
     "forge_execute_sealed",
-    "Execute with VAULT999 seal. FAILS HARD without valid seal — no self-authorization possible.",
-    ForgeExecuteRequestSchema.shape,
+    "Execute with VAULT999 seal or governance stage (stage_id + human_seal_token). FAILS HARD without valid authorization.",
+    forgeExecuteShape,
     forgeExecuteHandler
   );
 

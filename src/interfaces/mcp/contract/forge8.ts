@@ -159,65 +159,155 @@ export type ForgeSynthesizeResponse = z.infer<typeof ForgeSynthesizeResponseSche
 // ============================================================================
 
 /**
- * FORGE8 #2: forge_stage
+ * FORGE8 #2: forge_stage — The Quarantine / Governance Preview
  * 
  * FUNCTION:
- *   Move synthesized artifact to quarantine zone (.runtime/staging/)
- *   Lock artifact specification (immutable after staging)
+ *   Two modes:
+ *     mode="artifact": Move synthesized artifact to quarantine zone (legacy FORGE8)
+ *     mode="governance": Stage an intent for human preview + approval (two-phase commit)
  * 
- * BOUNDARY:
+ * BOUNDARY (artifact mode):
  *   - Once staged, spec is IMMUTABLE
  *   - No silent mutations
  *   - No self-modification
  * 
+ * BOUNDARY (governance mode):
+ *   - NO mutation, idempotent, safe to call repeatedly
+ *   - Computes diff/blast_radius/reversibility_score/affected_organs
+ *   - Returns ui://aforge/preview/<stage_id> for human review
+ * 
  * CAPABILITY:
- *   Enables:
- *   - Dependency resolution
- *   - Environment setup
- *   - Resource negotiation
- *   - Quarantine isolation
+ *   Artifact mode: dependency resolution, environment setup, quarantine isolation
+ *   Governance mode: two-phase commit, human-in-the-loop preview, F13 gate
  */
 
-export const ForgeStageRequestSchema = z.object({
-  /** Artifact ID from forge_synthesize */
-  artifact_id: z.string(),
+// ── Governance stage params ──
+
+export const GovernanceStageParamsSchema = z.object({
+  /** What the operation intends to do */
+  intent: z.string().min(10).max(10_000)
+    .describe("Natural-language description of the intended operation"),
   
-  /** Dependencies (package names, versions) */
+  /** What entity is being acted upon */
+  target: z.string().min(1).max(500)
+    .describe("Target of the operation (file path, organ name, service, etc.)"),
+  
+  /** Optional key-value parameters for the operation */
+  params: z.record(z.unknown()).optional()
+    .describe("Optional parameters for the operation"),
+});
+
+export type GovernanceStageParams = z.infer<typeof GovernanceStageParamsSchema>;
+
+// ── Governance stage result ──
+
+export const GovernanceStageResultSchema = z.object({
+  /** Diff representation (text or structured) */
+  diff: z.string().optional()
+    .describe("Before/after diff of the proposed change"),
+  
+  /** Organs that would be affected */
+  affected_organs: z.array(z.string())
+    .describe("Organs touched by this operation"),
+  
+  /** Reversibility score 0.0–1.0 (1.0 = fully reversible) */
+  reversibility_score: z.number().min(0).max(1)
+    .describe("How reversible this operation is (1.0 = fully reversible)"),
+  
+  /** Blast radius 0.0–1.0 (1.0 = federation-wide) */
+  blast_radius: z.number().min(0).max(1)
+    .describe("How many systems this operation affects (1.0 = federation-wide)"),
+  
+  /** Estimated resource cost 0.0–1.0 */
+  estimated_cost: z.number().min(0).max(1).optional()
+    .describe("Estimated resource/cost impact"),
+  
+  /** Stage TTL in seconds (default 300 = 5 minutes) */
+  ttl_seconds: z.number().int().positive().max(3600).default(300)
+    .describe("How long this stage remains valid (max 3600s)"),
+});
+
+export type GovernanceStageResult = z.infer<typeof GovernanceStageResultSchema>;
+
+export const ForgeStageRequestSchema = z.object({
+  /** Mode discriminator: "artifact" (legacy FORGE8) or "governance" (two-phase commit) */
+  mode: z.enum(["artifact", "governance"]).default("artifact")
+    .describe("Stage mode: artifact=FORGE8 pipeline, governance=two-phase commit preview"),
+  
+  // ── Common fields ──
+  ttl_seconds: z.number().int().positive().max(3600).default(300).optional()
+    .describe("Stage TTL in seconds (default 300)"),
+  
+  // ── Artifact mode fields (legacy FORGE8) ──
+  artifact_id: z.string().optional()
+    .describe("Artifact ID from forge_synthesize (artifact mode)"),
+  
   dependencies: z.array(z.object({
     name: z.string(),
     version: z.string().optional(),
     source: z.string().optional(),
-  })).optional(),
+  })).optional()
+    .describe("Dependencies (artifact mode)"),
   
-  /** Requested resources */
   resources_requested: z.object({
     cpu: z.number().positive().max(SANDBOX_RESOURCE_LIMITS.MAX_CPU_CORES),
     memory_mb: z.number().positive().max(SANDBOX_RESOURCE_LIMITS.MAX_MEMORY_MB),
     timeout_ms: z.number().positive().max(SANDBOX_TIMEOUT_MAX_MS.C4_SOVEREIGN),
     network: z.boolean().default(SANDBOX_RESOURCE_LIMITS.NETWORK_ACCESS),
-  }).optional(),
-});
+  }).optional()
+    .describe("Requested resources (artifact mode)"),
+  
+  // ── Governance mode fields ──
+  intent: z.string().min(10).max(10_000).optional()
+    .describe("Natural-language intent (governance mode)"),
+  
+  target: z.string().min(1).max(500).optional()
+    .describe("Target of the operation (governance mode)"),
+  
+  params: z.record(z.unknown()).optional()
+    .describe("Key-value parameters (governance mode)"),
+}).refine(
+  (data) => {
+    if (data.mode === "artifact") return !!data.artifact_id;
+    if (data.mode === "governance") return !!data.intent && !!data.target;
+    return true;
+  },
+  {
+    message: "artifact mode requires artifact_id; governance mode requires intent + target",
+    path: ["mode"],
+  }
+);
 
 export type ForgeStageRequest = z.infer<typeof ForgeStageRequestSchema>;
 
 export const ForgeStageResponseSchema = z.object({
-  /** Stage identifier (quarantine path) */
+  /** Stage identifier */
   stage_id: z.string(),
   
-  /** Full quarantine path */
-  quarantine_path: z.string(),
+  /** Mode this stage was created with */
+  mode: z.enum(["artifact", "governance"]),
   
-  /** Spec locked after staging */
+  // ── Common fields ──
   locked: z.literal(true),
-  
-  /** Spec immutable after staging */
-  immutable: z.literal(true),
-  
-  /** Staging timestamp */
   staged_at: z.string().datetime(),
+  expires_at: z.string().datetime().optional(),
   
-  /** SHA256 hash of locked spec */
-  spec_hash: z.string(),
+  // ── Artifact mode fields ──
+  quarantine_path: z.string().optional(),
+  immutable: z.literal(true).optional(),
+  spec_hash: z.string().optional(),
+  
+  // ── Governance mode fields ──
+  intent: z.string().optional(),
+  target: z.string().optional(),
+  diff: z.string().optional(),
+  affected_organs: z.array(z.string()).optional(),
+  reversibility_score: z.number().min(0).max(1).optional(),
+  blast_radius: z.number().min(0).max(1).optional(),
+  estimated_cost: z.number().min(0).max(1).optional(),
+  
+  /** UI resource URI for human preview */
+  preview_uri: z.string().optional(),
 });
 
 export type ForgeStageResponse = z.infer<typeof ForgeStageResponseSchema>;
@@ -859,6 +949,10 @@ export const CAPABILITY_MATRIX = {
     "Environment setup",
     "Resource allocation",
     "Quarantine isolation",
+    "Two-phase commit governance staging",
+    "Human-in-the-loop preview (ui://aforge/preview)",
+    "Blast radius computation",
+    "Reversibility scoring",
   ],
   forge_sandbox_run: [
     "Standalone script testing",
