@@ -1,6 +1,6 @@
 <!-- SOT-MANIFEST
 federation_release: v2026.07.12-CONSOLIDATION-EPOCH
-last_verified: 2026-07-15T23:38Z
+last_verified: 2026-07-16T23:38Z
 live_commit: 27fbfb8
 sense_port: 7071
 mcp_port: 7072
