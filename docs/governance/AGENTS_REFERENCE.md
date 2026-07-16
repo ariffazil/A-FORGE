@@ -114,10 +114,10 @@ npm run example:explore
 node dist/src/cli.js <command> [options]
 
 # Start HTTP bridge server
-node dist/src/server.js
+node dist/src/interfaces/server.js
 
 # Start MCP stdio server
-node dist/src/mcp/server.js
+node dist/src/interfaces/mcp/server.js
 
 # Docker Compose stack (includes Postgres, Redis, Ollama, Qdrant, Prometheus, Grafana, Caddy)
 docker compose up -d --build --remove-orphans
@@ -698,7 +698,6 @@ A-FORGE now physically integrates the **Central Nervous System** of the arifOS f
 7. **WEALTH-Agent** (AGI): Capital, transactions, and NAV specialist.
 8. **ARCHIVIST-Agent** (AGI): Canon and Memory Keeper. Automatically writes every `SEAL` to the `arifos.canon_records` immutable ledger.
 9. **NOTIFIER-Agent** (TOOL): Human-loop delivery. Bridges `888_HOLD` to external webhooks (e.g., Telegram sidecar on port 9001).
-
 
 
 

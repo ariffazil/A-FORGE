@@ -23,7 +23,7 @@ A-FORGE = execution shell (do it, safely)
 ## Owns
 
 - Governed agent execution pipeline (PlanValidator → ModelCapabilityGate → floors → ApprovalBoundary → execution)
-- MCP federation bridge (72+ tools across A-FORGE + live federation MCP surfaces, auto-discovered)
+- Local MCP execution surface (75 registered tools; 22 stateless over HTTP) plus federation probes/proxies
 - Terminal forge (streaming LLM, session persistence, federation probe)
 - Build, deploy, and artifact orchestration
 - Observability (Prometheus metrics, federation telemetry)

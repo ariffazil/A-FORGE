@@ -13,7 +13,7 @@
 
 ```bash
 npm ci && npm run build
-ls dist/interfaces/server.js      # Verify compile
+ls dist/src/interfaces/server.js  # Verify compile
 curl -s http://localhost:7071/health | python3 -m json.tool
 node dist/test/PlanValidator.test.js
 ```
@@ -25,9 +25,11 @@ node dist/test/PlanValidator.test.js
 A-FORGE is the **governed execution shell** of the arifOS Federation. It:
 
 - **Executes** approved plans through the 4-layer forge gate (F1 → Model → Governance → Irreversibility)
-- **Auto-discovers** tools across live federation MCP surfaces (arifOS, GEOX, WEALTH, WELL, A-FORGE); A-FORGE :7072 exposes 72 tools
+- **Exposes** a 75-tool local MCP surface (22 stateless HTTP tools; session-owned remainder)
+- **Probes** live federation surfaces (arifOS, GEOX, WEALTH, WELL, AAA) without treating them as part of the local MCP count
 - **Bridges** arifOS SEAL authorization to execution substrates
 - **Bridges** to MIND (Hermes:8644) and MEMORY (VAULT999 + tiered L1-L6 storage) — A-FORGE does NOT host them
+- **Enforces** tool calls with A-THINK + MCP Policy Gate + optional AAE envelope validation
 - **Terminal forge** — interactive streaming-LLM interface with session persistence
 
 **A-FORGE NEVER:** geoscience (GEOX), economics (WEALTH), verdicts (arifOS), NumPy/Pandas.

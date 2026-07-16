@@ -172,17 +172,20 @@ Result → RunReporter → Prometheus + Supabase + VAULT999
 
 ## Federation Discovery
 
-On startup, A-FORGE discovers connected federation surfaces via A2A agent cards. The arifOS Federation has **6 active organs** (arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL). APEX (port 3002) is decommissioned. A-FORGE also hosts the MIND:51001 **service**, which is not an organ. MEMORY:51002 is not currently responding.
+A-FORGE exposes a **75-tool local MCP surface** and separately probes connected federation organs. The active federation organs are **arifOS, A-FORGE, AAA, GEOX, WEALTH, and WELL**. APEX on port 3002 is legacy, while MIND:51001 and MEMORY:51002 are services rather than organs.
 
 ```
-A-FORGE startup
-  ├── Probe arifOS  at 127.0.0.1:8088  → tools registered
-  ├── Probe GEOX    at 127.0.0.1:8081  → tools registered
-  ├── Probe WEALTH  at 127.0.0.1:18082 → tools registered
-  ├── Probe WELL    at 127.0.0.1:18083 → tools registered
-  └── Probe AAA     at 127.0.0.1:3001  → A2A gateway active
-  ─────────────────────────────────────
-  TOTAL: 72+ tools across A-FORGE + federation MCP surfaces
+Local A-FORGE MCP
+  ├── 75 registered tools in src/interfaces/mcp/
+  ├── 22 stateless HTTP tools in src/interfaces/mcp/serve.ts
+  └── 53 session-owned tools behind MCP session + policy gates
+
+Federation probe
+  ├── Probe arifOS  at 127.0.0.1:8088
+  ├── Probe GEOX    at 127.0.0.1:8081
+  ├── Probe WEALTH  at 127.0.0.1:18082
+  ├── Probe WELL    at 127.0.0.1:18083
+  └── Probe AAA     at 127.0.0.1:3001
 ```
 
 The `/api/federation-probe` endpoint returns live status of connected surfaces.

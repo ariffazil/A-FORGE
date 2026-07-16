@@ -56,7 +56,7 @@ A-FORGE can run as a standalone execution shell without the other federation org
 # Start with stdio MCP (usable by Claude Code, Continue, etc.)
 npm run mcp:stdio
 
-# Or start as HTTP MCP server
+# Or start as HTTP MCP server (package.json binds port 3000 for local use)
 npm run mcp:http
 ```
 
@@ -85,7 +85,7 @@ npm run mcp:http
 
 ```bash
 npm run build && npm test
-# Runs: AgentEngine, PlanValidator, ParallelPlannerContract, and more
+# Runs the compiled AgentEngine suite; use `make test` for the broader battery
 ```
 
 ## Common Issues

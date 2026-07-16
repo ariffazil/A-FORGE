@@ -90,6 +90,12 @@ export function getConstitution(): FloorRule[] {
   return cachedConstitution;
 }
 
+function getRegisteredMcpToolCount(): number {
+  const registry = (mcpServer as unknown as { _registeredTools?: Record<string, { enabled?: boolean }> })._registeredTools;
+  if (!registry) return 0;
+  return Object.values(registry).filter((tool) => tool?.enabled !== false).length;
+}
+
 function ensureOperatorTokenPolicy(): string | undefined {
   const operatorApiToken = process.env.OPERATOR_API_TOKEN;
   const isProduction = process.env.NODE_ENV === "production" || process.env.AF_FORGE_ENV === "production";
@@ -188,7 +194,9 @@ export function createApp(): express.Express {
       mcp_endpoint: "/mcp",
       health_endpoint: "/health",
       contract_url: "/contract",
-      tool_count: 59,
+      tool_count: getRegisteredMcpToolCount(),
+      stateless_http_tool_count: 22,
+      session_required_tool_count: Math.max(0, getRegisteredMcpToolCount() - 22),
     });
   });
 

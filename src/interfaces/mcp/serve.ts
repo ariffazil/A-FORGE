@@ -11,7 +11,7 @@
  * Subsequent clients get stateless access to whitelisted tools.
  *
  * @module mcp/serve
- * @constitutional F2 TRUTH — verified working: stdio transport yields 59 tools
+ * @constitutional F2 TRUTH — tool count is dynamic; inspect MCP tools/list or server registry at runtime
  */
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
