@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>A-FORGE Governance Preview</title>
+<style>
+  :root {
+    --bg: #0b0f14;
+    --surface: #141a24;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #3b82f6;
+    --green: #22c55e;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --radius: 8px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+    line-height: 1.5;
+    font-size: 13px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .intent { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .target { font-size: 12px; color: var(--accent); font-family: monospace; }
+  .timer {
+    font-size: 24px;
+    font-weight: 700;
+    font-family: monospace;
+    color: var(--amber);
+    text-align: right;
+  }
+  .timer.expired { color: var(--red); }
+  .timer-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .diff {
+    font-family: monospace;
+    font-size: 11px;
+    white-space: pre-wrap;
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+  .organs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .organ-badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(59,130,246,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(59,130,246,0.2);
+  }
+  .metric-row { display: flex; gap: 12px; margin-top: 8px; }
+  .metric {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+  }
+  .metric-value { font-size: 20px; font-weight: 700; }
+  .metric-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-top: 2px; }
+  .score-green { color: var(--green); }
+  .score-amber { color: var(--amber); }
+  .score-red { color: var(--red); }
+  .btn-group { display: flex; gap: 8px; }
+  .btn {
+    flex: 1;
+    padding: 12px 16px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-seal { background: var(--green); color: #000; }
+  .btn-seal:hover:not(:disabled) { background: #16a34a; }
+  .btn-hold { background: var(--amber); color: #000; }
+  .btn-hold:hover:not(:disabled) { background: #d97706; }
+  .btn-void { background: var(--red); color: #fff; }
+  .btn-void:hover:not(:disabled) { background: #dc2626; }
+  .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .status-pending { background: rgba(245,158,11,0.15); color: var(--amber); }
+  .status-sealed { background: rgba(34,197,94,0.15); color: var(--green); }
+  .status-held { background: rgba(239,68,68,0.15); color: var(--red); }
+  .status-voided { background: rgba(100,116,139,0.15); color: var(--muted); }
+  .hidden { display: none; }
+  #status-msg {
+    text-align: center;
+    padding: 24px;
+  }
+  #status-msg p { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .f13-seal { font-size: 9px; color: var(--muted); margin-top: 6px; text-align: center; }
+  .f13-seal strong { color: var(--text); }
+</style>
+</head>
+<body>
+  <!-- Loading State -->
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <span>AWAITING GOVERNANCE DATA...</span>
+  </div>
+
+  <!-- Governance Preview -->
+  <div id="preview" class="hidden">
+    <div class="header">
+      <div>
+        <div class="intent" id="intent-display">—</div>
+        <div class="target" id="target-display">—</div>
+      </div>
+      <div>
+        <div class="timer" id="timer-display">--:--</div>
+        <div class="timer-label">STAGE EXPIRES IN</div>
+      </div>
+    </div>
+
+    <!-- Diff View -->
+    <div class="card">
+      <div class="card-title">Proposed Operation</div>
+      <div class="diff" id="diff-display">Awaiting diff data...</div>
+    </div>
+
+    <!-- Blast Radius Panel -->
+    <div class="card">
+      <div class="card-title">Blast Radius</div>
+      <div class="organs" id="organs-display"></div>
+      <div class="metric-row">
+        <div class="metric">
+          <div class="metric-value" id="reversibility-display">--</div>
+          <div class="metric-label">Reversibility</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="blast-display">--</div>
+          <div class="metric-label">Blast Radius</div>
+        </div>
+        <div class="metric">
+          <div class="metric-value" id="cost-display">--</div>
+          <div class="metric-label">Est. Cost</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F13 Gate -->
+    <div class="card">
+      <div class="card-title">F13 Sovereign Gate</div>
+      <div class="btn-group">
+        <button class="btn btn-seal" id="btn-seal" onclick="onSeal()">SEAL &amp; EXECUTE</button>
+        <button class="btn btn-hold" id="btn-hold" onclick="onHold()">HOLD</button>
+        <button class="btn btn-void" id="btn-void" onclick="onVoid()">VOID</button>
+      </div>
+      <div class="f13-seal">
+        <strong>F13</strong> · Sovereign approval required · Stage expires in <span id="timer-label">5:00</span>
+      </div>
+    </div>
+
+    <!-- Result Message -->
+    <div id="status-msg" class="hidden"></div>
+  </div>
+
+<script>
+(function() {
+  "use strict";
+
+  // ── State ──
+  let stageData = null;
+  let hostOrigin = null;
+  let hostCapabilities = null;
+  let requestId = 1;
+  let timerInterval = null;
+  let expiresAt = null;
+  let resolved = false;
+
+  // ── PostMessage JSON-RPC ──
+  function postToHost(msg) {
+    if (!parent) return;
+    parent.postMessage(JSON.stringify(msg), "*");
+  }
+
+  function sendRequest(method, params) {
+    const id = requestId++;
+    postToHost({ jsonrpc: "2.0", id: id, method: method, params: params || {} });
+    return id;
+  }
+
+  // ── UI Render ──
+  function renderPreview(data) {
+    stageData = data;
+    document.getElementById("loading").classList.add("hidden");
+    document.getElementById("preview").classList.remove("hidden");
+
+    // Intent + Target
+    document.getElementById("intent-display").textContent = data.intent || "—";
+    document.getElementById("target-display").textContent = data.target || "—";
+
+    // Diff
+    document.getElementById("diff-display").textContent = data.diff || "No diff available.";
+
+    // Organs
+    const organsContainer = document.getElementById("organs-display");
+    organsContainer.innerHTML = "";
+    if (data.affected_organs && data.affected_organs.length > 0) {
+      data.affected_organs.forEach(function(organ) {
+        var badge = document.createElement("span");
+        badge.className = "organ-badge";
+        badge.textContent = organ;
+        organsContainer.appendChild(badge);
+      });
+    } else {
+      organsContainer.innerHTML = '<span style="color:var(--muted);font-size:11px;">No organs detected</span>';
+    }
+
+    // Metrics
+    const rScore = typeof data.reversibility_score === "number" ? data.reversibility_score : 0.5;
+    const bRadius = typeof data.blast_radius === "number" ? data.blast_radius : 0.3;
+    const cost = typeof data.estimated_cost === "number" ? data.estimated_cost : 0.3;
+
+    function scoreColor(val, invert) {
+      if (invert) val = 1 - val;
+      if (val >= 0.7) return "score-green";
+      if (val >= 0.4) return "score-amber";
+      return "score-red";
+    }
+
+    const revEl = document.getElementById("reversibility-display");
+    revEl.textContent = (rScore * 100).toFixed(0) + "%";
+    revEl.className = "metric-value " + scoreColor(rScore, false);
+
+    const blastEl = document.getElementById("blast-display");
+    blastEl.textContent = (bRadius * 100).toFixed(0) + "%";
+    blastEl.className = "metric-value " + scoreColor(bRadius, true);
+
+    const costEl = document.getElementById("cost-display");
+    costEl.textContent = (cost * 100).toFixed(0) + "%";
+    costEl.className = "metric-value " + scoreColor(cost, true);
+
+    // Timer
+    if (data.expires_at) {
+      expiresAt = new Date(data.expires_at).getTime();
+      startTimer();
+    }
+
+    // Enable buttons
+    document.getElementById("btn-seal").disabled = false;
+    document.getElementById("btn-hold").disabled = false;
+    document.getElementById("btn-void").disabled = false;
+
+    // Notify host we're ready
+    sendRequest("ui/notifications/initialized", { app: "aforge-preview" });
+  }
+
+  function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    function tick() {
+      var now = Date.now();
+      var diff = expiresAt - now;
+      var timerEl = document.getElementById("timer-display");
+      var labelEl = document.getElementById("timer-label");
+      if (diff <= 0) {
+        timerEl.textContent = "EXPIRED";
+        timerEl.className = "timer expired";
+        labelEl.textContent = "0:00";
+        if (!resolved) {
+          document.getElementById("btn-seal").disabled = true;
+          document.getElementById("btn-hold").disabled = true;
+          document.getElementById("btn-void").disabled = true;
+        }
+        if (timerInterval) clearInterval(timerInterval);
+        return;
+      }
+      var min = Math.floor(diff / 60000);
+      var sec = Math.floor((diff % 60000) / 1000);
+      timerEl.textContent = min + ":" + (sec < 10 ? "0" : "") + sec;
+      timerEl.className = "timer" + (diff < 30000 ? " expired" : "");
+      labelEl.textContent = (diff < 60000 ? "<1 min" : Math.ceil(diff / 60000) + " min");
+    }
+    tick();
+    timerInterval = setInterval(tick, 1000);
+  }
+
+  function showResult(status, message) {
+    resolved = true;
+    document.getElementById("btn-seal").disabled = true;
+    document.getElementById("btn-hold").disabled = true;
+    document.getElementById("btn-void").disabled = true;
+    var msgEl = document.getElementById("status-msg");
+    msgEl.className = "status-badge status-" + status;
+    msgEl.innerHTML = status.toUpperCase() + "<p>" + (message || "") + "</p>";
+    msgEl.classList.remove("hidden");
+    if (timerInterval) clearInterval(timerInterval);
+    var timerEl = document.getElementById("timer-display");
+    timerEl.textContent = status === "sealed" ? "EXECUTED" : status.toUpperCase();
+  }
+
+  // ── F13 Gate Actions ──
+  window.onSeal = function() {
+    if (!stageData || resolved) return;
+    var token = "stg_" + Array.from(crypto.getRandomValues(new Uint8Array(16)), function(b) {
+      return b.toString(36).slice(0, 1);
+    }).join("").slice(0, 20);
+    sendRequest("tools/call", {
+      name: "forge_execute",
+      arguments: {
+        stage_id: stageData.stage_id,
+        human_seal_token: token,
+        action: stageData.intent || "governance_action",
+      }
+    });
+    // Optimistic UI
+    showResult("sealed", "Executing: " + (stageData.intent || "").slice(0, 100));
+  };
+
+  window.onHold = function() {
+    if (!stageData || resolved) return;
+    sendRequest("ui/update-model-context", {
+      structuredContent: {
+        envelope: {
+          stage_id: stageData.stage_id,
+          action: "HOLD",
+          reason: "Human review required more evidence",
+        }
+      }
+    });
+    showResult("held", "Stage held for review. Notify the model.");
+  };
+
+  window.onVoid = function() {
+    if (!stageData || resolved) return;
+    sendRequest("ui/update-model-context", {
+      structuredContent: {
+        envelope: {
+          stage_id: stageData.stage_id,
+          action: "VOID",
+          reason: "Human voided this operation",
+        }
+      }
+    });
+    showResult("voided", "Stage discarded.");
+  };
+
+  // ── Host Message Listener ──
+  window.addEventListener("message", function(ev) {
+    // Parse JSON-RPC
+    var data = ev.data;
+    if (typeof data === "string") {
+      try { data = JSON.parse(data); } catch(e) { return; }
+    }
+    if (!data || data.jsonrpc !== "2.0") return;
+
+    // Initialize
+    if (data.method === "ui/initialize") {
+      hostOrigin = ev.origin;
+      // Respond with capabilities
+      postToHost({
+        jsonrpc: "2.0",
+        id: data.id,
+        result: {
+          protocolVersion: "2026-01-26",
+          capabilities: {
+            tools: {},
+            resources: {}
+          },
+          clientInfo: { name: "aforge-preview", version: "1.0.0" }
+        }
+      });
+      return;
+    }
+
+    // Tool result / structured content
+    if (data.method === "ui/notifications/tool-result" && data.params) {
+      var content = data.params.content || [];
+      var structured = data.params.structuredContent || {};
+      var envelope = structured.envelope || {};
+
+      // Check if this is a forge_execute result for our stage
+      if (envelope.stage_id || data.params._meta?.ui?.resourceUri) {
+        // Try extracting from metadata first
+        if (envelope.stage_id) {
+          renderPreview(envelope);
+          return;
+        }
+      }
+
+      // Fallback: extract from text content
+      for (var i = 0; i < content.length; i++) {
+        if (content[i].type === "text" && content[i].text) {
+          try {
+            var parsed = JSON.parse(content[i].text);
+            if (parsed.stage_id && parsed.mode === "governance") {
+              renderPreview(parsed);
+              return;
+            }
+          } catch(e) { /* not JSON */ }
+        }
+      }
+    }
+
+    // Response to our tools/call
+    if (data.id && data.result) {
+      // forge_execute response
+      if (data.result.execution_id || data.result.success === true) {
+        showResult("sealed", "Executed: " + (data.result.execution_id || ""));
+      }
+      if (data.result.hold || data.result.isError) {
+        showResult("held", "HOLD: " + (data.result.message || ""));
+      }
+    }
+
+    // Error
+    if (data.id && data.error) {
+      showResult("held", "Error: " + (data.error.message || "RPC error"));
+    }
+  });
+
+  // ── Initialize handshake ──
+  sendRequest("ui/initialize", {
+    clientInfo: { name: "aforge-preview", version: "1.0.0" },
+    protocolVersion: "2026-01-26",
+  });
+
+  // ── Request stage data ──
+  sendRequest("resources/read", {
+    uri: window.location.pathname + window.location.search,
+  });
+})();
+</script>
+</body>
+</html>

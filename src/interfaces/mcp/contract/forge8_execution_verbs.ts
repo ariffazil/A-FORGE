@@ -146,45 +146,128 @@ export const ForgeSynthesizeResponseSchema = z.object({
 export type ForgeSynthesizeResponse = z.infer<typeof ForgeSynthesizeResponseSchema>;
 
 // ============================================================================
-// VERB 2: forge_stage — Move to Quarantine, Lock Spec
+// VERB 2: forge_stage — Move to Quarantine, Lock Spec / Governance Preview
 // ============================================================================
 
+/**
+ * forge_stage(mode: "governance", intent, target, params)
+ * 
+ * TWO modes:
+ *   mode="artifact":  Move synthesized artifact to quarantine zone (legacy FORGE8)
+ *   mode="governance": Stage an intent for human preview + approval (two-phase commit)
+ * 
+ * GOVERNANCE MODE:
+ *   - NO mutation, idempotent, safe to call repeatedly
+ *   - Computes diff/blast_radius/reversibility_score/affected_organs
+ *   - Returns ui://aforge/preview/<stage_id> for human review
+ *   - Stage_id expires after ttl_seconds (default 300s = 5 min)
+ */
+
+// ── Governance stage params ──
+export const GovernanceStageParamsSchema = z.object({
+  intent: z.string().min(10).max(10_000)
+    .describe("Natural-language description of the intended operation"),
+  target: z.string().min(1).max(500)
+    .describe("Target of the operation (file path, organ name, service, etc.)"),
+  params: z.record(z.unknown()).optional()
+    .describe("Optional key-value parameters for the operation"),
+});
+
+export type GovernanceStageParams = z.infer<typeof GovernanceStageParamsSchema>;
+
+// ── Governance stage result (computed metadata) ──
+export const GovernanceStageResultSchema = z.object({
+  diff: z.string().optional()
+    .describe("Before/after diff of the proposed change"),
+  affected_organs: z.array(z.string())
+    .describe("Organs touched by this operation"),
+  reversibility_score: z.number().min(0).max(1)
+    .describe("How reversible this operation is (1.0 = fully reversible)"),
+  blast_radius: z.number().min(0).max(1)
+    .describe("How many systems this operation affects (1.0 = federation-wide)"),
+  estimated_cost: z.number().min(0).max(1).optional()
+    .describe("Estimated resource/cost impact"),
+});
+
+export type GovernanceStageResult = z.infer<typeof GovernanceStageResultSchema>;
+
+// ── Main forge_stage request ──
 export const ForgeStageRequestSchema = z.object({
-  artifact_id: z.string().uuid(),
+  /** Mode: "artifact" (FORGE8 pipeline) or "governance" (two-phase commit) */
+  mode: z.enum(["artifact", "governance"]).default("artifact")
+    .describe("Stage mode: artifact=FORGE8 pipeline, governance=two-phase commit preview"),
+  
+  // ── Common ──
+  ttl_seconds: z.number().int().positive().max(3600).default(300)
+    .describe("Stage TTL in seconds (default 300 = 5 min)"),
+  
+  // ── Artifact mode (legacy FORGE8) ──
+  artifact_id: z.string().uuid().optional()
+    .describe("Artifact ID from forge_synthesize (artifact mode)"),
   dependencies: z.array(z.string())
     .max(100, "Cannot specify more than 100 dependencies")
     .optional()
-    .describe("External dependencies (packages, libraries)"),
-  
+    .describe("External dependencies (artifact mode)"),
   resource_requirements: z.object({
     cpu_cores: z.number().min(1).max(SANDBOX_RESOURCE_LIMITS.MAX_CPU_CORES),
     memory_mb: z.number().min(128).max(SANDBOX_RESOURCE_LIMITS.MAX_MEMORY_MB),
     disk_mb: z.number().min(64).max(SANDBOX_RESOURCE_LIMITS.MAX_DISK_MB),
     network_required: z.boolean().default(false)
   }).optional()
-});
+    .describe("Resource requirements (artifact mode)"),
+  
+  // ── Governance mode ──
+  intent: z.string().min(10).max(10_000).optional()
+    .describe("Natural-language intent (governance mode)"),
+  target: z.string().min(1).max(500).optional()
+    .describe("Target of the operation (governance mode)"),
+  params: z.record(z.unknown()).optional()
+    .describe("Key-value parameters (governance mode)"),
+}).refine(
+  (data) => {
+    if (data.mode === "artifact") return !!data.artifact_id;
+    if (data.mode === "governance") return !!data.intent && !!data.target;
+    return true;
+  },
+  {
+    message: "artifact mode requires artifact_id; governance mode requires intent + target",
+    path: ["mode"],
+  }
+);
 
 export type ForgeStageRequest = z.infer<typeof ForgeStageRequestSchema>;
 
+// ── forge_stage response ──
 export const ForgeStageResponseSchema = z.object({
-  stage_id: z.string().uuid(),
-  staging_location: z.string()
-    .describe("Quarantine staging directory path"),
+  stage_id: z.string(),
+  mode: z.enum(["artifact", "governance"]),
   
-  /** Spec is now IMMUTABLE */
+  // ── Common ──
   locked: z.literal(true),
+  staged_at: z.string().datetime(),
+  expires_at: z.string().datetime().optional(),
   
-  staging_completed_at: z.string().datetime(),
-  
-  /** All dependencies resolved and verified */
-  dependencies_resolved: z.array(z.string()),
-  
-  /** Resource quota allocated */
+  // ── Artifact mode ──
+  staging_location: z.string().optional(),
+  staging_completed_at: z.string().datetime().optional(),
+  dependencies_resolved: z.array(z.string()).optional(),
   resources_allocated: z.object({
     cpu_cores: z.number(),
     memory_mb: z.number(),
     disk_mb: z.number()
-  })
+  }).optional(),
+  
+  // ── Governance mode ──
+  intent: z.string().optional(),
+  target: z.string().optional(),
+  diff: z.string().optional(),
+  affected_organs: z.array(z.string()).optional(),
+  reversibility_score: z.number().min(0).max(1).optional(),
+  blast_radius: z.number().min(0).max(1).optional(),
+  estimated_cost: z.number().min(0).max(1).optional(),
+  
+  /** UI resource URI for human preview (governance mode) */
+  preview_uri: z.string().optional(),
 });
 
 export type ForgeStageResponse = z.infer<typeof ForgeStageResponseSchema>;
@@ -486,31 +569,56 @@ export type ForgeDocketPrepResponse = z.infer<typeof ForgeDocketPrepResponseSche
  * This is what prevents A-FORGE from self-authorizing.
  */
 export const ForgeExecuteRequestSchema = z.object({
-  docket_id: z.string().uuid(),
+  // ── Legacy FORGE8 path (docket + vault seal) ──
+  docket_id: z.string().uuid().optional()
+    .describe("Docket ID (legacy FORGE8 path)"),
   
-  /** MANDATORY: Valid VAULT999 SEAL from arifOS */
-  vault_seal_id: z.string().uuid()
+  vault_seal_id: z.string().uuid().optional()
     .describe("ID of VAULT999 SEAL (must be from arifOS)"),
   
-  vault_seal_signature: z.string()
+  vault_seal_signature: z.string().optional()
     .describe("Cryptographic signature from VAULT999"),
   
-  vault_seal_timestamp: z.string().datetime()
+  vault_seal_timestamp: z.string().datetime().optional()
     .describe("When the SEAL was issued"),
   
-  /** Optional: execution parameters */
+  // ── Governance two-phase commit path ──
+  stage_id: z.string().optional()
+    .describe("Stage ID from forge_stage(mode=governance)"),
+  
+  human_seal_token: z.string().min(16).optional()
+    .describe("F13 sovereign approval token from UI SEAL button"),
+  
+  /** Execution parameters */
   execution_parameters: z.record(z.string(), z.any())
     .optional()
-    .describe("Runtime parameters for the artifact")
-});
+    .describe("Runtime parameters for the artifact"),
+  
+  /** Action to execute (for governance path) */
+  action: z.string().optional()
+    .describe("Action to execute (e.g., 'deploy', 'restart', 'git_push')"),
+}).refine(
+  (data) => {
+    const hasLegacy = !!data.docket_id && !!data.vault_seal_id;
+    const hasGovernance = !!data.stage_id && !!data.human_seal_token;
+    return hasLegacy || hasGovernance;
+  },
+  {
+    message: "Must provide either (docket_id + vault_seal_id) or (stage_id + human_seal_token)",
+    path: ["stage_id"],
+  }
+);
 
 export type ForgeExecuteRequest = z.infer<typeof ForgeExecuteRequestSchema>;
 
 export const ForgeExecuteResponseSchema = z.object({
   success: z.literal(true),
-  execution_id: z.string().uuid(),
+  execution_id: z.string(),
   
   executed_at: z.string().datetime(),
+  
+  /** Which path was used */
+  authorization_path: z.enum(["vault_seal", "governance_stage"]),
   
   execution_metrics: z.object({
     execution_time_ms: z.number().int(),
@@ -522,7 +630,10 @@ export const ForgeExecuteResponseSchema = z.object({
   execution_output: z.string().optional(),
   
   /** VAULT999 audit trail entry */
-  vault_audit_id: z.string().uuid()
+  vault_audit_id: z.string().uuid(),
+  
+  /** UI receipt URI (governance path only) */
+  receipt_uri: z.string().optional(),
 });
 
 export type ForgeExecuteResponse = z.infer<typeof ForgeExecuteResponseSchema>;
