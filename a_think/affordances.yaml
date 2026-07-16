@@ -752,7 +752,135 @@ tools:
   kernel_verb: 777_FORGE
   mutation_class: OBSERVE
   reads:
-  - jobs
+  - task_groups
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_canonize
+  purpose: 'ACTUATOR [vault/OBSERVE] supervised by kernel 777_FORGE. Promote a draft artifact to canonical state. Copies from
+    source to forge_work/CANON/, computes SHA256, records provenance receipt. Does NOT delete source (F1 AMANAH). Classification:
+    EXECUTE_REVERSIBLE.'
+  affordance_class: vault
+  capability_surface: aforge.vault.canonize
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - artifacts
+  - filesystem
+  writes:
+  - filesystem
+  - vault
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R2
+- name: forge_cool_drift
+  purpose: 'ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. Emit a COOLING_RECEIPT with convergence signal (CONVERGING/DIVERGING/STABLE).
+    Routes through seal_chain.js validateCooling() → VAULT999 append. INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK.
+    INV-C4: explicit governance.'
+  affordance_class: vault
+  capability_surface: aforge.vault.cool_drift
+  kernel_verb: 999_SEAL
+  mutation_class: MUTATE
+  reads:
+  - vault
+  - session
+  writes:
+  - vault
+  external_side_effect: false
+  destructive: false
+  reversible: false
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R2
+- name: forge_cool_pattern
+  purpose: 'ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. Emit a COOLING_RECEIPT from observed failure recurrence. Same pipeline as
+    cool_drift with additional recurrence_count, first_seen, last_seen fields. Routes through seal_chain.js validateCooling() → VAULT999 append.'
+  affordance_class: vault
+  capability_surface: aforge.vault.cool_pattern
+  kernel_verb: 999_SEAL
+  mutation_class: MUTATE
+  reads:
+  - vault
+  - session
+  writes:
+  - vault
+  external_side_effect: false
+  destructive: false
+  reversible: false
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R2
+- name: forge_entropy_sweep
+  purpose: 'ACTUATOR [meta/OBSERVE] supervised by kernel 111_OBSERVE. Measure workspace entropy (ΔS) across the federation. Reports file count,
+    uncommitted changes, temp files, dead processes, and entropy hotspots. Classification: OBSERVE (read-only).'
+  affordance_class: meta
+  capability_surface: aforge.meta.entropy_sweep
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - filesystem
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_git_commit
+  purpose: 'ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Governed git commit with optional pre-commit checks. Delegates to
+    forge_git(mode=commit) under a constitutional gate. F1 AMANAH: verifies working tree before commit. Classification: EXECUTE_HIGH_IMPACT
+    in actionClassifier.ts.'
+  affordance_class: git
+  capability_surface: aforge.git.git_commit
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - git
+  - filesystem
+  writes:
+  - git
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R3
+- name: forge_kernel
+  purpose: 'ACTUATOR [governance/OBSERVE] supervised by kernel 000_INIT. Constitutional kernel proxy. Routes to arifOS at :8088/mcp.
+    Modes: init | observe | think | route | memory | judge | forge | seal. This is the LEGAL constitutional path — not a governance bypass.
+    Requires session ownership for seal/judge/forge modes.'
+  affordance_class: governance
+  capability_surface: aforge.governance.kernel
+  kernel_verb: 000_INIT
+  mutation_class: OBSERVE
+  reads:
+  - constitution
+  - session
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_runtime_verify
+  purpose: 'ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Verify runtime consistency: compares git source commit vs installed
+    wheel vs import path. Returns MATCH|DRIFT|UNKNOWN. Fail-closed: blocks execution on DRIFT. Read-only (OBSERVE class).'
+  affordance_class: probe
+  capability_surface: aforge.probe.runtime_verify
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - system_state
+  - git
   writes: []
   external_side_effect: false
   destructive: false
