@@ -464,6 +464,8 @@ export async function forgeVisualQA(
     request888Hold: (context: unknown) => Promise<{ approved: boolean; receipt_id: string }>;
     sealToVault: (data: unknown) => Promise<{ receipt_id: string }>;
     notifyWell: (signal: unknown) => Promise<{ receipt_id: string }>;
+    /** Optional VAULT999 append for composite seal validation pre-gate */
+    vault999Append?: (record: unknown) => Promise<{ seq: number }>;
   },
 ): Promise<z.infer<typeof ForgeVisualQAOutput>> {
   let currentVerdict: VerdictState = "INIT";
@@ -617,13 +619,14 @@ export async function forgeVisualQA(
   }
 
   // ─────────────────────────────────────────────────────────────
-  // PHASE 5: INTEGRATION RECEIPTS (with composite seal validation)
+  // PHASE 5: INTEGRATION RECEIPTS (with optional composite seal validation)
   // ─────────────────────────────────────────────────────────────
   let sealValidationFailed = false;
   let vaultReceiptId: string | undefined;
 
-  // If verdict is SEALED_DEPLOY, validate composite seal BEFORE sealing
-  if (currentVerdict === "SEALED_DEPLOY") {
+  // If verdict is SEALED_DEPLOY AND vault999Append is provided,
+  // validate composite seal BEFORE sealing (pre-seal gate)
+  if (currentVerdict === "SEALED_DEPLOY" && deps.vault999Append) {
     const sealResult = await sealToVault999(
       {
         w1: {
@@ -642,7 +645,7 @@ export async function forgeVisualQA(
         },
       },
       currentVerdict,
-      { vault999Append: deps.sealToVault as any },
+      { vault999Append: deps.vault999Append },
     );
 
     if (!sealResult.sealed) {
@@ -654,15 +657,18 @@ export async function forgeVisualQA(
     }
   }
 
-  // Fallback: if not SEALED_DEPLOY or seal was handled above
-  if (!sealValidationFailed && currentVerdict !== "VOID") {
-    const vaultReceipt = await deps.sealToVault({
-      verdict: currentVerdict,
-      iterations,
-      entropy_delta: entropy.delta_s,
-      screenshot_hash: input.screenshot_path,
-      code_diff_hash: domPayload,
-    });
+  // Standard vault seal (always runs unless composite seal already handled it)
+  const vaultReceipt = sealValidationFailed
+    ? { receipt_id: undefined }
+    : await deps.sealToVault({
+        verdict: currentVerdict,
+        iterations,
+        entropy_delta: entropy.delta_s,
+        screenshot_hash: input.screenshot_path,
+        code_diff_hash: domPayload,
+      });
+
+  if (!vaultReceiptId) {
     vaultReceiptId = vaultReceipt.receipt_id;
   }
 
@@ -692,8 +698,8 @@ export async function forgeVisualQA(
         receipt_id: judgeReceiptId,
       },
       vault999: {
-        status: "EMITTED",
-        receipt_id: vaultReceipt.receipt_id,
+        status: sealValidationFailed ? "PENDING" : "EMITTED",
+        receipt_id: vaultReceiptId,
       },
       well: {
         status: iterations > 3 ? "EMITTED" : "PENDING",
