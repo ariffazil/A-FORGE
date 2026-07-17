@@ -741,7 +741,7 @@ AGPL-3.0 was chosen deliberately. Governed execution is meaningless if the gover
 
 ## Federation Cross-Reference
 
-A-FORGE is one of **6 active organs** in the arifOS Federation. APEX (port 3002) is decommissioned.
+A-FORGE is one of **6 active organs** in the arifOS Federation. APEX_LEGACY_v3002 (retired 2026-06-27) is decommissioned.
 
 | Organ | Repository | Role | Port |
 |-------|-----------|------|------|
