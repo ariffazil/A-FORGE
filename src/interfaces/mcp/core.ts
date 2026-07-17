@@ -42,6 +42,7 @@ import { visionAnalyze } from "../../infrastructure/tools/visionAnalyze.js";
 import { domLinter } from "../../infrastructure/tools/domLinter.js";
 import { getMcpPolicyGate } from "../../domain/governance/McpPolicyGate.js";
 import { enforceMcpFloor, floorErrorResponse } from "../../domain/governance/mcpFloorEnforcer.js";
+import { gateToolIngress } from "../../infrastructure/governance/sctIngress.js";
 import {
   registerFilesystemTools,
   registerPostgresTools,
@@ -447,6 +448,11 @@ const GOVERNANCE_FIELDS = {
   session_id: z.string().optional().describe("Kernel-born session ID (FORGE 2-B)"),
   actor_id: z.string().optional().describe("Actor ID (FORGE 2-B)"),
   lease_id: z.string().optional().describe("Governed lease ID (FORGE 2-B)"),
+  session_token: z
+    .string()
+    .optional()
+    .describe("arifOS Session Capability Token sct_v1.* (federation SCT gate)"),
+  sct: z.string().optional().describe("Alias for session_token"),
 };
 
 function extendZodSchema(schema: any): any {
@@ -490,6 +496,11 @@ function extendInputSchema(schema: any): any {
         session_id: { type: "string", description: "Kernel-born session ID (FORGE 2-B)" },
         actor_id: { type: "string", description: "Actor ID (FORGE 2-B)" },
         lease_id: { type: "string", description: "Governed lease ID (FORGE 2-B)" },
+        session_token: {
+          type: "string",
+          description: "arifOS SCT sct_v1.* (federation gate)",
+        },
+        sct: { type: "string", description: "Alias for session_token" },
       },
     };
   }
@@ -507,6 +518,37 @@ const _originalTool = server.tool.bind(server);
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     const actionClass = classifyTool(name);
+
+    // ── SCT federation gate (2026-07-17) ────────────────────────────────
+    // Present token → verify fail-closed. MUTATE/ATOMIC may require SCT
+    // when FORGE_SCT_REQUIRE_MUTATE=1 (default on).
+    const requireSct =
+      requiresGovernance(actionClass) &&
+      process.env.FORGE_SCT_REQUIRE_MUTATE !== "0";
+    const sctGate = await gateToolIngress(name, argsObj, {
+      requireSct,
+      requiredAuthority: requiresGovernance(actionClass) ? "OBSERVE_ONLY" : "OBSERVE_ONLY",
+    });
+    if (!sctGate.ok) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                error: `SCT_GATE: ${sctGate.error}: ${sctGate.message}`,
+                action_class: actionClass,
+                adat_gate: "SCT_REQUIRED",
+                organ: "a-forge",
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+        isError: true,
+      };
+    }
 
     // ── A-THINK Guard: classify → budget → affordance → permission ──
     // This is the constitutional front-door. No tool bypasses this.
@@ -577,6 +619,34 @@ const _originalRegisterTool = server.registerTool.bind(server);
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     const actionClass = classifyTool(name);
+
+    // ── SCT federation gate (registerTool path) ─────────────────────────
+    const requireSctReg =
+      requiresGovernance(actionClass) &&
+      process.env.FORGE_SCT_REQUIRE_MUTATE !== "0";
+    const sctGateReg = await gateToolIngress(name, argsObj, {
+      requireSct: requireSctReg,
+    });
+    if (!sctGateReg.ok) {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                error: `SCT_GATE: ${sctGateReg.error}: ${sctGateReg.message}`,
+                action_class: actionClass,
+                adat_gate: "SCT_REQUIRED",
+                organ: "a-forge",
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+        isError: true,
+      };
+    }
 
     // ── A-THINK Guard: classify → budget → affordance → permission ──
     // This is the constitutional front-door. No tool bypasses this.
