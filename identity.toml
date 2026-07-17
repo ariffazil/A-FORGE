@@ -6,8 +6,9 @@ version = "kanon-1.0.0"
 authority = "F13_SOVEREIGN"
 
 [network]
-default_port = 7071
-caddy_domain = "a-forge.arif-fazil.com"
+sense_port = 7071
+mcp_port = 7072
+caddy_domain = "forge.arif-fazil.com"
 a2a_enabled = true
 
 [capabilities]
