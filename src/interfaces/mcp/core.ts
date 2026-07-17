@@ -38,6 +38,8 @@ import { journalctlWrapper } from "../../infrastructure/tools/infra/journalctl_w
 import { registerCoreResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
 import { callMCP } from "./client.js";
+import { visionAnalyze } from "../../infrastructure/tools/visionAnalyze.js";
+import { domLinter } from "../../infrastructure/tools/domLinter.js";
 import { getMcpPolicyGate } from "../../domain/governance/McpPolicyGate.js";
 import { enforceMcpFloor, floorErrorResponse } from "../../domain/governance/mcpFloorEnforcer.js";
 import {
@@ -2489,16 +2491,16 @@ server.tool(
           prev_deviation_count: 0,
         },
         {
-          // W₁: Vision analysis (stub — agent provides real implementation)
-          visionAnalyze: async () => ({
-            deviations: [],
-            confidence: 0.85,
-          }),
-          // W₂: DOM linter (stub — agent provides real implementation)
-          domLinter: async () => ({
-            deviations: [],
-            confidence: 0.90,
-          }),
+          // W₁: Vision analysis — deterministic pixelmatch (real implementation)
+          visionAnalyze: async (path: string, constraints: unknown) => {
+            const result = await visionAnalyze(path, constraints as any);
+            return { deviations: result.deviations, confidence: result.confidence };
+          },
+          // W₂: DOM linter — deterministic HTML/AST parsing (real implementation)
+          domLinter: async (payload: string, required: string[]) => {
+            const result = await domLinter(payload, { required_elements: required });
+            return { deviations: result.deviations, confidence: result.confidence };
+          },
           // Scar consultation — stub (real implementation via agent tool surface)
           scarQuery: async (_type: string) => null,
           // Fix generation (stub — agent provides real implementation)
