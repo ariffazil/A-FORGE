@@ -7,7 +7,7 @@
 # Lane 2 — BIJAKSANA: entropy (ΔS), clarity (Φ), truth (Ψ), governance (Ω)
 #   Uses TypeScript-native tools (tsc, Node test runner)
 #
-# Verdict: SEAL_READY | SABAR | HOLD
+# Verdict: CI_PASS | SABAR | HOLD
 
 name: "🧠 Agentic CI"
 
@@ -45,7 +45,6 @@ jobs:
         run: npm run build
       - name: Test
         run: node dist/test/AgentEngine.test.js
-        continue-on-error: true
 
   bijaksana:
     name: "Lane 2 — BIJAKSANA ΔS Φ Ψ Ω"
@@ -124,11 +123,11 @@ jobs:
           DS=${DS:-0}; PHI=${PHI:-0}; PSI=${PSI:-"UNKNOWN"}; OMEGA=${OMEGA:-"UNKNOWN"}
           
           if [ "$STANDARD_OK" = "success" ] && [ "$PHI" = "100" ] && [ "$OMEGA" = "0" ] && [ "$DS" -lt 100 ]; then
-            VERDICT="SEAL_READY"
+            VERDICT="CI_PASS"
           elif [ "$STANDARD_OK" = "success" ]; then
-            VERDICT="SABAR"
+            VERDICT='ADVISORY_WARN'
           else
-            VERDICT="HOLD"
+            VERDICT='CI_FAIL'
           fi
           
           cat > agentic_ci_report.json << EOF
@@ -139,7 +138,7 @@ jobs:
           script: |
             const fs = require('fs');
             const r = JSON.parse(fs.readFileSync('agentic_ci_report.json','utf8'));
-            const c = r.verdict === 'SEAL_READY' ? 'success' : r.verdict === 'SABAR' ? 'neutral' : 'failure';
+            const c = r.verdict === 'CI_PASS' ? 'success' : r.verdict === 'ADVISORY_WARN' ? 'neutral' : 'failure';
             await github.rest.checks.create({owner:context.repo.owner,repo:context.repo.repo,name:'Agentic CI',head_sha:context.sha,status:'completed',conclusion:c,output:{title:`A-FORGE: ${r.verdict}`,summary:`| Lane | Status |\n|------|--------|\n| Standard | ${r.lane_1} |\n| ΔS=${r.lane_2.ds} Φ=${r.lane_2.phi}% Ψ=${r.lane_2.psi} Ω=${r.lane_2.omega} |\n| **Verdict** | **${r.verdict}** |`}});
       - uses: actions/upload-artifact@v7
         if: always()
