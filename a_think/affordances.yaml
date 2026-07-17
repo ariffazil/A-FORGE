@@ -325,86 +325,6 @@ tools:
   requires_human_approval: true
   min_mode: GOVERN
   risk_label: R5
-- name: forge_fetch
-  purpose: 'ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Governed URL evidence intake + self-hosted web search.
-    Modes: html, markdown, text, json, readable, '
-  affordance_class: research
-  capability_surface: aforge.research.fetch
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - web
-  writes: []
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_fetch_json
-  purpose: ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Fetch a URL and parse as JSON. OBSERVE-class, SSRF-protected.
-    Equivalent to forge_fetch(mode=json).
-  affordance_class: research
-  capability_surface: aforge.research.fetch_json
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - web
-  writes: []
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_fetch_links
-  purpose: ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Extract all links from a URL. OBSERVE-class, SSRF-protected.
-    Equivalent to forge_fetch(mode=links).
-  affordance_class: research
-  capability_surface: aforge.research.fetch_links
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - web
-  writes: []
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_fetch_metadata
-  purpose: ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Fetch URL metadata (title, author, description, dates,
-    links). OBSERVE-class, SSRF-protected. Equiva
-  affordance_class: research
-  capability_surface: aforge.research.fetch_metadata
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - web
-  writes: []
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_fetch_url
-  purpose: ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Fetch a URL and return content as markdown. OBSERVE-class,
-    SSRF-protected. Equivalent to forge_fetch
-  affordance_class: research
-  capability_surface: aforge.research.fetch_url
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - web
-  writes: []
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
 - name: forge_filesystem
   purpose: 'ACTUATOR [fs/OBSERVE] supervised by kernel 777_FORGE. Canonical governed filesystem primitive. Modes: read, write,
     patch, glob, grep, stat, tree, move, de'
@@ -414,154 +334,6 @@ tools:
   mutation_class: OBSERVE
   reads:
   - filesystem
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_filesystem_delete
-  purpose: ACTUATOR [fs/MUTATE] supervised by kernel 777_FORGE. Delete a file (quarantine by default). IRREVERSIBLE for hard
-    delete — requires 888_HOLD.
-  affordance_class: fs
-  capability_surface: aforge.fs.filesystem_delete
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - filesystem
-  writes:
-  - filesystem
-  external_side_effect: true
-  destructive: true
-  reversible: false
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R5
-- name: forge_filesystem_move
-  purpose: ACTUATOR [fs/MUTATE] supervised by kernel 777_FORGE. Move a file or directory. EXECUTE-class, requires lease. Reversible.
-  affordance_class: fs
-  capability_surface: aforge.fs.filesystem_move
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - filesystem
-  writes:
-  - filesystem
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
-- name: forge_filesystem_patch
-  purpose: 'ACTUATOR [fs/MUTATE] supervised by kernel 777_FORGE. Surgical text replacement in a file. EXECUTE-class, requires
-    lease. Returns diff preview in dry_run '
-  affordance_class: fs
-  capability_surface: aforge.fs.filesystem_patch
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - filesystem
-  writes:
-  - filesystem
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
-- name: forge_filesystem_read
-  purpose: 'ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. Read a file or list a directory. OBSERVE-class, no lease
-    required. F8 scoped to /root, /tmp, /data, '
-  affordance_class: fs
-  capability_surface: aforge.fs.filesystem_read
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - filesystem
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_filesystem_search
-  purpose: ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. Search file contents by regex pattern. OBSERVE-class, no
-    lease required.
-  affordance_class: fs
-  capability_surface: aforge.fs.filesystem_search
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - filesystem
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_filesystem_stat
-  purpose: ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. Get file/directory metadata including sha256 hash. OBSERVE-class,
-    no lease required.
-  affordance_class: fs
-  capability_surface: aforge.fs.filesystem_stat
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - filesystem
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_filesystem_tree
-  purpose: ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. List directory tree structure. OBSERVE-class, no lease
-    required.
-  affordance_class: fs
-  capability_surface: aforge.fs.filesystem_tree
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - filesystem
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_filesystem_write
-  purpose: 'ACTUATOR [fs/MUTATE] supervised by kernel 777_FORGE. Create or overwrite a file. EXECUTE-class, requires lease.
-    F1 AMANAH: backup before overwrite.'
-  affordance_class: fs
-  capability_surface: aforge.fs.filesystem_write
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - filesystem
-  writes:
-  - filesystem
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
-- name: forge_fingerprint_check
-  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Compute and verify tool fingerprints. Detects duplicate
-    tools (same name + schema) and schema drift.
-  affordance_class: probe
-  capability_surface: aforge.probe.fingerprint_check
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - system_state
-  - federation
   writes: []
   external_side_effect: false
   destructive: false
@@ -606,38 +378,6 @@ tools:
   purpose: ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Create a GitHub issue. MUTATE — lease required.
   affordance_class: git
   capability_surface: aforge.git.github_create_issue
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - repo_state
-  writes:
-  - repo_state
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
-- name: forge_github_create_or_update_file
-  purpose: ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Create or update a file on GitHub. MUTATE — lease required.
-  affordance_class: git
-  capability_surface: aforge.git.github_create_or_update_file
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - repo_state
-  writes:
-  - repo_state
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
-- name: forge_github_create_pull_request
-  purpose: ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Create a GitHub pull request. MUTATE — lease required.
-  affordance_class: git
-  capability_surface: aforge.git.github_create_pull_request
   kernel_verb: 777_FORGE
   mutation_class: MUTATE
   reads:
@@ -728,23 +468,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_isomorphism_check
-  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. J‑space manifold stability check. Verifies GEOX ↔ arifOS
-    isomorphism pairs (Identity, Authority, Irr
-  affordance_class: probe
-  capability_surface: aforge.probe.isomorphism_check
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - system_state
-  - federation
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
 - name: forge_job
   purpose: 'ACTUATOR [job/OBSERVE] supervised by kernel 777_FORGE. Background job system. Modes: submit, status.'
   affordance_class: job
@@ -753,134 +476,6 @@ tools:
   mutation_class: OBSERVE
   reads:
   - task_groups
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_canonize
-  purpose: 'ACTUATOR [vault/OBSERVE] supervised by kernel 777_FORGE. Promote a draft artifact to canonical state. Copies from
-    source to forge_work/CANON/, computes SHA256, records provenance receipt. Does NOT delete source (F1 AMANAH). Classification:
-    EXECUTE_REVERSIBLE.'
-  affordance_class: vault
-  capability_surface: aforge.vault.canonize
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - artifacts
-  - filesystem
-  writes:
-  - filesystem
-  - vault
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: GOVERN
-  risk_label: R2
-- name: forge_cool_drift
-  purpose: 'ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. Emit a COOLING_RECEIPT with convergence signal (CONVERGING/DIVERGING/STABLE).
-    Routes through seal_chain.js validateCooling() → VAULT999 append. INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK.
-    INV-C4: explicit governance.'
-  affordance_class: vault
-  capability_surface: aforge.vault.cool_drift
-  kernel_verb: 999_SEAL
-  mutation_class: MUTATE
-  reads:
-  - vault
-  - session
-  writes:
-  - vault
-  external_side_effect: false
-  destructive: false
-  reversible: false
-  requires_human_approval: false
-  min_mode: GOVERN
-  risk_label: R2
-- name: forge_cool_pattern
-  purpose: 'ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. Emit a COOLING_RECEIPT from observed failure recurrence. Same pipeline as
-    cool_drift with additional recurrence_count, first_seen, last_seen fields. Routes through seal_chain.js validateCooling() → VAULT999 append.'
-  affordance_class: vault
-  capability_surface: aforge.vault.cool_pattern
-  kernel_verb: 999_SEAL
-  mutation_class: MUTATE
-  reads:
-  - vault
-  - session
-  writes:
-  - vault
-  external_side_effect: false
-  destructive: false
-  reversible: false
-  requires_human_approval: false
-  min_mode: GOVERN
-  risk_label: R2
-- name: forge_entropy_sweep
-  purpose: 'ACTUATOR [meta/OBSERVE] supervised by kernel 111_OBSERVE. Measure workspace entropy (ΔS) across the federation. Reports file count,
-    uncommitted changes, temp files, dead processes, and entropy hotspots. Classification: OBSERVE (read-only).'
-  affordance_class: meta
-  capability_surface: aforge.meta.entropy_sweep
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - filesystem
-  - system_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_git_commit
-  purpose: 'ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Governed git commit with optional pre-commit checks. Delegates to
-    forge_git(mode=commit) under a constitutional gate. F1 AMANAH: verifies working tree before commit. Classification: EXECUTE_HIGH_IMPACT
-    in actionClassifier.ts.'
-  affordance_class: git
-  capability_surface: aforge.git.git_commit
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - git
-  - filesystem
-  writes:
-  - git
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
-- name: forge_kernel
-  purpose: 'ACTUATOR [governance/OBSERVE] supervised by kernel 000_INIT. Constitutional kernel proxy. Routes to arifOS at :8088/mcp.
-    Modes: init | observe | think | route | memory | judge | forge | seal. This is the LEGAL constitutional path — not a governance bypass.
-    Requires session ownership for seal/judge/forge modes.'
-  affordance_class: governance
-  capability_surface: aforge.governance.kernel
-  kernel_verb: 000_INIT
-  mutation_class: OBSERVE
-  reads:
-  - constitution
-  - session
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_runtime_verify
-  purpose: 'ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Verify runtime consistency: compares git source commit vs installed
-    wheel vs import path. Returns MATCH|DRIFT|UNKNOWN. Fail-closed: blocks execution on DRIFT. Read-only (OBSERVE class).'
-  affordance_class: probe
-  capability_surface: aforge.probe.runtime_verify
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - system_state
-  - git
   writes: []
   external_side_effect: false
   destructive: false
@@ -1070,45 +665,11 @@ tools:
   requires_human_approval: true
   min_mode: GOVERN
   risk_label: R3
-- name: forge_predict
-  purpose: ACTUATOR [governance/OBSERVE] supervised by kernel 333_THINK. Pre-action simulation layer (prediction bridge).
-    GEOX/WEALTH forward models run BEFORE forge_execute
-  affordance_class: governance
-  capability_surface: aforge.governance.predict
-  kernel_verb: 333_THINK
-  mutation_class: OBSERVE
-  reads:
-  - constitution
-  - session
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
 - name: forge_probe
   purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Federation organ liveness. Probes all 5 organs + latency.
     OBSERVE-class. P2.1 canonical gap fill.
   affordance_class: probe
   capability_surface: aforge.probe.probe
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - system_state
-  - federation
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_probe_site
-  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Probe a web site or cockpit surface for federation resilience
-    and compliance checks. Returns status,
-  affordance_class: probe
-  capability_surface: aforge.probe.probe_site
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
   reads:
@@ -1130,22 +691,6 @@ tools:
   reads:
   - constitution
   - session
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_receipt_draft
-  purpose: ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. Draft a structured compliance receipt for a deployment
-    or change. Output is standard markdown format
-  affordance_class: vault
-  capability_surface: aforge.vault.receipt_draft
-  kernel_verb: 999_SEAL
-  mutation_class: OBSERVE
-  reads:
-  - vault999
   writes: []
   external_side_effect: false
   destructive: false
@@ -1238,23 +783,6 @@ tools:
   requires_human_approval: true
   min_mode: GOVERN
   risk_label: R3
-- name: forge_scan
-  purpose: 'ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Security scan a file or directory before code execution.
-    Detects dangerous patterns. OBSERVE-class. '
-  affordance_class: probe
-  capability_surface: aforge.probe.scan
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - system_state
-  - federation
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
 - name: forge_scar
   purpose: 'ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. APEX v36Ω scar metabolization gate. Seals failures as
     permanent constitutional constraints. Modes: s'
@@ -1319,23 +847,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_send_confirm
-  purpose: ACTUATOR [confirm/MUTATE] supervised by kernel 777_FORGE. Send data with human confirmation via elicitation. Supports
-    form mode (standard) and URL mode (sensi
-  affordance_class: confirm
-  capability_surface: aforge.confirm.send_confirm
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - human_channel
-  writes:
-  - human_channel
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
 - name: forge_session_init
   purpose: ACTUATOR [governance/OBSERVE] supervised by kernel 000_INIT. Constitutional session ignition. Proxies to arifOS
     kernel — A-FORGE no longer mints independent sess
@@ -1457,38 +968,6 @@ tools:
   requires_human_approval: true
   min_mode: GOVERN
   risk_label: R3
-- name: forge_skillstore_read
-  purpose: ACTUATOR [skill/OBSERVE] supervised by kernel 999_SEAL. Query artifact store. Semantic search with tag filtering.
-  affordance_class: skill
-  capability_surface: aforge.skill.skillstore_read
-  kernel_verb: 999_SEAL
-  mutation_class: OBSERVE
-  reads:
-  - artifacts
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_skillstore_write
-  purpose: ACTUATOR [skill/MUTATE] supervised by kernel 777_FORGE. Store artifact with provenance. WRITE mode only. Two-layer
-    retention with SCAR immunization.
-  affordance_class: skill
-  capability_surface: aforge.skill.skillstore_write
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - artifacts
-  writes:
-  - artifacts
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
 - name: forge_stage
   purpose: ACTUATOR [vault/MUTATE] supervised by kernel 777_FORGE. Move artifact to quarantine staging. Spec becomes IMMUTABLE
     after staging.
@@ -1592,23 +1071,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_transfer_confirm
-  purpose: ACTUATOR [confirm/MUTATE] supervised by kernel 777_FORGE. Transfer funds with human confirmation via form-mode
-    elicitation. F13 consent gate. Blocks until use
-  affordance_class: confirm
-  capability_surface: aforge.confirm.transfer_confirm
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - human_channel
-  writes:
-  - human_channel
-  external_side_effect: true
-  destructive: true
-  reversible: false
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R5
 - name: forge_vault
   purpose: 'ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. VAULT999 primitive. Modes: read, list, write, seal.'
   affordance_class: vault
@@ -1617,76 +1079,6 @@ tools:
   mutation_class: OBSERVE
   reads:
   - vault999
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_verify_timeline
-  purpose: 'ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Verify timeline claims require minimum 2 independent
-    sources.
-
-    TIMELINE_MIN_SOURCES invariant: No tim'
-  affordance_class: probe
-  capability_surface: aforge.probe.verify_timeline
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - system_state
-  - federation
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_vps_cron
-  purpose: ACTUATOR [vps/OBSERVE] supervised by kernel 111_OBSERVE. Machine Constitution cron registry. Lists cron jobs from
-    root crontab, /etc/crontab, and /etc/cron.d
-  affordance_class: vps
-  capability_surface: aforge.vps.vps_cron
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - system_state
-  - services
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_vps_ports
-  purpose: ACTUATOR [vps/OBSERVE] supervised by kernel 111_OBSERVE. Machine Constitution port registry. Scans listening ports
-    and classifies each as public, internal, o
-  affordance_class: vps
-  capability_surface: aforge.vps.vps_ports
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - system_state
-  - services
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_vps_services
-  purpose: ACTUATOR [vps/OBSERVE] supervised by kernel 111_OBSERVE. Machine Constitution service registry. Lists running systemd
-    services and Docker containers. OBSERVE
-  affordance_class: vps
-  capability_surface: aforge.vps.vps_services
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - system_state
-  - services
   writes: []
   external_side_effect: false
   destructive: false
@@ -1759,68 +1151,10 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_parallel
-  purpose: "ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Spawn N concurrent A2A tasks with bounded concurrency, timeout, cancellation propagation, and Δ receipts. Thin orchestration over existing A2A verbs."
-  affordance_class: orchestration
-  capability_surface: aforge.execute.parallel
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - session
-  - a2a_tasks
-  writes:
-  - a2a_tasks
-  - task_groups
-  external_side_effect: true
-  destructive: false
+- name: forge_github_create_pr
+  purpose: ACTUATOR [git/MUTATE] Create GitHub pull request with title, body, head, base, draft flag. Requires lease.
+  category: git
+  authority_ceiling: EXECUTE_HIGH_IMPACT
+  risk_tier: T2
   reversible: true
-  requires_human_approval: false
-  min_mode: FORGE
-  risk_label: R2
-- name: forge_parallel_status
-  purpose: "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Query the status of a parallel task group by group_id. Returns member states, outputs, and Δ anchors."
-  affordance_class: orchestration
-  capability_surface: aforge.registry.parallel_status
-  kernel_verb: 000_TRIAGE
-  mutation_class: OBSERVE
-  reads:
-  - task_groups
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_parallel_cancel
-  purpose: "ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Cancel all running agents in a parallel task group. Propagates tasks/cancel to each non-terminal member."
-  affordance_class: orchestration
-  capability_surface: aforge.execute.parallel_cancel
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - task_groups
-  - a2a_tasks
-  writes:
-  - a2a_tasks
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: FORGE
-  risk_label: R1
-- name: forge_parallel_list
-  purpose: "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. List all task groups with their status. For monitoring and debugging."
-  affordance_class: orchestration
-  capability_surface: aforge.registry.parallel_list
-  kernel_verb: 000_TRIAGE
-  mutation_class: OBSERVE
-  reads:
-  - task_groups
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
+  session_required: true
