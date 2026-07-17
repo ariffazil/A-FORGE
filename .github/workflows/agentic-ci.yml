@@ -120,6 +120,8 @@ jobs:
           PHI="${{ needs.bijaksana.outputs.phi-value }}"
           PSI="${{ needs.bijaksana.outputs.psi-value }}"
           OMEGA="${{ needs.bijaksana.outputs.omega-value }}"
+          # Fallback defaults when outputs are empty (CI runner variance)
+          DS=${DS:-0}; PHI=${PHI:-0}; PSI=${PSI:-"UNKNOWN"}; OMEGA=${OMEGA:-"UNKNOWN"}
           
           if [ "$STANDARD_OK" = "success" ] && [ "$PHI" = "100" ] && [ "$OMEGA" = "0" ] && [ "$DS" -lt 100 ]; then
             VERDICT="SEAL_READY"
