@@ -951,10 +951,12 @@ app.get("/health", (_req: Request, res: Response) => {
 
   // FEDERATION SCHEMA ALIGNMENT L2 (canonical: arifOS/arifosmcp/schemas/federation_enums.py)
   // See: /root/AAA/governance/FEDERATION_SCHEMA_ALIGNMENT.md
+  // T5 2026-07-17 — canonical 5-field federation header + organ payload.
+  // ok retained for legacy callers; status is canonical.
   res.json({
-    ok: true,
-    service: "A-FORGE-sense",
     status: "healthy",
+    ok: true, // legacy alias — prefer status
+    service: "A-FORGE-sense",
     version: "0.1.0",
     federation_schema_version: "2.0.0",
     // P5 (2026-06-13): Substrate doctrine — A-FORGE is the substrate engineering organ.
@@ -962,6 +964,20 @@ app.get("/health", (_req: Request, res: Response) => {
     profile: "enterprise",
     authority_ceiling: "777_FORGE", // A-FORGE may forge; never seal nor adjudicate
     identity_hash: identityHash,
+    apex_scalars: {
+      G: { value: null, status: "UNMEASURED" },
+      C_dark: { value: null, status: "UNMEASURED" },
+      W3: { value: null, status: "UNMEASURED" },
+      h: { value: null, status: "UNMEASURED" },
+      QDF: { value: null, status: "UNMEASURED" },
+    },
+    federation_geometry: {
+      status: "enabled",
+      subjects: 0,
+      ledger_events: 0,
+      witness_oracle: "active",
+      note: "geometry owned by arifOS; A-FORGE reports local presence only",
+    },
     contract_url: "/contract",
     timestamp: now,
     // Phase 2 hardening: freshness + owner summary
