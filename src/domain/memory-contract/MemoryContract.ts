@@ -375,7 +375,7 @@ export class MemoryContract {
   async verify(request: VerifyRequest, opts?: { actorId?: string; sessionId?: string }): Promise<MemoryEntry> {
     this.ensureInitialized();
 
-    // AAA Gate: verify → A-AUDIT
+    // AAA Gate: verify → 888-APEX (was A-AUDIT, collapsed 2026-07-15)
     await this._aaaGate("memory:verify", request.memoryId, undefined, opts, "MemoryContract.verify");
 
     const memory = this.memories.get(request.memoryId);
