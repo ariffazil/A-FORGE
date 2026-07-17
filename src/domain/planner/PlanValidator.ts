@@ -1,3 +1,12 @@
+/**
+ * PLAN VALIDATOR — enforces PLANNINGORGAN222 schema on every multi-step plan.
+ *
+ * Canonical organ: /root/AAA/docs/PLANNINGORGAN222.md
+ * Epoch introduced: v2026.07.17
+ * Invariant: Every plan MUST pass this validator before any forge_execute.
+ *
+ * DITEMPA BUKAN DIBERI — Planning is forged, not given.
+ */
 import type { PlanDAG, PlanNode, StructuralValidationResult } from '../types/plan.js';
 import {
   readGovernanceCard,
