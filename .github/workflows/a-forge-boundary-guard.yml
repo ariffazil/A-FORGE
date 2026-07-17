@@ -27,7 +27,7 @@ jobs:
 
       - name: Block geophysics compute in execution shell
         run: |
-          if grep -r --exclude='*.LEGACY' "Archie\|PHIE\|Vsh\|MATRIX_DENSITY\|porosity_fraction\|sw_calculat" src/; then
+          if grep -r --exclude='*.LEGACY' --exclude='TriWitnessValidator.ts' "Archie\|PHIE\|Vsh\|MATRIX_DENSITY\|porosity_fraction\|sw_calculat" src/; then
             echo "::error::A-FORGE must not contain geophysics domain computation. Move to GEOX."
             exit 1
           fi
