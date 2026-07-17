@@ -172,7 +172,7 @@ Result → RunReporter → Prometheus + Supabase + VAULT999
 
 ## Federation Discovery
 
-A-FORGE exposes a **75-tool local MCP surface** and separately probes connected federation organs. The active federation organs are **arifOS, A-FORGE, AAA, GEOX, WEALTH, and WELL**. APEX on port 3002 is legacy, while MIND:51001 and MEMORY:51002 are services rather than organs.
+A-FORGE exposes a **75-tool local MCP surface** and separately probes connected federation organs. The active federation organs are **arifOS, A-FORGE, AAA, GEOX, WEALTH, and WELL**. APEX_LEGACY_v3002 (retired 2026-06-27) is legacy, while MIND:51001 and MEMORY:51002 are services rather than organs.
 
 ```
 Local A-FORGE MCP

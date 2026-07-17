@@ -45,7 +45,7 @@ If your code is judging constitutionality → wrong layer.
 
 ## Live Federation Ports (VERIFIED 2026-06-05)
 
-The arifOS Federation has **6 active organs**: arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL. APEX (port 3002) is decommissioned. A-FORGE additionally hosts the MIND:51001 federated intelligence service; it is a service, not a separate organ. MEMORY:51002 is not currently responding.
+The arifOS Federation has **6 active organs**: arifOS, A-FORGE, AAA, GEOX, WEALTH, WELL. APEX_LEGACY_v3002 (retired 2026-06-27) is decommissioned. A-FORGE additionally hosts the MIND:51001 federated intelligence service; it is a service, not a separate organ. MEMORY:51002 is not currently responding.
 
 | Organ | Port | Public Host | Status |
 |-------|------|-------------|--------|
