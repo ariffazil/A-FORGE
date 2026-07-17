@@ -27,7 +27,7 @@ PAIRS = [
     ),
     (
         "GEOX",
-        "/root/geox",
+        "/root/GEOX",
         "/root/GEOX",
         "Both may exist; prefer path with systemd WorkingDirectory if set",
     ),

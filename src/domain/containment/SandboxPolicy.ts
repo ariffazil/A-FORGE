@@ -162,7 +162,7 @@ export const PRESETS: Record<string, SandboxPolicy> = {
     backend: 'auto',
     filesystem: {
       readOnly: [],
-      readWrite: ['/root/A-FORGE', '/root/arifOS', '/root/AAA', '/root/geox', '/root/WEALTH', '/root/WELL', '/tmp'],
+      readWrite: ['/root/A-FORGE', '/root/arifOS', '/root/AAA', '/root/GEOX', '/root/WEALTH', '/root/WELL', '/tmp'],
       denied: ['/root/.secrets', '/root/.ssh/id_*'],
       workingDir: '/root/A-FORGE',
     },
