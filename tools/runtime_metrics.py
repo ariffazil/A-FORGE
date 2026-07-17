@@ -276,7 +276,7 @@ def snapshot_state(label: str = "pre") -> dict:
         "AAA": "/root/AAA",
         "WEALTH": "/root/WEALTH",
         "WELL": "/root/WELL",
-        "geox": "/root/geox",
+        "geox": "/root/GEOX",
     }
 
     for name, path in repos.items():
