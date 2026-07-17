@@ -26,6 +26,7 @@
 
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { classifyCommand } from "./shell/arifJudge.js";
 
 import {
   getMcpPolicyGate,
@@ -251,6 +252,8 @@ const ELICITATION_BYPASS_READ = new Set([
   "forge_filesystem",  // has read/write modes — checked at mode level
   "forge_postgres",    // has read/write modes — checked at mode level
   "forge_vault",       // has read/write modes — checked at mode level
+  "forge_shell",       // has read/write — checked via ArifJudge classifyCommand
+  "forge_docker",      // has read/write modes — ps/logs/images=read, exec=mutate
 ]);
 
 /**
@@ -294,7 +297,8 @@ function isExternalClient(args: any, extra?: any): { external: boolean; reason?:
 function isMutateOperation(toolName: string, args: any): boolean {
   // Tools that are always MUTATE
   if (toolName !== "forge_filesystem" && toolName !== "forge_postgres" &&
-      toolName !== "forge_vault" && toolName !== "forge_docker") {
+      toolName !== "forge_vault" && toolName !== "forge_docker" &&
+      toolName !== "forge_shell") {
     return true;
   }
 
@@ -309,7 +313,23 @@ function isMutateOperation(toolName: string, args: any): boolean {
   if (toolName === "forge_vault" && (mode === "write" || mode === "seal" || mode === "delete")) {
     return true;
   }
-  if (toolName === "forge_docker" && (args?.command === "rm" || args?.command === "kill" || args?.command === "stop")) {
+  if (toolName === "forge_docker") {
+    // forge_docker mode enum: ps|logs|exec|images
+    // exec runs arbitrary commands inside containers — always MUTATE
+    // ps, logs, images — read-only observation
+    if (mode === "exec") return true;
+    return false;
+  }
+
+  // forge_shell: check actual command via ArifJudge
+  // Read-only commands (echo, cat, ps, free, df, etc.) are NOT mutate
+  if (toolName === "forge_shell" && args?.command) {
+    const judge = classifyCommand(args.command);
+    // ALLOW with OBSERVE or EXECUTE_REVERSIBLE = read-only safe command
+    if (judge.decision === "allow") {
+      return false;
+    }
+    // GATE or DENY = risky command, needs elicitation
     return true;
   }
 
