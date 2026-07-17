@@ -927,8 +927,13 @@ server.tool(
     actor_id: z.string().describe("Identifier for the human architect or agent"),
     intent: z.string().optional().describe("Primary intent for this session"),
     mode: z.enum(["internal", "external"]).optional().default("external"),
+    parent_session_id: z.string().optional().describe(
+      "Pre-existing arifOS session_id (or session_token) this A-FORGE session is forked from. "
+      + "Returned unchanged as parent_session_id in the response so cross-organ session chains reconstruct. "
+      + "B1 fix 2026-07-17 (T7 deliverable #4 propagation)."
+    ),
   },
-  async ({ actor_id, intent, mode }) => {
+  async ({ actor_id, intent, mode, parent_session_id }) => {
     const startedAt = Date.now();
     await telemetryInvoke("forge_session_init");
     return runStage("000_INIT" as MetabolicStage, async () => {
@@ -1027,6 +1032,7 @@ server.tool(
             text: JSON.stringify({
               status: "SEAL",
               session_id,
+              parent_session_id: parent_session_id ?? null,
               kernel_origin: true,
               epoch: new Date().toISOString().split("T")[0],
               actor_id,
