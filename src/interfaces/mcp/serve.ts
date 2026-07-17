@@ -236,6 +236,22 @@ function getToolHandler(name: string): ((args: any) => Promise<any>) | null {
   return null;
 }
 
+// ── SSE session registry (legacy transport) ────────────────────────────
+// SSE clients GET /sse → get sessionId → POST JSON-RPC to /mcp?sessionId=xxx
+// The SSE channel is for server→client events; POST responses are direct HTTP.
+// We maintain a registry of active SSE response streams for sending events.
+const sseSessions = new Map<string, import("http").ServerResponse>();
+
+// Cleanup stale SSE sessions periodically
+setInterval(() => {
+  for (const [sid, res] of sseSessions) {
+    try { res.write(": ping\n\n"); } catch {
+      process.stderr.write(`[A-FORGE-MCP] Cleaning stale SSE session: ${sid}\n`);
+      sseSessions.delete(sid);
+    }
+  }
+}, 60000).unref();
+
 // ── MCP Logging & Completions infrastructure (Phase 4 — 2026-07-09) ─────
 // Spec: MCP 2025-06-18 logging + completion utilities.
 // Rules:
@@ -432,7 +448,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
       }
 
       // MCP handler
-      if (req.url === "/mcp") {
+      if (req.url === "/mcp" || req.url?.startsWith("/mcp?")) {
         // GET /mcp — discovery for external clients
         if (req.method === "GET") {
           res.writeHead(200, {
@@ -928,6 +944,34 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
         }
 
         // GET without session — not supported
+        res.writeHead(405, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Method not allowed", path: req.url }));
+        return;
+      }
+
+      // ── SSE endpoint (legacy transport — lightweight keepalive) ────────
+      // SSE clients GET /sse → open SSE channel → POST JSON-RPC to /mcp?sessionId=xxx
+      // POST responses come back as normal HTTP. SSE channel used for events.
+      if (req.url === "/sse" || req.url?.startsWith("/sse?")) {
+        if (req.method === "GET") {
+          const sessionId = randomUUID();
+          res.writeHead(200, {
+            "Content-Type": "text/event-stream",
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+          });
+          // The endpoint tells the client where to POST JSON-RPC
+          res.write(`event: endpoint\ndata: /mcp?sessionId=${sessionId}\n\n`);
+          if (typeof (res as any).flushHeaders === "function") (res as any).flushHeaders();
+          sseSessions.set(sessionId, res);
+          process.stderr.write(`[A-FORGE-MCP] SSE:${sessionId.slice(0,8)} connected\n`);
+          req.on("close", () => {
+            sseSessions.delete(sessionId);
+            process.stderr.write(`[A-FORGE-MCP] SSE:${sessionId.slice(0,8)} disconnected\n`);
+          });
+          return;
+        }
         res.writeHead(405, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Method not allowed", path: req.url }));
         return;
