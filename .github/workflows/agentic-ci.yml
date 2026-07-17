@@ -51,6 +51,11 @@ jobs:
     name: "Lane 2 — BIJAKSANA ΔS Φ Ψ Ω"
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      ds-value: ${{ steps.ds.outputs.value }}
+      phi-value: ${{ steps.phi.outputs.value }}
+      psi-value: ${{ steps.psi.outputs.value }}
+      omega-value: ${{ steps.omega.outputs.value }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
