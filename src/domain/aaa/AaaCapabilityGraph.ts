@@ -63,8 +63,8 @@ export interface CapabilityEntry {
  *   Reads   → 333-AGI (THINK)   — ringan, tiada receipt
  *   Writes  → 555-ASI (MEMORY)  — perlukan receipt
  *   Mutates → 888-APEX (JUDGE)   — perlukan readiness + lock
- *   Seals   → A-ARCHIVE (VAULT)  — perlukan F13 + irreversibility gate
- *   Verify  → A-AUDIT (WATCH)    — oversight
+ *   Seals   → 888-APEX (JUDGE)   — perlukan F13 + irreversibility gate (was A-ARCHIVE, collapsed 2026-07-15)
+ *   Verify  → 888-APEX (JUDGE)   — oversight via arif_judge (was A-AUDIT, collapsed 2026-07-15)
  */
 export const AAA_CAPABILITY_GRAPH: Readonly<Record<MemoryAction, CapabilityEntry>> = {
   "memory:read": {
@@ -113,7 +113,7 @@ export const AAA_CAPABILITY_GRAPH: Readonly<Record<MemoryAction, CapabilityEntry
   },
   "memory:seal": {
     action: "memory:seal",
-    requiredAgent: "A-ARCHIVE",
+    requiredAgent: "888-APEX",  // was A-ARCHIVE, collapsed 2026-07-15
     minVerdict: "SABAR",
     reversible: false,
     requiresSession: true,
@@ -179,7 +179,7 @@ export const AAA_CAPABILITY_GRAPH: Readonly<Record<MemoryAction, CapabilityEntry
   },
   "memory:verify": {
     action: "memory:verify",
-    requiredAgent: "A-AUDIT",
+    requiredAgent: "888-APEX",  // was A-AUDIT, collapsed 2026-07-15
     minVerdict: "SEAL",
     reversible: true,
     requiresSession: true,

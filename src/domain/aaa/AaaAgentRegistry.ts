@@ -11,12 +11,13 @@
  *   333-AGI   (THINK)    — reasoning, planning, analysis
  *   555-ASI   (MEMORY)   — memory storage, retrieval, federation
  *   888-APEX  (JUDGE)    — constitutional judgment, verdicts
- *   A-AUDIT   (WATCH)    — oversight, receipt verification
- *   A-ARCHIVE (VAULT)    — immutable sealing, permanence
+ *   A-AUDIT   (WATCH)    — [DEPRECATED 2026-07-15] oversight → arifOS arif_judge/arif_seal
+ *   A-ARCHIVE (VAULT)    — [DEPRECATED 2026-07-15] vault sealing → VAULT999 direct via arif_seal
  *
  * @module aaa/AaaAgentRegistry
  * @constitutional AAA Agent Registry — identity boundary (hard constraint)
  * @forged 2026-06-29 by AAA Memory Audit
+ * @updated 2026-07-17 — A-AUDIT/A-ARCHIVE collapsed, functions absorbed into arifOS kernel
  */
 
 // ── AAA Agent Types ────────────────────────────────────────────
@@ -25,8 +26,8 @@ export type AaaAgentId =
   | "333-AGI"
   | "555-ASI"
   | "888-APEX"
-  | "A-AUDIT"
-  | "A-ARCHIVE";
+  | "A-AUDIT"    // DEPRECATED — retained for backward compat, routes to 888-APEX
+  | "A-ARCHIVE"; // DEPRECATED — retained for backward compat, routes to 888-APEX
 
 export type AaaAgentRole = "THINK" | "MEMORY" | "JUDGE" | "WATCH" | "VAULT";
 
@@ -38,6 +39,9 @@ export interface AaaAgent {
   governs: "read" | "write" | "mutate" | "receipt" | "seal";
   /** Constitutional floor binding */
   floorBinding: string;
+  /** Deprecated agents route to this replacement */
+  deprecated?: boolean;
+  migration?: string;
 }
 
 // ── Agent Registry ──────────────────────────────────────────────
@@ -67,16 +71,20 @@ const AAA_AGENTS: Readonly<Record<AaaAgentId, AaaAgent>> = {
   "A-AUDIT": {
     id: "A-AUDIT",
     role: "WATCH",
-    description: "Oversight engine — receipt verification, drift detection",
+    description: "[DEPRECATED 2026-07-15] Oversight — absorbed into arifOS arif_judge + arif_seal",
     governs: "receipt",
     floorBinding: "F11 (AUDITABILITY), F2 (TRUTH)",
+    deprecated: true,
+    migration: "Use arifOS arif_judge for oversight, arif_seal for receipt verification. Routes to 888-APEX.",
   },
   "A-ARCHIVE": {
     id: "A-ARCHIVE",
     role: "VAULT",
-    description: "Immutable vault — permanent seals, hash-chain integrity",
+    description: "[DEPRECATED 2026-07-15] Vault sealing — absorbed into VAULT999 direct via arif_seal",
     governs: "seal",
     floorBinding: "F1 (AMANAH), F11 (AUDITABILITY)",
+    deprecated: true,
+    migration: "Use arifOS arif_seal for VAULT999 immutable append. No intermediate archivist needed.",
   },
 };
 
@@ -116,7 +124,8 @@ export function resolveActor(actorId: string): ActorBinding | null {
     return {
       actorId,
       primaryAgent: "888-APEX",
-      delegateAgents: ["A-ARCHIVE", "A-AUDIT", "555-ASI", "333-AGI"],
+      delegateAgents: ["555-ASI", "333-AGI"],
+      // A-AUDIT + A-ARCHIVE removed 2026-07-17 — collapsed, functions absorbed into arifOS kernel
       humanOverride: false,
     };
   }
@@ -126,13 +135,14 @@ export function resolveActor(actorId: string): ActorBinding | null {
     "arif-fazil": {
       actorId: "arif-fazil",
       primaryAgent: "888-APEX",
-      delegateAgents: ["333-AGI", "555-ASI", "A-AUDIT", "A-ARCHIVE"],
+      delegateAgents: ["333-AGI", "555-ASI"],
+      // A-AUDIT + A-ARCHIVE removed 2026-07-17
       humanOverride: true,
     },
     "a-forge::seal-service": {
       actorId: "a-forge::seal-service",
       primaryAgent: "888-APEX",
-      delegateAgents: ["A-ARCHIVE"],
+      delegateAgents: [],  // was A-ARCHIVE, collapsed 2026-07-15 — sealing now via arif_seal → VAULT999
       humanOverride: false,
     },
     "a-forge::short-term-memory": {
@@ -144,7 +154,7 @@ export function resolveActor(actorId: string): ActorBinding | null {
     "a-forge::long-term-memory": {
       actorId: "a-forge::long-term-memory",
       primaryAgent: "555-ASI",
-      delegateAgents: ["333-AGI", "A-AUDIT"],
+      delegateAgents: ["333-AGI", "888-APEX"],  // was A-AUDIT, collapsed 2026-07-15
       humanOverride: false,
     },
     "a-forge::memory-contract": {
@@ -162,7 +172,7 @@ export function resolveActor(actorId: string): ActorBinding | null {
     "a-forge::cooling-gate": {
       actorId: "a-forge::cooling-gate",
       primaryAgent: "888-APEX",
-      delegateAgents: ["555-ASI", "A-ARCHIVE", "A-AUDIT"],
+      delegateAgents: ["555-ASI"],  // was A-ARCHIVE + A-AUDIT, collapsed 2026-07-15
       humanOverride: false,
     },
     "kimi": {
@@ -174,7 +184,7 @@ export function resolveActor(actorId: string): ActorBinding | null {
     "kernel-sealed": {
       actorId: "kernel-sealed",
       primaryAgent: "888-APEX",
-      delegateAgents: ["A-ARCHIVE", "A-AUDIT"],
+      delegateAgents: [],  // was A-ARCHIVE + A-AUDIT, collapsed 2026-07-15
       humanOverride: false,
     },
   };
@@ -187,7 +197,7 @@ export function resolveActor(actorId: string): ActorBinding | null {
   if (actorId.startsWith("a-forge::"))
     return { actorId, primaryAgent: "555-ASI", delegateAgents: ["333-AGI"], humanOverride: false };
   if (actorId.startsWith("human::"))
-    return { actorId, primaryAgent: "888-APEX", delegateAgents: ["333-AGI", "555-ASI", "A-AUDIT"], humanOverride: true };
+    return { actorId, primaryAgent: "888-APEX", delegateAgents: ["333-AGI", "555-ASI"], humanOverride: true };  // was A-AUDIT, collapsed 2026-07-15
 
   // Unknown → null (caller must HOLD — never default to privileged)
   return null;
