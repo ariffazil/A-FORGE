@@ -53,6 +53,10 @@ import { createRepoStewardRouter } from "./routes/repoStewardRoutes.js";
 import { callMCP } from "./mcp/client.js";
 import { server as mcpServer } from "./mcp/core.js";
 import { validateLeaseForTool } from "./mcp/forgeTools.js";
+import {
+  assertSctMutationGateOrExit,
+  sctMutationGateHealth,
+} from "../infrastructure/governance/sctIngress.js";
 import { validateSession } from "../domain/session/sessionGate.js";
 import { classifyTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
 import { preForgeCheck, PreForgeGateBlockedError, registerEarthMeasurement } from "../domain/governance/PreForgeGateClient.js";
@@ -107,6 +111,11 @@ function ensureOperatorTokenPolicy(): string | undefined {
     console.error("[WARN] OPERATOR_API_TOKEN is not set; /operator and /human-expert endpoints are unauthenticated");
   }
   return operatorApiToken;
+}
+
+/** Seal-A condition 3: production + FORGE_SCT_REQUIRE_MUTATE=0 → FATAL before bind. */
+function ensureSctMutationGatePolicy(): void {
+  assertSctMutationGateOrExit(process.env);
 }
 
 export function createApp(): express.Express {
@@ -1000,6 +1009,8 @@ app.get("/health", (_req: Request, res: Response) => {
     // Canonical 7-field health schema (federation convention).
     // A-FORGE does not adjudicate; final authority is always ARIF.
     final_authority: "ARIF",
+    // Seal-A condition 3 — SCT mutation gate status (never exit from /health)
+    sct_mutation_gate: sctMutationGateHealth(process.env),
   });
 });
 
@@ -1215,6 +1226,8 @@ async function initMcpTransport(): Promise<StreamableHTTPServerTransport | null>
 }
 
 export async function startServer(): Promise<void> {
+  // Production lockout BEFORE bind — SCT mutation bypass is FATAL in production.
+  ensureSctMutationGatePolicy();
   await loadConstitution();
   mcpTransport = await initMcpTransport();
 

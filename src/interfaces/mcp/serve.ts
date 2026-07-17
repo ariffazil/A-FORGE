@@ -27,6 +27,7 @@ import { telemetry } from "./telemetry.js";
 import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpPolicyGate.js";
 import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
+import { assertSctMutationGateOrExit } from "../../infrastructure/governance/sctIngress.js";
 
 const AFORGE_ROOT = process.cwd();
 
@@ -338,6 +339,9 @@ function toolIsErrorResult(
 
 // ── Session ID generation ──────────────────────────────────────────────
 export async function startMcpServer(transportType: "stdio" | "sse" | "streamable-http" | "http", port?: number): Promise<void> {
+  // Seal-A condition 3: production + FORGE_SCT_REQUIRE_MUTATE=0 → FATAL before bind.
+  assertSctMutationGateOrExit(process.env);
+
   const approvalBoundary = getApprovalBoundary();
   const memoryContract = getMemoryContract();
 
