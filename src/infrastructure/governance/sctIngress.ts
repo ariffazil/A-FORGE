@@ -1,8 +1,11 @@
 /**
  * Federation SCT ingress gate for A-FORGE.
  *
- * Mirrors AAA governance/federation_sct.py over HTTP to arifOS
- * arif_init(mode=validate). Fail-closed when a token is present.
+ * Mirrors AAA governance/federation_sct.py:
+ *   - Collect ALL SCT candidates from every source
+ *   - Identical values → normalize to one token
+ *   - Distinct values → SCT_AMBIGUOUS (reject, execute nothing)
+ *   - Present token → verify via arifOS fail-closed
  *
  * DITEMPA BUKAN DIBERI — Tokens are forged, not assumed.
  */
@@ -18,27 +21,231 @@ export type SctGateResult =
       error: string;
       message: string;
       actor?: string;
+      extraction?: TokenExtraction;
     };
 
-export function extractSctFromArgs(args: Record<string, unknown> | null | undefined): string | null {
-  if (!args || typeof args !== "object") return null;
-  for (const key of ["session_token", "sct", "arifos_sct"] as const) {
-    const v = args[key];
-    if (typeof v === "string" && v.trim()) return v.trim();
+export type TokenSource = {
+  location: string;
+  fingerprint: string;
+  length: number;
+};
+
+export type TokenExtraction =
+  | {
+      status: "ABSENT";
+      sources: TokenSource[];
+      source_count: number;
+      unique_fingerprints: number;
+    }
+  | {
+      status: "PRESENT";
+      token: string;
+      sources: TokenSource[];
+      source_count: number;
+      unique_fingerprints: number;
+    }
+  | {
+      status: "AMBIGUOUS";
+      sources: TokenSource[];
+      source_count: number;
+      unique_fingerprints: number;
+      conflict_detected: true;
+    };
+
+function fingerprint(token: string): string {
+  // Short non-reversible id for logs (not a crypto seal — just collision-resistant enough for audit)
+  let h = 0;
+  for (let i = 0; i < token.length; i++) {
+    h = (Math.imul(31, h) + token.charCodeAt(i)) | 0;
   }
-  const meta = args._meta;
-  if (meta && typeof meta === "object") {
-    const m = meta as Record<string, unknown>;
-    for (const key of ["sct", "session_token", "arifos_sct"] as const) {
-      const v = m[key];
-      if (typeof v === "string" && v.trim()) return v.trim();
+  return `fp:${(h >>> 0).toString(16).padStart(8, "0")}:${token.length}`;
+}
+
+function pushCandidate(
+  sources: TokenSource[],
+  unique: Map<string, string>,
+  token: string,
+  location: string,
+): void {
+  const t = token.trim();
+  if (!t) return;
+  const fp = fingerprint(t);
+  sources.push({ location, fingerprint: fp, length: t.length });
+  if (!unique.has(fp)) unique.set(fp, t);
+}
+
+/**
+ * Collect ALL SCT candidates from args, nested _meta, explicit meta, and headers.
+ * First-token-wins is FORBIDDEN — conflicts return AMBIGUOUS.
+ */
+export function extractSctFromCall(
+  args: Record<string, unknown> | null | undefined,
+  opts: {
+    headers?: Record<string, string> | null;
+    meta?: Record<string, unknown> | null;
+  } = {},
+): TokenExtraction {
+  const sources: TokenSource[] = [];
+  const unique = new Map<string, string>();
+
+  const a = args && typeof args === "object" ? args : {};
+
+  // 1. Direct argument keys
+  for (const key of ["session_token", "sct", "arifos_sct"] as const) {
+    const v = a[key];
+    if (typeof v === "string" && v.trim()) {
+      pushCandidate(sources, unique, v, `arguments.${key}`);
     }
   }
+
+  // 2. Nested _meta in arguments
+  const nested = a._meta;
+  if (nested && typeof nested === "object") {
+    const m = nested as Record<string, unknown>;
+    for (const key of ["sct", "session_token", "arifos_sct"] as const) {
+      const v = m[key];
+      if (typeof v === "string" && v.trim()) {
+        pushCandidate(sources, unique, v, `arguments._meta.${key}`);
+      }
+    }
+  }
+
+  // 3. Explicit meta
+  if (opts.meta && typeof opts.meta === "object") {
+    for (const key of ["sct", "session_token", "arifos_sct"] as const) {
+      const v = opts.meta[key];
+      if (typeof v === "string" && v.trim()) {
+        pushCandidate(sources, unique, v, `_meta.${key}`);
+      }
+    }
+  }
+
+  // 4. HTTP headers
+  if (opts.headers && typeof opts.headers === "object") {
+    const lower: Record<string, string> = {};
+    for (const [k, v] of Object.entries(opts.headers)) {
+      lower[String(k).toLowerCase()] = String(v);
+    }
+    for (const key of ["x-arifos-sct", "x-session-token", "x-arifos-session-token"]) {
+      const v = lower[key];
+      if (v && v.trim()) {
+        pushCandidate(sources, unique, v, `header.${key}`);
+      }
+    }
+    const auth = lower["authorization"] || "";
+    if (auth.toLowerCase().startsWith("bearer ")) {
+      const token = auth.slice(7).trim();
+      if (token.startsWith("sct_v1.") || token.startsWith("arifos.v1.")) {
+        pushCandidate(sources, unique, token, "header.authorization");
+      }
+    }
+  }
+
+  const source_count = sources.length;
+  const unique_fingerprints = unique.size;
+
+  if (unique_fingerprints === 0) {
+    return { status: "ABSENT", sources, source_count, unique_fingerprints: 0 };
+  }
+  if (unique_fingerprints === 1) {
+    const token = unique.values().next().value as string;
+    return {
+      status: "PRESENT",
+      token,
+      sources,
+      source_count,
+      unique_fingerprints: 1,
+    };
+  }
+  return {
+    status: "AMBIGUOUS",
+    sources,
+    source_count,
+    unique_fingerprints,
+    conflict_detected: true,
+  };
+}
+
+/**
+ * Legacy helper — returns single token or null.
+ * Prefer extractSctFromCall for conflict detection.
+ * Returns null on ABSENT or AMBIGUOUS (never silently picks first).
+ */
+export function extractSctFromArgs(
+  args: Record<string, unknown> | null | undefined,
+): string | null {
+  const ext = extractSctFromCall(args);
+  if (ext.status === "PRESENT") return ext.token;
   return null;
 }
 
 function formatOk(sct: string): boolean {
   return sct.length >= 16 && SCT_RE.test(sct);
+}
+
+/**
+ * Production startup invariant.
+ * production + FORGE_SCT_REQUIRE_MUTATE=0 → FATAL (exit before bind).
+ */
+export function assertSctMutationGateOrExit(
+  env: NodeJS.ProcessEnv = process.env,
+): { required: boolean; enforced: boolean; bypass_profile: "none" | "dev" } {
+  const isProduction =
+    env.NODE_ENV === "production" ||
+    env.AF_FORGE_ENV === "production" ||
+    env.AF_PROFILE === "production";
+  const raw = env.FORGE_SCT_REQUIRE_MUTATE;
+  const bypass =
+    raw === "0" || String(raw || "").toLowerCase() === "false";
+  const enforced = !bypass;
+
+  if (isProduction && bypass) {
+    console.error(
+      "[FATAL] FORGE_SCT_REQUIRE_MUTATE=0 is forbidden in production. " +
+        "SCT mutation gate must be enforced (set FORGE_SCT_REQUIRE_MUTATE=1 or unset). " +
+        `NODE_ENV=${env.NODE_ENV} AF_FORGE_ENV=${env.AF_FORGE_ENV}`,
+    );
+    process.exit(1);
+  }
+
+  return {
+    required: true,
+    enforced,
+    bypass_profile: bypass ? "dev" : "none",
+  };
+}
+
+/** Health payload fragment for sct_mutation_gate (never exits). */
+export function sctMutationGateHealth(
+  env: NodeJS.ProcessEnv = process.env,
+): {
+  required: boolean;
+  enforced: boolean;
+  bypass_profile: "none" | "dev";
+  env: string;
+} {
+  const isProduction =
+    env.NODE_ENV === "production" ||
+    env.AF_FORGE_ENV === "production" ||
+    env.AF_PROFILE === "production";
+  const raw = env.FORGE_SCT_REQUIRE_MUTATE;
+  const bypass = raw === "0" || String(raw || "").toLowerCase() === "false";
+  if (isProduction && bypass) {
+    // Health path must not exit mid-request if misconfigured at runtime —
+    // report the violation instead. Startup uses assertSctMutationGateOrExit.
+    return {
+      required: true,
+      enforced: false,
+      bypass_profile: "dev",
+      env: "production_violation",
+    };
+  }
+  return {
+    required: true,
+    enforced: !bypass,
+    bypass_profile: bypass ? "dev" : "none",
+    env: isProduction ? "production" : "non-production",
+  };
 }
 
 /**
@@ -177,35 +384,62 @@ export async function verifyFederationSct(
 /**
  * Ingress gate for A-FORGE tool handlers.
  *
+ * - Conflicting token sources → SCT_AMBIGUOUS (reject)
  * - SCT present → must verify (fail closed)
  * - requireSct=true and missing → SCT_REQUIRED
- * - otherwise allow (backward-compatible)
+ * - otherwise allow (backward-compatible OBSERVE)
  */
 export async function gateToolIngress(
   toolName: string,
   args: Record<string, unknown>,
-  opts: { requireSct?: boolean; requiredAuthority?: string } = {},
+  opts: {
+    requireSct?: boolean;
+    requiredAuthority?: string;
+    headers?: Record<string, string> | null;
+    meta?: Record<string, unknown> | null;
+  } = {},
 ): Promise<SctGateResult | { ok: true; skipped: true }> {
-  const sct = extractSctFromArgs(args);
+  const extraction = extractSctFromCall(args, {
+    headers: opts.headers,
+    meta: opts.meta,
+  });
   const actor =
     (typeof args.actor_id === "string" && args.actor_id) ||
     (typeof args.actor === "string" && args.actor) ||
     null;
 
-  if (!sct) {
+  if (extraction.status === "AMBIGUOUS") {
+    return {
+      ok: false,
+      error: "SCT_AMBIGUOUS",
+      message:
+        `Tool "${toolName}" received ${extraction.unique_fingerprints} distinct ` +
+        `SCT tokens from ${extraction.source_count} sources. ` +
+        `All sources must carry the same token. Execution refused.`,
+      actor: actor || undefined,
+      extraction,
+    };
+  }
+
+  if (extraction.status === "ABSENT") {
     if (opts.requireSct) {
       return {
         ok: false,
         error: "SCT_REQUIRED",
         message: `Tool "${toolName}" requires session_token (mint via arif_init)`,
         actor: actor || undefined,
+        extraction,
       };
     }
     return { ok: true, skipped: true };
   }
 
-  return verifyFederationSct(sct, {
+  const verified = await verifyFederationSct(extraction.token, {
     expectedActor: actor,
     requiredAuthority: opts.requiredAuthority || "OBSERVE_ONLY",
   });
+  if (!verified.ok) {
+    return { ...verified, extraction };
+  }
+  return verified;
 }

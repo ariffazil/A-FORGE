@@ -1,0 +1,214 @@
+# organ_authority_ceilings.yaml — T7 deliverable #5 (authority-ceiling enforcement)
+#
+# Canonical declaration of each federation organ's authority ceiling.
+# A ceiling is the HIGHEST band the organ is constitutionally permitted
+# to grant, regardless of agent claim. No actor — including SOVEREIGN —
+# can coerce an organ to exceed its own ceiling.
+#
+# Bands (canonical, APEX §8):
+#   OBSERVE_ONLY   — read/respond only, no state mutation
+#   READ_ONLY      — read, reason, no mutation
+#   LIMITED_MUTATE — bounded mutation under gate
+#   FULL           — full mutation, can sign receipts
+#   SOVEREIGN      — can seal (arifOS only; constitutional judge)
+#
+# APEX-CONCORDANCE-17072026 §8 — T7 deliverable #5
+# DITEMPA BUKAN DIBEI
+
+# ---------------------------------------------------------------------------
+# Organ ceilings — single source of truth
+# ---------------------------------------------------------------------------
+organs:
+
+  - name: arifOS
+    port: 8088
+    ceiling: SOVEREIGN
+    ceiling_verb: kernel
+    role: Constitutional governance kernel
+    can_grant:
+      - OBSERVE_ONLY
+      - READ_ONLY
+      - LIMITED_MUTATE
+      - FULL
+      - SOVEREIGN
+    cannot_grant: []                  # SOVEREIGN is the apex band
+    rationale: |
+      arifOS is the constitutional judge. F13 SOVEREIGN doctrine.
+      arifOS IS the only organ that can seal. Boot_attestation gate
+      (T3a Item 3) further constrains: boot_state != OK demotes any
+      band above OBSERVE_ONLY, even SOVEREIGN, because the gate is
+      about server integrity, not actor claim.
+    emits_in_health: true              # must surface authority_ceiling in /health
+
+  - name: A-FORGE
+    port: 7071
+    ceiling: 777_FORGE                 # executor verb, not a band; equivalent to FULL
+    ceiling_band_equivalent: FULL
+    role: Execution shell under lease + SEAL
+    can_grant:
+      - OBSERVE_ONLY
+      - READ_ONLY
+      - LIMITED_MUTATE
+      - FULL
+    cannot_grant:
+      - SOVEREIGN                     # A-FORGE never adjudicates constitutional floors
+    rationale: |
+      A-FORGE may forge (execute under lease + SEAL) but NEVER seal
+      or adjudicate. SOVEREIGN is delegated to arifOS. Already declared
+      in source (server.ts:965) and /health.
+    emits_in_health: true
+
+  - name: AAA
+    port: 3001
+    ceiling: T3_888_HOLD               # cockpit/adapter; cannot act without 888 grant
+    ceiling_band_equivalent: LIMITED_MUTATE
+    role: Cockpit + A2A gateway
+    can_grant:
+      - OBSERVE_ONLY
+      - READ_ONLY
+      - LIMITED_MUTATE                # T3_888_HOLD-equivalent
+    cannot_grant:
+      - FULL
+      - SOVEREIGN
+    rationale: |
+      AAA is the human-facing control plane. Its autonomy_band framework
+      (envelope.ts) is T3_888_HOLD + F13_SOVEREIGN — meaning AAA can
+      surface 888 actions but never autonomously grants FULL or
+      SOVEREIGN. (Source: AAA/src/envelope.ts:240-241 hard rule.)
+    emits_in_health: false             # implicit; T3 framework is canonical
+
+  - name: GEOX
+    port: 8081
+    ceiling: OBSERVE_ONLY
+    role: Earth / geoscience intelligence
+    can_grant:
+      - OBSERVE_ONLY
+    cannot_grant:
+      - READ_ONLY                     # GEOX never reasons independently; serves evidence
+      - LIMITED_MUTATE
+      - FULL
+      - SOVEREIGN
+    rationale: |
+      GEOX is evidence-only by doctrine. Compute organ — no state
+      mutation, no authority grant. Zero grant code in source
+      (verified by grep at T7-5 forge time). OBSERVE_ONLY is
+      structurally enforced by absence of mutation tools.
+    emits_in_health: false             # implicit; compute-only
+
+  - name: WEALTH
+    port: 18082
+    ceiling: OBSERVE_ONLY
+    role: Capital intelligence (compute only)
+    can_grant:
+      - OBSERVE_ONLY
+    cannot_grant:
+      - READ_ONLY
+      - LIMITED_MUTATE
+      - FULL
+      - SOVEREIGN
+    rationale: |
+      WEALTH computes — never allocates. F13 SOVEREIGN rule documented
+      in counterfactual.py, collapse_signature/beautiful_mouse.py,
+      tri_witness.py. No mutation tools exposed. OBSERVE_ONLY is
+      structurally enforced.
+    emits_in_health: false             # implicit
+
+  - name: WELL
+    port: 18083
+    ceiling: OBSERVE_ONLY
+    role: Human readiness (REFLECT_ONLY)
+    can_grant:
+      - OBSERVE_ONLY
+    cannot_grant:
+      - READ_ONLY
+      - LIMITED_MUTATE
+      - FULL
+      - SOVEREIGN
+    rationale: |
+      WELL is REFLECT_ONLY by F6/F11 doctrine. Source comments
+      explicitly state "F13 SOVEREIGN decides what is binding"
+      (server.py:6822). WELL surfaces readiness signals but never
+      grants authority. OBSERVE_ONLY is structurally enforced.
+    emits_in_health: false             # implicit
+
+# ---------------------------------------------------------------------------
+# Enforcement contract
+# ---------------------------------------------------------------------------
+enforcement:
+
+  policy: |
+    An organ CANNOT grant a band above its declared ceiling, regardless
+    of agent claim. If an agent claims SOVEREIGN and asks GEOX for FULL,
+    GEOX must refuse — even if the agent is genuinely SOVEREIGN.
+
+  runtime_check_per_organ:
+    arifOS: |
+      The _apply_boot_gate (T3a Item 3b, commit ddbcc4856) demotes any
+      band above OBSERVE_ONLY when boot_state != OK. The ceiling is
+      enforced via the kernel's authority envelope.
+    A-FORGE: |
+      Already hard-coded: A-FORGE cannot seal. The forge_approve
+      route refuses seal-class actions; only arifOS produces seals.
+    AAA: |
+      The envelope.ts hard rule (line 240-241): f13_required_boolean=true
+      requires autonomy_band in {T3_888_HOLD, F13_SOVEREIGN}. AAA
+      cannot autonomously grant FULL or SOVEREIGN.
+    GEOX: |
+      Structural enforcement — no grant code exists. Any mutation
+      attempt is structurally impossible.
+    WEALTH: |
+      Structural enforcement — no grant code exists.
+    WELL: |
+      Structural enforcement — no grant code exists. F6/F11 doctrine
+      explicit in source.
+
+  false_positive: |
+    OBSERVE_ONLY-by-absence is a structural argument, not a runtime
+    test. If an organ later gains a mutation tool, the absence-of-grant
+    argument breaks. To close that gap, T7-5 must run periodic grep
+    audits (the canonical test below) and alert when any non-arifOS
+    organ gains a mutation surface.
+
+# ---------------------------------------------------------------------------
+# Audit grep — re-runnable verification that the registry matches reality
+# ---------------------------------------------------------------------------
+audit_grep:
+
+  description: |
+    For each organ, verify that no grant code exists for bands above
+    its declared ceiling. Re-run weekly and on every organ deploy.
+
+  rules:
+    - organ: GEOX
+      ceiling: OBSERVE_ONLY
+      forbid_grant_code: |
+        matches in geox/:
+        - "authority_band.*=.*['\"](LIMITED_MUTATE|FULL|SOVEREIGN)['\"]"
+        - "mutation_allowed.*=.*True"
+
+    - organ: WEALTH
+      ceiling: OBSERVE_ONLY
+      forbid_grant_code: |
+        matches in wealth_core/, wealth_mcp/:
+        - "authority_band.*=.*['\"](LIMITED_MUTATE|FULL|SOVEREIGN)['\"]"
+        - "mutation_allowed.*=.*True"
+
+    - organ: WELL
+      ceiling: OBSERVE_ONLY
+      forbid_grant_code: |
+        matches in server.py, vps_compute.py:
+        - "authority_band.*=.*['\"](LIMITED_MUTATE|FULL|SOVEREIGN)['\"]"
+        - "mutation_allowed.*=.*True"
+      note: |
+        WELL's "FULL" strings are diagnostic values (bandwidth = "FULL"),
+        not authority grants. The grep must exclude those.
+
+# ---------------------------------------------------------------------------
+# Provenance
+# ---------------------------------------------------------------------------
+provenance:
+  forged: 2026-07-17T15:55:00Z
+  forged_by: kimi-code (FI-008) under ARIF (F13 SOVEREIGN)
+  session: SEAL-c3ec39619ebc4f36
+  audit_ref: APEX-CONCORDANCE-17072026 §8 · T7 deliverable #5
+  doctrine: DITEMPA BUKAN DIBEI
