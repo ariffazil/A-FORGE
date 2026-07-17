@@ -330,31 +330,26 @@
     "pulse_count": 1
   },
   "opencode": {
-    "agent_id": "opencode",
-    "agent_type": "opencode",
-    "role": "governed_coder",
-    "authority": {
-      "observe": true,
-      "dry_run": true,
-      "propose_patch": true,
-      "mutate_files": "lease_required",
-      "shell_exec": "lease_required",
-      "git_commit": "888_HOLD",
-      "deploy": "888_HOLD",
-      "vault_seal": "888_HOLD"
-    },
+    "agent_type": "forge_worker",
+    "trust_tier": "SOVEREIGN",
+    "description": "OpenCode \u2014 ARIF's governed coding forge worker bound to 333-AGI. Arrow of time identity via Ed25519 SSH key.",
     "identity_proof": {
       "type": "ed25519",
-      "public_key_fingerprint": "sha256:0c781338d412db5cbe9556d527006c715806c4785e0dbff45319de4288f7eec4",
-      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEALpkZ7yT3+EP65tbpQKud1U1OZCNYUnxObbioU0tIHRk=\n-----END PUBLIC KEY-----",
-      "registered_at": "2026-07-09T01:44:55.590961+00:00",
-      "verification_method": "sovereign_approval",
-      "verified_by": "sovereign"
+      "public_key_b64": "3if17nc8dwrx7b1BA0nsZPWeEVDKedKo5b9CFSC0LEE=",
+      "public_key_hex": "de27f5ee773c770af1edbd410349ec64f59e1150ca79d2a8e5bf421520b42c41",
+      "verified_at": "2026-07-17T07:45:00Z",
+      "method": "ssh_key"
     },
-    "trust_tier": "OBSERVED",
-    "registered_at": "2026-07-09T01:44:55.590961+00:00",
-    "last_seen": "2026-07-09T01:44:55.590961+00:00",
-    "lease_ids": []
+    "roles": [
+      "forge",
+      "judge",
+      "seal",
+      "observe",
+      "think",
+      "route"
+    ],
+    "parent_agent": "333-AGI",
+    "sovereign_delegate": true
   },
   "kimi-code": {
     "agent_id": "kimi-code",

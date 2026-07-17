@@ -623,7 +623,7 @@ Human (Layer 0)
 | Vertical Agent Engine | `/root/A-FORGE/src/domain/agents/vertical-agent/index.ts` |
 | VerdictEnvelope (existing) | `/root/A-FORGE/src/domain/governance/verdict-envelope.ts` |
 | APEX Contracts (existing) | `/root/A-FORGE/src/contracts/types.ts` |
-| Federation Organ Map | `/root/AAA/docs/FEDERATION_ORGAN.md` |
+| Federation Organ Map | `/root/AAA/docs/ORGAN.md` |
 
 ### Measurement Spine Types (Section 13-20)
 
