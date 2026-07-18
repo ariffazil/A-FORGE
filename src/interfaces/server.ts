@@ -198,7 +198,7 @@ export function createApp(): express.Express {
     // OpenCode compat: static server info
     res.json({
       service: "A-FORGE",
-      version: "0.1.0",
+      version: "v2026.07.17",
       protocol_version: "2025-03-26",
       mcp_endpoint: "/mcp",
       health_endpoint: "/health",
@@ -403,7 +403,7 @@ app.post("/sense", async (req: Request, res: Response) => {
       },
       context: {
         source: "A-FORGE",
-        version: "0.1.0",
+        version: "v2026.07.17",
         epoch: "2026-04-08",
         received_context: context,
         peer_contract_id,
@@ -966,7 +966,7 @@ app.get("/health", (_req: Request, res: Response) => {
     status: "healthy",
     ok: true, // legacy alias — prefer status
     service: "A-FORGE-sense",
-    version: "0.1.0",
+    version: "v2026.07.17",
     federation_schema_version: "2.0.0",
     // P5 (2026-06-13): Substrate doctrine — A-FORGE is the substrate engineering organ.
     // Profile bounded by F13; options: enterprise | agentic | sovereign | civilization.
