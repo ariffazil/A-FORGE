@@ -1,6 +1,6 @@
 <!-- SOT-MANIFEST
 federation_release: v2026.07.17-ZEN-CONVERGENCE
-last_verified: 2026-07-17T16:00Z
+last_verified: 2026-07-18T16:00Z
 live_commit: c128903
 sense_port: 7071 (healthy)
 mcp_port: 7072 (healthy, 52 stateless tools)
