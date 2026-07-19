@@ -200,9 +200,13 @@ export class McpPolicyGate {
 
     // Layer 1: Identity — provenance-aware
     if (!principal.authenticated) {
-      // Explicit "anonymous" → hard DENY
-      if (req.actor_id === "anonymous") {
-        result.reasons.push("L1_IDENTITY:anonymous_actor_explicitly_denied");
+      // Explicit "anonymous" OR empty string → hard DENY (semantically equivalent to no identity)
+      if (req.actor_id === "anonymous" || req.actor_id === "") {
+        result.reasons.push(
+          req.actor_id === ""
+            ? "L1_IDENTITY:empty_actor_id_explicitly_denied"
+            : "L1_IDENTITY:anonymous_actor_explicitly_denied",
+        );
         this.appendAudit(result);
         return result;
       }
@@ -280,6 +284,33 @@ export class McpPolicyGate {
       return result;
     }
 
+    // P0.7: ChatGPT channel — hard-denied sensitive paths.
+    // chatgpt-arif is OBSERVE_ONLY (P0.2 already blocks MUTATE), but
+    // certain read paths should also be denied through this channel:
+    //   - forge_vault read (sealed records)
+    //   - forge_shell (execution)
+    //   - forge_security_drift_scan (infra exposure)
+    //   - forge_journalctl (system logs)
+    //   - forge_vps_*/forge_probe (infra topology)
+    const CHATGPT_DENIED_TOOLS = [
+      "forge_vault", "forge_shell", "forge_shell_dryrun",
+      "forge_security_drift_scan", "forge_journalctl",
+      "forge_vps_ports", "forge_vps_services", "forge_vps_cron",
+      "forge_probe", "forge_netdata_alarms", "forge_netdata_metrics",
+    ];
+    if (
+      principal.source === "client_supplied" &&
+      principal.displayLabel === "chatgpt-arif" &&
+      CHATGPT_DENIED_TOOLS.some(dt => req.tool_name === dt || req.tool_name.startsWith(dt + "_"))
+    ) {
+      result.reasons.push(
+        `L1_CHANNEL:chatgpt-arif HARD_DENIED tool "${req.tool_name}". ` +
+        `This channel is OBSERVE_ONLY external MCP — infra/vault/shell tools are blocked.`
+      );
+      this.appendAudit(result);
+      return result;
+    }
+
     // Layer 2: Server
     if (!this.isServerAllowed(policy, mcpServer)) {
       result.reasons.push(`L2_SERVER:${mcpServer}_not_in_allowlist`);
@@ -329,6 +360,19 @@ export class McpPolicyGate {
     }
     result.layers.argument = true;
 
+    // Layer 4b (P0.6 FIX 2026-07-19): Unknown (unclassified) tools → HOLD regardless of AAE.
+    // classifier returns IRREVERSIBLE for unknowns, but that's too aggressive
+    // for a tool that simply hasn't been classified yet. HOLD is the correct
+    // fail-closed: stop, audit, escalate — don't pretend it's known-dangerous.
+    // Applies to BOTH AAE and non-AAE paths (was previously AAE-only).
+    if (!isClassifiedTool(req.tool_name)) {
+      result.reasons.push(
+        `L4b_CLASSIFY:UNKNOWN_TOOL(${req.tool_name}) — tool is not explicitly classified. Policy gate forces HOLD. Add to actionClassifier.ts.`,
+      );
+      this.appendAudit(result);
+      return result;
+    }
+
     // Layer 5: AAE action_class vs tool classification (if AAE present)
     if (req.aae) {
       // Layer 5 defense-in-depth: nonce replay check even if Layer 1b skipped
@@ -343,18 +387,7 @@ export class McpPolicyGate {
       }
 
       const aaeClass = req.aae.action_class as ActionClass;
-
-      // P0.6: Unknown tools → immediate HOLD.
-      // classifier returns IRREVERSIBLE for unknowns, but that's too aggressive
-      // for a tool that simply hasn't been classified yet. HOLD is the correct
-      // fail-closed: stop, audit, escalate — don't pretend it's known-dangerous.
-      if (!isClassifiedTool(req.tool_name)) {
-        result.reasons.push(
-          `L5_AAE:UNKNOWN_TOOL(${req.tool_name}) — tool is not explicitly classified. Classifier defaulted to IRREVERSIBLE but policy gate forces HOLD. Add to actionClassifier.ts.`,
-        );
-        this.appendAudit(result);
-        return result;
-      }
+      const toolClass = classifyTool(req.tool_name);
 
       // IRREVERSIBLE tools require IRREVERSIBLE AAE
       if (toolClass === "IRREVERSIBLE" && aaeClass !== "IRREVERSIBLE") {
