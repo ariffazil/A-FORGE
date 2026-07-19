@@ -8,7 +8,6 @@
  */
 import { z } from "zod";
 import { BaseTool } from "./base.js";
-import type { z } from "zod";
 
 // ── Schemas ────────────────────────────────────────────
 export const VerificationRequestSchema = z.object({
@@ -54,29 +53,43 @@ export function isIndependentVerifier(executorIdentity: string): boolean {
  * Classification: OBSERVE (cannot mutate state)
  * Authority: OBSERVE_ONLY (verifier never executes)
  */
-export const forgeVerifyTool = new (class extends BaseTool {
-  name: "forge_verify",
-  description: 
+class ForgeVerifyTool extends BaseTool {
+  name = "forge_verify";
+  description = 
     "WAJIB 2 — Independent verification lane. Verifies that an executed action " +
     "produced the expected outcome. The verifier identity is separate from the " +
     "executor. A-FORGE cannot self-verify. Returns VERIFIED, MISMATCH, INCONCLUSIVE, " +
-    "or STALE with evidence references and independence proof.",
-  inputSchema: VerificationRequestSchema,
+    "or STALE with evidence references and independence proof.";
+  inputSchema = VerificationRequestSchema;
+  parameters = {
+    type: "object" as const,
+    properties: {
+      intent_hash: { type: "string", description: "SHA-256 of the original intent/success criteria" },
+      success_criteria: { type: "array", items: { type: "string" }, description: "What must be true" },
+      mutation_receipt: { type: "string", description: "Reference to execution receipt" },
+      executor_identity: { type: "string", description: "Identity hash of executor" },
+      target_state: { type: "object", description: "Expected post-execution state" },
+      permitted_observation_tools: { type: "array", items: { type: "string" }, description: "Allowed observation tools" },
+      freshness_requirement: { type: "number", description: "Max evidence age in seconds" },
+    },
+  } as any;
+  riskLevel = "safe" as const;
   
-  annotations: {
+  annotations = {
     readOnlyHint: true,
     destructiveHint: false,
     idempotentHint: true,
-  },
+  };
   
-  classification: "OBSERVE" as const,
+  classification = "OBSERVE" as const;
   
-  async handler(args: VerificationRequest): Promise<{ content: Array<{ type: string; text: string }> }> {
+  async run(args: Record<string, unknown>, context: any): Promise<any> {
+    const verificationArgs = args as unknown as VerificationRequest;
     const startTime = Date.now();
     const observedAt = new Date().toISOString();
     
     // ── Independence Gate ──
-    if (!isIndependentVerifier(args.executor_identity)) {
+    if (!isIndependentVerifier(verificationArgs.executor_identity)) {
       return {
         content: [{
           type: "text",
@@ -85,7 +98,7 @@ export const forgeVerifyTool = new (class extends BaseTool {
             raw_evidence_refs: [],
             method: "independence_gate_rejected",
             verifier_identity: VERIFIER_IDENTITY_HASH,
-            verifier_independence_proof: `EXECUTOR_IS_VERIFIER: executor=${args.executor_identity} verifier=${VERIFIER_IDENTITY_HASH}`,
+            verifier_independence_proof: `EXECUTOR_IS_VERIFIER: executor=${verificationArgs.executor_identity} verifier=${VERIFIER_IDENTITY_HASH}`,
             observed_at: observedAt,
             residual_uncertainty: 1.0,
             details: {
@@ -102,19 +115,19 @@ export const forgeVerifyTool = new (class extends BaseTool {
     const evidence: string[] = [];
     const checks: Array<{ criterion: string; passed: boolean; detail: string }> = [];
     
-    for (const criterion of args.success_criteria) {
+    for (const criterion of verificationArgs.success_criteria) {
       // For now, observe-mode: report what was checked and what was found
       // Full implementation would call permitted_observation_tools here
       checks.push({
         criterion,
         passed: false, // Requires actual verification implementation
-        detail: `Verification lane active. Executor=${args.executor_identity.slice(0, 16)}... Verifier=${VERIFIER_IDENTITY_HASH.slice(0, 16)}... Independence confirmed.`,
+        detail: `Verification lane active. Executor=${verificationArgs.executor_identity.slice(0, 16)}... Verifier=${VERIFIER_IDENTITY_HASH.slice(0, 16)}... Independence confirmed.`,
       });
     }
     
     evidence.push(`verification_started=${startTime}`);
     evidence.push(`verifier_identity=${VERIFIER_IDENTITY_HASH}`);
-    evidence.push(`executor_identity=${args.executor_identity}`);
+    evidence.push(`executor_identity=${verificationArgs.executor_identity}`);
     evidence.push(`independence_verified=true`);
     
     // ── Result ──
@@ -123,7 +136,7 @@ export const forgeVerifyTool = new (class extends BaseTool {
       raw_evidence_refs: evidence,
       method: "WAJIB_2_verification_lane_v1",
       verifier_identity: VERIFIER_IDENTITY_HASH,
-      verifier_independence_proof: `sha256(${VERIFIER_IDENTITY_HASH} || ${args.executor_identity}) != self`,
+      verifier_independence_proof: `sha256(${VERIFIER_IDENTITY_HASH} || ${verificationArgs.executor_identity}) != self`,
       observed_at: observedAt,
       residual_uncertainty: 0.5,
       details: {
@@ -140,4 +153,6 @@ export const forgeVerifyTool = new (class extends BaseTool {
       }]
     };
   }
-};
+}
+
+export const forgeVerifyTool = new ForgeVerifyTool();
