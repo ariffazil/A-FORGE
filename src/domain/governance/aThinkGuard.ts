@@ -259,11 +259,14 @@ function checkAffordance(
     }
   }
 
-  // HARAM 1: No card = UNKNOWN = HOLD
+  // P0.7 FIX (2026-07-19): Tools without affordance cards default to ALLOWED.
+  // The actionClassifier handles action-class gating (unknown → IRREVERSIBLE → HOLD).
+  // The affordance layer is an additional guard, not a replacement for classification.
+  // Previously: no card = HOLD (blocked most tools from ChatGPT MCP access).
   if (!card) {
     return {
-      allowed: false,
-      reason: `HARAM: tool '${toolName}' has no affordance card (UNKNOWN = HOLD)`,
+      allowed: true,
+      reason: `DEFAULT_ALLOW: tool '${toolName}' has no affordance card — gated by actionClassifier instead`,
     };
   }
 
