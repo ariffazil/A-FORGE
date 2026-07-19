@@ -7,7 +7,8 @@
  * Constitutional invariant: verification_identity ≠ executor_identity
  */
 import { z } from "zod";
-import type { ToolDefinition } from "./base.js";
+import { BaseTool } from "./base.js";
+import type { z } from "zod";
 
 // ── Schemas ────────────────────────────────────────────
 export const VerificationRequestSchema = z.object({
@@ -53,7 +54,7 @@ export function isIndependentVerifier(executorIdentity: string): boolean {
  * Classification: OBSERVE (cannot mutate state)
  * Authority: OBSERVE_ONLY (verifier never executes)
  */
-export const forgeVerifyTool: ToolDefinition = {
+export const forgeVerifyTool = new (class extends BaseTool {
   name: "forge_verify",
   description: 
     "WAJIB 2 — Independent verification lane. Verifies that an executed action " +
