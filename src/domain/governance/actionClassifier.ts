@@ -120,6 +120,7 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_job_submit",       // async job submission — requires session
   "forge_lease_request",    // lease issuance — requires session
   "forge_lease_revoke",     // lease revocation — requires session
+  "forge_shell",            // shell execution — governed, session required (T₁ 2026-07-19)
 ]);
 
 // Tools that should always be simulated first
@@ -189,7 +190,6 @@ const OBSERVE_TOOLS = new Set([
   "forge_shell_dryrun",       // shell preview — read-only (no mutation)
   "forge_shell_ledger",       // shell ledger — read-only
   "forge_shell_alert_history", // shell alert history — read-only
-  "forge_shell",              // shell execution — authority verified by handler via arifOS
   "forge_worktree",           // local git physics sensor — read-only, OBSERVE
   "forge_runtime_verify",     // runtime hash verification — read-only, OBSERVE
   "forge_cool_drift",         // cooling receipt drift — read-only, OBSERVE
