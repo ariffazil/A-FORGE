@@ -817,6 +817,91 @@ export const EXAMPLE_POLICIES: McpPolicy[] = [
       }},
     },
   },
+  // P0.7 (2026-07-19): ChatGPT channel principal — OBSERVE_ONLY with hard-denied secret paths.
+  // Channel principal chatgpt-arif is NOT sovereign ARIF. Even with verified session, the
+  // authority ceiling caps at OBSERVE_ONLY and secret-bearing arguments are always rejected.
+  {
+    policy_id: "agent:chatgpt-arif",
+    actor_id: "chatgpt-arif",
+    role: "chatgpt-channel",
+    description:
+      "ChatGPT Secure MCP Tunnel channel principal. OBSERVE_ONLY authority ceiling. " +
+      "Hard-denied argument patterns on command/path/url prevent any secret-bearing access. " +
+      "Mutating tools (forge_shell, forge_filesystem_write, forge_seal, forge_vault, etc.) are NOT " +
+      "in the allowlist and are denied at Layer 3 by default:deny.",
+    allow_by_default: false,
+    allowed_mcp_servers: {
+      forge: {
+        allow: true,
+        tools: {
+          forge_health_check: {
+            description: "OBSERVE: health probe",
+            argument_constraints: CHATGPT_HARD_DENIED,
+          },
+          forge_probe: {
+            description: "OBSERVE: federation liveness",
+            argument_constraints: CHATGPT_HARD_DENIED,
+          },
+          forge_search: {
+            description: "OBSERVE: public web search",
+            argument_constraints: CHATGPT_HARD_DENIED,
+          },
+          forge_minimax_search: {
+            description: "OBSERVE: alternate web search",
+            argument_constraints: CHATGPT_HARD_DENIED,
+          },
+          forge_filesystem_read: {
+            description: "OBSERVE: read non-secret paths only",
+            argument_constraints: CHATGPT_HARD_DENIED,
+          },
+          forge_filesystem_tree: {
+            description: "OBSERVE: directory tree",
+            argument_constraints: CHATGPT_HARD_DENIED,
+          },
+          forge_filesystem_stat: {
+            description: "OBSERVE: file metadata",
+            argument_constraints: CHATGPT_HARD_DENIED,
+          },
+          forge_memory: {
+            description: "OBSERVE: memory recall",
+            argument_constraints: CHATGPT_HARD_DENIED,
+          },
+          forge_registry_status: {
+            description: "OBSERVE: tool registry",
+            argument_constraints: CHATGPT_HARD_DENIED,
+          },
+          forge_session_init: {
+            description: "OBSERVE: session ignition (creates context, no mutation)",
+            argument_constraints: CHATGPT_HARD_DENIED,
+          },
+        },
+      },
+    },
+  },
+];
+
+// P0.7 (2026-07-19): Hard-denied argument patterns applied to all chatgpt-arif tools.
+// Negative-lookahead regex: matches arguments that DO NOT contain forbidden patterns.
+// Forbidden: secret filesystem paths, vault, shadow/passwd, AWS secret flags, gh auth.
+const CHATGPT_HARD_DENIED: ArgumentConstraint[] = [
+  {
+    path: "command",
+    regex:
+      "^(?!.*(?:/root/\\.secrets/|/etc/shadow|/etc/passwd|VAULT999|\\.secrets/|aws.*--secret|gh auth login))",
+    description: "ChatGPT channel cannot invoke commands touching secrets, vault, or auth",
+  },
+  {
+    path: "path",
+    regex:
+      "^(?!/root/\\.secrets/|/etc/shadow|/etc/passwd|/root/VAULT999|/root/\\.env)",
+    description: "ChatGPT channel cannot read secret filesystem paths",
+  },
+  {
+    path: "url",
+    regex:
+      "^(?!.*(?:\\.secrets/|vault999|api[_-]?key|secret|password|token))",
+    description: "ChatGPT channel cannot fetch secret-bearing URLs",
+  },
 ];
 
 // ── Singleton ─────────────────────────────────────────────────────────

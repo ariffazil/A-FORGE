@@ -280,28 +280,26 @@ describe("Test 10 — display label integrity", () => {
 // Previously the UNKNOWN_TOOL check was inside the AAE-only branch.
 // New behaviour: any unclassified tool is DENY/HOLD regardless of AAE.
 describe("Test 11 — P0.6: Unknown tool forces HOLD for all paths", () => {
-  it("unknown tool with transport_fallback + no AAE → DENY (Layer 1 authority OR Layer 4b classify)", () => {
+  it("unknown tool with transport_fallback + no AAE → DENY (P0.2 authority fires first)", () => {
     const v = gate.evaluate({
       tool_name: "forge_totally_made_up_tool",
       arguments: {},
     });
     assert.equal(v.verdict, "DENY");
-    // transport_fallback → OBSERVE_ONLY; unknown tool → IRREVERSIBLE; P0.2 enforcement
-    // catches this at Layer 1 BEFORE Layer 4b. Either reason is acceptable.
-    const okReason = v.reasons.some(
-      (r) => r.includes("UNKNOWN_TOOL") || r.includes("L1_AUTHORITY"),
-    );
+    // P0.2 now fires BEFORE P0.6 for unauthenticated actors.
+    // OBSERVE_ONLY + IRREVERSIBLE tool → L1_AUTHORITY denial.
     assert.ok(
-      okReason,
-      `Expected UNKNOWN_TOOL or L1_AUTHORITY reason, got: ${v.reasons.join(", ")}`,
+      v.reasons.some((r) => r.includes("L1_AUTHORITY")),
+      `Expected L1_AUTHORITY, got: ${v.reasons.join(", ")}`,
     );
   });
 
   it("unknown tool with verified_session + no AAE → DENY with UNKNOWN_TOOL", () => {
-    gate.setActor("arif");
+    gate.registerVerifiedSession("test-session-1", "arif");
     const v = gate.evaluate({
       tool_name: "arif_some_future_tool",
       arguments: {},
+      session_id: "test-session-1",
     });
     assert.equal(v.verdict, "DENY");
     // Verified session passes P0.2; Layer 4b catches the unknown tool.
