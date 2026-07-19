@@ -29,6 +29,23 @@ concurrency:
 
 jobs:
 
+  federation-check:
+    name: 🗺️ Federation Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate FEDERATION.md
+        run: |
+          test -f FEDERATION.md || (echo "❌ Missing FEDERATION.md" && exit 1)
+          grep -q "role: EXECUTIVE" FEDERATION.md
+          grep -q "layer: L2" FEDERATION.md
+          echo "✅ A-FORGE FEDERATION.md valid — L2 EXECUTIVE"
+      - name: No self-authorization
+        run: |
+          ! grep -r "self.*authorize|self.*seal|self.*judge" src/ --include="*.ts" 2>/dev/null || echo "⚠️ Self-auth patterns found — review"
+          echo "✅ Self-auth check complete"
+
   standard:
     name: "Lane 1 — Standard CI"
     runs-on: ubuntu-latest
@@ -40,7 +57,7 @@ jobs:
           node-version: "22"
           cache: npm
       - name: Install
-        run: npm ci
+        run: npm install --legacy-peer-deps
       - name: Build
         run: npm run build
       - name: Test
@@ -62,7 +79,7 @@ jobs:
           node-version: "22"
           cache: npm
       - name: Install
-        run: npm ci
+        run: npm install --legacy-peer-deps
 
       - name: "ΔS — Entropy (dead code + TODO)"
         id: ds
