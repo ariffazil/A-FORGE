@@ -1,0 +1,277 @@
+/**
+ * PolicyGate Identity Model — 10 regression tests
+ *
+ * Tests the provenance-aware Principal system:
+ *   transport_fallback  → OBSERVE_ONLY (tests 1, 4)
+ *   client_supplied     → unverified, OBSERVE_ONLY (test 6)
+ *   explicit anonymous  → DENY always (test 3)
+ *   explicit spoofing   → DENY (test 4)
+ *   verified_session    → FULL (test 8)
+ *
+ * Invariant: authority ≠ actor_id string
+ *
+ * @forged 2026-07-19 — audit-driven identity fix
+ */
+
+import { describe, it, beforeEach } from "node:test";
+import { strict as assert } from "node:assert";
+import { McpPolicyGate } from "../src/domain/governance/McpPolicyGate.js";
+import type { Principal } from "../src/domain/governance/McpPolicyGate.js";
+
+let gate: McpPolicyGate;
+
+beforeEach(() => {
+  gate = new McpPolicyGate();
+});
+
+// ── Test 1: No actor_id + OBSERVE → ALLOW, authority=OBSERVE_ONLY ──
+describe("Test 1 — transport_fallback", () => {
+  it("allows OBSERVE tool without actor_id", () => {
+    const v = gate.evaluate({
+      tool_name: "forge_fetch",
+      arguments: { url: "https://example.com" },
+    });
+    assert.equal(v.verdict, "ALLOW");
+    assert.equal(v.principal.source, "transport_fallback");
+    assert.equal(v.principal.authenticated, false);
+    assert.equal(v.principal.authority, "OBSERVE_ONLY");
+    assert.equal(v.principal.actorId, null);
+    assert.equal(v.principal.displayLabel, "stateless-client");
+  });
+
+  it("allows OBSERVE tool via transport_fallback with multiple tools", () => {
+    for (const tool of ["forge_filesystem_read", "forge_search", "forge_probe"]) {
+      const v = gate.evaluate({ tool_name: tool, arguments: {} });
+      assert.equal(v.verdict, "ALLOW", `${tool} should ALLOW`);
+      assert.equal(v.principal.source, "transport_fallback");
+      assert.equal(v.principal.authority, "OBSERVE_ONLY");
+    }
+  });
+});
+
+// ── Test 2: No actor_id + MUTATE → needs session gate ──
+// The policy gate passes L1 for transport_fallback. The MUTATE denial
+// happens at the session gate layer in serve.ts (FORGE 2-B).
+// This test verifies the policy gate itself doesn't block MUTATE at L1.
+describe("Test 2 — transport_fallback + MUTATE (L1 only)", () => {
+  it("passes L1 for MUTATE tool — downstream session gate handles denial", () => {
+    const v = gate.evaluate({
+      tool_name: "forge_filesystem_write",
+      arguments: { path: "/tmp/test", content: "test" },
+    });
+    // Policy gate passes L1 with transport_fallback
+    assert.equal(v.layers.identity, true);
+    assert.equal(v.principal.source, "transport_fallback");
+    // The ALLOW at policy level is correct — session/lease gates enforce MUTATE downstream
+  });
+});
+
+// ── Test 3: Explicit anonymous → DENY always ──
+describe("Test 3 — explicit anonymous", () => {
+  it("denies anonymous actor_id on OBSERVE tool", () => {
+    const v = gate.evaluate({
+      actor_id: "anonymous",
+      tool_name: "forge_fetch",
+      arguments: {},
+    });
+    assert.equal(v.verdict, "DENY");
+    assert.ok(
+      v.reasons.some((r) => r.includes("anonymous_actor_explicitly_denied")),
+      `Expected anonymous denial, got: ${v.reasons.join(", ")}`,
+    );
+    assert.equal(v.layers.identity, false);
+  });
+
+  it("denies anonymous actor_id on any tool", () => {
+    for (const tool of ["forge_health_check", "forge_probe", "forge_memory"]) {
+      const v = gate.evaluate({ actor_id: "anonymous", tool_name: tool, arguments: {} });
+      assert.equal(v.verdict, "DENY", `${tool} should DENY anonymous`);
+    }
+  });
+
+  it("denies empty string actor_id like anonymous", () => {
+    const v = gate.evaluate({
+      actor_id: "",
+      tool_name: "forge_health_check",
+      arguments: {},
+    });
+    assert.equal(v.verdict, "DENY");
+  });
+});
+
+// ── Test 4: Explicit "stateless-client" → spoofing rejected ──
+describe("Test 4 — explicit stateless-client spoofing", () => {
+  it("rejects client-supplied 'stateless-client' actor_id", () => {
+    const v = gate.evaluate({
+      actor_id: "stateless-client",
+      tool_name: "forge_fetch",
+      arguments: {},
+    });
+    assert.equal(v.verdict, "DENY");
+    assert.ok(
+      v.reasons.some((r) => r.includes("spoofing_rejected")),
+      `Expected spoofing rejection, got: ${v.reasons.join(", ")}`,
+    );
+    assert.equal(v.principal.source, "client_supplied");
+    assert.equal(v.principal.authenticated, false);
+    // source is client_supplied, NOT transport_fallback
+    assert.notEqual(v.principal.source, "transport_fallback");
+  });
+
+  it("rejects client-supplied 'stateless-client' on OBSERVE tools", () => {
+    for (const tool of ["forge_filesystem_read", "forge_probe", "forge_search"]) {
+      const v = gate.evaluate({
+        actor_id: "stateless-client",
+        tool_name: tool,
+        arguments: {},
+      });
+      assert.equal(v.verdict, "DENY", `${tool} should reject spoofing`);
+      assert.ok(v.reasons.some((r) => r.includes("spoofing_rejected")));
+    }
+  });
+});
+
+// ── Test 5: Forged session ID → needs external validation ──
+// Session validation happens in serve.ts validateSession().
+// The policy gate treats any explicit actor_id as client_supplied (unverified).
+describe("Test 5 — forged session ID", () => {
+  it("treats any explicit actor_id as client_supplied", () => {
+    const v = gate.evaluate({
+      actor_id: "fake-session-arif",
+      tool_name: "forge_fetch",
+      arguments: {},
+    });
+    // Passes L1 (client_supplied → OBSERVE_ONLY)
+    assert.equal(v.layers.identity, true);
+    assert.equal(v.principal.source, "client_supplied");
+    assert.equal(v.principal.authenticated, false);
+    assert.equal(v.principal.authority, "OBSERVE_ONLY");
+  });
+});
+
+// ── Test 6: Client-supplied ID → OBSERVE_ONLY (unverified) ──
+describe("Test 6 — client_supplied unverified", () => {
+  it("allows OBSERVE but with client_supplied provenance", () => {
+    const v = gate.evaluate({
+      actor_id: "some-client-id",
+      tool_name: "forge_health_check",
+      arguments: {},
+    });
+    assert.equal(v.verdict, "ALLOW");
+    assert.equal(v.principal.source, "client_supplied");
+    assert.equal(v.principal.authenticated, false);
+    assert.equal(v.principal.authority, "OBSERVE_ONLY");
+  });
+
+  it("carries unverified_client_id caveat in reasons", () => {
+    const v = gate.evaluate({
+      actor_id: "some-client",
+      tool_name: "forge_fetch",
+      arguments: {},
+    });
+    assert.ok(
+      v.reasons.some((r) => r.includes("unverified_client_id")),
+      `Expected unverified caveat, got: ${v.reasons.join(", ")}`,
+    );
+  });
+});
+
+// ── Test 7: verified_session → FULL authority ──
+describe("Test 7 — verified_session", () => {
+  it("grants FULL authority after setActor()", () => {
+    gate.setActor("arif");
+    const v = gate.evaluate({
+      tool_name: "forge_fetch",
+      arguments: {},
+    });
+    assert.equal(v.verdict, "ALLOW");
+    assert.equal(v.principal.source, "verified_session");
+    assert.equal(v.principal.authenticated, true);
+    assert.equal(v.principal.authority, "FULL");
+    assert.equal(v.principal.actorId, "arif");
+  });
+
+  it("resolves policy by actorId for verified sessions", () => {
+    gate.setActor("arif");
+    const v = gate.evaluate({
+      tool_name: "forge_filesystem_write",
+      arguments: { path: "/tmp/x", content: "x" },
+    });
+    assert.equal(v.verdict, "ALLOW");
+    assert.equal(v.principal.actorId, "arif");
+    assert.equal(v.principal.authenticated, true);
+  });
+});
+
+// ── Test 8: Explicit actor_id overrides activeActor ──
+describe("Test 8 — explicit overrides activeActor", () => {
+  it("uses explicit actor_id when provided, not activeActor", () => {
+    gate.setActor("arif");
+    const v = gate.evaluate({
+      actor_id: "anonymous",
+      tool_name: "forge_health_check",
+      arguments: {},
+    });
+    // "anonymous" should still be DENIED even though activeActor is set
+    assert.equal(v.verdict, "DENY");
+    assert.ok(v.reasons.some((r) => r.includes("anonymous_actor")));
+  });
+});
+
+// ── Test 9: Principal structure invariant ──
+describe("Test 9 — Principal structure invariant", () => {
+  it("never sets authority=FULL for unauthenticated principals", () => {
+    const cases: Array<{ actor_id?: string; desc: string }> = [
+      { desc: "omitted" },
+      { actor_id: "some-client", desc: "client-supplied" },
+      { actor_id: "stateless-client", desc: "spoof attempt" },
+    ];
+    for (const c of cases) {
+      const v = gate.evaluate({
+        actor_id: c.actor_id,
+        tool_name: "forge_health_check",
+        arguments: {},
+      });
+      if (v.verdict === "ALLOW") {
+        assert.notEqual(
+          v.principal.authority,
+          "FULL",
+          `${c.desc}: unauthenticated must not get FULL`,
+        );
+      }
+    }
+  });
+
+  it("always includes principal in verdict result", () => {
+    const v = gate.evaluate({ tool_name: "forge_health_check", arguments: {} });
+    assert.ok(v.principal, "principal must be present");
+    assert.equal(typeof v.principal.source, "string");
+    assert.equal(typeof v.principal.authenticated, "boolean");
+    assert.equal(typeof v.principal.authority, "string");
+    assert.ok(
+      ["verified_session", "client_supplied", "transport_fallback"].includes(v.principal.source),
+      `Invalid source: ${v.principal.source}`,
+    );
+  });
+});
+
+// ── Test 10: Display label never becomes actor ──
+describe("Test 10 — display label integrity", () => {
+  it("transport_fallback has actorId=null", () => {
+    const v = gate.evaluate({ tool_name: "forge_fetch", arguments: {} });
+    assert.equal(v.principal.actorId, null);
+    assert.equal(v.principal.displayLabel, "stateless-client");
+    // The label is for display, not identity
+    assert.notEqual(v.principal.displayLabel, v.principal.actorId);
+  });
+
+  it("displayLabel matches actor_id for client_supplied", () => {
+    const v = gate.evaluate({
+      actor_id: "my-agent",
+      tool_name: "forge_health_check",
+      arguments: {},
+    });
+    assert.equal(v.principal.actorId, "my-agent");
+    assert.equal(v.principal.displayLabel, "my-agent");
+  });
+});
