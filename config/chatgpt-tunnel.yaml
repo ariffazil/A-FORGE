@@ -1,0 +1,50 @@
+# A-FORGE ChatGPT Secure MCP Tunnel Config
+# DITEMPA BUKAN DIBERI — 2026-07-19
+#
+# Architecture:
+#   ChatGPT → OpenAI Secure MCP Tunnel → 127.0.0.1:7072/mcp → A-FORGE
+#
+# This file is a reference config. Actual tunnel provisioning happens
+# through the OpenAI dashboard or tunnel-client CLI.
+
+tunnel:
+  name: aforge-chatgpt
+  profile: aforge-sovereign
+  transport: streamable_http
+  direction: outbound_only  # VPS initiates to OpenAI, no inbound port
+
+mcp_server:
+  url: "http://127.0.0.1:7072/mcp"
+  transport: streamable-http
+  # stdio is NOT used — HTTP preserves OAuth headers and session identity
+
+identity:
+  # ChatGPT workspace user authenticates via OAuth through the tunnel.
+  # A-FORGE receives bearer token → maps to principal → arif_init → SCT.
+  principal_source: oauth_bearer_token
+  default_actor: chatgpt-external
+  # Sovereign identity (ARIF) requires explicit arif_init with proof.
+  sovereign_binding: explicit_init_only
+
+authority:
+  default: OBSERVE_ONLY
+  escalation:
+    draft: autonomous
+    execute_reversible: kernel_lease
+    execute_high_impact: kernel_lease_and_ack
+    irreversible: sovereign_888
+
+environment:
+  # P0.3: Disable local lease fallback for external channels
+  ALLOW_LOCAL_LEASE_FALLBACK: "false"
+  # P0.1: Unknown tools → HOLD
+  UNKNOWN_ACTION_BEHAVIOUR: "HOLD"
+  # Bind to localhost only
+  AF_FORGE_PORT: "7072"
+
+chatgpt_app:
+  name: "A-FORGE"
+  description: "Arif's governed VPS forge. OBSERVE default, MUTATE with lease."
+  mode: draft  # Do not publish until P0 complete
+  access: arif_only
+  tools_visible: all  # Full capability surface, gated per-action
