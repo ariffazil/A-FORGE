@@ -330,6 +330,10 @@ export class McpPolicyGate {
 
     // Layer 4: Argument constraints
     const toolPolicy = toolCheck.policy;
+    // P0.7 FIX (2026-07-19): snapshot reasons.length before L4 so we only
+    // return DENY for L4-specific violations, not for accumulated L1 reasons
+    // (e.g. "unverified_client_id" — which is a caveat, not a violation).
+    const reasonsBeforeL4 = result.reasons.length;
     if (toolPolicy?.argument_constraints?.length) {
       for (const constraint of toolPolicy.argument_constraints) {
         const value = this.getValueAtPath(req.arguments, constraint.path);
@@ -353,7 +357,7 @@ export class McpPolicyGate {
           result.reasons.push(`L4 ARG:invalid_regex at ${constraint.path}: ${e.message}`);
         }
       }
-      if (result.reasons.length > 0) {
+      if (result.reasons.length > reasonsBeforeL4) {
         this.appendAudit(result);
         return result;
       }
@@ -670,6 +674,36 @@ function buildDefaultSovereignPolicy(): McpPolicy {
 
 // ── Built-in example policies (loaded on first install) ─────────────
 
+// P0.7 (2026-07-19): Hard-denied argument patterns applied to all chatgpt-arif tools.
+// Negative-lookahead regex: matches arguments that DO NOT contain forbidden patterns.
+// Forbidden: secret filesystem paths, vault, shadow/passwd, AWS secret flags, gh auth.
+const CHATGPT_HARD_DENIED: ArgumentConstraint[] = [
+  {
+    path: "command",
+    regex:
+      "^(?!.*(?:/root/\\.secrets/|/etc/shadow|/etc/passwd|VAULT999|\\.secrets/|aws.*--secret|gh auth login))",
+    description: "ChatGPT channel cannot invoke commands touching secrets, vault, or auth",
+  },
+  {
+    path: "path",
+    regex:
+      "^(?!/root/\\.secrets/|/etc/shadow|/etc/passwd|/root/VAULT999|/root/\\.env)",
+    description: "ChatGPT channel cannot read secret filesystem paths",
+  },
+  {
+    path: "url",
+    regex:
+      "^(?!.*(?:\\.secrets/|vault999|api[_-]?key|secret|password|token))",
+    description: "ChatGPT channel cannot fetch secret-bearing URLs",
+  },
+  {
+    path: "query",
+    regex:
+      "^(?!.*(?:/root/\\.secrets/|VAULT999|api[_-]?key|secret|password|token))",
+    description: "ChatGPT channel cannot search for secret-bearing queries",
+  },
+];
+
 export const EXAMPLE_POLICIES: McpPolicy[] = [
   {
     policy_id: "agent:support-agent",
@@ -880,29 +914,7 @@ export const EXAMPLE_POLICIES: McpPolicy[] = [
   },
 ];
 
-// P0.7 (2026-07-19): Hard-denied argument patterns applied to all chatgpt-arif tools.
-// Negative-lookahead regex: matches arguments that DO NOT contain forbidden patterns.
-// Forbidden: secret filesystem paths, vault, shadow/passwd, AWS secret flags, gh auth.
-const CHATGPT_HARD_DENIED: ArgumentConstraint[] = [
-  {
-    path: "command",
-    regex:
-      "^(?!.*(?:/root/\\.secrets/|/etc/shadow|/etc/passwd|VAULT999|\\.secrets/|aws.*--secret|gh auth login))",
-    description: "ChatGPT channel cannot invoke commands touching secrets, vault, or auth",
-  },
-  {
-    path: "path",
-    regex:
-      "^(?!/root/\\.secrets/|/etc/shadow|/etc/passwd|/root/VAULT999|/root/\\.env)",
-    description: "ChatGPT channel cannot read secret filesystem paths",
-  },
-  {
-    path: "url",
-    regex:
-      "^(?!.*(?:\\.secrets/|vault999|api[_-]?key|secret|password|token))",
-    description: "ChatGPT channel cannot fetch secret-bearing URLs",
-  },
-];
+// (CHATGPT_HARD_DENIED defined above EXAMPLE_POLICIES to avoid TDZ)
 
 // ── Singleton ─────────────────────────────────────────────────────────
 
