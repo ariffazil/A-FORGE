@@ -15,7 +15,7 @@
 
 import { describe, it, beforeEach } from "node:test";
 import { strict as assert } from "node:assert";
-import { McpPolicyGate, authorityPermits } from "../src/domain/governance/McpPolicyGate.js";
+import { McpPolicyGate, authorityPermits, buildSCT } from "../src/domain/governance/McpPolicyGate.js";
 import type { Principal } from "../src/domain/governance/McpPolicyGate.js";
 
 let gate: McpPolicyGate;
@@ -295,11 +295,15 @@ describe("Test 11 — P0.6: Unknown tool forces HOLD for all paths", () => {
   });
 
   it("unknown tool with verified_session + no AAE → DENY with UNKNOWN_TOOL", () => {
-    gate.registerVerifiedSession("test-session-1", "arif");
+    // P0.5: registerVerifiedSession now requires an SCT + organSecret for cryptographic verification.
+    const secret = "test-organ-secret";
+    const sct = buildSCT("arif", "test-session-1", secret);
+    const registered = gate.registerVerifiedSession("test-session-1", "arif", sct, secret);
+    assert.equal(registered, true, "SCT-gated registration must succeed with valid token");
     const v = gate.evaluate({
+      session_id: "test-session-1",
       tool_name: "arif_some_future_tool",
       arguments: {},
-      session_id: "test-session-1",
     });
     assert.equal(v.verdict, "DENY");
     // Verified session passes P0.2; Layer 4b catches the unknown tool.
