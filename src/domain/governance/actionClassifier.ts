@@ -69,6 +69,7 @@ const IRREVERSIBLE_TOOLS = new Set([
   "hostinger_vps_stop",
   "forge_github_create_or_update_file",
   "forge_github_create_pull_request",
+  "forge_visual_seal",      // VAULT999 composite seal — IRREVERSIBLE
 ]);
 
 // Tools that execute high-impact operations (deploy, data mutation, billing)
@@ -121,6 +122,10 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_lease_request",    // lease issuance — requires session
   "forge_lease_revoke",     // lease revocation — requires session
   "forge_shell",            // shell execution — governed, session required (T₁ 2026-07-19)
+  "forge_canonize",         // draft → canonical promotion — EXECUTE_REVERSIBLE (file copy)
+  "forge_parallel",         // spawn N concurrent A2A tasks — EXECUTE_REVERSIBLE
+  "forge_parallel_cancel",  // cancel running parallel agents — EXECUTE_REVERSIBLE
+  "forge_kernel",           // constitutional kernel proxy to arifOS — EXECUTE_REVERSIBLE
 ]);
 
 // Tools that should always be simulated first
@@ -194,6 +199,9 @@ const OBSERVE_TOOLS = new Set([
   "forge_runtime_verify",     // runtime hash verification — read-only, OBSERVE
   "forge_cool_drift",         // cooling receipt drift — read-only, OBSERVE
   "forge_cool_pattern",       // cooling receipt pattern — read-only, OBSERVE
+  "forge_parallel_list",      // task group list — read-only, OBSERVE
+  "forge_parallel_status",    // task group status query — read-only, OBSERVE
+  "forge_visual_qa",          // constitutional visual QA — read-only analysis, OBSERVE
 ]);
 
 /**
