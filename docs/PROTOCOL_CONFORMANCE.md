@@ -29,3 +29,4 @@
 4. **Well-Known:** No /.well-known/mcp/server.json endpoint
 
 *DITEMPA BUKAN DIBERI*
+DID-WEB support
