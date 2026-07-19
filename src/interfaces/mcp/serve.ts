@@ -217,6 +217,13 @@ function evaluatePolicyGate(
     return {
       verdict: "DENY",
       actor_id: actorId ?? "anonymous",
+      principal: {
+        actorId: actorId ?? null,
+        displayLabel: actorId ?? "anonymous",
+        source: "client_supplied",
+        authenticated: false,
+        authority: "OBSERVE_ONLY",
+      },
       policy_id: "engine_error",
       mcp_server: toolName.split("_")[0] ?? "unknown",
       tool_name: toolName,

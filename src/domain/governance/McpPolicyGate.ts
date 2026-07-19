@@ -37,6 +37,21 @@ import { NonceStore, globalNonceStore } from "./nonceStore.js";
 
 export type PolicyVerdict = "ALLOW" | "DENY" | "AUDIT_LOG";
 
+/** Where the actor identity originated — not just the name, the provenance. */
+export type PrincipalSource = "verified_session" | "client_supplied" | "transport_fallback";
+
+/** Authority band derived from provenance, not from actor_id string. */
+export type Authority = "OBSERVE_ONLY" | "LIMITED_MUTATE" | "FULL";
+
+/** Structured principal. The name "stateless-client" is a display label, never an actor. */
+export type Principal = {
+  actorId: string | null;
+  displayLabel: string;
+  source: PrincipalSource;
+  authenticated: boolean;
+  authority: Authority;
+};
+
 export type ArgumentConstraint = {
   path: string;                 // dot-path into args: "recipient", "file.path", "args.email"
   regex: string;                // regex pattern (string)
@@ -83,6 +98,7 @@ export type ToolCallRequest = {
 export type VerdictResult = {
   verdict: PolicyVerdict;
   actor_id: string;
+  principal: Principal;
   policy_id: string;
   mcp_server: string;
   tool_name: string;
@@ -145,15 +161,23 @@ export class McpPolicyGate {
   /**
    * Evaluate an MCP tool-call request against the 5-layer boundary.
    * Returns a verdict with full reason chain. Never throws.
+   *
+   * Identity provenance (2026-07-19 fix):
+   *   - Explicit actor_id passed by client → source=client_supplied
+   *   - activeActor set via forge_session_init → source=verified_session
+   *   - Neither → source=transport_fallback (OBSERVE_ONLY, never trusted as actor)
+   *   - "stateless-client" is a DISPLAY LABEL, never an authenticated actor.
+   *   - Explicit "anonymous" always DENIED at Layer 1.
    */
   evaluate(req: ToolCallRequest): VerdictResult {
-    const actorId = req.actor_id ?? this.activeActor ?? "stateless-client";
-    const policy = this.resolvePolicy(actorId);
+    const principal = this.derivePrincipal(req);
+    const policy = this.resolvePolicy(principal.actorId ?? principal.displayLabel);
     const mcpServer = this.extractServerFromTool(req.tool_name);
 
     const result: VerdictResult = {
       verdict: "DENY",
-      actor_id: actorId,
+      actor_id: principal.displayLabel,
+      principal,
       policy_id: policy.policy_id,
       mcp_server: mcpServer,
       tool_name: req.tool_name,
@@ -163,13 +187,35 @@ export class McpPolicyGate {
       timestamp: new Date().toISOString(),
     };
 
-    // Layer 1: Identity
-    if (!actorId || actorId === "anonymous") {
-      result.reasons.push("L1_IDENTITY:anonymous_actor");
-      this.appendAudit(result);
-      return result;
+    // Layer 1: Identity — provenance-aware
+    if (!principal.authenticated) {
+      // Explicit "anonymous" → hard DENY
+      if (req.actor_id === "anonymous") {
+        result.reasons.push("L1_IDENTITY:anonymous_actor_explicitly_denied");
+        this.appendAudit(result);
+        return result;
+      }
+      // Client-supplied "stateless-client" → reject spoofing
+      if (principal.source === "client_supplied" && req.actor_id === "stateless-client") {
+        result.reasons.push(
+          "L1_IDENTITY:spoofing_rejected — 'stateless-client' is a transport-level " +
+          "principal, not a claimable actor identity. Client may not supply this value.",
+        );
+        this.appendAudit(result);
+        return result;
+      }
+      // Transport fallback → OBSERVE_ONLY, Layer 1 passes
+      if (principal.source === "transport_fallback") {
+        result.layers.identity = true;
+      } else if (principal.source === "client_supplied" && req.actor_id) {
+        // Client-supplied but unverified → OBSERVE_ONLY, Layer 1 passes with caveat
+        result.reasons.push("L1_IDENTITY:unverified_client_id — OBSERVE_ONLY; MUTATE requires verified session");
+        result.layers.identity = true;
+      }
+    } else {
+      // Verified session → full Layer 1 pass
+      result.layers.identity = true;
     }
-    result.layers.identity = true;
 
     // Track whether nonce was already verified in Layer 1b
     let nonceVerifiedInLayer1b = false;
@@ -193,8 +239,8 @@ export class McpPolicyGate {
         nonceVerifiedInLayer1b = true;
       }
       // Verify AAE actor_id matches request actor_id
-      if (req.aae.actor_id !== actorId) {
-        result.reasons.push(`L1_AAE:actor_mismatch — AAE says "${req.aae.actor_id}" but request says "${actorId}"`);
+      if (req.aae.actor_id !== principal.actorId) {
+        result.reasons.push(`L1_AAE:actor_mismatch — AAE says "${req.aae.actor_id}" but request says "${principal.actorId}"`);
         this.appendAudit(result);
         return result;
       }
@@ -304,6 +350,52 @@ export class McpPolicyGate {
   }
 
   // ── helpers ───────────────────────────────────────────────────────
+
+  /**
+   * Derive the Principal from a ToolCallRequest.
+   *
+   * Provenance rules (invariant: authority ≠ actor_id string):
+   *   1. activeActor set (via forge_session_init) → verified_session, FULL
+   *   2. Explicit actor_id supplied by client → client_supplied, OBSERVE_ONLY
+   *      (except "anonymous" which is always DENIED at Layer 1)
+   *   3. Neither → transport_fallback, OBSERVE_ONLY
+   *
+   * "stateless-client" is a transport_fallback display label. If a client
+   * explicitly sends actor_id="stateless-client", it is treated as
+   * client_supplied (unverified), NOT as transport_fallback (trusted).
+   */
+  private derivePrincipal(req: ToolCallRequest): Principal {
+    // Case 1: activeActor is set — verified session
+    if (this.activeActor) {
+      return {
+        actorId: this.activeActor,
+        displayLabel: this.activeActor,
+        source: "verified_session",
+        authenticated: true,
+        authority: "FULL",
+      };
+    }
+
+    // Case 2: Client explicitly supplied an actor_id
+    if (req.actor_id !== undefined && req.actor_id !== null) {
+      return {
+        actorId: req.actor_id,
+        displayLabel: req.actor_id,
+        source: "client_supplied",
+        authenticated: false,
+        authority: "OBSERVE_ONLY",
+      };
+    }
+
+    // Case 3: Transport fallback — no identity provided
+    return {
+      actorId: null,
+      displayLabel: "stateless-client",
+      source: "transport_fallback",
+      authenticated: false,
+      authority: "OBSERVE_ONLY",
+    };
+  }
 
   private resolvePolicy(actorId: string): McpPolicy {
     // Prefer an actor-specific policy, then fall back to default sovereign
