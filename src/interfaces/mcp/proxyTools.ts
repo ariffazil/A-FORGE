@@ -366,7 +366,7 @@ export function registerFilesystemTools(server: McpServer): void {
         if (dry_run) return text({ status: "dry_run", would_write: true, path: check.resolvedPath, exists, bytes_new: Buffer.byteLength(content, "utf-8") });
 
         // ── P34 MUTATION GATE: authorize before filesystem write ──
-        const { requireAuthorization: fsAuth } = await import("../infrastructure/bridges/authorizeMutationBridge.js");
+        const { requireAuthorization: fsAuth } = await import("../../infrastructure/bridges/authorizeMutationBridge.js");
         await fsAuth({
           executable: "write",
           arguments: [check.resolvedPath],
@@ -481,7 +481,7 @@ export function registerFilesystemTools(server: McpServer): void {
         if (dry_run) return text({ status: "dry_run", would_quarantine: true, from: check.resolvedPath, to: qPath, restore_id: qId });
 
         // ── P34 MUTATION GATE: authorize before filesystem delete ──
-        const { requireAuthorization: fsDelAuth } = await import("../infrastructure/bridges/authorizeMutationBridge.js");
+        const { requireAuthorization: fsDelAuth } = await import("../../infrastructure/bridges/authorizeMutationBridge.js");
         await fsDelAuth({
           executable: "rm",
           arguments: [check.resolvedPath, "--recursive"],
@@ -697,7 +697,7 @@ export function registerPostgresTools(server: McpServer): void {
 
         // ── P34 MUTATION GATE: authorize before SQL mutation ──
         if (isMutation) {
-          const { requireAuthorization: sqlAuth } = await import("../infrastructure/bridges/authorizeMutationBridge.js");
+          const { requireAuthorization: sqlAuth } = await import("../../infrastructure/bridges/authorizeMutationBridge.js");
           await sqlAuth({
             executable: upper.split(/\s+/)[0],
             arguments: upper.split(/\s+/).slice(1),
@@ -806,7 +806,7 @@ export function registerGitTools(server: McpServer): void {
       if (!message) return text("message is required for mode=commit", true);
 
       // ── P34 MUTATION GATE: authorize before git mutation ──
-      const { requireAuthorization } = await import("../infrastructure/bridges/authorizeMutationBridge.js");
+      const { requireAuthorization } = await import("../../infrastructure/bridges/authorizeMutationBridge.js");
       await requireAuthorization({
         executable: "git",
         arguments: files && files.length > 0 ? ["add", ...files, "commit", "-m", message] : ["add", "-A", "commit", "-m", message],
@@ -957,7 +957,7 @@ export function registerDockerTools(server: McpServer): void {
       if (!command) return text("command is required for mode=exec", true);
 
       // ── P34 MUTATION GATE: authorize before docker exec ──
-      const { requireAuthorization: dockerAuth } = await import("../infrastructure/bridges/authorizeMutationBridge.js");
+      const { requireAuthorization: dockerAuth } = await import("../../infrastructure/bridges/authorizeMutationBridge.js");
       await dockerAuth({
         executable: "docker",
         arguments: ["exec", ...(interactive ? ["-it"] : []), container, ...command.split(" ")],
