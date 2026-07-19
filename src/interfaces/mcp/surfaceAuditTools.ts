@@ -138,10 +138,14 @@ async function auditSurface(
 
 /**
  * Known affordance paths per organ.
+ * WEALTH and WELL use tools_sot.yaml (not affordances.yaml).
+ * GEOX uses organ.yaml + tools_sot.yaml.
  */
 const ORGAN_AFFORDANCE_MAP: Record<string, string> = {
   aforge: "/root/A-FORGE/a_think/affordances.yaml",
-  // Future: geox, wealth, well affordance paths
+  wealth: "/root/WEALTH/tools_sot.yaml",
+  well: "/root/WELL/tools_sot.yaml",
+  geox: "/root/GEOX/tools_sot.yaml",
 };
 
 export function registerSurfaceAuditTools(server: McpServer): void {
@@ -160,12 +164,31 @@ export function registerSurfaceAuditTools(server: McpServer): void {
     async ({ organ, mode, affordance_path }) => {
       const results: DriftReport[] = [];
       const organsToScan = organ === "all"
-        ? ["aforge"]
+        ? ["aforge", "geox", "wealth", "well"]
         : [organ];
 
       for (const org of organsToScan) {
         const affPath = affordance_path || ORGAN_AFFORDANCE_MAP[org];
-        if (!affPath) continue;
+        if (!affPath || !existsSync(affPath)) {
+          // Report missing manifest anchor instead of silent skip (false CLEAN)
+          results.push({
+            organ: org,
+            affordance_path: affPath || "unknown",
+            registry_tools: 0,
+            affordance_tools: 0,
+            drift_count: 1,
+            findings: [{
+              type: "MISSING",
+              severity: "HIGH",
+              tool_name: "N/A",
+              detail: `No manifest anchor found for ${org}. Expected: ${affPath || "none configured"}. This organ cannot be audited without a signed manifest.`,
+              suggestion: `Create ${affPath || "a manifest file"} or update ORGAN_AFFORDANCE_MAP in surfaceAuditTools.ts.`
+            }],
+            is_clean: false,
+            recommendation: `MISSING_MANIFEST — ${org} has no surface anchor. Cannot verify tool surface integrity.`
+          });
+          continue;
+        }
 
         // Get registry tools from the live forge_registry
         const registry = await queryRegistry();
