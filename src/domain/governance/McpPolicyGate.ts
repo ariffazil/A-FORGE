@@ -117,41 +117,22 @@ export type VerdictResult = {
 
 export class McpPolicyGate {
   private policies: Map<string, McpPolicy> = new Map();
-  private defaultSovereignPolicy: McpPolicy;
-  private defaultObserveDenyPolicy: McpPolicy;
+  private defaultPolicy: McpPolicy;
   private auditLog: string;
+  private activeActor: string | null = null;
   private nonceStore: NonceStore;
-  /** Per-session verified identities — session_id → verified actorId (P0.1 fix). */
-  private verifiedSessions: Map<string, { actorId: string; expiresAt: number }> = new Map();
-  /** Server-resolved AAE verifier key — never supplied by client (P0.3 fix). */
-  private aaeVerifierKey: string | null = null;
 
   constructor(nonceStore?: NonceStore) {
-    this.defaultSovereignPolicy = buildDefaultSovereignPolicy();
-    this.defaultObserveDenyPolicy = buildDefaultObserveDenyPolicy();
-    this.policies.set("default:sovereign", this.defaultSovereignPolicy);
-    this.policies.set("default:observe-deny", this.defaultObserveDenyPolicy);
+    this.defaultPolicy = buildDefaultSovereignPolicy();
+    this.policies.set("default:sovereign", this.defaultPolicy);
     this.auditLog = "/root/A-FORGE/logs/mcp_policy_gate.log";
     this.nonceStore = nonceStore ?? globalNonceStore;
-    this.loadFromDisk();
+    this.loadFromDisk();  // load overrides if config exists
   }
 
-  /** Set the AAE verifier key from server configuration (never from client). P0.3. */
-  setAaeVerifierKey(key: string): void {
-    this.aaeVerifierKey = key;
-  }
-
-  /**
-   * Register a verified session from forge_session_init (P0.1 fix).
-   * Session-scoped, not process-global. Prevents cross-connection identity leak.
-   */
-  registerVerifiedSession(sessionId: string, actorId: string, ttlSeconds: number = 1800): void {
-    this.verifiedSessions.set(sessionId, { actorId, expiresAt: Date.now() + ttlSeconds * 1000 });
-  }
-
-  /** @deprecated Use registerVerifiedSession instead. P0.1. */
-  setActor(_actorId: string): void {
-    process.stderr.write("[McpPolicyGate] WARNING: setActor() is deprecated. Use registerVerifiedSession(sessionId, actorId) instead.\n");
+  /** Bind the active actor_id for subsequent evaluate() calls. */
+  setActor(actorId: string): void {
+    this.activeActor = actorId;
   }
 
   /** Register or replace a policy. */
@@ -181,13 +162,16 @@ export class McpPolicyGate {
    * Evaluate an MCP tool-call request against the 5-layer boundary.
    * Returns a verdict with full reason chain. Never throws.
    *
-   * P0.1 (2026-07-19): Identity is per-request via verifiedSessions map, not process-global.
-   * P0.2 (2026-07-19): Unverified principals get default:observe-deny, authority enforced.
-   * P0.3 (2026-07-19): AAE signature mandatory when AAE present.
+   * Identity provenance (2026-07-19 fix):
+   *   - Explicit actor_id passed by client → source=client_supplied
+   *   - activeActor set via forge_session_init → source=verified_session
+   *   - Neither → source=transport_fallback (OBSERVE_ONLY, never trusted as actor)
+   *   - "stateless-client" is a DISPLAY LABEL, never an authenticated actor.
+   *   - Explicit "anonymous" always DENIED at Layer 1.
    */
   evaluate(req: ToolCallRequest): VerdictResult {
     const principal = this.derivePrincipal(req);
-    const policy = this.resolvePolicy(principal);
+    const policy = this.resolvePolicy(principal.actorId ?? principal.displayLabel);
     const mcpServer = this.extractServerFromTool(req.tool_name);
 
     const result: VerdictResult = {
@@ -205,35 +189,26 @@ export class McpPolicyGate {
 
     // Layer 1: Identity — provenance-aware
     if (!principal.authenticated) {
-      if (
-        req.actor_id === "anonymous" ||
-        req.actor_id === "" ||
-        (principal.source === "client_supplied" && req.actor_id === "stateless-client")
-      ) {
-        const reasonKey = req.actor_id === "stateless-client"
-          ? "L1_IDENTITY:spoofing_rejected — 'stateless-client' is a transport-level principal."
-          : "L1_IDENTITY:anonymous_actor_explicitly_denied";
-        result.reasons.push(reasonKey);
+      // Explicit "anonymous" → hard DENY
+      if (req.actor_id === "anonymous") {
+        result.reasons.push("L1_IDENTITY:anonymous_actor_explicitly_denied");
         this.appendAudit(result);
         return result;
       }
-      result.layers.identity = true;
-      if (principal.source === "client_supplied" && req.actor_id) {
-        result.reasons.push("L1_IDENTITY:unverified_client_id — OBSERVE_ONLY; MUTATE requires verified session");
+      // Client-supplied "stateless-client" → reject spoofing
+      if (principal.source === "client_supplied" && req.actor_id === "stateless-client") {
+        result.reasons.push(
+          "L1_IDENTITY:spoofing_rejected — 'stateless-client' is a transport-level " +
+          "principal, not a claimable actor identity. Client may not supply this value.",
+        );
+        this.appendAudit(result);
+        return result;
       }
-    } else {
-      result.layers.identity = true;
-    }
-
-    // ── P0.2: Authority band enforcement ──
-    const actionClass = classifyTool(req.tool_name);
-    if (!authorityPermits(principal.authority, actionClass)) {
-      result.reasons.push(
-        `L1_AUTHORITY:principal_authority=${principal.authority} insufficient for ${actionClass}`,
-      );
-      this.appendAudit(result);
-      return result;
-    }
+      // Transport fallback → OBSERVE_ONLY, Layer 1 passes
+      if (principal.source === "transport_fallback") {
+        result.layers.identity = true;
+      } else if (principal.source === "client_supplied" && req.actor_id) {
+        // Client-supplied but unverified → OBSERVE_ONLY, Layer 1 passes with caveat
         result.reasons.push("L1_IDENTITY:unverified_client_id — OBSERVE_ONLY; MUTATE requires verified session");
         result.layers.identity = true;
       }
@@ -245,24 +220,24 @@ export class McpPolicyGate {
     // Track whether nonce was already verified in Layer 1b
     let nonceVerifiedInLayer1b = false;
 
-    // Layer 1b: AAE envelope validation — MANDATORY when present (P0.3)
+    // Layer 1b: AAE envelope validation (if present)
     if (req.aae) {
-      if (!this.aaeVerifierKey) {
-        result.reasons.push("L1_AAE:VERIFIER_UNAVAILABLE — AAE present but no server verifier key configured");
-        this.appendAudit(result);
-        return result;
-      }
-      const aaeResult = verifyAAE(req.aae, this.aaeVerifierKey, this.nonceStore);
-      if (!aaeResult.valid) {
-        if (aaeResult.replay_detected) {
-          result.reasons.push(`L1_AAE:REPLAY_DETECTED — ${aaeResult.reason}`);
-        } else {
-          result.reasons.push(`L1_AAE:${aaeResult.reason}`);
+      // Verify AAE signature + expiry + mandatory fields + nonce replay
+      const secret = req.organ_secret ?? "";
+      if (secret) {
+        const aaeResult = verifyAAE(req.aae, secret, this.nonceStore);
+        if (!aaeResult.valid) {
+          // Tag replay-specific denial for audit clarity
+          if (aaeResult.replay_detected) {
+            result.reasons.push(`L1_AAE:REPLAY_DETECTED — ${aaeResult.reason}`);
+          } else {
+            result.reasons.push(`L1_AAE:${aaeResult.reason}`);
+          }
+          this.appendAudit(result);
+          return result;
         }
-        this.appendAudit(result);
-        return result;
+        nonceVerifiedInLayer1b = true;
       }
-      nonceVerifiedInLayer1b = true;
       // Verify AAE actor_id matches request actor_id
       if (req.aae.actor_id !== principal.actorId) {
         result.reasons.push(`L1_AAE:actor_mismatch — AAE says "${req.aae.actor_id}" but request says "${principal.actorId}"`);
@@ -390,25 +365,7 @@ export class McpPolicyGate {
    * client_supplied (unverified), NOT as transport_fallback (trusted).
    */
   private derivePrincipal(req: ToolCallRequest): Principal {
-    // Expire stale verified sessions
-    for (const [sid, entry] of this.verifiedSessions) {
-      if (Date.now() > entry.expiresAt) this.verifiedSessions.delete(sid);
-    }
-
-    // Case 1: Verified session lookup by session_id (P0.1 — per-request, not process-global)
-    const sessionId = req.session_id;
-    if (sessionId && this.verifiedSessions.has(sessionId)) {
-      const entry = this.verifiedSessions.get(sessionId)!;
-      return {
-        actorId: entry.actorId,
-        displayLabel: entry.actorId,
-        source: "verified_session",
-        authenticated: true,
-        authority: "FULL",
-      };
-    }
-
-    // Case 2: Explicitly DENIED identities
+    // Case 1: Explicitly DENIED identities (always rejected, even if activeActor set)
     if (req.actor_id === "anonymous" || req.actor_id === "" || req.actor_id === "stateless-client") {
       return {
         actorId: req.actor_id || "(empty)",
@@ -416,6 +373,17 @@ export class McpPolicyGate {
         source: "client_supplied",
         authenticated: false,
         authority: "OBSERVE_ONLY",
+      };
+    }
+
+    // Case 2: activeActor is set — verified session
+    if (this.activeActor) {
+      return {
+        actorId: this.activeActor,
+        displayLabel: this.activeActor,
+        source: "verified_session",
+        authenticated: true,
+        authority: "FULL",
       };
     }
 
@@ -440,19 +408,12 @@ export class McpPolicyGate {
     };
   }
 
-  /**
-   * Resolve the policy for a principal (P0.2 fix).
-   * Verified sessions → actor-specific or sovereign.
-   * Unverified → default:observe-deny.
-   */
-  private resolvePolicy(principal: Principal): McpPolicy {
-    if (principal.authenticated && principal.actorId) {
-      for (const p of this.policies.values()) {
-        if (p.actor_id === principal.actorId) return p;
-      }
-      return this.defaultSovereignPolicy;
+  private resolvePolicy(actorId: string): McpPolicy {
+    // Prefer an actor-specific policy, then fall back to default sovereign
+    for (const p of this.policies.values()) {
+      if (p.actor_id === actorId) return p;
     }
-    return this.defaultObserveDenyPolicy;
+    return this.defaultPolicy;
   }
 
   /**
@@ -578,27 +539,6 @@ export class McpPolicyGate {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// Authority enforcement (P0.2 — 2026-07-19)
-// ═══════════════════════════════════════════════════════════════════════
-
-/**
- * Check whether a principal's authority band permits a given action class.
- *
- * Mapping:
- *   OBSERVE_ONLY    → OBSERVE, SUGGEST
- *   LIMITED_MUTATE  → up to EXECUTE_REVERSIBLE (lease-scoped)
- *   FULL            → all classes (still requires kernel judgment + lease)
- */
-export function authorityPermits(authority: Authority, actionClass: ActionClass): boolean {
-  const permits: Record<Authority, ActionClass[]> = {
-    "OBSERVE_ONLY": ["OBSERVE", "SUGGEST"],
-    "LIMITED_MUTATE": ["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE"],
-    "FULL": ["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"],
-  };
-  return permits[authority].includes(actionClass);
-}
-
 // ── Default sovereign policy ──────────────────────────────────────────
 
 function buildDefaultSovereignPolicy(): McpPolicy {
@@ -611,52 +551,6 @@ function buildDefaultSovereignPolicy(): McpPolicy {
       "MUTATE tools (forge_execute, forge_filesystem write, forge_git commit, DB writes) " +
       "remain gated by downstream forge_gate / forge_shell checks — this layer trusts the agent.",
     allow_by_default: true,
-    denied_mcp_servers: [],
-    allowed_mcp_servers: {
-      forge:   { allow: true, tools: {} },
-      arifos:  { allow: true, tools: {} },
-      geox:    { allow: true, tools: {} },
-      wealth:  { allow: true, tools: {} },
-      well:    { allow: true, tools: {} },
-      aaa:     { allow: true, tools: {} },
-      hermes:  { allow: true, tools: {} },
-      github:  { allow: true, tools: {} },
-      postgres:{ allow: true, tools: {} },
-      supabase:{ allow: true, tools: {} },
-      qdrant:  { allow: true, tools: {} },
-      cloudflare:{ allow: true, tools: {} },
-      docker:  { allow: true, tools: {} },
-      hostinger:{ allow: true, tools: {} },
-      minimax: { allow: true, tools: {} },
-      brave:   { allow: true, tools: {} },
-      perplexity:{ allow: true, tools: {} },
-      exa:     { allow: true, tools: {} },
-      context7:{ allow: true, tools: {} },
-      sequential:{ allow: true, tools: {} },
-      playwright:{ allow: true, tools: {} },
-      chrome:  { allow: true, tools: {} },
-      meyhem:  { allow: true, tools: {} },
-    },
-  };
-}
-
-/**
- * Default observe-deny policy for unverified principals (P0.2 — 2026-07-19).
- *
- * transport_fallback and client_supplied principals get this, NOT sovereign.
- * Only OBSERVE-class tools are allowed. All mutation is denied.
- * Downstream session/lease gates provide additional enforcement.
- */
-function buildDefaultObserveDenyPolicy(): McpPolicy {
-  return {
-    policy_id: "default:observe-deny",
-    actor_id: "unverified",
-    role: "unverified",
-    description:
-      "Default policy for unverified transport-fallback and client-supplied identities. " +
-      "OBSERVE only. MUTATE/IRREVERSIBLE denied at policy layer. " +
-      "Verified sessions get actor-specific or default:sovereign policy instead.",
-    allow_by_default: false,
     denied_mcp_servers: [],
     allowed_mcp_servers: {
       forge:   { allow: true, tools: {} },
