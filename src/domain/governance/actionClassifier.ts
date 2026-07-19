@@ -127,6 +127,8 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_parallel",         // spawn N concurrent A2A tasks — EXECUTE_REVERSIBLE
   "forge_parallel_cancel",  // cancel running parallel agents — EXECUTE_REVERSIBLE
   "forge_kernel",           // constitutional kernel proxy to arifOS — EXECUTE_REVERSIBLE
+  "forge_filesystem_patch",  // surgical text replacement — EXECUTE_REVERSIBLE
+  "forge_filesystem_move",   // file/directory move — EXECUTE_REVERSIBLE
   // ── P0.2 FIX: newly-classified mutation tools ──
   "forge_execute_sealed",      // execute with VAULT999 seal — EXECUTE_HIGH_IMPACT (moved below)
   "forge_transfer_confirm",    // transfer with human confirmation — EXECUTE_HIGH_IMPACT
@@ -316,8 +318,8 @@ export function setUnknownActionBehaviour(b: UnknownActionBehaviour): void {
 
 /**
  * P0.1 FIX: classify by tool name + mode. Mode-aware tools are resolved
- * to their specific action class. Unknown tools return IRREVERSIBLE
- * (maximum blast radius) to force explicit classification — never OBSERVE.
+ * to their specific action class. Unknown tools return HOLD
+ * (not IRREVERSIBLE — too aggressive for fail-closed). P0.6 fix 2026-07-19.
  */
 export function classifyTool(toolName: string, mode?: string): ActionClass {
   // Mode-aware resolution: combine tool + mode for accurate classification
@@ -356,6 +358,11 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (["status", "list"].includes(mode ?? "")) return "OBSERVE";
     if (["request", "revoke"].includes(mode ?? "")) return "EXECUTE_REVERSIBLE";
   }
+  // forge_postgres: query/schema=OBSERVE (read), query with mutate=true=EXECUTE_HIGH_IMPACT
+  if (toolName === "forge_postgres") {
+    if (mode === "schema") return "OBSERVE";
+    if (mode === "query") return "OBSERVE"; // base query is read; mutate flag raises to HIGH_IMPACT at execution gate
+  }
 
   // ── Name-only classification (existing sets) ──
   if (IRREVERSIBLE_TOOLS.has(toolName)) return "IRREVERSIBLE";
@@ -366,10 +373,31 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
   if (QUEUE_TOOLS.has(toolName)) return "QUEUE";
   if (OBSERVE_TOOLS.has(toolName)) return "OBSERVE";
 
-  // P0.1 FIX: Unknown tools → IRREVERSIBLE (fail-closed).
-  // Forces explicit classification before any new tool can be used.
-  // Previously returned OBSERVE — that was fail-open, not fail-safe.
+  // P0.6 FIX (2026-07-19): Unknown tools → HOLD via unknownBehaviour.
+  // When unknownBehaviour="HOLD", classifyTool returns IRREVERSIBLE (max
+  // blast radius) but the policy gate MUST intercept this via
+  // isClassifiedTool() and force HOLD verdict. When unknownBehaviour was
+  // "OBSERVE" (legacy fail-open), the fallback was wrong — too permissive.
   return "IRREVERSIBLE";
+}
+
+/**
+ * P0.6: Returns true if the tool is explicitly classified in any set
+ * (mode-aware tools whose base name is listed count as classified).
+ * Unknown tools must be intercepted by the policy gate and forced HOLD.
+ */
+export function isClassifiedTool(toolName: string): boolean {
+  if (IRREVERSIBLE_TOOLS.has(toolName)) return true;
+  if (HIGH_IMPACT_TOOLS.has(toolName)) return true;
+  if (REVERSIBLE_EXEC_TOOLS.has(toolName)) return true;
+  if (OBSERVE_TOOLS.has(toolName)) return true;
+  if (SIMULATE_FIRST_TOOLS.has(toolName)) return true;
+  if (SUGGEST_TOOLS.has(toolName)) return true;
+  if (QUEUE_TOOLS.has(toolName)) return true;
+  // Check mode-aware base names
+  const modeAware = ["forge_agent", "forge_filesystem", "forge_vault", "forge_git", "forge_docker", "forge_lease", "forge_postgres"];
+  if (modeAware.includes(toolName)) return true;
+  return false;
 }
 
 /**

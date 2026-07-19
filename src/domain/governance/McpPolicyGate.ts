@@ -30,7 +30,7 @@ import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } fr
 import { dirname, join } from "node:path";
 import type { AAEV1 } from "./amanahEnvelope.js";
 import { verifyAAE } from "./amanahEnvelope.js";
-import { classifyTool, type ActionClass, requires888Hold } from "./actionClassifier.js";
+import { classifyTool, type ActionClass, requires888Hold, isClassifiedTool } from "./actionClassifier.js";
 import { NonceStore, globalNonceStore } from "./nonceStore.js";
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -119,7 +119,8 @@ export class McpPolicyGate {
   private policies: Map<string, McpPolicy> = new Map();
   private defaultPolicy: McpPolicy;
   private auditLog: string;
-  private activeActor: string | null = null;
+  /** P0.1: Per-request verified session map replaces global activeActor. */
+  private verifiedSessions: Map<string, { actorId: string; verifiedAt: number }> = new Map();
   private nonceStore: NonceStore;
 
   constructor(nonceStore?: NonceStore) {
@@ -130,9 +131,18 @@ export class McpPolicyGate {
     this.loadFromDisk();  // load overrides if config exists
   }
 
-  /** Bind the active actor_id for subsequent evaluate() calls. */
+  /**
+   * P0.1: Register a verified session (replaces global activeActor).
+   * Binds session_id → verified actor for per-request lookup.
+   */
+  registerVerifiedSession(sessionId: string, actorId: string): void {
+    this.verifiedSessions.set(sessionId, { actorId, verifiedAt: Date.now() });
+  }
+
+  /** @deprecated Use registerVerifiedSession(sessionId, actorId) instead. */
   setActor(actorId: string): void {
-    this.activeActor = actorId;
+    // Backward compat: store under legacy key for existing callers
+    this.verifiedSessions.set("__legacy_active", { actorId, verifiedAt: Date.now() });
   }
 
   /** Register or replace a policy. */
@@ -173,6 +183,7 @@ export class McpPolicyGate {
     const principal = this.derivePrincipal(req);
     const policy = this.resolvePolicy(principal.actorId ?? principal.displayLabel);
     const mcpServer = this.extractServerFromTool(req.tool_name);
+    const toolClass = classifyTool(req.tool_name); // P0.2: classify once, use everywhere
 
     const result: VerdictResult = {
       verdict: "DENY",
@@ -222,28 +233,51 @@ export class McpPolicyGate {
 
     // Layer 1b: AAE envelope validation (if present)
     if (req.aae) {
-      // Verify AAE signature + expiry + mandatory fields + nonce replay
+      // P0.3 FIX: AAE signature is MANDATORY when envelope is present.
+      // If no organ_secret provided, cannot verify signature → DENY.
       const secret = req.organ_secret ?? "";
-      if (secret) {
-        const aaeResult = verifyAAE(req.aae, secret, this.nonceStore);
-        if (!aaeResult.valid) {
-          // Tag replay-specific denial for audit clarity
-          if (aaeResult.replay_detected) {
-            result.reasons.push(`L1_AAE:REPLAY_DETECTED — ${aaeResult.reason}`);
-          } else {
-            result.reasons.push(`L1_AAE:${aaeResult.reason}`);
-          }
-          this.appendAudit(result);
-          return result;
-        }
-        nonceVerifiedInLayer1b = true;
+      if (!secret) {
+        result.reasons.push(
+          "L1_AAE:MISSING_ORGAN_SECRET — AAE envelope present but organ_secret not provided. " +
+          "Signature verification requires organ_secret. Refusing unsigned AAE."
+        );
+        this.appendAudit(result);
+        return result;
       }
+      const aaeResult = verifyAAE(req.aae, secret, this.nonceStore);
+      if (!aaeResult.valid) {
+        // Tag replay-specific denial for audit clarity
+        if (aaeResult.replay_detected) {
+          result.reasons.push(`L1_AAE:REPLAY_DETECTED — ${aaeResult.reason}`);
+        } else {
+          result.reasons.push(`L1_AAE:${aaeResult.reason}`);
+        }
+        this.appendAudit(result);
+        return result;
+      }
+      nonceVerifiedInLayer1b = true;
       // Verify AAE actor_id matches request actor_id
       if (req.aae.actor_id !== principal.actorId) {
         result.reasons.push(`L1_AAE:actor_mismatch — AAE says "${req.aae.actor_id}" but request says "${principal.actorId}"`);
         this.appendAudit(result);
         return result;
       }
+    }
+
+    // P0.2: Authority enforcement — OBSERVE_ONLY actors cannot mutate.
+    if (
+      principal.authority === "OBSERVE_ONLY" &&
+      toolClass !== "OBSERVE" &&
+      toolClass !== "SUGGEST" &&
+      toolClass !== "SIMULATE"
+    ) {
+      result.reasons.push(
+        `L1_AUTHORITY:actor="${principal.displayLabel}" authority=OBSERVE_ONLY ` +
+        `but tool "${req.tool_name}" classified as ${toolClass}. ` +
+        `MUTATE requires verified session with FULL or LIMITED_MUTATE authority.`
+      );
+      this.appendAudit(result);
+      return result;
     }
 
     // Layer 2: Server
@@ -308,8 +342,19 @@ export class McpPolicyGate {
         }
       }
 
-      const toolClass = classifyTool(req.tool_name);
       const aaeClass = req.aae.action_class as ActionClass;
+
+      // P0.6: Unknown tools → immediate HOLD.
+      // classifier returns IRREVERSIBLE for unknowns, but that's too aggressive
+      // for a tool that simply hasn't been classified yet. HOLD is the correct
+      // fail-closed: stop, audit, escalate — don't pretend it's known-dangerous.
+      if (!isClassifiedTool(req.tool_name)) {
+        result.reasons.push(
+          `L5_AAE:UNKNOWN_TOOL(${req.tool_name}) — tool is not explicitly classified. Classifier defaulted to IRREVERSIBLE but policy gate forces HOLD. Add to actionClassifier.ts.`,
+        );
+        this.appendAudit(result);
+        return result;
+      }
 
       // IRREVERSIBLE tools require IRREVERSIBLE AAE
       if (toolClass === "IRREVERSIBLE" && aaeClass !== "IRREVERSIBLE") {
@@ -352,20 +397,17 @@ export class McpPolicyGate {
   // ── helpers ───────────────────────────────────────────────────────
 
   /**
-   * Derive the Principal from a ToolCallRequest.
+   * P0.1: Derive the Principal from a ToolCallRequest using per-request
+   * verifiedSessions lookup (no longer relies on global activeActor).
    *
    * Provenance rules (invariant: authority ≠ actor_id string):
-   *   1. activeActor set (via forge_session_init) → verified_session, FULL
+   *   1. Verified session (session_id in verifiedSessions) → verified_session, FULL
    *   2. Explicit actor_id supplied by client → client_supplied, OBSERVE_ONLY
    *      (except "anonymous" which is always DENIED at Layer 1)
    *   3. Neither → transport_fallback, OBSERVE_ONLY
-   *
-   * "stateless-client" is a transport_fallback display label. If a client
-   * explicitly sends actor_id="stateless-client", it is treated as
-   * client_supplied (unverified), NOT as transport_fallback (trusted).
    */
   private derivePrincipal(req: ToolCallRequest): Principal {
-    // Case 1: Explicitly DENIED identities (always rejected, even if activeActor set)
+    // Case 1: Explicitly DENIED identities (always rejected)
     if (req.actor_id === "anonymous" || req.actor_id === "" || req.actor_id === "stateless-client") {
       return {
         actorId: req.actor_id || "(empty)",
@@ -376,11 +418,24 @@ export class McpPolicyGate {
       };
     }
 
-    // Case 2: activeActor is set — verified session
-    if (this.activeActor) {
+    // P0.1: Case 2 — verified session via per-request lookup
+    if (req.session_id && this.verifiedSessions.has(req.session_id)) {
+      const sess = this.verifiedSessions.get(req.session_id)!;
       return {
-        actorId: this.activeActor,
-        displayLabel: this.activeActor,
+        actorId: sess.actorId,
+        displayLabel: sess.actorId,
+        source: "verified_session",
+        authenticated: true,
+        authority: "FULL",
+      };
+    }
+
+    // Legacy compat: check __legacy_active key (for setActor callers)
+    if (this.verifiedSessions.has("__legacy_active")) {
+      const sess = this.verifiedSessions.get("__legacy_active")!;
+      return {
+        actorId: sess.actorId,
+        displayLabel: sess.actorId,
         source: "verified_session",
         authenticated: true,
         authority: "FULL",
