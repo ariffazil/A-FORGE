@@ -25,6 +25,7 @@
 import { createHmac, timingSafeEqual } from "crypto";
 import { blake3 } from "hash-wasm";
 import type { ActionClass } from "./actionClassifier.js";
+import { NonceStore, type NonceCheckResult } from "./nonceStore.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -46,6 +47,7 @@ export interface AAEV1 {
   signature: string;        // HMAC-SHA256 of this envelope
   issued_at: number;         // Unix ms timestamp
   issuer: string;           // Organ name that issued this envelope
+  judgment_reference?: string; // Verdict ID from the judgment that authorized this action
 }
 
 // ─── Canonical JSON serialization (deterministic) ────────────────────────────
@@ -74,6 +76,7 @@ export interface AAEV1Options {
   idempotency_key?: string;
   organ_secret: string;       // HMAC signing key (organ-specific)
   issuer?: string;            // Default: "a-forge"
+  judgment_reference?: string; // Verdict ID from the judgment that authorized this action
 }
 
 export interface VerifyResult {
@@ -85,6 +88,8 @@ export interface VerifyResult {
   missing_signature?: boolean;
   /** F8 LAW check */
   expired?: boolean;
+  /** F1 AMANAH replay check */
+  replay_detected?: boolean;
   /** Epistemic label for the verification result */
   epistemic?: EpistemicLabel;
 }
@@ -116,6 +121,7 @@ export function computeSignature(envelope: Omit<AAEV1, "signature" | "intent_has
     idempotency_key: envelope.idempotency_key,
     issued_at: envelope.issued_at,
     issuer: envelope.issuer,
+    judgment_reference: envelope.judgment_reference,
   };
   const canonical = JSON.stringify(body);
   return createHmac("sha256", secret).update(canonical).digest("hex");
@@ -142,6 +148,7 @@ export async function buildAAE(options: AAEV1Options): Promise<AAEV1> {
     idempotency_key,
     organ_secret,
     issuer = "a-forge",
+    judgment_reference,
   } = options;
 
   // F1 guard — these are hard requirements
@@ -169,6 +176,7 @@ export async function buildAAE(options: AAEV1Options): Promise<AAEV1> {
     idempotency_key: idempotency_key ?? generateNonce(),
     issued_at: now,
     issuer,
+    judgment_reference,
   };
 
   const signature = computeSignature(envelope, organ_secret);
@@ -186,9 +194,12 @@ export async function buildAAE(options: AAEV1Options): Promise<AAEV1> {
  * Checks F1 AMANAH (actor_id, expiry, signature present) and F8 LAW (not expired).
  * Does NOT validate action_class vs tool — that is done by f1Amanah.ts.
  *
+ * If a NonceStore is provided, checks for nonce replay (F1 AMANAH anti-replay).
+ * On valid envelope, the nonce is recorded in the store.
+ *
  * Returns a VerifyResult — caller decides what to do with it.
  */
-export function verifyAAE(envelope: AAEV1, organ_secret: string): VerifyResult {
+export function verifyAAE(envelope: AAEV1, organ_secret: string, nonceStore?: NonceStore): VerifyResult {
   const result: VerifyResult = { valid: false, epistemic: "OBS" };
 
   // ── F1 AMANAH mandatory fields ────────────────────────────────────────────
@@ -244,6 +255,18 @@ export function verifyAAE(envelope: AAEV1, organ_secret: string): VerifyResult {
     return result;
   }
 
+  // ── F1 AMANAH nonce replay check ─────────────────────────────────────────
+
+  if (nonceStore && envelope.nonce) {
+    const nonceResult = nonceStore.checkAndRecord(envelope.nonce);
+    if (nonceResult.replay) {
+      result.replay_detected = true;
+      result.reason = nonceResult.reason;
+      result.epistemic = "DER";
+      return result;
+    }
+  }
+
   // ── Version check ───────────────────────────────────────────────────────────
 
   if (envelope.version !== "AAE-v1") {
@@ -283,6 +306,7 @@ export function extendAAE(envelope: AAEV1, additional_ms: number, organ_secret: 
     idempotency_key: envelope.idempotency_key,
     issued_at: envelope.issued_at,
     issuer: envelope.issuer,
+    judgment_reference: envelope.judgment_reference,
   };
 
   const new_sig = computeSignature(extended, organ_secret);

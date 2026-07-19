@@ -27,6 +27,8 @@ export interface ExecutorReceipt {
   verdict: "SEAL" | "SABAR" | "HOLD" | "VOID";
   /** Constitutional chain ID for audit */
   ccId: string;
+  /** Verdict ID from the judgment that authorized this execution — proves provenance */
+  judgment_reference: string;
   /** Allowed tools/actions (non-empty) */
   allowedActions: string[];
   /** Primary tool intended (must appear in allowedActions) */

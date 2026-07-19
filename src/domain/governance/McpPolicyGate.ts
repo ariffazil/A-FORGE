@@ -31,6 +31,7 @@ import { dirname, join } from "node:path";
 import type { AAEV1 } from "./amanahEnvelope.js";
 import { verifyAAE } from "./amanahEnvelope.js";
 import { classifyTool, type ActionClass, requires888Hold } from "./actionClassifier.js";
+import { NonceStore, globalNonceStore } from "./nonceStore.js";
 
 // ── Types ─────────────────────────────────────────────────────────────
 
@@ -103,11 +104,13 @@ export class McpPolicyGate {
   private defaultPolicy: McpPolicy;
   private auditLog: string;
   private activeActor: string | null = null;
+  private nonceStore: NonceStore;
 
-  constructor() {
+  constructor(nonceStore?: NonceStore) {
     this.defaultPolicy = buildDefaultSovereignPolicy();
     this.policies.set("default:sovereign", this.defaultPolicy);
     this.auditLog = "/root/A-FORGE/logs/mcp_policy_gate.log";
+    this.nonceStore = nonceStore ?? globalNonceStore;
     this.loadFromDisk();  // load overrides if config exists
   }
 
@@ -168,17 +171,26 @@ export class McpPolicyGate {
     }
     result.layers.identity = true;
 
+    // Track whether nonce was already verified in Layer 1b
+    let nonceVerifiedInLayer1b = false;
+
     // Layer 1b: AAE envelope validation (if present)
     if (req.aae) {
-      // Verify AAE signature + expiry + mandatory fields
+      // Verify AAE signature + expiry + mandatory fields + nonce replay
       const secret = req.organ_secret ?? "";
       if (secret) {
-        const aaeResult = verifyAAE(req.aae, secret);
+        const aaeResult = verifyAAE(req.aae, secret, this.nonceStore);
         if (!aaeResult.valid) {
-          result.reasons.push(`L1_AAE:${aaeResult.reason}`);
+          // Tag replay-specific denial for audit clarity
+          if (aaeResult.replay_detected) {
+            result.reasons.push(`L1_AAE:REPLAY_DETECTED — ${aaeResult.reason}`);
+          } else {
+            result.reasons.push(`L1_AAE:${aaeResult.reason}`);
+          }
           this.appendAudit(result);
           return result;
         }
+        nonceVerifiedInLayer1b = true;
       }
       // Verify AAE actor_id matches request actor_id
       if (req.aae.actor_id !== actorId) {
@@ -239,6 +251,17 @@ export class McpPolicyGate {
 
     // Layer 5: AAE action_class vs tool classification (if AAE present)
     if (req.aae) {
+      // Layer 5 defense-in-depth: nonce replay check even if Layer 1b skipped
+      // (e.g. no organ_secret provided). Skipped if Layer 1b already verified.
+      if (req.aae.nonce && !nonceVerifiedInLayer1b) {
+        const nonceResult = this.nonceStore.checkAndRecord(req.aae.nonce);
+        if (nonceResult.replay) {
+          result.reasons.push(`L5_AAE:REPLAY_DETECTED — ${nonceResult.reason}`);
+          this.appendAudit(result);
+          return result;
+        }
+      }
+
       const toolClass = classifyTool(req.tool_name);
       const aaeClass = req.aae.action_class as ActionClass;
 
@@ -255,6 +278,19 @@ export class McpPolicyGate {
       if (toolClass === "EXECUTE_HIGH_IMPACT" && aaeClass !== "EXECUTE_HIGH_IMPACT" && aaeClass !== "IRREVERSIBLE") {
         result.reasons.push(
           `L5_AAE:tool_classified_EXECUTE_HIGH_IMPACT but AAE action_class=${aaeClass} — need EXECUTE_HIGH_IMPACT or IRREVERSIBLE`,
+        );
+        this.appendAudit(result);
+        return result;
+      }
+
+      // High-severity actions (EXECUTE_HIGH_IMPACT, IRREVERSIBLE) require judgment_reference
+      // to prove which judgment authorized the execution
+      if (
+        (aaeClass === "EXECUTE_HIGH_IMPACT" || aaeClass === "IRREVERSIBLE") &&
+        !req.aae.judgment_reference
+      ) {
+        result.reasons.push(
+          `L5_AAE:action_class=${aaeClass} requires judgment_reference to prove authorization provenance`,
         );
         this.appendAudit(result);
         return result;
