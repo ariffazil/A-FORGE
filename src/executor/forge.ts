@@ -136,7 +136,7 @@ export interface ReceiptValidation {
  * Hard-fail set (command-runner ban — sovereign 2026-07-09):
  *   receiptId, kernelSignature, verdict, authority_scope/actor/session,
  *   allowedActions, toolName, blastRadius, reversibility, inputHash,
- *   validUntil (lease expiry), ccId, lineage
+ *   validUntil (lease expiry), ccId, judgment_reference, lineage
  */
 export function validateReceipt(receipt: ExecutorReceipt): ReceiptValidation {
   const violations: string[] = [];
@@ -145,6 +145,7 @@ export function validateReceipt(receipt: ExecutorReceipt): ReceiptValidation {
   if (!receipt.receiptId) violations.push("Missing receiptId");
   if (!receipt.kernelSignature) violations.push("Missing kernelSignature");
   if (!receipt.ccId) violations.push("Missing ccId (constitutional chain ID)");
+  if (!receipt.judgment_reference) violations.push("Missing judgment_reference — cannot prove which judgment authorized this execution");
   if (!receipt.inputHash) violations.push("Missing inputHash");
   if (!receipt.lineage?.collapseTimestamp) {
     violations.push("Missing lineage.collapseTimestamp");

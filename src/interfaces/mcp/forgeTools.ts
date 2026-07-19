@@ -27,6 +27,7 @@ import type { FingerprintCheckResult, ToolFingerprintCollision } from "../../dom
 import { runIsomorphismCheck, startupIsomorphismCheck } from "../../domain/isomorphism/isomorphism-check.js";
 import { getInvariantCounts, buildIsomorphismRegistry } from "../../domain/isomorphism/geo-computational-isomorphism.js";
 import { verdict, sealVerdict, errorVerdict, holdVerdict } from "../../domain/governance/verdict-envelope.js";
+import { globalNonceStore } from "../../domain/governance/nonceStore.js";
 import { callMCP } from "./client.js";
 import { registerSession } from "../../domain/session/sessionGate.js";
 import {
@@ -439,12 +440,24 @@ async function revokeLeaseViaKernel(args: {
 /**
  * Validate a lease against the requested tool and action class.
  * For execution-class tools, this performs a live arifOS lease_inspect call.
+ *
+ * If aaeNonce is provided, checks against the global NonceStore for replay detection.
  */
 export async function validateLeaseForTool(
   lease_id: string | undefined,
   tool: string,
   actionClass: string,
+  aaeNonce?: string,
 ): Promise<{ ok: true; lease: LeaseRecord } | { ok: false; gate: string; reason: string }> {
+  // ── Nonce replay check (F1 AMANAH anti-replay) ────────────────────────
+  if (aaeNonce) {
+    const nonceResult = globalNonceStore.checkAndRecord(aaeNonce);
+    if (nonceResult.replay) {
+      const fail = { ok: false as const, gate: "REPLAY_DETECTED", reason: nonceResult.reason ?? "Nonce replay detected" };
+      logLeaseDecision(lease_id, tool, actionClass, fail);
+      return fail;
+    }
+  }
   // OBSERVE actions do not require a lease, but if a lease_id is supplied we
   // still verify it exists with the kernel (read-only identity check).
   if (!lease_id) {
