@@ -37,7 +37,11 @@ check_drift() {
   fi
 }
 
-check_drift "arifOS" "/root/arifOS" "/opt/arifos/app/.git_commit" 2>/dev/null || true
+check_drift "arifOS"  "/root/arifOS"  "/opt/arifos/app/.git_commit"  2>/dev/null || true
+check_drift "WEALTH"  "/root/WEALTH"  "/opt/wealth/app/.git_commit"  2>/dev/null || true
+check_drift "WELL"    "/root/WELL"    "/opt/well/app/.git_commit"    2>/dev/null || true
+check_drift "GEOX"    "/root/GEOX"    "/opt/geox/app/.git_commit"    2>/dev/null || true
+check_drift "AAA"     "/root/AAA"     "/opt/aaa/app/.git_commit"     2>/dev/null || true
 
 # ── 3. PORT DRIFT (unexpected public ports) ─────────────────────────────
 # Known legitimate ports — updated 2026-07-16
