@@ -44,6 +44,7 @@ function craftCoolingReceipt(params: {
   recurrence_count?: number;
   first_seen?: string;
   last_seen?: string;
+  witness_organ?: string;  // T2.3: domain organ witness for ΔΩΨ routing
   caller?: string;
 }): Record<string, unknown> {
   const epoch = new Date().toISOString();
@@ -129,6 +130,8 @@ function craftCoolingReceipt(params: {
       human: null,
       ai: caller,
       external: null,
+      // T2.3: witness_organ routes cooling through domain organ for physical grounding
+      witness_organ: params.witness_organ || params.governance_organ,
     },
 
     metabolism: {
@@ -194,6 +197,9 @@ export function registerCoolingVerbs(server: McpServer): void {
       governance_floor: z.string().describe("Target floor: F1-F13"),
       required_authority: z.enum(["AUTO", "OBSERVE_ONLY", "888_HOLD", "F13_SOVEREIGN"]).describe("Required authority level"),
       convergence: z.enum(["CONVERGING", "DIVERGING", "STABLE", "first_cooling"]).describe("Convergence state"),
+      // T2.3: witness_organ for ΔΩΨ physical grounding routing
+      witness_organ: z.enum(["GEOX", "WEALTH", "WELL", "arifOS", "A-FORGE", "AAA"]).optional()
+        .describe("Domain organ that witnessed the drift (GEOX/WEALTH/WELL for physical grounding)"),
       caller: z.string().optional().describe("Override caller (default: hermes-prime)"),
     },
     async (params) => {
@@ -285,6 +291,9 @@ export function registerCoolingVerbs(server: McpServer): void {
       recurrence_count: z.number().int().min(1).describe("How many times this pattern has been observed"),
       first_seen: z.string().describe("ISO-8601 timestamp of first observation"),
       last_seen: z.string().describe("ISO-8601 timestamp of most recent observation"),
+      // T2.3: witness_organ for ΔΩΨ physical grounding routing
+      witness_organ: z.enum(["GEOX", "WEALTH", "WELL", "arifOS", "A-FORGE", "AAA"]).optional()
+        .describe("Domain organ that witnessed the pattern (GEOX/WEALTH/WELL for physical grounding)"),
       caller: z.string().optional().describe("Override caller (default: hermes-prime)"),
     },
     async (params) => {
