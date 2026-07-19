@@ -70,6 +70,7 @@ const IRREVERSIBLE_TOOLS = new Set([
   "forge_github_create_or_update_file",
   "forge_github_create_pull_request",
   "forge_visual_seal",      // VAULT999 composite seal — IRREVERSIBLE
+  "forge_seal",             // VAULT999 seal — IRREVERSIBLE
 ]);
 
 // Tools that execute high-impact operations (deploy, data mutation, billing)
@@ -135,7 +136,6 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_github_create_pull_request", // GitHub PR create — EXECUTE_REVERSIBLE
   "forge_skill",               // dynamic tool generation — EXECUTE_REVERSIBLE
   "forge_skillstore_write",    // artifact store write — EXECUTE_REVERSIBLE
-  "forge_seal",                // VAULT999 seal — IRREVERSIBLE (moved below)
   "forge_register",            // APEX-gated tool registration — EXECUTE_REVERSIBLE
   "forge_reality_loop",        // 7-stage intent compiler — EXECUTE_REVERSIBLE (stages are governed)
   "forge_sandbox_run",         // sandbox execution — EXECUTE_REVERSIBLE (isolated)
@@ -246,7 +246,6 @@ const OBSERVE_TOOLS = new Set([
   "forge_skillstore_read",    // artifact store query — read-only, OBSERVE
   "forge_registry",           // skill registry (list/get) — read-only, OBSERVE
   "forge_policy",             // MCP policy engine (check/list) — read-only, OBSERVE
-  "forge_lock",               // Amanah lock (acquire/release) — read-only, OBSERVE
   "forge_job",                // background job (submit/status) — read-only base, OBSERVE
   "forge_wealth",             // WEALTH organ bridge — read-only, OBSERVE
   "forge_well",               // WELL organ relay — read-only, OBSERVE
