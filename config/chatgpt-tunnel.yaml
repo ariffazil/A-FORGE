@@ -1,50 +1,42 @@
-# A-FORGE ChatGPT Secure MCP Tunnel Config
-# DITEMPA BUKAN DIBERI — 2026-07-19
-#
+# ChatGPT Secure MCP Tunnel — A-FORGE connector
+# 
 # Architecture:
-#   ChatGPT → OpenAI Secure MCP Tunnel → 127.0.0.1:7072/mcp → A-FORGE
+#   ChatGPT → OpenAI tunnel → tunnel-client → 127.0.0.1:7072/mcp (HTTP)
 #
-# This file is a reference config. Actual tunnel provisioning happens
-# through the OpenAI dashboard or tunnel-client CLI.
+# A-FORGE MCP gateway already handles stateless OBSERVE tools.
+# Verified session + lease required for MUTATE tools.
+#
+# DO NOT use FORGE_STDIO_ACTOR_ID=ARIF — use per-request session binding.
 
-tunnel:
-  name: aforge-chatgpt
-  profile: aforge-sovereign
-  transport: streamable_http
-  direction: outbound_only  # VPS initiates to OpenAI, no inbound port
-
+# Tunnel client connects to A-FORGE MCP gateway
 mcp_server:
   url: "http://127.0.0.1:7072/mcp"
-  transport: streamable-http
-  # stdio is NOT used — HTTP preserves OAuth headers and session identity
+  transport: "streamable-http"
 
+# Identity: chatgpt-arif is a channel principal, NOT sovereign ARIF
+# Sovereign binding requires verified arifOS session + SCT
 identity:
-  # ChatGPT workspace user authenticates via OAuth through the tunnel.
-  # A-FORGE receives bearer token → maps to principal → arif_init → SCT.
-  principal_source: oauth_bearer_token
-  default_actor: chatgpt-external
-  # Sovereign identity (ARIF) requires explicit arif_init with proof.
-  sovereign_binding: explicit_init_only
+  actor_id: "chatgpt-arif"
+  authority: "OBSERVE_ONLY"
+  note: "Channel principal. ARIF sovereign binding requires arif_init → SCT."
 
-authority:
-  default: OBSERVE_ONLY
-  escalation:
-    draft: autonomous
-    execute_reversible: kernel_lease
-    execute_high_impact: kernel_lease_and_ack
-    irreversible: sovereign_888
+# Session binding (for MUTATE tools)
+session:
+  init_tool: "forge_session_init"
+  kernel_url: "http://127.0.0.1:8088/mcp"
+  note: "Call forge_session_init(actor_id='arif') to bind sovereign ARIF session."
 
-environment:
-  # P0.3: Disable local lease fallback for external channels
-  ALLOW_LOCAL_LEASE_FALLBACK: "false"
-  # P0.1: Unknown tools → HOLD
-  UNKNOWN_ACTION_BEHAVIOUR: "HOLD"
-  # Bind to localhost only
-  AF_FORGE_PORT: "7072"
+# Tool surface: 52 stateless + full session tools
+tools:
+  stateless_observe: 52
+  session_required: "remaining forge_* tools"
+  note: "OBSERVE works immediately. MUTATE requires forge_session_init + lease."
 
-chatgpt_app:
-  name: "A-FORGE"
-  description: "Arif's governed VPS forge. OBSERVE default, MUTATE with lease."
-  mode: draft  # Do not publish until P0 complete
-  access: arif_only
-  tools_visible: all  # Full capability surface, gated per-action
+# P0 security gates (already enforced in code)
+security:
+  identity_spoofing: "BLOCKED — explicit 'stateless-client' rejected"
+  anonymous_access: "BLOCKED at L1_IDENTITY"
+  unverified_default: "default:observe-deny (not sovereign)"
+  aae_signature: "MANDATORY when present (P0.3)"
+  unknown_action: "IRREVERSIBLE by default (fail-closed)"
+  local_lease_fallback: "PENDING — should be DISABLED (P0.2)"
