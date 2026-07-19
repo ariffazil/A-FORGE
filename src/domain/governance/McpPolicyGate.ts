@@ -189,17 +189,17 @@ export class McpPolicyGate {
 
     // Layer 1: Identity — provenance-aware
     if (!principal.authenticated) {
-      // Explicit "anonymous" → hard DENY
-      if (req.actor_id === "anonymous") {
-        result.reasons.push("L1_IDENTITY:anonymous_actor_explicitly_denied");
-        this.appendAudit(result);
-        return result;
-      }
-      // Client-supplied "stateless-client" → reject spoofing
-      if (principal.source === "client_supplied" && req.actor_id === "stateless-client") {
+      // Explicitly denied identities (anonymous, empty, spoofed stateless-client)
+      if (
+        req.actor_id === "anonymous" ||
+        req.actor_id === "" ||
+        (principal.source === "client_supplied" && req.actor_id === "stateless-client")
+      ) {
+        const label = req.actor_id === "stateless-client" ? "spoofing_rejected" : "anonymous_actor_explicitly_denied";
         result.reasons.push(
-          "L1_IDENTITY:spoofing_rejected — 'stateless-client' is a transport-level " +
-          "principal, not a claimable actor identity. Client may not supply this value.",
+          req.actor_id === "stateless-client"
+            ? "L1_IDENTITY:spoofing_rejected — 'stateless-client' is a transport-level principal, not a claimable actor identity. Client may not supply this value."
+            : `L1_IDENTITY:${label}`,
         );
         this.appendAudit(result);
         return result;

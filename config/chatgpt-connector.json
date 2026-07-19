@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "a-forge": {
+      "command": "node",
+      "args": [
+        "/root/A-FORGE/dist/src/interfaces/mcp/cli.js",
+        "serve",
+        "--transport", "stdio"
+      ],
+      "env": {
+        "FORGE_STDIO_ACTOR_ID": "chatgpt-arif"
+      }
+    }
+  }
+}
