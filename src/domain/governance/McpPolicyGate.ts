@@ -147,7 +147,7 @@ export class McpPolicyGate {
    * Returns a verdict with full reason chain. Never throws.
    */
   evaluate(req: ToolCallRequest): VerdictResult {
-    const actorId = req.actor_id ?? this.activeActor ?? "anonymous";
+    const actorId = req.actor_id ?? this.activeActor ?? "stateless-client";
     const policy = this.resolvePolicy(actorId);
     const mcpServer = this.extractServerFromTool(req.tool_name);
 

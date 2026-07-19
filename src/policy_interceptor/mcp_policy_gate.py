@@ -176,7 +176,7 @@ class McpPolicyGate:
         Returns:
             VerdictResult with verdict=ALLOW/DENY/AUDIT_LOG
         """
-        actor_id = actor_id or self._active_actor or "anonymous"
+        actor_id = actor_id or self._active_actor or "stateless-client"
         policy = self._resolve_policy(actor_id)
         mcp_server = self._extract_server(tool_name)
 
@@ -451,11 +451,16 @@ if __name__ == "__main__":
     assert v.verdict == "ALLOW", f"Expected ALLOW, got {v.verdict}"
     print(f"  ✅ Layer 1-5 PASS: sovereign={v.verdict}")
 
-    # Test 2: Anonymous gets DENY
-    v = gate.evaluate(tool_name="geox_basin")
+    # Test 2: Explicit anonymous still gets DENY
+    v = gate.evaluate(tool_name="geox_basin", actor_id="anonymous")
     assert v.verdict == "DENY", f"Expected DENY, got {v.verdict}"
     assert "L1_IDENTITY" in v.reasons[0], f"Expected L1_IDENTITY reason"
-    print(f"  ✅ Layer 1 DENY: anonymous={v.verdict} ({v.reasons[0]})")
+    print(f"  ✅ Layer 1 DENY: explicit_anonymous={v.verdict} ({v.reasons[0]})")
+
+    # Test 2b: No actor_id defaults to stateless-client → ALLOW
+    v = gate.evaluate(tool_name="geox_basin")
+    assert v.verdict == "ALLOW", f"Expected ALLOW for stateless-client default, got {v.verdict}"
+    print(f"  ✅ Layer 1 PASS: stateless_client_default={v.verdict}")
 
     # Test 3: Custom policy with server restriction
     gate.add_policy(
