@@ -1,1 +1,0 @@
-/root/arifOS/SELF_AUDIT_PROMPT.md
