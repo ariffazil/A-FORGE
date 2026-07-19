@@ -526,12 +526,23 @@ export function registerFilesystemTools(server: McpServer): void {
       // ── GREP ────────────────────────────────────────────────────────────────
       if (mode === "grep") {
         if (!pattern) return text("pattern is required for mode=grep", true);
-        const includeFlag = include ? `--include="${include}"` : "";
         try {
-          const output = execSync(`grep -rn "${pattern}" ${includeFlag} "${check.resolvedPath}" 2>/dev/null | head -200`, { encoding: "utf-8", timeout: 15000 });
-          return text(output.trim() || "No matches found.");
+          // P0.6 FIX (2026-07-19): Use execFileSync with argument array instead of
+          // shell string interpolation. Prevents command injection through pattern/include.
+          const args: string[] = ["-rn", "--", pattern];
+          if (include) args.push("--include", include);
+          args.push(check.resolvedPath);
+          const output = execFileSync("grep", args, {
+            encoding: "utf-8",
+            timeout: 15000,
+            maxBuffer: 1024 * 1024,  // 1MB
+            stdio: ["ignore", "pipe", "pipe"],
+          });
+          // Truncate to 200 lines
+          const lines = output.split("\n").slice(0, 200).join("\n");
+          return text(lines.trim() || "No matches found.");
         } catch (err: any) {
-          if (err.status === 1) return text("No matches found.");
+          if (err.status === 1 || err.code === 1) return text("No matches found.");
           return text(`Error: ${err.message?.slice(0, 500)}`, true);
         }
       }
@@ -734,7 +745,7 @@ export function registerMemoryTools(server: McpServer): void {
   }, async ({ query, limit }) => {
     try {
       const safeLimit = Math.min(limit, 50);
-      const result = execSync(`ls -t /root/arifOS/VAULT999/*.jsonl 2>/dev/null | head -${safeLimit}`, { encoding: "utf-8", timeout: 5000 });
+      const result = execFileSync("bash", ["-c", `ls -t /root/arifOS/VAULT999/*.jsonl 2>/dev/null | head -${safeLimit}`], { encoding: "utf-8", timeout: 5000 });
       const files = result.split("\n").filter(Boolean);
       const entries: Array<Record<string, unknown>> = [];
       const queryLower = query.toLowerCase();
