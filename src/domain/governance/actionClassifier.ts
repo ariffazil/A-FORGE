@@ -197,22 +197,78 @@ const OBSERVE_TOOLS = new Set([
 ]);
 
 /**
- * Classify a tool name into one of 7 action classes.
+ * P0.1 FIX (2026-07-19): Unknown tools MUST return HOLD, not OBSERVE.
+ * Fail-open is not fail-safe. A new mutation tool omitted from the
+ * classifier could be treated as read-only and bypass the session gate.
  *
- * Default: OBSERVE (conservative — if we don't know, it's read-only).
- *
- * Explicit OBSERVE_TOOLS set documents known read-only tools.
- * Unknown tools also default to OBSERVE (fail-safe: read-only by default).
+ * Mode-aware tools (forge_agent, forge_filesystem, forge_vault etc.)
+ * MUST be classified by tool+mode, not tool name alone.
  */
-export function classifyTool(toolName: string): ActionClass {
+export type UnknownActionBehaviour = "HOLD" | "OBSERVE";
+
+let unknownBehaviour: UnknownActionBehaviour = "HOLD";
+
+/** Override unknown-tool behaviour (TESTING ONLY). */
+export function setUnknownActionBehaviour(b: UnknownActionBehaviour): void {
+  unknownBehaviour = b;
+}
+
+/**
+ * P0.1 FIX: classify by tool name + mode. Mode-aware tools are resolved
+ * to their specific action class. Unknown tools return IRREVERSIBLE
+ * (maximum blast radius) to force explicit classification — never OBSERVE.
+ */
+export function classifyTool(toolName: string, mode?: string): ActionClass {
+  // Mode-aware resolution: combine tool + mode for accurate classification
+  const fullKey = mode ? `${toolName}/${mode}` : toolName;
+
+  // ── Mode-aware overrides ──
+  // forge_agent: list/status=OBSERVE, register=EXECUTE_REVERSIBLE, kill=IRREVERSIBLE
+  if (toolName === "forge_agent") {
+    if (mode === "list" || mode === "status") return "OBSERVE";
+    if (mode === "register") return "EXECUTE_REVERSIBLE";
+    if (mode === "kill") return "IRREVERSIBLE";
+  }
+  // forge_filesystem: read/tree/search/stat/glob/grep=OBSERVE, write/patch/move=EXECUTE_REVERSIBLE, delete(quarantine)=EXECUTE_REVERSIBLE, delete(hard)=IRREVERSIBLE
+  if (toolName === "forge_filesystem") {
+    if (["read", "tree", "search", "stat", "glob", "grep"].includes(mode ?? "")) return "OBSERVE";
+    if (["write", "patch", "move"].includes(mode ?? "")) return "EXECUTE_REVERSIBLE";
+    if (mode === "delete") return "EXECUTE_HIGH_IMPACT";
+  }
+  // forge_vault: read/list=OBSERVE, write/seal=EXECUTE_HIGH_IMPACT
+  if (toolName === "forge_vault") {
+    if (mode === "read" || mode === "list") return "OBSERVE";
+    if (mode === "write" || mode === "seal") return "EXECUTE_HIGH_IMPACT";
+  }
+  // forge_git: status/diff/log=OBSERVE, commit=EXECUTE_REVERSIBLE
+  if (toolName === "forge_git") {
+    if (["status", "diff", "log"].includes(mode ?? "")) return "OBSERVE";
+    if (mode === "commit") return "EXECUTE_REVERSIBLE";
+  }
+  // forge_docker: ps/images/logs=OBSERVE, exec=EXECUTE_REVERSIBLE
+  if (toolName === "forge_docker") {
+    if (["ps", "images", "logs"].includes(mode ?? "")) return "OBSERVE";
+    if (mode === "exec") return "EXECUTE_REVERSIBLE";
+  }
+  // forge_lease: status/list=OBSERVE, request/revoke=EXECUTE_REVERSIBLE
+  if (toolName === "forge_lease") {
+    if (["status", "list"].includes(mode ?? "")) return "OBSERVE";
+    if (["request", "revoke"].includes(mode ?? "")) return "EXECUTE_REVERSIBLE";
+  }
+
+  // ── Name-only classification (existing sets) ──
   if (IRREVERSIBLE_TOOLS.has(toolName)) return "IRREVERSIBLE";
   if (HIGH_IMPACT_TOOLS.has(toolName)) return "EXECUTE_HIGH_IMPACT";
   if (SIMULATE_FIRST_TOOLS.has(toolName)) return "SIMULATE";
   if (REVERSIBLE_EXEC_TOOLS.has(toolName)) return "EXECUTE_REVERSIBLE";
   if (SUGGEST_TOOLS.has(toolName)) return "SUGGEST";
   if (QUEUE_TOOLS.has(toolName)) return "QUEUE";
-  // OBSERVE_TOOLS and unknown tools both return OBSERVE (fail-safe)
-  return "OBSERVE";
+  if (OBSERVE_TOOLS.has(toolName)) return "OBSERVE";
+
+  // P0.1 FIX: Unknown tools → IRREVERSIBLE (fail-closed).
+  // Forces explicit classification before any new tool can be used.
+  // Previously returned OBSERVE — that was fail-open, not fail-safe.
+  return "IRREVERSIBLE";
 }
 
 /**

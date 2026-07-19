@@ -374,12 +374,19 @@ async function issueLeaseViaKernel(args: {
     enforceOneSkillOneTool(localLease, lease.max_action_class || "OBSERVE", "lease_issue");
     return { ok: true, lease: localLease };
   } catch (kernelErr: any) {
-    // Local-only fallback. Audit-trail this in the lease record so the
-    // SEAL chain knows the lease came from A-FORGE local mint, not the
-    // arifOS kernel. The local lease is functionally equivalent for
-    // F1 AMANAH purposes: bounded scope, bounded TTL, hash-chained.
+    // P0.3 FIX (2026-07-19): Local lease fallback is DISABLED by default.
+    // When the kernel is unreachable, A-FORGE MUST HOLD, not self-mint.
+    // Set ALLOW_LOCAL_LEASE_FALLBACK=true for local dev only.
+    const allowFallback = process.env.ALLOW_LOCAL_LEASE_FALLBACK === "true";
+    if (!allowFallback) {
+      const kmsg = String(kernelErr?.message ?? kernelErr);
+      process.stderr.write(`[A-FORGE] arif_lease_issue kernel call FAILED — HOLDING (no local fallback). ${kmsg.slice(0, 120)}\n`);
+      return { ok: false, reason: `KERNEL_UNREACHABLE: Lease requires arifOS kernel. ${kmsg.slice(0, 200)}` };
+    }
+
+    // Local-only fallback (dev mode only). Audit-trail this in the lease record.
     const kmsg = String(kernelErr?.message ?? kernelErr);
-    process.stderr.write(`[A-FORGE] arif_lease_issue kernel call failed (${kmsg.slice(0, 120)}); minting local lease as fallback\n`);
+    process.stderr.write(`[A-FORGE] arif_lease_issue kernel call failed (${kmsg.slice(0, 120)}); minting local lease as fallback (dev mode)\n`);
     const ttl_seconds = Math.min(Math.max(args.ttl_seconds ?? 300, 1), 3600);
     const expires_at = Date.now() + ttl_seconds * 1000;
     const lease_id = `LCL-${args.agent_id}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
