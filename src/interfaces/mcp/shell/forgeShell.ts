@@ -264,32 +264,15 @@ async function preExecutionGate(
   const args = execParts.slice(1);
 
   try {
-    const { execFile } = await import("node:child_process");
-    const bridgeInput = JSON.stringify({
+    const { callAuthorizeMutationBridge } = await import("../../../infrastructure/bridges/authorizeMutationBridge.js");
+    const result = await callAuthorizeMutationBridge({
       executable,
       arguments: args,
-      args_text: args.join(" "),
-      actor_privilege: process.env.USER === "root" ? "root" : "user",
-      actor_id: envelope?.actor_id || "aforge",
-      session_id: envelope?.session_id || "unknown",
-      target_environment: process.env.DEPLOY_ENV || "unknown",
+      actorPrivilege: process.env.USER === "root" ? "root" : "user",
+      actorId: envelope?.actor_id || "aforge",
+      sessionId: envelope?.session_id || "unknown",
+      targetEnvironment: process.env.DEPLOY_ENV || "unknown",
     });
-
-    const bridgeOutput = await new Promise<string>((resolve, reject) => {
-      const child = execFile(
-        "python3",
-        ["/root/arifOS/core/shared/authorize_mutation_cli.py"],
-        { env: { ...process.env, PYTHONPATH: "/root/arifOS" }, timeout: 5000, maxBuffer: 65536 },
-        (err, stdout, stderr) => {
-          if (err) reject(new Error(stderr || err.message));
-          else resolve(stdout);
-        }
-      );
-      child.stdin?.write(bridgeInput);
-      child.stdin?.end();
-    });
-
-    const result = JSON.parse(bridgeOutput);
     if (!result.allowed) {
       await arifSealAudit({
         type: "MUTATION_GATE_HOLD",
