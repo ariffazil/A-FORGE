@@ -14,17 +14,19 @@
 
 import { describe, it, beforeEach } from "node:test";
 import { strict as assert } from "node:assert";
-import { getMcpPolicyGate, type McpPolicyGate } from "../src/domain/governance/McpPolicyGate.js";
+import { getMcpPolicyGate, type McpPolicyGate, buildSCT } from "../src/domain/governance/McpPolicyGate.js";
 import { buildAAE } from "../src/domain/governance/amanahEnvelope.js";
 
 let gate: McpPolicyGate;
 const ORGAN_SECRET = "test-organ-secret-12345";
 const ACTOR = "arif";
+const SESSION_ID = "sess-arif-1";
 
 beforeEach(() => {
   gate = getMcpPolicyGate();
-  // Pre-register ARIF as verified session so AAE actor matches
-  gate.registerVerifiedSession("sess-arif-1", ACTOR);
+  // P0.5: SCT-gated registration with cryptographic verification
+  const sct = buildSCT(ACTOR, SESSION_ID, ORGAN_SECRET);
+  gate.registerVerifiedSession(SESSION_ID, ACTOR, sct, ORGAN_SECRET);
 });
 
 describe("P0.3 — AAE signature mandatory when envelope present", () => {
@@ -46,7 +48,7 @@ describe("P0.3 — AAE signature mandatory when envelope present", () => {
 
     const v = gate.evaluate({
       actor_id: ACTOR,
-      session_id: "sess-arif-1",
+      session_id: SESSION_ID,
       tool_name: "forge_health_check",
       arguments: {},
       // NOTE: no organ_secret supplied → signature cannot be verified
@@ -77,7 +79,7 @@ describe("P0.3 — AAE signature mandatory when envelope present", () => {
 
     const v = gate.evaluate({
       actor_id: ACTOR,
-      session_id: "sess-arif-1",
+      session_id: SESSION_ID,
       tool_name: "forge_health_check",
       arguments: {},
       organ_secret: ORGAN_SECRET, // Valid secret at gate level, but envelope was signed with wrong one
@@ -108,7 +110,7 @@ describe("P0.3 — AAE signature mandatory when envelope present", () => {
 
     const v = gate.evaluate({
       actor_id: ACTOR,
-      session_id: "sess-arif-1",
+      session_id: SESSION_ID,
       tool_name: "forge_health_check",
       arguments: {},
       organ_secret: ORGAN_SECRET,
@@ -139,7 +141,7 @@ describe("P0.3 — AAE signature mandatory when envelope present", () => {
 
     const v = gate.evaluate({
       actor_id: ACTOR,
-      session_id: "sess-arif-1",
+      session_id: SESSION_ID,
       tool_name: "forge_health_check",
       arguments: {},
       organ_secret: ORGAN_SECRET,
@@ -166,7 +168,7 @@ describe("P0.3 — AAE signature mandatory when envelope present", () => {
 
     const v = gate.evaluate({
       actor_id: ACTOR,
-      session_id: "sess-arif-1",
+      session_id: SESSION_ID,
       tool_name: "forge_filesystem_patch",
       arguments: { path: "/tmp/test.txt", old_text: "x", new_text: "y" },
       organ_secret: ORGAN_SECRET,
@@ -194,7 +196,7 @@ describe("P0.3 — AAE signature mandatory when envelope present", () => {
     // First request — should ALLOW
     const v1 = gate.evaluate({
       actor_id: ACTOR,
-      session_id: "sess-arif-1",
+      session_id: SESSION_ID,
       tool_name: "forge_health_check",
       arguments: {},
       organ_secret: ORGAN_SECRET,
@@ -205,7 +207,7 @@ describe("P0.3 — AAE signature mandatory when envelope present", () => {
     // Second request with same nonce — should DENY (replay)
     const v2 = gate.evaluate({
       actor_id: ACTOR,
-      session_id: "sess-arif-1",
+      session_id: SESSION_ID,
       tool_name: "forge_health_check",
       arguments: {},
       organ_secret: ORGAN_SECRET,

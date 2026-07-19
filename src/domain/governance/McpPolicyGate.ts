@@ -148,6 +148,87 @@ export function authorityPermits(authority: Authority, actionClass: ActionClass)
   }
 }
 
+// ── SCT (Session Capability Token) — P0.5 (2026-07-19) ──────────────────
+
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+/**
+ * SCT wire format: `sct_v1.<base64url(payload)>.<base64url(signature)>`
+ * Payload: { actor_id, session_id, issued_at, expiry }
+ * Signature: HMAC-SHA256(payload, organSecret) base64url
+ *
+ * Only arifOS holds the sovereign organ_secret (anchored to
+ * did:web:arif-fazil.com#arif-fazil continuity key). Any forged SCT
+ * without a valid HMAC is rejected — that's the "not format-only" part.
+ */
+export interface SCTPayload {
+  actor_id: string;
+  session_id: string;
+  issued_at: number; // Unix ms
+  expiry: number;    // Unix ms
+}
+
+/** Mint a fresh SCT for an actor + session. arifOS uses this. */
+export function buildSCT(actorId: string, sessionId: string, organSecret: string, ttlMs = 60 * 60 * 1000): string {
+  const now = Date.now();
+  const payload: SCTPayload = { actor_id: actorId, session_id: sessionId, issued_at: now, expiry: now + ttlMs };
+  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = createHmac("sha256", organSecret).update(payloadB64).digest("base64url");
+  return `sct_v1.${payloadB64}.${sig}`;
+}
+
+export interface SCTVerifyResult {
+  valid: boolean;
+  reason?: string;
+  expired?: boolean;
+  payload?: SCTPayload;
+}
+
+/**
+ * Verify an SCT against expected actor_id, session_id, and organ_secret.
+ * Returns { valid: false } for any failure (format, signature, expiry, mismatch).
+ *
+ * SECURITY: signature comparison uses timingSafeEqual to prevent timing attacks.
+ */
+export function verifySCT(sct: string, expectedActorId: string, expectedSessionId: string, organSecret: string): SCTVerifyResult {
+  if (!sct.startsWith("sct_v1.")) {
+    return { valid: false, reason: "missing sct_v1 prefix" };
+  }
+  const parts = sct.split(".");
+  if (parts.length !== 3) {
+    return { valid: false, reason: "malformed SCT — expected 3 dot-separated parts" };
+  }
+  const [, payloadB64, sigB64] = parts;
+  // Verify signature
+  const expectedSig = createHmac("sha256", organSecret).update(payloadB64).digest("base64url");
+  // timingSafeEqual requires equal-length buffers
+  if (sigB64.length !== expectedSig.length) {
+    return { valid: false, reason: "signature length mismatch" };
+  }
+  const sigBuf = Buffer.from(sigB64);
+  const expectedBuf = Buffer.from(expectedSig);
+  if (!timingSafeEqual(sigBuf, expectedBuf)) {
+    return { valid: false, reason: "HMAC signature mismatch" };
+  }
+  // Decode + verify payload
+  let payload: SCTPayload;
+  try {
+    payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
+  } catch {
+    return { valid: false, reason: "payload JSON parse failed" };
+  }
+  if (payload.actor_id !== expectedActorId) {
+    return { valid: false, reason: `actor_id mismatch: SCT says "${payload.actor_id}" expected "${expectedActorId}"` };
+  }
+  if (payload.session_id !== expectedSessionId) {
+    return { valid: false, reason: `session_id mismatch: SCT says "${payload.session_id}" expected "${expectedSessionId}"` };
+  }
+  if (Date.now() > payload.expiry) {
+    return { valid: false, expired: true, reason: `SCT expired at ${new Date(payload.expiry).toISOString()}` };
+  }
+  return { valid: true, payload };
+}
+
 export class McpPolicyGate {
   private policies: Map<string, McpPolicy> = new Map();
   private defaultPolicy: McpPolicy;
@@ -165,14 +246,37 @@ export class McpPolicyGate {
   }
 
   /**
-   * P0.1: Register a verified session (replaces global activeActor).
-   * Binds session_id → verified actor for per-request lookup.
+   * P0.1 + P0.5 (2026-07-19): Register a verified session with cryptographic
+   * verification via SCT (Session Capability Token).
+   *
+   * The SCT is required and is verified against the expected actor_id,
+   * session_id, and a sovereign organ_secret (HMAC-SHA256). Only arifOS
+   * can mint SCTs (it holds the sovereign continuity key); any forged
+   * token without a valid signature is rejected.
+   *
+   * Without an SCT, the session is NOT registered as verified — the
+   * caller is treated as client_supplied OBSERVE_ONLY.
    */
-  registerVerifiedSession(sessionId: string, actorId: string): void {
+  registerVerifiedSession(sessionId: string, actorId: string, sct?: string, organSecret?: string): boolean {
+    // P0.5: SCT is MANDATORY for cryptographic verification.
+    if (!sct) {
+      // Backward compat: setActor() callers don't have SCT yet.
+      // They land in the legacy "__legacy_active" key via setActor().
+      return false;
+    }
+    const secret = organSecret ?? "";
+    if (!secret) {
+      return false;
+    }
+    const verification = verifySCT(sct, actorId, sessionId, secret);
+    if (!verification.valid) {
+      return false;
+    }
     this.verifiedSessions.set(sessionId, { actorId, verifiedAt: Date.now() });
+    return true;
   }
 
-  /** @deprecated Use registerVerifiedSession(sessionId, actorId) instead. */
+  /** @deprecated Use registerVerifiedSession(sessionId, actorId, sct, organSecret) instead. */
   setActor(actorId: string): void {
     // Backward compat: store under legacy key for existing callers
     this.verifiedSessions.set("__legacy_active", { actorId, verifiedAt: Date.now() });
