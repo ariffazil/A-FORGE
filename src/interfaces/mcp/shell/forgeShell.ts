@@ -250,11 +250,71 @@ async function arifSealAudit(event: Record<string, unknown>): Promise<void> {
  * Centralised gate for all shell commands.
  * Fires BEFORE any ArifJudge or authority checks.
  * Every command goes through classifyShellCommandRisk — no bypass.
+ *
+ * P34 ENFORCEMENT (2026-07-19): authorize-mutation bridge calls canonical
+ * arifOS Python authorize_mutation() via stdin JSON. Fail-closed.
  */
 async function preExecutionGate(
   command: string,
   envelope?: SealEnvelope
 ): Promise<GatedResult> {
+  // ── P34 MUTATION GATE: canonical arifOS boundary ──
+  const execParts = command.trim().split(/\s+/);
+  const executable = execParts[0]?.replace(/^["'`]/, "").split("/").pop() ?? "";
+  const args = execParts.slice(1);
+
+  try {
+    const { execFile } = await import("node:child_process");
+    const bridgeInput = JSON.stringify({
+      executable,
+      arguments: args,
+      args_text: args.join(" "),
+      actor_privilege: process.env.USER === "root" ? "root" : "user",
+      actor_id: envelope?.actor_id || "aforge",
+      session_id: envelope?.session_id || "unknown",
+      target_environment: process.env.DEPLOY_ENV || "unknown",
+    });
+
+    const bridgeOutput = await new Promise<string>((resolve, reject) => {
+      const child = execFile(
+        "python3",
+        ["/root/arifOS/core/shared/authorize_mutation_cli.py"],
+        { env: { ...process.env, PYTHONPATH: "/root/arifOS" }, timeout: 5000, maxBuffer: 65536 },
+        (err, stdout, stderr) => {
+          if (err) reject(new Error(stderr || err.message));
+          else resolve(stdout);
+        }
+      );
+      child.stdin?.write(bridgeInput);
+      child.stdin?.end();
+    });
+
+    const result = JSON.parse(bridgeOutput);
+    if (!result.allowed) {
+      await arifSealAudit({
+        type: "MUTATION_GATE_HOLD",
+        command,
+        verdict: result.verdict,
+        reasons: result.reasonCodes,
+      });
+      return {
+        status: "HARD_DENY",
+        reason: `MUTATION_GATE: ${result.verdict} — ${(result.reasonCodes || []).join(", ")}`,
+      };
+    }
+  } catch (err: any) {
+    // Fail-closed: bridge unavailable = HOLD
+    await arifSealAudit({
+      type: "MUTATION_GATE_BRIDGE_FAIL",
+      command,
+      error: err.message,
+    });
+    return {
+      status: "HARD_DENY",
+      reason: `MUTATION_GATE: bridge unavailable — fail-closed. ${err.message}`,
+    };
+  }
+
   const risk = classifyShellCommandRisk(command);
 
   if (risk === "GODEL_LOCKED") {
