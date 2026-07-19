@@ -1,0 +1,83 @@
+name: 'Classify Change'
+description: 'Classify a PR change by blast radius, reversibility, and domain'
+
+inputs:
+  organ:
+    description: 'Organ name (from organ.yaml)'
+    required: true
+  diff_json:
+    description: 'Path to changed-files.json'
+    required: false
+    default: ''
+
+outputs:
+  risk_class:
+    description: 'LOW | MEDIUM | HIGH | CRITICAL'
+    value: ${{ steps.classify.outputs.risk_class }}
+  reversibility:
+    description: 'REVERSIBLE | PARTIALLY_REVERSIBLE | IRREVERSIBLE'
+    value: ${{ steps.classify.outputs.reversibility }}
+  blast_radius:
+    description: 'NARROW | MODERATE | WIDE | FEDERATION'
+    value: ${{ steps.classify.outputs.blast_radius }}
+  affected_organs:
+    description: 'Comma-separated list of affected organs'
+    value: ${{ steps.classify.outputs.affected_organs }}
+
+runs:
+  using: composite
+  steps:
+    - id: classify
+      shell: bash
+      run: |
+        ORGAN="${{ inputs.organ }}"
+        echo "Classifying change for organ: $ORGAN"
+
+        # Defaults
+        RISK="LOW"
+        REV="REVERSIBLE"
+        BLAST="NARROW"
+        AFFECTED="$ORGAN"
+
+        # Get changed files
+        if command -v git &>/dev/null; then
+          CHANGED=$(git diff --name-only origin/main...HEAD 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "")
+        else
+          CHANGED=""
+        fi
+
+        # Constitutional files → CRITICAL
+        if echo "$CHANGED" | grep -qE '(FEDERATION_CONTRACT|CONSTITUTION|INVARIANTS|CANON|floors|organ\.yaml|FEDERATION\.md)'; then
+          RISK="CRITICAL"
+          REV="IRREVERSIBLE"
+          BLAST="FEDERATION"
+          AFFECTED="arifos,aaa,a-forge,geox,wealth,well"
+        fi
+
+        # MCP surface changes → HIGH
+        if [ "$RISK" != "CRITICAL" ]; then
+          if echo "$CHANGED" | grep -qE '(mcp.*surface|tool_registry|public_surface|contracts/mcp)'; then
+            RISK="HIGH"
+            BLAST="WIDE"
+          fi
+        fi
+
+        # Core logic changes → MEDIUM
+        if [ "$RISK" = "LOW" ]; then
+          if echo "$CHANGED" | grep -qE '(src/|core/|internal/|engine/|kernel/)'; then
+            RISK="MEDIUM"
+            BLAST="MODERATE"
+          fi
+        fi
+
+        # Docs/config only → LOW
+        if echo "$CHANGED" | grep -qvE '\.(md|ya?ml|json|toml)$' && echo "$CHANGED" | grep -qE '\.(py|ts|js|tsx|jsx)$'; then
+          : # code changes, risk already set above
+        fi
+
+        echo "risk_class=$RISK" >> "$GITHUB_OUTPUT"
+        echo "reversibility=$REV" >> "$GITHUB_OUTPUT"
+        echo "blast_radius=$BLAST" >> "$GITHUB_OUTPUT"
+        echo "affected_organs=$AFFECTED" >> "$GITHUB_OUTPUT"
+
+        echo "→ Risk: $RISK | Reversibility: $REV | Blast: $BLAST"

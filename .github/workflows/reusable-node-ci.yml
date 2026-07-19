@@ -1,0 +1,169 @@
+# ═══════════════════════════════════════════════════════════════════
+# A-FORGE Reusable Node.js CI Workflow
+# ═══════════════════════════════════════════════════════════════════
+# Called by: AAA, A-FORGE itself
+# Pinned by: FULL COMMIT SHA (never @main)
+# ═══════════════════════════════════════════════════════════════════
+
+name: "A-FORGE · Reusable Node.js CI"
+
+on:
+  workflow_call:
+    inputs:
+      organ:
+        description: 'Organ name'
+        required: true
+        type: string
+      node_version:
+        description: 'Node.js version'
+        required: false
+        type: string
+        default: '22'
+      install_command:
+        description: 'Install command'
+        required: false
+        type: string
+        default: 'npm ci'
+      build_command:
+        description: 'Build command'
+        required: false
+        type: string
+        default: 'npm run build'
+      test_command:
+        description: 'Test command'
+        required: false
+        type: string
+        default: 'npm test'
+      lint_command:
+        description: 'Lint command (optional)'
+        required: false
+        type: string
+        default: ''
+      artifact_path:
+        description: 'Artifact path pattern'
+        required: false
+        type: string
+        default: 'dist/'
+
+jobs:
+  classify:
+    name: "Classify Change"
+    runs-on: ubuntu-latest
+    outputs:
+      risk_class: ${{ steps.classify.outputs.risk_class }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Classify
+        id: classify
+        run: |
+          CHANGED=$(git diff --name-only origin/main...HEAD 2>/dev/null || echo "")
+          RISK="LOW"
+          if echo "$CHANGED" | grep -qE '(FEDERATION|CONSTITUTION|CANON|floors|organ\.yaml|\.github/workflows/)'; then
+            RISK="CRITICAL"
+          elif echo "$CHANGED" | grep -qE '(mcp.*surface|tool_registry|server\.ts|mcp/)'; then
+            RISK="HIGH"
+          elif echo "$CHANGED" | grep -qE '(src/|engine/|domain/)'; then
+            RISK="MEDIUM"
+          fi
+          echo "risk_class=$RISK" >> "$GITHUB_OUTPUT"
+
+  lint:
+    name: "Lint"
+    runs-on: ubuntu-latest
+    needs: [classify]
+    timeout-minutes: 5
+    if: ${{ inputs.lint_command != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: npm
+      - name: Install
+        run: ${{ inputs.install_command }}
+      - name: Lint
+        run: ${{ inputs.lint_command }}
+
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    needs: [lint]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: npm
+      - name: Install
+        run: ${{ inputs.install_command }}
+      - name: Build
+        run: ${{ inputs.build_command }}
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.organ }}-dist
+          path: ${{ inputs.artifact_path }}
+          retention-days: 7
+
+  test:
+    name: "Test"
+    runs-on: ubuntu-latest
+    needs: [build]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node_version }}
+          cache: npm
+      - name: Install
+        run: ${{ inputs.install_command }}
+      - name: Build
+        run: ${{ inputs.build_command }}
+      - name: Test
+        run: ${{ inputs.test_command }}
+
+  boundary:
+    name: "Organ Boundary"
+    runs-on: ubuntu-latest
+    needs: [classify]
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate organ.yaml
+        run: |
+          if [ ! -f organ.yaml ]; then
+            echo "⚠ No organ.yaml — boundary check skipped"
+            exit 0
+          fi
+          python3 -c "
+          import yaml, sys
+          with open('organ.yaml') as f:
+              doc = yaml.safe_load(f)
+          required = ['schema_version', 'organ', 'repo', 'role', 'authority_ceiling']
+          missing = [k for k in required if k not in doc]
+          if missing:
+              print(f'❌ organ.yaml missing required keys: {missing}')
+              sys.exit(1)
+          print(f'✅ organ.yaml valid — {doc[\"organ\"]} ({doc[\"role\"]})')
+          "
+
+  report:
+    name: "CI Report"
+    runs-on: ubuntu-latest
+    needs: [lint, build, test, boundary]
+    if: always()
+    timeout-minutes: 2
+    steps:
+      - name: Summary
+        run: |
+          echo "## ${{ inputs.organ }} CI Results"
+          echo "| Job | Result |"
+          echo "|-----|--------|"
+          echo "| lint | ${{ needs.lint.result }} |"
+          echo "| build | ${{ needs.build.result }} |"
+          echo "| test | ${{ needs.test.result }} |"
+          echo "| boundary | ${{ needs.boundary.result }} |"

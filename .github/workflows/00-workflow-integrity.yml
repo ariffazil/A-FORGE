@@ -1,0 +1,150 @@
+# ═══════════════════════════════════════════════════════════════════
+# 00-WORKFLOW-INTEGRITY — Pre-flight YAML validation
+# ═══════════════════════════════════════════════════════════════════
+# Runs BEFORE all other workflows. Catches YAML corruption,
+# duplicate job IDs, malformed expressions, and unsafe patterns
+# that would otherwise silently fail or partially execute.
+#
+# DITEMPA BUKAN DIBERI — Integrity is forged, not assumed.
+# ═══════════════════════════════════════════════════════════════════
+
+name: "00 · Workflow Integrity"
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wf-integrity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Gate 1: YAML parse ──────────────────────────────────────────
+  parse-all:
+    name: "Parse all workflow YAML"
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Parse and validate all workflow YAML
+        run: |
+          python3 -c "
+          import os, yaml, sys
+          errors = 0
+          wf_dir = '.github/workflows'
+          if not os.path.isdir(wf_dir):
+              print('⚠ No workflows directory — nothing to validate')
+              sys.exit(0)
+          for fname in sorted(os.listdir(wf_dir)):
+              if not fname.endswith(('.yml', '.yaml')):
+                  continue
+              fpath = os.path.join(wf_dir, fname)
+              with open(fpath) as f:
+                  raw = f.read()
+              try:
+                  docs = list(yaml.safe_load_all(raw))
+              except yaml.YAMLError as e:
+                  print(f'❌ YAML parse error in {fname}: {e}')
+                  errors += 1
+                  continue
+              if not docs or docs[0] is None:
+                  print(f'❌ {fname}: empty or null document')
+                  errors += 1
+                  continue
+              doc = docs[0]
+              if 'jobs' not in doc:
+                  print(f'⚠ {fname}: no jobs key — may be a reusable workflow')
+                  continue
+              # Check for duplicate job keys by re-parsing
+              import re
+              job_keys = re.findall(r'^\s{2}(\w[\w-]*):\s*$', raw, re.MULTILINE)
+              seen = {}
+              dups = []
+              for k in job_keys:
+                  if k in ('on', 'name', 'env', 'permissions', 'concurrency', 'defaults'):
+                      continue
+                  if k in seen:
+                      dups.append(k)
+                  seen[k] = seen.get(k, 0) + 1
+              if dups:
+                  print(f'❌ {fname}: duplicate job keys: {set(dups)}')
+                  errors += 1
+              else:
+                  print(f'✅ {fname}: {len(doc[\"jobs\"])} jobs, no duplicates')
+          if errors:
+              print(f'\n❌ {errors} workflow(s) have structural errors — BLOCKING')
+              sys.exit(1)
+          print('\n✅ All workflows structurally valid')
+          "
+
+  # ── Gate 2: actionlint ──────────────────────────────────────────
+  actionlint:
+    name: "actionlint"
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run actionlint
+        uses: raven-actions/actionlint@v2
+        continue-on-error: true  # advisory, not blocking (Steel Security non-blocking rule)
+        with:
+          flags: "-ignore 'reusable workflow .* should be pinned'"
+
+  # ── Gate 3: Unsafe patterns ─────────────────────────────────────
+  unsafe-patterns:
+    name: "Detect unsafe workflow patterns"
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for dangerous patterns
+        run: |
+          errors=0
+          for f in .github/workflows/*.yml .github/workflows/*.yaml; do
+            [ -f "$f" ] || continue
+            bn=$(basename "$f")
+
+            # Reject pull_request_target without explicit permissions check
+            if grep -q 'pull_request_target' "$f" 2>/dev/null; then
+              echo "⚠ $bn: uses pull_request_target — ensure untrusted code isolation"
+            fi
+
+            # Reject reusable workflow refs not pinned to SHA
+            if grep -qE 'uses:\s+\S+/(\S+/)*\.github/workflows/\S+@(main|master|v\d)' "$f" 2>/dev/null; then
+              echo "❌ $bn: reusable workflow NOT pinned to full SHA"
+              errors=$((errors + 1))
+            fi
+
+            # Reject overly broad permissions
+            if grep -q 'permissions:\s*write-all' "$f" 2>/dev/null; then
+              echo "❌ $bn: write-all permissions — use least-privilege"
+              errors=$((errors + 1))
+            fi
+
+            # Reject shell injection patterns
+            if grep -qE '\$\{\{\s*(github\.event\.(issue_title|comment\.body|pull_request\.(title|body)))\s*\}\}' "$f" 2>/dev/null; then
+              echo "❌ $bn: potential script injection via untrusted input"
+              errors=$((errors + 1))
+            fi
+          done
+
+          if [ $errors -gt 0 ]; then
+            echo "❌ $errors unsafe pattern(s) found — BLOCKING"
+            exit 1
+          fi
+          echo "✅ No unsafe patterns detected"
