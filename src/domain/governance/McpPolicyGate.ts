@@ -115,6 +115,39 @@ export type VerdictResult = {
 
 // ── Gate ──────────────────────────────────────────────────────────────
 
+/**
+ * P0.2 (2026-07-19): authorityPermits(authority, actionClass) — pure function
+ * extracted from inline Layer 1.5 check so it's testable + reusable.
+ *
+ * Invariant: authority ≠ actor_id string. Authority is derived from
+ * provenance (verified_session / client_supplied / transport_fallback),
+ * never from the actor_id alone.
+ *
+ *   OBSERVE_ONLY    → OBSERVE, SUGGEST, SIMULATE only
+ *   LIMITED_MUTATE  → + DRAFT, QUEUE, EXECUTE_REVERSIBLE
+ *   FULL            → all 7 action classes
+ *
+ * IRREVERSIBLE and EXECUTE_HIGH_IMPACT are NEVER permitted without FULL authority.
+ * This is the fail-closed default for any authority < FULL.
+ */
+export function authorityPermits(authority: Authority, actionClass: ActionClass): boolean {
+  switch (authority) {
+    case "OBSERVE_ONLY":
+      return actionClass === "OBSERVE"
+          || actionClass === "SUGGEST"
+          || actionClass === "SIMULATE";
+    case "LIMITED_MUTATE":
+      // Permits everything except high-impact and irreversible
+      return actionClass !== "EXECUTE_HIGH_IMPACT"
+          && actionClass !== "IRREVERSIBLE";
+    case "FULL":
+      return true;
+    default:
+      // Unknown authority → fail-closed (deny)
+      return false;
+  }
+}
+
 export class McpPolicyGate {
   private policies: Map<string, McpPolicy> = new Map();
   private defaultPolicy: McpPolicy;
@@ -268,17 +301,15 @@ export class McpPolicyGate {
       }
     }
 
-    // P0.2: Authority enforcement — OBSERVE_ONLY actors cannot mutate.
-    if (
-      principal.authority === "OBSERVE_ONLY" &&
-      toolClass !== "OBSERVE" &&
-      toolClass !== "SUGGEST" &&
-      toolClass !== "SIMULATE"
-    ) {
+    // P0.2: Authority enforcement — derived from provenance, NOT actor_id string.
+    // OBSERVE_ONLY can do read-only / suggest / simulate.
+    // LIMITED_MUTATE can additionally do draft / queue / execute_reversible (NOT high-impact or irreversible).
+    // FULL can do everything.
+    if (!authorityPermits(principal.authority, toolClass)) {
       result.reasons.push(
-        `L1_AUTHORITY:actor="${principal.displayLabel}" authority=OBSERVE_ONLY ` +
+        `L1_AUTHORITY:actor="${principal.displayLabel}" authority=${principal.authority} ` +
         `but tool "${req.tool_name}" classified as ${toolClass}. ` +
-        `MUTATE requires verified session with FULL or LIMITED_MUTATE authority.`
+        `MUTATE requires verified session with appropriate authority.`
       );
       this.appendAudit(result);
       return result;

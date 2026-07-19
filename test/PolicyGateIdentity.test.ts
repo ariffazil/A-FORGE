@@ -15,7 +15,7 @@
 
 import { describe, it, beforeEach } from "node:test";
 import { strict as assert } from "node:assert";
-import { McpPolicyGate } from "../src/domain/governance/McpPolicyGate.js";
+import { McpPolicyGate, authorityPermits } from "../src/domain/governance/McpPolicyGate.js";
 import type { Principal } from "../src/domain/governance/McpPolicyGate.js";
 
 let gate: McpPolicyGate;
@@ -329,5 +329,44 @@ describe("Test 11 — P0.6: Unknown tool forces HOLD for all paths", () => {
       v.reasons.some((r) => r.includes("empty_actor_id") || r.includes("anonymous")),
       `Expected empty/anonymous reason, got: ${v.reasons.join(", ")}`,
     );
+  });
+});
+
+// ── Test 12 (P0.2 FIX 2026-07-19): authorityPermits() matrix ──
+// Pure-function tests of the authority/action-class permission matrix.
+// Extracted from inline Layer 1.5 check for testability.
+describe("Test 12 — P0.2: authorityPermits() matrix", () => {
+  it("OBSERVE_ONLY permits OBSERVE/SUGGEST/SIMULATE", () => {
+    assert.equal(authorityPermits("OBSERVE_ONLY", "OBSERVE"), true);
+    assert.equal(authorityPermits("OBSERVE_ONLY", "SUGGEST"), true);
+    assert.equal(authorityPermits("OBSERVE_ONLY", "SIMULATE"), true);
+  });
+
+  it("OBSERVE_ONLY denies DRAFT/QUEUE/EXECUTE_REVERSIBLE/HIGH_IMPACT/IRREVERSIBLE", () => {
+    assert.equal(authorityPermits("OBSERVE_ONLY", "DRAFT"), false);
+    assert.equal(authorityPermits("OBSERVE_ONLY", "QUEUE"), false);
+    assert.equal(authorityPermits("OBSERVE_ONLY", "EXECUTE_REVERSIBLE"), false);
+    assert.equal(authorityPermits("OBSERVE_ONLY", "EXECUTE_HIGH_IMPACT"), false);
+    assert.equal(authorityPermits("OBSERVE_ONLY", "IRREVERSIBLE"), false);
+  });
+
+  it("LIMITED_MUTATE permits OBSERVE/SUGGEST/SIMULATE/DRAFT/QUEUE/EXECUTE_REVERSIBLE", () => {
+    for (const cls of ["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE"] as const) {
+      assert.equal(authorityPermits("LIMITED_MUTATE", cls), true, `LIMITED_MUTATE must permit ${cls}`);
+    }
+  });
+
+  it("LIMITED_MUTATE denies EXECUTE_HIGH_IMPACT and IRREVERSIBLE", () => {
+    assert.equal(authorityPermits("LIMITED_MUTATE", "EXECUTE_HIGH_IMPACT"), false);
+    assert.equal(authorityPermits("LIMITED_MUTATE", "IRREVERSIBLE"), false);
+  });
+
+  it("FULL permits all 7 action classes", () => {
+    for (const cls of [
+      "OBSERVE", "SUGGEST", "SIMULATE", "DRAFT",
+      "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE",
+    ] as const) {
+      assert.equal(authorityPermits("FULL", cls), true, `FULL must permit ${cls}`);
+    }
   });
 });
