@@ -30,17 +30,65 @@ concurrency:
 jobs:
 
   federation-check:
+
+  protocol-alignment:
+    runs-on: ubuntu-latest
+    needs: [federation-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Protocol alignment gate
+        run: bash AAA/scripts/check_protocol_alignment.sh
     name: 🗺️ Federation Check
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v7
       - name: Validate FEDERATION.md
+
+  protocol-alignment:
+    runs-on: ubuntu-latest
+    needs: [federation-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Protocol alignment gate
+        run: bash AAA/scripts/check_protocol_alignment.sh
         run: |
           test -f FEDERATION.md || (echo "❌ Missing FEDERATION.md" && exit 1)
+
+  protocol-alignment:
+    runs-on: ubuntu-latest
+    needs: [federation-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Protocol alignment gate
+        run: bash AAA/scripts/check_protocol_alignment.sh
           grep -q "role: EXECUTIVE" FEDERATION.md
+
+  protocol-alignment:
+    runs-on: ubuntu-latest
+    needs: [federation-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Protocol alignment gate
+        run: bash AAA/scripts/check_protocol_alignment.sh
           grep -q "layer: L2" FEDERATION.md
+
+  protocol-alignment:
+    runs-on: ubuntu-latest
+    needs: [federation-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Protocol alignment gate
+        run: bash AAA/scripts/check_protocol_alignment.sh
           echo "✅ A-FORGE FEDERATION.md valid — L2 EXECUTIVE"
+
+  protocol-alignment:
+    runs-on: ubuntu-latest
+    needs: [federation-check]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Protocol alignment gate
+        run: bash AAA/scripts/check_protocol_alignment.sh
       - name: No self-authorization
         run: |
           ! grep -r "self.*authorize|self.*seal|self.*judge" src/ --include="*.ts" 2>/dev/null || echo "⚠️ Self-auth patterns found — review"
