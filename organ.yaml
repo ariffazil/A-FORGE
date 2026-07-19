@@ -49,3 +49,4 @@ witness:
   required_for: [MUTATE, IRREVERSIBLE]
   min_external_confidence: 0.5
   identity_allowlist_ref: AAA/federation/authority-matrix.yaml
+# Federation CI test — 2026-07-19T18:18:52Z
