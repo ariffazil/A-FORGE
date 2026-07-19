@@ -33,6 +33,17 @@ import { validateSession } from "../../domain/session/sessionGate.js";
 
 const AFORGE_ROOT = process.cwd();
 
+// Read build commit hash for runtime drift detection
+let BUILD_COMMIT = "unknown";
+try {
+  const commitPath = path.join(AFORGE_ROOT, "dist", "build-commit.txt");
+  if (fs.existsSync(commitPath)) {
+    BUILD_COMMIT = fs.readFileSync(commitPath, "utf-8").trim();
+  }
+} catch {
+  // Non-critical — health will report "unknown"
+}
+
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;  // 30 min idle before auto-close
 const SESSION_CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // check every 5 min
 const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;    // hard max 24h regardless of activity
@@ -442,6 +453,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           service: "A-FORGE-MCP",
           status: "healthy",
           version: "0.1.0",
+          commit: BUILD_COMMIT,
           transport: "streamable-http",
           sessions: connected ? "active" : "pending",
           stateless_tools: STATELESS_TOOLS.size,

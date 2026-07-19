@@ -1,0 +1,140 @@
+# ═══════════════════════════════════════════════════════════════════
+# A-FORGE · Reusable Release Attestation
+# ═══════════════════════════════════════════════════════════════════
+# Phase 6 — Build-Once Attestation Pipeline
+#
+# Builds ONCE, never rebuilds. Generates SBOM, creates artifact
+# attestation, and publishes a machine-readable evidence envelope
+# linking commit, digest, SBOM hash, and signer workflow.
+#
+# Called by: 30-main-attest.yml + any organ needing release attestation.
+# Pinned by: FULL COMMIT SHA (never @main).
+# ═══════════════════════════════════════════════════════════════════
+
+name: "A-FORGE · Reusable Release Attestation"
+
+on:
+  workflow_call:
+    inputs:
+      organ:
+        description: 'Organ name (e.g. a-forge, arifos, geox)'
+        required: true
+        type: string
+      artifact_path:
+        description: 'Path to built artifact directory'
+        required: false
+        type: string
+        default: 'dist/'
+      build_command:
+        description: 'Build command to run once'
+        required: false
+        type: string
+        default: 'npm run build'
+
+jobs:
+  # ── BUILD ONCE — single build step, never rebuild ──────────────────
+  build:
+    name: "Build — ${{ inputs.organ }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      artifact_digest: ${{ steps.evidence.outputs.artifact_digest }}
+      sbom_hash: ${{ steps.evidence.outputs.sbom_hash }}
+      build_timestamp: ${{ steps.evidence.outputs.build_timestamp }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ═══ BUILD ONCE — the artifact that gets attested ═══
+      - name: Build
+        id: build_step
+        run: ${{ inputs.build_command }}
+
+      # ═══ SBOM — mandatory ═══
+      - name: Generate SBOM
+        id: sbom
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./
+          format: spdx-json
+          output-file: sbom-${{ inputs.organ }}.spdx.json
+          upload-artifact: false
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ inputs.organ }}-${{ github.sha }}
+          path: sbom-${{ inputs.organ }}.spdx.json
+          retention-days: 90
+
+      # ═══ ARTIFACT ATTESTATION ═══
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ inputs.artifact_path }}
+
+      - name: Attest SBOM
+        uses: actions/attest-sbom@v2
+        with:
+          subject-path: sbom-${{ inputs.organ }}.spdx.json
+
+      # ═══ EVIDENCE ENVELOPE — machine-readable JSON ═══
+      - name: Build evidence envelope
+        id: evidence
+        run: |
+          set -euo pipefail
+
+          ARTIFACT_DIGEST=$(find ${{ inputs.artifact_path }} -type f -exec sha256sum {} \; | sort | sha256sum | cut -d' ' -f1)
+          SBOM_HASH=$(sha256sum "sbom-${{ inputs.organ }}.spdx.json" | cut -d' ' -f1)
+          BUILD_TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+          cat > evidence-envelope.json << 'ENVEOF'
+          {
+            "schema_version": "1.0.0",
+            "phase": "6",
+            "organ": "${{ inputs.organ }}",
+            "commit_sha": "${{ github.sha }}",
+            "ref": "${{ github.ref }}",
+            "build_timestamp": "BUILD_TS_PLACEHOLDER",
+            "workflow": "${{ github.workflow }}",
+            "run_id": "${{ github.run_id }}",
+            "run_attempt": "${{ github.run_attempt }}",
+            "server_url": "${{ github.server_url }}",
+            "repository": "${{ github.repository }}",
+            "artifact_path": "${{ inputs.artifact_path }}",
+            "artifact_digest_sha256": "DIGEST_PLACEHOLDER",
+            "sbom_file": "sbom-${{ inputs.organ }}.spdx.json",
+            "sbom_hash_sha256": "SBOM_PLACEHOLDER",
+            "signer_workflow": "${{ github.workflow_ref }}",
+            "actor": "${{ github.actor }}",
+            "event_name": "${{ github.event_name }}"
+          }
+          ENVEOF
+
+          # Inject computed values (avoid nested interpolation issues)
+          sed -i "s/BUILD_TS_PLACEHOLDER/${BUILD_TS}/" evidence-envelope.json
+          sed -i "s/DIGEST_PLACEHOLDER/${ARTIFACT_DIGEST}/" evidence-envelope.json
+          sed -i "s/SBOM_PLACEHOLDER/${SBOM_HASH}/" evidence-envelope.json
+
+          cat evidence-envelope.json | python3 -m json.tool
+
+          echo "artifact_digest=${ARTIFACT_DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "sbom_hash=${SBOM_HASH}" >> "$GITHUB_OUTPUT"
+          echo "build_timestamp=${BUILD_TS}" >> "$GITHUB_OUTPUT"
+
+      # ═══ UPLOAD EVIDENCE ENVELOPE ═══
+      - name: Upload evidence envelope
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ inputs.organ }}-${{ github.sha }}
+          path: evidence-envelope.json
+          retention-days: 90
