@@ -997,12 +997,10 @@ server.tool(
         }
 	// Register the kernel-born session locally
         const session = registerSession(session_id, actor_id);
-        // ── DARWIN FIX 1b: bind actor_id to the policy gate's activeActor
-        // so subsequent tool calls that omit actor_id inherit the session's
-        // identity and pass L1_IDENTITY without a per-call re-auth. This
-        // is the actual key fix — pre-minting a lease alone is not enough
-        // because the policy gate checks actor_id at evaluate() time.
-        try { getMcpPolicyGate().setActor(actor_id); } catch {}
+        // P0.1: Bind verified session (per-request map, not global actor).
+        // P0.1: Bind verified session (replaces global activeActor).
+        // Each request carries session_id → verified session lookup.
+        try { getMcpPolicyGate().registerVerifiedSession(session_id, actor_id); } catch {}
         // ── DARWIN FIX 1a: pre-mint default lease as part of session envelope
         // Kills the L1_IDENTITY chicken-egg where subsequent mutate tools
         // (forge_filesystem.write, forge_vault.write, forge_shell) need a
