@@ -980,7 +980,8 @@ server.tool(
         // identity and pass L1_IDENTITY without a per-call re-auth. This
         // is the actual key fix — pre-minting a lease alone is not enough
         // because the policy gate checks actor_id at evaluate() time.
-        try { getMcpPolicyGate().setActor(actor_id); } catch {}
+        // ── P0.1 fix: register session-scoped identity, not process-global activeActor
+        try { getMcpPolicyGate().registerVerifiedSession(session_id, actor_id); } catch {}
         // ── DARWIN FIX 1a: pre-mint default lease as part of session envelope
         // Kills the L1_IDENTITY chicken-egg where subsequent mutate tools
         // (forge_filesystem.write, forge_vault.write, forge_shell) need a
