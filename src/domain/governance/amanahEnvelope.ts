@@ -162,7 +162,10 @@ export async function buildAAE(options: AAEV1Options): Promise<AAEV1> {
 
   const now = Date.now();
   const intent_hash = await computeIntentHash(intent);
-  const expiry = expiry_ms ?? now + 5 * 60 * 1000; // 5 min default
+  // P0.3 FIX (2026-07-19): expiry_ms is TTL (time-to-live, relative to now).
+  // Previously `expiry_ms ?? now + 5min` was operator-precedence trap —
+  // a non-undefined value was treated as absolute Unix ms, not TTL.
+  const expiry = now + (expiry_ms ?? 5 * 60 * 1000); // 5 min default TTL
 
   const envelope: Omit<AAEV1, "signature" | "intent_hash"> = {
     version: "AAE-v1",
