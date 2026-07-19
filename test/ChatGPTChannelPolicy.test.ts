@@ -34,13 +34,19 @@ describe("P0.7 — ChatGPT channel: tool allowlist", () => {
     assert.equal(v.verdict, "ALLOW");
   });
 
-  it("ALLOWs forge_probe (OBSERVE)", () => {
+  // forge_probe is intentionally HARD_DENIED by chatgpt channel code (line 295)
+  // because it exposes infrastructure topology. Test that the hard-deny wins.
+  it("DENIES forge_probe (infrastructure exposure — channel hard-deny)", () => {
     const v = gate.evaluate({
       actor_id: "chatgpt-arif",
       tool_name: "forge_probe",
       arguments: {},
     });
-    assert.equal(v.verdict, "ALLOW");
+    assert.equal(v.verdict, "DENY");
+    assert.ok(
+      v.reasons.some((r) => r.includes("L1_CHANNEL")),
+      `Expected L1_CHANNEL hard-deny, got: ${v.reasons.join(", ")}`,
+    );
   });
 
   it("ALLOWs forge_search (OBSERVE)", () => {
@@ -52,16 +58,17 @@ describe("P0.7 — ChatGPT channel: tool allowlist", () => {
     assert.equal(v.verdict, "ALLOW");
   });
 
-  it("DENIES forge_shell (MUTATE — not in allowlist)", () => {
+  it("DENIES forge_shell (MUTATE — P0.2 authority OR Layer 3)", () => {
     const v = gate.evaluate({
       actor_id: "chatgpt-arif",
       tool_name: "forge_shell",
       arguments: { command: "ls /tmp" },
     });
     assert.equal(v.verdict, "DENY");
+    // Either P0.2 authority enforcement (L1_AUTHORITY) OR Layer 3 (L3) is acceptable.
     assert.ok(
-      v.reasons.some((r) => r.includes("L3") || r.includes("not_in_allowlist") || r.includes("tool_not_in_explicit")),
-      `Expected Layer 3 denial, got: ${v.reasons.join(", ")}`,
+      v.reasons.some((r) => r.includes("L1_AUTHORITY") || r.includes("L3")),
+      `Expected authority OR tool deny, got: ${v.reasons.join(", ")}`,
     );
   });
 
@@ -83,7 +90,7 @@ describe("P0.7 — ChatGPT channel: tool allowlist", () => {
     assert.equal(v.verdict, "DENY");
   });
 
-  it("DENIES forge_vault (OBSERVE but not in chatgpt allowlist)", () => {
+  it("DENIES forge_vault (OBSERVE but channel-hardened deny)", () => {
     const v = gate.evaluate({
       actor_id: "chatgpt-arif",
       tool_name: "forge_vault",
@@ -192,18 +199,30 @@ describe("P0.7 — ChatGPT channel: channel principal cannot spoof sovereign", (
     assert.equal(v.principal.authenticated, false);
   });
 
-  it("chatgpt-arif cannot claim sovereign 'arif' identity", () => {
-    // If client supplies actor_id="arif" but doesn't match any policy resolution,
-    // they get OBSERVE_ONLY — cannot escalate.
+  it("client_supplied 'arif' (no verified session) is still OBSERVE_ONLY — cannot escalate via name", () => {
+    // Sovereign ARIF authority requires VERIFIED SESSION, not just actor_id="arif".
+    // An unverified client claiming actor_id="arif" gets OBSERVE_ONLY client_supplied.
+    // forge_shell is MUTATE → DENY at P0.2 authority enforcement.
     const v = gate.evaluate({
       actor_id: "arif",
       tool_name: "forge_shell",
       arguments: { command: "ls /tmp" },
     });
-    // 'arif' resolves to default:sovereign policy (allow_by_default: true)
-    // so forge_shell IS allowed by sovereign policy. But the chatgpt tunnel
-    // is supposed to use chatgpt-arif actor_id, not 'arif'. This test documents
-    // that the sovereign policy remains the fallback.
-    assert.equal(v.verdict, "ALLOW");
+    assert.equal(v.verdict, "DENY");
+    assert.ok(
+      v.reasons.some((r) => r.includes("L1_AUTHORITY") || r.includes("MUTATE")),
+      `Expected P0.2 authority deny, got: ${v.reasons.join(", ")}`,
+    );
+  });
+
+  it("verified ARIF session gets FULL authority (setActor)", () => {
+    gate.setActor("arif");
+    const v = gate.evaluate({
+      tool_name: "forge_health_check",
+      arguments: {},
+    });
+    assert.equal(v.principal.authority, "FULL");
+    assert.equal(v.principal.source, "verified_session");
+    assert.equal(v.principal.authenticated, true);
   });
 });

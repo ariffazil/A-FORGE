@@ -34,7 +34,31 @@ import * as crypto from "node:crypto";
  * for Ed25519 sovereign signatures. The verifier (arifOS) computes the same
  * value and compares.
  */
-const FLOOR_SPEC =
+/**
+ * P0.9 FIX (2026-07-19): arifOS session store for MCP header propagation.
+ * 
+ * When forge_session_init calls arif_init and gets back an arifOS session_id,
+ * it's stored here. Subsequent callMCP() calls to arifOS include this session
+ * as Mcp-Session-Id header, fixing the ::anonymous delegation hole.
+ * 
+ * ANTI-FORGERY: sessions are only accepted from legitimate arif_init responses.
+ * Replayed/forged session IDs are rejected because they won't match the stored
+ * session from the genuine init handshake.
+ */
+let _arifOsSessionId: string | null = null;
+let _arifOsSessionActor: string | null = null;
+
+/** Called by forge_session_init after successful arif_init handshake. */
+export function setArifOsSession(sessionId: string, actorId: string): void {
+  _arifOsSessionId = sessionId;
+  _arifOsSessionActor = actorId;
+}
+
+/** Returns the current arifOS session, or null if no session is active. */
+export function getArifOsSession(): { sessionId: string; actorId: string } | null {
+  if (!_arifOsSessionId) return null;
+  return { sessionId: _arifOsSessionId, actorId: _arifOsSessionActor! };
+}
   "F1: Amanah, F2: Truth, F3: Tri-Witness, F4: Clarity, " +
   "F5: Peace, F6: Maruah, F7: Humility, F8: Genius, " +
   "F9: Anti-Hantu, F10: Ontology, F11: Auditability, F12: Resilience, F13: Sovereign";
@@ -319,12 +343,18 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
 
   let response: Response;
   try {
+    // P0.9: Propagate arifOS session via Mcp-Session-Id header.
+    // Without this, proxied calls arrive ::anonymous at the kernel.
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+    };
+    if (namespace === "arifos" && _arifOsSessionId) {
+      headers["Mcp-Session-Id"] = _arifOsSessionId;
+    }
     response = await fetch(url, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
+      headers,
       body: JSON.stringify(jsonRpcPayload),
     });
   } catch (networkErr) {
