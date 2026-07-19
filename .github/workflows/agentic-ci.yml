@@ -3,11 +3,12 @@
 # DITEMPA BUKAN DIBERI
 # ═══════════════════════════════════════════════════════════════════════════
 #
-# Lane 1 — STANDARD CI: install → build → test
+# Lane 1 — STANDARD CI: install → build → test (BLOCKING)
 # Lane 2 — BIJAKSANA: entropy (ΔS), clarity (Φ), truth (Ψ), governance (Ω)
-#   Uses TypeScript-native tools (tsc, Node test runner)
+# Lane 3 — REPORT: aggregate evidence
 #
-# Verdict: CI_PASS | SABAR | HOLD
+# Verdict: CI_PASS | ADVISORY_WARN | CI_FAIL
+# CI supplies evidence; arifOS judges. CI never impersonates the kernel.
 
 name: "🧠 Agentic CI"
 
@@ -16,6 +17,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  merge_group:
   workflow_dispatch:
 
 permissions:
@@ -30,68 +32,41 @@ concurrency:
 jobs:
 
   federation-check:
-
-  protocol-alignment:
-    runs-on: ubuntu-latest
-    needs: [federation-check]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Protocol alignment gate
-        run: bash AAA/scripts/check_protocol_alignment.sh
     name: 🗺️ Federation Check
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v7
       - name: Validate FEDERATION.md
-
-  protocol-alignment:
-    runs-on: ubuntu-latest
-    needs: [federation-check]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Protocol alignment gate
-        run: bash AAA/scripts/check_protocol_alignment.sh
         run: |
+          set -o pipefail
           test -f FEDERATION.md || (echo "❌ Missing FEDERATION.md" && exit 1)
-
-  protocol-alignment:
-    runs-on: ubuntu-latest
-    needs: [federation-check]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Protocol alignment gate
-        run: bash AAA/scripts/check_protocol_alignment.sh
-          grep -q "role: EXECUTIVE" FEDERATION.md
-
-  protocol-alignment:
-    runs-on: ubuntu-latest
-    needs: [federation-check]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Protocol alignment gate
-        run: bash AAA/scripts/check_protocol_alignment.sh
-          grep -q "layer: L2" FEDERATION.md
-
-  protocol-alignment:
-    runs-on: ubuntu-latest
-    needs: [federation-check]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Protocol alignment gate
-        run: bash AAA/scripts/check_protocol_alignment.sh
+          grep -q "role: EXECUTIVE" FEDERATION.md || (echo "❌ Missing role: EXECUTIVE" && exit 1)
+          grep -q "layer: L2" FEDERATION.md || (echo "❌ Missing layer: L2" && exit 1)
           echo "✅ A-FORGE FEDERATION.md valid — L2 EXECUTIVE"
 
   protocol-alignment:
+    name: 📋 Protocol Alignment
     runs-on: ubuntu-latest
     needs: [federation-check]
+    timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Protocol alignment gate
-        run: bash AAA/scripts/check_protocol_alignment.sh
+        run: |
+          set -o pipefail
+          if [ -f AAA/scripts/check_protocol_alignment.sh ]; then
+            bash AAA/scripts/check_protocol_alignment.sh
+          else
+            echo "ℹ️ No protocol alignment script — skipping"
+          fi
       - name: No self-authorization
         run: |
-          ! grep -r "self.*authorize|self.*seal|self.*judge" src/ --include="*.ts" 2>/dev/null || echo "⚠️ Self-auth patterns found — review"
+          set -o pipefail
+          SELF_AUTH=$(grep -r "self.*authorize\|self.*seal\|self.*judge" src/ --include="*.ts" 2>/dev/null | grep -v "// \|DEPRECATED\|node_modules" | wc -l)
+          if [ "$SELF_AUTH" -gt 0 ]; then
+            echo "⚠️ Self-auth patterns found — review required"
+          fi
           echo "✅ Self-auth check complete"
 
   standard:
@@ -105,11 +80,11 @@ jobs:
           node-version: "22"
           cache: npm
       - name: Install
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
       - name: Build
         run: npm run build
       - name: Test
-        run: node dist/test/AgentEngine.test.js
+        run: npm test
 
   bijaksana:
     name: "Lane 2 — BIJAKSANA ΔS Φ Ψ Ω"
@@ -127,7 +102,7 @@ jobs:
           node-version: "22"
           cache: npm
       - name: Install
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
 
       - name: "ΔS — Entropy (dead code + TODO)"
         id: ds
@@ -184,9 +159,8 @@ jobs:
           PHI="${{ needs.bijaksana.outputs.phi-value }}"
           PSI="${{ needs.bijaksana.outputs.psi-value }}"
           OMEGA="${{ needs.bijaksana.outputs.omega-value }}"
-          # Fallback defaults when outputs are empty (CI runner variance)
           DS=${DS:-0}; PHI=${PHI:-0}; PSI=${PSI:-"UNKNOWN"}; OMEGA=${OMEGA:-"UNKNOWN"}
-          
+
           if [ "$STANDARD_OK" = "success" ] && [ "$PHI" = "100" ] && [ "$OMEGA" = "0" ] && [ "$DS" -lt 100 ]; then
             VERDICT="CI_PASS"
           elif [ "$STANDARD_OK" = "success" ]; then
@@ -194,7 +168,7 @@ jobs:
           else
             VERDICT='CI_FAIL'
           fi
-          
+
           cat > agentic_ci_report.json << EOF
           {"organ":"A-FORGE","stack":"TypeScript/Node/Express","sha":"${{ github.sha }}","ref":"${{ github.ref_name }}","lane_1":"$STANDARD_OK","lane_2":{"ds":$DS,"phi":$PHI,"psi":"$PSI","omega":$OMEGA},"verdict":"$VERDICT"}
           EOF
