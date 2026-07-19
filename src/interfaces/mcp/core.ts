@@ -147,6 +147,20 @@ const origRegisterTool = server.registerTool.bind(server);
         description: enrichActuatorDescription(name, config.description),
       };
     }
+    // ── MCP annotations: readOnlyHint / destructiveHint (2026-07-19) ──
+    // Auto-injected from actionClassifier. ChatGPT uses these to classify
+    // tools as safe (auto-execute) vs destructive (requires confirmation).
+    if (!config.annotations) {
+      const actionClass = classifyTool(name);
+      config = {
+        ...config,
+        annotations: {
+          readOnlyHint: actionClass === "OBSERVE" || actionClass === "SUGGEST",
+          destructiveHint: actionClass === "IRREVERSIBLE" || actionClass === "EXECUTE_HIGH_IMPACT",
+          idempotentHint: actionClass === "OBSERVE",
+        },
+      };
+    }
   }
   return origRegisterTool(name, config, cb);
 };
@@ -515,9 +529,11 @@ const _originalTool = server.tool.bind(server);
   handler: (args: any, ctx: any) => Promise<any>,
 ) {
   const gatedSchema = extendZodSchema(schema);
+  const baseActionClass = classifyTool(name); // registration-time classification for annotations
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
-    const actionClass = classifyTool(name);
+    const toolMode = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
+    const actionClass = classifyTool(name, toolMode); // runtime classification with mode
 
     // ── SCT federation gate (2026-07-17) ────────────────────────────────
     // Present token → verify fail-closed. MUTATE/ATOMIC may require SCT
@@ -600,7 +616,13 @@ const _originalTool = server.tool.bind(server);
   };
   // Federation alignment: ACTUATOR header on server.tool() path too
   const actuatorDesc = enrichActuatorDescription(name, description);
-  return _originalTool(name, actuatorDesc, gatedSchema, wrappedHandler);
+  // ── MCP annotations: readOnlyHint / destructiveHint (2026-07-19) ──
+  const annotations = {
+    readOnlyHint: baseActionClass === "OBSERVE" || baseActionClass === "SUGGEST",
+    destructiveHint: baseActionClass === "IRREVERSIBLE" || baseActionClass === "EXECUTE_HIGH_IMPACT",
+    idempotentHint: baseActionClass === "OBSERVE",
+  };
+  return _originalTool(name, actuatorDesc, gatedSchema, annotations, wrappedHandler);
 };
 // Also wrap server.registerTool (used by some tool registrations)
 const _originalRegisterTool = server.registerTool.bind(server);

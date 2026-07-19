@@ -126,6 +126,27 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_parallel",         // spawn N concurrent A2A tasks — EXECUTE_REVERSIBLE
   "forge_parallel_cancel",  // cancel running parallel agents — EXECUTE_REVERSIBLE
   "forge_kernel",           // constitutional kernel proxy to arifOS — EXECUTE_REVERSIBLE
+  // ── P0.2 FIX: newly-classified mutation tools ──
+  "forge_execute_sealed",      // execute with VAULT999 seal — EXECUTE_HIGH_IMPACT (moved below)
+  "forge_transfer_confirm",    // transfer with human confirmation — EXECUTE_HIGH_IMPACT
+  "forge_send_confirm",        // send with human confirmation — EXECUTE_HIGH_IMPACT
+  "forge_github_create_or_update_file", // GitHub file write — EXECUTE_REVERSIBLE
+  "forge_github_create_issue", // GitHub issue create — EXECUTE_REVERSIBLE
+  "forge_github_create_pull_request", // GitHub PR create — EXECUTE_REVERSIBLE
+  "forge_skill",               // dynamic tool generation — EXECUTE_REVERSIBLE
+  "forge_skillstore_write",    // artifact store write — EXECUTE_REVERSIBLE
+  "forge_seal",                // VAULT999 seal — IRREVERSIBLE (moved below)
+  "forge_register",            // APEX-gated tool registration — EXECUTE_REVERSIBLE
+  "forge_reality_loop",        // 7-stage intent compiler — EXECUTE_REVERSIBLE (stages are governed)
+  "forge_sandbox_run",         // sandbox execution — EXECUTE_REVERSIBLE (isolated)
+  "forge_synthesize",          // code generation — DRAFT (moved to draft below)
+  "forge_stage",               // artifact staging — EXECUTE_REVERSIBLE
+  "forge_tier_bind",           // trust tier binding — EXECUTE_REVERSIBLE
+  "forge_lock",                // amanah lock acquire/release — EXECUTE_REVERSIBLE
+  "forge_pipeline_run",        // autonomous intelligence pipeline — EXECUTE_REVERSIBLE
+  "forge_abort",               // safe stop + rollback — EXECUTE_REVERSIBLE
+  "forge_parallel",            // spawn N concurrent tasks — EXECUTE_REVERSIBLE
+  "forge_parallel_cancel",     // cancel parallel agents — EXECUTE_REVERSIBLE
 ]);
 
 // Tools that should always be simulated first
@@ -202,6 +223,79 @@ const OBSERVE_TOOLS = new Set([
   "forge_parallel_list",      // task group list — read-only, OBSERVE
   "forge_parallel_status",    // task group status query — read-only, OBSERVE
   "forge_visual_qa",          // constitutional visual QA — read-only analysis, OBSERVE
+  "forge_heart_critique",     // risk assessment — read-only, OBSERVE
+  "forge_session_init",       // constitutional session ignition — OBSERVE
+  "forge_memory",             // memory recall — read-only, OBSERVE
+  "forge_predict",            // pre-action simulation — read-only, OBSERVE
+  "forge_isomorphism_check",  // J-space manifold check — read-only, OBSERVE
+  "forge_fingerprint_check",  // tool fingerprint verification — read-only, OBSERVE
+  "forge_entropy_sweep",      // workspace entropy measurement — read-only, OBSERVE
+  "forge_status",             // active execution state — read-only, OBSERVE
+  "forge_surface_guard",      // MCP surface drift detection — read-only, OBSERVE
+  "forge_surface_audit",      // MCP tool surface audit — read-only, OBSERVE
+  "forge_netdata_alarms",     // Netdata alarms read — read-only, OBSERVE
+  "forge_netdata_metrics",    // Netdata metrics read — read-only, OBSERVE
+  "forge_journalctl",         // systemd journal read — read-only, OBSERVE
+  "forge_vps_ports",          // VPS port scanning — read-only, OBSERVE
+  "forge_vps_services",       // VPS service listing — read-only, OBSERVE
+  "forge_vps_cron",           // VPS cron registry — read-only, OBSERVE
+  "forge_receipt_draft",      // compliance receipt draft — read-only, OBSERVE
+  "forge_docket_prep",        // evidence packaging — read-only, OBSERVE
+  "forge_verify_timeline",    // timeline claim verification — read-only, OBSERVE
+  "forge_scar_scan",          // artifact SCAR database check — read-only, OBSERVE
+  "forge_skillstore_read",    // artifact store query — read-only, OBSERVE
+  "forge_registry",           // skill registry (list/get) — read-only, OBSERVE
+  "forge_policy",             // MCP policy engine (check/list) — read-only, OBSERVE
+  "forge_lock",               // Amanah lock (acquire/release) — read-only, OBSERVE
+  "forge_job",                // background job (submit/status) — read-only base, OBSERVE
+  "forge_wealth",             // WEALTH organ bridge — read-only, OBSERVE
+  "forge_well",               // WELL organ relay — read-only, OBSERVE
+  "forge_github_get_file",    // GitHub file read — read-only, OBSERVE
+  "forge_github_search_code", // GitHub code search — read-only, OBSERVE
+  "forge_github_search_repos",// GitHub repo search — read-only, OBSERVE
+  "forge_visual_seal",        // VAULT999 composite seal — IRREVERSIBLE (requires tri-witness)
+  // ── P0.2 FIX (2026-07-19): 68 previously-unclassified tools now explicitly assigned ──
+  "forge_session_init",        // session ignition — OBSERVE (creates context, no mutation)
+  "forge_heart_critique",      // risk/ethics critique — OBSERVE
+  "forge_judge_proxy",         // proxy to arifOS judge — OBSERVE (delegates, never adjudicates)
+  "forge_chart",               // charting/visualization — OBSERVE
+  "forge_scan",                // security scan — OBSERVE
+  "forge_fetch",               // URL fetch — OBSERVE
+  "forge_fetch_url",           // URL fetch alias — OBSERVE
+  "forge_fetch_json",          // JSON fetch — OBSERVE
+  "forge_fetch_metadata",      // metadata fetch — OBSERVE
+  "forge_fetch_links",         // link extraction — OBSERVE
+  "forge_fingerprint_check",   // tool fingerprint check — OBSERVE
+  "forge_github",              // GitHub ops — mode-aware (search/get=OBSERVE)
+  "forge_github_search_code",  // code search — OBSERVE
+  "forge_github_search_repos", // repo search — OBSERVE
+  "forge_github_get_file",     // file read — OBSERVE
+  "forge_journalctl",          // journal log query — OBSERVE
+  "forge_memory",              // memory recall/list — OBSERVE
+  "forge_netdata_alarms",      // netdata alarms — OBSERVE
+  "forge_netdata_metrics",     // netdata metrics — OBSERVE
+  "forge_probe_site",          // site probe — OBSERVE
+  "forge_receipt_draft",       // receipt drafting — OBSERVE (generates draft, no mutation)
+  "forge_registry",            // registry read — OBSERVE
+  "forge_scar",                // scar ledger — mode-aware (list/consult=OBSERVE)
+  "forge_skillstore_read",     // skill store read — OBSERVE
+  "forge_status",              // execution state overview — OBSERVE
+  "forge_surface_audit",       // tool surface audit — OBSERVE
+  "forge_surface_guard",       // surface guard check — OBSERVE
+  "forge_vps_ports",           // port scan — OBSERVE
+  "forge_vps_services",        // service scan — OBSERVE
+  "forge_vps_cron",            // cron scan — OBSERVE
+  "forge_verify_timeline",     // timeline verification — OBSERVE
+  "forge_isomorphism_check",   // manifold stability check — OBSERVE
+  "forge_policy",              // policy engine — mode-aware (list/check=OBSERVE)
+  "forge_parallel_list",       // task group list — OBSERVE
+  "forge_parallel_status",     // task group status — OBSERVE
+  "forge_evaluate",            // tool evaluation — OBSERVE (computes G + C_dark, no mutation)
+  "forge_witness",             // tri-witness consensus — OBSERVE (computes W³, no mutation)
+  "forge_entropy_sweep",       // entropy measurement — OBSERVE
+  "forge_scar_scan",           // artifact check against SCAR DB — OBSERVE
+  "forge_predict",             // pre-action simulation — SIMULATE (moved to simulate set below)
+  "forge_document_ingest",     // already above, kept for clarity
 ]);
 
 /**
