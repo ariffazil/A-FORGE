@@ -1,7 +1,7 @@
 <!-- SOT-MANIFEST
-federation_release: v2026.07.17-ZEN-CONVERGENCE
-last_verified: 2026-07-18T16:00Z
-live_commit: c128903
+federation_release: v2026.07.19-ZEN-CONVERGENCE
+last_verified: 2026-07-19T17:00Z
+live_commit: c16d0b5
 sense_port: 7071 (healthy)
 mcp_port: 7072 (healthy, 52 stateless tools)
 authority_ceiling: 777_FORGE (execution only — never adjudicate)
