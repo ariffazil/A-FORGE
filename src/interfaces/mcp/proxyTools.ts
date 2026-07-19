@@ -745,7 +745,7 @@ export function registerMemoryTools(server: McpServer): void {
   }, async ({ query, limit }) => {
     try {
       const safeLimit = Math.min(limit, 50);
-      const result = execFileSync("bash", ["-c", `ls -t /root/arifOS/VAULT999/*.jsonl 2>/dev/null | head -${safeLimit}`], { encoding: "utf-8", timeout: 5000 });
+      const result = execSync(`ls -t /root/arifOS/VAULT999/*.jsonl 2>/dev/null | head -${safeLimit}`, { encoding: "utf-8", timeout: 5000 });
       const files = result.split("\n").filter(Boolean);
       const entries: Array<Record<string, unknown>> = [];
       const queryLower = query.toLowerCase();
