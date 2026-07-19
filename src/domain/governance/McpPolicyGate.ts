@@ -365,7 +365,18 @@ export class McpPolicyGate {
    * client_supplied (unverified), NOT as transport_fallback (trusted).
    */
   private derivePrincipal(req: ToolCallRequest): Principal {
-    // Case 1: activeActor is set — verified session
+    // Case 1: Explicitly DENIED identities (always rejected, even if activeActor set)
+    if (req.actor_id === "anonymous" || req.actor_id === "" || req.actor_id === "stateless-client") {
+      return {
+        actorId: req.actor_id || "(empty)",
+        displayLabel: req.actor_id || "(empty)",
+        source: "client_supplied",
+        authenticated: false,
+        authority: "OBSERVE_ONLY",
+      };
+    }
+
+    // Case 2: activeActor is set — verified session
     if (this.activeActor) {
       return {
         actorId: this.activeActor,
@@ -376,8 +387,8 @@ export class McpPolicyGate {
       };
     }
 
-    // Case 2: Client explicitly supplied an actor_id
-    if (req.actor_id !== undefined && req.actor_id !== null) {
+    // Case 3: Client explicitly supplied a valid-looking actor_id
+    if (req.actor_id !== undefined && req.actor_id !== null && req.actor_id !== "") {
       return {
         actorId: req.actor_id,
         displayLabel: req.actor_id,
@@ -387,7 +398,7 @@ export class McpPolicyGate {
       };
     }
 
-    // Case 3: Transport fallback — no identity provided
+    // Case 4: Transport fallback — no identity provided
     return {
       actorId: null,
       displayLabel: "stateless-client",
