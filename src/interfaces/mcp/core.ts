@@ -999,6 +999,12 @@ server.tool(
         }
 	// Register the kernel-born session locally
         const session = registerSession(session_id, actor_id);
+        // P0.9: Store arifOS session for Mcp-Session-Id propagation on
+        // subsequent callMCP calls. Fixes ::anonymous delegation hole.
+        try {
+          const { setArifOsSession } = await import("./client.js");
+          setArifOsSession(session_id, actor_id);
+        } catch {}
         // P0.4: Wire kernel verifier so external callers can cryptographically
         // verify SEAL-* sessions. Without this, remote channels (ChatGPT)
         // cannot validate sessions — they get SESSION_UNKNOWN on every call.

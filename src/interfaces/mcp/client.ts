@@ -59,6 +59,7 @@ export function getArifOsSession(): { sessionId: string; actorId: string } | nul
   if (!_arifOsSessionId) return null;
   return { sessionId: _arifOsSessionId, actorId: _arifOsSessionActor! };
 }
+const FLOOR_SPEC =
   "F1: Amanah, F2: Truth, F3: Tri-Witness, F4: Clarity, " +
   "F5: Peace, F6: Maruah, F7: Humility, F8: Genius, " +
   "F9: Anti-Hantu, F10: Ontology, F11: Auditability, F12: Resilience, F13: Sovereign";
