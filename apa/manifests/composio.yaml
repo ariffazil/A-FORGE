@@ -1,0 +1,259 @@
+# APA Connector Manifest: Composio
+# APA v1.0 — Autonomous Protocol for Applications
+# Composio is an APA external-capability substrate inside A-FORGE.
+# ACT governs its movement. Kernel governs permission. ART governs intention.
+# AAA governs visibility. VAULT999 governs memory.
+#
+# DITEMPA BUKAN DIBERI — Forged, Not Given.
+
+connector:
+  name: composio
+  type: external_capability_provider
+  owner: APA
+  runtime_owner: A-FORGE
+  authority_owner: arifOS
+  executor: ACT
+  constitutional_authority: false
+
+# ── Session ────────────────────────────────────
+
+session:
+  require_kernel_session: true
+  require_stable_actor_mapping: true
+  sandbox_enabled: false
+  dynamic_toolkit_discovery: false
+  require_explicit_account_selection: true
+  mcp_server_id: "6e892839-a047-4611-8b1e-eea39b81a1c6"
+  proxy_path: "/root/.config/mcp/composio-proxy.mjs"
+
+# ── Identity Binding ───────────────────────────
+
+identity:
+  mapping_method: hmac_sha256
+  input_components:
+    - arifos_sovereign_id
+    - environment
+    - tenant
+  federation_secret_env: APA_IDENTITY_SECRET
+  composio_user_id: arif-federation
+  mapping_version: 1
+  forbid:
+    - raw_sovereign_id_as_user_id
+    - cross_organ_identity_mixing
+    - display_name_based_routing
+
+# ── Account Selection ──────────────────────────
+
+accounts:
+  require_explicit_alias: true
+  forbid_implicit_selection: true
+  forbid_latest_account_default: true
+  known_aliases:
+    primary-gmail: "arif-federation primary Gmail"
+    primary-github: "arif-federation primary GitHub"
+    primary-reddit: "u/isoman (Reddit)"
+
+# ── Execution (ACT-governed) ───────────────────
+
+execution:
+  require_lease_for_mutation: true
+  require_idempotency_key: true
+  require_preflight: true
+  require_verification: true
+  require_vault_receipt: true
+  fail_closed: true
+
+  phases:
+    - DRY_RUN    # Validate schema, resolve provider tool
+    - SIMULATE   # Preview effect without provider call
+    - PREFLIGHT  # Check lease, actor, account, scopes, payload hash
+    - EXECUTE    # Single provider call
+    - VERIFY     # Independent state read
+    - ROLLBACK   # Compensation if possible
+    - RECEIPT    # Normalized to VAULT999
+
+# ── Capability Bands ───────────────────────────
+
+bands:
+  observe:
+    description: "Read-only observation. Autonomous under authenticated session."
+    lease_required: false
+    examples:
+      - gmail.search
+      - gmail.read
+      - github.list_issues
+      - github.read_pull_request
+      - calendar.list_events
+      - reddit.browse
+
+  mutate:
+    description: "Reversible mutation. Lease required. Verification required."
+    lease_required: true
+    ttl_default: 600
+    examples:
+      - gmail.create_draft
+      - github.create_draft_issue
+      - calendar.create_tentative_event
+      - reddit.create_post
+      - reddit.post_comment
+
+  external_consequence:
+    description: "External side effect. Short lease. Payload preview. Human ACK."
+    lease_required: true
+    ttl_default: 120
+    require_ack: true
+    examples:
+      - gmail.send
+      - github.merge_pull_request
+      - calendar.invite_attendees
+      - reddit.delete_post
+
+# ── Forbidden (hard-blocked) ───────────────────
+
+forbidden:
+  - unrestricted_toolkit_catalog
+  - remote_bash
+  - remote_workbench
+  - composio_self_authorization
+  - implicit_account_selection
+  - execution_without_kernel_lease
+
+# ── Receipt Normalization ──────────────────────
+
+receipt:
+  required_fields:
+    - connector
+    - provider_toolkit
+    - provider_tool
+    - canonical_capability
+    - actor_id
+    - session_id
+    - lease_id
+    - account_alias
+    - verb_class
+    - blast_radius
+    - payload_hash
+    - idempotency_key
+    - provider_execution_id
+    - provider_result_hash
+    - verification_state
+    - phases_completed
+
+# ── Capability Mapping (canonical → provider) ──
+
+capabilities:
+
+  # Email
+  communication.email.read:
+    provider: composio
+    toolkit: gmail
+    tool: GMAIL_FETCH_EMAILS
+    account_alias: primary-gmail
+    band: observe
+
+  communication.email.draft:
+    provider: composio
+    toolkit: gmail
+    tool: GMAIL_CREATE_EMAIL_DRAFT
+    account_alias: primary-gmail
+    band: mutate
+
+  communication.email.send:
+    provider: composio
+    toolkit: gmail
+    tool: GMAIL_SEND_EMAIL
+    account_alias: primary-gmail
+    band: external_consequence
+
+  # GitHub
+  code.platform.issue.read:
+    provider: composio
+    toolkit: github
+    tool: GITHUB_LIST_ISSUES
+    account_alias: primary-github
+    band: observe
+
+  code.platform.issue.create:
+    provider: composio
+    toolkit: github
+    tool: GITHUB_CREATE_ISSUE
+    account_alias: primary-github
+    band: mutate
+
+  code.platform.pr.read:
+    provider: composio
+    toolkit: github
+    tool: GITHUB_LIST_PULL_REQUESTS
+    account_alias: primary-github
+    band: observe
+
+  code.platform.pr.merge:
+    provider: composio
+    toolkit: github
+    tool: GITHUB_MERGE_PULL_REQUEST
+    account_alias: primary-github
+    band: external_consequence
+
+  # Reddit
+  social.reddit.browse:
+    provider: composio
+    toolkit: reddit
+    tool: REDDIT_RETRIEVE_REDDIT_POST
+    account_alias: primary-reddit
+    band: observe
+
+  social.reddit.search:
+    provider: composio
+    toolkit: reddit
+    tool: REDDIT_SEARCH_ACROSS_SUBREDDITS
+    account_alias: primary-reddit
+    band: observe
+
+  social.reddit.post:
+    provider: composio
+    toolkit: reddit
+    tool: REDDIT_CREATE_REDDIT_POST
+    account_alias: primary-reddit
+    band: mutate
+
+  social.reddit.comment:
+    provider: composio
+    toolkit: reddit
+    tool: REDDIT_POST_REDDIT_COMMENT
+    account_alias: primary-reddit
+    band: mutate
+
+  social.reddit.delete:
+    provider: composio
+    toolkit: reddit
+    tool: REDDIT_DELETE_REDDIT_POST
+    account_alias: primary-reddit
+    band: external_consequence
+
+  # Calendar
+  productivity.calendar.read:
+    provider: composio
+    toolkit: calendar
+    tool: GOOGLECALENDAR_LIST_EVENTS
+    account_alias: primary-gmail
+    band: observe
+
+  productivity.calendar.create:
+    provider: composio
+    toolkit: calendar
+    tool: GOOGLECALENDAR_CREATE_EVENT
+    account_alias: primary-gmail
+    band: mutate
+
+# ── Replaceability ──────────────────────────────
+# Composio is replaceable. The constitution governs the capability,
+# not a vendor tool name.
+
+replaceability:
+  communication.email.send:
+    - sovereign_smtp_adapter
+    - google_gmail_api_adapter
+    - composio_gmail_adapter
+  social.reddit.browse:
+    - reddit_api_adapter
+    - composio_reddit_adapter

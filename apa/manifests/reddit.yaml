@@ -1,0 +1,176 @@
+# APA Manifest: Reddit (Composio-Managed OAuth2)
+# APA v1.0 — Autonomous Protocol for Applications
+# 22 Reddit tools routed through Composio MCP proxy → Reddit API
+# MCP Server: 6e892839-a047-4611-8b1e-eea39b81a1c6
+# Auth: Composio-managed OAuth2
+
+connector:
+  name: reddit
+  mcp_tool: composio
+  version: "1.0.0"
+  domain: social.reddit
+  protocol: oauth2
+  provider: composio.dev
+  mcp_server_id: "6e892839-a047-4611-8b1e-eea39b81a1c6"
+  auth:
+    method: oauth2_composio_managed
+    inject: never_in_llm_context
+
+# ── Verb Classification — 22 tools ─────────────────
+
+verbs:
+
+  # ═══ OBSERVE (14 tools) — no lease required ═══
+  - name: REDDIT_GET
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_GET_CONTROVERSIAL_POSTS
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_GET_ME_PREFS
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_GET_RANDOM
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_GET_REDDIT_USER_ABOUT
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_GET_R_TOP
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_GET_SCOPES
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_GET_SUBREDDITS_SEARCH
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_GET_SUBREDDIT_RULES
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_GET_USERNAME_AVAILABLE
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_GET_USER_FLAIR
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_LIST_SUBREDDIT_POST_FLAIRS
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_RETRIEVE_POST_COMMENTS
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_RETRIEVE_SPECIFIC_COMMENT
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  # ═══ MUTATE (5 tools) — lease reddit.write required ═══
+  - name: REDDIT_RETRIEVE_REDDIT_POST
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_SEARCH_ACROSS_SUBREDDITS
+    class: OBSERVE
+    blast_radius: LOW
+    scope: reddit.read
+
+  - name: REDDIT_CREATE_REDDIT_POST
+    class: MUTATE
+    blast_radius: MEDIUM
+    reversible: true
+    scope: reddit.write
+
+  - name: REDDIT_POST_REDDIT_COMMENT
+    class: MUTATE
+    blast_radius: MEDIUM
+    reversible: true
+    scope: reddit.write
+
+  - name: REDDIT_EDIT_REDDIT_COMMENT_OR_POST
+    class: MUTATE
+    blast_radius: MEDIUM
+    reversible: true
+    scope: reddit.write
+
+  - name: REDDIT_TOGGLE_INBOX_REPLIES
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    scope: reddit.write
+
+  # ═══ IRREVERSIBLE (2 tools) — F13 ACK required ═══
+  - name: REDDIT_DELETE_REDDIT_POST
+    class: IRREVERSIBLE
+    blast_radius: HIGH
+    reversible: false
+    scope: reddit.veto
+    requires_ack: true
+
+  - name: REDDIT_DELETE_REDDIT_COMMENT
+    class: IRREVERSIBLE
+    blast_radius: HIGH
+    reversible: false
+    scope: reddit.veto
+    requires_ack: true
+
+# ── Lease Scopes ─────────────────────────────────
+
+leases:
+  - scope: reddit.read
+    verbs: [all OBSERVE-class verbs]
+    ttl_default: 3600
+    note: "OBSERVE only — no lease required for sovereign"
+
+  - scope: reddit.write
+    verbs: [REDDIT_CREATE_REDDIT_POST, REDDIT_POST_REDDIT_COMMENT, REDDIT_EDIT_REDDIT_COMMENT_OR_POST, REDDIT_TOGGLE_INBOX_REPLIES]
+    ttl_default: 600
+    note: "MUTATE — lease required. Reversible operations."
+
+  - scope: reddit.veto
+    verbs: [REDDIT_DELETE_REDDIT_POST, REDDIT_DELETE_REDDIT_COMMENT]
+    ttl_default: 120
+    note: "IRREVERSIBLE — short TTL. ACK + F13 required."
+
+# ── F1-F13 Gate Matrix ───────────────────────────
+
+gates:
+  pre_observe: [F2_TRUTH, F4_CLARITY, F12_INJECTION]
+  pre_mutate: [F1_AMANAH, F2_TRUTH, F8_GENIUS, F13_SOVEREIGN]
+  pre_irreversible: [F1_AMANAH, F3_WITNESS, F13_SOVEREIGN]
+  post_execute: [F11_AUDIT, F4_CLARITY]
+
+# ── Architecture ─────────────────────────────────
+
+routing:
+  path: "ART → KERNEL → APA (this manifest) → composio-proxy.mjs → Composio MCP → Reddit API"
+  proxy: "/root/.config/mcp/composio-proxy.mjs"
+  server_id: "6e892839-a047-4611-8b1e-eea39b81a1c6"
+  opencode_mcp: "composio (type=local, node composio-proxy.mjs)"

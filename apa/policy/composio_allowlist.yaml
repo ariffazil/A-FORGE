@@ -1,0 +1,131 @@
+# APA Composio Allowlist — 3-Band Tool Exposure Policy
+# DITEMPA BUKAN DIBERI
+#
+# This policy governs which Composio tools are exposed to agents,
+# organized into three capability bands:
+#   Band 1 — OBSERVE (read-only, autonomous)
+#   Band 2 — MUTATE (reversible, lease-gated)
+#   Band 3 — EXTERNAL (consequential, ACK-gated)
+#
+# Any tool NOT in this allowlist is HARD-BLOCKED (fail-closed).
+
+version: "1.0.0"
+last_updated: 2026-07-19
+server_id: "6e892839-a047-4611-8b1e-eea39b81a1c6"
+
+# ═══════════════════════════════════════════════════
+# Band 1 — OBSERVE
+# Autonomous under authenticated read session.
+# No lease required. No ACK required.
+# ═══════════════════════════════════════════════════
+
+band_observe:
+  
+  gmail:
+    - GMAIL_FETCH_EMAILS
+    - GMAIL_FETCH_MESSAGE_BY_MESSAGE_ID
+    - GMAIL_LIST_DRAFTS
+    - GMAIL_SEARCH_PEOPLE
+    - GMAIL_GET_ATTACHMENT
+
+  github:
+    - GITHUB_LIST_ISSUES
+    - GITHUB_LIST_PULL_REQUESTS
+    - GITHUB_GET_ISSUE
+    - GITHUB_GET_PULL_REQUEST
+    - GITHUB_GET_PULL_REQUEST_FILES
+    - GITHUB_GET_PULL_REQUEST_COMMENTS
+    - GITHUB_SEARCH_CODE
+    - GITHUB_SEARCH_REPOSITORIES
+    - GITHUB_SEARCH_ISSUES
+
+  reddit:
+    - REDDIT_GET
+    - REDDIT_GET_CONTROVERSIAL_POSTS
+    - REDDIT_GET_ME_PREFS
+    - REDDIT_GET_RANDOM
+    - REDDIT_GET_REDDIT_USER_ABOUT
+    - REDDIT_GET_R_TOP
+    - REDDIT_GET_SCOPES
+    - REDDIT_GET_SUBREDDITS_SEARCH
+    - REDDIT_GET_SUBREDDIT_RULES
+    - REDDIT_GET_USERNAME_AVAILABLE
+    - REDDIT_GET_USER_FLAIR
+    - REDDIT_LIST_SUBREDDIT_POST_FLAIRS
+    - REDDIT_RETRIEVE_POST_COMMENTS
+    - REDDIT_RETRIEVE_SPECIFIC_COMMENT
+    - REDDIT_RETRIEVE_REDDIT_POST
+    - REDDIT_SEARCH_ACROSS_SUBREDDITS
+
+  calendar:
+    - GOOGLECALENDAR_LIST_EVENTS
+    - GOOGLECALENDAR_GET_EVENT
+
+# ═══════════════════════════════════════════════════
+# Band 2 — MUTATE
+# Requires lease (600s TTL). Reversible operations.
+# Verification required after execution.
+# ═══════════════════════════════════════════════════
+
+band_mutate:
+  
+  gmail:
+    - GMAIL_CREATE_EMAIL_DRAFT
+    - GMAIL_BATCH_MODIFY_MESSAGES
+    - GMAIL_MOVE_TO_TRASH
+    - GMAIL_PATCH_LABEL
+
+  github:
+    - GITHUB_CREATE_ISSUE
+    - GITHUB_UPDATE_ISSUE
+    - GITHUB_CREATE_PULL_REQUEST
+    - GITHUB_ADD_ISSUE_COMMENT
+
+  reddit:
+    - REDDIT_CREATE_REDDIT_POST
+    - REDDIT_POST_REDDIT_COMMENT
+    - REDDIT_EDIT_REDDIT_COMMENT_OR_POST
+    - REDDIT_TOGGLE_INBOX_REPLIES
+
+  calendar:
+    - GOOGLECALENDAR_CREATE_EVENT
+    - GOOGLECALENDAR_UPDATE_EVENT
+
+# ═══════════════════════════════════════════════════
+# Band 3 — EXTERNAL CONSEQUENCE
+# Short lease (120s TTL). Payload preview required.
+# Human ACK required. Irreversible.
+# ═══════════════════════════════════════════════════
+
+band_external:
+  
+  gmail:
+    - GMAIL_SEND_EMAIL
+    - GMAIL_SEND_DRAFT
+    - GMAIL_DELETE_DRAFT
+    - GMAIL_DELETE_MESSAGE
+
+  github:
+    - GITHUB_MERGE_PULL_REQUEST
+    - GITHUB_CREATE_OR_UPDATE_FILE
+    - GITHUB_PUSH_FILES
+
+  reddit:
+    - REDDIT_DELETE_REDDIT_POST
+    - REDDIT_DELETE_REDDIT_COMMENT
+
+  calendar:
+    - GOOGLECALENDAR_DELETE_EVENT
+
+# ═══════════════════════════════════════════════════
+# HARD-BLOCKED (fail-closed)
+# These tools are NEVER exposed, even if Composio
+# surfaces them. Constitutional boundary.
+# ═══════════════════════════════════════════════════
+
+hard_blocked:
+  items:
+    - any_remote_bash
+    - any_remote_workbench
+    - any_unmapped_tool
+  note: "Any tool NOT in bands above is hard-blocked by default (fail-closed)."
