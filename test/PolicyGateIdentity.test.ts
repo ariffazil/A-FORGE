@@ -275,3 +275,61 @@ describe("Test 10 — display label integrity", () => {
     assert.equal(v.principal.displayLabel, "my-agent");
   });
 });
+
+// ── Test 11 (P0.6 FIX 2026-07-19): Unknown tool → HOLD for all paths ──
+// Previously the UNKNOWN_TOOL check was inside the AAE-only branch.
+// New behaviour: any unclassified tool is DENY/HOLD regardless of AAE.
+describe("Test 11 — P0.6: Unknown tool forces HOLD for all paths", () => {
+  it("unknown tool with transport_fallback + no AAE → DENY (Layer 1 authority OR Layer 4b classify)", () => {
+    const v = gate.evaluate({
+      tool_name: "forge_totally_made_up_tool",
+      arguments: {},
+    });
+    assert.equal(v.verdict, "DENY");
+    // transport_fallback → OBSERVE_ONLY; unknown tool → IRREVERSIBLE; P0.2 enforcement
+    // catches this at Layer 1 BEFORE Layer 4b. Either reason is acceptable.
+    const okReason = v.reasons.some(
+      (r) => r.includes("UNKNOWN_TOOL") || r.includes("L1_AUTHORITY"),
+    );
+    assert.ok(
+      okReason,
+      `Expected UNKNOWN_TOOL or L1_AUTHORITY reason, got: ${v.reasons.join(", ")}`,
+    );
+  });
+
+  it("unknown tool with verified_session + no AAE → DENY with UNKNOWN_TOOL", () => {
+    gate.setActor("arif");
+    const v = gate.evaluate({
+      tool_name: "arif_some_future_tool",
+      arguments: {},
+    });
+    assert.equal(v.verdict, "DENY");
+    // Verified session passes P0.2; Layer 4b catches the unknown tool.
+    assert.ok(
+      v.reasons.some((r) => r.includes("UNKNOWN_TOOL")),
+      `Verified sessions must hit Layer 4b UNKNOWN_TOOL, got: ${v.reasons.join(", ")}`,
+    );
+  });
+
+  it("known tool still ALLOWs (regression check)", () => {
+    gate.setActor("arif");
+    const v = gate.evaluate({
+      tool_name: "forge_health_check",
+      arguments: {},
+    });
+    assert.equal(v.verdict, "ALLOW", "Classified OBSERVE tools must still ALLOW");
+  });
+
+  it("empty string actor_id is treated as anonymous → DENY", () => {
+    const v = gate.evaluate({
+      actor_id: "",
+      tool_name: "forge_health_check",
+      arguments: {},
+    });
+    assert.equal(v.verdict, "DENY");
+    assert.ok(
+      v.reasons.some((r) => r.includes("empty_actor_id") || r.includes("anonymous")),
+      `Expected empty/anonymous reason, got: ${v.reasons.join(", ")}`,
+    );
+  });
+});

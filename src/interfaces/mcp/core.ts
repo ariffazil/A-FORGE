@@ -93,7 +93,7 @@ import {
   type SimulationRequest,
   type PredictionResult,
 } from "../../domain/governance/preActionSimulation.js";
-import { validateSession, registerSession } from "../../domain/session/sessionGate.js";
+import { validateSession, registerSession, setKernelVerifier } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
@@ -102,6 +102,8 @@ import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThink
 // Read ONCE at module load time, not per-call. Ensures the env var is
 // captured even if the stdio transport doesn't pass it through correctly.
 const STDIO_ACTOR = process.env.FORGE_STDIO_ACTOR_ID ?? "opencode";
+/** P0.4: Track whether kernel verifier has been wired (once per process). */
+let kernelVerifierWired = false;
 
 export const server = new McpServer({
   name: "A-FORGE",
@@ -997,6 +999,17 @@ server.tool(
         }
 	// Register the kernel-born session locally
         const session = registerSession(session_id, actor_id);
+        // P0.4: Wire kernel verifier so external callers can cryptographically
+        // verify SEAL-* sessions. Without this, remote channels (ChatGPT)
+        // cannot validate sessions — they get SESSION_UNKNOWN on every call.
+        if (!kernelVerifierWired) {
+          setKernelVerifier(async (sid, aid) => {
+            const sv = validateSession(sid);
+            if (sv.valid) return { verified: true, actor_id: sv.actor_id };
+            return { verified: false, reason: sv.reason };
+          });
+          kernelVerifierWired = true;
+        }
         // P0.1: Bind verified session (per-request map, not global actor).
         // P0.1: Bind verified session (replaces global activeActor).
         // Each request carries session_id → verified session lookup.
