@@ -1,459 +1,76 @@
 {
   "policies": [
     {
-      "policy_id": "default:sovereign",
-      "actor_id": "arif",
-      "role": "sovereign",
-      "description": "Default sovereign policy. All federation organs allowed. MUTATE tools (forge_execute, forge_filesystem write, forge_git commit, DB writes) remain gated by downstream forge_gate / forge_shell checks — this layer trusts the agent.",
-      "allow_by_default": true,
-      "denied_mcp_servers": [],
-      "allowed_mcp_servers": {
-        "forge": {
-          "allow": true,
-          "tools": {}
-        },
-        "arifos": {
-          "allow": true,
-          "tools": {}
-        },
-        "geox": {
-          "allow": true,
-          "tools": {}
-        },
-        "wealth": {
-          "allow": true,
-          "tools": {}
-        },
-        "well": {
-          "allow": true,
-          "tools": {}
-        },
-        "aaa": {
-          "allow": true,
-          "tools": {}
-        },
-        "hermes": {
-          "allow": true,
-          "tools": {}
-        },
-        "github": {
-          "allow": true,
-          "tools": {}
-        },
-        "postgres": {
-          "allow": true,
-          "tools": {}
-        },
-        "supabase": {
-          "allow": true,
-          "tools": {}
-        },
-        "qdrant": {
-          "allow": true,
-          "tools": {}
-        },
-        "cloudflare": {
-          "allow": true,
-          "tools": {}
-        },
-        "docker": {
-          "allow": true,
-          "tools": {}
-        },
-        "hostinger": {
-          "allow": true,
-          "tools": {}
-        },
-        "minimax": {
-          "allow": true,
-          "tools": {}
-        },
-        "brave": {
-          "allow": true,
-          "tools": {}
-        },
-        "perplexity": {
-          "allow": true,
-          "tools": {}
-        },
-        "exa": {
-          "allow": true,
-          "tools": {}
-        },
-        "context7": {
-          "allow": true,
-          "tools": {}
-        },
-        "sequential": {
-          "allow": true,
-          "tools": {}
-        },
-        "playwright": {
-          "allow": true,
-          "tools": {}
-        },
-        "chrome": {
-          "allow": true,
-          "tools": {}
-        },
-        "meyhem": {
-          "allow": true,
-          "tools": {}
-        }
-      }
-    },
-    {
-      "policy_id": "containment:2026-07-12",
-      "actor_id": "*",
-      "role": "containment",
-      "description": "CONTAINMENT: Force OBSERVE_ONLY until identity fix is verified. Blocks all MUTATE/ATOMIC tools.",
+      "policy_id": "chatgpt-arif",
+      "role": "sovereign-external-channel",
+      "description": "ChatGPT sovereign channel through forge.arif-fazil.com Caddy proxy. OBSERVE by default, MUTATE requires arifOS session + lease.",
       "allow_by_default": false,
-      "denied_mcp_servers": [
-        "aforge"
-      ],
-      "allowed_mcp_servers": {
-        "aforge": {
-          "allow": true,
-          "default_tool_policy": {
-            "allow": false,
-            "deny_tools": []
-          },
-          "tools": {
-            "forge_session_init": {
-              "allow": true
-            },
-            "forge_health_check": {
-              "allow": true
-            },
-            "forge_probe": {
-              "allow": true
-            },
-            "forge_registry": {
-              "allow": true
-            },
-            "forge_registry_status": {
-              "allow": true
-            },
-            "forge_fingerprint_check": {
-              "allow": true
-            },
-            "forge_isomorphism_check": {
-              "allow": true
-            },
-            "forge_surface_audit": {
-              "allow": true
-            },
-            "forge_surface_guard": {
-              "allow": true
-            },
-            "forge_security_drift_scan": {
-              "allow": true
-            },
-            "forge_vps_ports": {
-              "allow": true
-            },
-            "forge_vps_services": {
-              "allow": true
-            },
-            "forge_vps_cron": {
-              "allow": true
-            },
-            "forge_journalctl": {
-              "allow": true
-            },
-            "forge_worktree": {
-              "allow": true
-            },
-            "forge_git": {
-              "allow": true
-            },
-            "forge_memory": {
-              "allow": true
-            },
-            "forge_vault": {
-              "allow": true
-            },
-            "forge_scar": {
-              "allow": true
-            },
-            "forge_scar_scan": {
-              "allow": true
-            },
-            "forge_search": {
-              "allow": true
-            },
-            "forge_fetch": {
-              "allow": true
-            },
-            "forge_research": {
-              "allow": true
-            },
-            "forge_docs_lookup": {
-              "allow": true
-            },
-            "forge_filesystem_read": {
-              "allow": true
-            },
-            "forge_filesystem_search": {
-              "allow": true
-            },
-            "forge_filesystem_stat": {
-              "allow": true
-            },
-            "forge_filesystem_tree": {
-              "allow": true
-            },
-            "forge_chart": {
-              "allow": true
-            },
-            "forge_shell_dryrun": {
-              "allow": true
-            },
-            "forge_shell_alert_history": {
-              "allow": true
-            },
-            "forge_shell_ledger": {
-              "allow": true
-            },
-            "forge_shell_status": {
-              "allow": true
-            },
-            "forge_evaluate": {
-              "allow": true
-            },
-            "forge_predict": {
-              "allow": true
-            },
-            "forge_witness": {
-              "allow": true
-            },
-            "forge_status": {
-              "allow": true
-            },
-            "forge_lease": {
-              "allow": true
-            },
-            "forge_job": {
-              "allow": true
-            },
-            "forge_document_ingest": {
-              "allow": true
-            },
-            "forge_probe_site": {
-              "allow": true
-            },
-            "forge_wealth": {
-              "allow": true
-            },
-            "forge_well": {
-              "allow": true
-            },
-            "forge_github": {
-              "allow": true
-            }
-          }
-        }
-      },
-      "max_requests_per_minute": 600
-    },
-    {
-      "policy_id": "agent:support-agent",
-      "actor_id": "support-agent",
-      "role": "support",
-      "description": "Support agent: read customer records, no mutations. Matches Arif's canonical example: 'support agent may read but not delete/update'.",
-      "allow_by_default": false,
-      "allowed_mcp_servers": {
-        "forge": {
-          "allow": true,
-          "tools": {
-            "forge_memory": {
-              "description": "recall prior tickets"
-            },
-            "forge_search": {
-              "description": "search knowledge base"
-            },
-            "forge_registry_status": {
-              "description": "read tool status"
-            },
-            "forge_probe": {
-              "description": "liveness check"
-            }
-          }
-        },
-        "postgres": {
-          "allow": true,
-          "tools": {
-            "postgres_query": {
-              "description": "read-only SELECT only",
-              "argument_constraints": [
-                {
-                  "path": "sql",
-                  "regex": "^\\s*SELECT\\s",
-                  "description": "Only SELECT statements allowed (case-insensitive leading)"
-                }
-              ]
-            }
-          }
-        }
-      }
-    },
-    {
-      "policy_id": "agent:sales-agent",
-      "actor_id": "sales-agent",
-      "role": "sales",
-      "description": "Sales agent: send emails only to approved company domains. Matches Arif's canonical example: 'recipient domain must match approved list'.",
-      "allow_by_default": false,
-      "allowed_mcp_servers": {
-        "forge": {
-          "allow": true,
-          "tools": {
-            "forge_search": {
-              "description": "discover contacts"
-            },
-            "forge_memory": {
-              "description": "recall interactions"
-            }
-          }
-        },
-        "hermes": {
-          "allow": true,
-          "tools": {
-            "hermes_send_message": {
-              "description": "send email / telegram to approved domains only",
-              "argument_constraints": [
-                {
-                  "path": "recipient",
-                  "regex": "@(arif-fazil\\.com|ariffazil\\.com|partner-corp\\.com)$",
-                  "description": "Recipient email must be on approved domain list"
-                },
-                {
-                  "path": "subject",
-                  "regex": "^(?!.*(?:urgent|asap|immediately))",
-                  "description": "Sales agent never sends urgency-labeled subjects"
-                }
-              ]
-            }
-          }
-        }
-      }
-    },
-    {
-      "policy_id": "agent:forge-worker",
-      "actor_id": "forge-worker",
-      "role": "forge",
-      "description": "Forge worker: broad filesystem + shell, but no secrets, no vault, no sovereign commands.",
-      "allow_by_default": true,
-      "denied_mcp_servers": [],
-      "allowed_mcp_servers": {
-        "forge": {
-          "allow": true,
-          "tools": {
-            "forge_shell": {
-              "description": "shell with sensitive-path blocklist",
-              "argument_constraints": [
-                {
-                  "path": "command",
-                  "regex": "^(?!.*(?:/etc/shadow|/etc/passwd|VAULT999|\\.secrets/|aws.*--secret|gh auth login))",
-                  "description": "Block commands reading credentials, vault, shadow, or triggering auth login"
-                }
-              ]
-            },
-            "forge_filesystem": {
-              "description": "filesystem with path boundary guard",
-              "argument_constraints": [
-                {
-                  "path": "path",
-                  "regex": "^/(?:root|tmp|data|var/log)/",
-                  "description": "Only F8-approved filesystem roots"
-                }
-              ]
-            },
-            "forge_vault": {
-              "description": "vault READ/LIST only via argument guard below",
-              "argument_constraints": [
-                {
-                  "path": "mode",
-                  "regex": "^(?:read|list)$",
-                  "description": "vault writes require sovereign, not forge-worker"
-                }
-              ]
-            },
-            "forge_seal": {
-              "deny": true,
-              "description": "seal is sovereign-only"
-            },
-            "forge_register": {
-              "deny": true,
-              "description": "register is sovereign-only"
-            }
-          }
-        }
-      }
-    },
-    {
-      "policy_id": "agent:data-scientist",
-      "actor_id": "data-scientist",
-      "role": "data-scientist",
-      "description": "Data scientist: read DB + analytics, no production mutations.",
-      "allow_by_default": false,
-      "allowed_mcp_servers": {
-        "postgres": {
-          "allow": true,
-          "tools": {
-            "postgres_query": {
-              "argument_constraints": [
-                {
-                  "path": "sql",
-                  "regex": "^\\s*SELECT\\s"
-                }
-              ]
-            },
-            "postgres_describe_table": {
-              "description": "schema introspection"
-            }
-          }
-        },
-        "supabase": {
-          "allow": true,
-          "tools": {}
-        },
-        "qdrant": {
-          "allow": true,
-          "tools": {}
-        },
-        "forge": {
-          "allow": true,
-          "tools": {
-            "forge_chart": {
-              "description": "agentic charting"
-            },
-            "forge_memory": {
-              "description": "recall"
-            }
-          }
-        }
-      }
-    },
-    {
-      "policy_id": "agent:antigravity",
-      "actor_id": "antigravity",
-      "role": "forge",
-      "description": "Antigravity CLI (FI-009) — sovereign-delegate warga. Full federation access across all 23 MCP servers + 5 organs. YOLO/AFK autonomy with F1-F13 floors. No blocks. Set 2026-07-19 by Arif (F13 SOVEREIGN).",
-      "allow_by_default": true,
-      "allowed_mcp_servers": {
-        "arifos": true,
-        "aforge": true,
-        "geox": true,
-        "wealth": true,
-        "well": true,
-        "aaa": true,
-        "brave-search": true,
-        "serena": true,
-        "repomapper": true,
-        "minimax": true,
-        "capability-index": true,
-        "github-official": true
-      }
+      "allowed_tools": [
+        "forge_health_check",
+        "forge_filesystem_read",
+        "forge_filesystem_tree",
+        "forge_filesystem_stat",
+        "forge_filesystem_search",
+        "forge_filesystem_glob",
+        "forge_filesystem_grep",
+        "forge_probe",
+        "forge_probe_site",
+        "forge_docker",
+        "forge_journalctl",
+        "forge_vps_ports",
+        "forge_vps_services",
+        "forge_vps_cron",
+        "forge_security_drift_scan",
+        "forge_entropy_sweep",
+        "forge_surface_audit",
+        "forge_git_status",
+        "forge_git_log",
+        "forge_git_diff",
+        "forge_worktree",
+        "forge_runtime_verify",
+        "forge_registry_status",
+        "forge_receipt_draft",
+        "forge_netdata_alarms",
+        "forge_netdata_metrics",
+        "forge_shell_dryrun",
+        "forge_shell_status",
+        "forge_shell_ledger",
+        "forge_shell_alert_history",
+        "forge_research",
+        "forge_search",
+        "forge_fetch",
+        "forge_fetch_url",
+        "forge_fetch_json",
+        "forge_fetch_metadata",
+        "forge_fetch_links",
+        "forge_docs_lookup",
+        "forge_minimax_search",
+        "forge_document_ingest",
+        "forge_reality_loop",
+        "forge_parallel_list",
+        "forge_parallel_status",
+        "forge_job",
+        "forge_status",
+        "forge_memory",
+        "forge_skillstore_read",
+        "forge_surface_guard",
+        "forge_verify_timeline",
+        "forge_filesystem_write",
+        "forge_filesystem_patch",
+        "forge_filesystem_move",
+        "forge_filesystem_delete",
+        "forge_git_commit",
+        "forge_git",
+        "forge_github",
+        "forge_github_create_issue",
+        "forge_github_create_pull_request",
+        "forge_shell",
+        "forge_execute",
+        "forge_pipeline_run",
+        "forge_vault",
+        "forge_lease",
+        "forge_agent"
+      ]
     }
   ]
 }
