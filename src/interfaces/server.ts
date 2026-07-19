@@ -952,9 +952,16 @@ app.post("/GEOX/log_interpreter", async (req: Request, res: Response) => {
  */
 app.get("/health", (_req: Request, res: Response) => {
   let identityHash = "UNAVAILABLE";
+  let gitCommit = "UNAVAILABLE";
   try {
     identityHash = readFileSync("/root/A-FORGE/.identity_hash", "utf8").trim();
   } catch (e) {}
+  try {
+    gitCommit = require("node:child_process").execSync("git -C /root/A-FORGE rev-parse --short=7 HEAD", { timeout: 3000 }).toString().trim();
+  } catch (e) {}
+  if (gitCommit === "UNAVAILABLE") {
+    try { gitCommit = readFileSync("/root/A-FORGE/.git_commit", "utf8").trim(); } catch (e) {}
+  }
 
   const now = new Date().toISOString();
 
@@ -972,7 +979,9 @@ app.get("/health", (_req: Request, res: Response) => {
     // Profile bounded by F13; options: enterprise | agentic | sovereign | civilization.
     profile: "enterprise",
     authority_ceiling: "777_FORGE", // A-FORGE may forge; never seal nor adjudicate
+    identity: identityHash,
     identity_hash: identityHash,
+    git_commit: gitCommit,
     apex_scalars: {
       G: { value: null, status: "UNMEASURED" },
       C_dark: { value: null, status: "UNMEASURED" },

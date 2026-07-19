@@ -1,0 +1,149 @@
+# ═══════════════════════════════════════════════════════════════════
+# 30 · MAIN ATTESTATION — Build-Once Release Gate
+# ═══════════════════════════════════════════════════════════════════
+# Phase 6 — Federation Automation Plan
+#
+# Triggers on push to main for workflow, contract, and schema changes.
+# Calls the reusable attest workflow (build once → SBOM → attest →
+# evidence envelope), then publishes a GitHub Release with the
+# attestation data attached.
+#
+# Numbering: 00/10/20/30/40/50/60 — this is the 30-tier attest gate.
+# DITEMPA BUKAN DIBERI — Attestation is forged, not given.
+# ═══════════════════════════════════════════════════════════════════
+
+name: "30 · Main Attestation"
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'contracts/**'
+      - 'schemas/**'
+      - 'organ.yaml'
+      - 'FEDERATION_CONTRACT.md'
+      - 'FEDERATION.md'
+      - 'AGENTS.md'
+      - 'package.json'
+      - 'tsconfig.json'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  actions: read
+
+concurrency:
+  group: main-attest-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ── Call reusable build-once attestation ───────────────────────────
+  attest:
+    name: "Attest — a-forge"
+    uses: ./.github/workflows/reusable-release-attest.yml
+    with:
+      organ: 'a-forge'
+      artifact_path: 'dist/'
+      build_command: 'npm run build'
+    secrets: inherit
+
+  # ── Create GitHub Release with attestation evidence ───────────────
+  release:
+    name: "Publish Release"
+    runs-on: ubuntu-latest
+    needs: attest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Download the evidence envelope from the attest job
+      - name: Download evidence envelope
+        uses: actions/download-artifact@v4
+        with:
+          name: evidence-a-forge-${{ github.sha }}
+          path: artifacts/
+
+      - name: Download SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom-a-forge-${{ github.sha }}
+          path: artifacts/
+
+      # Read envelope fields for release body
+      - name: Parse evidence envelope
+        id: parse
+        run: |
+          ARTIFACT_DIGEST=$(python3 -c "import json; print(json.load(open('artifacts/evidence-envelope.json'))['artifact_digest_sha256'])")
+          SBOM_HASH=$(python3 -c "import json; print(json.load(open('artifacts/evidence-envelope.json'))['sbom_hash_sha256'])")
+          BUILD_TS=$(python3 -c "import json; print(json.load(open('artifacts/evidence-envelope.json'))['build_timestamp'])")
+          echo "artifact_digest=${ARTIFACT_DIGEST}" >> "$GITHUB_OUTPUT"
+          echo "sbom_hash=${SBOM_HASH}" >> "$GITHUB_OUTPUT"
+          echo "build_ts=${BUILD_TS}" >> "$GITHUB_OUTPUT"
+
+      # Create or resolve the date-stamped tag
+      - name: Resolve release tag
+        id: tag
+        run: |
+          TODAY="v$(date -u +'%Y.%m.%d')"
+          if git rev-parse "$TODAY" >/dev/null 2>&1; then
+            echo "tag=${TODAY}" >> "$GITHUB_OUTPUT"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            # Create an attest-specific tag: vYYYY.MM.DD-attest.N
+            BASE="${TODAY}-attest"
+            N=1
+            while git rev-parse "${BASE}.${N}" >/dev/null 2>&1; do
+              N=$((N + 1))
+            done
+            TAG="${BASE}.${N}"
+            git tag -a "$TAG" -m "$TAG — build-once attestation release"
+            git push origin "$TAG"
+            echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Publish the GitHub Release
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: "${{ steps.tag.outputs.tag }} · Build-Once Attestation"
+          body: |
+            ## 🔒 Build-Once Attestation — `a-forge`
+
+            | Field | Value |
+            |-------|-------|
+            | **Commit** | [`${{ github.sha }}`](https://github.com/${{ github.repository }}/commit/${{ github.sha }}) |
+            | **Build Timestamp** | ${{ steps.parse.outputs.build_ts }} |
+            | **Artifact Digest (SHA-256)** | `${{ steps.parse.outputs.artifact_digest }}` |
+            | **SBOM Hash (SHA-256)** | `${{ steps.parse.outputs.sbom_hash }}` |
+            | **Workflow** | `${{ github.workflow }}` |
+            | **Run** | [#${{ github.run_id }}](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) |
+            | **Actor** | @${{ github.actor }} |
+
+            ### Attached Evidence
+            - `evidence-envelope.json` — machine-readable attestation envelope
+            - `sbom-a-forge.spdx.json` — SPDX 2.3 Software Bill of Materials
+
+            ### Verification
+            ```bash
+            # Verify artifact digest
+            gh attestation verify dist/ --repo ${{ github.repository }}
+
+            # Verify SBOM
+            gh attestation verify sbom-a-forge.spdx.json --repo ${{ github.repository }}
+            ```
+
+            ---
+            *DITEMPA BUKAN DIBERI — Forged, not given. Phase 6 attestation gate.*
+          files: |
+            artifacts/evidence-envelope.json
+            artifacts/sbom-a-forge.spdx.json
+          fail_on_unmatched_files: true
+          generate_release_notes: false
+          make_latest: false
