@@ -596,19 +596,33 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
 
           // Case 2: tools/list
           if (method === "tools/list") {
-            const tools = getServerTools().map(t => ({
-              name: t.name,
-              description: t.description,
-              inputSchema: {
-                type: "object",
-                properties: t.inputSchema?.shape
-                  ? Object.entries(t.inputSchema.shape).reduce((acc: any, [k, v]: [string, any]) => {
-                      acc[k] = { type: v._def?.typeName?.includes("optional") ? "string" : "string", description: v.description };
-                      return acc;
-                    }, {})
-                  : {},
-              },
-            }));
+            const { classifyTool } = await import("../../domain/governance/actionClassifier.js");
+            const tools = getServerTools().map(t => {
+              const name = t.name;
+              // Determine readOnlyHint/destructiveHint from action classifier
+              const actionClass = classifyTool(name);
+              const isObserve = actionClass === "OBSERVE";
+              const isDestructive = ["EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"].includes(actionClass);
+              return {
+                name,
+                description: t.description,
+                inputSchema: {
+                  type: "object" as const,
+                  properties: t.inputSchema?.shape
+                    ? Object.entries(t.inputSchema.shape).reduce((acc: any, [k, v]: [string, any]) => {
+                        acc[k] = { type: v._def?.typeName?.includes("optional") ? "string" : "string", description: v.description };
+                        return acc;
+                      }, {})
+                    : {},
+                },
+                annotations: {
+                  readOnlyHint: isObserve,
+                  destructiveHint: isDestructive,
+                  idempotentHint: false,
+                  openWorldHint: false,
+                },
+              };
+            });
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(jsonRpcResult(msgId, { tools }));
             return;
