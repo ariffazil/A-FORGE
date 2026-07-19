@@ -28,6 +28,8 @@ import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpP
 import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
 import { assertSctMutationGateOrExit } from "../../infrastructure/governance/sctIngress.js";
+import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
+import { validateSession } from "../../domain/session/sessionGate.js";
 
 const AFORGE_ROOT = process.cwd();
 
@@ -794,6 +796,31 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 tool: toolName,
               }));
               return;
+            }
+
+            // ── FORGE 2-B session gate (T₁ audit fix 2026-07-19) ──────
+            // Stateless whitelist tools that are MUTATE-class (e.g. forge_shell)
+            // must still carry a valid session_id. OBSERVE-class tools remain
+            // fully stateless.
+            const actionClass = classifyTool(toolName);
+            if (requiresGovernance(actionClass)) {
+              const callerSession = (typeof toolArgs?.session_id === "string") ? toolArgs.session_id : undefined;
+              const sessionCheck = callerSession ? validateSession(callerSession) : { valid: false, reason: "SESSION_REQUIRED: No session_id provided for MUTATE-class tool" } as const;
+              if (!sessionCheck.valid) {
+                process.stderr.write(`[A-FORGE-MCP] SESSION_GATE blocked stateless ${toolName} (${actionClass}): ${sessionCheck.reason}\n`);
+                res.writeHead(200, {
+                  "Content-Type": "application/json",
+                  "X-AForge-Gate": "SESSION_REQUIRED",
+                });
+                res.end(toolIsErrorResult(msgId, `SESSION_GATE: Tool "${toolName}" is ${actionClass}. ${sessionCheck.reason}`, {
+                  error_class: "SESSION_REQUIRED",
+                  recoverability: "AGENT_CAN_RETRY",
+                  action_class: actionClass,
+                  tool: toolName,
+                  gate: "SESSION_REQUIRED",
+                }));
+                return;
+              }
             }
 
             // Dispatch whitelisted tool
