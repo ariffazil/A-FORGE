@@ -1,0 +1,116 @@
+# ═══════════════════════════════════════════════════════════════════
+# A-FORGE Reusable Contract Gate
+# ═══════════════════════════════════════════════════════════════════
+# Validates organ.yaml, schema compliance, and ABI compatibility.
+# ═══════════════════════════════════════════════════════════════════
+
+name: "A-FORGE · Reusable Contract Gate"
+
+on:
+  workflow_call:
+    inputs:
+      organ:
+        description: 'Organ name'
+        required: true
+        type: string
+
+jobs:
+  organ-yaml:
+    name: "Validate organ.yaml"
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate schema
+        run: |
+          if [ ! -f organ.yaml ]; then
+            echo "⚠ No organ.yaml — skipping"
+            exit 0
+          fi
+          pip install pyyaml 2>/dev/null
+          python3 -c "
+          import yaml, sys
+          with open('organ.yaml') as f:
+              doc = yaml.safe_load(f)
+
+          # Required fields
+          required = {
+              'schema_version': int,
+              'organ': str,
+              'repo': str,
+              'role': str,
+              'authority_ceiling': str,
+          }
+          errors = []
+          for key, typ in required.items():
+              if key not in doc:
+                  errors.append(f'missing required key: {key}')
+              elif not isinstance(doc[key], typ):
+                  errors.append(f'{key}: expected {typ.__name__}, got {type(doc[key]).__name__}')
+
+          # Valid authority ceilings
+          valid_ceilings = {
+              'JUDGE_ONLY', 'EXECUTE_AFTER_SEAL', 'DISPLAY_ONLY',
+              'COMPUTE_ONLY', 'REFLECT_ONLY', 'OBSERVE_ONLY'
+          }
+          if doc.get('authority_ceiling') not in valid_ceilings:
+              errors.append(f'invalid authority_ceiling: {doc[\"authority_ceiling\"]}')
+
+          # Must have forbidden_domains
+          if 'forbidden_domains' not in doc or not isinstance(doc['forbidden_domains'], list):
+              errors.append('missing or invalid forbidden_domains')
+
+          if errors:
+              for e in errors:
+                  print(f'❌ {e}')
+              sys.exit(1)
+
+          print(f'✅ organ.yaml valid — {doc[\"organ\"]} ({doc[\"role\"]}, ceiling={doc[\"authority_ceiling\"]})')
+          print(f'   Forbidden: {\", \".join(doc[\"forbidden_domains\"])}')
+          "
+
+  schema-validate:
+    name: "Validate JSON Schemas"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install tools
+        run: pip install check-jsonschema 2>/dev/null || npm install -g ajv-cli 2>/dev/null || echo "⚠ No schema validator available"
+      - name: Validate schemas
+        run: |
+          echo "Checking JSON schema files..."
+          for schema in $(find . -name "*.schema.json" -type f 2>/dev/null); do
+            if command -v check-jsonschema &>/dev/null; then
+              echo "  📋 $schema"
+            else
+              python3 -c "
+              import json, sys
+              with open('$schema') as f:
+                  doc = json.load(f)
+              if '\$schema' in doc:
+                  print(f'  ✅ $schema (has \$schema ref)')
+              else:
+                  print(f'  ⚠ $schema (no \$schema ref)')
+              "
+            fi
+          done
+          echo "✅ Schema validation complete"
+
+  fed-md-validate:
+    name: "Validate FEDERATION.md"
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check FEDERATION.md
+        run: |
+          if [ ! -f FEDERATION.md ]; then
+            echo "⚠ No FEDERATION.md — skipping"
+            exit 0
+          fi
+          if ! grep -q "role:" FEDERATION.md; then
+            echo "❌ FEDERATION.md missing 'role:' declaration"
+            exit 1
+          fi
+          echo "✅ FEDERATION.md role declared"

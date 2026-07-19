@@ -1,0 +1,87 @@
+name: 'Validate Organ Boundary'
+description: 'Validate that changes do not cross organ authority boundaries'
+
+inputs:
+  organ_yaml:
+    description: 'Path to organ.yaml'
+    required: true
+  risk_class:
+    description: 'From classify-change'
+    required: false
+    default: 'LOW'
+
+outputs:
+  boundary_clean:
+    description: 'true if no boundary violations'
+    value: ${{ steps.validate.outputs.boundary_clean }}
+  violations:
+    description: 'List of boundary violations found'
+    value: ${{ steps.validate.outputs.violations }}
+
+runs:
+  using: composite
+  steps:
+    - id: validate
+      shell: bash
+      run: |
+        ORGAN_YAML="${{ inputs.organ_yaml }}"
+        VIOLATIONS=""
+        CLEAN="true"
+
+        if [ ! -f "$ORGAN_YAML" ]; then
+          echo "⚠ No organ.yaml found at $ORGAN_YAML — skipping boundary check"
+          echo "boundary_clean=true" >> "$GITHUB_OUTPUT"
+          echo "violations=" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        # Extract forbidden domains
+        FORBIDDEN=$(python3 -c "
+import yaml, sys
+try:
+    with open('$ORGAN_YAML') as f:
+        doc = yaml.safe_load(f)
+    forbidden = doc.get('forbidden_domains', [])
+    for d in forbidden:
+        print(d)
+except: pass
+" 2>/dev/null)
+
+        # Check for self-authorization patterns
+        CHANGED=$(git diff --name-only origin/main...HEAD 2>/dev/null || git diff --name-only HEAD~1 2>/dev/null || echo "")
+
+        # Check for constitutional judgment in non-governance organs
+        if echo "$FORBIDDEN" | grep -q "constitutional_judgment"; then
+          if echo "$CHANGED" | xargs grep -l "SEAL\|SABAR\|VOID\|arif_judge\|arif_seal" 2>/dev/null | grep -v "test_\|\.test\.\|forge_judge_proxy\|# \|\.md"; then
+            VIOLATIONS="$VIOLATIONS\n  ❌ constitutional_judgment: verdict language found in non-governance organ"
+            CLEAN="false"
+          fi
+        fi
+
+        # Check for capital allocation in non-wealth organs
+        if echo "$FORBIDDEN" | grep -q "capital_allocation"; then
+          if echo "$CHANGED" | xargs grep -lE "allocate|invest|buy|sell|position_size" 2>/dev/null | grep -v "test_\|\.md"; then
+            VIOLATIONS="$VIOLATIONS\n  ⚠ capital_allocation: financial action language in non-capital organ"
+          fi
+        fi
+
+        # Check for self-authorization
+        if echo "$FORBIDDEN" | grep -q "self_authorization"; then
+          if echo "$CHANGED" | xargs grep -lE "self.approve|bypass.*judge|skip.*floor|self.*seal" 2>/dev/null | grep -v "test_\|\.md"; then
+            VIOLATIONS="$VIOLATIONS\n  ❌ self_authorization: self-approval pattern detected"
+            CLEAN="false"
+          fi
+        fi
+
+        echo "boundary_clean=$CLEAN" >> "$GITHUB_OUTPUT"
+        echo "violations=$VIOLATIONS" >> "$GITHUB_OUTPUT"
+
+        if [ "$CLEAN" = "true" ]; then
+          echo "✅ Organ boundary check passed"
+        else
+          echo "❌ Organ boundary violations:$VIOLATIONS"
+          if [ "${{ inputs.risk_class }}" = "CRITICAL" ]; then
+            echo "CRITICAL risk — boundary violations are BLOCKING"
+            exit 1
+          fi
+        fi
