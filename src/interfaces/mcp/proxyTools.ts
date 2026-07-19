@@ -364,6 +364,17 @@ export function registerFilesystemTools(server: McpServer): void {
         } catch { /* absent */ }
         if (exists && !overwrite) return text(`F1 AMANAH: File '${inputPath}' exists. Set overwrite=true to replace.`, true);
         if (dry_run) return text({ status: "dry_run", would_write: true, path: check.resolvedPath, exists, bytes_new: Buffer.byteLength(content, "utf-8") });
+
+        // ── P34 MUTATION GATE: authorize before filesystem write ──
+        const { requireAuthorization: fsAuth } = await import("../infrastructure/bridges/authorizeMutationBridge.js");
+        await fsAuth({
+          executable: "write",
+          arguments: [check.resolvedPath],
+          targetEnvironment: process.env.DEPLOY_ENV || "unknown",
+          actorId: "aforge",
+          sessionId: "forge-fs-write",
+        });
+
         await mkdir(resolve(check.resolvedPath, ".."), { recursive: true });
         await writeFile(check.resolvedPath, content, "utf-8");
         const hashAfter = sha256(content);
@@ -468,6 +479,17 @@ export function registerFilesystemTools(server: McpServer): void {
         const qId = `q-${Date.now()}-${basename(check.resolvedPath)}`;
         const qPath = join(QUARANTINE_DIR, qId);
         if (dry_run) return text({ status: "dry_run", would_quarantine: true, from: check.resolvedPath, to: qPath, restore_id: qId });
+
+        // ── P34 MUTATION GATE: authorize before filesystem delete ──
+        const { requireAuthorization: fsDelAuth } = await import("../infrastructure/bridges/authorizeMutationBridge.js");
+        await fsDelAuth({
+          executable: "rm",
+          arguments: [check.resolvedPath, "--recursive"],
+          targetEnvironment: process.env.DEPLOY_ENV || "unknown",
+          actorId: "aforge",
+          sessionId: "forge-fs-delete",
+        });
+
         await cp(check.resolvedPath, qPath, { recursive: true });
         await rm(check.resolvedPath, { recursive: true });
         return text({
@@ -672,6 +694,19 @@ export function registerPostgresTools(server: McpServer): void {
         if (!query) return text("query is required for mode=query", true);
         const upper = query.toUpperCase().trim();
         const isMutation = /^(INSERT|UPDATE|DELETE|CREATE|DROP|TRUNCATE|ALTER)\b/.test(upper);
+
+        // ── P34 MUTATION GATE: authorize before SQL mutation ──
+        if (isMutation) {
+          const { requireAuthorization: sqlAuth } = await import("../infrastructure/bridges/authorizeMutationBridge.js");
+          await sqlAuth({
+            executable: upper.split(/\s+/)[0],
+            arguments: upper.split(/\s+/).slice(1),
+            targetEnvironment: process.env.DEPLOY_ENV || "production",
+            actorId: "aforge",
+            sessionId: "forge-postgres",
+          });
+        }
+
         if (isMutation && !mutate) return text("F1 AMANAH: SQL mutation requires mutate=true and upstream governance lease.", true);
         if (/^(DROP|TRUNCATE|ALTER)\b/.test(upper)) return text("F1 AMANAH: DROP/TRUNCATE/ALTER requires 888_HOLD. Use arif_judge_deliberate first.", true);
         sql = query;
@@ -769,6 +804,17 @@ export function registerGitTools(server: McpServer): void {
       }
       if (mode === "log") return text(gitExec(repo, ["log", "--oneline", `-${Math.min(count, 50)}`]));
       if (!message) return text("message is required for mode=commit", true);
+
+      // ── P34 MUTATION GATE: authorize before git mutation ──
+      const { requireAuthorization } = await import("../infrastructure/bridges/authorizeMutationBridge.js");
+      await requireAuthorization({
+        executable: "git",
+        arguments: files && files.length > 0 ? ["add", ...files, "commit", "-m", message] : ["add", "-A", "commit", "-m", message],
+        targetEnvironment: process.env.DEPLOY_ENV || "unknown",
+        actorId: "aforge",
+        sessionId: "forge-git-commit",
+      });
+
       if (files && files.length > 0) {
         gitExec(repo, ["add", ...files]);
       } else {
@@ -909,6 +955,17 @@ export function registerDockerTools(server: McpServer): void {
         return text(output);
       }
       if (!command) return text("command is required for mode=exec", true);
+
+      // ── P34 MUTATION GATE: authorize before docker exec ──
+      const { requireAuthorization: dockerAuth } = await import("../infrastructure/bridges/authorizeMutationBridge.js");
+      await dockerAuth({
+        executable: "docker",
+        arguments: ["exec", ...(interactive ? ["-it"] : []), container, ...command.split(" ")],
+        targetEnvironment: process.env.DEPLOY_ENV || "unknown",
+        actorId: "aforge",
+        sessionId: "forge-docker",
+      });
+
       const args = ["exec", ...(interactive ? ["-it"] : []), container, ...command.split(" ")];
       const output = execFileSync("docker", args, { encoding: "utf-8", timeout: 30000 });
       return text(output);
