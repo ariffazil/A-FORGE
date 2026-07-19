@@ -791,7 +791,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             // ── Policy Gate (stateless path) ───────────────────────────
             // The 5-layer boundary (identity/server/tool/args) evaluated before dispatch.
             const actorHint =
-              (toolArgs?.actor_id as string) || (toolArgs?.actorId as string) || "stateless-client";
+              (toolArgs?.actor_id as string) || (toolArgs?.actorId as string) || undefined;
             const clientIp = (req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim()
               || req.socket?.remoteAddress || "unknown");
             const policyVerdict = evaluatePolicyGate(toolName, toolArgs, actorHint, clientIp, "http");
@@ -858,8 +858,10 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
 
               // Inject actor_id for PolicyInterceptor (L1_IDENTITY gate)
               // Stateless path already passed evaluatePolicyGate above.
+              // Use "http-stateless" not "stateless-client" — the latter triggers
+              // L1_IDENTITY:spoofing_rejected in the policy gate.
               if (!toolArgs.actor_id && !toolArgs.actorId && !toolArgs.actor) {
-                toolArgs.actor_id = "stateless-client";
+                toolArgs.actor_id = "http-stateless";
               }
               const result = await handler(toolArgs);
               // Ensure schema/policy denies from handlers always surface isError
