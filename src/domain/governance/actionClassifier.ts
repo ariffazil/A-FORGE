@@ -244,6 +244,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_receipt_draft",      // compliance receipt draft — read-only, OBSERVE
   "forge_docket_prep",        // evidence packaging — read-only, OBSERVE
   "forge_verify_timeline",    // timeline claim verification — read-only, OBSERVE
+  "forge_verify",              // WAJIB 2 verification lane — read-only, OBSERVE (verifier ≠ executor)
   "forge_scar_scan",          // artifact SCAR database check — read-only, OBSERVE
   "forge_skillstore_read",    // artifact store query — read-only, OBSERVE
   "forge_registry",           // skill registry (list/get) — read-only, OBSERVE
