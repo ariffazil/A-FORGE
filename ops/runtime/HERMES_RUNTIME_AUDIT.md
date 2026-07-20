@@ -47,7 +47,7 @@
 ## Active Ops Holds
 1. GEOX-BRIDGE-001: geox_bridge.py returns SIMULATED — live MCP wiring pending
 2. FED-SSE-001: WEALTH/WELL SSE-only — arifOS has no SSE client — federation calls fail silently
-3. ARCH-001: arif_mind_reason forge-dispatch boundary unclear
+3. ARCH-001: arif_think forge-dispatch boundary unclear
 
 ## Hard Ops Guards
 - No docker system prune -a or docker volume prune without 888_HOLD + Arif explicit confirm

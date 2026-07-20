@@ -182,7 +182,7 @@ explicit type discrimination, downstream consumers can confuse them.
 | # | Requirement | Status | Evidence |
 |---|---|---|---|
 | V-1 | Only arifOS may issue SEAL | ✅ enforced | A-FORGE `forge_approve` refuses self-authorization |
-| V-2 | Only arifOS may issue VOID | ✅ enforced | A-FORGE routes to `arif_judge_deliberate` |
+| V-2 | Only arifOS may issue VOID | ✅ enforced | A-FORGE routes to `arif_judge` |
 | V-3 | SABAR must carry substate | ❌ missing | A-FORGE treats SABAR as generic error |
 | V-4 | GEOX acrisk must map to SealType | ❌ missing | Independent vocabulary, no translation |
 | V-5 | WELL HOLD must not be confused with arifOS HOLD | ⚠️ partial | Same string, different authority |

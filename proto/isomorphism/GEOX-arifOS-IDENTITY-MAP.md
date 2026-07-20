@@ -107,7 +107,7 @@ model — but it means:
 
 | # | Invariant | Status | Evidence |
 |---|---|---|---|
-| I-1 | `session_id` MUST originate from kernel | ✅ enforced | `forge_session_init` proxies to `arifos.arif_session_init` |
+| I-1 | `session_id` MUST originate from kernel | ✅ enforced | `forge_session_init` proxies to `arifos.arif_init` |
 | I-2 | `actor_id` MUST be F11-verified before first use | ⚠️ partial | A-FORGE uses `STDIO_ACTOR` fallback for stdio transport |
 | I-3 | `lease_id` MUST be validated before MUTATE | ✅ enforced | `validateLeaseForTool()` in core.ts |
 | I-4 | `actor_hash` SHOULD propagate to downstream organs | ❌ missing | Only arifOS stores it |

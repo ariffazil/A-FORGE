@@ -65,7 +65,7 @@ journalctl -u a-forge -n 50 --no-pager
 ## Common Failure Modes
 | Symptom | Likely Cause | Fix |
 |---------|-------------|-----|
-| 888_HOLD on execution | No JUDGE_SEAL_AUTHORIZATION from arifOS | Run through arif_judge_deliberate first |
+| 888_HOLD on execution | No JUDGE_SEAL_AUTHORIZATION from arifOS | Run through arif_judge first |
 | /health unreachable | Service crashed | `systemctl restart a-forge` |
 | `Server already initialized` on second HTTP client | Streamable-http singleton limitation | Use stdio transport, or restart `a-forge-mcp.service` for a fresh session |
 | 7072 returns 500 on `initialize` | `serve.ts` not connected to `McpServer` | Ensure `server.connect(transport)` is present and service is rebuilt/restarted |

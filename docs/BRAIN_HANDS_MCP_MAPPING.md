@@ -106,7 +106,7 @@ From constitutional eureka (this session):
 - 010 `arif_forge` (decoder/execute)
 - 999 `arif_seal` (reality seal)
 - Additional exported: `arif_self_evaluate`, `arif_model_compare` (shadow geometry)
-- Soft-deprecated: `arif_bridge`, `arif_kernel_route` (absorbed via passthrough in kernel_canonical)
+- Soft-deprecated: `arif_bridge`, `arif_route` (absorbed via passthrough in kernel_canonical)
 
 **Gaps closed in this audit/harden:**
 - arif_explore and arif_memory now in __all__ and surfaced (was gap in report snapshot).
