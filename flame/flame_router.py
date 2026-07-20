@@ -236,7 +236,18 @@ class FlameEngine:
                 return "", latency, False, False
 
             data = resp.json()
-            content = data["choices"][0]["message"].get("content", "").strip()
+            message = data["choices"][0]["message"]
+            content = message.get("content", "").strip()
+
+            # Reasoning-model blind spot: gpt-oss-120b, zai-glm-4.7, etc.
+            # spend max_tokens on reasoning_content, leaving content="".
+            # If reasoning is present and non-empty, the model WORKED —
+            # count as success even if content is empty.
+            reasoning = message.get("reasoning_content", "") or message.get("reasoning", "")
+            if not content and reasoning and reasoning.strip():
+                content = reasoning.strip()
+                logger.info(f"FLAME {provider}/{model} reasoning-only response "
+                           f"({len(content)} chars) — counting as success")
 
             refused = self._check_refusal(content)
             censored = self._check_censorship(content)
@@ -326,17 +337,28 @@ class FlameEngine:
         )
 
     def probe_all(self) -> dict[str, dict]:
-        """Health probe: test all models with a 1-token sanity check."""
+        """Health probe: test all models with a sanity check.
+        Uses 80 max_tokens so reasoning models can emit content.
+        Provider-aware: 2s cooldown between same-provider tiers
+        to avoid burst rate limits (SEA-LION, Gemini especially aggressive).
+        """
         results = {}
-        for tier in self.chain["tiers"]:
+        prev_provider = None
+        for i, tier in enumerate(self.chain["tiers"]):
             provider = tier["provider"]
             model = tier["model"]
             key = self._provider_key(provider, model)
+
+            # Provider-aware cooldown: 2s between same-provider tiers
+            if provider == prev_provider:
+                time.sleep(2.0)
+            prev_provider = provider
+
             content, latency, refused, censored = self._call_model(
                 provider,
                 model,
-                [{"role": "user", "content": "Reply READY"}],
-                max_tokens=20,
+                [{"role": "user", "content": "Say OK"}],
+                max_tokens=80,
                 temperature=0.0,
             )
             ok = (
