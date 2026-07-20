@@ -35,7 +35,7 @@
         },
         {
           "provider": "sea-lion",
-          "model": "Qwen-SEA-LION-v4-32B-IT",
+          "model": "aisingapore/Qwen-SEA-LION-v4-32B-IT",
           "weight": 8,
           "tags": [
             "bm-native",
@@ -44,7 +44,7 @@
         },
         {
           "provider": "sea-lion",
-          "model": "Llama-SEA-LION-v3-70B-IT",
+          "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
           "weight": 7,
           "tags": [
             "bm-native",
@@ -53,7 +53,7 @@
         },
         {
           "provider": "sea-lion",
-          "model": "Gemma-SEA-LION-v4-27B-IT",
+          "model": "aisingapore/Gemma-SEA-LION-v4-27B-IT",
           "weight": 6,
           "tags": [
             "bm-native",
@@ -110,30 +110,6 @@
           "tags": [
             "added-from-registry"
           ]
-        },
-        {
-          "provider": "cerebras",
-          "model": "zai-glm-4.7",
-          "weight": 1,
-          "tags": [
-            "added-from-registry"
-          ]
-        },
-        {
-          "provider": "opencode-go",
-          "model": "deepseek-v4-flash-free",
-          "weight": 1,
-          "tags": [
-            "added-from-registry"
-          ]
-        },
-        {
-          "provider": "opencode-go",
-          "model": "north-mini-code-free",
-          "weight": 1,
-          "tags": [
-            "added-from-registry"
-          ]
         }
       ]
     },
@@ -170,8 +146,18 @@
             "embed",
             "local"
           ]
+        },
+        {
+          "provider": "ollama",
+          "model": "nomic-embed-text",
+          "weight": 9,
+          "tags": [
+            "embed",
+            "fast",
+            "multilingual"
+          ]
         }
-      ]
+      ]  
     }
   },
   "providers": {
