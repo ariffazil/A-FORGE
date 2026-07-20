@@ -1,16 +1,96 @@
 {
   "_meta": {
-    "name": "FLAME \u2014 Free Loop AI Model Engine",
-    "version": "1.0.0",
+    "name": "FLAME — Free Loop AI Model Engine",
+    "version": "2.0.1-p0",
     "forged": "2026-07-20",
+    "updated": "2026-07-20T17:55:00Z",
     "doctrine": "DITEMPA BUKAN DIBERI",
-    "cost": "RM0",
-    "purpose": "Non-agentic inference mesh for tools, system workers, and agent fallback. Zero governance authority \u2014 pure throughput.",
-    "constitutional_note": "This chain is for WORKERS only. Agents use the governed constitutional cascade. Workers do not judge, seal, or hold constitutional authority."
+    "cost": "RM0 — all tiers on free provider plans. Hard RM0 gate enforced in code (P0.5).",
+    "purpose": "Sequential fallback inference mesh for tools, workers, and advisory throughput. Zero governance authority — pure throughput. FLAME produces proposals; consuming tools determine admissibility.",
+    "constitutional_note": "TOOL LANE only. Agents use the governed constitutional cascade. FLAME never judges, seals, promotes memory, or touches sovereign data. P0 hardened 2026-07-20: false SEAL removed, RM0 hard gate, safety refusal no-shop, sensitivity gate, provenance fingerprints.",
+    "fleet": "8 core verified models + 3 experimental low-weight tiers. Total 11 tiers across 5 providers. Core: Groq(llama-3.1-8b,llama-3.3-70b), SEA-LION(Qwen-v4-32B,Llama-v3-70B,Gemma-v4-27B), Gemini(flash-2.5), Cerebras(gemma-4-31b), Ollama(qwen2.5-coder:3b). Experimental: Groq(gpt-oss-120b), Gemini(flash-lite-latest), Cerebras(gpt-oss-120b)."
   },
   "chains": {
+    "TOKENROUTER-PRIMARY": {
+      "description": "Primary agent lane — TokenRouter (DeepSeek V4 Pro) first, graceful fallback to free models. For non-constitutional agent work.",
+      "strategy": "least_latency",
+      "fallback": "sequential",
+      "max_retries": 2,
+      "timeout_ms": 20000,
+      "tiers": [
+        {
+          "provider": "tokenrouter",
+          "model": "deepseek/deepseek-v4-pro",
+          "weight": 100,
+          "tags": ["paid", "primary", "deep-reasoning", "1m-context"]
+        },
+        {
+          "provider": "tokenrouter",
+          "model": "deepseek/deepseek-v4-flash",
+          "weight": 95,
+          "tags": ["paid", "fast", "flash"]
+        },
+        {
+          "provider": "groq",
+          "model": "llama-3.1-8b-instant",
+          "weight": 10,
+          "tags": ["fastest", "high-volume", "fallback"]
+        },
+        {
+          "provider": "groq",
+          "model": "llama-3.3-70b-versatile",
+          "weight": 9,
+          "tags": ["deep-reasoning", "fallback"]
+        },
+        {
+          "provider": "sea-lion",
+          "model": "aisingapore/Qwen-SEA-LION-v4-32B-IT",
+          "weight": 8,
+          "tags": ["bm-native", "malay", "fallback"]
+        },
+        {
+          "provider": "sea-lion",
+          "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
+          "weight": 7,
+          "tags": ["bm-native", "deep", "fallback"]
+        },
+        {
+          "provider": "gemini",
+          "model": "gemini-2.5-flash",
+          "weight": 7,
+          "tags": ["general", "deep-context", "fallback"]
+        },
+        {
+          "provider": "cerebras",
+          "model": "gemma-4-31b",
+          "weight": 5,
+          "tags": ["multimodal", "vision", "fallback"]
+        },
+        {
+          "provider": "ollama",
+          "model": "qwen2.5-coder:3b",
+          "weight": 1,
+          "tags": ["local", "survival", "last-resort"]
+        }
+      ]
+    },
+    "GOVERNED-ONLY": {
+      "description": "Constitutional lane — TokenRouter ONLY. NO free-model fallback. HOLD on failure. For arif_judge, arif_seal, capital_wisdom, well_*.",
+      "strategy": "least_latency",
+      "fallback": "none",
+      "max_retries": 1,
+      "timeout_ms": 20000,
+      "tiers": [
+        {
+          "provider": "tokenrouter",
+          "model": "deepseek/deepseek-v4-pro",
+          "weight": 100,
+          "tags": ["paid", "primary", "constitutional", "no-fallback"]
+        }
+      ]
+    },
     "RM0-TOOLS-FREELOOP": {
-      "description": "Primary tool lane \u2014 latency-first, RM0-only. 9 verified-working models across 5 providers.",
+      "description": "Primary tool lane — sequential fallback, 8 core + 3 experimental models. Hit-rate tracked, SNAPSHOT_CHECKSUM integrity hash (not seal). Hard RM0 gate enforced (P0.5).",
       "strategy": "least_latency",
       "fallback": "sequential",
       "max_retries": 3,
@@ -20,101 +100,72 @@
           "provider": "groq",
           "model": "llama-3.1-8b-instant",
           "weight": 10,
-          "tags": [
-            "fastest",
-            "high-volume"
-          ]
+          "tags": ["fastest", "high-volume"]
         },
         {
           "provider": "groq",
           "model": "llama-3.3-70b-versatile",
           "weight": 9,
-          "tags": [
-            "deep-reasoning"
-          ]
+          "tags": ["deep-reasoning"]
         },
         {
           "provider": "sea-lion",
           "model": "aisingapore/Qwen-SEA-LION-v4-32B-IT",
           "weight": 8,
-          "tags": [
-            "bm-native",
-            "malay"
-          ]
+          "tags": ["bm-native", "malay"]
         },
         {
           "provider": "sea-lion",
           "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
           "weight": 7,
-          "tags": [
-            "bm-native",
-            "deep"
-          ]
+          "tags": ["bm-native", "deep"]
         },
         {
           "provider": "sea-lion",
           "model": "aisingapore/Gemma-SEA-LION-v4-27B-IT",
           "weight": 6,
-          "tags": [
-            "bm-native",
-            "fast"
-          ]
+          "tags": ["bm-native", "fast"]
         },
         {
           "provider": "gemini",
           "model": "gemini-2.5-flash",
           "weight": 7,
-          "tags": [
-            "general",
-            "deep-context"
-          ]
+          "tags": ["general", "deep-context"]
         },
         {
           "provider": "cerebras",
           "model": "gemma-4-31b",
           "weight": 5,
-          "tags": [
-            "multimodal",
-            "vision"
-          ]
+          "tags": ["multimodal", "vision"]
         },
         {
           "provider": "ollama",
           "model": "qwen2.5-coder:3b",
           "weight": 1,
-          "tags": [
-            "local",
-            "survival"
-          ]
+          "tags": ["local", "survival"]
         },
         {
           "provider": "groq",
           "model": "openai/gpt-oss-120b",
           "weight": 1,
-          "tags": [
-            "added-from-registry"
-          ]
+          "tags": ["added-from-registry"]
         },
         {
           "provider": "gemini",
           "model": "gemini-flash-lite-latest",
           "weight": 1,
-          "tags": [
-            "added-from-registry"
-          ]
+          "tags": ["added-from-registry"]
         },
         {
           "provider": "cerebras",
           "model": "gpt-oss-120b",
           "weight": 1,
-          "tags": [
-            "added-from-registry"
-          ]
+          "tags": ["added-from-registry"]
         }
       ]
     },
     "RM0-EMBED-FREELOOP": {
-      "description": "Embedding lane \u2014 SEA-LION + Ollama for vector work",
+      "description": "Embedding lane — SEA-LION + Ollama for vector work",
       "strategy": "least_latency",
       "fallback": "sequential",
       "max_retries": 2,
@@ -124,43 +175,37 @@
           "provider": "sea-lion",
           "model": "aisingapore/SEA-LION-ModernBERT-Embedding-600M",
           "weight": 10,
-          "tags": [
-            "embed",
-            "bm-native"
-          ]
+          "tags": ["embed", "bm-native"]
         },
         {
           "provider": "sea-lion",
           "model": "BAAI/bge-m3",
           "weight": 8,
-          "tags": [
-            "embed",
-            "multilingual"
-          ]
+          "tags": ["embed", "multilingual"]
         },
         {
           "provider": "ollama",
           "model": "bge-m3",
           "weight": 5,
-          "tags": [
-            "embed",
-            "local"
-          ]
+          "tags": ["embed", "local"]
         },
         {
           "provider": "ollama",
           "model": "nomic-embed-text",
           "weight": 9,
-          "tags": [
-            "embed",
-            "fast",
-            "multilingual"
-          ]
+          "tags": ["embed", "fast", "multilingual"]
         }
-      ]  
+      ]
     }
   },
   "providers": {
+    "tokenrouter": {
+      "base_url": "https://api.tokenrouter.com/v1",
+      "api_key_env": "TOKENROUTER_API_KEY",
+      "cost_band": "paid",
+      "timeout_ms": 20000,
+      "note": "Primary paid provider — DeepSeek V4 Pro (1M context, tool_call + reasoning)"
+    },
     "groq": {
       "base_url": "https://api.groq.com/openai/v1",
       "api_key_env": "GROQ_API_KEY",
@@ -193,6 +238,7 @@
     }
   },
   "routing": {
+    "default_chain": "TOKENROUTER-PRIMARY",
     "health_probe_interval_s": 300,
     "hit_rate_window": 50,
     "demote_threshold": 0.3,
