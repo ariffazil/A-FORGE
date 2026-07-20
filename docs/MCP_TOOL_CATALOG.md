@@ -70,7 +70,7 @@ Use these when you actually want A-FORGE to *do* something autonomously.
 
 | Tool | Class | Lease? | Use When |
 |------|-------|--------|----------|
-| `arif_forge_execute` | `EXECUTE_HIGH_IMPACT` | Yes + JUDGE SEAL | Execute an action plan via AgentEngine. |
+| `arif_forge` | `EXECUTE_HIGH_IMPACT` | Yes + JUDGE SEAL | Execute an action plan via AgentEngine. |
 | `forge_run` | `EXECUTE_HIGH_IMPACT` | Yes + JUDGE SEAL | Full agent run with governance floors. |
 | `forge_pipeline` | `EXECUTE_REVERSIBLE`/`HIGH_IMPACT` | Yes (mode-dependent) | One-call 000→999 autonomous pipeline (SENSE → ROUTE → FORGE → JUDGE → VAULT). |
 | `forge_approve` | `IRREVERSIBLE` | Yes | **Deprecated proxy.** Always returns `SELF_AUTHORIZE_REFUSED`; route to `forge_judge_proxy` instead. |
@@ -278,7 +278,7 @@ Diagnostics, dry-run, and background job plumbing.
 | Open a browser | `forge_browser_navigate` (lease) |
 | Commit changes | `forge_git_commit` (lease) |
 | Open a GitHub issue/PR | `forge_github_create_issue` / `forge_github_create_pull_request` (lease) |
-| Run shell commands safely | `forge_shell_dryrun` first, then `arif_forge_execute` with SEAL |
+| Run shell commands safely | `forge_shell_dryrun` first, then `arif_forge` with SEAL |
 | Store a memory | `forge_remember` or `forge_memory_store` (lease) |
 | Seal a final verdict | `arif_seal` (lease + JUDGE SEAL) |
 | Check system health | `arif_health_check`, `forge_log_tail`, `forge_netdata_alarms` |

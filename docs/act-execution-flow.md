@@ -58,7 +58,7 @@
 ```
 STAGE 1: DRY_RUN
 ┌─────────────────────────────────────────────────────────────────┐
-│  Agent: arif_forge_execute(mode="dry_run", manifest=...)        │
+│  Agent: arif_forge(mode="dry_run", manifest=...)        │
 │    ↓                                                             │
 │  ART: checks tool state, blast radius, trust                    │
 │    ↓                                                             │
@@ -76,7 +76,7 @@ STAGE 1: DRY_RUN
          ▼
 STAGE 2: DEPLOY
 ┌─────────────────────────────────────────────────────────────────┐
-│  Agent: arif_forge_execute(mode="engineer", manifest=...)       │
+│  Agent: arif_forge(mode="engineer", manifest=...)       │
 │    ↓                                                             │
 │  ART: checks tool state (OBSERVED/TRUSTED), blast, reversibility│
 │    ↓                                                             │
@@ -94,7 +94,7 @@ STAGE 2: DEPLOY
          ▼
 STAGE 3: VERIFY
 ┌─────────────────────────────────────────────────────────────────┐
-│  Agent: arif_forge_execute(mode="query", verify=true)           │
+│  Agent: arif_forge(mode="query", verify=true)           │
 │    ↓                                                             │
 │  A-FORGE: runs verification checks                               │
 │    ↓                                                             │
@@ -119,7 +119,7 @@ TIMELINE:
 ```
 STAGE 1: PREFLIGHT + COMPENSATION APPROVAL
 ┌─────────────────────────────────────────────────────────────────┐
-│  Agent: arif_forge_execute(mode="dry_run", manifest=...,        │
+│  Agent: arif_forge(mode="dry_run", manifest=...,        │
 │           compensation_plan=...)                                 │
 │    ↓                                                             │
 │  ART: TRUST_CRITICAL → SABAR (must verify first)                │
@@ -136,7 +136,7 @@ STAGE 1: PREFLIGHT + COMPENSATION APPROVAL
          ▼
 STAGE 2: CANARY (1%)
 ┌─────────────────────────────────────────────────────────────────┐
-│  Agent: arif_forge_execute(mode="engineer", scope="1%", ...)   │
+│  Agent: arif_forge(mode="engineer", scope="1%", ...)   │
 │    ↓                                                             │
 │  ART: checks tool state, blast radius                            │
 │    ↓                                                             │
@@ -152,7 +152,7 @@ STAGE 2: CANARY (1%)
          ▼
 STAGE 3: EXPAND (25%)
 ┌─────────────────────────────────────────────────────────────────┐
-│  Agent: arif_forge_execute(mode="engineer", scope="25%", ...)  │
+│  Agent: arif_forge(mode="engineer", scope="25%", ...)  │
 │    ↓                                                             │
 │  Human: must ACK before EXPAND                                   │
 │    ↓                                                             │
@@ -278,7 +278,7 @@ Each stage in any ACT pattern generates the same event sequence:
 │  Event: "stage_start"                                            │
 │  ├── pattern: "default_deploy"                                   │
 │  ├── stage: 2/3                                                  │
-│  ├── tool: "arif_forge_execute"                                  │
+│  ├── tool: "arif_forge"                                  │
 │  └── session_id: "...", actor_id: "..."                          │
 │                                                                   │
 │       ↓                                                          │
@@ -300,7 +300,7 @@ Each stage in any ACT pattern generates the same event sequence:
 │       ↓                                                          │
 │                                                                   │
 │  Event: "stage_execute"                                          │
-│  ├── tool: "arif_forge_execute"                                  │
+│  ├── tool: "arif_forge"                                  │
 │  ├── mode: "engineer"                                            │
 │  ├── result: {ok: true, ...}                                     │
 │  └── duration_ms: 1234                                           │

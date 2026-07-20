@@ -85,7 +85,7 @@ The factory automatically inserts veto points based on four rules:
 
 | Rule | Condition | Floor | Human required? |
 |------|-----------|-------|-----------------|
-| **R1: F1 AMANAH** | Task is on F1 surface (`arif_seal`, `arif_forge_execute`, `arif_judge`) | F1 | ✅ yes |
+| **R1: F1 AMANAH** | Task is on F1 surface (`arif_seal`, `arif_forge`, `arif_judge`) | F1 | ✅ yes |
 | **R2: F13 SOVEREIGN risk** | Task `risk_tier >= HIGH` (after sensitivity adjustment) | F13 | ✅ yes |
 | **R3: F13 ALWAYS_HOLD** | Task tool name is in `ALWAYS_HOLD_ACTIONS` (e.g., `DROP DATABASE`, `rm -rf /`) | F13 | ✅ yes |
 | **R4: 888_HOLD trigger** | Task triggers HOLD per `triggersHold(tool, sensitivity)` from OutcomeSpec | F13 | ✅ yes |

@@ -116,9 +116,9 @@ arifOS is not "an AI agent." It is the **constitutional substrate** upon which a
 │  AGI SUBSTRATE = constitutional rules + judgment + memory    │
 │                                                              │
 │  Every agent that boots must:                                │
-│  1. Call arif_session_init (bind to constitution)            │
-│  2. Call arif_judge_deliberate before irreversible acts      │
-│  3. Call arif_vault_seal after every consequential action    │
+│  1. Call arif_init (bind to constitution)            │
+│  2. Call arif_judge before irreversible acts      │
+│  3. Call arif_seal after every consequential action    │
 │  4. Never bypass floors F1-F13                               │
 └─────────────────────────────────────────────────────────────┘
 ```

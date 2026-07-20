@@ -38,7 +38,7 @@
 8. ✅ New `test/BrowserTools.test.ts` covers: open/navigate/extract/close, URL deny, timeout, screenshot redaction
 9. ✅ Build green (`tsc -p tsconfig.json`)
 10. ✅ `curl http://localhost:7071/api/federation-probe` shows new tools in surface
-11. ✅ `arif_kernel_route` from arifOS MCP can invoke `aforge_browser_navigate` end-to-end
+11. ✅ `arif_route` from arifOS MCP can invoke `aforge_browser_navigate` end-to-end
 
 ---
 
@@ -65,7 +65,7 @@
 ```
 arifOS kernel :8088
     │
-    │ arif_kernel_route(target="aforge_browser_*")
+    │ arif_route(target="aforge_browser_*")
     ▼
 A-FORGE :7071 ──── src/mcp/core.ts
     │           │

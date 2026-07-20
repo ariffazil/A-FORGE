@@ -1,4 +1,4 @@
-# ARCH-001: arif_mind_reason → arif_forge_execute Dispatch Boundary
+# ARCH-001: arif_think → arif_forge Dispatch Boundary
 
 > **Status:** DOCUMENTED — boundary is architecturally sound, gap is in documentation
 > **Fixed:** 2026-05-05
@@ -6,7 +6,7 @@
 
 ## The Concern
 
-When `arif_mind_reason(mode='plan')` generates a plan, and that plan includes steps that require `arif_forge_execute`, the handoff between "thinking" (333_MIND) and "doing" (010_FORGE) was poorly defined. Could cause:
+When `arif_think(mode='plan')` generates a plan, and that plan includes steps that require `arif_forge`, the handoff between "thinking" (333_MIND) and "doing" (010_FORGE) was poorly defined. Could cause:
 
 1. Wrong tool routing after planning
 2. Missing audit trail between plan creation and execution
@@ -15,15 +15,15 @@ When `arif_mind_reason(mode='plan')` generates a plan, and that plan includes st
 ## Plan Lifecycle (The Contract)
 
 ```
-arif_mind_reason(plan)
+arif_think(plan)
     ↓ [plan_id created, status=pending_approval]
     ↓ [vault ledger entry written]
     ↓
     888_JUDGE deliberates
-    OR arif_mind_reason(plan_approve, witness_type=human)
+    OR arif_think(plan_approve, witness_type=human)
     ↓ [status=pending_approval → approved, human witness recorded]
     ↓
-arif_forge_execute(mode=engineer, plan_id=xxx)
+arif_forge(mode=engineer, plan_id=xxx)
     ↓ [H2 hard-gate: plan must exist AND status=='approved']
     ↓ [F13 hard-gate: plan_approve requires witness_type='human' — AI cannot self-approve]
     ↓
@@ -36,9 +36,9 @@ arif_forge_execute(mode=engineer, plan_id=xxx)
 ```
 F13 SOVEREIGN: plan_approve requires witness_type='human'
 ```
-The LLM running inside `arif_mind_reason` can **propose** plans but cannot **approve** them. Approval requires either:
-- `arif_judge_deliberate(888_JUDGE)` SEAL verdict
-- `arif_mind_reason(mode='plan_approve', witness_type='human')` — human actor
+The LLM running inside `arif_think` can **propose** plans but cannot **approve** them. Approval requires either:
+- `arif_judge(888_JUDGE)` SEAL verdict
+- `arif_think(mode='plan_approve', witness_type='human')` — human actor
 
 ### Rule 2: Forge Gated on Approved Plans Only
 ```python
@@ -48,8 +48,8 @@ if mode in _PLAN_REQUIRED_MODES:  # engineer, write, generate
 ```
 
 ### Rule 3: plan_id is the Chain Link
-- `arif_mind_reason(plan)` writes vault ledger entry with `plan_id`
-- `arif_forge_execute` requires `plan_id` to reference the approving verdict
+- `arif_think(plan)` writes vault ledger entry with `plan_id`
+- `arif_forge` requires `plan_id` to reference the approving verdict
 - Vault chain: plan_created → plan_approved → forge_executed
 
 ### Rule 4: tool_hint is Advisory Only
@@ -87,7 +87,7 @@ plan = _PLAN_REGISTRY.get('PLAN-xxxxxxxx')
 assert plan['status'] == 'approved'
 assert plan.get('witness_type') == 'human'
 
-# After arif_forge_execute without plan_id or with unapproved plan:
+# After arif_forge without plan_id or with unapproved plan:
 # → returns HOLD with failed_floors=['F01','F13']
 "
 ```

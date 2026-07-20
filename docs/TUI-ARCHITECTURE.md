@@ -12,7 +12,7 @@
 
 This document describes the **constitutional architecture** of the A-FORGE Terminal User Interface (TUI) — a real-time operations dashboard for forge job monitoring, governance floor status, federation organ health, and execution logs.
 
-**Critical distinction:** The TUI is a **witness surface**, not a judge. It observes and displays state emitted by the arifOS kernel and federation organs. It never calls `arif_judge`, `arif_seal`, or `arif_forge_execute`. It is the terminal-native complement to the AAA cockpit (React, port 3001).
+**Critical distinction:** The TUI is a **witness surface**, not a judge. It observes and displays state emitted by the arifOS kernel and federation organs. It never calls `arif_judge`, `arif_seal`, or `arif_forge`. It is the terminal-native complement to the AAA cockpit (React, port 3001).
 
 **Eureka Insights (forged this session):**
 
@@ -192,7 +192,7 @@ function update(model: TuiModel, msg: TuiMessage): TuiModel {
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-**Agent rule:** No code in the TUI layer ever calls `arif_judge`, `arif_seal`, or `arif_forge_execute`. The TUI is a *reader* of the kernel, not an *actor*.
+**Agent rule:** No code in the TUI layer ever calls `arif_judge`, `arif_seal`, or `arif_forge`. The TUI is a *reader* of the kernel, not an *actor*.
 
 ---
 
@@ -297,7 +297,7 @@ type SseEvent =
 |--------|-----|-------------|
 | Calling `arif_judge` from TUI | TUI is witness, not judge | Bypasses 888_JUDGE gate |
 | Calling `arif_seal` from TUI | TUI has no authority to seal | Forges unsigned ledger entries |
-| Calling `arif_forge_execute` from TUI | TUI cannot mutate execution state | Bypasses F1 reversibility |
+| Calling `arif_forge` from TUI | TUI cannot mutate execution state | Bypasses F1 reversibility |
 | Inferring floor pass/fail locally | Only arifOS kernel can judge floors | F9 ANTI-HANTU violation |
 | Direct mutation of model (not via Msg) | Violates MVU contract | Hidden state, no audit trail |
 | Skipping Zod validation on external data | Skips F9 gate | Invalid data silently accepted |
