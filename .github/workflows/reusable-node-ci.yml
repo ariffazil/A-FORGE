@@ -52,7 +52,7 @@ jobs:
     outputs:
       risk_class: ${{ steps.classify.outputs.risk_class }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Classify
@@ -76,8 +76,8 @@ jobs:
     timeout-minutes: 5
     if: ${{ inputs.lint_command != '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ inputs.node_version }}
           cache: npm
@@ -92,8 +92,8 @@ jobs:
     needs: [lint]
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ inputs.node_version }}
           cache: npm
@@ -102,7 +102,7 @@ jobs:
       - name: Build
         run: ${{ inputs.build_command }}
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.organ }}-dist
           path: ${{ inputs.artifact_path }}
@@ -114,8 +114,8 @@ jobs:
     needs: [build]
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ inputs.node_version }}
           cache: npm
@@ -132,7 +132,7 @@ jobs:
     needs: [classify]
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate organ.yaml
         run: |
           if [ ! -f organ.yaml ]; then

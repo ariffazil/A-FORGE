@@ -57,7 +57,7 @@ jobs:
       risk_class: ${{ steps.classify.outputs.risk_class }}
       reversibility: ${{ steps.classify.outputs.reversibility }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Classify
@@ -82,8 +82,8 @@ jobs:
     needs: [classify]
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ inputs.python_version }}
       - name: Install lint deps
@@ -99,8 +99,8 @@ jobs:
     timeout-minutes: 5
     if: ${{ inputs.type_check_command != '' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ inputs.python_version }}
       - name: Install
@@ -115,8 +115,8 @@ jobs:
     needs: [lint]
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ inputs.python_version }}
       - name: Install
@@ -133,8 +133,8 @@ jobs:
     needs: [test]
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ inputs.python_version }}
       - name: Install build deps
@@ -144,7 +144,7 @@ jobs:
       - name: Build package
         run: python -m build
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ inputs.organ }}-dist
           path: ${{ inputs.artifact_path }}
@@ -157,7 +157,7 @@ jobs:
     needs: [classify]
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Validate organ.yaml

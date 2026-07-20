@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate schema
         run: |
           if [ ! -f organ.yaml ]; then
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install tools
         run: pip install check-jsonschema 2>/dev/null || npm install -g ajv-cli 2>/dev/null || echo "⚠ No schema validator available"
       - name: Validate schemas
@@ -102,7 +102,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Check FEDERATION.md
         run: |
           if [ ! -f FEDERATION.md ]; then

@@ -42,7 +42,7 @@ jobs:
           - { name: aaa, port: 3001, repo: ariffazil/AAA }
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: ${{ matrix.organ.repo }}
           path: ${{ matrix.organ.name }}
@@ -94,7 +94,7 @@ jobs:
 
       - name: "Open drift issue"
         if: steps.compare.outputs.drift == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const title = `[DRIFT] ${{ matrix.organ.name }}: source != runtime`;
