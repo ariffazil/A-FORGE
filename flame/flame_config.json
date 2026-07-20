@@ -1,0 +1,238 @@
+{
+  "_meta": {
+    "name": "FLAME \u2014 Free Loop AI Model Engine",
+    "version": "1.0.0",
+    "forged": "2026-07-20",
+    "doctrine": "DITEMPA BUKAN DIBERI",
+    "cost": "RM0",
+    "purpose": "Non-agentic inference mesh for tools, system workers, and agent fallback. Zero governance authority \u2014 pure throughput.",
+    "constitutional_note": "This chain is for WORKERS only. Agents use the governed constitutional cascade. Workers do not judge, seal, or hold constitutional authority."
+  },
+  "chains": {
+    "RM0-TOOLS-FREELOOP": {
+      "description": "Primary tool lane \u2014 latency-first, RM0-only. 9 verified-working models across 5 providers.",
+      "strategy": "least_latency",
+      "fallback": "sequential",
+      "max_retries": 3,
+      "timeout_ms": 15000,
+      "tiers": [
+        {
+          "provider": "groq",
+          "model": "llama-3.1-8b-instant",
+          "weight": 10,
+          "tags": [
+            "fastest",
+            "high-volume"
+          ]
+        },
+        {
+          "provider": "groq",
+          "model": "llama-3.3-70b-versatile",
+          "weight": 9,
+          "tags": [
+            "deep-reasoning"
+          ]
+        },
+        {
+          "provider": "sea-lion",
+          "model": "Qwen-SEA-LION-v4-32B-IT",
+          "weight": 8,
+          "tags": [
+            "bm-native",
+            "malay"
+          ]
+        },
+        {
+          "provider": "sea-lion",
+          "model": "Llama-SEA-LION-v3-70B-IT",
+          "weight": 7,
+          "tags": [
+            "bm-native",
+            "deep"
+          ]
+        },
+        {
+          "provider": "sea-lion",
+          "model": "Gemma-SEA-LION-v4-27B-IT",
+          "weight": 6,
+          "tags": [
+            "bm-native",
+            "fast"
+          ]
+        },
+        {
+          "provider": "gemini",
+          "model": "gemini-2.5-flash",
+          "weight": 7,
+          "tags": [
+            "general",
+            "deep-context"
+          ]
+        },
+        {
+          "provider": "cerebras",
+          "model": "gemma-4-31b",
+          "weight": 5,
+          "tags": [
+            "multimodal",
+            "vision"
+          ]
+        },
+        {
+          "provider": "ollama",
+          "model": "qwen2.5-coder:3b",
+          "weight": 1,
+          "tags": [
+            "local",
+            "survival"
+          ]
+        },
+        {
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "weight": 1,
+          "tags": [
+            "added-from-registry"
+          ]
+        },
+        {
+          "provider": "gemini",
+          "model": "gemini-flash-lite-latest",
+          "weight": 1,
+          "tags": [
+            "added-from-registry"
+          ]
+        },
+        {
+          "provider": "cerebras",
+          "model": "gpt-oss-120b",
+          "weight": 1,
+          "tags": [
+            "added-from-registry"
+          ]
+        },
+        {
+          "provider": "cerebras",
+          "model": "zai-glm-4.7",
+          "weight": 1,
+          "tags": [
+            "added-from-registry"
+          ]
+        },
+        {
+          "provider": "opencode-go",
+          "model": "deepseek-v4-flash-free",
+          "weight": 1,
+          "tags": [
+            "added-from-registry"
+          ]
+        },
+        {
+          "provider": "opencode-go",
+          "model": "north-mini-code-free",
+          "weight": 1,
+          "tags": [
+            "added-from-registry"
+          ]
+        }
+      ]
+    },
+    "RM0-EMBED-FREELOOP": {
+      "description": "Embedding lane \u2014 SEA-LION + Ollama for vector work",
+      "strategy": "least_latency",
+      "fallback": "sequential",
+      "max_retries": 2,
+      "timeout_ms": 30000,
+      "tiers": [
+        {
+          "provider": "sea-lion",
+          "model": "aisingapore/SEA-LION-ModernBERT-Embedding-600M",
+          "weight": 10,
+          "tags": [
+            "embed",
+            "bm-native"
+          ]
+        },
+        {
+          "provider": "sea-lion",
+          "model": "BAAI/bge-m3",
+          "weight": 8,
+          "tags": [
+            "embed",
+            "multilingual"
+          ]
+        },
+        {
+          "provider": "ollama",
+          "model": "bge-m3",
+          "weight": 5,
+          "tags": [
+            "embed",
+            "local"
+          ]
+        }
+      ]
+    }
+  },
+  "providers": {
+    "groq": {
+      "base_url": "https://api.groq.com/openai/v1",
+      "api_key_env": "GROQ_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 10000
+    },
+    "sea-lion": {
+      "base_url": "https://api.sea-lion.ai/v1",
+      "api_key_env": "SEA_LION_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 10000
+    },
+    "gemini": {
+      "base_url": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "api_key_env": "GEMINI_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 12000
+    },
+    "cerebras": {
+      "base_url": "https://api.cerebras.ai/v1",
+      "api_key_env": "CEREBRAS_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 12000
+    },
+    "ollama": {
+      "base_url": "http://localhost:11434/v1",
+      "api_key_env": null,
+      "cost_band": "free",
+      "timeout_ms": 30000
+    }
+  },
+  "routing": {
+    "health_probe_interval_s": 300,
+    "hit_rate_window": 50,
+    "demote_threshold": 0.3,
+    "promote_threshold": 0.8,
+    "latency_decay": 0.9,
+    "censorship_patterns": [
+      "I cannot",
+      "I'm unable",
+      "I apologize",
+      "as an AI",
+      "I don't feel comfortable"
+    ],
+    "refusal_patterns": [
+      "refuse",
+      "cannot comply",
+      "against my guidelines",
+      "not appropriate"
+    ],
+    "malformed_markers": [
+      "undefined",
+      "null",
+      "error code"
+    ],
+    "state_dir": "/root/.local/share/flame/",
+    "state_file": "/root/.local/share/flame/flame_state.json",
+    "hitrate_log": "/root/.local/share/flame/flame_hitrate.jsonl",
+    "health_log": "/root/.local/share/flame/flame_health.jsonl"
+  }
+}
