@@ -59,17 +59,17 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Download the evidence envelope from the attest job
       - name: Download evidence envelope
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: evidence-a-forge-${{ github.sha }}
           path: artifacts/
 
       - name: Download SBOM
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: sbom-a-forge-${{ github.sha }}
           path: artifacts/
@@ -109,7 +109,7 @@ jobs:
 
       # Publish the GitHub Release
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: "${{ steps.tag.outputs.tag }} · Build-Once Attestation"
