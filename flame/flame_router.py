@@ -424,6 +424,7 @@ class FlameEngine:
         messages: list[dict],
         max_tokens: int = 1024,
         temperature: float = 0.3,
+        timeout_override: float | None = None,
     ) -> tuple[str, float, bool, bool, bool, bool]:
         """Call a single model.
 
@@ -431,11 +432,16 @@ class FlameEngine:
 
         P0.2 fix: reasoning_content without final content = FAIL, not success.
         P0.6 fix: returns safety_refused flag for caller to stop model-shopping.
+        P1 fix (2026-07-20): timeout_override for probe mode.
         """
         cfg = self.providers[provider]
         base_url = cfg["base_url"]
         api_key = self._get_api_key(provider)
-        timeout = cfg.get("timeout_ms", 15000) / 1000
+        timeout = (
+            timeout_override
+            if timeout_override is not None
+            else cfg.get("timeout_ms", 15000) / 1000
+        )
 
         headers = {"Content-Type": "application/json"}
         if api_key:
@@ -770,11 +776,15 @@ class FlameEngine:
 
     # ── Probe ──────────────────────────────────────────────────────────────
 
-    def probe_all(self) -> dict[str, dict]:
+    def probe_all(self, probe_timeout_s: float = 5.0) -> dict[str, dict]:
         """Health probe: test all models with a sanity check.
         Uses 80 max_tokens so reasoning models can emit content.
         Provider-aware: 2s cooldown between same-provider tiers
         to avoid burst rate limits (SEA-LION, Gemini especially aggressive).
+
+        P1 fix (2026-07-20): probe_timeout_s controls per-model timeout.
+        Default 5s — a healthy model responds in <1s. Unhealthy ones
+        waste no more than 5s each instead of 15s.
         """
         results = {}
         prev_provider = None
@@ -805,6 +815,7 @@ class FlameEngine:
                     [{"role": "user", "content": "Say OK"}],
                     max_tokens=80,
                     temperature=0.0,
+                    timeout_override=probe_timeout_s,
                 )
             )
             ok = (
@@ -999,8 +1010,11 @@ def main():
     # Mode handlers
     if args.mode == "probe":
         results = engine.probe_all()
-        for k, v in results.items():
-            print(f"{'✅' if v['ok'] else '❌'} {k} → {v['latency_ms']:.0f}ms")
+        if args.json:
+            print(json.dumps(results))
+        else:
+            for k, v in results.items():
+                print(f"{'✅' if v['ok'] else '❌'} {k} → {v['latency_ms']:.0f}ms")
         engine._save_state()
         return
 
