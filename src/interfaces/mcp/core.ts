@@ -2639,13 +2639,17 @@ server.tool(
               return { approved: false, receipt_id: `judge-fallback-${Date.now()}` };
             }
           },
-          // VAULT999 seal
-          sealToVault: async (data: unknown) => {
+          // VAULT999 seal — DAG Bridge L1→L2 (FORGED 2026-07-20)
+          sealToVault: async (data: unknown, evidenceSha?: string) => {
             try {
-              const sealResult = await callMCP("arifos.arif_seal", {
+              const sealParams: Record<string, unknown> = {
                 mode: "seal",
                 payload: JSON.stringify(data),
-              });
+              };
+              if (evidenceSha) {
+                sealParams.evidence_sha = evidenceSha;
+              }
+              const sealResult = await callMCP("arifos.arif_seal", sealParams);
               const sr = sealResult as Record<string, unknown>;
               return {
                 receipt_id: typeof sr?.receipt_id === "string" ? sr.receipt_id : `vault-${Date.now()}`,
@@ -2763,12 +2767,16 @@ server.tool(
           verdict: args.verdict,
         },
         {
-          vaultAppend: async (record: unknown) => {
+          vaultAppend: async (record: unknown, evidenceSha?: string) => {
             try {
-              const sealResult = await callMCP("arifos.arif_seal", {
+              const sealParams: Record<string, unknown> = {
                 mode: "seal",
                 payload: JSON.stringify(record),
-              });
+              };
+              if (evidenceSha) {
+                sealParams.evidence_sha = evidenceSha;
+              }
+              const sealResult = await callMCP("arifos.arif_seal", sealParams);
               const sr = sealResult as Record<string, unknown>;
               return {
                 seq: typeof sr?.seq === "number" ? sr.seq : Date.now(),
