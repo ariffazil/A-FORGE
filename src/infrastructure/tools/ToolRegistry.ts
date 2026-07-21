@@ -5,6 +5,7 @@ import type {
   ToolResult,
 } from "../../domain/types/tool.js";
 import type { ToolDefinitionForModel } from "../../domain/types/agent.js";
+import { executeQQQ } from "../../domain/governance/QQQRuntime.js";
 
 export class ToolRegistry {
   private readonly tools = new Map<string, Tool>();
@@ -32,6 +33,26 @@ export class ToolRegistry {
     const tool = this.tools.get(toolName);
     if (!tool) {
       throw new Error(`Unknown tool: ${toolName}`);
+    }
+
+    // === QQQ Runtime v1: Constitutional Evaluation Gate ===
+    const intent = executionContext.intent || executionContext.expectedOutput || `Execute tool ${toolName}`;
+    const qqqRecord = await executeQQQ(toolName, args, intent, executionContext.sessionId);
+    
+    if (qqqRecord.verdict.verdict === "VOID") {
+      return {
+        ok: false,
+        output: `VOID: QQQ Runtime blocked execution. Reason: ${qqqRecord.verdict.reason}`,
+        metadata: { qqq: qqqRecord },
+      };
+    }
+    
+    if (qqqRecord.verdict.verdict === "HOLD") {
+      return {
+        ok: false,
+        output: `HOLD: QQQ Runtime held execution. Reason: ${qqqRecord.verdict.reason}`,
+        metadata: { qqq: qqqRecord },
+      };
     }
 
     // 1. Strict Permission Check
