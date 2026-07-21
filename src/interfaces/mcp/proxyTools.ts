@@ -1129,7 +1129,10 @@ async function executeFetch(params: {
       const timer = setTimeout(() => controller.abort(), effectiveTimeout);
       const resp = await fetch(searchUrl, {
         signal: controller.signal,
-        headers: { "User-Agent": "A-FORGE/1.0 (arifOS Federation; +https://arif-fazil.com)" },
+        headers: {
+          "User-Agent": "A-FORGE/1.0 (arifOS Federation; +https://arif-fazil.com)",
+          "Accept": "application/agent+json, text/html, application/json;q=0.9, */*;q=0.5",
+        },
       });
       clearTimeout(timer);
       if (!resp.ok) return text({ status: "error", http_status: resp.status, query: params.query, backend: "searxng" }, true);
@@ -1185,6 +1188,7 @@ async function executeFetch(params: {
       redirect: follow_redirects ? "follow" : "manual",
       headers: {
         "User-Agent": "A-FORGE/1.0 (arifOS Federation; +https://arif-fazil.com)",
+        "Accept": "application/agent+json, text/html, application/json;q=0.9, */*;q=0.5",
       },
     });
     clearTimeout(timer);
