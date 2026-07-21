@@ -77,7 +77,14 @@ describe("QQQ Runtime v1 Constitutional Layer", () => {
       } catch {}
     }
 
-    const record = await executeQQQ("write_file", { path: "test.txt" }, testIntent, testSession);
+    const record = await executeQQQ(
+      "write_file",
+      { path: "test.txt" },
+      testIntent,
+      testSession,
+      ["Workspace matches standard layout"],
+      ["No concurrent file writes"]
+    );
 
     assert.ok(record.qqq_id.startsWith("QQQ-"));
     assert.equal(record.intent, testIntent);
@@ -86,7 +93,49 @@ describe("QQQ Runtime v1 Constitutional Layer", () => {
     assert.ok(existsSync(receiptPath));
 
     const fileContent = readFileSync(receiptPath, "utf-8").trim();
-    const loggedRecord = JSON.parse(fileContent);
+    const lines = fileContent.split("\n");
+    const loggedRecord = JSON.parse(lines[lines.length - 1]);
     assert.equal(loggedRecord.qqq_id, record.qqq_id);
+  });
+
+  it("should block with HOLD verdict if declared reasoning fields are empty", async () => {
+    const record = await executeQQQ("write_file", { path: "test.txt" }, testIntent, testSession, [], []);
+    assert.equal(record.verdict.verdict, "HOLD");
+    assert.ok(record.verdict.reason.includes("no reasoning submitted"));
+  });
+
+  it("should activate DEGRADED_MODE and write downgrade event when arifOS is simulated unreachable", async () => {
+    const receiptPath = "/root/VAULT999/qqq_receipts.jsonl";
+    
+    // Clean up if exists
+    if (existsSync(receiptPath)) {
+      try {
+        unlinkSync(receiptPath);
+      } catch {}
+    }
+
+    // Call a mock tool that will try to request judgment but fail to find the MCP endpoint
+    const record = await executeQQQ(
+      "nonexistent_tool_force_outage",
+      { path: "test.txt" },
+      testIntent,
+      testSession,
+      ["System is normal"],
+      ["Outage possible"]
+    );
+
+    // Should activate degraded mode
+    const { isDegradedMode } = await import("../src/domain/governance/QQQRuntime.js");
+    assert.equal(isDegradedMode, true);
+
+    // Verify fallback verdict is recorded
+    assert.ok(record.verdict.verdict === "SEAL" || record.verdict.verdict === "HOLD");
+
+    // Verify downgrade event written to receipt log
+    assert.ok(existsSync(receiptPath));
+    const lines = readFileSync(receiptPath, "utf-8").trim().split("\n");
+    const downgradeLine = JSON.parse(lines[0]);
+    assert.equal(downgradeLine.event, "constitutional_downgrade");
+    assert.ok(downgradeLine.reason);
   });
 });

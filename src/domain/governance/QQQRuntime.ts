@@ -27,6 +27,10 @@ export interface QQQRecord {
   args: Record<string, unknown>;
   assumptions: string[];
   unknowns: string[];
+  assumptions_declared: string[];
+  assumptions_inferred: string[];
+  unknowns_declared: string[];
+  unknowns_inferred: string[];
   options: {
     path_1: string; // The primary execution path
     path_2: string; // Safer check/probe path
@@ -50,6 +54,8 @@ export interface QQQRecord {
   };
   vault_receipt_id?: string;
 }
+
+export let isDegradedMode = false;
 
 // ── Implementation ──────────────────────────────────────────────────────────
 
@@ -185,46 +191,103 @@ export async function executeQQQ(
   toolName: string,
   args: Record<string, unknown>,
   intent: string,
-  sessionId: string
+  sessionId: string,
+  assumptions_declared: string[] = [],
+  unknowns_declared: string[] = []
 ): Promise<QQQRecord> {
   const qqqId = `QQQ-${Date.now()}-${randomUUID().slice(0, 8)}`;
-  const assumptions = extractAssumptions(toolName, args);
-  const unknowns = detectUnknowns(toolName, args);
+  
+  // 1. Distinguish agent-declared vs runtime-inferred fields
+  let final_assumptions_declared = [...assumptions_declared];
+  if (Array.isArray(args.assumptions_declared)) {
+    final_assumptions_declared.push(...args.assumptions_declared);
+  } else if (args.qqq && typeof args.qqq === "object" && Array.isArray((args.qqq as any).assumptions_declared)) {
+    final_assumptions_declared.push(...(args.qqq as any).assumptions_declared);
+  } else if (Array.isArray(args.qqq_assumptions)) {
+    final_assumptions_declared.push(...args.qqq_assumptions);
+  }
+  final_assumptions_declared = Array.from(new Set(final_assumptions_declared));
+
+  let final_unknowns_declared = [...unknowns_declared];
+  if (Array.isArray(args.unknowns_declared)) {
+    final_unknowns_declared.push(...args.unknowns_declared);
+  } else if (args.qqq && typeof args.qqq === "object" && Array.isArray((args.qqq as any).unknowns_declared)) {
+    final_unknowns_declared.push(...(args.qqq as any).unknowns_declared);
+  } else if (Array.isArray(args.qqq_unknowns)) {
+    final_unknowns_declared.push(...args.qqq_unknowns);
+  }
+  final_unknowns_declared = Array.from(new Set(final_unknowns_declared));
+
+  const assumptions_inferred = extractAssumptions(toolName, args);
+  const unknowns_inferred = detectUnknowns(toolName, args);
+
   const options = generatePaths(toolName, args);
   const riskScore = calculateRiskScore(toolName, args);
   const rollback = generateRollback(toolName, args);
   const simulation = runSimulationPass(toolName, args, riskScore);
 
-  // 1. Initial local floor evaluation
+  // 2. Initial local floor evaluation
   const floorsTriggered: string[] = [];
   if (riskScore >= 0.90) floorsTriggered.push("F1"); // Irreversible threshold
-  if (unknowns.length > 5) floorsTriggered.push("F7");   // Humility limit
+  if (unknowns_inferred.length > 5) floorsTriggered.push("F7");   // Humility limit
 
   let verdict: QQQRecord["verdict"]["verdict"] = "SEAL";
   let reason = "QQQ local checks passed.";
 
-  // 2. Constitutional verdict request (Call arifOS judge if available)
-  try {
-    const response = (await callMCP("arifos_mcp.arif_judge", {
-      intent,
-      tool_name: toolName,
-      arguments: args,
-      risk_score: riskScore,
-      floors_triggered: floorsTriggered,
-    })) as Record<string, unknown>;
+  // Hardening: If both declared lists are empty → 888_HOLD with "no reasoning submitted"
+  if (final_assumptions_declared.length === 0 && final_unknowns_declared.length === 0) {
+    verdict = "HOLD";
+    reason = "888_HOLD: no reasoning submitted. Missing: assumptions_declared, unknowns_declared.";
+    floorsTriggered.push("F7");
+  }
 
-    if (response && typeof response.verdict === "string") {
-      verdict = response.verdict as QQQRecord["verdict"]["verdict"];
-      reason = String(response.reason ?? "arifOS evaluated verdict.");
-      if (Array.isArray(response.floors_triggered)) {
-        floorsTriggered.push(...(response.floors_triggered as string[]));
+  // 3. Constitutional verdict request (Call arifOS judge if available and not held locally)
+  if (verdict === "SEAL") {
+    try {
+      const response = (await callMCP("arifos_mcp.arif_judge", {
+        intent,
+        tool_name: toolName,
+        arguments: args,
+        risk_score: riskScore,
+        floors_triggered: floorsTriggered,
+        assumptions_declared: final_assumptions_declared,
+        unknowns_declared: final_unknowns_declared,
+      })) as Record<string, unknown>;
+
+      if (response && typeof response.verdict === "string") {
+        verdict = response.verdict as QQQRecord["verdict"]["verdict"];
+        reason = String(response.reason ?? "arifOS evaluated verdict.");
+        if (Array.isArray(response.floors_triggered)) {
+          floorsTriggered.push(...(response.floors_triggered as string[]));
+        }
       }
-    }
-  } catch {
-    // arifOS kernel is offline/unreachable: fall back to local heuristic rules
-    if (riskScore >= 0.90) {
-      verdict = "HOLD";
-      reason = "F1 AMANAH: High risk execution requires sovereign verification (arifOS offline fallback).";
+      isDegradedMode = false;
+    } catch (err: any) {
+      // arifOS kernel is offline/unreachable: activate DEGRADED_MODE and write downgrade event
+      isDegradedMode = true;
+
+      if (riskScore >= 0.90) {
+        verdict = "HOLD";
+        reason = "F1 AMANAH: High risk execution requires sovereign verification (arifOS offline fallback).";
+      } else {
+        verdict = "SEAL";
+        reason = "QQQ offline fallback: Local F1-F13 thresholds check passed.";
+      }
+
+      const downgradeEvent = {
+        event: "constitutional_downgrade",
+        reason: err.message || String(err),
+        timestamp: new Date().toISOString(),
+        fallback_verdict: verdict,
+        tools_executed_under_downgrade: [toolName],
+      };
+
+      try {
+        mkdirSync(dirname(VAULT_QQQ_PATH), { recursive: true });
+        appendFileSync(VAULT_QQQ_PATH, JSON.stringify(downgradeEvent) + "\n", "utf-8");
+      } catch (writeErr: any) {
+        process.stderr.write(`[QQQ] Failed to write downgrade event to VAULT999: ${writeErr.message}\n`);
+      }
     }
   }
 
@@ -234,8 +297,12 @@ export async function executeQQQ(
     intent,
     tool_name: toolName,
     args,
-    assumptions,
-    unknowns,
+    assumptions: Array.from(new Set([...final_assumptions_declared, ...assumptions_inferred])),
+    unknowns: Array.from(new Set([...final_unknowns_declared, ...unknowns_inferred])),
+    assumptions_declared: final_assumptions_declared,
+    assumptions_inferred,
+    unknowns_declared: final_unknowns_declared,
+    unknowns_inferred,
     options,
     risks: {
       best_case: `Tool executes successfully and actual state matches expected state.`,
@@ -251,7 +318,7 @@ export async function executeQQQ(
     },
   };
 
-  // 3. VAULT999 receipt generation
+  // 4. VAULT999 receipt generation
   try {
     mkdirSync(dirname(VAULT_QQQ_PATH), { recursive: true });
     appendFileSync(VAULT_QQQ_PATH, JSON.stringify(record) + "\n", "utf-8");
