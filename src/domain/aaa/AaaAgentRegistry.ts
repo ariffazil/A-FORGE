@@ -139,6 +139,13 @@ export function resolveActor(actorId: string): ActorBinding | null {
       // A-AUDIT + A-ARCHIVE removed 2026-07-17
       humanOverride: true,
     },
+    // P1.3: arif (sovereign shorthand) for autonomous seal path
+    "arif": {
+      actorId: "arif",
+      primaryAgent: "888-APEX",
+      delegateAgents: ["333-AGI", "555-ASI"],
+      humanOverride: true,
+    },
     "a-forge::seal-service": {
       actorId: "a-forge::seal-service",
       primaryAgent: "888-APEX",

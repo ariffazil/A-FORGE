@@ -50,6 +50,8 @@ export interface SealRecord {
   hash: string;
   /** Freeform notes */
   notes?: string;
+  /** World Model metadata — action→observation fingerprint (L1-L5, ECHO/PaW) */
+  wm_metadata?: Record<string, unknown>;
 }
 
 export interface ArifSealConfig {
@@ -211,6 +213,7 @@ export class ArifSeal {
     stderr: string;
     exit_code: number | null;
     notes?: string;
+    wm_metadata?: Record<string, unknown>;
   }): Promise<SealRecord> {
     const lockDir = this.config.ledgerPath + ".lock";
     const holder = `forge_shell-${randomUUID().slice(0, 8)}`;
@@ -254,6 +257,7 @@ export class ArifSeal {
       };
       if (params.approver) recordBase.approver = params.approver;
       if (params.notes) recordBase.notes = params.notes;
+      if (params.wm_metadata) recordBase.wm_metadata = params.wm_metadata;
 
       // Compute self-hash
       const canonical = canonicalSerialize(recordBase);

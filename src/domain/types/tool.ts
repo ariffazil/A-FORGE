@@ -31,6 +31,8 @@ export type ToolExecutionContext = {
   workingDirectory: string;
   modeName: string;
   abortSignal?: AbortSignal;
+  /** Agent's expected output BEFORE execution — used for world model surprise scoring */
+  expectedOutput?: string;
   policy?: {
     commandTimeoutMs: number;
     maxFileBytes: number;
@@ -45,4 +47,14 @@ export type ToolResult = {
   ok: boolean;
   output: string;
   metadata?: Record<string, unknown>;
+  /** World model metadata — action→observation instrumentation (L1-L5) */
+  wm?: {
+    tool_priority: number;
+    action_hash: string;
+    observation_hash: string;
+    agent_confidence: number;
+    observation_entropy: number;
+    surprise_score: number;
+    wm_eligible: boolean;
+  };
 };

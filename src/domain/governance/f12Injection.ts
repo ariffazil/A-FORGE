@@ -36,8 +36,12 @@ function flattenForScan(a: FloorContext["action"]): string {
     a.session_id,
   ];
   if (a.args) {
-    for (const v of Object.values(a.args)) {
-      if (typeof v === "string") parts.push(v);
+    // P1.3: Skip SCT/capability tokens from F12 scan. These are kernel-minted
+    // session tokens (sct_v1.*) that legitimately contain fields like "kid"
+    // and "token" which otherwise trigger false-positive SECRET_ACCESS alerts.
+    const skipKeys = new Set(["session_token", "sct", "arifos_sct"]);
+    for (const [k, v] of Object.entries(a.args)) {
+      if (typeof v === "string" && !skipKeys.has(k)) parts.push(v);
     }
   }
   return parts.join(" ");
@@ -180,8 +184,13 @@ export function checkF12Injection(ctx: FloorContext): FloorReason[] {
   }
 
   // Rule 5: Secret file access
+  // P1.3: For code-accepting tools (forge_vault, forge_filesystem, etc.),
+  // only check the action target (file paths), not the content payload.
+  // These tools legitimately carry structured content containing words like
+  // "token", "key", "password" that trigger false-positive SECRET_ACCESS.
+  const haystackForSecretCheck = isCodeAccepter ? a.target : haystack;
   for (const pattern of F12_THREAT_PATTERNS.SECRET_FILE_PATTERNS) {
-    if (pattern.test(a.target) || pattern.test(haystack)) {
+    if (pattern.test(a.target) || pattern.test(haystackForSecretCheck)) {
       reasons.push({
         floor: "F12",
         code: "SECRET_ACCESS",
