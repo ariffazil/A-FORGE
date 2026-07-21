@@ -1,8 +1,8 @@
 <!-- SOT-MANIFEST
 owner: Arif
-last_verified: 2026-07-18 18:08 UTC (999_SEAL — 8-class action taxonomy + A-FORGE gate alignment)
+last_verified: 2026-07-21T07:02:17Z (999_SEAL — A-FORGE Execution Constitution integrated)
 valid_from: 2026-06-14
-valid_until: 2026-08-17
+valid_until: 2026-08-21
 confidence: high
 scope: /root/A-FORGE
 epistemic_status: SOURCE_OF_TRUTH
@@ -442,3 +442,30 @@ The AAA deliberation engine now returns `trilemma_state` with every SEAL verdict
 - `INCOMPLETE_SOVEREIGN` — all three pillars present, trilemma shattered, proceed
 - `PARTIAL` — incompleteness acknowledged but missing dual-awareness or chosen constraint
 - `TRILEMMA_TRAPPED` — claiming completeness or missing all pillars → BLOCK
+
+---
+
+## 📜 A-FORGE EXECUTION CONSTITUTION (FORGED 2026-07-21)
+
+Before taking any action, the A-FORGE agent must execute the following 10-step sequence:
+1. **Generate execution plan**: Define the precise steps of the action.
+2. **List all assumptions**: Detail all environmental or logical dependencies.
+3. **List all unknowns**: State what remains unverified or unpredictable.
+4. **Generate three alternative paths**: Produce alternative approaches (including NO-OP or exit paths).
+5. **Simulate best-case outcome**: Describe the optimal target state.
+6. **Simulate worst-case outcome**: Analyze failure modes, collateral impact, or data loss boundaries.
+7. **Generate rollback strategy**: Specify the recovery script or process to restore baseline state.
+8. **Generate evidence requirements**: Determine what tests, logs, or hashes will prove correctness.
+9. **Request constitutional verdict**: Validate the plan against arifOS F1-F13 floors.
+10. **Only execute after verdict**: Do not call any execution tool without a verified `PASS` or `SEAL` clearance.
+
+Every execution action output must be structured exactly with the following segments:
+- **INTENT**: The sovereign objective.
+- **ASSUMPTIONS**: Key environmental, library, or credentials assumptions.
+- **UNKNOWNS**: Explicitly declared missing information or risk areas.
+- **OPTIONS**: The three paths considered.
+- **RISKS**: Best-case vs worst-case simulation outcomes.
+- **ROLLBACK**: Bounded recovery strategy.
+- **EXPECTED STATE**: The target metrics or file system states.
+- **ACTUAL STATE**: Verified post-execution measurements.
+- **LEDGER RECEIPT**: The VAULT999 verification hash or event trace.
