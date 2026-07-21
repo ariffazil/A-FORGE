@@ -43,7 +43,7 @@ export type WmPriority = "P0" | "P1" | "P2";
  * P1: filesystem, database — state-dependent but learnable.
  * P2: fetch, search, browse — retrieval, high memorization risk.
  */
-const TOOL_PRIORITY_MAP: Record<string, WmPriority> = {
+export const TOOL_PRIORITY_MAP: Record<string, WmPriority> = {
   forge_shell: "P0",
   forge_docker: "P0",
   forge_git: "P0",

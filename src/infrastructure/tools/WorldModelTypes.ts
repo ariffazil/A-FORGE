@@ -1,6 +1,11 @@
 /**
  * World Model Types — Action→Observation Instrumentation
  *
+ * ⚠️ DEPRECATED (2026-07-21): This file is superseded by the richer
+ * governance-layer implementation at src/domain/governance/worldModel.ts.
+ * Still imported by ShellTools.ts — migrate ShellTools to governance imports
+ * when Phase 2 infra refactor is approved.
+ *
  * Implements the five architecture laws from AGENTIC-WORLD-MODEL-EUREKA:
  *   L1: Observation is signal, not exhaust
  *   L2: Zero-cost density — hash what's already there
