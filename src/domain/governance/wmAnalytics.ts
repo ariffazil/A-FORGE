@@ -84,10 +84,7 @@ export interface WmDashboardSnapshot {
   };
 }
 
-// ── Event Helper ─────────────────────────────────────────────────────────────
-
-/**
- * Emit a gap alert to the event-bus for dashboard consumption.
+// ── Dashboard Generator ──────────────────────────────────────────────────────
 
 /**
  * Generate a full WM dashboard snapshot from accumulated trajectory data.

@@ -1,6 +1,11 @@
 /**
  * World Model Trajectory Logger — Mini VAULT999 for WM
  *
+ * ⚠️ DEPRECATED (2026-07-21): This file is superseded by the richer
+ * governance-layer implementation at src/domain/governance/worldModelLogger.ts.
+ * Still imported by ShellTools.ts — migrate ShellTools to governance imports
+ * when Phase 2 infra refactor is approved.
+ *
  * Append-only, hash-chained JSONL log of action→observation pairs.
  * Each record links to the previous one via sha256 hash chain.
  * This is the raw material for future ECHO/PaW training.

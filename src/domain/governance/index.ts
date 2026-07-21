@@ -82,3 +82,115 @@ export {
 
 // F11: Auth (migrated from legacy index)
 export { checkAuth, checkResponseAuth, type AuthResult, type AuthVerdict } from "./f11Auth.js";
+
+// ══════════════════════════════════════════════════════════════════
+// WORLD MODEL — Action→Observation Instrumentation (forged 2026-07-21)
+// ══════════════════════════════════════════════════════════════════
+
+// worldModel.ts — types, priority classifier, entropy, hashing
+export {
+  classifyWmPriority,
+  isWmEligible,
+  hashAction,
+  hashObservation,
+  observationEntropyProxy,
+  computeSurpriseScore,
+  computePredictionGap,
+  buildWmMetadata,
+  isHighEntropyAction,
+  isUncertainAction,
+  serializeWmLine,
+  TOOL_PRIORITY_MAP,
+  WM_TRAJECTORY_LOG_PATH,
+  WM_PREDICTION_LOG_PATH,
+  WM_LAMBDA_DEFAULT,
+  WM_LAMBDA_RANGE,
+  WM_MIN_OBSERVATION_LENGTH,
+  WM_EXCLUDED_TOOLS,
+  type WmPriority,
+  type WmMetadata,
+  type WmMetadataInput,
+  type PredictionRecord,
+} from "./worldModel.js";
+
+// worldModelLogger.ts — append-only JSONL trajectory ledger
+export {
+  initWorldModelLogger,
+  logTrajectory,
+  logPrediction,
+  getWmStats,
+  type TrajectoryLogEntry,
+  type WmStats,
+} from "./worldModelLogger.js";
+
+// observationPredictor.ts — predict→verify→gap scoring pipeline
+export {
+  predictObservation,
+  verifyPrediction,
+  formatPredictionForTool,
+  getGapSummary,
+  checkGapAlert,
+  type PredictionRequest,
+  type PredictionResult,
+  type GapResult,
+  type GapSummary,
+  type GapAlert,
+} from "./observationPredictor.js";
+
+// wmAnalytics.ts — dashboard, alerts, quality reports, Phase 2 readiness
+export {
+  generateDashboard,
+  emitGapAlert,
+  emitPendingAlerts,
+  generateQualityReport,
+  getPhase2Readiness,
+  runCli,
+  type WmToolStats,
+  type WmTrendPoint,
+  type WmDashboardSnapshot,
+  type QualityReport,
+  type Phase2Readiness,
+} from "./wmAnalytics.js";
+
+// grpo.ts — Group Relative Policy Optimization (Phase 2 RL training)
+export {
+  computeGroupAdvantages,
+  computeTokenWeights,
+  computeGRPOLoss,
+  estimateKLDivergence,
+  grpoStep,
+  computeDynamicEchoLambda,
+  validateRolloutGroup,
+  testAdvantageSanity,
+  createMetricsAccumulator,
+  accumulateMetrics,
+  DEFAULT_GRPO_CONFIG,
+  type TokenRole,
+  type TokenEntry,
+  type Rollout,
+  type RolloutGroup,
+  type GRPOConfig,
+  type TokenWeights,
+  type GRPOStepResult,
+  type GRPOMetrics,
+} from "./grpo.js";
+
+// faultFixFlow.ts — unified detect→classify→fix→verify→seal pipeline
+export {
+  classifyFault,
+  selectFixStrategy,
+  executeFix,
+  runFaultFixCycle,
+  isAutoRecoverable,
+  needsHumanAttention,
+  faultBlastRadius,
+  type FaultSource,
+  type FixStrategy,
+  type FixVerdict,
+  type BlastRadius,
+  type FaultReport,
+  type FixAction,
+  type FixResult,
+  type FaultFixCycle,
+  type ExecutorContext,
+} from "./faultFixFlow.js";
