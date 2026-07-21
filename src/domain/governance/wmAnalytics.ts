@@ -589,10 +589,10 @@ export async function runCli(): Promise<void> {
   console.log(JSON.stringify(output, null, 2));
 }
 
-// Auto-run if called directly
-if (require.main === module) {
-  runCli().catch(err => {
-    console.error("WM Analytics failed:", err.message);
-    process.exit(1);
-  });
-}
+// CLI auto-run disabled in ES module mode — use import.meta.url if needed
+// if (import.meta.url === `file://${process.argv[1]}`) {
+//   runCli().catch(err => {
+//     console.error("WM Analytics failed:", err.message);
+//     process.exit(1);
+//   });
+// }
