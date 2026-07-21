@@ -33,6 +33,7 @@ export type ToolExecutionContext = {
   abortSignal?: AbortSignal;
   /** Agent's expected output BEFORE execution — used for world model surprise scoring */
   expectedOutput?: string;
+  intent?: string;
   policy?: {
     commandTimeoutMs: number;
     maxFileBytes: number;

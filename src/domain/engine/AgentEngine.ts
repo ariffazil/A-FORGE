@@ -681,6 +681,7 @@ export class AgentEngine {
           workingDirectory,
           memoryInjectedItems,
           floorsTriggered,
+          options.task,
           ),
         );
 
@@ -1105,6 +1106,7 @@ export class AgentEngine {
     workingDirectory: string,
     memoryCount: number,
     floorsTriggered: string[],
+    intent: string,
   ): Promise<{
     messages: AgentMessage[];
     blockedDangerousActions: number;
@@ -1211,6 +1213,7 @@ export class AgentEngine {
             workingDirectory,
             modeName: this.profile.modeName,
             policy: this.dependencies.toolPolicy,
+            intent,
           },
           permissionContext,
         );

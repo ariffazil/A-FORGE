@@ -465,7 +465,7 @@ export class PipelineCoordinator {
         const toolExec = await this.executeToolCalls(
           turnResponse, shortTermMemory, permissionContext,
           sessionId, workingDirectory, relevantMemories.length,
-          floorsTriggered, thermo,
+          floorsTriggered, thermo, options.task,
         );
         pendingMessages = toolExec.messages;
         blockedDangerousActions += toolExec.blockedDangerousActions;
@@ -580,6 +580,7 @@ export class PipelineCoordinator {
     memoryCount: number,
     floorsTriggered: string[],
     thermo: ThermodynamicCostEstimator,
+    intent: string,
   ): Promise<{ messages: AgentMessage[]; blockedDangerousActions: number; blockedCommands: number }> {
     const toolMessages: AgentMessage[] = [];
     let blockedDangerousActions = 0;
@@ -643,7 +644,7 @@ export class PipelineCoordinator {
       try {
         const toolResult = await this.deps.toolRegistry.runTool(
           call.toolName, call.args,
-          { sessionId, workingDirectory, modeName: this.profile.modeName, policy: this.deps.toolPolicy },
+          { sessionId, workingDirectory, modeName: this.profile.modeName, policy: this.deps.toolPolicy, intent },
           permissionContext,
         );
         toolResults.push({ ok: toolResult.ok, output: toolResult.output });
