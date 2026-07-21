@@ -30,8 +30,18 @@ import { getDefaultArifSeal } from "./arifSeal.js";
 import { checkModificationIntent, isGodelLocked } from "./godelLock.js";
 import { classifyShellCommand, type ActionClass } from "../../../domain/governance/execution-authority.js";
 import { classifyUnknown, isStructuredError } from "../../../domain/governance/error-classifier.js";
+import { buildWmMetadata, hashAction, type WmMetadata } from "../../../domain/governance/worldModel.js";
+import { logTrajectory } from "../../../domain/governance/worldModelLogger.js";
 import { Memory, Epistemic, enrichResult } from "../../../domain/governance/epistemic-signal.js";
 import { callMCP } from "../client.js";
+import {
+  actionHash,
+  observationHash,
+  computeSurpriseScore,
+  computeWMEligibility,
+  TOOL_WM_PRIORITY,
+} from "../../../infrastructure/tools/WorldModelTypes.js";
+import { appendTrajectory } from "../../../infrastructure/tools/WorldModelTrajectoryLogger.js";
 
 // ── Execution Authority Helper ──────────────────────────────────────
 function checkAuthorityFromActionClass(actionClass: ActionClass): {
@@ -650,8 +660,13 @@ export function registerShellTools(server: McpServer): void {
       timeout: z.number().default(DEFAULT_TIMEOUT_MS).describe("Timeout in ms (max " + MAX_TIMEOUT_MS + ")"),
       session_id: z.string().optional().describe("arifOS-issued session_id from arif_init(). REQUIRED for execution."),
       lease_id: z.string().optional().describe("Governed lease ID"),
+      expected_output: z.string().optional().describe(
+        "OPTIONAL: what the agent expects this command to produce. " +
+        "Used for world model surprise scoring (AGENTIC-WORLD-MODEL-EUREKA L3). " +
+        "The gap between expected vs actual is the richest training signal."
+      ),
     },
-    async ({ command, cwd, timeout, session_id, lease_id }) => {
+    async ({ command, cwd, timeout, session_id, lease_id, expected_output }) => {
       // Apply defaults (stateless HTTP path bypasses Zod schema defaults)
       const safeCwd = cwd || DEFAULT_WORKSPACE;
       const safeTimeout = (typeof timeout === 'number' && timeout > 0) ? Math.min(timeout, MAX_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
@@ -903,6 +918,27 @@ export function registerShellTools(server: McpServer): void {
       // ── Step 2: Execute ──
       const result = await executeShell(command, safeCwd, safeTimeout);
 
+      // ── World Model: build metadata from this execution (L1-L5) ──
+      const combinedOutput = [result.stdout, result.stderr].filter(Boolean).join("\n");
+      const wmMeta = buildWmMetadata({
+        tool: "forge_shell",
+        args: { command: command.slice(0, 200), cwd: safeCwd },
+        observation: combinedOutput.slice(0, 20000),
+        agentConfidence: 0.85,
+        predictedObservation: null,
+        exitCode: result.exitCode,
+      });
+
+      // Fire-and-forget trajectory logging
+      logTrajectory({
+        tool: "forge_shell",
+        args: { command: command.slice(0, 200), cwd: safeCwd },
+        observation: combinedOutput.slice(0, 20000),
+        agentConfidence: 0.85,
+        predictedObservation: null,
+        exitCode: result.exitCode,
+      }).catch(err => console.error(`[forge_shell] WM log error: ${err.message}`));
+
       // ── Step 3: ArifSeal (hash-chain audit) ──
       const sealer = getDefaultArifSeal();
       let sealRecord: any = { seq: 0, hash: "pending" };
@@ -917,6 +953,7 @@ export function registerShellTools(server: McpServer): void {
           notes: judge.decision === "allow"
             ? "auto-executed"
             : "requires human gate (approval queue)",
+          wm_metadata: wmMeta as unknown as Record<string, unknown>,
         });
       } catch (sealErr: any) {
         console.error(`[forge_shell] ArifSeal error: ${sealErr.message}`);
@@ -964,6 +1001,8 @@ export function registerShellTools(server: McpServer): void {
               reversible: true,
               authority_claim: result.exitCode === 0 ? 'EVIDENCE' : 'ADVISORY',
             },
+            // World Model metadata (AGENTIC-WORLD-MODEL-EUREKA L1-L5)
+            wm_metadata: wmMeta,
           }, null, 2),
         }],
         isError: result.exitCode !== 0,

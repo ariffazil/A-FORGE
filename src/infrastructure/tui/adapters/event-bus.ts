@@ -5,6 +5,8 @@
  * Used by AgentManager to emit job lifecycle events,
  * and by the SSE /events endpoint to push to connected clients.
  *
+ * Extended with WM (World Model) events for Phase 1.5 alert pipeline.
+ *
  * F1 AMANAH: Read-only event stream. No mutation from subscribers.
  * F8 LAW: Events are observations of state changes, not commands.
  */
@@ -17,7 +19,22 @@ export type JobLifecycleEvent =
   | { type: "job_cancelled"; jobId: string; timestamp: string }
   | { type: "job_hold"; jobId: string; ticketId: string; timestamp: string };
 
-export type SseEvent = JobLifecycleEvent | { type: "heartbeat"; timestamp: string };
+/** World Model gap alert — Phase 1.5 (L3: SURPRISE TEACHES MORE THAN ROUTINE) */
+export type WmGapAlertEvent = {
+  type: "wm_gap_alert";
+  tool: string;
+  action_hash: string;
+  gap_score: number;
+  confidence: number;
+  severity: "CRITICAL" | "WARN" | "INFO";
+  message: string;
+  timestamp: string;
+};
+
+export type SseEvent =
+  | JobLifecycleEvent
+  | { type: "heartbeat"; timestamp: string }
+  | WmGapAlertEvent;
 
 type Subscriber = (event: SseEvent) => void;
 

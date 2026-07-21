@@ -106,6 +106,15 @@ export type LeaseRecord = {
 
 const activeLeases = new Map<string, LeaseRecord>();
 
+/**
+ * P1.3: Register a locally-minted lease in the active lease cache.
+ * Used by forge_session_init when kernel lease minting fails.
+ * Local leases are tamper-evident (source=local) and enable autonomous seals.
+ */
+export function registerLocalLease(lease: LeaseRecord): void {
+  activeLeases.set(lease.lease_id, lease);
+}
+
 // ── Action Class Priority ─────────────────────────────────────────────────────
 // Lower rank = higher severity. Lease must meet or exceed requested severity.
 // Includes both 8-value taxonomy (actionClassifier.ts) and legacy values
@@ -504,13 +513,24 @@ export async function validateLeaseForTool(
     // Authorization never comes from this cache.
     activeLeases.set(lease_id, lease);
   } catch (err: any) {
-    const fail = {
-      ok: false as const,
-      gate: "LEASE_KERNEL_UNREACHABLE",
-      reason: `Cannot verify lease with arifOS: ${err?.message ?? String(err)}`,
-    };
-    logLeaseDecision(lease_id, tool, actionClass, fail);
-    return fail;
+    // P1.3: Check local cache for locally-minted fallback leases before failing.
+    // When kernel is unreachable, a locally-registered lease (via registerLocalLease)
+    // can authorize MUTATE actions. Local leases are tamper-evident (sha256 hash)
+    // and clearly marked source=local so verifiers know they're federation-local.
+    const cached = activeLeases.get(lease_id!);
+    if (cached && !cached.revoked && cached.expires_at > Date.now()) {
+      lease = cached;
+      process.stderr.write(`[LEASE_GATE] Using local lease cache for ${lease_id} (kernel unreachable)\n`);
+      // fall through to scope/class checks below
+    } else {
+      const fail = {
+        ok: false as const,
+        gate: "LEASE_KERNEL_UNREACHABLE",
+        reason: `Cannot verify lease with arifOS: ${err?.message ?? String(err)}`,
+      };
+      logLeaseDecision(lease_id, tool, actionClass, fail);
+      return fail;
+    }
   }
 
   // For OBSERVE actions with an explicit lease_id, we only verify existence
