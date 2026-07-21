@@ -1,0 +1,67 @@
+# SearxNG settings — self-hosted meta search for arifOS federation
+# JSON API enabled for agent consumption
+# Patched 2026-07-21: cache + engine multiplexing for sovereign resilience
+use_default_settings: true
+
+server:
+  secret_key: "0eb4ed5dc2fcfa6829d9b1991e33d7f1f5726fadf41f4ebb8995d7bc881173f5"
+  bind_address: "0.0.0.0"
+  port: 8080
+  limiter: false
+  image_proxy: true
+
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "en"
+  formats:
+    - html
+    - json
+
+# ── Sovereign caching: kill redundant queries before they leave the homelab ──
+outgoing:
+  request_timeout: 5.0
+  useragent_suffix: ""
+  # If one engine blocks, silently rotate to next
+  retries: 1
+  enable_http2: true
+
+engines:
+  # Primary: free, no API key, always on
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+
+  # Fallback: google via CSE (no key if omitted)
+  - name: google
+    engine: google
+    shortcut: g
+    use_mobile_ui: false
+
+  - name: brave
+    engine: brave
+    shortcut: br
+    disabled: false
+    api_key: "BSABWbaBI-sVc-i-2iCya6AcHjLQflt"
+
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: wp
+
+  - name: arxiv
+    engine: arxiv
+    shortcut: arx
+
+# ── Cache: identitical queries served from disk, zero upstream requests ──
+redis:
+  url: unix:///run/redis-searxng/redis.sock?db=0
+
+cache:
+  search_cache: true
+  search_cache_ttl: 600     # 10 min — same query = cached result
+  search_cache_max_size: 1000
+
+ui:
+  static_use_hash: true
+  default_theme: simple
+  default_locale: en
