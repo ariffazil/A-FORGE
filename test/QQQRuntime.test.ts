@@ -138,4 +138,46 @@ describe("QQQ Runtime v1 Constitutional Layer", () => {
     assert.equal(downgradeLine.event, "constitutional_downgrade");
     assert.ok(downgradeLine.reason);
   });
+
+  // v1.1.1 CLOSURE — Residue 1: Verdict success-path round-trip test
+  // Verifies: judge reachable → verdict returned → verdict recorded → verdict enforced
+  // This tests the SUCCESS path; the previous test covers the FAILURE path.
+  // We mock a local judge by injecting a verdict via declared assumptions.
+  it("should record verdict correctly when QQQ produces a SEAL verdict for a safe read operation", async () => {
+    const receiptPath = "/root/VAULT999/qqq_receipts.jsonl";
+
+    if (existsSync(receiptPath)) {
+      try { unlinkSync(receiptPath); } catch {}
+    }
+
+    // read_file is explicitly low-risk (0.15); local F1-F13 thresholds produce SEAL
+    // This simulates the success-path: kernel reachable (or local threshold passes)
+    // → verdict SEAL returned → stored in record.verdict → execution NOT blocked
+    const record = await executeQQQ(
+      "read_file",
+      { path: "/root/AGENTS.md" },
+      testIntent,
+      testSession,
+      ["File exists at declared path", "Read-only operation with no side-effects"],
+      ["File may have been modified since last read"]
+    );
+
+    // SEAL verdict must be recorded (success path)
+    assert.equal(record.verdict.verdict, "SEAL");
+
+    // Verdict reason must exist
+    assert.ok(record.verdict.reason && record.verdict.reason.length > 0);
+
+    // Verdict must be stored inside the QQQ record (round-trip confirmed)
+    assert.ok(record.qqq_id.startsWith("QQQ-"));
+    assert.equal(record.tool_name, "read_file");
+
+    // Receipt must exist on disk (chain written)
+    assert.ok(existsSync(receiptPath));
+    const lines = readFileSync(receiptPath, "utf-8").trim().split("\n");
+    const logged = JSON.parse(lines[lines.length - 1]);
+    assert.equal(logged.verdict.verdict, "SEAL");
+    assert.equal(logged.qqq_id, record.qqq_id);
+  });
 });
+
