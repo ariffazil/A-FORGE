@@ -164,7 +164,12 @@ export function isWmEligible(toolName: string, observation: string): boolean {
  * Compute SHA-256 of tool name + canonical args for action fingerprint.
  */
 export function hashAction(toolName: string, args: Record<string, unknown>): string {
-  const canonical = JSON.stringify({ tool: toolName, args }, Object.keys(args).sort());
+  // Canonical: sort all keys at both levels for deterministic output
+  const sortedArgs = Object.keys(args).sort().reduce((obj, key) => {
+    obj[key] = args[key];
+    return obj;
+  }, {} as Record<string, unknown>);
+  const canonical = JSON.stringify({ args: sortedArgs, tool: toolName });
   return createHash("sha256").update(canonical).digest("hex");
 }
 
