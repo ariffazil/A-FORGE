@@ -1,0 +1,30 @@
+[Unit]
+Description=FLAME — Free Loop AI Model Engine
+Documentation=https://github.com/ariffazil/A-FORGE/tree/main/flame
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=30
+StartLimitBurst=3
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/root/A-FORGE/flame
+ExecStart=/usr/bin/python3 flame_api_server.py
+Restart=always
+RestartSec=5
+
+# Resource limits — FLAME is lightweight (stdlib HTTP, no heavy deps)
+CPUQuota=100%
+MemoryHigh=256M
+MemoryMax=512M
+OOMScoreAdjust=200
+
+# Security hardening
+NoNewPrivileges=true
+# TODO(audit): tighten to ProtectSystem=strict + ReadWritePaths after
+# verifying subprocess temp file paths during model probes.
+
+[Install]
+WantedBy=multi-user.target
