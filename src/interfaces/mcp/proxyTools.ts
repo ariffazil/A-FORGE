@@ -1095,6 +1095,17 @@ async function checkRobotsTxt(url: string): Promise<{ allowed: boolean; reason?:
   }
 }
 
+// ── B2A Sovereign Fetch Cache (L1/L2 ephemeral, in-memory) ──────────────
+// Key = sha256(url|query|mode). TTL-gated. Process lifetime.
+// Before hitting SearxNG or open web, check cache first.
+// After successful fetch, write to cache.
+const fetchCache = new Map<string, { data: ReturnType<typeof text>; cachedAt: number; ttlMs: number }>();
+
+function fetchCacheKey(params: { url?: string; query?: string; mode: string }): string {
+  const key = `${params.url ?? ""}|${params.query ?? ""}|${params.mode}`;
+  return createHash("sha256").update(key).digest("hex").slice(0, 16);
+}
+
 // ── Extracted fetch handler — used by forge_fetch + proxy tools ───────────
 // Proxy tools (forge_fetch_url, forge_fetch_json, etc.) call this directly
 // instead of going through server._callTool (which doesn't exist on McpServer).
@@ -1113,7 +1124,23 @@ async function executeFetch(params: {
   scan_injection?: boolean;
   disable_readability?: boolean;
   max_response_bytes?: number;
+  cache_ttl_seconds?: number;
 }) {
+  const cacheTTL = params.cache_ttl_seconds ?? 300; // default 5 min cache
+  const ck = cacheTTL > 0 ? fetchCacheKey(params as any) : null;
+
+  // ── Cache hit check ──────────────────────────────────────────────────────
+  if (ck) {
+    const cached = fetchCache.get(ck);
+    if (cached && (Date.now() - cached.cachedAt) < cached.ttlMs) {
+      const age = Math.round((Date.now() - cached.cachedAt) / 1000);
+      // shallow clone + inject cache metadata
+      const payload: any = typeof cached.data === "object" && cached.data !== null
+        ? { ...cached.data } : { content: cached.data };
+      payload._cache = { hit: true, age_seconds: age, ttl_seconds: cacheTTL, key: ck };
+      return payload;
+    }
+  }
   const effectiveTimeout = params.timeout_ms ?? 15000;
 
   // ── SearxNG Search Mode (sovereignty fallback) ──────────────────────────
@@ -1144,7 +1171,7 @@ async function executeFetch(params: {
         content: (r.content || "").slice(0, 500),
         engines: r.engines || [],
       }));
-      return text({
+      const result = text({
         status: "OK",
         backend: "searxng",
         searxng_url: searxngBase,
@@ -1153,6 +1180,8 @@ async function executeFetch(params: {
         total_available: data.results?.length || 0,
         results,
       });
+      if (ck) fetchCache.set(ck, { data: result, cachedAt: Date.now(), ttlMs: cacheTTL * 1000 });
+      return result;
     } catch (err: any) {
       return text({ status: "error", backend: "searxng", query: params.query, message: err.message?.slice(0, 500) }, true);
     }
@@ -1162,6 +1191,13 @@ async function executeFetch(params: {
   const url = params.url!;
   if (!url) return text({ status: "BLOCKED", reason: "Either `url` or `query` is required" }, true);
   const { mode } = params;
+
+  // ── Cache-wrapped return helper (writes to L1/L2 ephemeral cache) ─────
+  const cr = (content: unknown, isError?: boolean) => {
+    const result = text(content, isError);
+    if (ck && !isError) fetchCache.set(ck, { data: result, cachedAt: Date.now(), ttlMs: cacheTTL * 1000 });
+    return result;
+  };
   const effectiveMax = params.max_chars ?? 50000;
   const effectiveStart = params.start_index ?? 0;
   const follow_redirects = params.follow_redirects ?? true;
@@ -1242,26 +1278,26 @@ async function executeFetch(params: {
       try {
         const parsed = JSON.parse(raw);
         const out = JSON.stringify(parsed, null, 2).slice(effectiveStart, effectiveStart + effectiveMax);
-        return text({ ...provenance, content: out });
+        return cr({ ...provenance, content: out });
       } catch {
-        return text({ ...provenance, content: raw.slice(effectiveStart, effectiveStart + effectiveMax) });
+        return cr({ ...provenance, content: raw.slice(effectiveStart, effectiveStart + effectiveMax) });
       }
     }
 
     // ── HTML mode ──────────────────────────────────────────────────────────
     if (mode === "html") {
-      return text({ ...provenance, content: raw.slice(effectiveStart, effectiveStart + effectiveMax) });
+      return cr({ ...provenance, content: raw.slice(effectiveStart, effectiveStart + effectiveMax) });
     }
 
     // ── Metadata mode ──────────────────────────────────────────────────────
     if (mode === "metadata") {
-      return text(provenance);
+      return cr(provenance);
     }
 
     // ── Links mode ─────────────────────────────────────────────────────────
     if (mode === "links") {
       const links = (metadata as any).links || [];
-      return text({ ...provenance, links, link_count: links.length });
+      return cr({ ...provenance, links, link_count: links.length });
     }
 
     // ── Readable mode ──────────────────────────────────────────────────────
@@ -1271,7 +1307,7 @@ async function executeFetch(params: {
       if (title) result += `# ${title}\n\n`;
       result += content;
       const sliced = result.slice(effectiveStart, effectiveStart + effectiveMax);
-      return text({
+      return cr({
         ...provenance,
         title,
         byline,
@@ -1296,7 +1332,7 @@ async function executeFetch(params: {
         .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
         .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
         .replace(/\s+/g, " ").trim();
-      return text({ ...provenance, content: stripped.slice(effectiveStart, effectiveStart + effectiveMax) });
+      return cr({ ...provenance, content: stripped.slice(effectiveStart, effectiveStart + effectiveMax) });
     }
 
     // ── Markdown mode ──────────────────────────────────────────────────────
@@ -1307,7 +1343,7 @@ async function executeFetch(params: {
     if (title) result += `# ${title}\n\n`;
     result += md;
     const sliced = result.slice(effectiveStart, effectiveStart + effectiveMax);
-    return text({ ...provenance, title, content: sliced, content_length: result.length });
+    return cr({ ...provenance, title, content: sliced, content_length: result.length });
   } catch (err: any) {
     if (err.name === "AbortError")
       return text({ status: "timeout", timeout_ms: effectiveTimeout, url, trust_status: "UNTRUSTED_EXTERNAL_CONTENT" }, true);
@@ -1348,6 +1384,7 @@ export function registerFetchTools(server: McpServer): void {
       scan_injection: z.boolean().default(true).describe("Scan for prompt-injection patterns"),
       disable_readability: z.boolean().default(false).describe("Skip Readability extraction, use basic stripping"),
       max_response_bytes: z.number().default(5_000_000).describe("Max response body size in bytes (SSRF protection)"),
+      cache_ttl_seconds: z.number().min(0).max(3600).default(300).describe("Cache TTL in seconds (0 = no cache, default 300, max 3600). Cached by sha256(url|query|mode). L1/L2 ephemeral (process memory)."),
     }),
   }, async (params) => {
     return executeFetch(params);
