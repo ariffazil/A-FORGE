@@ -48,6 +48,7 @@ import { createJobsRouter } from "./routes/jobsRoutes.js";
 import { createPeerContractRouter } from "./routes/peerContractRoutes.js";
 import { subscribe, type SseEvent } from "../infrastructure/tui/adapters/event-bus.js";
 import { getTuiHealth } from "../infrastructure/tui/adapters/tui-health.js";
+import { isDegradedMode } from "../domain/governance/QQQRuntime.js";
 import { createVaultMerkleRouter } from "./routes/vaultMerkleRoutes.js";
 import { createRepoStewardRouter } from "./routes/repoStewardRoutes.js";
 import { callMCP } from "./mcp/client.js";
@@ -970,8 +971,9 @@ app.get("/health", (_req: Request, res: Response) => {
   // T5 2026-07-17 — canonical 5-field federation header + organ payload.
   // ok retained for legacy callers; status is canonical.
   res.json({
-    status: "healthy",
-    ok: true, // legacy alias — prefer status
+    status: isDegradedMode ? "degraded" : "healthy",
+    ok: !isDegradedMode, // legacy alias — prefer status
+    degraded_mode: isDegradedMode,
     service: "A-FORGE-sense",
     version: "v2026.07.17",
     federation_schema_version: "2.0.0",

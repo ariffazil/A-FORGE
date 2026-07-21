@@ -465,7 +465,7 @@ export class PipelineCoordinator {
         const toolExec = await this.executeToolCalls(
           turnResponse, shortTermMemory, permissionContext,
           sessionId, workingDirectory, relevantMemories.length,
-          floorsTriggered, thermo, options.task,
+          floorsTriggered, thermo, options.task, options.planDAG,
         );
         pendingMessages = toolExec.messages;
         blockedDangerousActions += toolExec.blockedDangerousActions;
@@ -581,6 +581,7 @@ export class PipelineCoordinator {
     floorsTriggered: string[],
     thermo: ThermodynamicCostEstimator,
     intent: string,
+    planDAG?: any,
   ): Promise<{ messages: AgentMessage[]; blockedDangerousActions: number; blockedCommands: number }> {
     const toolMessages: AgentMessage[] = [];
     let blockedDangerousActions = 0;
@@ -641,10 +642,32 @@ export class PipelineCoordinator {
         continue;
       }
 
+      let assumptions_declared: string[] = [];
+      let unknowns_declared: string[] = [];
+      if (planDAG && planDAG.nodes) {
+        for (const [nodeId, node] of planDAG.nodes.entries()) {
+          if (node && node.epistemic) {
+            if (node.status === "running" || node.status === "pending" || nodeId.toLowerCase().includes(call.toolName.toLowerCase())) {
+              assumptions_declared = node.epistemic.assumptions || [];
+              unknowns_declared = node.epistemic.unknowns || [];
+              break;
+            }
+          }
+        }
+      }
+
       try {
         const toolResult = await this.deps.toolRegistry.runTool(
           call.toolName, call.args,
-          { sessionId, workingDirectory, modeName: this.profile.modeName, policy: this.deps.toolPolicy, intent },
+          {
+            sessionId,
+            workingDirectory,
+            modeName: this.profile.modeName,
+            policy: this.deps.toolPolicy,
+            intent,
+            assumptions_declared,
+            unknowns_declared,
+          },
           permissionContext,
         );
         toolResults.push({ ok: toolResult.ok, output: toolResult.output });

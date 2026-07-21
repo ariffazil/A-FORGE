@@ -682,6 +682,7 @@ export class AgentEngine {
           memoryInjectedItems,
           floorsTriggered,
           options.task,
+          options.planDAG,
           ),
         );
 
@@ -1107,6 +1108,7 @@ export class AgentEngine {
     memoryCount: number,
     floorsTriggered: string[],
     intent: string,
+    planDAG?: any,
   ): Promise<{
     messages: AgentMessage[];
     blockedDangerousActions: number;
@@ -1205,6 +1207,20 @@ export class AgentEngine {
       try {
         // PER-TOOL TIMEOUT HARDENING: Ensure no tool hangs the engine
         const toolTimeoutMs = 30000;
+        let assumptions_declared: string[] = [];
+        let unknowns_declared: string[] = [];
+        if (planDAG && planDAG.nodes) {
+          for (const [nodeId, node] of planDAG.nodes.entries()) {
+            if (node && node.epistemic) {
+              if (node.status === "running" || node.status === "pending" || nodeId.toLowerCase().includes(call.toolName.toLowerCase())) {
+                assumptions_declared = node.epistemic.assumptions || [];
+                unknowns_declared = node.epistemic.unknowns || [];
+                break;
+              }
+            }
+          }
+        }
+
         const toolPromise = this.dependencies.toolRegistry.runTool(
           call.toolName,
           call.args,
@@ -1214,6 +1230,8 @@ export class AgentEngine {
             modeName: this.profile.modeName,
             policy: this.dependencies.toolPolicy,
             intent,
+            assumptions_declared,
+            unknowns_declared,
           },
           permissionContext,
         );

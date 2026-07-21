@@ -34,6 +34,8 @@ export type ToolExecutionContext = {
   /** Agent's expected output BEFORE execution — used for world model surprise scoring */
   expectedOutput?: string;
   intent?: string;
+  assumptions_declared?: string[];
+  unknowns_declared?: string[];
   policy?: {
     commandTimeoutMs: number;
     maxFileBytes: number;

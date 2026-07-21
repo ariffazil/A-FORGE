@@ -37,7 +37,14 @@ export class ToolRegistry {
 
     // === QQQ Runtime v1: Constitutional Evaluation Gate ===
     const intent = executionContext.intent || executionContext.expectedOutput || `Execute tool ${toolName}`;
-    const qqqRecord = await executeQQQ(toolName, args, intent, executionContext.sessionId);
+    const qqqRecord = await executeQQQ(
+      toolName,
+      args,
+      intent,
+      executionContext.sessionId,
+      executionContext.assumptions_declared ?? [],
+      executionContext.unknowns_declared ?? []
+    );
     
     if (qqqRecord.verdict.verdict === "VOID") {
       return {
