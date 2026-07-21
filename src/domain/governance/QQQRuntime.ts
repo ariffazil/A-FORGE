@@ -16,6 +16,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { appendFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 import { callMCP } from "../../interfaces/mcp/client.js";
+import { checkAndAnchorReceipts } from "./MerkleReceiptAnchor.js";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -323,6 +324,9 @@ export async function executeQQQ(
     mkdirSync(dirname(VAULT_QQQ_PATH), { recursive: true });
     appendFileSync(VAULT_QQQ_PATH, JSON.stringify(record) + "\n", "utf-8");
     record.vault_receipt_id = createHash("sha256").update(JSON.stringify(record)).digest("hex");
+    
+    // Check and trigger Merkle anchoring if block size reached
+    await checkAndAnchorReceipts();
   } catch (err: any) {
     process.stderr.write(`[QQQ] Failed to append QQQ receipt to VAULT999: ${err.message}\n`);
   }
