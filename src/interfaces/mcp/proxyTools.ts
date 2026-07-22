@@ -11,6 +11,7 @@ import { globSync } from "glob";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
+import { registerLatentTrigger } from "../../infrastructure/causality/latentTriggerRegistry.js";
 
 const ALLOWED_ROOTS = ["/root", "/tmp", "/data", "/var/log"];
 
@@ -377,6 +378,16 @@ export function registerFilesystemTools(server: McpServer): void {
 
         await mkdir(resolve(check.resolvedPath, ".."), { recursive: true });
         await writeFile(check.resolvedPath, content, "utf-8");
+
+        // ── LATENT TRIGGER REGISTRY (Causality Defense Phase 1) ──
+        registerLatentTrigger({
+          path: check.resolvedPath,
+          mode: "write",
+          content,
+          sha256_before: hashBefore,
+          bytes_before: bytesBefore,
+        }).catch(err => process.stderr.write(`[LATENT_TRIGGER] register failed: ${err.message}\n`));
+
         const hashAfter = sha256(content);
         const byteCount = Buffer.byteLength(content, "utf-8");
         const receiptId = `fs-${Date.now()}-${hashAfter.slice(0, 8)}`;
@@ -414,6 +425,16 @@ export function registerFilesystemTools(server: McpServer): void {
         }
         const patched = existing.replace(old_text, new_text);
         await writeFile(check.resolvedPath, patched, "utf-8");
+
+        // ── LATENT TRIGGER REGISTRY (Causality Defense Phase 1) ──
+        registerLatentTrigger({
+          path: check.resolvedPath,
+          mode: "patch",
+          content: patched,
+          sha256_before: hashBefore,
+          bytes_before: Buffer.byteLength(existing, "utf-8"),
+        }).catch(err => process.stderr.write(`[LATENT_TRIGGER] register failed: ${err.message}\n`));
+
         const hashAfter = sha256(patched);
         const receiptId = `fs-patch-${Date.now()}-${hashAfter.slice(0, 8)}`;
         return text({
