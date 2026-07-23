@@ -1,16 +1,14 @@
 <!-- SOT-MANIFEST
-federation_release: v2026.07.21-QQQ-V1.1.1-SEALED
-last_verified: 2026-07-21T07:30Z
-live_commit: fe8a81d
+federation_release: v2026.07.23
+last_verified: 2026-07-23T22:00Z
+live_commit: 3a50f44
 qqq_version: v1.1.1 (10/10 tests passing, verdict round-trip closed)
 seal_chain: append-only (chattr +a) + Merkle anchor every 100 receipts
 sense_port: 7071 (healthy)
 mcp_port: 7072 (healthy)
 authority_ceiling: 777_FORGE (execution only — never adjudicate)
-owner_summary: GREEN — QQQ v1.1.1 verdict round-trip sealed
+owner_summary: GREEN
 truth_rule: MCP tools/list on :7072 beats any static count in prose
-a2a_agent_json: /root/A-FORGE/.well-known/agent.json
-deferred_residues: R2 planDAG epistemic quality gate (→ v1.2), R3 /health auth tiering (→ surface hardening sprint)
 -->
 
 # A-FORGE — Governed Execution Shell
