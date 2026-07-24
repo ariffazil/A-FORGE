@@ -1,7 +1,7 @@
 <!-- SOT-MANIFEST
-federation_release: v2026.07.23
-last_verified: 2026-07-23T22:00Z
-live_commit: 3a50f44
+federation_release: v2026.07.24
+last_verified: 2026-07-24T16:00Z
+live_commit: b6b995b
 qqq_version: v1.1.1 (10/10 tests passing, verdict round-trip closed)
 seal_chain: append-only (chattr +a) + Merkle anchor every 100 receipts
 sense_port: 7071 (healthy)
@@ -10,6 +10,8 @@ authority_ceiling: 777_FORGE (execution only — never adjudicate)
 owner_summary: GREEN
 truth_rule: MCP tools/list on :7072 beats any static count in prose
 -->
+
+**SOT:** 2026-07-24 | **seal_seq:** `b6b995b`
 
 # A-FORGE — Governed Execution Shell
 
