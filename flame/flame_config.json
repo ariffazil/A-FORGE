@@ -3,12 +3,12 @@
     "name": "FLAME — Free Loop AI Model Engine",
     "version": "2.0.1-p0",
     "forged": "2026-07-20",
-    "updated": "2026-07-20T17:55:00Z",
+    "updated": "2026-07-24T13:45:00Z",
     "doctrine": "DITEMPA BUKAN DIBERI",
     "cost": "RM0 — all tiers on free provider plans. Hard RM0 gate enforced in code (P0.5).",
     "purpose": "Sequential fallback inference mesh for tools, workers, and advisory throughput. Zero governance authority — pure throughput. FLAME produces proposals; consuming tools determine admissibility.",
     "constitutional_note": "TOOL LANE only. Agents use the governed constitutional cascade. FLAME never judges, seals, promotes memory, or touches sovereign data. P0 hardened 2026-07-20: false SEAL removed, RM0 hard gate, safety refusal no-shop, sensitivity gate, provenance fingerprints.",
-    "fleet": "8 core verified models + 3 experimental low-weight tiers. Total 11 tiers across 5 providers. Core: Groq(llama-3.1-8b,llama-3.3-70b), SEA-LION(Qwen-v4-32B,Llama-v3-70B,Gemma-v4-27B), Gemini(flash-2.5), Cerebras(gemma-4-31b), Ollama(qwen2.5-coder:3b). Experimental: Groq(gpt-oss-120b), Gemini(flash-lite-latest), Cerebras(gpt-oss-120b)."
+    "fleet": "12 core verified models + experimental low-weight tiers. Total 12 tiers across 5 providers. Core: Groq(llama-3.1-8b,llama-3.3-70b), SEA-LION(Qwen-v4-32B,Llama-v3-70B,Gemma-v4-27B), Gemini(flash-lite-latest promoted), Cerebras(gemma-4-31b,zai-glm-4.7), OpenRouter(free-aggregator), Ollama(qwen2.5-coder:3b). Experimental: Groq(gpt-oss-120b), Cerebras(gpt-oss-120b)."
   },
   "chains": {
     "TOKENROUTER-PRIMARY": {
@@ -22,55 +22,91 @@
           "provider": "tokenrouter",
           "model": "deepseek/deepseek-v4-pro",
           "weight": 100,
-          "tags": ["paid", "primary", "deep-reasoning", "1m-context"]
+          "tags": [
+            "paid",
+            "primary",
+            "deep-reasoning",
+            "1m-context"
+          ]
         },
         {
           "provider": "tokenrouter",
           "model": "deepseek/deepseek-v4-flash",
           "weight": 95,
-          "tags": ["paid", "fast", "flash"]
+          "tags": [
+            "paid",
+            "fast",
+            "flash"
+          ]
         },
         {
           "provider": "groq",
           "model": "llama-3.1-8b-instant",
           "weight": 10,
-          "tags": ["fastest", "high-volume", "fallback"]
+          "tags": [
+            "fastest",
+            "high-volume",
+            "fallback"
+          ]
         },
         {
           "provider": "groq",
           "model": "llama-3.3-70b-versatile",
           "weight": 9,
-          "tags": ["deep-reasoning", "fallback"]
+          "tags": [
+            "deep-reasoning",
+            "fallback"
+          ]
         },
         {
           "provider": "sea-lion",
           "model": "aisingapore/Qwen-SEA-LION-v4-32B-IT",
           "weight": 8,
-          "tags": ["bm-native", "malay", "fallback"]
+          "tags": [
+            "bm-native",
+            "malay",
+            "fallback"
+          ]
         },
         {
           "provider": "sea-lion",
           "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
           "weight": 7,
-          "tags": ["bm-native", "deep", "fallback"]
+          "tags": [
+            "bm-native",
+            "deep",
+            "fallback"
+          ]
         },
         {
           "provider": "gemini",
           "model": "gemini-2.5-flash",
           "weight": 7,
-          "tags": ["general", "deep-context", "fallback"]
+          "tags": [
+            "general",
+            "deep-context",
+            "fallback"
+          ]
         },
         {
           "provider": "cerebras",
           "model": "gemma-4-31b",
           "weight": 5,
-          "tags": ["multimodal", "vision", "fallback"]
+          "tags": [
+            "multimodal",
+            "vision",
+            "fallback"
+          ]
         },
         {
           "provider": "ollama",
           "model": "qwen2.5-coder:3b",
           "weight": 1,
-          "tags": ["local", "survival", "last-resort"]
+          "tags": [
+            "local",
+            "survival",
+            "last-resort"
+          ]
         }
       ]
     },
@@ -85,7 +121,12 @@
           "provider": "tokenrouter",
           "model": "deepseek/deepseek-v4-pro",
           "weight": 100,
-          "tags": ["paid", "primary", "constitutional", "no-fallback"]
+          "tags": [
+            "paid",
+            "primary",
+            "constitutional",
+            "no-fallback"
+          ]
         }
       ]
     },
@@ -100,67 +141,120 @@
           "provider": "groq",
           "model": "llama-3.1-8b-instant",
           "weight": 10,
-          "tags": ["fastest", "high-volume"]
+          "tags": [
+            "fastest",
+            "high-volume"
+          ]
         },
         {
           "provider": "groq",
           "model": "llama-3.3-70b-versatile",
           "weight": 9,
-          "tags": ["deep-reasoning"]
+          "tags": [
+            "deep-reasoning"
+          ]
         },
         {
           "provider": "sea-lion",
           "model": "aisingapore/Qwen-SEA-LION-v4-32B-IT",
           "weight": 8,
-          "tags": ["bm-native", "malay"]
+          "tags": [
+            "bm-native",
+            "malay"
+          ]
         },
         {
           "provider": "sea-lion",
           "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
           "weight": 7,
-          "tags": ["bm-native", "deep"]
+          "tags": [
+            "bm-native",
+            "deep"
+          ]
         },
         {
           "provider": "sea-lion",
           "model": "aisingapore/Gemma-SEA-LION-v4-27B-IT",
           "weight": 6,
-          "tags": ["bm-native", "fast"]
+          "tags": [
+            "bm-native",
+            "fast"
+          ]
         },
         {
           "provider": "gemini",
-          "model": "gemini-2.5-flash",
+          "model": "gemini-flash-lite-latest",
           "weight": 7,
-          "tags": ["general", "deep-context"]
+          "tags": [
+            "general",
+            "deep-context",
+            "promoted-2026-07-24"
+          ]
         },
         {
           "provider": "cerebras",
           "model": "gemma-4-31b",
           "weight": 5,
-          "tags": ["multimodal", "vision"]
-        },
-        {
-          "provider": "ollama",
-          "model": "qwen2.5-coder:3b",
-          "weight": 1,
-          "tags": ["local", "survival"]
+          "tags": [
+            "multimodal",
+            "vision"
+          ]
         },
         {
           "provider": "groq",
           "model": "openai/gpt-oss-120b",
           "weight": 1,
-          "tags": ["added-from-registry"]
-        },
-        {
-          "provider": "gemini",
-          "model": "gemini-flash-lite-latest",
-          "weight": 1,
-          "tags": ["added-from-registry"]
+          "tags": [
+            "added-from-registry"
+          ]
         },
         {
           "provider": "cerebras",
           "model": "gpt-oss-120b",
           "weight": 1,
-          "tags": ["added-from-registry"]
+          "tags": [
+            "added-from-registry"
+          ]
+        },
+        {
+          "provider": "openrouter",
+          "model": "free-aggregator",
+          "weight": 0.5,
+          "tags": [
+            "aggregator",
+            "gap-fill",
+            "rate-limited",
+            "experimental",
+            "added-2026-07-24"
+          ],
+          "allowlist": [
+            "cohere/north-mini-code:free",
+            "inclusionai/ling-3.0-flash:free",
+            "poolside/laguna-s-2.1:free",
+            "google/gemma-4-31b-it:free",
+            "nvidia/nemotron-3-super-120b-a12b:free"
+          ]
+        },
+        {
+          "provider": "groq",
+          "model": "qwen/qwen3.6-27b",
+          "weight": 1,
+          "tags": [
+            "general",
+            "fast",
+            "gap-fill",
+            "qwen3.6-2026-07-24"
+          ]
+        },
+        {
+          "provider": "ollama",
+          "model": "qwen2.5-coder:3b",
+          "weight": 1,
+          "tags": [
+            "local",
+            "survival",
+            "high-latency-cold-start"
+          ]
         }
       ]
     },
@@ -175,25 +269,38 @@
           "provider": "sea-lion",
           "model": "aisingapore/SEA-LION-ModernBERT-Embedding-600M",
           "weight": 10,
-          "tags": ["embed", "bm-native"]
+          "tags": [
+            "embed",
+            "bm-native"
+          ]
         },
         {
           "provider": "sea-lion",
           "model": "BAAI/bge-m3",
           "weight": 8,
-          "tags": ["embed", "multilingual"]
+          "tags": [
+            "embed",
+            "multilingual"
+          ]
         },
         {
           "provider": "ollama",
           "model": "bge-m3",
           "weight": 5,
-          "tags": ["embed", "local"]
+          "tags": [
+            "embed",
+            "local"
+          ]
         },
         {
           "provider": "ollama",
           "model": "nomic-embed-text",
           "weight": 9,
-          "tags": ["embed", "fast", "multilingual"]
+          "tags": [
+            "embed",
+            "fast",
+            "multilingual"
+          ]
         }
       ]
     }
@@ -235,6 +342,23 @@
       "api_key_env": null,
       "cost_band": "free",
       "timeout_ms": 30000
+    },
+    "openrouter": {
+      "base_url": "https://openrouter.ai/api/v1",
+      "api_key_env": "OPENROUTER_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 15000,
+      "headers": {
+        "HTTP-Referer": "https://arif-fazil.com",
+        "X-Title": "arifOS FLAME Free Loop",
+        "X-OpenRouter-Experimental-Metadata": "enabled"
+      },
+      "note": "OpenRouter :free model aggregator. RATE-LIMITED: 20rpm/50rpd shared across all free models. Added 2026-07-24 for FLAME gap-fill. RM0 hard — only :free models used.",
+      "rate_limits": {
+        "rpm": 20,
+        "rpd": 50,
+        "note": "1000rpd after $10 lifetime credit purchase"
+      }
     }
   },
   "routing": {

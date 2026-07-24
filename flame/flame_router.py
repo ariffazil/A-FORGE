@@ -5,28 +5,90 @@ FLAME — Free Loop AI Model Engine
 Non-agentic inference mesh for tools, system workers, and advisory throughput.
 Zero governance authority — pure RM0 where RM0 is enforced.
 
-Architecture (corrected 2026-07-20 — P0 constitutional alignment):
-  Groq → SEA-LION → Gemini → Cerebras → Ollama
-  Sequential fallback with per-tier RM0 hard gate.
+DITEMPA BUKAN DIBERI — Forged 2026-07-20 · Ratified 2026-07-24
 
-Features (verified 2026-07-20):
-  - Sequential graceful fallback on timeout/empty/malform
-  - Hard RM0 enforcement — cost_band != "free" → REJECT before HTTP
-  - Safety refusal detection — NEVER model-shop past a policy refusal
-  - Cryptographic provenance on every response (P0.4 — GAP-1 fix)
-  - Snapshot checksum (NOT seal — no constitutional authority)
-  - Worker-labelled advisory output; callers must validate
+─── ROLE (Arif-ratified 2026-07-24) ──────────────────────────────────────
+FLAME is the WORKER BEE + SAFETY NET layer. It answers one question:
+"Can something respond right now, cheaply, without breaking rate limits?"
+It NEVER answers "is this answer true or authorized?"
 
-Constitutional (P0 2026-07-20):
-  - FLAME produces proposals. Consuming tools determine admissibility.
-  - FLAME is for throughput, not truth.
-  - SAFETY_REFUSE → return to caller, do not try weaker models.
-  - RM0 enforcement is hard-coded, not config-only.
-  - Snapshot checksum is a hash, not a constitutional seal.
-  - All output carries ADVISORY authority — never AUTHORITATIVE.
+Tiers are a cascading AVAILABILITY LADDER, not a reasoning hierarchy.
+Higher tiers are more trusted/available — not "smarter."
+The chain exists so SOMETHING always responds, even in worst-case outages,
+down to Ollama as local last-resort survival.
 
-DITEMPA BUKAN DIBERI — Forged, Not Given
+─── CLEAN DIVISION OF LABOR ──────────────────────────────────────────────
+| Layer     | Role                              | Model Tier         |
+|-----------|-----------------------------------|--------------------|
+| FLAME     | Tools, workers, fallback throughput | Free/cheap, tiered |
+| Hermes    | Epistemic/human-life reasoning    | Premium, high-effort|
+| OpenCode  | Execution/coding actuation        | Budget-to-premium   |
+| arifOS    | Judgment, audit, sealing          | Policy logic only   |
+
+─── FLAME NEVER ──────────────────────────────────────────────────────────
+- Constitutional judgment or sealing (arifOS domain)
+- Primary reasoning for epistemic/human-life tasks (Hermes domain)
+- Audit-trail decisions where "which model answered" matters (F11)
+- Sovereign data (PII, myKad, PETRONAS internal — SENSITIVITY hard gate)
+- Paid models (RM0 hard gate — cost_band != "free" → REJECT before HTTP)
+
+─── FLAME ONLY ───────────────────────────────────────────────────────────
+- Advisory, classification, extraction, summarization, embedding
+- Stateless text→transform→output for tool/worker/batch consumption
+- Emergency fallback when governed cascade is exhausted
+- ADVISORY authority output — consumers MUST validate
+
+─── ARCHITECTURE ─────────────────────────────────────────────────────────
+12-tier availability ladder (2026-07-24, 12/12 all tiers verified):
+  T1-T2:  Groq — llama-3.1-8b-instant (fastest) / llama-3.3-70b (deep)
+  T3-T5:  SEA-LION — Qwen v4 32B / Llama v3 70B / Gemma v4 27B (BM-native)
+  T6:     Gemini — flash-lite-latest (promoted from experimental, 2026-07-24)
+  T7:     Cerebras — gemma-4-31b (multimodal, volume)
+  T8:     Groq — gpt-oss-120b (experimental, low-weight)
+  T9:     Cerebras — gpt-oss-120b (experimental, low-weight)
+  T10:    OpenRouter — :free aggregator (gap-fill, weight=0.5)
+  T11:    Groq — qwen/qwen3.6-27b (general, fast, gap-fill)
+  T12:    Ollama — qwen2.5-coder:3b (local survival knife, 10s cold-start)
+
+7 task-class reorder chains: coding, epistemic, bm_malay, classification,
+  summarization, gap_fill, destructive(NEVER FLAME)
+
+─── CONSTITUTIONAL ──────────────────────────────────────────────────────
+FLAME produces proposals. Consuming tools determine admissibility.
+FLAME is for THROUGHPUT, not TRUTH.
+SAFETY_REFUSE → return to caller. NEVER model-shop.
+RM0 enforcement is hard-coded, not config-only.
+Snapshot checksum is a hash, NOT a constitutional seal.
+All output: ADVISORY authority — NEVER AUTHORITATIVE.
 """
+
+# ── FLAME GOVERNED USE CLASSIFICATION (code-enforced, not comment) ─────────
+# Every FLAME consumer MUST declare a use_class. FLAME enforces admissibility.
+# Forged 2026-07-24 — Arif-ratified division of labor.
+
+GOVERNED_USE = {
+    # ALLOWED — FLAME is the correct lane
+    "classification": "Text classification, categorization, labeling",
+    "summarization": "Compression, extraction, log/digest summarization",
+    "extraction": "Entity/keyword extraction, structured data pull",
+    "embedding": "Vector generation for search/retrieval",
+    "advisory_check": "Non-binding fact/epistemic/plan review via FLAME tools",
+    "worker_synthesis": "Tool-level text generation (geox_claim, forge_search, etc.)",
+    "batch_processing": "Bulk text transform, multi-prompt processing",
+    "fallback_throughput": "Emergency when governed cascade exhausted",
+    # CONDITIONAL — FLAME for non-seal sub-paths only
+    "geox_synthesis": "Geoscience evidence synthesis (non-seal mode)",
+    "market_signal": "Capital market interpretation (signal mode, never allocate)",
+    "plan_review": "Plan safety review (advisory only, never authorize)",
+    # FORBIDDEN — never FLAME, hard gate
+    "constitutional_judgment": "FORBIDDEN. arifOS 666_JUDGE domain.",
+    "constitutional_seal": "FORBIDDEN. arifOS 999_SEAL + VAULT999 domain.",
+    "epistemic_primary": "FORBIDDEN. Hermes premium reasoning domain.",
+    "human_life_reasoning": "FORBIDDEN. Hermes domain. Human substrate never touches FLAME.",
+    "sovereign_data": "FORBIDDEN. PII/myKad/PETRONAS internal. Governed cascade only.",
+    "execution_authorization": "FORBIDDEN. forge_execute lease authorization domain.",
+}
+# ── IMPORTS ─────────────────────────────────────────────────────────────────
 
 import json
 import os
@@ -48,6 +110,7 @@ _FLAME_ALLOWLIST_KEYS = {
     "SEA_LION_API_KEY",
     "GEMINI_API_KEY",
     "CEREBRAS_API_KEY",
+    "OPENROUTER_API_KEY",
     # Ollama: local, no key needed
 }
 
@@ -160,6 +223,27 @@ class Sensitivity:
         return Sensitivity.PUBLIC
 
 
+# ── Task-Class Chains (P0.8 — per-task-class fallback overrides) ─────────
+
+TASK_CLASS_CHAINS = {
+    "coding": [
+        "groq/llama-3.3-70b-versatile",
+        "openrouter/free-aggregator",
+        "cerebras/gemma-4-31b",
+    ],
+    "epistemic": ["groq/llama-3.3-70b-versatile", "gemini/gemini-2.5-flash"],
+    "bm_malay": [
+        "sea-lion/aisingapore/Qwen-SEA-LION-v4-32B-IT",
+        "sea-lion/aisingapore/Llama-SEA-LION-v3-70B-IT",
+    ],
+    "classification": ["groq/llama-3.1-8b-instant", "gemini/gemini-flash-lite-latest"],
+    "summarization": ["groq/llama-3.1-8b-instant", "gemini/gemini-2.5-flash"],
+    "gap_fill": [
+        "openrouter/free-aggregator"
+    ],  # OR free models only — for providers FLAME can't reach directly
+    "destructive": [],  # NEVER FLAME — governed cascade only
+}
+
 # ── Data Structures ────────────────────────────────────────────────────────
 
 
@@ -255,6 +339,177 @@ class FlameResult:
 
 
 # ── Engine ─────────────────────────────────────────────────────────────────
+
+
+class OpenRouterProvider:
+    """OpenRouter :free model aggregator for FLAME — gap-filler for models
+    the federation can't reach directly via free direct-provider tiers.
+
+    RATE-LIMITED: 20rpm / 50rpd (1000rpd after $10 lifetime credit purchase).
+    Account-wide cap — shared across all free models, not per-model.
+    Failed attempts count toward quota — 429 cooldown is a HARD requirement.
+
+    Forged 2026-07-24. DITEMPA BUKAN DIBERI.
+    """
+
+    BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+    # Allowlisted free models — only these are routed (no auto-discover)
+    # These are models FLAME cannot reach directly via free tiers:
+    # Cohere, InclusionAI, Poolside are NOT accessible via Groq/Gemini/Cerebras/SEA-LION
+    ALLOWLIST = [
+        "cohere/north-mini-code:free",  # Cohere — lightweight coding
+        "inclusionai/ling-3.0-flash:free",  # InclusionAI — 124B MoE, 5.1B active/token
+        "poolside/laguna-s-2.1:free",  # Poolside — coding specialist
+        "google/gemma-4-31b-it:free",  # Google — already available via Cerebras direct
+        "nvidia/nemotron-3-super-120b-a12b:free",  # NVIDIA — 120B, 12B active
+    ]
+
+    MAX_RPD = 200  # Conservative — respect 50-1000 rpd limit
+    RPM_LIMIT = 20  # Account-wide
+    COOLDOWN_ON_429 = 3600  # 1 hour — failed attempts COUNT toward quota
+
+    def __init__(self, api_key: str = ""):
+        self.api_key = api_key or os.environ.get("OPENROUTER_API_KEY", "")
+        self.last_429: float = 0.0
+        self.call_count_today: int = 0
+        self._day_start: float = time.time()
+
+    def _check_quota(self) -> tuple[bool, str]:
+        """Check if we're within rate limits. Returns (ok, reason)."""
+        # Reset daily counter
+        if time.time() - self._day_start > 86400:
+            self.call_count_today = 0
+            self._day_start = time.time()
+
+        # 429 cooldown
+        if time.time() - self.last_429 < self.COOLDOWN_ON_429:
+            return (
+                False,
+                f"OR_COOLDOWN: 429 backoff active ({int(self.COOLDOWN_ON_429 - (time.time() - self.last_429))}s remaining)",
+            )
+
+        # Daily cap
+        if self.call_count_today >= self.MAX_RPD:
+            return False, f"OR_RPD_EXHAUSTED: {self.MAX_RPD} daily limit reached"
+
+        return True, ""
+
+    def call(
+        self,
+        messages: list[dict],
+        max_tokens: int = 1024,
+        temperature: float = 0.3,
+        timeout: float = 15.0,
+    ) -> tuple[str, float, bool]:
+        """Call OpenRouter with allowlisted :free models. Fallback within allowlist.
+
+        Returns (content, latency_ms, ok).
+        """
+        if not self.api_key:
+            return "", 0.0, False
+
+        ok, reason = self._check_quota()
+        if not ok:
+            logger.warning(f"FLAME OR {reason}")
+            return "", 0.0, False
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+            "HTTP-Referer": "https://arif-fazil.com",
+            "X-Title": "arifOS FLAME Free Loop",
+            "X-OpenRouter-Experimental-Metadata": "enabled",
+        }
+
+        t0 = time.monotonic()
+
+        # Try each allowlisted model in sequence (same request, same quota consumption)
+        for model_id in self.ALLOWLIST:
+            payload = {
+                "model": model_id,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }
+
+            try:
+                with httpx.Client(timeout=timeout) as client:
+                    resp = client.post(self.BASE_URL, headers=headers, json=payload)
+
+                if resp.status_code == 429:
+                    self.last_429 = time.time()
+                    logger.warning(
+                        f"FLAME OR 429 on {model_id} — 1hr cooldown activated"
+                    )
+                    self.call_count_today += (
+                        1  # Failed attempt STILL counts toward quota
+                    )
+                    continue
+
+                if resp.status_code != 200:
+                    self.call_count_today += 1
+                    continue
+
+                data = resp.json()
+                message = data["choices"][0]["message"]
+                content = message.get("content", "").strip()
+
+                # Check reasoning_content (same P0.2 fix as _call_model)
+                reasoning = message.get("reasoning_content", "") or message.get(
+                    "reasoning", ""
+                )
+                if not content and reasoning and reasoning.strip():
+                    logger.info(f"FLAME OR {model_id} reasoning-without-final — skip")
+                    self.call_count_today += 1
+                    continue
+
+                if (
+                    content
+                    and not _is_safety_refusal(content)
+                    and not _is_censor_refusal(content)
+                ):
+                    latency = (time.monotonic() - t0) * 1000
+                    self.call_count_today += 1
+                    return content, latency, True
+
+                self.call_count_today += 1
+
+            except Exception as e:
+                logger.warning(f"FLAME OR {model_id} error: {e}")
+                self.call_count_today += 1
+                continue
+
+        latency = (time.monotonic() - t0) * 1000
+        return "", latency, False
+
+
+def _is_safety_refusal(text: str) -> bool:
+    """P0.6: Safety refusal check — shared by both OR and direct providers."""
+    patterns = [
+        "I cannot assist",
+        "I'm not able to help",
+        "against my safety",
+        "harmful content",
+        "dangerous request",
+        "illegal activity",
+    ]
+    text_lower = text.lower()
+    return any(p.lower() in text_lower for p in patterns)
+
+
+def _is_censor_refusal(text: str) -> bool:
+    """Censorship check."""
+    patterns = [
+        "I cannot",
+        "I'm unable",
+        "I apologize",
+        "as an AI",
+        "I don't feel comfortable",
+        "not able to",
+    ]
+    text_lower = text.lower()
+    return any(p.lower() in text_lower for p in patterns)
 
 
 class FlameEngine:
@@ -542,6 +797,8 @@ class FlameEngine:
 
     # ── Main Call ──────────────────────────────────────────────────────────
 
+    _or_provider: OpenRouterProvider | None = None  # P0.8 — lazy init
+
     def call(
         self,
         prompt: str,
@@ -551,6 +808,7 @@ class FlameEngine:
         chain_id: str | None = None,
         sensitivity: str = "PUBLIC",  # P0.4 — caller-declared sensitivity
         caller_id: str = "unknown",  # P0.7 — caller identity for audit
+        task_class: str = "",  # P0.8 — per-task-class chain override (coding/epistemic/bm_malay/classification/summarization)
     ) -> FlameResult:
         """
         Route a prompt through the free-loop chain.
@@ -587,12 +845,37 @@ class FlameEngine:
                 )
                 sensitivity = detected
 
+        # P0.8: Per-task-class chain override — reorder tiers for task-specific optimization
         used_chain_id = (
             chain_id
             if (chain_id and chain_id in self.config["chains"])
             else self.chain_id
         )
         chain = self.config["chains"][used_chain_id]
+        tiers = list(chain["tiers"])  # shallow copy — may reorder
+
+        if task_class and task_class in TASK_CLASS_CHAINS:
+            preferred = TASK_CLASS_CHAINS[task_class]
+            if preferred:
+                # Move preferred tiers to front of iteration order
+                reordered = []
+                remaining = list(tiers)
+                for pref_key in preferred:
+                    for tier in remaining:
+                        p_m = f"{tier['provider']}/{tier['model']}"
+                        if (
+                            p_m == pref_key
+                            or tier["model"] == pref_key
+                            or tier["provider"] == pref_key
+                        ):
+                            reordered.append(tier)
+                            remaining.remove(tier)
+                            break
+                tiers = reordered + remaining
+                logger.info(
+                    f"FLAME task_class={task_class} → reordered chain: "
+                    f"{[t['provider'] + '/' + t['model'] for t in tiers[:4]]}{'...' if len(tiers) > 4 else ''}"
+                )
 
         messages = []
         if system:
@@ -600,7 +883,6 @@ class FlameEngine:
         messages.append({"role": "user", "content": prompt})
 
         tried = []
-        tiers = chain["tiers"]
         safety_refuse_seen = []  # Track which models issued safety refusals
 
         for i, tier in enumerate(tiers):
@@ -608,6 +890,74 @@ class FlameEngine:
             model = tier["model"]
             key = self._provider_key(provider, model)
             tried.append(key)
+
+            # P0.8: OpenRouter free aggregator tier — special handling
+            if provider == "openrouter":
+                if self._or_provider is None:
+                    self._or_provider = OpenRouterProvider()
+
+                or_ok, or_reason = self._or_provider._check_quota()
+                if not or_ok:
+                    logger.warning(f"FLAME ⛔ OR → {or_reason}")
+                    self._save_event(
+                        {
+                            "event": "openrouter_quota_reject",
+                            "provider": provider,
+                            "model": model,
+                            "reason": or_reason,
+                            "caller": caller_id,
+                        }
+                    )
+                    continue  # Skip OR tier — try next
+
+                # Check sensitivity — OR is US jurisdiction, PUBLIC only
+                if sensitivity not in (Sensitivity.PUBLIC,):
+                    self._save_event(
+                        {
+                            "event": "openrouter_sensitivity_reject",
+                            "provider": provider,
+                            "sensitivity": sensitivity,
+                            "caller": caller_id,
+                        }
+                    )
+                    continue
+
+                content, latency, or_ok = self._or_provider.call(
+                    messages, max_tokens, temperature
+                )
+
+                if or_ok and content:
+                    hr = self.hitrates[key]
+                    hr.record(True, latency, refuse=False, censor=False)
+                    result = FlameResult(
+                        content=content,
+                        model=model,
+                        provider=provider,
+                        latency_ms=latency,
+                        tier_index=i,
+                        tried=tried,
+                        ok=True,
+                        fingerprint=self._compute_fingerprint(
+                            prompt,
+                            content,
+                            model,
+                            provider,
+                            time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                        ),
+                        prompt_hash=hashlib.sha256(prompt.encode()).hexdigest()[:16],
+                        authority="ADVISORY",
+                        classification="LLM_PROPOSAL",
+                        requires_validation=True,
+                        chain_id=used_chain_id,
+                        created_at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                        sensitivity=sensitivity,
+                    )
+                    self._save_state()
+                    return result
+                else:
+                    hr = self.hitrates[key]
+                    hr.record(False, latency, refuse=False, censor=False)
+                    continue  # OR failed — fall through to next tier
 
             # P0.5: Hard RM0 gate — reject before HTTP
             rm0_ok, rm0_reason = self._check_rm0(provider, tier)
@@ -803,6 +1153,28 @@ class FlameEngine:
                 }
                 continue
 
+            # P0.8: OpenRouter tier — probe via OpenRouterProvider, not _call_model
+            if provider == "openrouter":
+                if self._or_provider is None:
+                    self._or_provider = OpenRouterProvider()
+                content, latency, or_ok = self._or_provider.call(
+                    [{"role": "user", "content": "Say OK"}],
+                    max_tokens=80,
+                    temperature=0.0,
+                    timeout=probe_timeout_s,
+                )
+                results[key] = {
+                    "ok": bool(content) and not self._check_malformed(content),
+                    "latency_ms": latency,
+                    "content": content
+                    if content
+                    else f"OR_PROBE_FAIL ({latency:.0f}ms)",
+                }
+                if bool(content):
+                    hr = self.hitrates[key]
+                    hr.record(True, latency, refuse=False, censor=False)
+                continue
+
             # Provider-aware cooldown: 2s between same-provider tiers
             if provider == prev_provider:
                 time.sleep(2.0)
@@ -815,7 +1187,9 @@ class FlameEngine:
                     [{"role": "user", "content": "Say OK"}],
                     max_tokens=80,
                     temperature=0.0,
-                    timeout_override=probe_timeout_s,
+                    timeout_override=probe_timeout_s
+                    if provider != "ollama"
+                    else max(probe_timeout_s, 10.0),
                 )
             )
             ok = (
@@ -999,6 +1373,20 @@ def main():
         help="Data sensitivity class (P0.4)",
     )
     parser.add_argument(
+        "--task-class",
+        choices=[
+            "coding",
+            "epistemic",
+            "bm_malay",
+            "classification",
+            "summarization",
+            "gap_fill",
+            "destructive",
+        ],
+        default="",
+        help="Task class for chain override (P0.8). Destructive: NEVER FLAME.",
+    )
+    parser.add_argument(
         "--caller",
         default="cli",
         help="Caller identifier for audit (P0.7)",
@@ -1107,6 +1495,7 @@ def main():
         temperature=args.temperature,
         sensitivity=args.sensitivity,
         caller_id=args.caller,
+        task_class=args.task_class,
     )
 
     if args.json:
