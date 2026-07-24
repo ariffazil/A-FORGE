@@ -1,3 +1,6 @@
+> **Canonical RUNBOOK:** `/root/RUNBOOK.md` — this file is organ-specific overrides only.
+> **SOT:** 2026-07-24 | **seal_seq:** fed-phase-7
+
 # 📋 RUNBOOK — A-FORGE Operations
 
 > **SOT:** 2026-07-20
