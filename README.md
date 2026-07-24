@@ -228,6 +228,7 @@ a-forge-mcp.service                # MCP gateway on :7072
 | GEOX | Earth intelligence | 8081 | [ariffazil/geox](https://github.com/ariffazil/geox) |
 | WEALTH | Capital intelligence | 18082 | [ariffazil/wealth](https://github.com/ariffazil/wealth) |
 | WELL | Vitality guard | 18083 | [ariffazil/well](https://github.com/ariffazil/well) |
+| HERMES | Multi-modal bridge + Telegram relay | 8644 | [ariffazil/HERMES](https://github.com/ariffazil/HERMES) |
 | **A-FORGE** | Execution shell | 7071/7072 | ← you are here |
 
 ---
