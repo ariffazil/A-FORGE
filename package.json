@@ -1,7 +1,7 @@
 {
   "name": "@ariffazil/a-forge",
-  "version": "2026.06.30",
-  "description": "A-FORGE — Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
+  "version": "2026.07.24",
+  "description": "A-FORGE \u2014 Constitutional Event-Sourced Agent Runtime. Planner/Executor/Verifier triad, policy engine, governed memory, and 888_HOLD human sovereignty gates.",
   "type": "module",
   "bin": {
     "agent": "./dist/src/interfaces/cli.js",
