@@ -421,7 +421,7 @@
     },
     "identity_proof": {
       "type": "ed25519",
-      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEA/8srcNdnITCuEYrwgqO0MsMAMt4h35z1w6+39Tuptrc=\n-----END PUBLIC KEY-----",
+      "public_key_pem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAauxSHdOwyvO+s+/sRYzK9ZgvGj8m57NYzmbY10qsvV4=\n-----END PUBLIC KEY-----",
       "registered_at": "2026-07-11T12:46:00Z",
       "note": "Sovereign principal \u2014 F13 authority"
     },
