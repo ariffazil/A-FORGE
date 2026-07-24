@@ -108,7 +108,32 @@ Every execution passes ALL four layers. No skipping, no silence.
 | **3: Governance Bridge** | F1–F12 floor eval via arifOS | VOID → HALT |
 | **4: Approval Boundary** | Irreversibility + blast radius | APPROVED → PROCEED |
 
-**Gödel Lock:** A-FORGE cannot seal its own `forge_execute` outcomes without external witness (arifOS kernel or Arif F13). This is the formalization of "hands never adjudicate."
+**Gödel Lock:** A-FORGE cannot seal its own `forge_execute` outcomes without external witness (arifOS kernel or Arif F13). The executor cannot certify itself.
+
+### What Is a Lease?
+
+A **lease** is a bounded permission grant — the execution safety object of A-FORGE:
+
+- **Who may act** — the agent or instrument
+- **What may be changed** — scope of mutation
+- **Where action may occur** — filesystem, network, shell boundaries
+- **How long permission lasts** — time-bound, auto-expiring
+- **What witness is required** — rollback plan, audit trace
+
+> Without a valid lease, no mutation. The hands never self-authorize.
+
+### Federation Separation of Powers
+
+| Layer | Role | Can | Cannot |
+|-------|------|-----|--------|
+| **ARIF** | Sovereign | Veto, approve, decide | Be overridden |
+| **AAA** | State / Cockpit | Display, route, queue, register | Judge, execute, seal |
+| **arifOS** | Judge | Issue SEAL/HOLD/VOID/SABAR | Execute mutations |
+| **Domain Organs** | Witnesses | Compute and reflect evidence | Decide alone |
+| **A-FORGE** | Executor | Build, deploy, mutate | Self-authorize |
+| **VAULT999** | Ledger | Record immutable seals | Edit or delete history |
+
+> AAA routes and displays. arifOS judges. Domain organs witness. A-FORGE executes. VAULT999 records. ARIF decides.
 
 ---
 
