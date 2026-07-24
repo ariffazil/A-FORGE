@@ -1,53 +1,93 @@
-# A-FORGE — Constitutional Execution Shell
-> Event-sourced agent runtime. Planner/Executor/Verifier triad, policy engine, governed memory.
-> Port: 7071. License: AGPL-3.0. Status: OPERATIONAL. Version: 2026.06.06.
+# A-FORGE — Execution Shell (arifOS Federation)
+## Machine & Agent Interface Specification
 
-## Quick Context
-- **What:** Execution shell — builds, deploys, runs as systemd service
-- **Role:** EXECUTES approved plans. Hard-gated by judge + APEX. Never autonomous.
-- **Federation:** A-FORGE executes. arifOS authorizes. Arif commands.
-- **Runtime:** TypeScript, Node 22+, Express, bare-metal systemd
+**Version:** 2026.07.24  
+**URL:** https://forge.arif-fazil.com  
+**MCP (canonical public door):** https://mcp.arif-fazil.com/mcp  
+**API:** https://forge.arif-fazil.com (→ :7071)  
+**Source:** https://github.com/ariffazil/A-FORGE  
+**Port (local):** 7071 API · 7072 MCP · **License:** AGPL-3.0  
 
-## Key Files
-- README.md — Full human-readable narrative (842 lines)
-- AGENTS.md — Agent rules, build/test commands
-- GENESIS/012_AFORGE_MANDATE.md — Constitutional mandate
-- CONTEXT.md — Live organ state
+> **A-FORGE executes. arifOS authorizes. Arif commands.**  
+> Never self-authorizes. Mutates only after SESSION + LEASE + GATE + SEAL.
 
-## Entry Points
-- src/ — TypeScript source (~130 files, ~24K lines)
-- src/engine/ — AgentEngine, PlanValidator, execution runtime
-- src/planner/ — ParallelPlanner, dependency resolution
-- src/memory/ — Governed memory, context compression
-- src/governance/ — Policy engine, 888_HOLD gates
-- src/bridges/ — Federation organ bridges (MCP, A2A)
-- src/a2a/ — Agent-to-Agent protocol
-- src/ops/ — Health, federation probe, telemetry
-- src/cli/ — CLI interface
+---
+
+## What A-FORGE Is
+
+Engineering actuator of the arifOS federation. Plans, dry-runs, builds, deploys,
+and rolls back under constitutional gates. TypeScript / Node 22+ bare-metal systemd.
+
+## Federation Organs
+
+| Organ | Role | Port | Link |
+|-------|------|------|------|
+| arifOS | Constitutional kernel — judge, seal | 8088 | https://arifos.arif-fazil.com |
+| AAA | Cockpit + A2A | 3001 | https://aaa.arif-fazil.com |
+| **A-FORGE** | Execution shell | 7071 | ← you are here |
+| GEOX | Earth intelligence | 8081 | https://geox.arif-fazil.com |
+| WEALTH | Capital intelligence | 18082 | https://wealth.arif-fazil.com |
+| WELL | Vitality guard (REFLECT_ONLY) | 18083 | https://well.arif-fazil.com |
+| HERMES | Multi-modal / Telegram bridge | — | https://t.me/arifos |
+
+Contract: https://arifos.arif-fazil.com · `/root/FEDERATION_CONTRACT.md`
+
+---
+
+## Discovery Endpoints
+
+| Path | Purpose |
+|------|---------|
+| `/health` | API liveness |
+| `/api/federation-probe` | Multi-organ health scan |
+| `/.well-known/agent-card.json` | A2A agent card |
+| `/llms.txt` | This file |
+| Public MCP | https://mcp.arif-fazil.com/mcp |
+
+**Truth rule:** live `/health` + lease state beat prose. forge_* on arifOS is deprecated proxy — canonical home is A-FORGE.
+
+---
+
+## 4-Layer Forge Gate
+
+Every execution must pass:
+
+1. **F1 AMANAH** — catastrophic pattern scan  
+2. **Model Capability** — DEGRADED | MISSING | PASS  
+3. **Governance Bridge** — F1–F12 via arifOS → SEAL | SABAR | VOID  
+4. **Approval Boundary** — irreversibility → APPROVED | 888_HOLD | DENIED  
+
+## Boundaries (hard)
+
+- NEVER execute without judge authorization + lease  
+- NEVER legislate (arifOS owns law)  
+- NEVER self-authorize a forge gate  
+- NEVER bypass reversibility scoring  
+- NEVER auto-deploy production without human 888 on T3 acts  
+
+## Architecture
+
+```
+Domain (pure) → Infrastructure (fs/docker/net) → Interfaces (Express/MCP/A2A)
+```
+
+Key: `src/engine/` · `src/planner/` · `src/governance/` · `src/bridges/`
 
 ## Build & Test
-- Install:  npm install
-- Build:   npm run build   (tsc -p tsconfig.json)
-- Test:    make test        (security-audit + build + all 17 test suites)
-- Start:   systemctl start a-forge
-- Health:  curl http://127.0.0.1:7071/health
-- Probe:   curl http://127.0.0.1:7071/api/federation-probe
-- Deploy:  make build && systemctl restart a-forge
 
-## API Endpoints
-GET  /health                  — Liveness probe
-GET  /api/federation-probe    — 6-organ parallel health scan
-GET  /.well-known/agent-card.json — A2A agent card
-POST /tasks                   — A2A task submission
+```bash
+npm ci && npm run build
+make test
+systemctl restart a-forge a-forge-mcp
+curl -s http://127.0.0.1:7071/health
+```
 
-## Architecture (W2/W3 hexagonal ports)
-Domain layer    — Pure business logic, no I/O
-Infrastructure  — Systemd, filesystem, Docker, network
-Interfaces      — Express routes, MCP bridges, A2A handlers
+## For Agents
 
-## Boundaries (NEVER)
-- NEVER execute without JUDGE_SEAL_AUTHORIZATION + APEX approval
-- NEVER legislate (A-FORGE executes, arifOS legislates)
-- NEVER self-authorize a forge gate
-- NEVER bypass the reversibility scoring
-- NEVER auto-deploy to production without human 888
+1. Read this file + `/health`  
+2. Prefer public MCP door: `https://mcp.arif-fazil.com/mcp`  
+3. Obtain session + lease before mutate tools  
+4. Treat 888_HOLD as terminal until Arif decides  
+5. Crawl federation: https://arifos.arif-fazil.com/llms.txt  
+
+DITEMPA BUKAN DIBERI — Forged, Not Given.
