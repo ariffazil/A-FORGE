@@ -1045,10 +1045,12 @@ export function registerShellTools(server: McpServer): void {
       // Run sandboxed via timeout (same as before but with governance note)
       const effective_timeout = Math.min(safeTimeout, 60000);
       try {
+        const env = buildMinimalEnv("/root");
         const output = execSync(command, {
           encoding: "utf-8",
           timeout: effective_timeout,
           maxBuffer: 1024 * 1024,
+          env,
         });
         return {
           content: [{

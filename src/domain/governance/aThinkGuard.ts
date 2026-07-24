@@ -229,7 +229,12 @@ const MODE_ORDER: Record<AThinkMode, number> = { FAST: 0, THINK: 1, GOVERN: 2 };
 function isKnown(card: AffordanceCard | undefined): boolean {
   if (!card) return false;
   if (!card.purpose || card.purpose.trim() === "") return false;
-  if (card.reads.length === 0 && card.writes.length === 0) return false;
+  // SURVIVAL-OF-THE-FITTEST FIX 2026-07-24: optional-chain on card.reads
+  // and card.writes. Defensive against legacy/malformed cards. Returns
+  // UNKNOWN = HOLD for cards-without-rw, avoiding TypeError on .length.
+  const reads = card.reads ?? [];
+  const writes = card.writes ?? [];
+  if (reads.length === 0 && writes.length === 0) return false;
   if (card.external_side_effect === null || card.external_side_effect === undefined) return false;
   if (card.destructive === null || card.destructive === undefined) return false;
   if (card.reversible === null || card.reversible === undefined) return false;
@@ -422,8 +427,11 @@ export class AThinkGuard {
     // Step 6: GOVERN + destructive = HOLD for human approval
     // DARWIN FIX 3: read-only shell commands bypass the GOVERN+HOLD block.
     // (READONLY_SHELL_COMMANDS Set is hoisted to top of check() — see above.)
-    const card = affordance.card!;
-    if (mode === "GOVERN" && card.requires_human_approval) {
+    // SURVIVAL-OF-THE-FITTEST FIX 2026-07-24: optional-chain `card` — when
+    // checkAffordance returns DEFAULT_ALLOW (no card), `affordance.card` is
+    // undefined. Optional chain prevents TypeError on .requires_human_approval.
+    const card = affordance.card;
+    if (mode === "GOVERN" && card?.requires_human_approval) {
       // Exempt read-only forge_shell invocations from the HOLD gate.
       // forge_shell is the only GOVERN-mode tool that takes a `command`
       // string; check the first token against the allowlist.
@@ -471,8 +479,8 @@ export class AThinkGuard {
       reason: "ALLOWED",
       mode,
       tool_name: toolName,
-      risk_label: card.risk_label,
-      requires_human_approval: card.requires_human_approval,
+      risk_label: card?.risk_label ?? "R0",
+      requires_human_approval: card?.requires_human_approval ?? false,
     };
   }
 

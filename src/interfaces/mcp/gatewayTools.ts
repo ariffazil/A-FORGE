@@ -803,7 +803,7 @@ export async function handleForgeMinimaxSearch(args: any) {
 
 export function registerGatewayTools(server: McpServer): void {
   // Research & Search
-  server.tool("forge_research", "Governed research across web sources. OBSERVE-class.", {
+  server.tool("forge_research", "Governed research across web sources.", {
     query: z.string().max(500).describe("Research query"),
     depth: z.enum(["quick", "standard", "deep"]).default("standard").describe("Research depth"),
     sources: z.array(z.enum(["web", "news", "academic", "docs", "all"])).default(["all"]).describe("Source filters"),
@@ -813,7 +813,7 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeResearch);
 
-  server.tool("forge_search", "Governed web search via Brave. OBSERVE-class.", {
+  server.tool("forge_search", "Governed web search via Brave.", {
     query: z.string().max(400).describe("Search query"),
     count: z.number().min(1).max(20).default(10).describe("Result count"),
     freshness: z.enum(["any", "day", "week", "month", "year"]).default("any").describe("Freshness"),
@@ -821,7 +821,7 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeSearch);
 
-  server.tool("forge_docs_lookup", "Governed docs lookup via Context7. OBSERVE-class.", {
+  server.tool("forge_docs_lookup", "Governed docs lookup via Context7.", {
     query: z.string().describe("Docs query"),
     corpus: z.enum(["arifos", "geox", "wealth", "well", "aforge", "cloudflare", "workers", "all"]).default("all").describe("Corpus"),
     max_results: z.number().min(1).max(20).default(5).describe("Max results"),
@@ -829,7 +829,7 @@ export function registerGatewayTools(server: McpServer): void {
   }, handleForgeDocsLookup);
 
   // Browser
-  server.tool("forge_browser_navigate", "Navigate browser to URL. OBSERVE-class.", {
+  server.tool("forge_browser_navigate", "Navigate browser to URL.", {
     url: z.string().describe("URL to navigate to"),
     wait_until: z.enum(["load", "domcontentloaded", "networkidle"]).default("networkidle").describe("Wait condition"),
     timeout_ms: z.number().min(1000).max(30000).default(15000).describe("Timeout ms"),
@@ -838,7 +838,7 @@ export function registerGatewayTools(server: McpServer): void {
     page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
   }, handleForgeBrowserNavigate);
 
-  server.tool("forge_browser_click", "Click a browser element. OBSERVE-class.", {
+  server.tool("forge_browser_click", "Click a browser element.", {
     selector: z.string().describe("Element selector"),
     button: z.enum(["left", "right", "middle"]).default("left").describe("Mouse button"),
     request_id: z.string().describe("Caller request ID"),
@@ -846,7 +846,7 @@ export function registerGatewayTools(server: McpServer): void {
     page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
   }, handleForgeBrowserClick);
 
-  server.tool("forge_browser_type", "Type text into a browser element. OBSERVE-class.", {
+  server.tool("forge_browser_type", "Type text into a browser element.", {
     selector: z.string().describe("Element selector"),
     text: z.string().max(1000).describe("Text to type"),
     submit: z.boolean().default(false).describe("Submit after typing"),
@@ -855,7 +855,7 @@ export function registerGatewayTools(server: McpServer): void {
     page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
   }, handleForgeBrowserType);
 
-  server.tool("forge_browser_screenshot", "Take a browser screenshot. OBSERVE-class.", {
+  server.tool("forge_browser_screenshot", "Take a browser screenshot.", {
     selector: z.string().optional().describe("Element selector (omit for full page)"),
     full_page: z.boolean().default(false).describe("Full page screenshot"),
     request_id: z.string().describe("Caller request ID"),
@@ -863,7 +863,7 @@ export function registerGatewayTools(server: McpServer): void {
     page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
   }, handleForgeBrowserScreenshot);
 
-  server.tool("forge_browser_extract_text", "Extract text from browser page. OBSERVE-class.", {
+  server.tool("forge_browser_extract_text", "Extract text from browser page.", {
     selector: z.string().optional().describe("Element selector (omit for body)"),
     max_chars: z.number().default(50000).describe("Max characters"),
     request_id: z.string().describe("Caller request ID"),
@@ -871,7 +871,7 @@ export function registerGatewayTools(server: McpServer): void {
     page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
   }, handleForgeBrowserExtractText);
 
-  server.tool("forge_browser_evaluate_js", "Evaluate JS in browser context. OBSERVE-class.", {
+  server.tool("forge_browser_evaluate_js", "Evaluate JS in browser context.", {
     script: z.string().max(2000).describe("JavaScript to evaluate"),
     request_id: z.string().describe("Caller request ID"),
     task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
@@ -879,21 +879,21 @@ export function registerGatewayTools(server: McpServer): void {
   }, handleForgeBrowserEvaluateJs);
 
   // GitHub
-  server.tool("forge_github_search_code", "Search GitHub code. OBSERVE-class.", {
+  server.tool("forge_github_search_code", "Search GitHub code.", {
     q: z.string().describe("GitHub code search query"),
     per_page: z.number().min(1).max(100).default(30).describe("Results per page"),
     page: z.number().default(1).describe("Page"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeGitHubSearchCode);
 
-  server.tool("forge_github_search_repos", "Search GitHub repositories. OBSERVE-class.", {
+  server.tool("forge_github_search_repos", "Search GitHub repositories.", {
     q: z.string().describe("Repository search query"),
     per_page: z.number().min(1).max(100).default(30).describe("Results per page"),
     page: z.number().default(1).describe("Page"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeGitHubSearchRepos);
 
-  server.tool("forge_github_get_file", "Read a file from GitHub. OBSERVE-class.", {
+  server.tool("forge_github_get_file", "Read a file from GitHub.", {
     owner: z.string().describe("Repository owner"),
     repo: z.string().describe("Repository name"),
     path: z.string().describe("File path"),
@@ -901,7 +901,7 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeGitHubGetFile);
 
-  server.tool("forge_github_create_or_update_file", "Create or update a file on GitHub. MUTATE — lease required.", {
+  server.tool("forge_github_create_or_update_file", "Create or update a file on GitHub.", {
     owner: z.string().describe("Repository owner"),
     repo: z.string().describe("Repository name"),
     path: z.string().describe("File path"),
@@ -915,7 +915,7 @@ export function registerGatewayTools(server: McpServer): void {
     lease_id: z.string().describe("Kernel-issued lease ID"),
   }, handleForgeGitHubCreateOrUpdateFile);
 
-  server.tool("forge_github_create_issue", "Create a GitHub issue. MUTATE — lease required.", {
+  server.tool("forge_github_create_issue", "Create a GitHub issue.", {
     owner: z.string().describe("Repository owner"),
     repo: z.string().describe("Repository name"),
     title: z.string().describe("Issue title"),
@@ -926,7 +926,7 @@ export function registerGatewayTools(server: McpServer): void {
     lease_id: z.string().describe("Kernel-issued lease ID"),
   }, handleForgeGitHubCreateIssue);
 
-  server.tool("forge_github_create_pull_request", "Create a GitHub pull request. MUTATE — lease required.", {
+  server.tool("forge_github_create_pull_request", "Create a GitHub pull request.", {
     owner: z.string().describe("Repository owner"),
     repo: z.string().describe("Repository name"),
     title: z.string().describe("PR title"),
@@ -939,19 +939,19 @@ export function registerGatewayTools(server: McpServer): void {
   }, handleForgeGitHubCreatePullRequest);
 
   // Worktree
-  server.tool("forge_worktree", "Local git physics sensor. Returns branch, dirty state, stash, conflicts, in-progress ops, blast radius, and actionable recommendations. OBSERVE-class — never mutates.", {
+  server.tool("forge_worktree", "Local git physics sensor — reports branch, dirty state, stash, conflicts, and blast radius.", {
     cwd: z.string().optional().describe("Working directory (defaults to process cwd)"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeWorktree);
 
   // Netdata
-  server.tool("forge_netdata_alarms", "Read Netdata alarms. OBSERVE-class.", {
+  server.tool("forge_netdata_alarms", "Read Netdata alarms.", {
     host: z.string().default("localhost").describe("Netdata host"),
     status: z.enum(["all", "raised", "clear", "warning", "critical"]).default("raised").describe("Alarm status filter"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeNetdataAlarms);
 
-  server.tool("forge_netdata_metrics", "Read Netdata chart data. OBSERVE-class.", {
+  server.tool("forge_netdata_metrics", "Read Netdata chart data.", {
     host: z.string().default("localhost").describe("Netdata host"),
     chart: z.string().describe("Chart name"),
     after: z.number().optional().describe("Unix timestamp start"),
@@ -961,7 +961,7 @@ export function registerGatewayTools(server: McpServer): void {
   }, handleForgeNetdataMetrics);
 
   // MiniMax
-  server.tool("forge_minimax_search", "Search the web via MiniMax. OBSERVE-class.", {
+  server.tool("forge_minimax_search", "Search the web via MiniMax.", {
     query: z.string().max(400).describe("Search query"),
     max_results: z.number().min(1).max(20).default(10).describe("Max results"),
     request_id: z.string().describe("Caller request ID"),
