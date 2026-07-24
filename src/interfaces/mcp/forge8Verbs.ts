@@ -627,15 +627,20 @@ async function forgeExecuteHandler(args: z.infer<typeof ForgeExecuteRequestSchem
       };
     }
     
-    // Validate human_seal_token format (stg_<16+ alphanumeric>)
-    if (!/^stg_[a-zA-Z0-9]{16,}$/.test(args.human_seal_token)) {
+    // Verify human_seal_token cryptographically via arifOS VAULT999
+    const token_valid = await verifyHumanSealToken(args.human_seal_token, args.stage_id);
+    if (!token_valid) {
       return {
         content: [{
           type: "text" as const,
           text: JSON.stringify({
             success: false,
             error_type: "INVALID_HUMAN_SEAL_TOKEN",
-            error_message: "human_seal_token must match format: stg_<16+ alphanumeric>",
+            error_message: "human_seal_token cryptographic verification failed — VAULT999 rejected the token.",
+            constitutional_violation: {
+              violated_principle: "F13 SOVEREIGN — fabricated approval token rejected",
+              required_action: "Re-obtain valid human_seal_token from F13 sovereign",
+            },
             _epistemic: epistemicTag("forge_execute"),
           }, null, 2),
         }],
@@ -781,11 +786,88 @@ async function forgeExecuteHandler(args: z.infer<typeof ForgeExecuteRequestSchem
   };
 }
 
-async function validateVaultSeal(seal_id: string, _signature: string, _docket_id: string): Promise<boolean> {
-  // In production: call arifOS VAULT999 to verify SEAL cryptographically
-  // For now: basic format validation
-  const uuid_regex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuid_regex.test(seal_id);
+async function validateVaultSeal(seal_id: string, signature: string, docket_id: string): Promise<boolean> {
+  try {
+    const ARIFOS_KERNEL = process.env.ARIFOS_KERNEL_URL || "http://127.0.0.1:8088";
+    const docket_hash = crypto.createHash("sha256").update(docket_id || "").digest("hex");
+
+    const verifyPayload = {
+      session_id: seal_id,
+      verdict: "SEAL",
+      state_hash: docket_hash,
+      actor_signature: signature || undefined,
+      include_trace: false,
+      agent_id: "a-forge",
+    };
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(`${ARIFOS_KERNEL}/seal/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(verifyPayload),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      console.error(`[A-FORGE] VAULT999 seal verification HTTP ${response.status}`);
+      return false;
+    }
+
+    const body = await response.json() as any;
+    const valid = body.valid === true;
+    const vaultAnchored = body.vault_anchored === true;
+    const sigValid = body.signature_valid === true;
+
+    if (!valid || !vaultAnchored) {
+      console.error(
+        `[A-FORGE] SEAL rejected: valid=${valid} vault_anchored=${vaultAnchored} sig_valid=${sigValid} seal_id=${seal_id.slice(0,36)}`
+      );
+      return false;
+    }
+
+    return true;
+  } catch (error: any) {
+    console.error(`[A-FORGE] VAULT999 seal verification error: ${error.message}`);
+    return false;
+  }
+}
+
+async function verifyHumanSealToken(token: string, stage_id: string): Promise<boolean> {
+  try {
+    const ARIFOS_KERNEL = process.env.ARIFOS_KERNEL_URL || "http://127.0.0.1:8088";
+    const stage_hash = crypto.createHash("sha256").update(stage_id || "").digest("hex");
+
+    const verifyPayload = {
+      session_id: stage_hash.slice(0, 36),
+      verdict: "SEAL",
+      state_hash: stage_hash,
+      actor_signature: token,
+      include_trace: false,
+      agent_id: "a-forge",
+    };
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(`${ARIFOS_KERNEL}/seal/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(verifyPayload),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) return false;
+
+    const body = await response.json() as any;
+    return body.valid === true && body.signature_valid === true;
+  } catch (error: any) {
+    console.error(`[A-FORGE] human_seal_token verification error: ${error.message}`);
+    return false;
+  }
 }
 
 // ── Tool Registration ──────────────────────────────────────────────────────
