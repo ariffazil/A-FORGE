@@ -110,6 +110,23 @@ Every execution passes ALL four layers. No skipping, no silence.
 
 **Gödel Lock:** A-FORGE cannot seal its own `forge_execute` outcomes without external witness (arifOS kernel or Arif F13). The executor cannot certify itself.
 
+```mermaid
+graph TB
+    AGENT[🤖 Agent / Intent] -->|request| LEASE{Valid Lease?}
+    LEASE -->|no| BLOCK[🚫 DENIED]
+    LEASE -->|yes| L1[Layer 1: F1 AMANAH<br/>Catastrophic Pattern Scan]
+    L1 -->|HARAM| BLOCK
+    L1 -->|PASS| L2[Layer 2: Model Capability<br/>Identity + Capability Band]
+    L2 -->|DEGRADED| BLOCK
+    L2 -->|PASS| L3[Layer 3: Governance Bridge<br/>arifOS F1-F12 Floor Eval]
+    L3 -->|VOID| BLOCK
+    L3 -->|SEAL| L4[Layer 4: Approval Boundary<br/>Irreversibility + Blast Radius]
+    L4 -->|888_HOLD| HOLD[⏸️ Human Ratification]
+    L4 -->|APPROVED| EXEC[⚡ Execute<br/>Shell · Git · Deploy · Docker]
+    EXEC -->|receipt| VAULT[(VAULT999<br/>Immutable Record)]
+    HOLD -->|approve| EXEC
+```
+
 ### What Is a Lease?
 
 A **lease** is a bounded permission grant — the execution safety object of A-FORGE:
