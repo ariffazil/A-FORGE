@@ -61,10 +61,21 @@ AGENTS_MISSING_ID=0
 if [ -d "$AGENTS_DIR" ]; then
   for agent_dir in "$AGENTS_DIR"/*/; do
     [ ! -d "$agent_dir" ] && continue
+    agent_name=$(basename "$agent_dir")
+
+    # PRE-FILTER: skip org dirs (_*) and non-agent dirs
+    # An agent directory MUST contain at least one identity file
+    [[ "$agent_name" == _* ]] && continue
+    if [ ! -f "${agent_dir}AGENTS.md" ] && \
+       [ ! -f "${agent_dir}agent-card.json" ] && \
+       [ ! -f "${agent_dir}IDENTITY.md" ] && \
+       [ ! -f "${agent_dir}SOUL.md" ]; then
+      continue
+    fi
+
     TOTAL_AGENTS=$((TOTAL_AGENTS + 1))
     if [ ! -f "${agent_dir}IDENTITY.md" ] && [ ! -f "${agent_dir}agent-card.json" ]; then
       AGENTS_MISSING_ID=$((AGENTS_MISSING_ID + 1))
-      agent_name=$(basename "$agent_dir")
       FINDINGS="${FINDINGS}  ❌ Agent '${agent_name}' — no IDENTITY.md or agent-card.json
 "
       ISSUES=$((ISSUES + 1))

@@ -1838,44 +1838,26 @@ server.tool(
 // Modes: read, list, write, seal
 // Replaces: forge_vault_read, forge_vault_list, forge_vault_write, forge_vault_seal
 // forge_vault_delete REMOVED — VAULT999 is append-only.
-// DEPRECATED (2026-07-03): write/seal modes should route through arifOS arif_seal.
-//   Keep read/list as A-FORGE native cache layer. Full removal TBD.
+// forge_vault mode=seal REMOVED (2026-07-24, DIE-16) — write/seal route through arifOS arif_seal.
+//   Keep read/list as A-FORGE native cache layer. Write kept for non-seal cache writes.
+//   Path C unification: VAULT999 sealing is the kernel's job (port 8088 /mcp arif_seal).
+//   See /root/scripts/federation_ritual.py seal + AAA A2A skill arifos.session.seal.
 
 server.registerTool("forge_vault", {
-  description: "VAULT999 primitive. Modes: read, list, write, seal.",
+  description: "VAULT999 primitive (A-FORGE cache layer). Modes: read, list, write. For seal: use arifOS arif_seal (port 8088) or /root/scripts/federation_ritual.py seal.",
   inputSchema: z.object({
-    mode: z.enum(["read", "list", "write", "seal"]).describe("Vault operation"),
-    name: z.string().optional().describe("Record name (read/write/seal)"),
+    mode: z.enum(["read", "list", "write"]).describe("Vault operation (read|list|write; seal removed 2026-07-24 DIE-16)"),
+    name: z.string().optional().describe("Record name (read/write)"),
     category: z.string().optional().describe("Category filter (list) / Record category (write)"),
     limit: z.number().optional().describe("Max records (list, default 100)"),
-    value: z.string().optional().describe("Record value (write/seal)"),
-    content: z.string().optional().describe("Content to seal (seal mode)"),
-    reason: z.string().optional().describe("Seal reason (seal mode)"),
-    tier: z.string().optional().describe("Memory tier (seal mode)"),
-    tags: z.array(z.string()).optional().describe("Tags (seal mode)"),
+    value: z.string().optional().describe("Record value (write)"),
     metadata: z.record(z.string(), z.unknown()).optional().describe("Optional metadata (write)"),
   }),
-}, async ({ mode, name, category, limit, value, content, reason, tier, tags, metadata, ...restArgs }) => {
+}, async ({ mode, name, category, limit, value, metadata }) => {
   const startedAt = Date.now();
   await telemetryInvoke(`forge_vault:${mode}`);
   return runStage("999_VAULT" as MetabolicStage, async () => {
     try {
-      if (mode === "seal") {
-        const sealContent = content || value;
-        if (!sealContent || !reason) {
-          return { content: [{ type: "text" as const, text: "content (or value) and reason required for mode=seal" }], isError: true };
-        }
-        // P1.3: Pass session/actor through to MemoryContract so AAA memory
-        // gate finds the kernel-registered session (not AUTONOMOUS_KERNEL_SESSION).
-        const sessionId = (restArgs as any).session_id || (restArgs as any).sessionId;
-        const actorId = (restArgs as any).actor_id || (restArgs as any).actorId;
-        const entry = await memoryContract.store(
-          { content: sealContent, reason, tier: tier as any, tags },
-          { sessionId, actorId },
-        );
-        await telemetrySuccess(`forge_vault:seal`, startedAt);
-        return { content: [{ type: "text" as const, text: JSON.stringify({ memoryId: entry.memoryId, tier: entry.tier, mode: "seal" }, null, 2) }] };
-      }
       const sbClient = new SupabaseVaultClient();
       let result: any;
       if (mode === "read") {
@@ -1899,7 +1881,7 @@ server.registerTool("forge_vault", {
   });
 });
 
-// NOTE: forge_vault_seal REMOVED — collapsed into forge_vault mode=seal.
+// NOTE: forge_vault mode=seal REMOVED 2026-07-24 (DIE-16) — route through arifOS arif_seal.
 // NOTE: forge_remember REMOVED — duplicate of arif_vault_seal.
 
 // ── Domain Tools (Tier 03) ───────────────────────────────────────────────────

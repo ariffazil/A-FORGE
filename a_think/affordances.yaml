@@ -1158,3 +1158,133 @@ tools:
   risk_tier: T2
   reversible: true
   session_required: true
+# ── SURVIVAL-OF-THE-FITTEST 2026-07-24: missing OBSERVE cards ──
+# These tools were registered in the actionClassifier.ts OBSERVE_TOOLS set
+# but had no affordance card. The aThinkGuard defaulted to ALLOW but
+# then crashed on `card.requires_human_approval` in the GOVERN branch.
+# Optional-chain in aThinkGuard.js/ts (line 325) prevents the crash;
+# these cards ensure checkAffordance returns a fully populated card
+# for the OBSERVE → ALLOW → card.requires_human_approval === false path.
+- name: forge_vps_ports
+  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. VPS port scanning — classified as public, internal, or unknown. Does not trust UFW alone because Docker can bypass it.
+  affordance_class: probe
+  capability_surface: aforge.probe.vps_ports
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - system_state
+  - network
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_vps_services
+  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. List running systemd services and Docker containers. Machine Constitution service registry.
+  affordance_class: probe
+  capability_surface: aforge.probe.vps_services
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_vps_cron
+  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Machine Constitution cron registry. Lists cron jobs from root crontab, /etc/crontab, and /etc/cron.d.
+  affordance_class: probe
+  capability_surface: aforge.probe.vps_cron
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_filesystem_read
+  purpose: ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. Read a file or list a directory. Stateless HTTP — no lease, no session required.
+  affordance_class: fs
+  capability_surface: aforge.fs.read
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - filesystem
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_skillstore_read
+  purpose: ACTUATOR [skill/OBSERVE] supervised by kernel 111_OBSERVE. Query artifact store. Semantic search with tag filtering.
+  affordance_class: skill
+  capability_surface: aforge.skill.skillstore_read
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - vault
+  - skillstore
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_fingerprint_check
+  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Compute and verify tool fingerprints. Detects duplicate tools (same name + schema) and schema drift.
+  affordance_class: probe
+  capability_surface: aforge.probe.fingerprint_check
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - registry
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_isomorphism_check
+  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. J-space manifold stability check. Verifies GEOX ↔ arifOS isomorphism pairs (Identity, Authority, Irreversibility) through runtime witness functions.
+  affordance_class: probe
+  capability_surface: aforge.probe.isomorphism_check
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - federation
+  - isomorphism
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+- name: forge_wm_quality
+  purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. World Model trajectory quality report + Phase 2 readiness. Grades tools from A-D based on training data quality.
+  affordance_class: probe
+  capability_surface: aforge.probe.wm_quality
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - world_model
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
