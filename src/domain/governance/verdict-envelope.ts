@@ -160,8 +160,8 @@ export function bridgeError(
     session?: string;
     sourceLayer?: string;
     downstreamError?: string;
-    apx_G?: number;
-    apx_C_dark?: number;
+    g_score?: number;
+    c_dark?: number;
     trace_id?: string;
   },
 ): VerdictEnvelope {
@@ -173,10 +173,10 @@ export function bridgeError(
   };
   if (options?.downstreamError) data.downstream_error = options.downstreamError;
   if (options?.trace_id) data.trace_id = options.trace_id;
-  if (options?.apx_G !== undefined || options?.apx_C_dark !== undefined) {
+  if (options?.g_score !== undefined || options?.c_dark !== undefined) {
     data.apx_block = {
-      G: options.apx_G ?? 0.0,
-      C_dark: options.apx_C_dark ?? 0.0,
+      G: options.g_score ?? 0.0,
+      C_dark: options.c_dark ?? 0.0,
       reason: `Bridge blocked: ${errorCode}`,
     };
   }

@@ -1,333 +1,118 @@
 """
-APEX C_dark Detector — Bangang Detector
-=========================================
+⚠️ DEAD DUAL PATH (2026-07-25 H2 entropy kill)
 
-Computes the shadow term: C_dark = A · (1-P) · (1-X)
+This file previously re-implemented G = A·P·E·X·Φ inside A-FORGE.
+That is illegal for constitutional G.
 
-Where:
-  A = Adaptation (learning, pattern matching)
-  P = Perception (grounding, reality contact)
-  X = Cross-domain (coordination, civilization)
+CANONICAL G-FOLD (Δ plane only):
+  arif_think(mode='apex') → arifosmcp.runtime.apex_canonical.compute_apex
 
-When C_dark is high, the system is hallucinating.
-This is the first mathematical definition of hallucination.
+This module remains as a **compatibility shim** that:
+  - documents the kill
+  - raises RuntimeError if used for constitutional G
+  - provides offline local estimates only when AFORGE_LOCAL_G_OK=1
 
-Also computes:
-  G = A · P · E · X · Φ  (multiplicative intelligence)
-  dS/dt ≤ 0               (conservation law check)
+Do not import for new code. Prefer GovernanceBridge → arifOS.
 
-Ratified 2026-07-05 by F13 SOVEREIGN.
-APEX THEORY defines intelligence as a stack of conservation laws, not a capability spectrum.
-
-APEX v2 adds two axioms (not organs):
-  Axiom 6 — Relational Intelligence (intelligence from bonds, not processors)
-  Axiom 7 — Epistemic Humility (there are things that cannot be built)
+DITEMPA BUKAN DIBERI
 """
 
 from __future__ import annotations
 
-import json
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Optional
+import os
+import warnings
+from dataclasses import dataclass
+from typing import Any
 
 
-class Verdict(Enum):
-    """Four-vertex verdict from APEX THEORY."""
-    SEAL = "SEAL"       # Approved, irreversible
-    SABAR = "SABAR"     # Patience, default state
-    HOLD = "HOLD"       # Need more info
-    VOID = "VOID"       # Forbidden
+class CanonicalGRequired(RuntimeError):
+    """Raised when A-FORGE tries to mint constitutional G locally."""
 
 
-@dataclass
-class OrganState:
-    """State of one of the seven organs."""
-    name: str
-    symbol: str
-    value: float  # [0, 1]
-    conservation_law: str
-    failure_mode: str
-
-    @property
-    def is_alive(self) -> bool:
-        return self.value > 0.0
-
-    @property
-    def is_critical(self) -> bool:
-        return self.value < 0.1
+def _allow_local() -> bool:
+    return os.environ.get("AFORGE_LOCAL_G_OK", "").strip() in ("1", "true", "yes")
 
 
 @dataclass
-class APEXState:
-    """Full APEX state across seven organs."""
-    reality: float       # ΔR — energy conservation
-    governance: float    # ΔG — entropy reduction
-    civilization: float  # I_sys — statistical coordination
-    execution: float     # W — work
-    memory: float        # ∂M/∂t — Landauer cost
-    witness: float       # Ω — Gödel incompleteness
-    meaning: float       # ∇F — free energy gradient
+class LocalApexEstimate:
+    """Non-constitutional local estimate — never authority."""
 
-    def to_organs(self) -> list[OrganState]:
-        return [
-            OrganState("Reality", "ΔR", self.reality,
-                       "Energy conservation", "False certainty"),
-            OrganState("Governance", "ΔG", self.governance,
-                       "Entropy reduction", "Rule drift"),
-            OrganState("Civilization", "I_sys", self.civilization,
-                       "Statistical coordination", "Isolation"),
-            OrganState("Execution", "W", self.execution,
-                       "Work", "Paralysis"),
-            OrganState("Memory", "∂M/∂t", self.memory,
-                       "Landauer cost", "Forgetting"),
-            OrganState("Witness", "Ω", self.witness,
-                       "Gödel incompleteness", "Self-verification"),
-            OrganState("Meaning", "∇F", self.meaning,
-                       "Free energy gradient", "Equilibrium death"),
-        ]
+    G: float
+    C_dark: float
+    A: float
+    P: float
+    E: float
+    X: float
+    Phi: float
+    g_authority: str = "local_estimate"
+    g_canonical_source: str = "arif_think.mode=apex"
+    invent_g: bool = False
 
-
-@dataclass
-class APEXVerdict:
-    """Result of APEX analysis."""
-    # The APEX Formula: G = A · P · E · X · Φ
-    G: float                    # Multiplicative intelligence score
-    A: float                    # Adaptation
-    P: float                    # Perception
-    E: float                    # Execution
-    X: float                    # Cross-domain
-    Phi: float                  # Integration
-
-    # Shadow term: C_dark = A · (1-P) · (1-X)
-    C_dark: float               # Hallucination risk
-
-    # Conservation law: dS/dt ≤ 0
-    dS_dt: float                # Entropy rate (negative = ordered)
-
-    # Organ states
-    organs: list[OrganState]
-
-    # Verdict
-    verdict: Verdict
-    verdict_reason: str
-
-    # MALU–Gödel repair chain (if needed)
-    repair_chain: list[str] = field(default_factory=list)
-
-    # Blindspots detected
-    blindspots: list[str] = field(default_factory=list)
-
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
-            "G": round(self.G, 4),
-            "C_dark": round(self.C_dark, 4),
-            "dS_dt": round(self.dS_dt, 4),
-            "verdict": self.verdict.value,
-            "verdict_reason": self.verdict_reason,
-            "organs": {
-                o.symbol: {
-                    "name": o.name,
-                    "value": round(o.value, 4),
-                    "alive": o.is_alive,
-                    "critical": o.is_critical,
-                    "conservation_law": o.conservation_law,
-                    "failure_mode": o.failure_mode,
-                }
-                for o in self.organs
-            },
-            "repair_chain": self.repair_chain,
-            "blindspots": self.blindspots,
-            "formula": {
-                "G": "A · P · E · X · Φ",
-                "C_dark": "A · (1-P) · (1-X)",
-                "dS_dt": "dS_agent/dt ≤ 0",
-            },
+            "G": self.G,
+            "C_dark": self.C_dark,
+            "A": self.A,
+            "P": self.P,
+            "E": self.E,
+            "X": self.X,
+            "Phi": self.Phi,
+            "g_authority": self.g_authority,
+            "g_canonical_source": self.g_canonical_source,
+            "invent_g": self.invent_g,
+            "warning": "LOCAL ONLY — not constitutional G",
         }
-
-    def to_json(self, indent: int = 2) -> str:
-        return json.dumps(self.to_dict(), indent=indent)
 
 
 def compute_apex(
-    adaptation: float,
-    perception: float,
-    execution: float,
-    cross_domain: float,
-    integration: float,
-    entropy_rate: float = 0.0,
-    *,
-    reality: Optional[float] = None,
-    governance: Optional[float] = None,
-    civilization: Optional[float] = None,
-    memory: Optional[float] = None,
-    witness: Optional[float] = None,
-    meaning: Optional[float] = None,
-) -> APEXVerdict:
+    A: float = 0.0,
+    P: float = 0.0,
+    E: float = 0.0,
+    X: float = 0.0,
+    Phi: float = 0.0,
+    **_: Any,
+) -> LocalApexEstimate:
+    """Deprecated local product. Not constitutional G.
+
+    Set AFORGE_LOCAL_G_OK=1 to allow offline estimates.
+    Otherwise raises CanonicalGRequired.
     """
-    Compute APEX intelligence score, shadow term, and verdict.
-
-    Args:
-        adaptation: A — learning, pattern matching [0, 1]
-        perception: P — grounding, reality contact [0, 1]
-        execution: E — work, action [0, 1]
-        cross_domain: X — coordination, civilization [0, 1]
-        integration: Φ — paradox resolution, wisdom [0, 1]
-        entropy_rate: dS/dt — negative = ordered, positive = disordered
-        reality: ΔR override (defaults to perception)
-        governance: ΔG override (defaults to 1.0)
-        civilization: I_sys override (defaults to cross_domain)
-        memory: ∂M/∂t override (defaults to 1.0)
-        witness: Ω override (defaults to 1.0)
-        meaning: ∇F override (defaults to integration)
-
-    Returns:
-        APEXVerdict with G, C_dark, dS_dt, organs, verdict, repair chain.
-    """
-    # Clamp all inputs to [0, 1]
-    A = max(0.0, min(1.0, adaptation))
-    P = max(0.0, min(1.0, perception))
-    E = max(0.0, min(1.0, execution))
-    X = max(0.0, min(1.0, cross_domain))
-    Phi = max(0.0, min(1.0, integration))
-
-    # The APEX Formula: G = A · P · E · X · Φ
-    G = A * P * E * X * Phi
-
-    # The Shadow Term: C_dark = A · (1-P) · (1-X)
-    C_dark = A * (1 - P) * (1 - X)
-
-    # Conservation law: dS/dt
-    dS_dt = entropy_rate
-
-    # Build organ states
-    state = APEXState(
-        reality=reality if reality is not None else P,
-        governance=governance if governance is not None else 1.0,
-        civilization=civilization if civilization is not None else X,
-        execution=E,
-        memory=memory if memory is not None else 1.0,
-        witness=witness if witness is not None else 1.0,
-        meaning=meaning if meaning is not None else Phi,
+    warnings.warn(
+        "A-FORGE domain.apex.compute_apex is DEAD for constitutional G. "
+        "Use arif_think(mode='apex') → apex_canonical.",
+        DeprecationWarning,
+        stacklevel=2,
     )
-    organs = state.to_organs()
-
-    # Detect blindspots
-    blindspots = []
-    for organ in organs:
-        if organ.is_critical:
-            blindspots.append(f"{organ.name} ({organ.symbol}): {organ.failure_mode}")
-
-    # Determine verdict
-    repair_chain = []
-    dead_organs = [o for o in organs if not o.is_alive]
-    critical_organs = [o for o in organs if o.is_critical]
-
-    if C_dark > 0.5:
-        verdict = Verdict.VOID
-        verdict_reason = f"C_dark = {C_dark:.3f} > 0.5 — shadow intelligence detected"
-        repair_chain = ["SESAT", "MALU", "HOLD", "GÖDEL LOCK", "SAKSI", "TEBUS", "PARUT", "LURUS"]
-    elif dead_organs:
-        verdict = Verdict.HOLD
-        dead_names = ", ".join(o.name for o in dead_organs)
-        verdict_reason = f"Dead organs: {dead_names} — zero anywhere = collapse"
-        repair_chain = ["SESAT", "MALU", "HOLD", "GÖDEL LOCK", "SAKSI", "TEBUS", "PARUT", "LURUS"]
-    elif dS_dt > 0 and G < 0.5:
-        verdict = Verdict.HOLD
-        verdict_reason = f"Entropy increasing (dS/dt = {dS_dt:.3f}) with low G ({G:.3f})"
-        repair_chain = ["SESAT", "MALU", "HOLD"]
-    elif critical_organs:
-        verdict = Verdict.SABAR
-        crit_names = ", ".join(o.name for o in critical_organs)
-        verdict_reason = f"Critical organs: {crit_names} — SABAR (patience)"
-    elif G >= 0.5 and C_dark < 0.15 and dS_dt <= 0:
-        verdict = Verdict.SEAL
-        verdict_reason = f"G = {G:.3f} ≥ 0.5, C_dark = {C_dark:.3f} < 0.15, dS/dt ≤ 0"
-    else:
-        verdict = Verdict.SABAR
-        verdict_reason = f"Default SABAR — G = {G:.3f}, C_dark = {C_dark:.3f}"
-
-    return APEXVerdict(
-        G=G, A=A, P=P, E=E, X=X, Phi=Phi,
-        C_dark=C_dark, dS_dt=dS_dt,
-        organs=organs, verdict=verdict,
-        verdict_reason=verdict_reason,
-        repair_chain=repair_chain,
-        blindspots=blindspots,
+    if not _allow_local():
+        raise CanonicalGRequired(
+            "Constitutional G lives in arifOS arif_think(mode='apex'). "
+            "Set AFORGE_LOCAL_G_OK=1 only for offline local estimates."
+        )
+    G = float(A) * float(P) * float(E) * float(X) * float(Phi)
+    C_dark = float(A) * (1.0 - float(P)) * (1.0 - float(X))
+    return LocalApexEstimate(
+        G=max(0.0, min(1.0, G)),
+        C_dark=max(0.0, min(1.0, C_dark)),
+        A=float(A),
+        P=float(P),
+        E=float(E),
+        X=float(X),
+        Phi=float(Phi),
     )
 
 
-def compute_c_dark(
-    adaptation: float,
-    perception: float,
-    cross_domain: float,
-) -> float:
-    """
-    Compute the shadow term: C_dark = A · (1-P) · (1-X)
-
-    This is the first mathematical definition of hallucination.
-    When C_dark is high, the system is hallucinating.
-
-    Args:
-        adaptation: A — learning, pattern matching [0, 1]
-        perception: P — grounding, reality contact [0, 1]
-        cross_domain: X — coordination, civilization [0, 1]
-
-    Returns:
-        C_dark score [0, 1]. Higher = more hallucination risk.
-    """
-    A = max(0.0, min(1.0, adaptation))
-    P = max(0.0, min(1.0, perception))
-    X = max(0.0, min(1.0, cross_domain))
-    return A * (1 - P) * (1 - X)
+def compute_c_dark(A: float, P: float, X: float) -> float:
+    """Local C_dark estimate only — same authority rules as compute_apex."""
+    if not _allow_local():
+        raise CanonicalGRequired(
+            "C_dark for constitutional use comes from arif_think(mode='apex')."
+        )
+    return max(0.0, min(1.0, float(A) * (1.0 - float(P)) * (1.0 - float(X))))
 
 
-# MCP-ready interface
-def apex_mcp_handler(params: dict) -> dict:
-    """
-    MCP-ready handler for APEX mode.
-
-    Usage:
-        Run in APEX mode: enforce ΔR, ΔG, I_sys, W, ∂M/∂t, Ω, ∇F;
-        detect C_dark; apply MALU→GÖDEL→SAKSI→TEBUS→PARUT→LURUS;
-        return organ-wise entropy, witness requirements, and scar updates.
-    """
-    verdict = compute_apex(
-        adaptation=params.get("adaptation", 0.5),
-        perception=params.get("perception", 0.5),
-        execution=params.get("execution", 0.5),
-        cross_domain=params.get("cross_domain", 0.5),
-        integration=params.get("integration", 0.5),
-        entropy_rate=params.get("entropy_rate", 0.0),
-        reality=params.get("reality"),
-        governance=params.get("governance"),
-        civilization=params.get("civilization"),
-        memory=params.get("memory"),
-        witness=params.get("witness"),
-        meaning=params.get("meaning"),
-    )
-    return verdict.to_dict()
-
-
-if __name__ == "__main__":
-    # Demo: healthy agent
-    print("=== Healthy Agent ===")
-    v = compute_apex(
-        adaptation=0.8, perception=0.7, execution=0.6,
-        cross_domain=0.5, integration=0.6, entropy_rate=-0.1,
-    )
-    print(v.to_json())
-
-    print("\n=== Hallucinating Agent (high C_dark) ===")
-    v = compute_apex(
-        adaptation=0.9, perception=0.1, execution=0.8,
-        cross_domain=0.1, integration=0.5, entropy_rate=0.3,
-    )
-    print(v.to_json())
-
-    print("\n=== Dead Organ (zero execution) ===")
-    v = compute_apex(
-        adaptation=0.8, perception=0.7, execution=0.0,
-        cross_domain=0.5, integration=0.6, entropy_rate=-0.1,
-    )
-    print(v.to_json())
+__all__ = [
+    "CanonicalGRequired",
+    "LocalApexEstimate",
+    "compute_apex",
+    "compute_c_dark",
+]

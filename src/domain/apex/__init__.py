@@ -1,16 +1,21 @@
 """
-apex — APEX Theory computation domain for A-FORGE
-═════════════════════════════════════════════════
+A-FORGE domain.apex — DEAD for constitutional G (H2 2026-07-25).
 
-MEMBRANE-01: These computations belong to A-FORGE (actuator), not the kernel.
-The kernel reads from MeasurementPacket; it never recomputes.
+Canonical G: arif_think(mode='apex') → arifosmcp.runtime.apex_canonical
 
-Modules:
-  apex_c_dark.py   — G = A·P·E·X·Φ, C_dark = A·(1-P)·(1-X)
-  compute_w3.py    — W³ = ∛(H × AI × Ext)
-  sesat_event.py   — SESAT failure event emission
-  hantar.py        — HANTAR envelope wrapping
-  malu_score.py    — MALU failure pressure accumulator
-
-DITEMPA BUKAN DIBERI
+Local shim: apex_c_dark.compute_apex only if AFORGE_LOCAL_G_OK=1.
 """
+
+from .apex_c_dark import (
+    CanonicalGRequired,
+    LocalApexEstimate,
+    compute_apex,
+    compute_c_dark,
+)
+
+__all__ = [
+    "CanonicalGRequired",
+    "LocalApexEstimate",
+    "compute_apex",
+    "compute_c_dark",
+]

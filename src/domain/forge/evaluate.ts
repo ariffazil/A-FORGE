@@ -3,6 +3,17 @@
  *
  * APEX v36Ω — Measurement Instrument, Not Physical Law.
  *
+ * ═══════════════════════════════════════════════════════════════
+ * Ω→Δ ARCHITECTURAL NOTE (2026-07-25):
+ * This file lives in TypeScript (Ω-plane — transport). It computes
+ * G and C_dark — constitutional scalars that belong in Δ-plane
+ * (Python reasoning). Canonical path: arif_think(mode='apex')
+ * in the arifOS Python kernel. This implementation exists as a
+ * local gate for tool registration; long-term, it should delegate
+ * to the kernel via GovernanceBridge rather than duplicating the
+ * computation. See /root/AAA/docs/AAA_ZEN_AND_FORGE.md §3.
+ * ═══════════════════════════════════════════════════════════════
+ *
  * G = A · P · E · X · Φ  (Nash 1950 bargaining product)
  * C_dark = A · (1−P) · (1−X)  (clever + unstable + unethical)
  *
@@ -310,10 +321,17 @@ function estimateOmega(evaluatorCount: number): number {
 function computeGate(scores: Omit<EstimatorScores, "rationale" | "Omega">): {
   G: number;
   C_dark: number;
+  g_authority: "local_estimate";
+  g_canonical_source: "arif_think.mode=apex";
 } {
   const G = scores.A * scores.P * scores.E * scores.X * scores.Phi;
   const C_dark = scores.A * (1 - scores.P) * (1 - scores.X);
-  return { G, C_dark };
+  return {
+    G,
+    C_dark,
+    g_authority: "local_estimate",
+    g_canonical_source: "arif_think.mode=apex",
+  };
 }
 
 /**
@@ -456,6 +474,8 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
     evaluator_count: evaluatorCount,
     evaluated_at: now,
     expires_at: expiresAt,
+    g_authority: "local_estimate",
+    g_canonical_source: "arif_think.mode=apex",
   };
 
   // If VOID, attach a scar record (the caller seals it)
@@ -519,5 +539,7 @@ export function evaluateDryRun(spec: CandidateSpec, evaluatorCount = 1): Omit<Ga
     evaluator_count: evaluatorCount,
     evaluated_at: now,
     expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    g_authority: "local_estimate",
+    g_canonical_source: "arif_think.mode=apex",
   };
 }
