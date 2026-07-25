@@ -106,7 +106,7 @@ export class GovernanceBridge {
   constructor(options: GovernanceBridgeOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.timeoutMs = options.timeoutMs ?? 5000;
-    this.fallbackOnFailure = options.fallbackOnFailure ?? true;
+    this.fallbackOnFailure = options.fallbackOnFailure ?? false;
   }
 
   /**
