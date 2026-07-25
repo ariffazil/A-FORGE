@@ -68,6 +68,7 @@ import {
   registerResilienceTools,
   registerIsomorphismTools,
   registerPredictTools,
+  registerCognitionTools,
   startupFingerprintCheck,
 } from "./forgeTools.js";
 import { registerGatewayTools } from "./gatewayTools.js";
@@ -2631,6 +2632,12 @@ registerSurfaceAuditTools(server);
 // forge_predict: called BEFORE forge_execute for domain actions.
 // Prediction result injected as evidence to judge.
 registerPredictTools(server);
+
+// ── Cognition Bridge (Jacobian-to-AC Dual-Sensitivity Kernel) ──────────
+// forge_apex_encode / metabolize / emd / recompute / goal_status.
+// This is the metabolic intelligence layer that makes G computable.
+// Before: G = UNMEASURED. After: G = scalar from live task state.
+registerCognitionTools(server);
 
 // Install the 5-layer policy pre-check wrapper on every registered tool.
 // Called AFTER all other registerXTools() so it wraps them all.

@@ -2190,3 +2190,256 @@ export function registerPredictTools(server: McpServer): void {
     }
   );
 }
+
+// ── COGNITION: Jacobian-to-AC Dual-Sensitivity Kernel ────────────────────────
+// Registers forge_apex_encode, forge_apex_metabolize, forge_apex_emd.
+// This module makes G computable from live task state instead of UNMEASURED.
+
+import {
+  encodeGoal,
+  emdPass,
+  metabolicCycle,
+  recomputeOnFieldChange,
+  type GoalVector,
+  type FieldChange,
+} from "../../domain/cognition/index.js";
+
+/** In-memory goal store (per-session, per-process). Session restart = reset. */
+const goalStore = new Map<string, GoalVector>();
+
+export function registerCognitionTools(server: McpServer): void {
+  // ── forge_apex_encode — goal → task vector with Jacobian ──────────────
+  server.tool(
+    "forge_apex_encode",
+    "Encode a natural language goal into structured task vector T=[t1..tm] with Jacobian sensitivity J=∂T/∂G. Returns G scalar, per-task sensitivity, provenance. This is the ENCODE phase of the metabolic pipeline.",
+    {
+      goal: z.string().min(3).describe("Natural language goal to decompose into tasks"),
+      actor_id: z.string().optional().describe("Calling agent identity"),
+      session_id: z.string().optional(),
+    },
+    async ({ goal, actor_id, session_id }) => {
+      const result = encodeGoal(goal, {
+        actorId: actor_id ?? "unknown",
+        sessionId: session_id ?? "none",
+      });
+      goalStore.set(result.goal_id, result);
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "SEAL",
+            goal_id: result.goal_id,
+            G: result.G,
+            C_dark: result.C_dark,
+            W3: result.W3,
+            task_count: result.tasks.length,
+            tasks: result.tasks.map((t) => ({
+              task_id: t.task_id,
+              label: t.label,
+              organ: t.organ,
+              domain: t.domain,
+              risk_tier: t.risk_tier,
+              sensitivity: t.sensitivity,
+              provenance: {
+                metabolism_count: t.provenance.metabolism_count,
+                risk_weight: t.provenance.risk_weight_multiplier,
+                constraint_weight: t.provenance.constraint_weight_multiplier,
+              },
+            })),
+            jacobian: {
+              high_sensitivity_count: result.jacobian.high_sensitivity_count,
+              stable_task_count: result.jacobian.stable_task_count,
+              continuity_hash: result.jacobian.continuity_hash,
+            },
+            note: "G is now COMPUTED — not UNMEASURED. This is the Jacobian-enabled task decomposition.",
+          }, null, 2),
+        }],
+      };
+    },
+  );
+
+  // ── forge_apex_metabolize — run metabolic cycle on goal ───────────────
+  server.tool(
+    "forge_apex_metabolize",
+    "Run metabolic cycle on a goal: adjust risk/constraint weights based on task outcomes. Failed tasks → risk ×1.2, constraint ×1.2. Returns updated G and C_dark.",
+    {
+      goal_id: z.string().min(3).describe("Goal ID from forge_apex_encode"),
+      outcomes: z.record(z.boolean()).describe("Per-task outcomes: { task_id: true|false }"),
+      session_id: z.string().optional(),
+    },
+    async ({ goal_id, outcomes }) => {
+      const goal = goalStore.get(goal_id);
+      if (!goal) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `Goal ${goal_id} not found in session store`, hint: "Run forge_apex_encode first" }, null, 2) }],
+        };
+      }
+
+      const { goal: updated, summary } = metabolicCycle({ goal, outcomes });
+      goalStore.set(goal_id, updated);
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "SEAL",
+            goal_id,
+            G: summary.G,
+            C_dark: summary.C_dark,
+            successes: summary.successes,
+            failures: summary.failures,
+            warnings: summary.warnings,
+            results: summary.results.map((r) => ({
+              task_id: r.task_id,
+              success: r.success,
+              risk_weight: `${r.previous_risk_weight.toFixed(2)} → ${r.new_risk_weight.toFixed(2)}`,
+              sensitivity_adjusted: r.sensitivity_adjusted,
+              adjusted_fields: r.adjusted_fields,
+              warning: r.warning,
+            })),
+            note: "Metabolic adjustments applied. Risk weights for failed tasks increased. G recomputed from adjusted Jacobian.",
+          }, null, 2),
+        }],
+      };
+    },
+  );
+
+  // ── forge_apex_emd — EMD validation gate ──────────────────────────────
+  server.tool(
+    "forge_apex_emd",
+    "Run EMD (Encode→Metabolize→Decode) validation gate on a goal. Detects drift, scope creep, anomalies. Returns C_dark and ToAC verdict.",
+    {
+      goal_id: z.string().min(3).describe("Goal ID from forge_apex_encode"),
+      session_id: z.string().optional(),
+    },
+    async ({ goal_id }) => {
+      const goal = goalStore.get(goal_id);
+      if (!goal) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `Goal ${goal_id} not found in session store` }, null, 2) }],
+        };
+      }
+
+      const emd = emdPass(goal);
+      goal.C_dark = emd.C_dark;
+      goalStore.set(goal_id, goal);
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "SEAL",
+            goal_id,
+            passed: emd.passed,
+            verdict: emd.verdict,
+            C_dark: emd.C_dark,
+            fidelity: emd.decode.fidelity,
+            anomaly_count: emd.decode.anomalies.length,
+            anomalies: emd.decode.anomalies.map((a) => ({
+              task_id: a.task_id,
+              type: a.type,
+              severity: a.severity,
+              description: a.description,
+            })),
+            evidence: emd.evidence,
+            note: "EMD gate complete. C_dark ≥ 0.30 = HOLD, ≥ 0.50 = VOID.",
+          }, null, 2),
+        }],
+      };
+    },
+  );
+
+  // ── forge_apex_recompute — recompute on field change ──────────────────
+  server.tool(
+    "forge_apex_recompute",
+    "Recompute task plan when a governance field changes (risk, scope, authority, etc.). Only high-sensitivity tasks (>0.6) are recalculated — stable tasks retain. Returns which tasks need recompute.",
+    {
+      goal_id: z.string().min(3).describe("Goal ID from forge_apex_encode"),
+      field: z.enum(["risk", "scope", "authority", "time", "cost", "organ", "domain"]).describe("Which governance field changed"),
+      from: z.string().describe("Old value (e.g., 'MEDIUM')"),
+      to: z.string().describe("New value (e.g., 'HIGH')"),
+      session_id: z.string().optional(),
+    },
+    async ({ goal_id, field, from, to }) => {
+      const goal = goalStore.get(goal_id);
+      if (!goal) {
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `Goal ${goal_id} not found` }, null, 2) }],
+        };
+      }
+
+      const change: FieldChange = { field, from, to };
+      const result = recomputeOnFieldChange(goal, change);
+      goalStore.set(goal_id, goal);
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "SEAL",
+            goal_id,
+            change: { field, from, to },
+            recompute: result.recompute,
+            stable: result.stable,
+            G: result.G,
+            recompute_count: result.recompute.length,
+            stable_count: result.stable.length,
+            note: `Only ${result.recompute.length} of ${goal.tasks.length} tasks need recompute — ${result.stable.length} tasks retain. Before Jacobian: ALL tasks would need re-plan.`,
+          }, null, 2),
+        }],
+      };
+    },
+  );
+
+  // ── forge_apex_goal_status — inspect current goal state ───────────────
+  server.tool(
+    "forge_apex_goal_status",
+    "Inspect current state of a goal: tasks, G, C_dark, Jacobian, and metabolic history.",
+    {
+      goal_id: z.string().min(3).describe("Goal ID from forge_apex_encode"),
+    },
+    async ({ goal_id }) => {
+      const goal = goalStore.get(goal_id);
+      if (!goal) {
+        // List all known goals
+        const known = Array.from(goalStore.keys());
+        return {
+          content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `Goal ${goal_id} not found`, known_goals: known }, null, 2) }],
+        };
+      }
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "SEAL",
+            goal_id: goal.goal_id,
+            goal_text: goal.goal_text,
+            G: goal.G,
+            C_dark: goal.C_dark,
+            W3: goal.W3,
+            version: goal.version,
+            sealed: goal.sealed,
+            task_count: goal.tasks.length,
+            tasks: goal.tasks.map((t) => ({
+              task_id: t.task_id,
+              label: t.label,
+              state: t.state,
+              risk_tier: t.risk_tier,
+              organ: t.organ,
+              metabolism_count: t.provenance.metabolism_count,
+              risk_weight: t.provenance.risk_weight_multiplier,
+              c_dark: t.c_dark_contribution,
+            })),
+            jacobian_summary: {
+              high_sensitivity: goal.jacobian.high_sensitivity_count,
+              stable: goal.jacobian.stable_task_count,
+              efficiency: goal.jacobian.efficiency,
+              continuity_hash: goal.jacobian.continuity_hash,
+            },
+          }, null, 2),
+        }],
+      };
+    },
+  );
+}
