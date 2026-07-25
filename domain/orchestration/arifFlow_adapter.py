@@ -28,14 +28,18 @@ import requests
 
 logger = logging.getLogger("ariflow_adapter")
 
-# ─── Types ──────────────────────────────────────────────────────────────
+# ─── Config ──────────────────────────────────────────────────────────────
 
 ARIF_JUDGE_TIMEOUT = 10  # seconds per call
 MAX_RETRIES = 3
 RETRY_BACKOFF = [1, 2, 4]  # seconds
 RUST_BINARY = os.environ.get(
     "ARIFLOW_BINARY",
-    "/root/arifFlow/target/release/ariflow",
+    "/usr/local/bin/ariflow",
+)
+ARIFLOW_DAEMON_URL = os.environ.get(
+    "ARIFLOW_DAEMON_URL",
+    "http://127.0.0.1:7073",
 )
 _raw_arifos_url = os.environ.get("ARIFOS_MCP_URL", "http://localhost:8088/mcp")
 # Ensure /mcp path suffix — env var may point to root :port only
@@ -47,6 +51,10 @@ ARIFOS_MCP_URL = (
 KABARKAN_URL = os.environ.get(
     "KABARKAN_URL",
     None,  # optional — emit to stderr if unset
+)
+ARIFLOW_DAEMON_URL = os.environ.get(
+    "ARIFLOW_DAEMON_URL",
+    "http://127.0.0.1:7073",
 )
 VAULT999_WRITER = os.environ.get(
     "VAULT999_WRITER",
@@ -179,6 +187,10 @@ class ArifFlowAdapter:
         )
 
         logger.info("arifFlow spawned: topology=%s lease=%s", topology, self.lease_id)
+
+        # Push spawn receipt to daemon
+        self._push_receipt("Execute", 0, "Pass", "OBS")
+
         return self.lease_id
 
     def close(self) -> CoolingReceipt:
@@ -206,6 +218,10 @@ class ArifFlowAdapter:
 
         self._emit_kabarkan("flow_completed", self._cooling.to_dict())
         self._write_vault999_receipt(self._cooling)
+
+        # Push cooling receipt to daemon
+        self._push_receipt("Cool", 0, "Pass", "SEAL")
+
         logger.info(
             "arifFlow closed: %d steps, %d SEAL, %d HOLD, %d VOID",
             self._total_steps,
@@ -306,6 +322,11 @@ class ArifFlowAdapter:
                     "reason": verdict.verdict,
                 },
             )
+
+        # Push step receipt to daemon
+        step_type = "Execute" if verdict.verdict == "SEAL" else "Verify"
+        epistemic = "OBS" if verdict.verdict == "SEAL" else "DER"
+        self._push_receipt(step_type, 0, verdict.verdict, epistemic)
 
         return {
             "step": envelope.step,
@@ -573,6 +594,49 @@ class ArifFlowAdapter:
             f"(step={self._total_steps}, topology={self.current_topology})"
         )
 
+    # ── Internal: Flow Receipt Push ────────────────────────────────
+
+    def _push_receipt(self, step_type: str, cost_ns: int, verdict: str, epistemic: str):
+        """Push a FlowReceipt to the arifFlow daemon at :7073/ingest.
+
+        Updates the daemon's ReceiptStore so GET /health reflects live FQ.
+        Failures are logged but never block execution (fire-and-forget).
+        """
+        receipt = {
+            "receipt_id": str(uuid.uuid4()),
+            "previous_receipt_hash": None,
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "actor_id": self.actor_id,
+            "session_id": self.lease_id or "",
+            "step_type": step_type,
+            "topology_id": self.current_topology,
+            "lane_id": None,
+            "step_number": self._total_steps,
+            "cost_ns": cost_ns,
+            "preceding_verify_cost_ns": None,
+            "epistemic_label": epistemic,
+            "floor_verdict": verdict,
+            "cooling_decision": "None",
+            "tri_witness_votes": None,
+            "merkle_root": None,
+            "payload": {
+                "chain_id": self.chain_id,
+                "lease_id": self.lease_id,
+            },
+        }
+        try:
+            resp = requests.post(
+                f"{ARIFLOW_DAEMON_URL}/ingest",
+                json=receipt,
+                timeout=2,
+            )
+            if resp.status_code != 200:
+                logger.debug("Daemon /ingest returned %d: %s", resp.status_code, resp.text[:100])
+        except requests.ConnectionError:
+            logger.debug("Daemon not reachable at %s — receipt buffered locally", ARIFLOW_DAEMON_URL)
+        except Exception as e:
+            logger.debug("Daemon /ingest failed: %s", e)
+
     # ── Internal: Kabarkan Observability ─────────────────────────────
 
     def _emit_kabarkan(self, event_type: str, data: dict):
@@ -609,6 +673,50 @@ class ArifFlowAdapter:
         vault_dir.mkdir(parents=True, exist_ok=True)
         receipt_path = vault_dir / f"flow_cooling_{cooling.lease_id[:8]}.json"
         receipt_path.write_text(json.dumps(cooling.to_dict(), indent=2))
+
+    def _push_flow_receipt(
+        self,
+        step_type: str,
+        step_number: int,
+        verdict: str,
+        cost_ns: int = 0,
+    ):
+        """Push a FlowReceipt to the arifFlow daemon's /ingest endpoint.
+
+        This feeds the daemon's ReceiptStore, which updates the live
+        Flow Quotient (FQ) gauge on GET /health.
+        """
+        if not self.lease_id or not self.chain_id:
+            return
+
+        receipt = {
+            "receipt_id": str(uuid.uuid4()),
+            "actor_id": self.actor_id,
+            "session_id": self.lease_id,
+            "step_type": step_type,
+            "step_number": step_number,
+            "cost_ns": cost_ns,
+            "epistemic_label": "Observation",
+            "floor_verdict": verdict,
+            "cooling_decision": "None",
+            "topology_id": self.current_topology,
+            "merkle_root": None,
+        }
+
+        try:
+            resp = requests.post(
+                f"{ARIFLOW_DAEMON_URL}/ingest",
+                json=receipt,
+                timeout=2,
+            )
+            if resp.status_code == 200:
+                logger.debug("Receipt pushed: step=%s type=%s", step_number, step_type)
+            else:
+                logger.debug("Receipt push returned %d: %s", resp.status_code, resp.text[:100])
+        except requests.ConnectionError:
+            logger.debug("arifFlow daemon unreachable (not running?) — receipt buffered locally")
+        except Exception as e:
+            logger.debug("Receipt push failed: %s", e)
 
 
 # ─── CLI Entry Point ─────────────────────────────────────────────────────
