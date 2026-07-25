@@ -37,9 +37,12 @@ RUST_BINARY = os.environ.get(
     "ARIFLOW_BINARY",
     "/root/arifFlow/target/release/ariflow",
 )
-ARIFOS_MCP_URL = os.environ.get(
-    "ARIFOS_MCP_URL",
-    "http://localhost:8088/mcp",
+_raw_arifos_url = os.environ.get("ARIFOS_MCP_URL", "http://localhost:8088/mcp")
+# Ensure /mcp path suffix — env var may point to root :port only
+ARIFOS_MCP_URL = (
+    _raw_arifos_url
+    if _raw_arifos_url.rstrip("/").endswith("/mcp")
+    else _raw_arifos_url.rstrip("/") + "/mcp"
 )
 KABARKAN_URL = os.environ.get(
     "KABARKAN_URL",
