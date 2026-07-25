@@ -264,7 +264,18 @@ export function needsRecompute(
   return sensitivity[changedField] >= threshold;
 }
 
-/** Compute overall G from Jacobian entries */
+/**
+ * Local Jacobian vitality estimate — NOT the canonical G-fold.
+ *
+ * AAA scalar physics: canonical G = A·P·E·X·Φ lives ONLY in
+ * arif_think(mode='apex') → arifOS apex_canonical (Δ Python substrate).
+ * This function is a Ψ-plane actuator heuristic for task sensitivity
+ * recompute. Consumers must NOT treat the return as constitutional G.
+ * Prefer goal.G only as continuity evidence; re-derive via arif_think apex.
+ *
+ * @constitutional F8 — local estimate only; kernel G is authoritative
+ * @constitutional F7 — humilityCap reserve; never claim ≥0.95 certainty
+ */
 export function computeGFromJacobian(
   entries: TaskVectorEntry[],
   humilityCap = 0.08,  // F7: Ω₀ ∈ [0.03, 0.05]; use upper bound as humility reserve
@@ -288,11 +299,19 @@ export function computeGFromJacobian(
   }, 0) / entries.length;
   const E = 1 - avgSensitivity;
 
-  // G = (A · P · X · E²) · (1 - h)
+  // Local actuator estimate (NOT kernel G): G_local ≈ (A · P · X · E²) · (1 - h)
   const G = A * P * X * E * E * (1 - humilityCap);
 
   return Math.round(G * 10000) / 10000;
 }
+
+/** Provenance tag — proves this module does not claim canonical G authority */
+export const G_FOLD_AUTHORITY = {
+  canonical_source: "arif_think.mode=apex",
+  local_role: "jacobian_actuator_estimate",
+  plane: "Psi",
+  invent_g: false,
+} as const;
 
 /** Compute C_dark (deception scalar) from task entries */
 export function computeCDark(entries: TaskVectorEntry[]): number {

@@ -210,6 +210,10 @@ export function gatesToDials6(gates: Apex10Gates): Apex6Dials {
   return { A, P, H, S, U, E };
 }
 
+/**
+ * Local 6-dial product for actuator envelopes — NOT kernel G-fold.
+ * Canonical G: arif_think(mode='apex') → apex_canonical (Python Δ).
+ */
 export function computeGFrom6Dials(dials: Apex6Dials): number {
   return dials.A * dials.P * dials.H * Math.sqrt(dials.S * dials.U) * dials.E ** 2;
 }

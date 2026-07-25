@@ -296,13 +296,16 @@ function estimateOmega(evaluatorCount: number): number {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Compute the Decision Field from estimator scores.
+ * Actuator-local gate scores for forge_evaluate (Ψ plane).
  *
- * G = A · P · E · X · Φ  (Nash 1950 bargaining product)
- * C_dark = A · (1−P) · (1−X)  (isolates "clever + unstable + unethical")
+ * AAA scalar physics: canonical G-fold is arif_think(mode='apex') only.
+ * This product mirrors the Nash form for local tool-spec gating but
+ * does NOT author constitutional G. Label outputs as actuator evidence.
  *
- * Multiplicative: zero in any component collapses G.
- * This is the non-compensatory veto: capability cannot buy back ethics.
+ * G_local = A · P · E · X · Φ  (Nash 1950 pattern, local)
+ * C_dark = A · (1−P) · (1−X)
+ *
+ * Multiplicative: zero in any component collapses G_local.
  */
 function computeGate(scores: Omit<EstimatorScores, "rationale" | "Omega">): {
   G: number;
