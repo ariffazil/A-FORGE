@@ -148,3 +148,4 @@ python/aforge_publish/artifacts/*.receipt.json
 python/aforge_publish/artifacts/*.validator.json
 python/aforge_publish/artifacts/*.typ
 python/aforge_publish/artifacts/figures_*/*.png
+CONTRIBUTING.md
