@@ -252,6 +252,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_job",                // background job (submit/status) — read-only base, OBSERVE
   "forge_wealth",             // WEALTH organ bridge — read-only, OBSERVE
   "forge_well",               // WELL organ relay — read-only, OBSERVE
+  "forge_docsgpt",            // DocsGPT knowledge spine — read-only, OBSERVE (FORGE-1 membrane)
   "forge_github_get_file",    // GitHub file read — read-only, OBSERVE
   "forge_github_search_code", // GitHub code search — read-only, OBSERVE
   "forge_github_search_repos",// GitHub repo search — read-only, OBSERVE

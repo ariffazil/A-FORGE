@@ -31,6 +31,7 @@ import { FileVaultClient, SupabaseVaultClient, type VaultVerdict } from "../../i
 import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "../../application/approval/HumanEscalationClient.js";
 import { WEALTH_TOOLS } from "../../infrastructure/tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../../infrastructure/tools/MiniMaxTools.js";
+import { getDocsGPTBridge } from "../../infrastructure/bridges/docsgptBridge.js";
 import { getMiniMaxClient } from "../../infrastructure/tools/MiniMaxMcpClient.js";
 // systemctlWrapper unregistered 2026-07-09 — use forge_shell for systemctl
 import { dockerWrapper } from "../../infrastructure/tools/infra/docker_wrapper.js";
@@ -2025,6 +2026,103 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
           message: `WEALTH routing error: ${msg}`,
           downstream_error: downstreamError,
           trace_id: (err as any)?.trace_id ?? undefined,
+        }, null, 2),
+      }],
+      isError: true,
+    };
+  }
+});
+
+// ── DocsGPT Tool (Tier 03 — Governed Knowledge Spine) ─────────────────────────
+// FORGE-1: Constitutional membrane between A-FORGE agents and DocsGPT.
+// DocsGPT has no kernel (P34). This tool IS the kernel membrane:
+//   F2 — epistemic tags on every chunk (OBS/DER/INT/SPEC/UNKNOWN)
+//   F7 — confidence capped at 0.90
+//   F4 — ΔS ≤ 0, receipt-wrapped
+// Uses DocsGPT's OpenAI-compatible /v1/chat/completions endpoint.
+// Configure via DOCSGPT_BASE_URL and DOCSGPT_API_KEY env vars.
+// DITEMPA BUKAN DIBERI — Forged, Not Given.
+server.tool("forge_docsgpt", "Governed DocsGPT knowledge query. Routes through constitutional membrane: F2 epistemic tags, F7 confidence cap, receipt-wrapped. Modes: query (OpenAI-compatible), native (DocsGPT /api/answer).", {
+  mode: z.enum(["query", "native"]).default("query").describe("query = OpenAI-compatible /v1/chat/completions, native = DocsGPT /api/answer"),
+  question: z.string().describe("Question or search query"),
+  corpus_id: z.string().optional().describe("DocsGPT agent ID or corpus identifier"),
+  model_id: z.string().optional().describe("Override model (otherwise uses agent default)"),
+  chunks: z.number().optional().describe("Number of retrieval chunks (default 3)"),
+  active_docs: z.array(z.string()).optional().describe("Active document IDs (native mode only)"),
+  retriever: z.string().optional().describe("Retriever type, e.g. 'classic' (native mode only)"),
+  conversation_id: z.string().optional().describe("Continue existing conversation"),
+}, async (args) => {
+  const bridge = getDocsGPTBridge();
+  const startedAt = Date.now();
+
+  try {
+    let result;
+    if (args.mode === "native") {
+      result = await bridge.queryNative({
+        query: args.question,
+        corpusId: args.corpus_id,
+        chunks: args.chunks ?? 3,
+        activeDocs: args.active_docs,
+        retriever: args.retriever,
+        conversationId: args.conversation_id,
+      });
+    } else {
+      result = await bridge.query({
+        query: args.question,
+        corpusId: args.corpus_id,
+        modelId: args.model_id,
+        chunks: args.chunks ?? 3,
+        conversationId: args.conversation_id,
+      });
+    }
+
+    const elapsedMs = Date.now() - startedAt;
+
+    // F4 CLARITY: structured output with epistemic envelope
+    const output = {
+      status: "OK",
+      query: args.question,
+      answer: result.answer,
+      model: result.model,
+      conversation_id: result.conversationId,
+      // Epistemic envelope (F2 TRUTH)
+      epistemic: {
+        chunks: result.chunks.map((c) => ({
+          label: c.epistemicLabel,
+          confidence: c.confidence,
+          text_preview: c.text.slice(0, 280),
+          source: c.source || null,
+        })),
+        summary: result.receipt.epistemicSummary,
+      },
+      citations: result.citations,
+      // Receipt (F11 AUDIT)
+      receipt: {
+        hash: result.receipt.queryResponseHash,
+        timestamp: result.receipt.timestamp,
+        bridge_version: result.receipt.bridgeVersion,
+        elapsed_ms: elapsedMs,
+      },
+      // F7 HUMILITY check
+      f7_humility: {
+        max_confidence: Math.max(...result.chunks.map((c) => c.confidence), 0),
+        capped: true,
+        ceiling: 0.90,
+      },
+    };
+
+    return { content: [{ type: "text" as const, text: JSON.stringify(output, null, 2) }] };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          status: "ERROR",
+          error_code: "DOCSGPT_BRIDGE_FAILED",
+          source_layer: "A-FORGE::BRIDGE::DOCSGPT",
+          message: `DocsGPT bridge error: ${msg}`,
+          trace_id: `docsgpt-${Date.now()}`,
         }, null, 2),
       }],
       isError: true,
