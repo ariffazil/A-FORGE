@@ -1408,7 +1408,7 @@ const forgeHandler = async (args: any, toolName: string) => {
       judgeBody.prediction_context = effectivePrediction;
       judgeBody.evidence_receipt = { ...(judgeBody.evidence_receipt || {}), prediction: effectivePrediction, source: "forge_predict" };
     }
-    const judgeResult = await callMCP("arifos.arif_judge_deliberate", judgeBody) as any;
+    const judgeResult = await callMCP("arifos.arif_judge", { ...judgeBody, mode: "intercept" }) as any;
     const judgeVerdict = judgeResult?.verdict ?? judgeResult?.decision ?? "HOLD";
     if (judgeVerdict !== "SEAL") {
       const holdResult = {
@@ -1647,7 +1647,7 @@ const judgeProxyHandler = async (args: Record<string, unknown>) => {
         };
       } catch (gateErr: any) {
         // Gate soft-fail: arif_claim_gate may not be on public MCP surface.
-        // Log warning but proceed — arif_judge_deliberate does truth enforcement internally.
+        // Log warning but proceed — arif_judge does truth enforcement internally.
         console.warn(`[forge_judge_proxy] Truth gate unavailable: ${gateErr?.message ?? gateErr}. Proceeding to judge.`);
       }
 
@@ -1660,7 +1660,7 @@ const judgeProxyHandler = async (args: Record<string, unknown>) => {
           judgeArgs.evidence_receipt = { prediction: args.prediction_context, source: "forge_predict" };
         }
       }
-      const res = await callMCP("arifos.arif_judge_deliberate", judgeArgs);
+      const res = await callMCP("arifos.arif_judge", { ...judgeArgs, mode: judgeArgs.mode || "intercept" });
       const result = { content: [{ type: "text" as const, text: resultAsJson(res) }] };
       await telemetrySuccess("forge_judge_proxy", startedAt);
       return result;
