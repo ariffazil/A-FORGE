@@ -959,20 +959,14 @@ app.get("/health", (_req: Request, res: Response) => {
   try {
     identityHash = readFileSync(`${DEPLOY_ROOT}/.identity_hash`, "utf8").trim();
   } catch (e) {}
-  // Read deployed commit from deployment marker (single source of truth)
+  // Read deployed commit from deployment marker
   try {
     deployedCommit = readFileSync(`${DEPLOY_ROOT}/.git_commit`, "utf8").trim().substring(0, 7);
   } catch (e) {}
-  // Read source commit for drift comparison — try git, fall back to file
+  // Read source commit from source repo marker (written at deploy time)
   try {
-    sourceCommit = require("node:child_process").execSync("git -C /root/A-FORGE rev-parse --short=7 HEAD", { timeout: 3000 }).toString().trim();
+    sourceCommit = readFileSync("/root/A-FORGE/.git_commit", "utf8").trim().substring(0, 7);
   } catch (e) {}
-  if (sourceCommit === "UNAVAILABLE") {
-    try { sourceCommit = readFileSync("/root/A-FORGE/.git_commit", "utf8").trim().substring(0, 7); } catch (e) {}
-  }
-  if (sourceCommit === "UNAVAILABLE") {
-    try { sourceCommit = readFileSync("/root/A-FORGE/.git/refs/heads/main", "utf8").trim().substring(0, 7); } catch (e) {}
-  }
   const deploymentDrift = deployedCommit !== "UNAVAILABLE" && sourceCommit !== "UNAVAILABLE" && deployedCommit !== sourceCommit;
 
   const now = new Date().toISOString();
