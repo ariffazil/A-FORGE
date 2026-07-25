@@ -1300,6 +1300,74 @@ const forgeHandler = async (args: any, toolName: string) => {
       };
     }
 
+    // ── FORGE 2-A2: STRICT CHAIN VALIDATION (P0 — no soft fallback) ──
+    // Before: truthiness check only. After: cryptographically validate chain via arifOS.
+    // Must pass ALL: chain_valid, judge_hash_matches, candidate_matches, actor_matches, replay_safe.
+    try {
+      const validationResult = await callMCP("arifos.arif_judge", {
+        mode: "validate",
+        constitutional_chain_id,
+        judge_state_hash: judge_state_hash ?? args.judge_state_hash,
+        actor_id: actor_id ?? "mcp-anonymous",
+        session_id,
+        candidate: task,
+      }) as any;
+      const v = validationResult?.result ?? validationResult ?? {};
+      const failed = [];
+      if (!v.chain_valid) failed.push("chain_valid");
+      if (v.judge_hash_matches === false) failed.push("judge_hash_matches");
+      if (v.candidate_matches === false) failed.push("candidate_matches");
+      if (v.actor_matches === false) failed.push("actor_matches");
+      if (v.replay_safe === false) failed.push("replay_safe");
+      if (failed.length > 0) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              verdict: "VOID",
+              error_code: "FORGE_GATE_CHAIN_VALIDATION_FAILED",
+              gate: "STRUCTURAL_AUTHORIZATION_VALIDATION",
+              reason: `Chain validation failed: ${failed.join(", ")}`,
+              validation: v,
+              next_safe_action: "Re-submit with a valid constitutional_chain_id from arif_judge SEAL",
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+      if (!v.execution_grant) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              verdict: "VOID",
+              error_code: "FORGE_GATE_NO_EXECUTION_GRANT",
+              gate: "STRUCTURAL_AUTHORIZATION_GRANT",
+              reason: "Chain validated but no single-use execution grant returned. Cannot proceed.",
+              validation: v,
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
+      // Store grant for consumption after execution
+      args._execution_grant = v.execution_grant;
+    } catch (validateErr: any) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            verdict: "VOID",
+            error_code: "FORGE_GATE_VALIDATION_UNAVAILABLE",
+            gate: "STRUCTURAL_AUTHORIZATION_VALIDATION",
+            reason: `Chain validation unavailable: ${validateErr?.message ?? validateErr}. Cannot proceed without verification.`,
+            next_safe_action: "Ensure arifOS is reachable and retry",
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+
     // ── FORGE 2-B: arifOS judge SEAL required before any execution ──
     const candidate = JSON.stringify({
       tool: toolName,
