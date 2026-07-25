@@ -1274,11 +1274,32 @@ server.registerTool(
 // ── Tier 05 Execution ────────────────────────────────────────────────────────
 
 const forgeHandler = async (args: any, toolName: string) => {
-  const { task, mode, session_id, actor_id, lease_id, evidence_receipt, peer_contract_id, prediction_context, auto_predict = true } = args;
+  const { task, mode, session_id, actor_id, lease_id, evidence_receipt, peer_contract_id, prediction_context, auto_predict = true, constitutional_chain_id, judge_state_hash } = args;
   const startedAt = Date.now();
   await telemetryInvoke("forge_execute");
   return runStage("777_FORGE" as MetabolicStage, async () => {
   try {
+    // ── FORGE 2-A: STRUCTURAL AUTHORIZATION GATE (INV-4 — no cc_id, no mutation) ──
+    // Before: cc_id was optional, enforcement behind env var. Warnings, not barriers.
+    // After: forge_execute hard-refuses execution without a valid constitutional_chain_id.
+    // The chain proves: human identity → signed challenge → proposed action → judge → seal.
+    // No valid auth chain → no mutation. Period. This cannot be bypassed by env var.
+    if (!constitutional_chain_id) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            verdict: "VOID",
+            error_code: "FORGE_GATE_NO_AUTHORIZATION",
+            gate: "STRUCTURAL_AUTHORIZATION_GATE",
+            reason: "forge_execute requires a valid constitutional_chain_id from arif_judge SEAL. No authorization chain, no mutation. Call arif_judge first to obtain one.",
+            next_safe_action: "Route through arif_judge → SEAL → pass constitutional_chain_id back to forge_execute",
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+
     // ── FORGE 2-B: arifOS judge SEAL required before any execution ──
     const candidate = JSON.stringify({
       tool: toolName,
@@ -2528,8 +2549,8 @@ server.tool(
       if (!resource_id || !actor_id || !justification) {
         return { content: [{ type: "text" as const, text: JSON.stringify({ error: "resource_id, actor_id, justification required for mode=acquire" }) }], isError: true };
       }
-      if (process.env.REQUIRE_CC_ID_GATE === "true" && !constitutional_chain_id) {
-        return { content: [{ type: "text" as const, text: JSON.stringify({ verdict: "VOID", reason: "cc_id required for lock on mutate path (INV-4)" }) }] };
+      if (!constitutional_chain_id) {
+        return { content: [{ type: "text" as const, text: JSON.stringify({ verdict: "VOID", reason: "cc_id required for lock on mutate path. No authorization chain, no mutation.", gate: "STRUCTURAL_AUTHORIZATION_GATE" }) }], isError: true };
       }
       return runStage("000_INIT" as MetabolicStage, async () => {
         try {
@@ -2582,8 +2603,9 @@ server.tool(
     const { task, mode, hold_id, constitutional_chain_id, session_id, actor_id } = args as any;
     const startedAt = Date.now();
     await telemetryInvoke("forge_pipeline_run");
-    if ((mode === "forge" || mode === "full") && process.env.REQUIRE_CC_ID_GATE === "true" && !(hold_id || constitutional_chain_id)) {
-      return { content: [{ type: "text" as const, text: JSON.stringify({ verdict: "VOID", reason: "cc_id/hold required for mutate pipeline (INV-4)" }) }] };
+    // ── STRUCTURAL AUTHORIZATION GATE: no cc_id → no forge/full pipeline mutation ──
+    if ((mode === "forge" || mode === "full") && !(hold_id || constitutional_chain_id)) {
+      return { content: [{ type: "text" as const, text: JSON.stringify({ verdict: "VOID", reason: "cc_id/hold required for mutate pipeline. No authorization chain, no mutation.", gate: "STRUCTURAL_AUTHORIZATION_GATE" }) }], isError: true };
     }
     // delegate to shared impl below (original body uses similar)
     // delegate to the (original) pipeline body that follows for the alias path; keep simple for reversible edit
