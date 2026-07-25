@@ -96,6 +96,7 @@
             "multimodal",
             "vision",
             "fallback",
+            "credit-expired",
             "credit-expired"
           ],
           "active": false
@@ -174,6 +175,27 @@
           ]
         },
         {
+          "provider": "cloudflare",
+          "model": "@cf/qwen/qwen3-30b-a3b-fp8",
+          "weight": 0.8,
+          "active": true,
+          "note": "Cloudflare Workers AI free tier"
+        },
+        {
+          "provider": "cloudflare",
+          "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+          "weight": 0.8,
+          "active": true,
+          "note": "Cloudflare Workers AI free tier"
+        },
+        {
+          "provider": "cloudflare",
+          "model": "@cf/mistralai/mistral-small-3.1-24b-instruct",
+          "weight": 0.8,
+          "active": true,
+          "note": "Cloudflare Workers AI free tier"
+        },
+        {
           "provider": "groq",
           "model": "llama-3.1-8b-instant",
           "weight": 85,
@@ -186,12 +208,13 @@
         {
           "provider": "cerebras",
           "model": "gpt-oss-120b",
-          "weight": 25,
+          "weight": 0,
           "tags": [
             "shadow-warmup",
             "credit-expires-aug20",
             "build-hitrate",
-            "p0-2026-07-25"
+            "p0-2026-07-25",
+            "credit-expired"
           ],
           "note": "Shadow warmup tier \u2014 Cerebras credit expires Aug 20",
           "active": false
@@ -260,11 +283,12 @@
         {
           "provider": "cerebras",
           "model": "gemma-4-31b",
-          "weight": 55,
+          "weight": 0,
           "tags": [
             "multimodal",
             "vision",
             "fallback-9",
+            "credit-expired",
             "credit-expired"
           ],
           "active": false
@@ -434,17 +458,15 @@
     },
     "cloudflare": {
       "base_url": "https://api.cloudflare.com/client/v4/accounts/22cc94b77b6481d2b054bee7952710e6/ai/v1",
-      "api_key_env": "CLOUDFLARE_API_TOKEN",
+      "api_key_env": "CLOUDFLARE_WORKERS_AI_TOKEN",
       "cost_band": "free",
       "timeout_ms": 15000,
-      "note": "Cloudflare Workers AI \u2014 OpenAI-compatible. 10k neurons/day free. Auth: Bearer token must have Workers AI permissions. Current token: active but lacks AI scope (error 10000). Circuit breakers: 10000=auth, 3036=neuron limit, 1027=rate limit. ACCOUNT_ID: 22cc94b7...",
+      "note": "Cloudflare Workers AI \u2014 OpenAI-compatible. 10k neurons/day free. Circuit breakers: 10000=auth, 3036=neuron limit, 1027=rate limit. Verified LIVE 2026-07-25 \u2014 Llama 3.3 70B, Qwen3 30B, Mistral Small 24B.",
       "models": [
         "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
         "@cf/qwen/qwen3-30b-a3b-fp8",
         "@cf/mistralai/mistral-small-3.1-24b-instruct"
-      ],
-      "degraded": true,
-      "degraded_reason": "API token lacks Workers AI scope \u2014 needs token with Workers AI:Edit permission"
+      ]
     },
     "sambanova": {
       "base_url": "https://api.sambanova.ai/v1",
