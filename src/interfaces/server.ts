@@ -952,17 +952,28 @@ app.post("/GEOX/log_interpreter", async (req: Request, res: Response) => {
  * Service health check
  */
 app.get("/health", (_req: Request, res: Response) => {
+  const DEPLOY_ROOT = "/opt/a-forge/app";
   let identityHash = "UNAVAILABLE";
-  let gitCommit = "UNAVAILABLE";
+  let deployedCommit = "UNAVAILABLE";
+  let sourceCommit = "UNAVAILABLE";
   try {
-    identityHash = readFileSync("/root/A-FORGE/.identity_hash", "utf8").trim();
+    identityHash = readFileSync(`${DEPLOY_ROOT}/.identity_hash`, "utf8").trim();
   } catch (e) {}
+  // Read deployed commit from deployment marker (single source of truth)
   try {
-    gitCommit = require("node:child_process").execSync("git -C /root/A-FORGE rev-parse --short=7 HEAD", { timeout: 3000 }).toString().trim();
+    deployedCommit = readFileSync(`${DEPLOY_ROOT}/.git_commit`, "utf8").trim().substring(0, 7);
   } catch (e) {}
-  if (gitCommit === "UNAVAILABLE") {
-    try { gitCommit = readFileSync("/root/A-FORGE/.git_commit", "utf8").trim(); } catch (e) {}
+  // Read source commit for drift comparison — try git, fall back to file
+  try {
+    sourceCommit = require("node:child_process").execSync("git -C /root/A-FORGE rev-parse --short=7 HEAD", { timeout: 3000 }).toString().trim();
+  } catch (e) {}
+  if (sourceCommit === "UNAVAILABLE") {
+    try { sourceCommit = readFileSync("/root/A-FORGE/.git_commit", "utf8").trim().substring(0, 7); } catch (e) {}
   }
+  if (sourceCommit === "UNAVAILABLE") {
+    try { sourceCommit = readFileSync("/root/A-FORGE/.git/refs/heads/main", "utf8").trim().substring(0, 7); } catch (e) {}
+  }
+  const deploymentDrift = deployedCommit !== "UNAVAILABLE" && sourceCommit !== "UNAVAILABLE" && deployedCommit !== sourceCommit;
 
   const now = new Date().toISOString();
 
@@ -971,9 +982,8 @@ app.get("/health", (_req: Request, res: Response) => {
   // T5 2026-07-17 — canonical 5-field federation header + organ payload.
   // ok retained for legacy callers; status is canonical.
   res.json({
-    status: isDegradedMode ? "degraded" : "healthy",
-    ok: !isDegradedMode, // legacy alias — prefer status
-    degraded_mode: isDegradedMode,
+    ok: !isDegradedMode && !deploymentDrift, // legacy alias — prefer status
+    degraded_mode: isDegradedMode || deploymentDrift,
     service: "A-FORGE-sense",
     version: "v2026.07.24",
     federation_schema_version: "2.0.0",
@@ -983,7 +993,10 @@ app.get("/health", (_req: Request, res: Response) => {
     authority_ceiling: "777_FORGE", // A-FORGE may forge; never seal nor adjudicate
     identity: identityHash,
     identity_hash: identityHash,
-    git_commit: gitCommit,
+    deployed_commit: deployedCommit,
+    source_commit: sourceCommit,
+    deployment_drift: deploymentDrift,
+    status: isDegradedMode || deploymentDrift ? "degraded" : "healthy",
     apex_scalars: {
       G: { value: null, status: "UNMEASURED" },
       C_dark: { value: null, status: "UNMEASURED" },
