@@ -18,7 +18,9 @@ import { randomUUID } from "node:crypto";
 import { mkdir, appendFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+
+// FLAME client for search result synthesis
 import {
   type TaskContext,
   type PageContext,
@@ -242,7 +244,7 @@ export async function handleForgeResearch(args: any) {
 }
 
 export async function handleForgeSearch(args: any) {
-  const { query, count, freshness, safesearch, request_id } = args;
+  const { query, count, freshness, safesearch, synthesize, request_id } = args;
   const receiptMeta = { tool: "forge_search", query, count, freshness };
   const search = await braveWebSearch(query, count ?? 10, freshness ?? "any", safesearch ?? "moderate");
   if (!search.ok) {
@@ -255,10 +257,37 @@ export async function handleForgeSearch(args: any) {
     date: r.age ?? null,
   }));
   const receipt_id = await recordReceipt({ ...receiptMeta, provider: "brave", result_count: results.length });
+
+  // FLAME synthesis (optional — task_class="extract", greedy degradation on failure)
+  let flame: any = null;
+  if (synthesize && results.length > 0) {
+    try {
+      const { flameSynthesizeSearch } = await import("../../tools/flameClient.js");
+      flame = await flameSynthesizeSearch(query, results, "brave");
+    } catch (e: any) {
+      console.warn(`[forge_search] FLAME synthesis unavailable: ${e.message ?? e}`);
+    }
+  }
+
   return {
     content: [{
       type: "text" as const,
-      text: JSON.stringify({ request_id, results, provider: "brave", receipt_id }, null, 2),
+      text: JSON.stringify({
+        request_id,
+        results,
+        provider: "brave",
+        receipt_id,
+        ...(flame ? {
+          flame_synthesis: {
+            content: flame.synthesis,
+            ok: flame.ok,
+            model: flame.model,
+            latency_ms: flame.latency_ms,
+            authority: "ADVISORY",
+            provenance: flame.provenance,
+          },
+        } : {}),
+      }, null, 2),
     }],
   };
 }
@@ -813,11 +842,12 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeResearch);
 
-  server.tool("forge_search", "Governed web search via Brave.", {
+  server.tool("forge_search", "Governed web search via Brave. Optional FLAME synthesis.", {
     query: z.string().max(400).describe("Search query"),
     count: z.number().min(1).max(20).default(10).describe("Result count"),
     freshness: z.enum(["any", "day", "week", "month", "year"]).default("any").describe("Freshness"),
     safesearch: z.enum(["off", "moderate", "strict"]).default("moderate").describe("SafeSearch"),
+    synthesize: z.boolean().default(false).describe("Synthesize results via FLAME (task_class=extract)"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeSearch);
 

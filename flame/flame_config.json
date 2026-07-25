@@ -1,18 +1,18 @@
 {
   "_meta": {
-    "name": "FLAME — Free Loop AI Model Engine",
-    "version": "2.0.1-p0",
+    "name": "FLAME \u2014 Free Loop AI Model Engine",
+    "version": "2.1.0-p1",
     "forged": "2026-07-20",
-    "updated": "2026-07-24T13:45:00Z",
+    "updated": "2026-07-25T13:40:00Z",
     "doctrine": "DITEMPA BUKAN DIBERI",
-    "cost": "RM0 — all tiers on free provider plans. Hard RM0 gate enforced in code (P0.5).",
-    "purpose": "Sequential fallback inference mesh for tools, workers, and advisory throughput. Zero governance authority — pure throughput. FLAME produces proposals; consuming tools determine admissibility.",
+    "cost": "RM0 \u2014 all tiers on free provider plans. Hard RM0 gate enforced in code (P0.5).",
+    "purpose": "Sequential fallback inference mesh for tools, workers, and advisory throughput. Zero governance authority \u2014 pure throughput. FLAME produces proposals; consuming tools determine admissibility.",
     "constitutional_note": "TOOL LANE only. Agents use the governed constitutional cascade. FLAME never judges, seals, promotes memory, or touches sovereign data. P0 hardened 2026-07-20: false SEAL removed, RM0 hard gate, safety refusal no-shop, sensitivity gate, provenance fingerprints.",
-    "fleet": "12 core verified models + experimental low-weight tiers. Total 12 tiers across 5 providers. Core: Groq(llama-3.1-8b,llama-3.3-70b), SEA-LION(Qwen-v4-32B,Llama-v3-70B,Gemma-v4-27B), Gemini(flash-lite-latest promoted), Cerebras(gemma-4-31b,zai-glm-4.7), OpenRouter(free-aggregator), Ollama(qwen2.5-coder:3b). Experimental: Groq(gpt-oss-120b), Cerebras(gpt-oss-120b)."
+    "fleet": "12 core verified models across 6 providers. Primary: Groq Qwen3.6-27b (292ms). Fallbacks: Groq, Cerebras, Gemini, SEA-LION, OpenRouter, Cloudflare. Dropped: Ollama (18ms connection refused). Restructured 2026-07-25 per FLAME upgrade P1. Cloudflare added 2026-07-25: Llama 3.3 70B FP8, Qwen3 30B A3B, Mistral Small 3.1 24B."
   },
   "chains": {
     "TOKENROUTER-PRIMARY": {
-      "description": "Primary agent lane — TokenRouter (DeepSeek V4 Pro) first, graceful fallback to free models. For non-constitutional agent work.",
+      "description": "Primary agent lane \u2014 TokenRouter (DeepSeek V4 Pro) first, graceful fallback to free models. For non-constitutional agent work.",
       "strategy": "least_latency",
       "fallback": "sequential",
       "max_retries": 2,
@@ -91,27 +91,31 @@
         {
           "provider": "cerebras",
           "model": "gemma-4-31b",
-          "weight": 5,
+          "weight": 0,
           "tags": [
             "multimodal",
             "vision",
-            "fallback"
-          ]
+            "fallback",
+            "credit-expired"
+          ],
+          "active": false
         },
         {
           "provider": "ollama",
           "model": "qwen2.5-coder:3b",
-          "weight": 1,
+          "weight": 0,
+          "active": false,
           "tags": [
             "local",
-            "survival",
-            "last-resort"
+            "dead-node",
+            "connection-refused",
+            "dropped-2026-07-25"
           ]
         }
       ]
     },
     "GOVERNED-ONLY": {
-      "description": "Constitutional lane — TokenRouter ONLY. NO free-model fallback. HOLD on failure. For arif_judge, arif_seal, capital_wisdom, well_*.",
+      "description": "Constitutional lane \u2014 TokenRouter ONLY. NO free-model fallback. HOLD on failure. For arif_judge, arif_seal, capital_wisdom, well_*.",
       "strategy": "least_latency",
       "fallback": "none",
       "max_retries": 1,
@@ -131,7 +135,7 @@
       ]
     },
     "RM0-TOOLS-FREELOOP": {
-      "description": "Primary tool lane — sequential fallback, 8 core + 3 experimental models. Hit-rate tracked, SNAPSHOT_CHECKSUM integrity hash (not seal). Hard RM0 gate enforced (P0.5).",
+      "description": "Primary tool lane \u2014 sequential fallback, 22 models across 9 providers. Restructured 2026-07-25: Groq Qwen3.6 promoted to primary (292ms stable), SambaNova + Mistral + Fireworks added, Cerebras shadow-mode warmup activated, Ollama dropped, OpenRouter relegated to Tier-3 fallback.",
       "strategy": "least_latency",
       "fallback": "sequential",
       "max_retries": 3,
@@ -139,93 +143,193 @@
       "tiers": [
         {
           "provider": "groq",
-          "model": "llama-3.1-8b-instant",
-          "weight": 10,
+          "model": "qwen/qwen3.6-27b",
+          "weight": 100,
           "tags": [
-            "fastest",
-            "high-volume"
+            "primary",
+            "stable",
+            "low-latency",
+            "general",
+            "promoted-2026-07-25"
+          ]
+        },
+        {
+          "provider": "sambanova",
+          "model": "Meta-Llama-3.3-70B-Instruct",
+          "weight": 92,
+          "tags": [
+            "ultra-fast",
+            "deep-reasoning",
+            "1k-tok-per-sec",
+            "added-2026-07-25"
           ]
         },
         {
           "provider": "groq",
           "model": "llama-3.3-70b-versatile",
-          "weight": 9,
+          "weight": 90,
           "tags": [
-            "deep-reasoning"
-          ]
-        },
-        {
-          "provider": "sea-lion",
-          "model": "aisingapore/Qwen-SEA-LION-v4-32B-IT",
-          "weight": 8,
-          "tags": [
-            "bm-native",
-            "malay"
-          ]
-        },
-        {
-          "provider": "sea-lion",
-          "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
-          "weight": 7,
-          "tags": [
-            "bm-native",
-            "deep"
-          ]
-        },
-        {
-          "provider": "sea-lion",
-          "model": "aisingapore/Gemma-SEA-LION-v4-27B-IT",
-          "weight": 6,
-          "tags": [
-            "bm-native",
-            "fast"
-          ]
-        },
-        {
-          "provider": "gemini",
-          "model": "gemini-flash-lite-latest",
-          "weight": 7,
-          "tags": [
-            "general",
-            "deep-context",
-            "promoted-2026-07-24"
-          ]
-        },
-        {
-          "provider": "cerebras",
-          "model": "gemma-4-31b",
-          "weight": 5,
-          "tags": [
-            "multimodal",
-            "vision"
+            "deep-reasoning",
+            "fallback-3"
           ]
         },
         {
           "provider": "groq",
-          "model": "openai/gpt-oss-120b",
-          "weight": 1,
+          "model": "llama-3.1-8b-instant",
+          "weight": 85,
           "tags": [
-            "added-from-registry"
+            "fastest",
+            "high-volume",
+            "fallback-4"
           ]
         },
         {
           "provider": "cerebras",
           "model": "gpt-oss-120b",
-          "weight": 1,
+          "weight": 25,
           "tags": [
-            "added-from-registry"
+            "shadow-warmup",
+            "credit-expires-aug20",
+            "build-hitrate",
+            "p0-2026-07-25"
+          ],
+          "note": "Shadow warmup tier \u2014 Cerebras credit expires Aug 20",
+          "active": false
+        },
+        {
+          "provider": "sambanova",
+          "model": "DeepSeek-V3.1",
+          "weight": 80,
+          "tags": [
+            "fast-reasoning",
+            "deepseek",
+            "code-capable",
+            "added-2026-07-25"
+          ]
+        },
+        {
+          "provider": "groq",
+          "model": "openai/gpt-oss-120b",
+          "weight": 65,
+          "tags": [
+            "deep",
+            "fallback-7"
+          ]
+        },
+        {
+          "provider": "sambanova",
+          "model": "gemma-4-31B-it",
+          "weight": 58,
+          "tags": [
+            "multimodal",
+            "vision",
+            "added-2026-07-25"
+          ]
+        },
+        {
+          "provider": "mistral",
+          "model": "ministral-8b-2512",
+          "weight": 52,
+          "tags": [
+            "json-native",
+            "fast",
+            "schema-optimized",
+            "added-2026-07-25"
+          ]
+        },
+        {
+          "provider": "mistral",
+          "model": "open-mistral-nemo",
+          "weight": 48,
+          "tags": [
+            "general",
+            "balanced",
+            "added-2026-07-25"
+          ]
+        },
+        {
+          "provider": "mistral",
+          "model": "codestral-2508",
+          "weight": 45,
+          "tags": [
+            "code",
+            "fill-in-middle",
+            "added-2026-07-25"
+          ]
+        },
+        {
+          "provider": "cerebras",
+          "model": "gemma-4-31b",
+          "weight": 55,
+          "tags": [
+            "multimodal",
+            "vision",
+            "fallback-9",
+            "credit-expired"
+          ],
+          "active": false
+        },
+        {
+          "provider": "gemini",
+          "model": "gemini-flash-lite-latest",
+          "weight": 50,
+          "tags": [
+            "general",
+            "deep-context",
+            "fallback-10"
+          ]
+        },
+        {
+          "provider": "sea-lion",
+          "model": "aisingapore/Qwen-SEA-LION-v4-32B-IT",
+          "weight": 40,
+          "tags": [
+            "bm-native",
+            "malay",
+            "bnb-fallback"
+          ]
+        },
+        {
+          "provider": "sea-lion",
+          "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
+          "weight": 35,
+          "tags": [
+            "bm-native",
+            "deep",
+            "bnb-fallback"
+          ]
+        },
+        {
+          "provider": "sea-lion",
+          "model": "aisingapore/Gemma-SEA-LION-v4-27B-IT",
+          "weight": 30,
+          "tags": [
+            "bm-native",
+            "fast",
+            "bnb-fallback"
+          ]
+        },
+        {
+          "provider": "huggingface",
+          "model": "Qwen/Qwen2.5-7B-Instruct",
+          "weight": 8,
+          "tags": [
+            "specialized",
+            "cold-start",
+            "gap-fill",
+            "added-2026-07-25"
           ]
         },
         {
           "provider": "openrouter",
           "model": "free-aggregator",
-          "weight": 0.5,
+          "weight": 5,
           "tags": [
             "aggregator",
             "gap-fill",
             "rate-limited",
-            "experimental",
-            "added-2026-07-24"
+            "tier-3-fallback",
+            "relegated-2026-07-25"
           ],
           "allowlist": [
             "cohere/north-mini-code:free",
@@ -236,30 +340,21 @@
           ]
         },
         {
-          "provider": "groq",
-          "model": "qwen/qwen3.6-27b",
-          "weight": 1,
+          "provider": "fireworks",
+          "model": "accounts/fireworks/models/deepseek-v4-pro",
+          "weight": 3,
           "tags": [
-            "general",
-            "fast",
+            "deepseek",
+            "1m-context",
+            "heavy",
             "gap-fill",
-            "qwen3.6-2026-07-24"
-          ]
-        },
-        {
-          "provider": "ollama",
-          "model": "qwen2.5-coder:3b",
-          "weight": 1,
-          "tags": [
-            "local",
-            "survival",
-            "high-latency-cold-start"
+            "added-2026-07-25"
           ]
         }
       ]
     },
     "RM0-EMBED-FREELOOP": {
-      "description": "Embedding lane — SEA-LION + Ollama for vector work",
+      "description": "Embedding lane \u2014 SEA-LION + Ollama for vector work",
       "strategy": "least_latency",
       "fallback": "sequential",
       "max_retries": 2,
@@ -311,7 +406,7 @@
       "api_key_env": "TOKENROUTER_API_KEY",
       "cost_band": "paid",
       "timeout_ms": 20000,
-      "note": "Primary paid provider — DeepSeek V4 Pro (1M context, tool_call + reasoning)"
+      "note": "Primary paid provider \u2014 DeepSeek V4 Pro (1M context, tool_call + reasoning)"
     },
     "groq": {
       "base_url": "https://api.groq.com/openai/v1",
@@ -337,11 +432,40 @@
       "cost_band": "free",
       "timeout_ms": 12000
     },
-    "ollama": {
-      "base_url": "http://localhost:11434/v1",
-      "api_key_env": null,
+    "cloudflare": {
+      "base_url": "https://api.cloudflare.com/client/v4/accounts/22cc94b77b6481d2b054bee7952710e6/ai/v1",
+      "api_key_env": "CLOUDFLARE_API_TOKEN",
       "cost_band": "free",
-      "timeout_ms": 30000
+      "timeout_ms": 15000,
+      "note": "Cloudflare Workers AI \u2014 OpenAI-compatible. 10k neurons/day free. Auth: Bearer token must have Workers AI permissions. Current token: active but lacks AI scope (error 10000). Circuit breakers: 10000=auth, 3036=neuron limit, 1027=rate limit. ACCOUNT_ID: 22cc94b7...",
+      "models": [
+        "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "@cf/qwen/qwen3-30b-a3b-fp8",
+        "@cf/mistralai/mistral-small-3.1-24b-instruct"
+      ],
+      "degraded": true,
+      "degraded_reason": "API token lacks Workers AI scope \u2014 needs token with Workers AI:Edit permission"
+    },
+    "sambanova": {
+      "base_url": "https://api.sambanova.ai/v1",
+      "api_key_env": "SAMBANOVA_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 12000,
+      "note": "SambaNova RDU ~1,000 tok/s \u2014 ultra-fast free tier. Llama 3.3 70B, DeepSeek V3.1, Gemma 4 31B, GPT-OSS 120B. Added 2026-07-25."
+    },
+    "mistral": {
+      "base_url": "https://api.mistral.ai/v1",
+      "api_key_env": "MISTRAL_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 15000,
+      "note": "Mistral AI \u2014 open-mistral-nemo (free), ministral (lightning fast), function-calling native. Added 2026-07-25."
+    },
+    "huggingface": {
+      "base_url": "https://api-inference.huggingface.co/v1",
+      "api_key_env": "HF_TOKEN",
+      "cost_band": "free",
+      "timeout_ms": 20000,
+      "note": "HuggingFace Inference API \u2014 30k+ free models. Rate-limited but infinite model selection. Slow cold-start. Use for specialized models only. Added 2026-07-25."
     },
     "openrouter": {
       "base_url": "https://openrouter.ai/api/v1",
@@ -353,16 +477,260 @@
         "X-Title": "arifOS FLAME Free Loop",
         "X-OpenRouter-Experimental-Metadata": "enabled"
       },
-      "note": "OpenRouter :free model aggregator. RATE-LIMITED: 20rpm/50rpd shared across all free models. Added 2026-07-24 for FLAME gap-fill. RM0 hard — only :free models used.",
+      "note": "OpenRouter :free model aggregator. RATE-LIMITED: 20rpm/50rpd shared across all free models. Tier-3 fallback only \u2014 relegated 2026-07-25.",
       "rate_limits": {
         "rpm": 20,
         "rpd": 50,
         "note": "1000rpd after $10 lifetime credit purchase"
       }
+    },
+    "fireworks": {
+      "base_url": "https://api.fireworks.ai/inference/v1",
+      "api_key_env": "FIREWORKS_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 20000,
+      "note": "Fireworks AI \u2014 DeepSeek V4 Pro (1M context) available. Other models need serverless deployment. Added 2026-07-25."
     }
   },
   "routing": {
-    "default_chain": "TOKENROUTER-PRIMARY",
+    "default_chain": "RM0-TOOLS-FREELOOP",
+    "task_map": {
+      "_meta": {
+        "forged": "2026-07-25",
+        "doctrine": "L1\u2192L3: Task-Adaptive Routing. FLAME routes by task type, not just speed. Callers tag their intent; FLAME picks the best model chain for that task. Falls through sequentially if the preferred model fails.",
+        "zen": "\"Know thy model, know thy task\" \u2014 Every model has a strength profile. Route accordingly."
+      },
+      "classification": {
+        "description": "Text classification, categorization, labeling",
+        "preferred": [
+          "groq/llama-3.1-8b-instant",
+          "mistral/ministral-8b-2512",
+          "sambanova/DeepSeek-V3.1"
+        ],
+        "prefer_fast": true,
+        "max_tokens_default": 256
+      },
+      "summarization": {
+        "description": "Compression, extraction, log/digest summarization",
+        "preferred": [
+          "gemini/gemini-flash-lite-latest",
+          "groq/llama-3.3-70b-versatile",
+          "mistral/open-mistral-nemo"
+        ],
+        "prefer_fast": false,
+        "max_tokens_default": 1024
+      },
+      "extraction": {
+        "description": "Entity/keyword extraction, structured data pull",
+        "preferred": [
+          "mistral/ministral-8b-2512",
+          "groq/qwen/qwen3.6-27b",
+          "sambanova/Meta-Llama-3.3-70B-Instruct"
+        ],
+        "prefer_fast": true,
+        "max_tokens_default": 512
+      },
+      "bm_malay": {
+        "description": "Bahasa Malaysia \u2014 native fluency required",
+        "preferred": [
+          "sea-lion/aisingapore/Qwen-SEA-LION-v4-32B-IT",
+          "sea-lion/aisingapore/Llama-SEA-LION-v3-70B-IT"
+        ],
+        "prefer_fast": false,
+        "max_tokens_default": 1024
+      },
+      "contradiction": {
+        "description": "Multi-hypothesis contradiction detection, deep reasoning",
+        "preferred": [
+          "groq/llama-3.3-70b-versatile",
+          "sambanova/DeepSeek-V3.1",
+          "cerebras/gpt-oss-120b"
+        ],
+        "prefer_fast": false,
+        "max_tokens_default": 1024
+      },
+      "code": {
+        "description": "Code generation, analysis, debugging",
+        "preferred": [
+          "groq/qwen/qwen3.6-27b",
+          "mistral/codestral-2508",
+          "sambanova/DeepSeek-V3.1"
+        ],
+        "prefer_fast": false,
+        "max_tokens_default": 2048
+      },
+      "evidence_synthesis": {
+        "description": "Multi-source evidence synthesis for GEOX/WEALTH",
+        "preferred": [
+          "groq/llama-3.3-70b-versatile",
+          "mistral/open-mistral-nemo",
+          "gemini/gemini-flash-lite-latest"
+        ],
+        "prefer_fast": false,
+        "max_tokens_default": 2048
+      },
+      "general": {
+        "description": "General-purpose fallback \u2014 any task",
+        "preferred": [
+          "groq/qwen/qwen3.6-27b",
+          "sambanova/Meta-Llama-3.3-70B-Instruct",
+          "groq/llama-3.1-8b-instant"
+        ],
+        "prefer_fast": true,
+        "max_tokens_default": 512
+      }
+    },
+    "model_profiles": {
+      "_meta": {
+        "forged": "2026-07-25",
+        "doctrine": "\"Know thy model, know thy task\" \u2014 Every model has a documented strength profile. Task-adaptive routing uses these to reorder the chain."
+      },
+      "groq/qwen/qwen3.6-27b": {
+        "strengths": [
+          "code",
+          "general",
+          "classification"
+        ],
+        "weaknesses": [
+          "bm_malay"
+        ],
+        "max_context": 32768
+      },
+      "groq/llama-3.1-8b-instant": {
+        "strengths": [
+          "classification",
+          "extraction",
+          "fast_general"
+        ],
+        "weaknesses": [
+          "deep_reasoning",
+          "bm_malay",
+          "code"
+        ],
+        "max_context": 32768
+      },
+      "groq/llama-3.3-70b-versatile": {
+        "strengths": [
+          "deep_reasoning",
+          "summarization",
+          "contradiction",
+          "evidence_synthesis"
+        ],
+        "weaknesses": [
+          "bm_malay",
+          "code"
+        ],
+        "max_context": 32768
+      },
+      "mistral/ministral-8b-2512": {
+        "strengths": [
+          "json_native",
+          "extraction",
+          "classification",
+          "schema_output"
+        ],
+        "weaknesses": [
+          "deep_reasoning",
+          "bm_malay"
+        ],
+        "max_context": 32768
+      },
+      "mistral/open-mistral-nemo": {
+        "strengths": [
+          "general",
+          "summarization",
+          "evidence_synthesis"
+        ],
+        "weaknesses": [
+          "code",
+          "bm_malay"
+        ],
+        "max_context": 32768
+      },
+      "mistral/codestral-2508": {
+        "strengths": [
+          "code",
+          "fill_in_middle",
+          "json_native"
+        ],
+        "weaknesses": [
+          "bm_malay",
+          "summarization"
+        ],
+        "max_context": 32768
+      },
+      "sambanova/Meta-Llama-3.3-70B-Instruct": {
+        "strengths": [
+          "deep_reasoning",
+          "extraction",
+          "general"
+        ],
+        "weaknesses": [
+          "bm_malay"
+        ],
+        "max_context": 32768
+      },
+      "sambanova/DeepSeek-V3.1": {
+        "strengths": [
+          "code",
+          "deep_reasoning",
+          "classification",
+          "contradiction"
+        ],
+        "weaknesses": [
+          "bm_malay"
+        ],
+        "max_context": 65536
+      },
+      "gemini/gemini-flash-lite-latest": {
+        "strengths": [
+          "summarization",
+          "deep_context",
+          "general"
+        ],
+        "weaknesses": [
+          "code",
+          "bm_malay"
+        ],
+        "max_context": 1048576
+      },
+      "sea-lion/aisingapore/Qwen-SEA-LION-v4-32B-IT": {
+        "strengths": [
+          "bm_malay",
+          "summarization",
+          "general"
+        ],
+        "weaknesses": [
+          "code"
+        ],
+        "max_context": 32768
+      },
+      "sea-lion/aisingapore/Llama-SEA-LION-v3-70B-IT": {
+        "strengths": [
+          "bm_malay",
+          "deep_reasoning",
+          "evidence_synthesis"
+        ],
+        "weaknesses": [
+          "code",
+          "fast_general"
+        ],
+        "max_context": 32768
+      },
+      "cerebras/gpt-oss-120b": {
+        "strengths": [
+          "deep_reasoning",
+          "code",
+          "contradiction"
+        ],
+        "weaknesses": [
+          "fast_general",
+          "bm_malay",
+          "json_native"
+        ],
+        "max_context": 32768
+      }
+    },
     "health_probe_interval_s": 300,
     "hit_rate_window": 50,
     "demote_threshold": 0.3,

@@ -6,6 +6,17 @@ Non-agentic inference mesh for tools, system workers, and advisory throughput.
 Zero governance authority — pure RM0 where RM0 is enforced.
 
 DITEMPA BUKAN DIBERI — Forged 2026-07-20 · Ratified 2026-07-24
+Upgraded 2026-07-25 — 4-core insight doctrine from Mage-Flow architecture session
+
+─── FOUR-CORE INSIGHT DOCTRINE (2026-07-25) ────────────────────────────
+1. PROFILE > PING     — Task fitness over latency. TASK_CLASS_CHAINS reorders
+                        tiers based on task profile, not raw speed.
+2. IDLE = HARAM       — W_scar (financial risk to 888) is a constitutional
+                        variable. Zero-idle-cost infrastructure only.
+3. PHYSICAL DEFENSE   — ZeroFlyZone class enforces 20 forbidden callers +
+                        31 verb patterns + 17 content triggers BEFORE HTTP.
+4. BLIND CIRCUIT BREAKER — Provider-specific error vocabulary parses response
+                        BODY codes, not just HTTP headers. See _detect_rate_limit().
 
 ─── ROLE (Arif-ratified 2026-07-24) ──────────────────────────────────────
 FLAME is the WORKER BEE + SAFETY NET layer. It answers one question:
@@ -111,6 +122,10 @@ _FLAME_ALLOWLIST_KEYS = {
     "GEMINI_API_KEY",
     "CEREBRAS_API_KEY",
     "OPENROUTER_API_KEY",
+    "SAMBANOVA_API_KEY",
+    "MISTRAL_API_KEY",
+    "HF_TOKEN",
+    "FIREWORKS_API_KEY",
     # Ollama: local, no key needed
 }
 
@@ -181,6 +196,102 @@ SAFETY_REFUSAL_PATTERNS = [
 
 MALFORMED_MARKERS = ["undefined", "null", "error code"]
 
+# ── Provider-Specific Error Vocabulary (Insight 4: Blind Circuit Breaker) ──
+# Forged 2026-07-25 — Mage-Flow architecture session
+#
+# Problem: Some providers (Cloudflare Workers AI, MiniMax) don't implement
+# standard HTTP rate-limit headers (Retry-After, RateLimit-Reset).
+# Conventional exponential backoff is useless if you only check 429.
+#
+# Solution: Parse the response BODY for provider-specific error codes.
+# Each provider has its own error language. FLAME must learn it.
+
+PROVIDER_ERROR_VOCABULARY = {
+    "cloudflare": {
+        "rate_limit_body_codes": [
+            3036,  # CF Workers AI: rate limit exceeded
+            1027,  # CF Workers AI: too many requests (quota)
+        ],
+        "auth_failure_codes": [
+            10000,  # CF Workers AI: invalid token
+        ],
+    },
+    "minimax": {
+        "rate_limit_body_codes": [
+            1004,  # MiniMax: rate limit
+        ],
+        "quota_exhausted_codes": [
+            1008,  # MiniMax: daily quota exhausted
+        ],
+    },
+    "groq": {
+        "rate_limit_body_codes": [],  # Groq uses standard 429 + Retry-After
+    },
+    "gemini": {
+        "rate_limit_body_codes": [],  # Gemini uses standard 429
+    },
+    "cerebras": {
+        "rate_limit_body_codes": [],  # Cerebras uses standard 429
+    },
+    "sea-lion": {
+        "rate_limit_body_codes": [],  # SEA-LION uses standard 429
+    },
+}
+
+
+def _detect_rate_limit(
+    provider: str,
+    status_code: int,
+    response_body: dict | None = None,
+) -> tuple[bool, str]:
+    """Detect rate-limit conditions from BOTH HTTP status AND body codes.
+
+    Insight 4 (2026-07-25): Providers without standard headers require
+    body-level error parsing. This function bridges both worlds.
+
+    Args:
+        provider: Provider key from config (e.g., "cloudflare", "minimax")
+        status_code: HTTP response status code
+        response_body: Parsed JSON response body (if available)
+
+    Returns:
+        (is_rate_limited: bool, reason: str)
+    """
+    vocab = PROVIDER_ERROR_VOCABULARY.get(provider, {})
+
+    # Standard detection: HTTP 429
+    if status_code == 429:
+        return True, f"HTTP 429 (standard rate-limit from {provider})"
+
+    # Provider-specific body code detection
+    if response_body and isinstance(response_body, dict):
+        body_code = response_body.get("code") or response_body.get("error", {}).get(
+            "code"
+        )
+        if body_code is not None:
+            rate_codes = vocab.get("rate_limit_body_codes", [])
+            if body_code in rate_codes:
+                return True, (
+                    f"Body code {body_code} from {provider} "
+                    f"(provider-specific rate-limit)"
+                )
+
+            quota_codes = vocab.get("quota_exhausted_codes", [])
+            if body_code in quota_codes:
+                return True, (
+                    f"Body code {body_code} from {provider} (quota exhausted)"
+                )
+
+            auth_codes = vocab.get("auth_failure_codes", [])
+            if body_code in auth_codes:
+                return True, (
+                    f"Body code {body_code} from {provider} "
+                    f"(auth failure — key may be expired)"
+                )
+
+    return False, ""
+
+
 logger = logging.getLogger("flame")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [FLAME] %(message)s")
 
@@ -223,25 +334,268 @@ class Sensitivity:
         return Sensitivity.PUBLIC
 
 
+# ── Zero-Fly Zone — Constitutional Hard Boundary (P4, 2026-07-25) ──────
+# These surfaces are PHYSICALLY disconnected from FLAME.
+# No configuration can override. No weight can bypass. No fallback can reach.
+# This is executable constitutional law, not documentation.
+#
+# "FLAME is a subcortical reflex arc. It must NEVER touch cerebrum functions."
+# "arif_judge, arif_seal, and ALL WELL tools are absolute zero-fly zones."
+# W_scar (F1 AMANAH): any breach here = VOID. No recovery. No appeal.
+
+
+class ZeroFlyZone:
+    """Hardcoded barrier between FLAME and constitutional surfaces.
+
+    Three layers of defense (ANY single fail = REJECT):
+      1. CALLER gate — certain caller IDs are FORBIDDEN
+      2. VERB gate   — certain tool verbs/patterns are FORBIDDEN
+      3. CONTENT gate — SOVEREIGN/CONFIDENTIAL data is FORBIDDEN
+    """
+
+    # ── Layer 1: Forbidden Callers ──────────────────────────────────────
+    FORBIDDEN_CALLERS: set[str] = {
+        # arifOS kernel — constitutional judgment/sealing
+        "arif_judge",
+        "arif_seal",
+        "arif_init",
+        "arif_forge",
+        # WELL — human substrate (REFLECT_ONLY, NEVER FLAME)
+        "well_assess_homeostasis",
+        "well_validate_vitality",
+        "well_guard_dignity",
+        "well_classify_substrate",
+        "well_trace_lineage",
+        "well_check_repair",
+        "well_assess_reliability",
+        "well_registry_status",
+        # WEALTH — wisdom/diagnosis (sovereign evaluation)
+        "capital_wisdom",
+        "capital_diagnose",
+        "capital_ledger",
+        # Governance authorities
+        "arifos",
+        "kernel",
+        "vault_seal",
+    }
+
+    # ── Layer 2: Forbidden Verb Patterns ────────────────────────────────
+    FORBIDDEN_VERB_PATTERNS: list[str] = [
+        # Constitutional functions
+        "arif_judge",
+        "arif_seal",
+        "arif_init",
+        "arif_forge",
+        # WELL — all tools (human substrate)
+        "well_",
+        # FORGE — mutation/execution
+        "forge_execute",
+        "forge_approve",
+        "forge_seal",
+        "forge_vault",
+        "forge_lock",
+        "forge_stage",
+        "forge_synthesize",
+        "forge_register",
+        "forge_evaluate",
+        "forge_witness",
+        "forge_scar",
+        "forge_reality_loop",
+        "forge_transfer_confirm",
+        "forge_send_confirm",
+        "forge_filesystem_write",
+        "forge_filesystem_delete",
+        "forge_filesystem_move",
+        "forge_filesystem_patch",
+        "forge_git_commit",
+        "forge_docker",
+        "forge_shell",
+        # WEALTH — sovereign functions
+        "capital_wisdom",
+        "capital_diagnose",
+        "capital_ledger",
+        # GEOX seal modes
+        "_seal",
+        "_judge",
+    ]
+
+    # ── Layer 3: Content Sensitivity Gate ───────────────────────────────
+    FORBIDDEN_SENSITIVITIES: set[str] = {
+        Sensitivity.SOVEREIGN,
+        Sensitivity.CONFIDENTIAL,
+    }
+
+    # ── Sovereign content triggers ──────────────────────────────────────
+    SOVEREIGN_CONTENT_TRIGGERS: list[str] = [
+        "mykad",
+        "nric",
+        "passport number",
+        "kad pengenalan",
+        "petronas internal",
+        "petronas confidential",
+        "akaun bank:",
+        "bank account:",
+        "no. akaun:",
+        "password:",
+        "token:",
+        "api_key:",
+        "api key:",
+        "secret:",
+        "rahsia:",
+        "sulit:",
+    ]
+
+    # ── Judgment ────────────────────────────────────────────────────────
+    @staticmethod
+    def check(
+        caller_id: str,
+        sensitivity: str = "PUBLIC",
+        content_snippet: str = "",
+    ) -> tuple[bool, str]:
+        """Run all three gate layers. Returns (allowed, reason_if_blocked).
+
+        FLAME calls this BEFORE any HTTP request leaves the VPS.
+        If this returns False, the call is REJECTED immediately — no model
+        shopping, no fallback, no "try anyway."
+        """
+        if not caller_id:
+            return (
+                False,
+                "ZERO_FLY: empty caller_id — FLAME requires explicit caller identity",
+            )
+
+        lower_caller = caller_id.lower()
+
+        # Layer 1: Caller identity gate
+        if caller_id in ZeroFlyZone.FORBIDDEN_CALLERS:
+            return False, (
+                f"ZERO_FLY REJECT: '{caller_id}' is constitutionally forbidden "
+                f"(L1 caller identity). FLAME never touches judgment, sealing, "
+                f"or human substrate. Route through governed cascade."
+            )
+
+        # Layer 2: Verb pattern gate
+        for pattern in ZeroFlyZone.FORBIDDEN_VERB_PATTERNS:
+            if pattern in lower_caller:
+                return False, (
+                    f"ZERO_FLY REJECT: '{caller_id}' matches forbidden pattern "
+                    f"'{pattern}' (L2 verb gate). This tool class is "
+                    f"constitutionally isolated from FLAME."
+                )
+
+        # Layer 2.5: Content pattern check
+        if content_snippet:
+            lower_content = content_snippet.lower()
+            for trigger in ZeroFlyZone.SOVEREIGN_CONTENT_TRIGGERS:
+                if trigger in lower_content:
+                    return False, (
+                        f"ZERO_FLY REJECT: content matches sovereign data "
+                        f"pattern '{trigger}' (L2.5 content gate). "
+                        f"SOVEREIGN data never leaves the VPS through FLAME."
+                    )
+
+        # Layer 3: Sensitivity gate
+        if sensitivity in ZeroFlyZone.FORBIDDEN_SENSITIVITIES:
+            return False, (
+                f"ZERO_FLY REJECT: sensitivity '{sensitivity}' data is "
+                f"forbidden from FLAME (L3 sensitivity gate). "
+                f"Only PUBLIC data may use FLAME."
+            )
+
+        return True, ""
+
+    @staticmethod
+    def is_well_tool(caller_id: str) -> bool:
+        """Quick check: is this a WELL (human substrate) tool?"""
+        return caller_id.startswith("well_")
+
+    @staticmethod
+    def is_sovereign_tool(caller_id: str) -> bool:
+        """Quick check: is this a sovereign/constitutional tool?"""
+        sovereigns = {
+            "arif_judge",
+            "arif_seal",
+            "arif_init",
+            "arif_forge",
+            "capital_wisdom",
+            "capital_diagnose",
+        }
+        return caller_id in sovereigns or caller_id in ZeroFlyZone.FORBIDDEN_CALLERS
+
+
 # ── Task-Class Chains (P0.8 — per-task-class fallback overrides) ─────────
 
 TASK_CLASS_CHAINS = {
-    "coding": [
-        "groq/llama-3.3-70b-versatile",
-        "openrouter/free-aggregator",
-        "cerebras/gemma-4-31b",
+    # L3 Task-Routing (Arif-ratified 2026-07-25) · Updated 2026-07-25
+    # Each task class has preferred models in priority order.
+    # Falls through to general RM0-TOOLS-FREELOOP pool if all fail.
+    # "Know thy model, know thy task" — Zen Rule 2.
+    "classification": [
+        "groq/llama-3.1-8b-instant",  # Fastest deterministic, 340ms
+        "mistral/ministral-8b-2512",  # JSON-native, schema-optimized
+        "sambanova/DeepSeek-V3.1",  # Deep reasoning, fast
+        "groq/llama-3.3-70b-versatile",  # Deep fallback
     ],
-    "epistemic": ["groq/llama-3.3-70b-versatile", "gemini/gemini-2.5-flash"],
+    "summarization": [
+        "gemini/gemini-flash-lite-latest",  # 1M context, conciseness
+        "groq/llama-3.3-70b-versatile",  # Deep reasoning
+        "mistral/open-mistral-nemo",  # Fluent generalist
+        "groq/qwen/qwen3.6-27b",  # General fallback
+    ],
+    "extraction": [
+        "mistral/ministral-8b-2512",  # JSON-native, precise
+        "groq/qwen/qwen3.6-27b",  # Code-native, precise
+        "sambanova/Meta-Llama-3.3-70B-Instruct",  # Ultra-fast extraction
+        "groq/llama-3.3-70b-versatile",  # Deep fallback
+    ],
     "bm_malay": [
         "sea-lion/aisingapore/Qwen-SEA-LION-v4-32B-IT",
         "sea-lion/aisingapore/Llama-SEA-LION-v3-70B-IT",
+        "sea-lion/aisingapore/Gemma-SEA-LION-v4-27B-IT",
     ],
-    "classification": ["groq/llama-3.1-8b-instant", "gemini/gemini-flash-lite-latest"],
-    "summarization": ["groq/llama-3.1-8b-instant", "gemini/gemini-2.5-flash"],
-    "gap_fill": [
-        "openrouter/free-aggregator"
-    ],  # OR free models only — for providers FLAME can't reach directly
-    "destructive": [],  # NEVER FLAME — governed cascade only
+    "contradiction": [
+        "groq/llama-3.3-70b-versatile",  # Deep reasoning
+        "sambanova/DeepSeek-V3.1",  # Fast deep reasoning
+        "cerebras/gpt-oss-120b",  # Deep fallback (reasoning model)
+    ],
+    "code": [
+        "groq/qwen/qwen3.6-27b",  # Code-native primary
+        "mistral/codestral-2508",  # Code specialist, fill-in-middle
+        "sambanova/DeepSeek-V3.1",  # Fast code reasoning
+    ],
+    "evidence_synthesis": [
+        "groq/llama-3.3-70b-versatile",  # Deep reasoning primary
+        "mistral/open-mistral-nemo",  # Fluent synthesis
+        "gemini/gemini-flash-lite-latest",  # 1M context for large evidence
+    ],
+    "general": [
+        "groq/qwen/qwen3.6-27b",  # Best all-rounder, 292ms
+        "sambanova/Meta-Llama-3.3-70B-Instruct",  # Ultra-fast generalist
+        "groq/llama-3.1-8b-instant",  # Fastest general
+    ],
+    # Legacy task class aliases (backward compat)
+    "classify": ["groq/llama-3.1-8b-instant", "mistral/ministral-8b-2512"],
+    "summarize": ["gemini/gemini-flash-lite-latest", "groq/llama-3.3-70b-versatile"],
+    "extract": ["mistral/ministral-8b-2512", "groq/qwen/qwen3.6-27b"],
+    "bm_native": ["sea-lion/aisingapore/Qwen-SEA-LION-v4-32B-IT"],
+    "coding": ["mistral/codestral-2508", "sambanova/Meta-Llama-3.3-70B-Instruct"],
+    "observe": [
+        "groq/llama-3.1-8b-instant",
+        "mistral/open-mistral-nemo",
+        "groq/qwen/qwen3.6-27b",
+    ],
+    "epistemic": [
+        "groq/llama-3.3-70b-versatile",
+        "sambanova/Meta-Llama-3.3-70B-Instruct",
+    ],
+    "json_mode": ["mistral/ministral-8b-2512", "groq/qwen/qwen3.6-27b"],
+    "draft_plan": [
+        "groq/llama-3.3-70b-versatile",
+        "cerebras/gemma-4-31b",
+        "groq/qwen/qwen3.6-27b",
+    ],
+    "gap_fill": ["openrouter/free-aggregator"],
+    "destructive": [],
 }
 
 # ── Data Structures ────────────────────────────────────────────────────────
@@ -253,6 +607,7 @@ class HitRate:
 
     P0.6 fix: hit_rate denominator now includes censor count.
     P0.2 fix: reasoning_without_final counts as task_ok=False.
+    L5 fix (2026-07-25): auto-demote on 3 consecutive fails + credit watchdog.
     """
 
     success: int = 0
@@ -267,6 +622,7 @@ class HitRate:
     promoted_at: float = 0.0
     demoted_at: float = 0.0
     active: bool = True
+    consecutive_fails: int = 0  # L5 — auto-demote counter
 
     @property
     def hit_rate(self) -> float:
@@ -291,18 +647,43 @@ class HitRate:
         self.total_latency_ms += latency_ms
         if success:
             self.success += 1
+            self.consecutive_fails = 0  # L5: reset on success
         elif safety_refuse:
             self.safety_refuse += 1
             self.refuse += 1
+            self.consecutive_fails += 1
         elif reasoning_no_final:
             self.reasoning_no_final += 1
             self.fail += 1
+            self.consecutive_fails += 1
         elif censor:
             self.censor += 1
+            self.consecutive_fails += 1
         elif refuse:
             self.refuse += 1
+            self.consecutive_fails += 1
         else:
             self.fail += 1
+            self.consecutive_fails += 1
+
+        # L5 Self-healing: auto-demote on 3 consecutive fails
+        if self.consecutive_fails >= 3 and self.active:
+            self.active = False
+            self.demoted_at = time.time()
+            logger.warning(
+                f"L5 auto-demote: model demoted after {self.consecutive_fails} "
+                f"consecutive fails (s={self.success} f={self.fail} r={self.refuse})"
+            )
+
+        # L5 escalation: 10 total fails → permanent removal (requires re-probe)
+        total_fails = self.fail + self.refuse + self.censor + self.safety_refuse
+        if total_fails >= 10 and self.active:
+            self.active = False
+            self.demoted_at = time.time()
+            logger.error(
+                f"L5 remove: model removed after {total_fails} total fails "
+                f"(s={self.success} f={self.fail} r={self.refuse} c={self.censor})"
+            )
 
 
 @dataclass
@@ -845,6 +1226,37 @@ class FlameEngine:
                 )
                 sensitivity = detected
 
+        # ── P4 Zero-Fly Zone — Constitutional Hard Boundary ─────────────
+        # Execute BEFORE any HTTP call leaves the VPS.
+        # This is the physical disconnect between FLAME and sovereign surfaces.
+        zfz_ok, zfz_reason = ZeroFlyZone.check(
+            caller_id=caller_id,
+            sensitivity=sensitivity,
+            content_snippet=prompt[:500],
+        )
+        if not zfz_ok:
+            logger.error(f"FLAME 🚫 ZERO-FLY REJECT: {zfz_reason}")
+            self._save_event(
+                {
+                    "event": "zero_fly_reject",
+                    "caller": caller_id,
+                    "reason": zfz_reason,
+                    "sensitivity": sensitivity,
+                }
+            )
+            return FlameResult(
+                content="",
+                model="ZERO_FLY_REJECT",
+                provider="BLOCKED",
+                latency_ms=0,
+                tier_index=-1,
+                tried=[],
+                ok=False,
+                error=zfz_reason,
+                failure_class="zero_fly_zone",
+                sensitivity=sensitivity,
+            )
+
         # P0.8: Per-task-class chain override — reorder tiers for task-specific optimization
         used_chain_id = (
             chain_id
@@ -890,6 +1302,12 @@ class FlameEngine:
             model = tier["model"]
             key = self._provider_key(provider, model)
             tried.append(key)
+
+            # L5 Self-healing: skip auto-demoted models
+            hr = self.hitrates.get(key)
+            if hr is not None and not hr.active:
+                logger.debug(f"FLAME ⏭ {key} → auto-demoted (inactive)")
+                continue
 
             # P0.8: OpenRouter free aggregator tier — special handling
             if provider == "openrouter":
@@ -1123,6 +1541,172 @@ class FlameEngine:
             sensitivity=sensitivity,
             **prov,
         )
+
+    # ── Agentic Observe — Bounded Reflex Loop (Priority 0, 2026-07-25) ──
+
+    def agentic_observe(
+        self,
+        prompt: str,
+        json_schema: dict[str, Any],
+        max_hops: int = 3,
+        timeout_sec: float = 8.0,
+        task_class: str = "classification",
+    ) -> dict[str, Any]:
+        """
+        Bounded reflex agentic loop for OBSERVE-class inference.
+        ─────────────────────────────────────────────────────
+        FLAME is a subcortical reflex arc, NOT a cerebrum.
+
+        Four inviolable rules enforced here:
+          1. Bounded Reflex Hops — N_max ≤ 3. If FLAME needs >3 hops,
+             return AMBIGUOUS → governed cascade.
+          2. Speculative Execution — FLAME drafts, governed model audits.
+          3. Schema-Forced Determinism — output MUST validate against
+             json_schema. Any violation → circuit break.
+          4. Zero-State Ephemeral — every hop is self-contained.
+             State/history managed by orchestrator, not FLAME.
+
+        Args:
+            prompt: Initial task prompt. Must describe what to observe/classify/extract.
+            json_schema: JSON Schema the output MUST validate against (Rule 3).
+            max_hops: Maximum reflex iterations. Hard cap at 3 (Rule 1).
+            timeout_sec: Per-hop timeout in seconds. Default 8s.
+            task_class: FLAME task class override (classification/summarization/extraction).
+
+        Returns:
+            dict with keys:
+              status: COMPLETE | AMBIGUOUS | NEEDS_FALLBACK
+              content: parsed output (validated against schema)
+              hops_used: actual hops taken
+              model: final model used
+              fingerprint: provenance hash
+              authority: always "ADVISORY"
+
+        Circuit breakers:
+            - JSON schema violation → AMBIGUOUS immediately (no retry)
+            - Timeout → AMBIGUOUS on that hop
+            - N > max_hops → NEEDS_FALLBACK (raw context preserved)
+            - Safety refusal → AMBIGUOUS (never model-shop past safety gates)
+
+        DITEMPA BUKAN DIBERI — Forged, Not Given.
+        """
+        import json as _json
+
+        if max_hops > 3:
+            max_hops = 3  # Hard cap, non-negotiable
+
+        current_prompt = prompt
+        accumulated_context: list[str] = []
+
+        for hop in range(max_hops):
+            # ── Build schema-enforced system prompt ──
+            schema_str = _json.dumps(json_schema)
+            system_msg = (
+                f"Respond ONLY in valid JSON matching this schema: {schema_str}. "
+                "Do NOT provide reasoning steps. Output immediate JSON. "
+                "If status field exists, set to COMPLETE when finished, "
+                "NEEDS_MORE_DATA when more context is required."
+            )
+
+            # ── Cerebras fix: suppress reasoning_content for fast tool loops ──
+            full_prompt = current_prompt
+            if accumulated_context:
+                full_prompt += "\n\n--- Previous Observations ---\n"
+                full_prompt += "\n".join(accumulated_context[-3:])  # Last 3 only
+
+            try:
+                result = self.call(
+                    prompt=full_prompt,
+                    system=system_msg,
+                    max_tokens=1024,
+                    temperature=0.1,
+                    task_class=task_class,
+                    caller_id="flame-agentic-observe",
+                )
+
+                if not result.ok:
+                    return {
+                        "status": "AMBIGUOUS",
+                        "reason": f"FLAME inference failed at hop {hop}: {result.error}",
+                        "hops_used": hop + 1,
+                        "authority": "ADVISORY",
+                    }
+
+                # ── Rule 3: Schema-Forced Determinism ──
+                try:
+                    output = _json.loads(result.content)
+                except (_json.JSONDecodeError, TypeError):
+                    # Circuit break immediately — no retry for bad JSON
+                    return {
+                        "status": "AMBIGUOUS",
+                        "reason": f"Schema validation failed at hop {hop} — "
+                        f"model returned non-JSON. "
+                        f"Raw: {result.content[:200]}",
+                        "hops_used": hop + 1,
+                        "raw_content": result.content[:500],
+                        "authority": "ADVISORY",
+                    }
+
+                # ── Check AgenticLoopState ──
+                loop_status = output.get("status", "UNKNOWN")
+
+                if loop_status == "COMPLETE":
+                    return {
+                        "status": "COMPLETE",
+                        "content": output,
+                        "model": result.model,
+                        "provider": result.provider,
+                        "hops_used": hop + 1,
+                        "fingerprint": result.fingerprint,
+                        "latency_ms": result.latency_ms,
+                        "authority": "ADVISORY",
+                    }
+
+                elif loop_status == "NEEDS_MORE_DATA" and hop < (max_hops - 1):
+                    # Feed observation back for next hop
+                    next_query = output.get("next_query", output.get("observation", ""))
+                    accumulated_context.append(
+                        f"Hop {hop}: {output.get('finding', next_query)}"
+                    )
+                    current_prompt = (
+                        f"{prompt}\n\n"
+                        f"Previous observations:\n"
+                        f"{chr(10).join(accumulated_context)}\n\n"
+                        f"Continue analysis. Fill gaps: {next_query}"
+                    )
+
+                else:
+                    # AMBIGUOUS or max hops reached — fallback to governed
+                    return {
+                        "status": "NEEDS_FALLBACK",
+                        "reason": (
+                            f"Max hops ({max_hops}) reached with status={loop_status}. "
+                            "Passing raw context to governed cascade."
+                        ),
+                        "content": output,
+                        "raw_context": accumulated_context,
+                        "model": result.model,
+                        "hops_used": hop + 1,
+                        "authority": "ADVISORY",
+                    }
+
+            except Exception as e:
+                # Circuit break on any exception
+                return {
+                    "status": "AMBIGUOUS",
+                    "reason": f"Exception at hop {hop}: {str(e)[:200]}",
+                    "hops_used": hop + 1,
+                    "authority": "ADVISORY",
+                }
+
+        # Should never reach here due to max_hops check above
+        return {
+            "status": "NEEDS_FALLBACK",
+            "reason": "Exhausted all hops",
+            "raw_context": accumulated_context,
+            "hops_used": max_hops,
+            "authority": "ADVISORY",
+        }
 
     # ── Probe ──────────────────────────────────────────────────────────────
 
@@ -1375,16 +1959,19 @@ def main():
     parser.add_argument(
         "--task-class",
         choices=[
+            "classify",
+            "summarize",
+            "extract",
+            "bm_native",
             "coding",
+            "observe",
+            "draft_plan",
             "epistemic",
-            "bm_malay",
-            "classification",
-            "summarization",
             "gap_fill",
             "destructive",
         ],
         default="",
-        help="Task class for chain override (P0.8). Destructive: NEVER FLAME.",
+        help="Task class for L3 chain override (P0.8). Destructive: NEVER FLAME.",
     )
     parser.add_argument(
         "--caller",

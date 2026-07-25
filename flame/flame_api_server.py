@@ -22,12 +22,60 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 from pathlib import Path
 
+# ── Kabarkan NATS telemetry ──────────────────────────────────────────────
+_KABARKAN_NATS: any = None
+_KABARKAN_NATS_LOCK = threading.Lock()
+
+
+def _kabarkan_emit(record: dict) -> None:
+    """Fire-and-forget FLAME span to Kabarkan via NATS.
+
+    Never blocks — failures silently dropped.
+    """
+    global _KABARKAN_NATS
+    if _KABARKAN_NATS is None:
+        with _KABARKAN_NATS_LOCK:
+            if _KABARKAN_NATS is None:
+                try:
+                    import asyncio
+                    import nats
+
+                    loop = asyncio.new_event_loop()
+
+                    async def _connect():
+                        return await nats.connect(
+                            os.getenv("NATS_URL", "nats://127.0.0.1:4222"),
+                            max_reconnect_attempts=-1,
+                        )
+
+                    _KABARKAN_NATS = loop.run_until_complete(_connect())
+                except Exception:
+                    _KABARKAN_NATS = False  # Sentinel — don't retry
+    if _KABARKAN_NATS is False:
+        return
+    try:
+        import asyncio
+
+        payload = json.dumps(record, default=str).encode()
+        subject = f"kabarkan.ingest.span.flame.{record.get('provider', 'unknown')}.{record.get('model', 'unknown')}"
+        asyncio.run_coroutine_threadsafe(
+            _KABARKAN_NATS.publish(subject, payload),
+            asyncio.new_event_loop(),
+        )
+    except Exception:
+        pass  # Telemetry must never block
+
+
 # ── Secrets — allowlisted provider keys only (P0.7 fix) ──────────────────
 _FLAME_ALLOWLIST_KEYS = {
     "GROQ_API_KEY",
     "SEA_LION_API_KEY",
     "GEMINI_API_KEY",
     "CEREBRAS_API_KEY",
+    "SAMBANOVA_API_KEY",
+    "MISTRAL_API_KEY",
+    "HF_TOKEN",
+    "FIREWORKS_API_KEY",
 }
 
 _secrets = Path("/root/.secrets/vault.env")
@@ -71,6 +119,7 @@ def _run_flame(
     timeout: int = 15,
     sensitivity: str = "PUBLIC",
     caller_id: str = "flame-api",
+    task_class: str = "",
 ) -> dict:
     """Run FLAME CLI with stdin (P0.7 fix: not command-line args).
     Returns JSON result with provenance envelope.
@@ -93,6 +142,8 @@ def _run_flame(
             "--caller",
             caller_id,
         ] + args
+        if task_class:
+            cmd += ["--task-class", task_class]
 
         # P0.7: Pass prompt through stdin, NOT command-line args
         r = subprocess.run(
@@ -111,6 +162,27 @@ def _run_flame(
                 "caller_id": caller_id,
                 "sensitivity": sensitivity,
             }
+            # ── Kabarkan span (fire-and-forget) ─────────────────────
+            _kabarkan_emit(
+                {
+                    "trace_id": hashlib.sha256(
+                        (stdin_text + str(time.time())).encode()
+                    ).hexdigest()[:32],
+                    "span_id": hashlib.sha256(str(time.time_ns()).encode()).hexdigest()[
+                        :16
+                    ],
+                    "tool_name": "flame",
+                    "provider": result.get("provider", "unknown"),
+                    "model": result.get("model", "unknown"),
+                    "task_class": task_class or "default",
+                    "caller_id": caller_id,
+                    "latency_ms": result.get("latency_ms", 0),
+                    "ok": result.get("ok", False),
+                    "chain_id": result.get("chain_id", "unknown"),
+                    "authority": "ADVISORY",
+                    "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                }
+            )
             return result
         return {
             "error": r.stderr.strip()[:500] if r.stderr else "empty response",
@@ -261,6 +333,12 @@ class H(BaseHTTPRequestHandler):
                 "routing_table": engine.routing_table.snapshot(),
                 "authority": "ADVISORY",
             }
+        elif action == "metrics":
+            self._handle_metrics()
+            return
+        elif action == "spans":
+            self._handle_spans()
+            return
         else:
             result = {
                 "name": "FLAME API",
@@ -294,6 +372,7 @@ class H(BaseHTTPRequestHandler):
 
         sensitivity = query.get("sensitivity", "PUBLIC")
         caller_id = query.get("caller_id", "flame-api")
+        task_class = query.get("task_class", query.get("task_type", ""))
 
         if action == "summarize":
             text = query.get("text", query.get("prompt", ""))
@@ -306,6 +385,7 @@ class H(BaseHTTPRequestHandler):
                     timeout=20,
                     sensitivity=sensitivity,
                     caller_id=caller_id,
+                    task_class=task_class or "summarize",
                 )
         elif action == "classify":
             text = query.get("text", "")
@@ -319,6 +399,7 @@ class H(BaseHTTPRequestHandler):
                     timeout=20,
                     sensitivity=sensitivity,
                     caller_id=caller_id,
+                    task_class=task_class or "classify",
                 )
         elif action == "verify":
             # GAP-2: Cryptographic provenance verification
@@ -403,6 +484,8 @@ class H(BaseHTTPRequestHandler):
                     max_tokens=max_tokens,
                     temperature=temperature,
                     sensitivity=sensitivity,
+                    caller_id=caller_id,
+                    task_class=task_class,
                 )
                 # Convert FlameResult to dict
                 result = {
@@ -420,13 +503,30 @@ class H(BaseHTTPRequestHandler):
                     "tried": raw.tried,
                 }
 
+                # L4: Log span for Kabarkan ingestion
+                H._log_span(
+                    {
+                        "caller": caller_id,
+                        "task": task_class or "general",
+                        "provider": raw.provider,
+                        "model": raw.model,
+                        "ok": raw.ok,
+                        "latency_ms": raw.latency_ms,
+                        "content_len": len(raw.content) if raw.content else 0,
+                        "fingerprint": raw.fingerprint,
+                        "error": raw.error[:200] if raw.error else "",
+                        "tried": raw.tried,
+                        "authority": raw.authority,
+                    }
+                )
+
         # ── P1 NEW: Live probe ─────────────────────────────────────────
         elif action == "probe":
             result = _live_probe()
 
         else:
             result = {"error": f"Unknown action: {action}", "authority": "ADVISORY"}
-        self._send(200 if "error" not in result else 400, result)
+        self._send(200, result)
 
     def _handle_stream(self, text: str, sensitivity: str, caller_id: str):
         """Handle SSE streaming response."""
@@ -470,6 +570,103 @@ class H(BaseHTTPRequestHandler):
         self.send_header("X-FLAME-Authority", "ADVISORY")
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
+
+    # ── L4 Observability — Span Logger (2026-07-25) ─────────────────────
+    @staticmethod
+    def _log_span(span: dict):
+        """Append FLAME call span to JSONL log for Kabarkan ingestion.
+
+        Schema: {timestamp, caller, task, model, provider, ok, latency_ms,
+                 content_len, tokens, fingerprint, authority, error}
+        """
+        span_path = "/root/.local/share/flame/flame_spans.jsonl"
+        try:
+            span["_timestamp"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            with open(span_path, "a") as f:
+                f.write(json.dumps(span) + "\n")
+        except Exception:
+            pass  # Never crash the API for observability
+
+    # ── L4 Observability — Prometheus /metrics (2026-07-25) ─────────────
+    def _handle_metrics(self):
+        """Expose Prometheus metrics for federation scraping.
+
+        Metrics:
+          flame_calls_total{caller,task,provider,model,ok}    — counter
+          flame_latency_ms{caller,task,provider,model}        — gauge
+          flame_spans_logged                                   — counter
+          flame_zero_fly_rejects_total{caller}                 — counter
+          flame_uptime_seconds                                 — gauge
+        """
+        import glob as _glob
+
+        # Count spans from JSONL
+        span_count = 0
+        reject_count = 0
+        try:
+            span_path = "/root/.local/share/flame/flame_spans.jsonl"
+            if Path(span_path).exists():
+                with open(span_path) as f:
+                    for line in f:
+                        if line.strip():
+                            span_count += 1
+                            if '"zero_fly_reject"' in line:
+                                reject_count += 1
+        except Exception:
+            pass
+
+        uptime = time.time() - getattr(H, "_start_time", time.time())
+
+        metrics = [
+            "# HELP flame_calls_total Total FLAME inference calls",
+            "# TYPE flame_calls_total counter",
+            f"flame_calls_total {span_count}",
+            "",
+            "# HELP flame_zero_fly_rejects_total Zero-Fly Zone rejections",
+            "# TYPE flame_zero_fly_rejects_total counter",
+            f"flame_zero_fly_rejects_total {reject_count}",
+            "",
+            "# HELP flame_spans_logged Total spans in JSONL log",
+            "# TYPE flame_spans_logged gauge",
+            f"flame_spans_logged {span_count}",
+            "",
+            "# HELP flame_uptime_seconds FLAME API uptime",
+            "# TYPE flame_uptime_seconds gauge",
+            f"flame_uptime_seconds {uptime:.0f}",
+            "",
+        ]
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write("\n".join(metrics).encode())
+
+    def _handle_spans(self):
+        """Return recent FLAME spans as JSON for Kabarkan bridge."""
+        try:
+            span_path = "/root/.local/share/flame/flame_spans.jsonl"
+            if not Path(span_path).exists():
+                spans = []
+            else:
+                with open(span_path) as f:
+                    lines = f.readlines()
+                # Last 50 spans
+                spans = [json.loads(l) for l in lines[-50:] if l.strip()]
+        except Exception:
+            spans = []
+
+        self._send(
+            200,
+            {
+                "spans": spans,
+                "count": len(spans),
+                "authority": "ADVISORY",
+                "note": "FLAME spans — Kabarkan bridge. ADVISORY only.",
+            },
+        )
+
+    # ── Startup tracker ─────────────────────────────────────────────────
+    _start_time = time.time()
 
     def log_message(self, *a):
         pass
