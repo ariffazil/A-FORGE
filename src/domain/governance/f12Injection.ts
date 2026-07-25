@@ -65,6 +65,12 @@ const CODE_ACCEPTING_TOOLS = new Set([
   "forge_registry",
   "forge_shell_dryrun",
   "forge_vault",
+  // Governance bridge tools: forge_session_init and forge_kernel proxy
+  // session tokens and kernel arguments through arifOS — they have their
+  // own governance layers (SCT gate, kernel auth, lease enforcement).
+  // F12 SHELL_METACHARS is a false positive on their structured payloads.
+  "forge_session_init",
+  "forge_kernel",
   // Filesystem content legitimately contains backticks, braces, and
   // structured text (markdown, JSON, code). forge_filesystem has its
   // own path scoping via checkPathAllowed — F12 SHELL_METACHARS is
