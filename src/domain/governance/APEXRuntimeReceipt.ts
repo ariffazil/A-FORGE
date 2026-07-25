@@ -13,6 +13,14 @@
  * C_dark = A · (1-P) · (1-X)  (misalignment signature)
  * W³ = (H · AI · E) ^ (1/3)  (geometric mean, informational only)
  *
+ * ═══════════════════════════════════════════════════════════════
+ * Ω→Δ ARCHITECTURAL NOTE (2026-07-25):
+ * G/C_dark computation in this file should ultimately delegate to
+ * arifOS kernel via GovernanceBridge (Python Δ-plane). The local
+ * computation exists for offline/cold-path use. Canonical G-fold
+ * lives at arif_think(mode='apex'). See AAA_ZEN_AND_FORGE.md §3.
+ * ═══════════════════════════════════════════════════════════════
+ *
  * Layer reconciliation (2026-07-05): this 4-term A·P·E·X is the
  * kernel execution gate (per-action receipt). The `reality-loop`
  * prompt uses a separate 4-term Q·V·Ψ·Φ as per-iteration decision
@@ -96,8 +104,9 @@ export type APEXReceiptInput = {
 };
 
 /**
- * Build a canonical APEXRuntimeReceipt from component scores.
- * G and C_dark are computed, not provided — they cannot be gamed.
+ * Build an APEXRuntimeReceipt from component scores.
+ * G/C_dark here are **local actuator estimates** (g_authority=local_estimate).
+ * Constitutional G: arif_think(mode='apex') only — see gAuthority.ts.
  */
 export function buildAPEXReceipt(input: APEXReceiptInput): APEXReceipt {
   const { A, P, E, X } = input.scores;
@@ -106,6 +115,7 @@ export function buildAPEXReceipt(input: APEXReceiptInput): APEXReceipt {
   const clamp = (v: number) => Math.max(0, Math.min(1, v));
   const a = clamp(A), p = clamp(P), e = clamp(E), x = clamp(X);
 
+  // Local 4-term product — NOT kernel G-fold (missing Φ; actuator gate only)
   const G = Math.round(a * p * e * x * 1000) / 1000;
   const C_dark = Math.round(a * (1 - p) * (1 - x) * 1000) / 1000;
 

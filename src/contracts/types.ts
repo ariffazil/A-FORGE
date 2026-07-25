@@ -103,10 +103,13 @@ export interface GateDecision {
   /** Fingerprint: sha256[:16] of (domain + intent + normalized implementation) */
   fingerprint: string;
 
-  /** G = A · P · E · X · Φ — the action potential */
+  /** G = A · P · E · X · Φ — local actuator product (NOT kernel G-fold) */
   G: number;
-  /** C_dark = A · (1-P) · (1-X) — the misalignment vector */
+  /** C_dark = A · (1-P) · (1-X) — local misalignment vector */
   C_dark: number;
+  /** Authority stamp — constitutional G is arif_think.mode=apex only */
+  g_authority?: "local_estimate" | "arif_think.mode=apex";
+  g_canonical_source?: "arif_think.mode=apex";
 
   /** Per-component scores */
   scores: EstimatorScores;

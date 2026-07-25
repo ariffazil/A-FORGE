@@ -53,6 +53,15 @@ export { SealService, type SealContext, type SealVerdict, type SealStatus, type 
 // APEX Dials — Eigendecomposition from 13 Floors (K777_APEX §10.4)
 export { floorsToDials, calculateGeniusFromFloors, formatApexDisplay, type ApexDials, type ApexGeniusResult, type FloorScores13 } from "./apexDials.js";
 
+// G-fold authority labels (H2 2026-07-25) — constitutional G is never local
+export {
+  CANONICAL_G_SOURCE,
+  CANONICAL_G_MODULE,
+  CANONICAL_G_EQUATION,
+  localGStamp,
+  type GAuthority,
+} from "./gAuthority.js";
+
 // Governance Client abstraction
 export {
   LocalGovernanceClient,
