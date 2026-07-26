@@ -118,6 +118,8 @@ class McpTelemetry {
     }
     const line = JSON.stringify(safeEvent) + "\n";
     await appendFile(this.auditPath, line, "utf-8");
+    // P1-6: Forward to arifFLOW telemetry (fire-and-forget, silent on failure)
+    this._forwardToArifFlow(safeEvent).catch(() => {});
     this.writeJournald({
       level: event.action === "failure" ? "error" : "info",
       component: "mcp",
@@ -133,6 +135,43 @@ class McpTelemetry {
       verdict: event.verdict,
       metadata: safeEvent.metadata,
     });
+  }
+
+  /**
+   * P1-6: Forward telemetry event to arifFLOW :7073/telemetry/log.
+   * Fire-and-forget — failure is silent, local sinks are primary.
+   * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+   */
+  private async _forwardToArifFlow(event: AuditEvent): Promise<void> {
+    try {
+      await fetch("http://127.0.0.1:7073/telemetry/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          band: event.verdict === "HOLD" || event.verdict === "VOID" ? "GOVERNANCE" : "OPERATIONAL",
+          organ: "A-FORGE",
+          agent_id: event.session_id ? `aforge:${event.session_id.slice(0, 8)}` : undefined,
+          session_id: event.session_id,
+          tool_name: event.tool,
+          latency_ms: event.metadata?.durationMs as number | undefined,
+          success: event.action !== "failure",
+          error_message: event.outcome,
+          metadata: {
+            action: event.action,
+            pipeline_stage: event.pipeline_stage,
+            dS: event.dS,
+            peace2: event.peace2,
+            omega: event.omega,
+            w3: event.w3,
+            verdict: event.verdict,
+            agent_geometry: event.agent_geometry,
+          },
+        }),
+        signal: AbortSignal.timeout(3000),
+      });
+    } catch {
+      // arifFLOW unreachable — local JSONL + journald are primary sinks
+    }
   }
 
   getSummary(): TelemetrySummary {
