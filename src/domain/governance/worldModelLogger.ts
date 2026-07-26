@@ -132,6 +132,9 @@ export async function logTrajectory(input: WmMetadataInput): Promise<TrajectoryL
   // Update chain head
   trajectoryPrevHash = hash;
 
+  // P1-5n: Forward WM trajectory to arifFLOW — fire-and-forget
+  _forwardTrajectoryToArifFlow(entry).catch(() => {});
+
   return entry;
 }
 
@@ -188,6 +191,9 @@ export async function logPrediction(
   await appendFile(WM_PREDICTION_LOG_PATH, line, "utf-8");
 
   predictionPrevHash = hash;
+
+  // P1-5o: Forward WM prediction to arifFLOW — fire-and-forget
+  _forwardPredictionToArifFlow(entry).catch(() => {});
 
   return entry;
 }
@@ -272,3 +278,61 @@ export async function getWmStats(): Promise<WmStats> {
 initWorldModelLogger().catch((err) => {
   console.error("[worldModelLogger] Init failed:", err.message);
 });
+
+// ── P1-5n/o: Forward to arifFLOW ────────────────────────────────────────────
+
+/**
+ * P1-5n: Forward WM trajectory to arifFLOW :7073/telemetry/log.
+ */
+async function _forwardTrajectoryToArifFlow(entry: TrajectoryLogEntry): Promise<void> {
+  try {
+    await fetch("http://127.0.0.1:7073/telemetry/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        band: "OPERATIONAL",
+        organ: "A-FORGE",
+        tool_name: `wm:${entry.tool}`,
+        success: (entry.exit_code ?? 0) === 0,
+        metadata: {
+          action_hash: entry.action_hash,
+          observation_hash: entry.observation_hash,
+          wm_priority: entry.wm_priority,
+          surprise_score: entry.surprise_score,
+          prediction_gap: entry.prediction_gap,
+          agent_confidence: entry.agent_confidence,
+          seq: entry.seq,
+        },
+      }),
+      signal: AbortSignal.timeout(2000),
+    });
+  } catch { /* silent */ }
+}
+
+/**
+ * P1-5o: Forward WM prediction to arifFLOW :7073/telemetry/log.
+ */
+async function _forwardPredictionToArifFlow(
+  entry: PredictionRecord & { seq: number; hash: string },
+): Promise<void> {
+  try {
+    await fetch("http://127.0.0.1:7073/telemetry/log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        band: "OPERATIONAL",
+        organ: "A-FORGE",
+        tool_name: `wm-predict:${entry.tool}`,
+        success: true,
+        metadata: {
+          gap_score: entry.gap_score,
+          predicted_hash: entry.predicted_hash,
+          actual_hash: entry.actual_hash,
+          action_hash: entry.action_hash,
+          seq: entry.seq,
+        },
+      }),
+      signal: AbortSignal.timeout(2000),
+    });
+  } catch { /* silent */ }
+}
