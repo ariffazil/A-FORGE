@@ -1,3 +1,6 @@
+<!-- CANONICAL: /root/AGENTS.md -->
+<!-- Status: DERIVED — organ-specific extension. Authoritative doctrine: /root/AGENTS.md -->
+
 # AGENTS.md — A-FORGE | arifOS Federation
 
 > **A-FORGE is the hands. The hands never adjudicate.**
