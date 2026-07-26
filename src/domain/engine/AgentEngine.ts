@@ -299,6 +299,8 @@ export class AgentEngine {
     // Reads the live model_governance_card from the arifOS-model-registry spine.
     // This is the SECONDARY gate: thin, fast, non-deliberative.
     // Constitutional enforcement (primary) happens in arifOS MCP / 888_JUDGE.
+    // P3-03: CI/FORGE_TEST_MODE bypass — no model registry in CI runners.
+    if (!process.env.CI && !process.env.FORGE_TEST_MODE) {
     try {
       const { checkModelCapability } = await import("../governance/ModelCapabilityGate.js");
       const capabilityResult = checkModelCapability(options.task, {
@@ -325,6 +327,7 @@ export class AgentEngine {
         `[MODEL GATE] Gate check failed (non-fatal): ${gateErr instanceof Error ? gateErr.message : String(gateErr)}\n`
       );
     }
+    } // CI/FORGE_TEST_MODE bypass
 
     // === Plan Governance Card Gate (Spine-Gated Plan Validation) ===
     // Validates the plan DAG against the model's governance card from the
