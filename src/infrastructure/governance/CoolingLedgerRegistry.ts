@@ -62,5 +62,49 @@ export function recordCoolingLedgerEvent(params: CoolingLedgerRecordParams): str
     "",
   ];
   appendFileSync(ledgerPath, `${lines.join("\n")}\n`, "utf-8");
+
+  // P1-5d: Forward cooling ledger event to arifFLOW — fire-and-forget
+  setImmediate(() => {
+    _forwardCoolingToArifFlow(params, day, ordinal).catch(() => {});
+  });
+
   return ledgerPath;
+}
+
+/**
+ * P1-5d: Forward cooling ledger event to arifFLOW :7073/receipt/emit.
+ * Fire-and-forget — failure is silent, local markdown ledger is canonical.
+ * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ */
+async function _forwardCoolingToArifFlow(
+  params: CoolingLedgerRecordParams,
+  day: string,
+  ordinal: number,
+): Promise<void> {
+  try {
+    await fetch("http://127.0.0.1:7073/receipt/emit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        organ: "A-FORGE",
+        producer: "CoolingLedgerRegistry",
+        action: "cooling_ledger",
+        scope: `well-runtime:${day}`,
+        risk: "INTERNAL",
+        epistemic_label: "OBS",
+        session_id: params.sessionId,
+        verdict: params.verdict,
+        metadata: {
+          cooldown_entry_id: params.cooldownEntryId,
+          risk_level: params.riskLevel,
+          ordinal,
+          task: params.task.slice(0, 500),
+          source: params.source,
+        },
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch {
+    // arifFLOW unreachable — local markdown ledger is canonical
+  }
 }

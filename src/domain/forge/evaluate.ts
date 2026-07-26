@@ -54,6 +54,7 @@ import type {
   GovernedDomain,
   ScarRecord,
 } from "../../contracts/types.js";
+import { GovernanceBridge } from "../governance/GovernanceBridge.js";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // §1 — ESTIMATOR FUNCTIONS (Phase 1: heuristic. Phase 2: empirical.)
@@ -326,6 +327,53 @@ function computeGate(scores: Omit<EstimatorScores, "rationale" | "Omega">): {
 } {
   const G = scores.A * scores.P * scores.E * scores.X * scores.Phi;
   const C_dark = scores.A * (1 - scores.P) * (1 - scores.X);
+  return {
+    G,
+    C_dark,
+    g_authority: "local_estimate",
+    g_canonical_source: "arif_think.mode=apex",
+  };
+}
+
+/**
+ * computeGateWithKernelG — G-fold gate with canonical kernel G override.
+ *
+ * 4-layer forge gate integration:
+ *   Layer 1 — Local estimate (A·P·E·X·Φ product)
+ *   Layer 2 — Canonical kernel G via GovernanceBridge.fetchCanonicalG()
+ *   Layer 3 — Fallback to local estimate on kernel unreachable
+ *   Layer 4 — Authority stamp reflects which layer fired
+ *
+ * When the canonical G from the arifOS APEX kernel is available, it
+ * replaces the local A·P·E·X·Φ product entirely. C_dark remains local
+ * as it is a local misalignment signal, not a kernel scalar.
+ */
+async function computeGateWithKernelG(
+  scores: Omit<EstimatorScores, "rationale" | "Omega">,
+  bridge: GovernanceBridge,
+): Promise<{
+  G: number;
+  C_dark: number;
+  g_authority: "arif_think.mode=apex" | "local_estimate";
+  g_canonical_source: "arif_think.mode=apex";
+}> {
+  const C_dark = scores.A * (1 - scores.P) * (1 - scores.X);
+
+  // Layer 2: Try canonical kernel G
+  const canonical = await bridge.fetchCanonicalG();
+
+  if (canonical !== null) {
+    // Layer 2 hit: kernel G replaces local product
+    return {
+      G: canonical.G,
+      C_dark,
+      g_authority: "arif_think.mode=apex",
+      g_canonical_source: "arif_think.mode=apex",
+    };
+  }
+
+  // Layer 3 fallback: local estimate
+  const G = scores.A * scores.P * scores.E * scores.X * scores.Phi;
   return {
     G,
     C_dark,

@@ -564,6 +564,11 @@ export async function runFaultFixCycle(
     .update(`${fault.fault_id}:${fix.strategy}:${result.verdict}:${result.receipt_hash}`)
     .digest("hex");
 
+  // P1-5c: Forward fault-fix cycle to arifFLOW — fire-and-forget
+  setImmediate(() => {
+    _forwardFaultFixToArifFlow(fault, fix, result, cycleHash, context).catch(() => {});
+  });
+
   return {
     fault,
     fix,
@@ -610,5 +615,47 @@ export function faultBlastRadius(fault: FaultReport): BlastRadius {
     case "judge_deny": return "FEDERATION";
     case "godel_lock": return "IRREVERSIBLE";
     case "unknown": return "ORGAN";
+  }
+}
+
+/**
+ * P1-5c: Forward fault-fix cycle to arifFLOW :7073/receipt/emit.
+ * Fire-and-forget — failure is silent, local cycle is canonical.
+ * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ */
+async function _forwardFaultFixToArifFlow(
+  fault: FaultReport,
+  fix: FixAction,
+  result: FixResult,
+  cycleHash: string,
+  context: { attempted_tool: string; intent: string; gap_score?: number; confidence?: number },
+): Promise<void> {
+  try {
+    await fetch("http://127.0.0.1:7073/receipt/emit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        organ: "A-FORGE",
+        producer: "faultFixFlow",
+        action: `fault_fix:${fault.source}`,
+        scope: `tool:${context.attempted_tool}`,
+        risk: fix.needs_hold ? "CONSEQUENTIAL" : "INTERNAL",
+        epistemic_label: "OBS",
+        confidence: context.confidence ?? 0.80,
+        verdict: result.verdict === "FIXED" ? "SEAL" : "HOLD",
+        metadata: {
+          fault_id: fault.fault_id,
+          fault_source: fault.source,
+          fix_strategy: fix.strategy,
+          fix_verdict: result.verdict,
+          cycle_hash: cycleHash,
+          receipt_hash: result.receipt_hash,
+          gap_score: context.gap_score,
+        },
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch {
+    // arifFLOW unreachable — local fault-fix cycle is canonical
   }
 }

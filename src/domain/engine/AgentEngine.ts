@@ -1056,7 +1056,55 @@ export class AgentEngine {
       // Non-fatal — ledger failure must not break agent execution
     }
 
+    // ── P1-5f: Forward execution receipt to arifFLOW — fire-and-forget ────────
+    // arifFlow is the canonical receipt gravity well.
+    // Local RealityLedger + sealTerminal remain primary sinks.
+    this._forwardToArifFlow(result, options, metrics, floorsTriggered).catch(() => {});
+
     return result;
+  }
+
+  /**
+   * P1-5f: Forward AgentEngine execution receipt to arifFLOW :7073/receipt/emit.
+   * Fire-and-forget — failure is silent, local ledger + seal are primary.
+   * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+   */
+  private async _forwardToArifFlow(
+    result: AgentRunResult,
+    options: EngineRunOptions,
+    metrics: AgentRunResult["metrics"],
+    floorsTriggered: string[],
+  ): Promise<void> {
+    try {
+      await fetch("http://127.0.0.1:7073/receipt/emit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organ: "A-FORGE",
+          producer: "AgentEngine",
+          action: this.profile.name,
+          scope: `session:${result.sessionId.slice(0, 12)}`,
+          risk: metrics.blockedDangerousActions > 0 ? "CONSEQUENTIAL" : "OPERATIONAL",
+          epistemic_label: "OBS",
+          confidence: 0.90,
+          actor_id: this.profile.name,
+          verdict: metrics.completion ? "SEAL" : "HOLD",
+          metadata: {
+            turn_count: result.turnCount,
+            total_tokens: result.totalEstimatedTokens,
+            profile: this.profile.name,
+            mode: this.profile.modeName,
+            floors_triggered: floorsTriggered,
+            blocked_dangerous: metrics.blockedDangerousActions,
+            cost_estimate: metrics.llmCost,
+            completion: metrics.completion,
+          },
+        }),
+        signal: AbortSignal.timeout(3000),
+      });
+    } catch {
+      // arifFLOW unreachable — local ledger + seal are primary
+    }
   }
 
   private async injectSacredMemories(): Promise<AgentMessage[]> {

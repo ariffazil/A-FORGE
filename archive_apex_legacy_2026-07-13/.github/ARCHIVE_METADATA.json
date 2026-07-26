@@ -1,0 +1,15 @@
+{
+  "archived": "2026-07-13",
+  "reason": "APEX Formula V1/V3/V4 deprecated. V2 canonical. Migration to arifOS/GENESIS/040_APEX_STACK.md and genius.py V2.",
+  "superseded_by": "arifOS/GENESIS/040_APEX_STACK.md",
+  "retention_policy": "KEEP_UNTIL_MIGRATION_VERIFIED",
+  "eureka_distilled": [
+    "Complete 7-axiom intelligence verification framework",
+    "Gate Layer: G_seal = G_raw × (1−h) × |ΔS|^β × W³",
+    "Shadow Term C_dark = A·(1−P)·(1−X)",
+    "Tri-Witness W³ = ∛(H × AI × Ext)"
+  ],
+  "last_accessed": "2026-07-26",
+  "read_only": true,
+  "deprecation_ledger": "V1, V3, V4 VOID after 7 days from 2026-07-13"
+}

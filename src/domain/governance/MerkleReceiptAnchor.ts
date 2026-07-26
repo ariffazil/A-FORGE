@@ -130,9 +130,46 @@ export async function checkAndAnchorReceipts(): Promise<MerkleBlockRoot | null> 
       process.stderr.write(`[MerkleAnchor] Git tagging failed: ${gitErr.message}\n`);
     }
 
+    // P1-5b: Forward Merkle anchor to arifFLOW — fire-and-forget
+    _forwardMerkleToArifFlow(blockRecord).catch(() => {});
+
     return blockRecord;
   } catch (err: any) {
     process.stderr.write(`[MerkleAnchor] Failed to execute receipts anchoring: ${err.message}\n`);
     return null;
+  }
+}
+
+/**
+ * P1-5b: Forward Merkle anchor to arifFLOW :7073/receipt/emit.
+ * Fire-and-forget — failure is silent, local roots.jsonl + Supabase + Git tag are primary.
+ * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ */
+async function _forwardMerkleToArifFlow(block: MerkleBlockRoot): Promise<void> {
+  try {
+    await fetch("http://127.0.0.1:7073/receipt/emit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        organ: "A-FORGE",
+        producer: "MerkleReceiptAnchor",
+        action: "merkle_anchor",
+        scope: `block:${block.block_index}`,
+        risk: "INTERNAL",
+        epistemic_label: "OBS",
+        confidence: 1.0,
+        verdict: "SEAL",
+        metadata: {
+          block_index: block.block_index,
+          start_seal_id: block.start_seal_id,
+          end_seal_id: block.end_seal_id,
+          merkle_root: block.merkle_root,
+          prev_root: block.prev_root,
+        },
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch {
+    // arifFLOW unreachable — local anchors + Supabase + Git tag are primary
   }
 }

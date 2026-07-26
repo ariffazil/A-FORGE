@@ -135,7 +135,7 @@ Narrow Grok-Build MCPs (services/grok-build-mcp) **must not** implement judgment
 ## Sources of Truth
 
 - arifOS: arifosmcp/constitutional_map.py, server.py, runtime/tools.py, resources/agent_geometry.py
-- A-FORGE: ARCHITECTURE.md (this mapping), src/interfaces/mcp/*, contracts/mcp_surface.yaml, GENESIS/012_AFORGE_MANDATE.md, APEX_THEORY_AND_FEDERATION.md
+- A-FORGE: ARCHITECTURE.md (this mapping), src/interfaces/mcp/*, contracts/mcp_surface.yaml, GENESIS/012_AFORGE_MANDATE.md, APEX_THEORY_AND_FEDERATION.md (⚠️ HISTORICAL — SUPERSEDED 2026-07-25)
 - Federation: root AGENTS.md, A-FORGE AGENTS.md, plan AF-2026-06-23-001
 
 **arifOS decides what is lawful.**  

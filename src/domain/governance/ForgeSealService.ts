@@ -131,6 +131,9 @@ export class ForgeSealService {
 
     const receipt = this._buildReceipt(skill, triWitness, sealedBy, humanApprovalToken, sealId);
 
+    // P1-5a: Forward seal receipt to arifFLOW — fire-and-forget
+    this._forwardToArifFlow(receipt).catch(() => {});
+
     return {
       status: "SEALED",
       receipt,
@@ -174,6 +177,42 @@ export class ForgeSealService {
       scar_reference: `SCAR-SKILL-${skill.tool_name}`,
       irreversible: true,
     };
+  }
+
+  /**
+   * P1-5a: Forward seal receipt to arifFLOW :7073/receipt/emit.
+   * Fire-and-forget — failure is silent, local receipt is canonical.
+   * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+   */
+  private async _forwardToArifFlow(receipt: SealReceipt): Promise<void> {
+    try {
+      await fetch("http://127.0.0.1:7073/receipt/emit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organ: "A-FORGE",
+          producer: "ForgeSealService",
+          action: "seal",
+          scope: `skill:${receipt.skill_name}`,
+          risk: "CONSEQUENTIAL",
+          epistemic_label: "OBS",
+          confidence: 0.95,
+          actor_id: receipt.sealed_by,
+          verdict: "SEAL",
+          metadata: {
+            seal_id: receipt.seal_id,
+            skill_name: receipt.skill_name,
+            skill_version: receipt.skill_version,
+            tri_witness_consensus: receipt.tri_witness_consensus,
+            generation_depth: receipt.generation_depth,
+            irreversible: receipt.irreversible,
+          },
+        }),
+        signal: AbortSignal.timeout(3000),
+      });
+    } catch {
+      // arifFLOW unreachable — local seal receipt is canonical
+    }
   }
 }
 

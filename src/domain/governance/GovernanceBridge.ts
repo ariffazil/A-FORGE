@@ -152,6 +152,40 @@ export class GovernanceBridge {
     return result;
   }
 
+  /**
+   * Fetch canonical G-fold from the arifOS APEX verification pipeline.
+   *
+   * Calls GET {baseUrl}/health and extracts apex_scalars.G.value.
+   * Timeout 2s. Returns null on failure (graceful degradation).
+   *
+   * Layer 2 of the 4-layer forge gate: the canonical kernel G replaces
+   * the local A·P·E·X·Φ product when available.
+   */
+  async fetchCanonicalG(): Promise<{ G: number; source: string } | null> {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2000);
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!response.ok) return null;
+      const body = (await response.json()) as Record<string, unknown>;
+
+      // Navigate: body.apex_scalars.G.value
+      const apexScalars = body.apex_scalars as Record<string, unknown> | undefined;
+      if (!apexScalars) return null;
+      const gField = apexScalars.G as Record<string, unknown> | undefined;
+      if (!gField || typeof gField.value !== "number") return null;
+
+      return { G: gField.value, source: `${this.baseUrl}/health` };
+    } catch {
+      return null;
+    }
+  }
+
   private async _httpClassify(script: string): Promise<RiskClassificationResult | null> {
     try {
       const controller = new AbortController();

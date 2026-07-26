@@ -2,6 +2,12 @@
  * AgentManager Singleton — exposes a single AgentManager instance
  * to both the Express server and the TUI data sources.
  *
+ * @deprecated P4 (2026-07-26): Queue ownership extracted to arifFLOW.
+ *   This singleton remains as a backward-compatibility shim.
+ *   New code: use arifFlow/src/ts/arifflow/jobqueue → getJobQueue().
+ *   Migration target: getAgentManager() → getJobQueue() (P4-5 wiring).
+ *   DO NOT DELETE until P6 verified — all callers must migrate first.
+ *
  * F1 AMANAH: Singleton access is read-only for status queries.
  * Job mutation (enqueue/complete/fail) still requires governance routing.
  *
