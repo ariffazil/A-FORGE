@@ -129,7 +129,7 @@ export function buildAPEXReceipt(input: APEXReceiptInput): APEXReceipt {
   else if (input.tri_witness_consensus === "HOLD") verdict = "HOLD";
   else verdict = "PASS";
 
-  return {
+  const receipt: APEXReceipt = {
     receipt_id: `APEX-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     action_id: input.action_id,
     actor_id: input.actor_id,
@@ -145,6 +145,13 @@ export function buildAPEXReceipt(input: APEXReceiptInput): APEXReceipt {
     human_approval: input.human_approval,
     scar_references: input.scar_references ?? [],
   };
+
+  // P1-5i: Forward APEX receipt to arifFLOW — fire-and-forget
+  setImmediate(() => {
+    _forwardAPEXToArifFlow(receipt).catch(() => {});
+  });
+
+  return receipt;
 }
 
 /**
@@ -163,4 +170,44 @@ export function estimateAPEXX(
     E: Math.round(energySignals * 100) / 100,
     X: Math.round(ethicsSignals * 100) / 100,
   };
+}
+
+/**
+ * P1-5i: Forward APEX receipt to arifFLOW :7073/receipt/emit.
+ * Fire-and-forget — failure is silent, local computation is canonical.
+ * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ */
+async function _forwardAPEXToArifFlow(receipt: APEXReceipt): Promise<void> {
+  try {
+    await fetch("http://127.0.0.1:7073/receipt/emit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        organ: "A-FORGE",
+        producer: "APEXRuntimeReceipt",
+        action: `apex:${receipt.verdict}`,
+        scope: `action:${receipt.action_id}`,
+        risk: receipt.verdict === "FAIL" ? "CONSEQUENTIAL" : "INTERNAL",
+        epistemic_label: "DER",
+        confidence: (receipt.G + (1 - receipt.C_dark)) / 2,
+        session_id: receipt.session_id,
+        actor_id: receipt.actor_id,
+        verdict: receipt.verdict === "PASS" ? "SEAL"
+          : receipt.verdict === "HOLD" ? "HOLD"
+          : receipt.verdict === "FAIL" ? "VOID"
+          : "SABAR",
+        metadata: {
+          G: receipt.G,
+          C_dark: receipt.C_dark,
+          A: receipt.A, P: receipt.P, E: receipt.E, X: receipt.X,
+          authority_band: receipt.authority_band,
+          blast_radius: receipt.blast_radius,
+          tri_witness_consensus: receipt.tri_witness_consensus,
+        },
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch {
+    // arifFLOW unreachable — local APEX computation is canonical
+  }
 }
