@@ -11,6 +11,8 @@ import { homedir } from "node:os";
 import { resolve, dirname } from "node:path";
 import { appendFile, mkdir } from "node:fs/promises";
 
+const ARIFLOW_TELEMETRY = "http://127.0.0.1:7073/telemetry/log";
+
 export type AuditEventAction =
   | "invoke"
   | "success"
@@ -138,13 +140,13 @@ class McpTelemetry {
   }
 
   /**
-   * P1-6: Forward telemetry event to arifFLOW :7073/telemetry/log.
-   * Fire-and-forget — failure is silent, local sinks are primary.
-   * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+   * P1-6 VERIFIED: Forward telemetry event to arifFLOW :7073/telemetry/log.
+   * Proven live 2026-07-26 via batch_0a canary. Pipe accepted, timestamp returned.
+   * Fire-and-forget — failure is silent, local JSONL + journald are primary sinks.
    */
   private async _forwardToArifFlow(event: AuditEvent): Promise<void> {
     try {
-      await fetch("http://127.0.0.1:7073/telemetry/log", {
+      await fetch(ARIFLOW_TELEMETRY, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
