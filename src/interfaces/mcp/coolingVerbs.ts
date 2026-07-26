@@ -162,7 +162,14 @@ function writeCoolingReceipt(envelope: Record<string, unknown>): Record<string, 
       timeout: 15000,
       env: { ...process.env, NODE_PATH: process.env.NODE_PATH || "" },
     });
-    return JSON.parse(stdout.trim());
+    const result = JSON.parse(stdout.trim());
+
+    // P1-5h: Forward cooling receipt to arifFLOW — fire-and-forget
+    setImmediate(() => {
+      _forwardCoolingToArifFlow(envelope).catch(() => {});
+    });
+
+    return result;
   } catch (err: any) {
     const stderr = err.stderr?.toString() || "";
     const stdout = err.stdout?.toString() || "";
@@ -364,4 +371,44 @@ export function registerCoolingVerbs(server: McpServer): void {
       }
     }
   );
+}
+
+/**
+ * P1-5h: Forward cooling receipt to arifFLOW :7073/receipt/emit.
+ * Fire-and-forget — failure is silent, seal_chain.js write is canonical.
+ * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ */
+async function _forwardCoolingToArifFlow(envelope: Record<string, unknown>): Promise<void> {
+  try {
+    await fetch("http://127.0.0.1:7073/receipt/emit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        organ: "A-FORGE",
+        producer: "coolingVerbs",
+        action: `cooling:${envelope.cooling_source || "unknown"}`,
+        scope: `drift:${envelope.drift_dimension || "unknown"}`,
+        risk: (envelope.severity === "CRITICAL" || envelope.severity === "SIGNIFICANT")
+          ? "CONSEQUENTIAL" : "INTERNAL",
+        epistemic_label: envelope.epistemic_label || "OBS",
+        confidence: 0.85,
+        session_id: envelope.session_id as string | undefined,
+        verdict: envelope.original_verdict as string || "SABAR",
+        metadata: {
+          drift_dimension: envelope.drift_dimension,
+          convergence: envelope.convergence,
+          severity: envelope.severity,
+          governance_organ: envelope.governance_organ,
+          governance_floor: envelope.governance_floor,
+          hypothesis: (envelope.hypothesis as string)?.slice(0, 200),
+          cooling_source: envelope.cooling_source,
+          required_authority: envelope.required_authority,
+          witness_organ: envelope.witness_organ,
+        },
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch {
+    // arifFLOW unreachable — seal_chain.js is canonical
+  }
 }
