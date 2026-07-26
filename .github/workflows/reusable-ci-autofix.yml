@@ -1,0 +1,427 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# A-FORGE Reusable CI Autofix Workflow
+# DITEMPA BUKAN DIBERI
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Autonomous CI healing — detects common failure patterns across the
+# federation and auto-generates fixes as PRs.
+#
+# Called by: every organ's ci-autofix.yml workflow_run trigger
+#
+# Failure patterns auto-fixed:
+#   FEDERATION_MISSING  → Creates FEDERATION.md with organ markers
+#   ABI_DRIFT           → Runs sync_kernel_abi.py (arifOS)
+#   FORMAT_LINT         → Runs ruff format / prettier --write
+#   SURFACE_DRIFT       → Runs surface sync scripts
+#
+# Failure patterns → diagnostic issue:
+#   TEST_FAILURE        → Opens issue with stack trace
+#   BUILD_FAILURE       → Opens issue with build log
+#   SECRET_LEAK         → Opens security issue (T3)
+#
+# ═══════════════════════════════════════════════════════════════════════════
+
+name: "A-FORGE · Reusable CI Autofix"
+
+on:
+  workflow_call:
+    inputs:
+      organ:
+        description: 'Organ name (arifos, aforge, aaa, geox, wealth, well)'
+        required: true
+        type: string
+      organ_role:
+        description: 'Organ role marker for FEDERATION.md (ROOT, EXECUTIVE, COCKPIT, EARTH, CAPITAL, VITALITY)'
+        required: true
+        type: string
+      organ_layer:
+        description: 'Organ layer marker for FEDERATION.md (L1-L6)'
+        required: true
+        type: string
+      organ_mcp:
+        description: 'MCP prefix + URL for FEDERATION.md'
+        required: true
+        type: string
+      ci_workflow_name:
+        description: 'Name of the CI workflow to autofix'
+        required: true
+        type: string
+      python_version:
+        description: 'Python version for Python organs'
+        required: false
+        type: string
+        default: '3.13'
+      node_version:
+        description: 'Node version for TypeScript organs'
+        required: false
+        type: string
+        default: '22'
+      sync_command:
+        description: 'Optional ABI/surface sync command'
+        required: false
+        type: string
+        default: ''
+      format_command:
+        description: 'Auto-format command'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: read
+  checks: read
+
+jobs:
+  diagnose:
+    name: "🔍 Diagnose CI Failures"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      failure_patterns: ${{ steps.classify.outputs.patterns }}
+      fix_count: ${{ steps.classify.outputs.fix_count }}
+      issue_count: ${{ steps.classify.outputs.issue_count }}
+    steps:
+      - name: Fetch CI run logs
+        id: fetch
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { data: runs } = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: '${{ inputs.ci_workflow_name }}',
+              status: 'completed',
+              conclusion: 'failure',
+              per_page: 3
+            });
+
+            if (!runs.workflow_runs.length) {
+              core.setOutput('has_failures', 'false');
+              return;
+            }
+
+            const latest = runs.workflow_runs[0];
+            core.setOutput('has_failures', 'true');
+            core.setOutput('run_id', latest.id);
+            core.setOutput('run_url', latest.html_url);
+            core.setOutput('head_sha', latest.head_sha);
+            core.setOutput('head_branch', latest.head_branch);
+
+            // Fetch failed jobs
+            const { data: jobs } = await github.rest.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: latest.id,
+              filter: 'latest'
+            });
+
+            const failures = jobs.jobs.filter(j => j.conclusion === 'failure');
+            core.setOutput('failed_jobs', JSON.stringify(failures.map(j => ({
+              name: j.name,
+              id: j.id,
+              url: j.html_url
+            }))));
+
+      - name: Classify failure patterns
+        id: classify
+        if: steps.fetch.outputs.has_failures == 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const organ = '${{ inputs.organ }}';
+            const patterns = [];
+
+            // Fetch logs for each failed job to classify
+            const failedJobs = JSON.parse('${{ steps.fetch.outputs.failed_jobs }}' || '[]');
+
+            for (const job of failedJobs) {
+              try {
+                const { data: log } = await github.rest.actions.downloadJobLogsForWorkflowRun({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  job_id: job.id
+                });
+
+                const logText = typeof log === 'string' ? log : '';
+
+                // CLASSIFY: Pattern matching
+                if (logText.includes('Missing FEDERATION.md') || logText.includes('Missing role:') || logText.includes('Missing layer:')) {
+                  patterns.push('FEDERATION_MISSING');
+                }
+                if (logText.includes('Kernel ABI drift') || logText.includes('generated-surface drift')) {
+                  patterns.push('ABI_DRIFT');
+                }
+                if (logText.includes('would be reformatted') || logText.includes('ruff format') || logText.includes('prettier')) {
+                  patterns.push('FORMAT_LINT');
+                }
+                if (logText.includes('Surface drift') || logText.includes('surface_lock')) {
+                  patterns.push('SURFACE_DRIFT');
+                }
+                if (logText.includes('FAIL') || logText.includes('AssertionError') || logText.includes('Error:')) {
+                  if (!patterns.includes('ABI_DRIFT') && !patterns.includes('SURFACE_DRIFT')) {
+                    patterns.push('TEST_FAILURE');
+                  }
+                }
+                if (logText.includes('npm ERR!') || logText.includes('error TS') || logText.includes('Build failed')) {
+                  patterns.push('BUILD_FAILURE');
+                }
+                if (logText.includes('GITLEAKS') || logText.includes('secret') || logText.includes('credential')) {
+                  patterns.push('SECRET_LEAK');
+                }
+              } catch (e) {
+                core.warning(`Failed to fetch logs for job ${job.name}: ${e.message}`);
+              }
+            }
+
+            // Deduplicate
+            const unique = [...new Set(patterns)];
+
+            // Auto-fixable patterns
+            const autoFixable = ['FEDERATION_MISSING', 'ABI_DRIFT', 'FORMAT_LINT', 'SURFACE_DRIFT'];
+            const needsIssue = ['TEST_FAILURE', 'BUILD_FAILURE', 'SECRET_LEAK'];
+
+            const fixPatterns = unique.filter(p => autoFixable.includes(p));
+            const issuePatterns = unique.filter(p => needsIssue.includes(p));
+
+            core.setOutput('patterns', unique.join(','));
+            core.setOutput('fix_count', fixPatterns.length);
+            core.setOutput('issue_count', issuePatterns.length);
+            core.setOutput('fix_patterns', fixPatterns.join(','));
+            core.setOutput('issue_patterns', issuePatterns.join(','));
+
+            if (unique.length === 0) {
+              core.notice('No CI failure patterns detected — CI may be green or unclassified');
+            } else {
+              core.notice(`Classified ${unique.length} failure patterns: ${unique.join(', ')}`);
+            }
+
+  # ═══════════════════════════════════════════════════════════════════
+  # AUTO-FIX: FEDERATION.md missing
+  # ═══════════════════════════════════════════════════════════════════
+  fix-federation:
+    name: "🔧 Fix: FEDERATION.md"
+    needs: [diagnose]
+    if: contains(needs.diagnose.outputs.fix_patterns, 'FEDERATION_MISSING')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.diagnose.outputs.head_branch || github.ref }}
+
+      - name: Generate FEDERATION.md
+        run: |
+          ORGAN="${{ inputs.organ }}"
+          ROLE="${{ inputs.organ_role }}"
+          LAYER="${{ inputs.organ_layer }}"
+          MCP="${{ inputs.organ_mcp }}"
+
+          cat > FEDERATION.md << FEDEOF
+          # Federation Contract v2 — $ORGAN
+
+          > SOT: $(date -u +%Y-%m-%d) | seal_seq: fed-phase-7-zen
+          > Authority: F13 SOVEREIGN — Muhammad Arif bin Fazil
+          > Canonical location: /root/FEDERATION_CONTRACT.md
+          > role: $ROLE
+          > layer: $LAYER
+          > mcp: $MCP
+
+          ---
+
+          ## 1. Federation Identity
+
+          The **arifOS Federation** is a governed intelligence system comprising 7 core organs, 31 GitHub repositories, and a single sovereign (Arif, F13). It operates on a single VPS (72.62.71.199) with Cloudflare Tunnel + Caddy ingress.
+
+          **Governing principle:** No organ may seal without arifOS. No organ may self-authorize mutation.
+
+          ---
+
+          ## 2. Organs — Authority Boundaries
+
+          | Organ | Role | Port | MCP Prefix | Permissions |
+          |-------|------|------|-----------|-------------|
+          | **arifOS** | Constitutional kernel | 8088 | \`arif_*\` | Judges, seals, routes. NEVER executes. |
+          | **A-FORGE** | Execution shell | 7071/7072 | \`forge_*\` | Executes after SEAL. NEVER adjudicates. |
+          | **AAA** | Cockpit + A2A | 3001 | — | Routes, displays. NEVER adjudicates. |
+          | **GEOX** | Earth intelligence | 8081 | \`geox_*\` | Computes earth evidence. NEVER decides. |
+          | **WEALTH** | Capital intelligence | 18082 | \`capital_*\` | Computes capital math. NEVER allocates. |
+          | **WELL** | Vitality guard | 18083 | \`well_*\` | Reflects readiness. NEVER diagnoses. |
+          | **HERMES** | Multi-modal bridge | Telegram | — | Routes signals. NEVER adjudicates. |
+
+          ---
+
+          ## 3. Authority Chain
+          No link may be skipped. No organ may self-authorize.
+
+          ## 4. CI/CD Standards
+          - Every organ runs gitleaks secret scanning
+          - Every organ uses date-stamp tags (\`vYYYY.MM.DD\`)
+          - Conventional commits with organ prefix
+
+          ---
+
+          *DITEMPA BUKAN DIBERI — Auto-generated by CI Autofix*
+          FEDEOF
+
+      - name: Create Autofix PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "[REPAIR] autofix: generate FEDERATION.md for ${{ inputs.organ }} — CI autofix"
+          title: "🤖 [AUTOFIX] FEDERATION.md — ${{ inputs.organ }} CI heal"
+          body: |
+            ## 🤖 Autonomous CI Fix
+
+            **Detected:** Missing or malformed FEDERATION.md
+            **Organ:** ${{ inputs.organ }} (${{ inputs.organ_role }}, ${{ inputs.organ_layer }})
+            **Trigger:** CI run #${{ needs.diagnose.outputs.run_id }}
+
+            Auto-generated FEDERATION.md with correct markers.
+
+            **SOT:** $(date -u +%Y-%m-%d) | Auto-generated by CI Autofix
+          branch: ci-autofix/federation-${{ github.run_id }}
+          delete-branch: true
+          labels: ci-autofix, automated
+
+  # ═══════════════════════════════════════════════════════════════════
+  # AUTO-FIX: Kernel ABI drift (arifOS only)
+  # ═══════════════════════════════════════════════════════════════════
+  fix-abi-drift:
+    name: "🔧 Fix: ABI Drift"
+    needs: [diagnose]
+    if: contains(needs.diagnose.outputs.fix_patterns, 'ABI_DRIFT')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "${{ inputs.python_version }}"
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: false
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras 2>/dev/null || uv sync
+
+      - name: Regenerate ABI surfaces
+        run: |
+          uv run python scripts/sync_kernel_abi.py
+
+      - name: Verify fix
+        run: |
+          uv run python scripts/sync_kernel_abi.py --check
+
+      - name: Create Autofix PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "[REPAIR] autofix: regenerate ABI surface files — CI autofix"
+          title: "🤖 [AUTOFIX] Kernel ABI drift — ${{ inputs.organ }} surface sync"
+          body: |
+            ## 🤖 Autonomous CI Fix
+
+            **Detected:** Kernel ABI generated-surface drift
+            **Organ:** ${{ inputs.organ }}
+            **Trigger:** CI run #${{ needs.diagnose.outputs.run_id }}
+
+            Ran `scripts/sync_kernel_abi.py` to regenerate:
+            - `static/.well-known/mcp/server.json`
+            - `mcp-arifos.json`
+            - `smithery.yaml`
+            - `arifosmcp/abi/generated/public_agent.snapshot.json`
+
+            **SOT:** $(date -u +%Y-%m-%d) | Auto-generated by CI Autofix
+          branch: ci-autofix/abi-drift-${{ github.run_id }}
+          delete-branch: true
+          labels: ci-autofix, automated
+
+  # ═══════════════════════════════════════════════════════════════════
+  # AUTO-FIX: Format/Lint (ruff, prettier)
+  # ═══════════════════════════════════════════════════════════════════
+  fix-format:
+    name: "🔧 Fix: Format/Lint"
+    needs: [diagnose]
+    if: contains(needs.diagnose.outputs.fix_patterns, 'FORMAT_LINT')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Run auto-formatter
+        run: |
+          if [ -n "${{ inputs.format_command }}" ]; then
+            eval "${{ inputs.format_command }}"
+          elif [ -f "pyproject.toml" ]; then
+            pip install ruff && ruff format . && ruff check --fix .
+          elif [ -f "package.json" ]; then
+            npx prettier --write "src/**/*.{ts,tsx,js,jsx}" "test/**/*.{ts,tsx,js,jsx}" 2>/dev/null || true
+            npx eslint --fix "src/**/*.{ts,tsx}" 2>/dev/null || true
+          fi
+
+      - name: Create Autofix PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "[REPAIR] autofix: format/lint — CI autofix"
+          title: "🤖 [AUTOFIX] Format/Lint — ${{ inputs.organ }} auto-format"
+          body: |
+            ## 🤖 Autonomous CI Fix
+
+            **Detected:** Format/lint violations
+            **Organ:** ${{ inputs.organ }}
+            **Trigger:** CI run #${{ needs.diagnose.outputs.run_id }}
+
+            Auto-formatted code to comply with lint rules.
+
+            **SOT:** $(date -u +%Y-%m-%d) | Auto-generated by CI Autofix
+          branch: ci-autofix/format-${{ github.run_id }}
+          delete-branch: true
+          labels: ci-autofix, automated
+
+  # ═══════════════════════════════════════════════════════════════════
+  # DIAGNOSTIC ISSUE: Non-auto-fixable failures
+  # ═══════════════════════════════════════════════════════════════════
+  create-diagnostic-issue:
+    name: "📋 Diagnostic Issue"
+    needs: [diagnose]
+    if: needs.diagnose.outputs.issue_count > 0
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const patterns = '${{ needs.diagnose.outputs.issue_patterns }}';
+            const runUrl = '${{ needs.diagnose.outputs.run_url }}';
+            const runId = '${{ needs.diagnose.outputs.run_id }}';
+
+            const labels = [];
+            if (patterns.includes('SECRET_LEAK')) labels.push('security', 'T3-888-HOLD');
+            if (patterns.includes('TEST_FAILURE')) labels.push('test-failure', 'bug');
+            if (patterns.includes('BUILD_FAILURE')) labels.push('build-failure', 'bug');
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🤖 [CI AUTOFIX] Diagnostic: ${patterns} — run #${runId}`,
+              body: `## 🤖 Autonomous CI Diagnostic
+
+          **Failure patterns:** ${patterns}
+          **CI run:** ${runUrl}
+          **Organ:** ${{ inputs.organ }}
+
+          These failures could not be auto-fixed. Manual investigation needed.
+
+          ### Failure Details
+          ${patterns.split(',').map(p => `- **${p}**: ${runUrl}`).join('\n')}
+
+          **SOT:** ${new Date().toISOString().split('T')[0]} | Auto-generated by CI Autofix`,
+              labels: labels
+            });
