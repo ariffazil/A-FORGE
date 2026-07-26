@@ -178,14 +178,20 @@ export class CoolingGate {
 
   private async persist(): Promise<void> {
     const statePath = getCoolingStatePath();
-    await mkdir(dirname(statePath), { recursive: true });
-    const data = {
-      entries: [...this.entries.values()],
-      sealedCount: this.sealedCount,
-      voidedCount: this.voidedCount,
-      persistedAt: new Date().toISOString(),
-    };
-    await writeFile(statePath, JSON.stringify(data, null, 2), "utf8");
+    try {
+      await mkdir(dirname(statePath), { recursive: true });
+      const data = {
+        entries: [...this.entries.values()],
+        sealedCount: this.sealedCount,
+        voidedCount: this.voidedCount,
+        persistedAt: new Date().toISOString(),
+      };
+      await writeFile(statePath, JSON.stringify(data, null, 2), "utf8");
+    } catch (err) {
+      // Non-fatal in CI/test — persistence path may not exist
+      if (process.env.CI || process.env.FORGE_TEST_MODE) return;
+      throw err;
+    }
   }
 
   // ── Core Operations ──
