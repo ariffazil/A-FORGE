@@ -100,6 +100,13 @@ export function verdict(
   const chainHash = computeChainHash(tool, status, lastChainHash);
   lastChainHash = chainHash;
 
+  // P1-5e: Forward verdict envelope to arifFLOW — fire-and-forget
+  // This is the most-exercised telemetry path — every tool response passes through here.
+  // Fire-and-forget via setImmediate so the sync function never blocks.
+  setImmediate(() => {
+    _forwardVerdictToArifFlow(status, tool, message, options, chainHash).catch(() => {});
+  });
+
   return {
     status,
     data,
@@ -119,6 +126,55 @@ export function verdict(
       chain_hash: chainHash,
     },
   };
+}
+
+/**
+ * P1-5e: Forward verdict envelope to arifFLOW :7073/receipt/emit.
+ * Fire-and-forget — failure is silent, local chain hash is canonical.
+ * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ */
+async function _forwardVerdictToArifFlow(
+  status: VerdictStatus,
+  tool: string,
+  message: string,
+  options?: {
+    actor?: string;
+    session?: string;
+    duration_ms?: number;
+  },
+  chainHash?: string,
+): Promise<void> {
+  try {
+    await fetch("http://127.0.0.1:7073/receipt/emit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        organ: "A-FORGE",
+        producer: "VerdictEnvelope",
+        action: `verdict:${tool}`,
+        scope: `chain:${chainHash?.slice(0, 12) ?? "unknown"}`,
+        risk: status === "VOID" || status === "HOLD" ? "CONSEQUENTIAL" : "OPERATIONAL",
+        epistemic_label: "OBS",
+        confidence: 0.95,
+        actor_id: options?.actor,
+        verdict: status === "SEAL" ? "SEAL"
+          : status === "HOLD" ? "HOLD"
+          : status === "SABAR" ? "SABAR"
+          : status === "VOID" ? "VOID"
+          : "ERROR",
+        metadata: {
+          tool,
+          message: message.slice(0, 200),
+          duration_ms: options?.duration_ms,
+          session: options?.session?.slice(0, 12),
+          chain_hash: chainHash,
+        },
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch {
+    // arifFLOW unreachable — local chain is canonical
+  }
 }
 
 /**

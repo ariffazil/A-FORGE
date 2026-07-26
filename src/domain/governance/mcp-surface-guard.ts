@@ -644,6 +644,11 @@ export class SurfaceGuardRunner {
       this.onDrift(report);
     }
 
+    // P1-5g: Forward drift report to arifFLOW — fire-and-forget
+    setImmediate(() => {
+      _forwardDriftToArifFlow(report).catch(() => {});
+    });
+
     return report;
   }
 
@@ -654,6 +659,43 @@ export class SurfaceGuardRunner {
         process.stderr.write(`[SurfaceGuard] Check failed: ${err}\n`);
       });
     }, intervalMs);
+  }
+}
+
+// ── P1-5g: arifFlow drift report forwarding ────────────────────────────────
+
+/**
+ * P1-5g: Forward federation drift report to arifFLOW :7073/receipt/emit.
+ * Fire-and-forget — failure is silent, local drift report is canonical.
+ * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ */
+async function _forwardDriftToArifFlow(report: FederationDriftReport): Promise<void> {
+  try {
+    await fetch("http://127.0.0.1:7073/receipt/emit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        organ: "A-FORGE",
+        producer: "SurfaceGuard",
+        action: "drift_report",
+        scope: `federation:${report.organs.length}_organs`,
+        risk: report.status === "HOLD" ? "CONSEQUENTIAL" : "OPERATIONAL",
+        epistemic_label: "OBS",
+        confidence: 0.85,
+        verdict: report.status === "PASS" ? "SEAL"
+          : report.status === "HOLD" ? "HOLD" : "VOID",
+        metadata: {
+          status: report.status,
+          total_drifts: report.total_drifts,
+          total_missing_required: report.total_missing_required,
+          organs_down: report.organs.filter(o => o.status === "DOWN").map(o => o.organ_id),
+          organs_drift: report.organs.filter(o => o.status === "DRIFT").map(o => o.organ_id),
+        },
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+  } catch {
+    // arifFLOW unreachable — local drift report is canonical
   }
 }
 
