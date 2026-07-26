@@ -889,7 +889,9 @@ export class AgentEngine {
         f12_injection: 0.98,
         f13_sovereign: 1.0,
       };
-      apexGenius = calculateGeniusFromFloors(floorsProxy, 0.05, 1.0);
+      // APEX T-000: energy1/energy2 should come from observatory/reality-ledger
+      // TODO: wire arifFLOW observatory Energy_score → energy1, energy2
+      apexGenius = calculateGeniusFromFloors(floorsProxy, 0.5, 0.5);
       finalResponse += `\n\n[888_JUDGE APEX: G=${apexGenius.G.toFixed(3)} | A=${apexGenius.dials.A.toFixed(2)} P=${apexGenius.dials.P.toFixed(2)} X=${apexGenius.dials.X.toFixed(2)} E=${apexGenius.dials.E.toFixed(2)} | ${apexGenius.verdict}]`;
     } catch {
       // APEX computation is best-effort — do not block verdict on failure
