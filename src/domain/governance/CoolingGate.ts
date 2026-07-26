@@ -326,6 +326,12 @@ export class CoolingGate {
     entry.sealed_at = new Date().toISOString();
     this.sealedCount++;
     await this.persist();
+
+    // P1-5d: Forward cooling seal receipt to arifFLOW — fire-and-forget
+    setImmediate(() => {
+      this._forwardToArifFlow({ action: "seal", entry_id, description: entry.description, risk_tier: entry.risk_tier }).catch(() => {});
+    });
+
     return { ok: true, reason: "sealed" };
   }
 

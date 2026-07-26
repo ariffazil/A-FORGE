@@ -1,12 +1,36 @@
 # APEX Theory & Federation Architecture
 
+> ⚠️ **HISTORICAL — SUPERSEDED 2026-07-25**
+> 
+> This document described AGI/ASI/APEX as **three vertically stacked layers** (L1/L2/L3).
+> That model is **no longer canonical**.
+> 
+> The corrected doctrine defines them as **three orthogonal modes (not ranks)**:
+> 
+> ```
+> 333-AGI (Δ)  = Think — meaning, inference, hypotheses
+> 555-ASI (Ω)  = Coordinate — shared state, routing, federation
+> 888-APEX     = Judge — boundaries, authority, SEAL/HOLD/VOID
+> Ψ A-FORGE    = Act — governed execution under lease
+> ```
+> 
+> The governing equation: **ℐ_agentic = Δ_AGI ⊕ Ω_ASI ⊕ 888_APEX**
+> 
+> The symbol ⊕ means direct sum: **none of the three can substitute for another.**
+> 
+> **Canonical source (AAA):** `/root/AAA/governance/AGI_ASI_APEX_HUMAN.md`
+> **Correction authority:** Arif (F13 SOVEREIGN), ChatGPT external instrument, 2026-07-25
+> **One-line rule:** Think under AGI. Coordinate under ASI. Judge under APEX. Act under lease. Remember under VAULT. Veto under Arif.
+> 
+> The content below is preserved for **historical audit** only. Do not deploy to agents.
+
 > **DITEMPA BUKAN DIBERI** — Forged, Not Given
 > **Forged:** 2026-06-21 by FORGE (000Ω) for F13 SOVEREIGN
-> **Status:** CANONICAL — deploy to all agents
+> **Status:** ~~CANONICAL~~ → **HISTORICAL — SUPERSEDED 2026-07-25**
 
 ---
 
-## 1. The Three Layers of Intelligence
+## 1. The Three Layers of Intelligence [HISTORICAL — SUPERSEDED]
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐

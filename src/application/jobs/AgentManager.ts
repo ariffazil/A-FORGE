@@ -1,6 +1,12 @@
 /**
  * A-FORGE Agent Manager
  *
+ * @deprecated P4 (2026-07-26): Queue ownership extracted to arifFLOW.
+ *   Canonical queue: arifFlow/src/ts/arifflow/jobqueue/scheduler.ts (JobQueueScheduler).
+ *   Canonical types: arifFlow/src/ts/arifflow/jobqueue/types.ts.
+ *   This class remains for backward compatibility. DO NOT DELETE until P6 verified.
+ *   Migration: enqueue/dequeue/complete/fail/listJobs → JobQueueScheduler equivalents.
+ *
  * Persistent control-plane service that:
  * - Owns the job queue (enqueue, dequeue, heartbeat, complete, fail)
  * - Manages agent session lifecycle (openSession on job start, sealSession on complete)

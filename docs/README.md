@@ -25,7 +25,7 @@
 |----------|-------------|
 | [governance/](governance/) | Governance blueprints & organ specs |
 | [governance/PLAN_ORGAN_BLUEPRINT.md](governance/PLAN_ORGAN_BLUEPRINT.md) | PLAN organ blueprint |
-| [APEX_THEORY_AND_FEDERATION.md](APEX_THEORY_AND_FEDERATION.md) | APEX theory & federation integration |
+| [APEX_THEORY_AND_FEDERATION.md](APEX_THEORY_AND_FEDERATION.md) | ⚠️ HISTORICAL — SUPERSEDED 2026-07-25. See AAA/governance/AGI_ASI_APEX_HUMAN.md for canonical orthogonal-modes doctrine |
 | [BRAIN_HANDS_MCP_MAPPING.md](BRAIN_HANDS_MCP_MAPPING.md) | Brain-Hands MCP mapping |
 | [MCP_TOOL_CATALOG.md](MCP_TOOL_CATALOG.md) | MCP tool catalog |
 | [TUI-ARCHITECTURE.md](TUI-ARCHITECTURE.md) | TUI architecture |
