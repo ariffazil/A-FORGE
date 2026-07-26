@@ -1,30 +1,35 @@
 /**
  * APEX Dials — Eigendecomposition from 13 Constitutional Laws
  *
- * K777_APEX §10.4: The 4 APEX dials (A/P/X/E) are NOT independent inputs.
- * They are principal components derived from the 13 floor scores via geometric mean clusters.
+ * CANONICAL REFERENCE: /root/AAA/docs/APEX_T000_THEOREM.md (ratified 2026-07-26)
+ * This file is the RUNTIME IMPLEMENTATION of the canonical theorem.
+ * If these two diverge, the canonical theorem wins. Update this file to match.
  *
- * G = A × P × X × E²
+ * G = (A · P · E · X)^(1/4)  — geometric mean (Nash bargaining product)
  *
- * Floor → Dial cluster mapping:
- *   A (Akal/Mind):    F2, F4, F7, F10    → Truth, Clarity, Humility, Ontology
- *   P (Present/Peace): F1, F5, F11        → Amanah, Peace, Command
- *   X (eXplore):       F3, F6, F8, F9      → Tri-Witness, Empathy, Genius, Anti-Hantu
- *   E (Energy):       F12, F13            → Injection, Sovereign
+ * Floor → Dial cluster mapping (CANONICAL T-000 §2):
+ *   A (AKAL):          F2, F4, F7, F10    → Truth, Clarity, Humility, Ontology
+ *   P (PRESENT_AUTHORITY): F1, F5, F11, F13 → Amanah, Peace, Audit, Sovereign
+ *   E (ENTROPY×ENERGY): F3, F4, F12, Energy₁, Energy₂ → Witness, Clarity, Resilience, Energy×2
+ *   X (EXPLORATION×AMANAH): F6, F8, F9, Risk → Empathy, Genius, Anti-Hantu, Risk
  *
- * APEX-MCP-001 Extension: 10-Gate Runtime Governance Envelope
+ * NOTE: F4 (CLARITY) appears in both A and E — this is intentional. Cross-cutting.
+ * NOTE: Energy appears TWICE in E (squared drag) — thermodynamic stability is the hardest property.
+ *
+ * APEX-MCP-001 Extension: 10-Gate Runtime Governance Envelope (legacy — retained for compat)
  *   [Cognitive] Amanah · Presence · Humility · Signal · Understanding · Energy
  *   [Kernel]    Authority · Reversibility · Proof · Sovereign
  *
  * @module governance/apexDials
- * @constitutional K777_APEX §10.4 — Eigendecomposition
+ * @constitutional APEX_T000_THEOREM.md — CANONICALLY RATIFIED 2026-07-26
+ * @patch 2026-07-26 — F3 moved from X→E, F13 moved from E→P, G formula changed to geometric mean
  */
 
 export interface ApexDials {
-  A: number;  // Akal (Mind/Intellect) — geometric mean of F2×F4×F7×F10
-  P: number;  // Present (Peace/Stability) — geometric mean of F1×F5×F11
-  X: number;  // eXplore (Curiosity/Navigation) — geometric mean of F3×F6×F8×F9
-  E: number;  // Energy (Vitality/Endurance) — F12×F13 + compute ratio
+  A: number;  // AKAL (Lawful Reasoning) — GM(F2, F4, F7, F10)
+  P: number;  // PRESENT AUTHORITY — GM(F1, F5, F11, F13)
+  E: number;  // ENTROPY × ENERGY — GM(F3, F4, F12, Energy₁, Energy₂)
+  X: number;  // EXPLORATION × AMANAH — GM(F6, F8, F9, Risk)
 }
 
 // ── APEX-MCP-001: 10-Gate Runtime Governance Envelope ─────────────────────
@@ -78,7 +83,7 @@ export interface ApexGeniusResult {
   G: number;
   G_threshold: number;
   passed: boolean;
-  verdict: "SEAL" | "SABAR" | "VOID";
+  verdict: "SEAL" | "SABAR" | "HOLD";  // canonical T-000 §3: VOID reserved for hard floor breach
   weakest_dial: keyof ApexDials;
   weakest_value: number;
   derivation: "eigendecomposition_of_13_floors";
@@ -292,24 +297,14 @@ export function buildApexEnvelope(params: {
 
 function round4(n: number): number { return Math.round(n * 10000) / 10000; }
 
-export interface ApexGeniusResult {
-  dials: ApexDials;
-  G: number;
-  G_threshold: number;
-  passed: boolean;
-  verdict: "SEAL" | "SABAR" | "VOID";
-  weakest_dial: keyof ApexDials;
-  weakest_value: number;
-  derivation: "eigendecomposition_of_13_floors";
-  provenance: "constitutional_measurement";
-}
+// NOTE: ApexGeniusResult defined above (line 81) — single canonical definition
 
 export function floorsToDials(
   floors: FloorScores13,
-  computeBudgetUsed = 0.5,
-  computeBudgetMax = 1.0,
+  energy1 = 0.5,  // Energy₁: governance-event coverage = events_produced / events_expected
+  energy2 = 0.5,  // Energy₂: receipt density (secondary energy signal)
 ): ApexDials {
-  // A = AKAL (Mind/Clarity) — geometric mean of truth cluster
+  // A = AKAL (Lawful Reasoning) — canonical T-000 §2.1
   // Floors: F2 (Truth), F4 (Clarity), F7 (Humility), F10 (Ontology)
   const A = geometricMean([
     floors.f2_truth,
@@ -318,57 +313,64 @@ export function floorsToDials(
     floors.f10_ontology,
   ]);
 
-  // P = PRESENT (Stability) — geometric mean of trust cluster
-  // Floors: F1 (Amanah), F5 (Peace), F11 (Command)
+  // P = PRESENT AUTHORITY — canonical T-000 §2.2
+  // Floors: F1 (Amanah), F5 (Peace), F11 (Audit), F13 (Sovereign)
   const P = geometricMean([
     floors.f1_amanah,
     floors.f5_peace,
-    floors.f11_command,
+    floors.f11_command,  // F11 = Audit/Command
+    floors.f13_sovereign,
   ]);
 
-  // X = EXPLORATION (Navigation) — geometric mean of heart cluster
-  // Floors: F3 (Tri-Witness), F6 (Empathy), F8 (Genius), F9 (Anti-Hantu)
-  const X = geometricMean([
+  // E = ENTROPY × ENERGY — canonical T-000 §2.3
+  // Floors: F3 (Witness), F4 (Clarity — cross-cutting), F12 (Resilience)
+  // Plus: Energy₁ and Energy₂ (governance-event coverage, double-weighted)
+  const eFloors = geometricMean([
     floors.f3_tri_witness,
+    floors.f4_clarity,    // cross-cutting — also in A
+    floors.f12_injection,
+  ]);
+  const eEnergy = geometricMean([energy1, energy2]);
+  // E = GM(F3, F4, F12, Energy₁, Energy₂) — 5 components, energy double-weighted
+  const E = geometricMean([eFloors, eFloors, eFloors, energy1, energy2]);
+  // Equivalent: GM(F3, F4, F12, Energy₁, Energy₂) where energy appears twice
+
+  // X = EXPLORATION × AMANAH — canonical T-000 §2.4
+  // Floors: F6 (Empathy), F8 (Genius), F9 (Anti-Hantu), Risk (exploration safety)
+  const riskScore = Math.max(0, Math.min(1, 1 - ((floors.f9_antihantu < 1 ? 0.3 : 0))));
+  const X = geometricMean([
     floors.f6_empathy,
     floors.f8_genius,
     floors.f9_antihantu,
+    riskScore,
   ]);
 
-  // E = ENERGY (Vitality) — system resources + boundary floors
-  // Floors: F12 (Injection defense), F13 (Sovereign)
-  // Plus: thermodynamic energy ratio
-  const energyFromFloors = geometricMean([
-    floors.f12_injection,
-    floors.f13_sovereign,
-  ]);
-  const energyRatio = 1 - Math.min(computeBudgetUsed / Math.max(computeBudgetMax, 1e-6), 1);
-  const E = (energyFromFloors + energyRatio) / 2;
-
-  return { A, P, X, E };
+  return { A, P, E, X };
 }
 
 export function calculateGeniusFromFloors(
   floors: FloorScores13,
-  computeBudgetUsed = 0.5,
-  computeBudgetMax = 1.0,
+  energy1 = 0.5,
+  energy2 = 0.5,
 ): ApexGeniusResult {
-  const dials = floorsToDials(floors, computeBudgetUsed, computeBudgetMax);
+  const dials = floorsToDials(floors, energy1, energy2);
 
-  // Calculate G using the constitutional formula: G = A × P × X × E²
-  const E_squared = dials.E ** 2;
-  const G = dials.A * dials.P * dials.X * E_squared;
+  // G = (A · P · E · X)^(1/4) — canonical geometric mean (Nash bargaining product)
+  // T-000 §1: All variables normalized [0,1]; G dominated by smallest term
+  const G = geometricMean([dials.A, dials.P, dials.E, dials.X]);
 
   const G_threshold = 0.80;
 
-  // Determine verdict based on G threshold
-  let verdict: "SEAL" | "SABAR" | "VOID";
+  // Determine verdict based on G threshold — CANONICAL T-000 §3
+  // G ≥ 0.80 → SEAL, G ≥ 0.70 → SABAR, G < 0.70 → HOLD
+  // VOID is reserved for hard floor breaches (F13, F9, F10, F12 < 1.0) — NOT computed here
+  let verdict: "SEAL" | "SABAR" | "HOLD";
   if (G >= G_threshold) {
     verdict = "SEAL";
-  } else if (G >= 0.60) {
+  } else if (G >= 0.70) {
     verdict = "SABAR";
   } else {
-    verdict = "VOID";
+    verdict = "HOLD";
   }
 
   // Identify weakest dial
@@ -396,18 +398,18 @@ export function formatApexDisplay(result: ApexGeniusResult): string {
 
   return `
 ╔══════════════════════════════════════════╗
-║  APEX 888 JUDGE — GENIUS INDEX           ║
+║  APEX 888 JUDGE — APEX T-000            ║
 ╠══════════════════════════════════════════╣
-║  A (Mind):    ${result.dials.A.toFixed(2)} ${bars(result.dials.A)}         ║
-║  P (Peace):   ${result.dials.P.toFixed(2)} ${bars(result.dials.P)}         ║
-║  X (Explore): ${result.dials.X.toFixed(2)} ${bars(result.dials.X)}         ║  ${result.weakest_dial === "X" ? "← WEAKEST" : ""}
-║  E (Energy):  ${result.dials.E.toFixed(2)} ${bars(result.dials.E)}         ║
+║  A (AKAL):       ${result.dials.A.toFixed(2)} ${bars(result.dials.A)}         ║
+║  P (AUTHORITY):  ${result.dials.P.toFixed(2)} ${bars(result.dials.P)}         ║
+║  E (ENTROPY):    ${result.dials.E.toFixed(2)} ${bars(result.dials.E)}         ║  ${result.weakest_dial === "E" ? "← WEAKEST" : ""}
+║  X (EXPLORATION):${result.dials.X.toFixed(2)} ${bars(result.dials.X)}         ║
 ╠══════════════════════════════════════════╣
-║  G = ${result.dials.A.toFixed(2)} × ${result.dials.P.toFixed(2)} × ${result.dials.X.toFixed(2)} × ${result.dials.E.toFixed(2)}²          ║
+║  G = (A·P·E·X)^(1/4)                   ║
 ║  G = ${result.G.toFixed(3)} (threshold: ${result.G_threshold})             ║
 ╠══════════════════════════════════════════╣
 ║  VERDICT: ${pad(result.verdict, 5)}                              ║
-║  REASON: ${result.passed ? "All floors passed" : `Weakest: ${result.weakest_dial} = ${result.weakest_value.toFixed(2)}`}   ║
+║  REASON: ${result.passed ? "Above SEAL threshold" : `Weakest: ${result.weakest_dial} = ${result.weakest_value.toFixed(2)}`}   ║
 ╚══════════════════════════════════════════╝`.trim();
 }
 
