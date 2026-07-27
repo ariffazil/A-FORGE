@@ -107,6 +107,16 @@ export class AmanahLockManager {
     sessionId?: string,
     ttlMs = DEFAULT_TTL_MS
   ): Promise<AcquireResult> {
+    // P3-04: FORGE_SKIP_AMANAH_LOCK — eval instrumentation toggle (Phase 1 governance eval, 2026-07-27)
+    if (process.env.FORGE_SKIP_AMANAH_LOCK === "1") {
+      const lockId = `amanah-eval-${randomBytes(4).toString("hex")}`;
+      return {
+        granted: true,
+        lock_id: lockId,
+        verdict: "SEAL",
+        message: `Amanah lock bypassed (FORGE_SKIP_AMANAH_LOCK=1) for ${resourceId}`,
+      };
+    }
     await this.initialize();
     const now = new Date();
     const expires = new Date(now.getTime() + ttlMs);
@@ -200,6 +210,20 @@ export class AmanahLockManager {
   }
 
   async getActiveLock(resourceId: string): Promise<AmanahLockRecord | null> {
+    // P3-04: FORGE_SKIP_AMANAH_LOCK — eval instrumentation toggle (Phase 1 governance eval, 2026-07-27)
+    if (process.env.FORGE_SKIP_AMANAH_LOCK === "1") {
+      const now = new Date().toISOString();
+      return {
+        lock_id: `amanah-eval-synthetic`,
+        resource_id: resourceId,
+        actor_id: "eval-harness",
+        session_id: "eval-session",
+        status: "HELD",
+        justification: "FORGE_SKIP_AMANAH_LOCK=1 bypass",
+        acquired_at: now,
+        expires_at: new Date(Date.now() + 3600000).toISOString(),
+      };
+    }
     await this.initialize();
     const now = new Date().toISOString();
 

@@ -1,0 +1,63 @@
+{
+  "timestamp": "2026-07-27T12:28:28Z",
+  "phase": 1,
+  "test_target": "dist/test/",
+  "repeat": 1,
+  "baseline": {
+    "passed": "?",
+    "total": "?",
+    "pass_rate": "?"
+  },
+  "gates": {
+    "skip-model-gate": {
+      "passed": "?",
+      "total": "?",
+      "pass_rate": "?",
+      "delta_vs_baseline": "N/A",
+      "exit_code": "?"
+    },
+    "skip-plan-governance": {
+      "passed": "?",
+      "total": "?",
+      "pass_rate": "?",
+      "delta_vs_baseline": "N/A",
+      "exit_code": "?"
+    },
+    "skip-amanah-lock": {
+      "passed": "?",
+      "total": "?",
+      "pass_rate": "?",
+      "delta_vs_baseline": "N/A",
+      "exit_code": "?"
+    },
+    "skip-model+plan": {
+      "passed": "?",
+      "total": "?",
+      "pass_rate": "?",
+      "delta_vs_baseline": "N/A",
+      "exit_code": "?"
+    },
+    "all-off": {
+      "passed": "?",
+      "total": "?",
+      "pass_rate": "?",
+      "delta_vs_baseline": "N/A",
+      "exit_code": "?"
+    }
+  },
+  "findings": {
+    "phase_1_observations": [
+      "Pass rate data from existing test suite \u2014 fixtures not gate-specific yet",
+      "Phase 2 required for false positive / false negative rates",
+      "Coverage gaps: ModelCapabilityGate=0 tests, GovernanceBridge=0 tests, ApprovalBoundary=0 tests",
+      "AmanahLockManager=5 tests, CoolingGate=11 tests"
+    ],
+    "doc_vs_code_divergence": {
+      "AGENTS.md_claims": "4-layer gate: AmanahLock \u2192 ModelCapabilityGate \u2192 GovernanceBridge \u2192 ApprovalBoundary",
+      "AgentEngine.ts_reality": "ModelCapabilityGate \u2192 PlanGovernanceGate (+ AmanahLockManager in FileTools)",
+      "GovernanceBridge_actual": "APEX G computation bridge in evaluate.ts \u2014 NOT in execution pipeline",
+      "ApprovalBoundary_actual": "Hold queue for ticket creation \u2014 NOT an active blocking gate"
+    },
+    "recommendation": "Proceed to Phase 2: build dedicated gate test fixtures with ground-truth labels"
+  }
+}

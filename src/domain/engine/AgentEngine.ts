@@ -300,7 +300,9 @@ export class AgentEngine {
     // This is the SECONDARY gate: thin, fast, non-deliberative.
     // Constitutional enforcement (primary) happens in arifOS MCP / 888_JUDGE.
     // P3-03: CI/FORGE_TEST_MODE bypass — no model registry in CI runners.
-    if (!process.env.CI && !process.env.FORGE_TEST_MODE) {
+    // P3-04: FORGE_SKIP_MODEL_GATE — eval instrumentation toggle (Phase 1 governance eval, 2026-07-27)
+    const skipModelGate = process.env.CI || process.env.FORGE_TEST_MODE || process.env.FORGE_SKIP_MODEL_GATE === "1";
+    if (!skipModelGate) {
     try {
       const { checkModelCapability } = await import("../governance/ModelCapabilityGate.js");
       const capabilityResult = checkModelCapability(options.task, {
@@ -334,7 +336,9 @@ export class AgentEngine {
     // arifOS spine: registry presence, risk leash, self-claim boundaries,
     // and shadow profile. This is the TERTIARY gate — plan-level, not just
     // action-level. Executes BEFORE any plan step touches tools.
-    if (options.planDAG) {
+    // P3-04: FORGE_SKIP_PLAN_GOVERNANCE — eval instrumentation toggle (Phase 1 governance eval, 2026-07-27)
+    const skipPlanGovernance = process.env.FORGE_SKIP_PLAN_GOVERNANCE === "1";
+    if (options.planDAG && !skipPlanGovernance) {
       try {
         const { verifyGovernanceCard } = await import("../planner/PlanValidator.js");
         const modelId = this.profile.name;

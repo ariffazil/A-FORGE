@@ -75,6 +75,14 @@ const HUMAN_ACK_TRIGGERS = [
 
 let cachedCard: ModelGovernanceCard | null = null;
 
+/**
+ * Clear the cached governance card (for test fixture reuse).
+ * Phase 2 governance eval — 2026-07-27.
+ */
+export function clearGovernanceCardCache(): void {
+  cachedCard = null;
+}
+
 export function readGovernanceCard(): ModelGovernanceCard | null {
   if (cachedCard) {
     return cachedCard;
