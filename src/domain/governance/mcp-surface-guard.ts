@@ -83,7 +83,9 @@ export const DEFAULT_CONFIG: SurfaceGuardConfig = {
     { id: 'geox', url: 'http://localhost:8081' },
     { id: 'wealth', url: 'http://localhost:18082' },
     { id: 'well', url: 'http://localhost:18083' },
-    { id: 'aaa', url: 'http://localhost:3001' },
+    // AAA is a React cockpit + A2A gateway, NOT an MCP server.
+    // Registered here for awareness but excluded from MCP tool surface checks.
+    // { id: 'aaa', url: 'http://localhost:3001' },
   ],
   snapshot_ttl_ms: 300_000, // 5 minutes
   enforce_hold: true,
