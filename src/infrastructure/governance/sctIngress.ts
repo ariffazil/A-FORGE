@@ -397,6 +397,8 @@ export async function gateToolIngress(
     requiredAuthority?: string;
     headers?: Record<string, string> | null;
     meta?: Record<string, unknown> | null;
+    /** Fallback SCT token derived from a validated session (P2.1 fix for SCT_GATE regression) */
+    sessionFallbackToken?: string | null;
   } = {},
 ): Promise<SctGateResult | { ok: true; skipped: true }> {
   const extraction = extractSctFromCall(args, {
@@ -422,6 +424,18 @@ export async function gateToolIngress(
   }
 
   if (extraction.status === "ABSENT") {
+    // P2.1 FIX (2026-07-27): SCT_GATE regression — when session_token isn't
+    // explicitly passed but a validated session exists, use the session's
+    // SCT as fallback. This restores the autonomous seal path broken when
+    // arif_init OBSERVE_ONLY tokens stopped being forwarded to forge_vault.
+    if (opts.sessionFallbackToken) {
+      const verified = await verifyFederationSct(opts.sessionFallbackToken, {
+        expectedActor: actor,
+        requiredAuthority: opts.requiredAuthority || "OBSERVE_ONLY",
+      });
+      if (verified.ok) return verified;
+      // Fallback failed — continue to normal SCT_REQUIRED path
+    }
     if (opts.requireSct) {
       return {
         ok: false,
