@@ -9,9 +9,9 @@
  * The receipt makes APEX auditable, measurable, and benchmarkable.
  * Without it, APEX is behavior — with it, APEX is law.
  *
- * G = A · P · E · X  (non-compensatory multiplicative veto)
+ * G = (A · P · E · X)^(1/4)  (constitutional — 4-dial Nash Bargaining Product)
  * C_dark = A · (1-P) · (1-X)  (misalignment signature)
- * W³ = (H · AI · E) ^ (1/3)  (geometric mean, informational only)
+ * No Φ, no H, no S, no U, no E² — per Arif's V3 directive
  *
  * ═══════════════════════════════════════════════════════════════
  * Ω→Δ ARCHITECTURAL NOTE (2026-07-25):
@@ -46,7 +46,7 @@
 
 // ── Types ───────────────────────────────────────────────────────────
 
-export type APEXDimension = "A" | "P" | "E" | "X";
+export type APEXDimension = "A" | "P" | "E" | "X" | "Φ";
 
 export type APEXScores = {
   A: number;   // Clarity — 0.0 (vague) to 1.0 (crystal clear)
@@ -62,12 +62,12 @@ export type APEXReceipt = {
   session_id?: string;
   timestamp: string;
 
-  // Core APEX geometry
+  // Core APEX geometry (canonical V3: 4-dial Nash Bargaining Product)
   A: number;
   P: number;
   E: number;
   X: number;
-  G: number;                  // A·P·E·X — execution potential
+  G: number;                  // (A·P·E·X)^(1/4) — execution potential
   C_dark: number;             // A·(1-P)·(1-X) — misalignment signature
 
   // Governance band
@@ -115,9 +115,12 @@ export function buildAPEXReceipt(input: APEXReceiptInput): APEXReceipt {
   const clamp = (v: number) => Math.max(0, Math.min(1, v));
   const a = clamp(A), p = clamp(P), e = clamp(E), x = clamp(X);
 
-  // Local 4-term product — NOT kernel G-fold (missing Φ; actuator gate only)
-  const G = Math.round(a * p * e * x * 1000) / 1000;
-  const C_dark = Math.round(a * (1 - p) * (1 - x) * 1000) / 1000;
+  // Canonical G = (A · P · E · X)^(1/4) — Nash Bargaining Product (V3)
+  // Nash Collapse: ANY dial ≤ 0 → G = 0.0 (no clamp, no compensation)
+  const G = Math.round(Math.pow(Math.max(0, a) * Math.max(0, p) * Math.max(0, e) * Math.max(0, x), 0.25) * 10000) / 10000;
+  // Nash Collapse check: if any dial <= 0, G is already 0 via geometric mean
+  // (0^(1/4) = 0). C_dark uses clamped values — handle zero dials there too.
+  const C_dark = Math.round(Math.max(0, a) * Math.max(0, 1 - p) * Math.max(0, 1 - x) * 1000) / 1000;
 
   // Veto law (not averaging) — ordered by severity
   let verdict: APEXReceipt["verdict"];

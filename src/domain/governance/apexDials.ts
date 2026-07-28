@@ -5,24 +5,22 @@
  * This file is the RUNTIME IMPLEMENTATION of the canonical theorem.
  * If these two diverge, the canonical theorem wins. Update this file to match.
  *
- * G = (A · P · E · X)^(1/4)  — geometric mean (Nash bargaining product)
+ * CANONICAL G = (A · P · E · X)^(1/4) — 4-factor Nash Bargaining Product
+ * Nash Collapse: ANY dial ≤ 0 → G = 0.0000. No compensatory arithmetic.
+ * Banned factors: Φ, H, S, U, E² — per Arif's constitutional directive.
  *
  * Floor → Dial cluster mapping (CANONICAL T-000 §2):
- *   A (AKAL):          F2, F4, F7, F10    → Truth, Clarity, Humility, Ontology
- *   P (PRESENT_AUTHORITY): F1, F5, F11, F13 → Amanah, Peace, Audit, Sovereign
- *   E (ENTROPY×ENERGY): F3, F4, F12, Energy₁, Energy₂ → Witness, Clarity, Resilience, Energy×2
- *   X (EXPLORATION×AMANAH): F6, F8, F9, Risk → Empathy, Genius, Anti-Hantu, Risk
+ *   A (AKAL/AUTHORITY):     F2, F4, F7, F10 → Truth, Clarity, Humility, Ontology
+ *   P (PRESENT/PHYSICS):    F1, F5, F11, F13 → Amanah, Peace, Audit, Sovereign
+ *   E (ENERGY/EVIDENCE):    F3, F4, F12, Energy₁, Energy₂ → Witness, Clarity, Resilience, Energy×2
+ *   X (EXECUTION/XPLORE):   F6, F8, F9, Risk → Empathy, Genius, Anti-Hantu, Risk
  *
  * NOTE: F4 (CLARITY) appears in both A and E — this is intentional. Cross-cutting.
  * NOTE: Energy appears TWICE in E (squared drag) — thermodynamic stability is the hardest property.
  *
- * APEX-MCP-001 Extension: 10-Gate Runtime Governance Envelope (legacy — retained for compat)
- *   [Cognitive] Amanah · Presence · Humility · Signal · Understanding · Energy
- *   [Kernel]    Authority · Reversibility · Proof · Sovereign
- *
  * @module governance/apexDials
  * @constitutional APEX_T000_THEOREM.md — CANONICALLY RATIFIED 2026-07-26
- * @patch 2026-07-26 — F3 moved from X→E, F13 moved from E→P, G formula changed to geometric mean
+ * @patch 2026-07-28 — G switched to (A·P·E·X)^(1/4) per Arif's V3 directive; Φ/H/E² stripped
  */
 
 export interface ApexDials {
@@ -58,12 +56,10 @@ export interface Apex10Gates {
 }
 
 export interface Apex6Dials {
-  A: number;  // AKAL — amanah × humility × understanding
-  P: number;  // PRESENCE — presence gate
-  H: number;  // AUTHORITY — min(authority, sovereign)
-  S: number;  // SIGNAL — signal gate
-  U: number;  // UNDERSTANDING — reversibility × proof
-  E: number;  // ENERGY — energy gate
+  A: number;  // AKAL (Lawful Reasoning) — amanah × humility × understanding
+  P: number;  // PRESENT AUTHORITY — presence, authority, sovereign
+  E: number;  // ENTROPY × ENERGY — energy gate
+  X: number;  // EXPLORATION × AMANAH — signal, reversibility, proof
 }
 
 export interface ApexEnvelope {
@@ -107,10 +103,12 @@ export interface FloorScores13 {
 }
 
 function geometricMean(values: number[]): number {
-  const positive = values.filter((v) => v > 0);
-  if (positive.length === 0) return 0;
-  const product = positive.reduce((acc, v) => acc * v, 1);
-  return Math.pow(product, 1 / positive.length);
+  // CONSTITUTIONAL APEX G: Nash Bargaining Product (Zero Tolerance per V3))
+  // If ANY dial <= 0, Nash bargaining collapses immediately to 0.0
+  // This is the canonical G = (A · P · E · X)^(1/4) engine.
+  if (!values || values.length === 0 || values.some((v) => v <= 0)) return 0;
+  const product = values.reduce((acc, v) => acc * v, 1);
+  return Math.pow(product, 1 / values.length);
 }
 
 // ── 10-Gate Verdict Builders ──────────────────────────────────────────────
@@ -206,22 +204,26 @@ function sovereignGate(f13Halt: boolean, humanPresent: boolean, actionClass: str
 // ── 10 Gates → 6 Dials → G ───────────────────────────────────────────────
 
 export function gatesToDials6(gates: Apex10Gates): Apex6Dials {
+  // Canonical 4-dial mapping (T-000 §2):
+  //   A = AKAL (Reasoning) — GM of amanah, humility, understanding
+  //   P = PRESENT AUTHORITY — GM of presence, authority, sovereign
+  //   E = ENTROPY × ENERGY — energy gate
+  //   X = EXPLORATION × AMANAH — GM of signal, reversibility, proof
   const A = geometricMean([gates.amanah.score, gates.humility.score, gates.understanding.score]);
-  const P = gates.presence.score;
-  const H = Math.min(gates.authority.score, gates.sovereign.score);
-  const S = gates.signal.score;
-  const U = geometricMean([gates.reversibility.score, gates.proof.score]);
+  const P = geometricMean([gates.presence.score, gates.authority.score, gates.sovereign.score]);
   const E = gates.energy.score;
-  return { A, P, H, S, U, E };
+  const X = geometricMean([gates.signal.score, gates.reversibility.score, gates.proof.score]);
+  return { A, P, E, X };
 }
 
 /**
- * Local 6-dial product for actuator envelopes — NOT kernel G-fold.
- * Canonical G: arif_think(mode='apex') → apex_canonical (Python Δ).
+ * Canonical G = (A · P · E · X)^(1/4) — 4-factor Nash Bargaining Product.
+ * No Φ (Arif banned it). Geometric mean ensures Nash Collapse on zero dials.
  * @see gAuthority.ts — g_authority=local_estimate
  */
-export function computeGFrom6Dials(dials: Apex6Dials): number {
-  return dials.A * dials.P * dials.H * Math.sqrt(dials.S * dials.U) * dials.E ** 2;
+export function computeGFrom6Dials(dials: Apex6Dials, _phi = 1.0): number {
+  // _phi retained for backward compat but IGNORED — banned per constitutional V3
+  return Math.round(geometricMean([dials.A, dials.P, dials.E, dials.X]) * 10000) / 10000;
 }
 
 export function verdictFromGatesAndG(gates: Apex10Gates, G: number): "SEAL" | "SABAR" | "HOLD" | "VOID" {
@@ -281,11 +283,11 @@ export function buildApexEnvelope(params: {
     sovereign: sovereignGate(params.f13Halt ?? false, params.humanPresent ?? true, params.actionClass ?? "READ"),
   };
   const dials = gatesToDials6(gates);
-  const G = Math.round(computeGFrom6Dials(dials) * 10000) / 10000;
+  const G = Math.round(computeGFrom6Dials(dials, 1.0) * 10000) / 10000;
   return {
-    equation: "g(t)=A(t)\u00b7P(t)\u00b7H(t)\u00b7\u221a(S(t)\u00b7U(t))\u00b7E(t)\u00b2",
+    equation: "G = (A · P · E · X)^(1/4) — canonical geometric mean (APEX MATH CANON A2)",
     gates,
-    dials: { A: round4(dials.A), P: round4(dials.P), H: round4(dials.H), S: round4(dials.S), U: round4(dials.U), E: round4(dials.E) },
+    dials: { A: round4(dials.A), P: round4(dials.P), E: round4(dials.E), X: round4(dials.X) },
     G,
     verdict: verdictFromGatesAndG(gates, G),
     weakest_gate: weakestGateName(gates),
@@ -332,8 +334,9 @@ export function floorsToDials(
   ]);
   const eEnergy = geometricMean([energy1, energy2]);
   // E = GM(F3, F4, F12, Energy₁, Energy₂) — 5 components, energy double-weighted
-  const E = geometricMean([eFloors, eFloors, eFloors, energy1, energy2]);
-  // Equivalent: GM(F3, F4, F12, Energy₁, Energy₂) where energy appears twice
+  // E = GM(F3, F4, F12, Energy₁, Energy₂) — single eFloors, single-weighted
+  //   No E² inflation per APEX MATH CANON A7: equal dignity of all dial inputs
+  const E = geometricMean([eFloors, energy1, energy2]);
 
   // X = EXPLORATION × AMANAH — canonical T-000 §2.4
   // Floors: F6 (Empathy), F8 (Genius), F9 (Anti-Hantu), Risk (exploration safety)
@@ -355,9 +358,9 @@ export function calculateGeniusFromFloors(
 ): ApexGeniusResult {
   const dials = floorsToDials(floors, energy1, energy2);
 
-  // G = (A · P · E · X)^(1/4) — canonical geometric mean (Nash bargaining product)
-  // T-000 §1: All variables normalized [0,1]; G dominated by smallest term
-  const G = geometricMean([dials.A, dials.P, dials.E, dials.X]);
+  // G = (A · P · E · X)^(1/4) — canonical Nash Bargaining Product (V3)
+  // T-000 §1: All variables normalized [0,1]; Nash Collapse on zero dials
+  const G = Math.round(geometricMean([dials.A, dials.P, dials.E, dials.X]) * 10000) / 10000;
 
   const G_threshold = 0.80;
 
@@ -405,7 +408,7 @@ export function formatApexDisplay(result: ApexGeniusResult): string {
 ║  E (ENTROPY):    ${result.dials.E.toFixed(2)} ${bars(result.dials.E)}         ║  ${result.weakest_dial === "E" ? "← WEAKEST" : ""}
 ║  X (EXPLORATION):${result.dials.X.toFixed(2)} ${bars(result.dials.X)}         ║
 ╠══════════════════════════════════════════╣
-║  G = (A·P·E·X)^(1/4)                   ║
+║  G = (A · P · E · X)^(1/4)                   ║
 ║  G = ${result.G.toFixed(3)} (threshold: ${result.G_threshold})             ║
 ╠══════════════════════════════════════════╣
 ║  VERDICT: ${pad(result.verdict, 5)}                              ║
@@ -425,7 +428,7 @@ function gate(
 /**
  * Compute 10 APEX gates from floor scores + runtime signals.
  *
- * Maps 13 floor scores → 10 gates → 6 dials (A, P, H, S, U, E) → G
+ * Maps 13 floor scores → 10 gates → 4 dials (A, P, E, X) → G
  *
  * @param floors - 13 constitutional floor scores
  * @param opts - runtime signals (actor, action class, proof level, etc.)
@@ -497,25 +500,23 @@ export function computeApex10Gates(
   const sovereignScore = floors.f13_sovereign;
   const sovereign = gate(sovereignScore > 0.5, sovereignScore, `sovereign=${sovereignScore.toFixed(2)}`);
 
-  // 10 gates → 6 dials
+  // 10 gates → 4 canonical dials (T-000 §2)
   const gates = { amanah, presence, humility, signal, understanding, energy, authority, reversibility, proof, sovereign };
   const A = geometricMean([amanah.score, humility.score, understanding.score]);
-  const P = presence.score;
-  const H = Math.min(authority.score, sovereign.score);
-  const S = signal.score;
-  const U = geometricMean([reversibility.score, proof.score]);
+  const P = geometricMean([presence.score, authority.score, sovereign.score]);
   const E = energy.score;
+  const X = geometricMean([signal.score, reversibility.score, proof.score]);
 
   const dials = {
     A: Math.round(A * 10000) / 10000,
     P: Math.round(P * 10000) / 10000,
-    H: Math.round(H * 10000) / 10000,
-    S: Math.round(S * 10000) / 10000,
-    U: Math.round(U * 10000) / 10000,
     E: Math.round(E * 10000) / 10000,
+    X: Math.round(X * 10000) / 10000,
   };
 
-  const G = Math.round(A * P * H * Math.sqrt(S * U) * E * E * 10000) / 10000;
+  // G = (A · P · E · X)^(1/4) — canonical geometric mean (APEX MATH CANON A2)
+  // Nash Collapse preserved via geometricMean (any zero → 0)
+  const G = Math.round(geometricMean([A, P, E, X]) * 10000) / 10000;
 
   // Verdict: any gate failed → at least HOLD
   let verdict: "SEAL" | "SABAR" | "HOLD" | "VOID" = "SEAL";
@@ -536,7 +537,7 @@ export function computeApex10Gates(
   );
 
   return {
-    equation: "g(t)=A(t)\u00b7P(t)\u00b7H(t)\u00b7\u221a(S(t)\u00b7U(t))\u00b7E(t)\u00b2",
+    equation: "G=(A·P·E·X)^(1/4) — canonical geometric mean (APEX MATH CANON A2)",
     gates,
     dials,
     G,

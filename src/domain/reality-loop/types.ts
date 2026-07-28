@@ -331,7 +331,7 @@ export const STAGE_PROMPT_MAP: Record<RealityStage, string[]> = {
   ],
   ENCODE: [
     "quantum-frame",       // generate N mutually-exclusive hypotheses
-    "apex-reason",         // physics-grounded evaluation (G = Q·V·Ψ·Φ)
+    "apex-reason",         // physics-grounded evaluation (G = A · P · E · X · Φ)
     "godel-metabolize",    // self-consistency check before action
   ],
   IMPROVE: [

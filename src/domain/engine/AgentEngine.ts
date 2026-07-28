@@ -876,7 +876,7 @@ export class AgentEngine {
     }
 
     // === 888_JUDGE APEX: Compute G via eigendecomposition from 13 floors ===
-    // K777_APEX §10.4: G = A × P × X × E² (derived from floor scores, not manual)
+    // Canonical G = A · P · E · X · Φ (product, derived from floor scores)
     // This is the constitutional genius index — computed from governance signals.
     let apexGenius: ReturnType<typeof calculateGeniusFromFloors> | undefined;
     try {
@@ -899,7 +899,7 @@ export class AgentEngine {
       // APEX T-000: energy1/energy2 should come from observatory/reality-ledger
       // TODO: wire arifFLOW observatory Energy_score → energy1, energy2
       apexGenius = calculateGeniusFromFloors(floorsProxy, 0.5, 0.5);
-      finalResponse += `\n\n[888_JUDGE APEX: G=${apexGenius.G.toFixed(3)} | A=${apexGenius.dials.A.toFixed(2)} P=${apexGenius.dials.P.toFixed(2)} X=${apexGenius.dials.X.toFixed(2)} E=${apexGenius.dials.E.toFixed(2)} | ${apexGenius.verdict}]`;
+      finalResponse += `\n\n[888_JUDGE APEX: G=${apexGenius.G.toFixed(3)} | A=${apexGenius.dials.A.toFixed(2)} P=${apexGenius.dials.P.toFixed(2)} E=${apexGenius.dials.E.toFixed(2)} X=${apexGenius.dials.X.toFixed(2)} Φ=1.0 | ${apexGenius.verdict}]`;
     } catch {
       // APEX computation is best-effort — do not block verdict on failure
     }

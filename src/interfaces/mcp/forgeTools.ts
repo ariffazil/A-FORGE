@@ -1582,7 +1582,7 @@ export function registerGovernedTools(server: McpServer): void {
           G: args.gate_G,
           C_dark: args.gate_C_dark,
           scores: {
-            A: 0.8, P: 0.8, E: 0.8, X: 0.8, Phi: 0.8, Omega: 0.04,
+            A: 0.8, P: 0.8, E: 0.8, X: 0.8, Omega: 0.04,
             rationale: ["Scores reconstructed from registration call — see prior forge_evaluate output for full detail"],
           },
           verdict: args.gate_verdict,

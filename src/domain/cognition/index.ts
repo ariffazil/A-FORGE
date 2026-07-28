@@ -20,7 +20,7 @@
  * @module cognition
  * @constitutional F2 TRUTH — every computation is evidence-labeled
  * @constitutional F4 CLARITY — ΔS ≤ 0 on every encode/decode cycle
- * @constitutional F8 GENIUS — G = (A·P·X·E²)·(1-h) computable from live state
+ * @constitutional F8 GENIUS — G = A · P · E · X · Φ computable from live state
  */
 export {
   type TaskSensitivity,

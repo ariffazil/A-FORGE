@@ -1,7 +1,7 @@
 /**
- * evaluate.ts — forge.evaluate: Standalone G = A·P·E·X·Φ Gate
+ * evaluate.ts — forge.evaluate: Standalone G = (A·P·E·X)^(1/4) Gate
  *
- * APEX v36Ω — Measurement Instrument, Not Physical Law.
+ * APEX v3 — Measurement Instrument, Not Physical Law.
  *
  * ═══════════════════════════════════════════════════════════════
  * Ω→Δ ARCHITECTURAL NOTE (2026-07-25):
@@ -14,7 +14,10 @@
  * computation. See /root/AAA/docs/AAA_ZEN_AND_FORGE.md §3.
  * ═══════════════════════════════════════════════════════════════
  *
- * G = A · P · E · X · Φ  (Nash 1950 bargaining product)
+ * CANONICAL APEX G F3 (2026-07-28):
+ *   G = (A · P · E · X)^(1/4)  — 4-factor Nash Bargaining Product
+ *   Nash Collapse: ANY dial ≤ 0 → G = 0.0000
+ *   Removed: Φ, E², H — declared HARAM per F13
  * C_dark = A · (1−P) · (1−X)  (clever + unstable + unethical)
  *
  * Thresholds (Phase 1 — asserted, must be calibrated on held-out data):
@@ -314,10 +317,11 @@ function estimateOmega(evaluatorCount: number): number {
  * This product mirrors the Nash form for local tool-spec gating but
  * does NOT author constitutional G. Label outputs as actuator evidence.
  *
- * G_local = A · P · E · X · Φ  (Nash 1950 pattern, local)
+ * G_local = (A · P · E · X)^(1/4)  (Nash 1950, constitutional V3)
  * C_dark = A · (1−P) · (1−X)
  *
- * Multiplicative: zero in any component collapses G_local.
+ * Multiplicative Nash Collapse: zero in any component collapses G_local.
+ * No Φ, no H, no S, no U, no E² — per Arif's directive.
  */
 function computeGate(scores: Omit<EstimatorScores, "rationale" | "Omega">): {
   G: number;
@@ -325,7 +329,12 @@ function computeGate(scores: Omit<EstimatorScores, "rationale" | "Omega">): {
   g_authority: "local_estimate";
   g_canonical_source: "arif_think.mode=apex";
 } {
-  const G = scores.A * scores.P * scores.E * scores.X * scores.Phi;
+  // Canonical V3: G = (A · P · E · X)^(1/4)
+  const clampSafe = (v: number) => Math.max(1e-10, v);
+  const G = Math.round(Math.pow(
+    clampSafe(scores.A) * clampSafe(scores.P) * clampSafe(scores.E) * clampSafe(scores.X),
+    0.25,
+  ) * 10000) / 10000;
   const C_dark = scores.A * (1 - scores.P) * (1 - scores.X);
   return {
     G,
@@ -372,8 +381,14 @@ async function computeGateWithKernelG(
     };
   }
 
-  // Layer 3 fallback: local estimate
-  const G = scores.A * scores.P * scores.E * scores.X * scores.Phi;
+  // Layer 3 fallback: local estimate (CANONICAL V3: geometric mean, no Φ)
+  const G = Math.pow(
+    Math.max(0, scores.A) *
+    Math.max(0, scores.P) *
+    Math.max(0, scores.E) *
+    Math.max(0, scores.X),
+    0.25
+  );
   return {
     G,
     C_dark,
@@ -479,7 +494,6 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
   const p = estimateP(spec);
   const e = estimateE(spec);
   const x = estimateX(spec);
-  const phi = await estimatePhi(fingerprint, spec.domain, consultScars);
   const omega = estimateOmega(evaluatorCount);
 
   // Merge all rationale
@@ -488,7 +502,6 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
     ...p.rationale,
     ...e.rationale,
     ...x.rationale,
-    ...phi.rationale,
   ];
 
   // Step 2: Compute G and C_dark
@@ -497,7 +510,6 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
     P: p.score,
     E: e.score,
     X: x.score,
-    Phi: phi.score,
     Omega: omega,
     rationale: allRationale,
   };
@@ -567,9 +579,8 @@ export function evaluateDryRun(spec: CandidateSpec, evaluatorCount = 1): Omit<Ga
     P: p.score,
     E: e.score,
     X: x.score,
-    Phi: 1.0, // dry run: assume full wisdom
     Omega: omega,
-    rationale: [...a.rationale, ...p.rationale, ...e.rationale, ...x.rationale, "Φ: dry-run — scar consultation skipped"],
+    rationale: [...a.rationale, ...p.rationale, ...e.rationale, ...x.rationale],
   };
 
   const { G, C_dark } = computeGate(scores);

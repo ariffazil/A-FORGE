@@ -11,7 +11,7 @@
  * @module cognition/taskJacobian
  * @constitutional F2 TRUTH — every sensitivity claim must be measured, not asserted
  * @constitutional F7 HUMILITY — confidence capped at 0.90 on Jacobian estimates
- * @constitutional F8 GENIUS — G = (A·P·X·E²)·(1-h) now computable from live task state
+ * @constitutional F8 GENIUS — G = A · P · E · X · Φ now computable from live task state
  * @constitutional F11 AUDIT — every Jacobian snapshot is provenance-bound
  */
 
@@ -299,8 +299,10 @@ export function computeGFromJacobian(
   }, 0) / entries.length;
   const E = 1 - avgSensitivity;
 
-  // Local actuator estimate (NOT kernel G): G_local ≈ (A · P · X · E²) · (1 - h)
-  const G = A * P * X * E * E * (1 - humilityCap);
+  // Canonical G = A · P · E · X · Φ — local actuator estimate (NOT kernel G)
+  //   Φ = 1 - humilityCap (F7 humility reserve as alignment factor)
+  //   E is used once (not squared) per canonical formula
+  const G = A * P * E * X * (1 - humilityCap);
 
   return Math.round(G * 10000) / 10000;
 }

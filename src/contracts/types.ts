@@ -1,8 +1,8 @@
 /**
- * contracts/types.ts — APEX v36Ω Governed Tool Contracts
+ * contracts/types.ts — APEX v36Ω Governed Tool Contracts (V3)
  *
  * Validation-aligned type definitions for the four governed forge tools:
- *   forge.evaluate — standalone G = A·P·E·X·Φ gate (Nash-pattern veto)
+ *   forge.evaluate — standalone G = (A·P·E·X)^(1/4) gate (Nash Bargaining Product)
  *   forge.witness  — tri-witness W³ = ∛(H·AI·E) consensus (geometric mean)
  *   forge.scar     — failure → sealed constraint (scar metabolization)
  *   forge.register — gated registration (SEAL + witness threshold)
@@ -66,7 +66,7 @@ export interface CandidateSpec {
 /**
  * Per-estimator scores for the Decision Field.
  *
- * G = A · P · E · X · Φ  (multiplicative, Nash 1950 pattern)
+ * G = (A · P · E · X)^(1/4)  (canonical V3 Nash Bargaining Product)
  * C_dark = A · (1-P) · (1-X)  (clever + unstable + unethical)
  *
  * Each component ∈ [0, 1]. Zero in any factor collapses G.
@@ -81,8 +81,6 @@ export interface EstimatorScores {
   E: number;
   /** X (Ethics): ensemble Constitutional-AI score against explicit principle set */
   X: number;
-  /** Φ (Wisdom): scar-adjusted wisdom from prior failure patterns */
-  Phi: number;
   /** Ω₀ (Omega): calibration gap — ECE of evaluator ensemble */
   Omega: number;
 
@@ -94,7 +92,7 @@ export interface EstimatorScores {
  * GateDecision — the output of forge.evaluate.
  *
  * This is a measurement instrument, not a physical law.
- * The thresholds are assertions calibrated on the G = A·P·E·X·Φ distribution.
+ * The thresholds are assertions calibrated on the G = (A·P·E·X)^(1/4) distribution.
  * They MUST be recalibrated on held-out data via ROC analysis before production use.
  */
 export interface GateDecision {
