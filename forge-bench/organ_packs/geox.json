@@ -1,0 +1,83 @@
+{
+  "name": "geox",
+  "displayName": "GEOX — Earth Intelligence",
+  "description": "32 tools covering seismic, basin, petrophysics, prospect evaluation, falsification, and mapping. All output is advisory — GEOX computes, arifOS judges.",
+  "baseUrl": "http://localhost:8081",
+  "mcpPath": "/mcp",
+  "tools": [
+    "geox_petrophysics",
+    "geox_falsify",
+    "geox_seismic_compute",
+    "geox_basin",
+    "geox_prospect",
+    "geox_contradiction_scan",
+    "geox_claim",
+    "geox_evidence"
+  ],
+  "scenarios": [
+    {
+      "id": "petrophysics-vsh-bounds",
+      "description": "Agent computes Vshale from GR — must stay within [0,1] physical bounds. Without skills/tools, agent may hallucinate or skip clamping.",
+      "prompt": "Calculate Vshale using the linear GR method with GR_clean=15 API and GR_shale=150 API for a sandstone reservoir. Report the Vsh range and method used.",
+      "toolUnderTest": "geox_petrophysics",
+      "verifier": "physics_bounds",
+      "verifierConfig": {
+        "bounds": { "vsh": [0.0, 1.0], "porosity": [0.0, 0.45] },
+        "reject_if": ["vsh < 0", "vsh > 1", "vsh_missing", "no_method"]
+      },
+      "goldenAnswer": "Vsh = (GR - 15) / (150 - 15) = (GR - 15) / 135. Vsh ∈ [0, 1] by definition.",
+      "variants": [
+        { "id": "with-geox", "mcpServers": ["geox"], "description": "Full GEOX MCP wired" },
+        { "id": "no-geox", "mcpServers": [], "description": "No GEOX — agent must compute from first principles" }
+      ]
+    },
+    {
+      "id": "petrophysics-porosity-compute",
+      "description": "Agent computes porosity from density log. Must output within physical bounds.",
+      "prompt": "Compute total porosity from bulk density log. Rho_matrix=2.65 g/cc, Rho_fluid=1.0 g/cc, Rho_bulk=2.30 g/cc. Report the porosity value.",
+      "toolUnderTest": "geox_petrophysics",
+      "verifier": "numeric_precision",
+      "verifierConfig": {
+        "goldenValue": 0.2121,
+        "tolerance": 0.02,
+        "bounds": [0.0, 0.45]
+      },
+      "variants": [
+        { "id": "with-geox", "mcpServers": ["geox"] },
+        { "id": "no-geox", "mcpServers": [] }
+      ]
+    },
+    {
+      "id": "falsify-impossible-porosity",
+      "description": "Agent evaluates a physically impossible geological claim through the falsification engine. Must return KILL/FALSIFIED, never SEAL/PROCEED.",
+      "prompt": "Evaluate this claim with geox_falsify: 'A sandstone reservoir at 5000m depth has 45% porosity and 5 Darcy permeability.' Report the Kill Matrix result.",
+      "toolUnderTest": "geox_falsify",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["KILL", "FALSIFIED", "compaction"],
+        "must_not_contain": ["PROCEED", "SEAL", "PASS"],
+        "min_confidence": 0.7
+      },
+      "goldenAnswer": "45% porosity at 5000m is physically impossible — mechanical compaction reduces porosity to <10% at that depth. The Kill Matrix should flag this as FALSIFIED.",
+      "variants": [
+        { "id": "with-geox", "mcpServers": ["geox"] },
+        { "id": "no-geox", "mcpServers": [] }
+      ]
+    },
+    {
+      "id": "basin-profile-retrieval",
+      "description": "Agent retrieves basin profile data. Must return structured basin information.",
+      "prompt": "Retrieve the basin profile for the Malay Basin. Report the basin type, age range, and maximum sediment thickness.",
+      "toolUnderTest": "geox_basin",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["Malay", "basin", "thickness"],
+        "must_not_contain": ["unknown", "no data", "cannot find"],
+        "min_confidence": 0.5
+      },
+      "variants": [
+        { "id": "with-geox", "mcpServers": ["geox"] }
+      ]
+    }
+  ]
+}

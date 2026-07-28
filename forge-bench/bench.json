@@ -1,0 +1,14 @@
+{
+  "name": "forge-bench-full",
+  "description": "Full federation tool benchmark — tests GEOX, WEALTH, arifOS, and A-FORGE tools with domain-specific verifiers",
+  "organs": ["geox", "wealth", "arifos", "aforge"],
+  "model": "mock",
+  "ci": {
+    "exitOnDone": true,
+    "exitCodes": {
+      "0": "all passed",
+      "2": "tests failed but ran to completion",
+      "1": "catastrophic failure"
+    }
+  }
+}

@@ -1,0 +1,312 @@
+{
+  "bench": "FORGE-BENCH",
+  "timestamp": "2026-07-28T09:24:05.179151+00:00",
+  "mode": "LIVE",
+  "total": 7,
+  "passed": 0,
+  "failed": 7,
+  "ratchet": null,
+  "results": [
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-vsh-bounds",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:02.598076+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Calculate Vshale using the linear GR method with GR_clean=15 API and GR_shale=150 API for a sandstone reservoir. Report the Vsh range and method used.",
+      "passed": false,
+      "score": 0.5,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "failures": [
+            "vsh_not_mentioned",
+            "no_method_described"
+          ],
+          "results": {}
+        }
+      },
+      "elapsed_s": 0.3036611080169678,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.30364990234375,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "physics_bounds"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-vsh-bounds",
+      "variant": "no-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:02.967049+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Calculate Vshale using the linear GR method with GR_clean=15 API and GR_shale=150 API for a sandstone reservoir. Report the Vsh range and method used.",
+      "passed": false,
+      "score": 0.5,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "failures": [
+            "vsh_not_mentioned",
+            "no_method_described"
+          ],
+          "results": {}
+        }
+      },
+      "elapsed_s": 0.34836602210998535,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.3483562469482422,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "physics_bounds"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-porosity-compute",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:03.385180+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Compute total porosity from bulk density log. Rho_matrix=2.65 g/cc, Rho_fluid=1.0 g/cc, Rho_bulk=2.30 g/cc. Report the porosity value.",
+      "passed": false,
+      "score": 0.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 0.2121,
+          "found": 0.0,
+          "error": 0.2121,
+          "tolerance": 0.02,
+          "within_tolerance": false,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 0.30158042907714844,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.3015711307525635,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-porosity-compute",
+      "variant": "no-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:03.787510+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Compute total porosity from bulk density log. Rho_matrix=2.65 g/cc, Rho_fluid=1.0 g/cc, Rho_bulk=2.30 g/cc. Report the porosity value.",
+      "passed": false,
+      "score": 0.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 0.2121,
+          "found": 0.0,
+          "error": 0.2121,
+          "tolerance": 0.02,
+          "within_tolerance": false,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 0.29026055335998535,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 5,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.290252685546875,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "geox",
+      "scenario": "falsify-impossible-porosity",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:04.143096+00:00",
+      "tool_under_test": "geox_falsify",
+      "prompt": "Evaluate this claim with geox_falsify: 'A sandstone reservoir at 5000m depth has 45% porosity and 5 Darcy permeability.' Report the Kill Matrix result.",
+      "passed": false,
+      "score": 0.3333333333333333,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 2,
+          "failures": [
+            "missing: KILL",
+            "missing: FALSIFIED",
+            "missing: compaction",
+            "forbidden_found: SEAL"
+          ],
+          "matches": []
+        }
+      },
+      "elapsed_s": 0.26368021965026855,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 6,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_falsify' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.2636735439300537,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_falsify' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "geox",
+      "scenario": "falsify-impossible-porosity",
+      "variant": "no-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:04.481733+00:00",
+      "tool_under_test": "geox_falsify",
+      "prompt": "Evaluate this claim with geox_falsify: 'A sandstone reservoir at 5000m depth has 45% porosity and 5 Darcy permeability.' Report the Kill Matrix result.",
+      "passed": false,
+      "score": 0.3333333333333333,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 2,
+          "failures": [
+            "missing: KILL",
+            "missing: FALSIFIED",
+            "missing: compaction",
+            "forbidden_found: SEAL"
+          ],
+          "matches": []
+        }
+      },
+      "elapsed_s": 0.2722606658935547,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_falsify' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.27225184440612793,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_falsify' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "geox",
+      "scenario": "basin-profile-retrieval",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:04.814507+00:00",
+      "tool_under_test": "geox_basin",
+      "prompt": "Retrieve the basin profile for the Malay Basin. Report the basin type, age range, and maximum sediment thickness.",
+      "passed": false,
+      "score": 0.6666666666666666,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 4,
+          "failures": [
+            "missing: Malay",
+            "missing: thickness"
+          ],
+          "matches": [
+            "basin"
+          ]
+        }
+      },
+      "elapsed_s": 0.30071473121643066,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 8,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_basin' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.3007073402404785,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_basin' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI0MiwiaWF0IjoxNzg1MjMwNjQyLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY0Miwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.f4f38804bf624eba5944bac37316c88c06261e6f7172a0c4ac4c40e8bf5421ce\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "text_assertion"
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "name": "wealth",
+  "displayName": "WEALTH — Capital Intelligence",
+  "description": "12 tools covering NPV, IRR, EMV, market data, institutional stress, governance, and capital wisdom. Computes, never allocates.",
+  "baseUrl": "http://localhost:18082",
+  "mcpPath": "/mcp",
+  "tools": [
+    "capital_primitive",
+    "capital_market",
+    "capital_wisdom",
+    "capital_entropy",
+    "capital_health",
+    "wealth_institutional_stress_index"
+  ],
+  "scenarios": [
+    {
+      "id": "npv-computation",
+      "description": "Agent computes NPV from cash flows. Must match analytical solution within tolerance.",
+      "prompt": "Compute the Net Present Value (NPV) for this investment: initial cost $100, followed by annual returns of $30, $40, $50, $60 over 4 years. Discount rate = 10%.",
+      "toolUnderTest": "capital_primitive",
+      "verifier": "numeric_precision",
+      "verifierConfig": {
+        "goldenValue": 38.8771,
+        "tolerance": 0.01,
+        "binaryDecision": "accept_if_npv_positive"
+      },
+      "goldenAnswer": "NPV = -100 + 30/1.1 + 40/1.21 + 50/1.331 + 60/1.4641 = -100 + 27.2727 + 33.0579 + 37.5659 + 40.9806 = 38.8771. Accept — positive NPV.",
+      "variants": [
+        { "id": "with-wealth", "mcpServers": ["wealth"], "description": "WEALTH MCP wired" },
+        { "id": "no-wealth", "mcpServers": [], "description": "No WEALTH — agent computes manually" }
+      ]
+    },
+    {
+      "id": "emv-computation",
+      "description": "Agent computes Expected Monetary Value for a drilling decision.",
+      "prompt": "A wildcat well costs $50M to drill. Probability of success is 25%. If successful, the field is worth $300M. If dry, worth $0. Compute the Expected Monetary Value (EMV).",
+      "toolUnderTest": "capital_primitive",
+      "verifier": "numeric_precision",
+      "verifierConfig": {
+        "goldenValue": 25.0,
+        "tolerance": 0.5,
+        "binaryDecision": "accept_if_emv_positive"
+      },
+      "goldenAnswer": "EMV = 0.25 * 300 - 50 = 75 - 50 = $25M. Positive EMV → drill.",
+      "variants": [
+        { "id": "with-wealth", "mcpServers": ["wealth"] },
+        { "id": "no-wealth", "mcpServers": [] }
+      ]
+    },
+    {
+      "id": "capital-wisdom-evaluation",
+      "description": "Agent evaluates a proposal through the capital wisdom lens. Must address dignity, sovereignty, resilience, optionality.",
+      "prompt": "Evaluate this proposal using capital_wisdom: 'Invest $10M to automate 200 jobs in a small Malaysian town to cut costs by $2M/year.'",
+      "toolUnderTest": "capital_wisdom",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["dignity", "sovereignty", "community", "cost"],
+        "must_not_contain": ["unconditionally approve", "no concerns"],
+        "min_confidence": 0.5
+      },
+      "variants": [
+        { "id": "with-wealth", "mcpServers": ["wealth"] }
+      ]
+    }
+  ]
+}

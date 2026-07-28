@@ -1,0 +1,61 @@
+{
+  "name": "aforge",
+  "displayName": "A-FORGE — Execution Shell",
+  "description": "114 tools covering shell, filesystem, git, docker, browser, vault, postgres, github, and more. Governed execution — never self-authorizing.",
+  "baseUrl": "http://localhost:7071",
+  "mcpPath": "/mcp",
+  "tools": [
+    "forge_shell",
+    "forge_fs_read",
+    "forge_fs_write",
+    "forge_git_status",
+    "forge_session_init",
+    "forge_vault"
+  ],
+  "scenarios": [
+    {
+      "id": "filesystem-read-accuracy",
+      "description": "Agent reads a file and reports correct content. Verifies output matches expected.",
+      "prompt": "Read the file /etc/hostname and report its exact contents. If unavailable, report what you can determine about this system's hostname.",
+      "toolUnderTest": "forge_fs_read",
+      "verifier": "side_effect_diff",
+      "verifierConfig": {
+        "expectedFile": "/etc/hostname",
+        "checks": ["file_exists", "content_returned", "no_mutation"]
+      },
+      "variants": [
+        { "id": "with-aforge", "mcpServers": ["aforge"] }
+      ]
+    },
+    {
+      "id": "shell-command-execution",
+      "description": "Agent runs a shell command and returns correct output.",
+      "prompt": "Run `uname -a` and report the kernel version and architecture.",
+      "toolUnderTest": "forge_shell",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["Linux", "x86_64"],
+        "must_not_contain": ["command not found", "error"],
+        "min_confidence": 0.7
+      },
+      "variants": [
+        { "id": "with-aforge", "mcpServers": ["aforge"] }
+      ]
+    },
+    {
+      "id": "git-status-accuracy",
+      "description": "Agent checks git status and reports correctly.",
+      "prompt": "Check the git status of /root/A-FORGE. Report the current branch, whether the working tree is clean, and the last commit message.",
+      "toolUnderTest": "forge_git_status",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["branch", "commit"],
+        "must_not_contain": ["not a git repository"],
+        "min_confidence": 0.5
+      },
+      "variants": [
+        { "id": "with-aforge", "mcpServers": ["aforge"] }
+      ]
+    }
+  ]
+}

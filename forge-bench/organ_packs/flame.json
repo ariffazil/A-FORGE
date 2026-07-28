@@ -1,0 +1,68 @@
+{
+  "name": "flame",
+  "displayName": "FLAME — Free-Loop Inference Mesh",
+  "description": "RM0 free-tier inference tools: fact_check, epistemic_check, plan_review, memory_steward, cross_verify, system_status. Stateless, advisory, never judges.",
+  "baseUrl": "http://localhost:18901",
+  "transport": "flame",
+  "requiresMcpSession": false,
+  "requiresAuth": false,
+  "note": "FLAME is NOT an MCP server. Uses simple HTTP endpoints (/health, /probe, /verify, /classify). No session management needed. Backend: Groq free tier.",
+  "tools": [
+    "hermes_fact_check",
+    "hermes_epistemic_check",
+    "hermes_plan_review",
+    "hermes_memory_steward",
+    "hermes_cross_verify",
+    "hermes_system_status",
+    "hermes_health"
+  ],
+  "scenarios": [
+    {
+      "id": "flame-health-check",
+      "description": "FLAME health endpoint responds with live status.",
+      "prompt": "Check FLAME health status.",
+      "toolUnderTest": "hermes_health",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["live", "FLAME"],
+        "must_not_contain": ["error", "down"],
+        "min_confidence": 0.5
+      },
+      "variants": [
+        { "id": "live-flame", "mcpServers": ["flame"], "description": "Live FLAME API" }
+      ]
+    },
+    {
+      "id": "flame-fact-check-responds",
+      "description": "FLAME /verify endpoint responds to structured claim verification (even if validation fails on missing fields — proves endpoint is alive).",
+      "prompt": "Call hermes_fact_check with a simple claim. Verify the endpoint responds.",
+      "toolUnderTest": "hermes_fact_check",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["valid", "authority"],
+        "must_not_contain": [],
+        "min_confidence": 0.4
+      },
+      "goldenAnswer": "FLAME /verify endpoint requires structured payload (fingerprint, prompt_hash, content, model, provider, created_at). Without full fields it returns valid=false — proves endpoint is alive. Full fact-check needs proper payload construction.",
+      "variants": [
+        { "id": "live-flame", "mcpServers": ["flame"] }
+      ]
+    },
+    {
+      "id": "flame-system-status",
+      "description": "FLAME /health returns system status with name, status, chain, mode, authority.",
+      "prompt": "Get federation system status via hermes_system_status.",
+      "toolUnderTest": "hermes_system_status",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["live", "FLAME", "authority", "chain"],
+        "must_not_contain": [],
+        "min_confidence": 0.4
+      },
+      "goldenAnswer": "FLAME /health returns: name=FLAME API, status=live, chain=RM0-TOOLS-FREELOOP, authority=ADVISORY.",
+      "variants": [
+        { "id": "live-flame", "mcpServers": ["flame"] }
+      ]
+    }
+  ]
+}

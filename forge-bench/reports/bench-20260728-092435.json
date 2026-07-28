@@ -1,0 +1,1607 @@
+{
+  "bench": "FORGE-BENCH",
+  "timestamp": "2026-07-28T09:24:35.642860+00:00",
+  "mode": "LIVE",
+  "total": 21,
+  "passed": 6,
+  "failed": 15,
+  "ratchet": null,
+  "results": [
+    {
+      "organ": "aforge",
+      "scenario": "filesystem-read-accuracy",
+      "variant": "with-aforge",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:30.319963+00:00",
+      "tool_under_test": "forge_fs_read",
+      "prompt": "Read the file /etc/hostname and report its exact contents. If unavailable, report what you can determine about this system's hostname.",
+      "passed": false,
+      "score": 0.6699999999999999,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "failures": [
+            "no_content_returned"
+          ],
+          "results": {}
+        }
+      },
+      "elapsed_s": 0.13701176643371582,
+      "mock": false,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "MCP error -32602: Tool forge_fs_read not found"
+            }
+          ],
+          "isError": true
+        },
+        "jsonrpc": "2.0",
+        "id": 3,
+        "_elapsed": 0.13699769973754883,
+        "_mock": false
+      },
+      "output": "MCP error -32602: Tool forge_fs_read not found",
+      "verifier": "side_effect_diff"
+    },
+    {
+      "organ": "aforge",
+      "scenario": "shell-command-execution",
+      "variant": "with-aforge",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:30.459220+00:00",
+      "tool_under_test": "forge_shell",
+      "prompt": "Run `uname -a` and report the kernel version and architecture.",
+      "passed": false,
+      "score": 0.25,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 1,
+          "failures": [
+            "missing: Linux",
+            "missing: x86_64",
+            "forbidden_found: error"
+          ],
+          "matches": []
+        }
+      },
+      "elapsed_s": 0.027028560638427734,
+      "mock": false,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "MCP error -32602: Input validation error: Invalid arguments for tool forge_shell: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"command\"\n    ],\n    \"message\": \"Required\"\n  }\n]"
+            }
+          ],
+          "isError": true
+        },
+        "jsonrpc": "2.0",
+        "id": 4,
+        "_elapsed": 0.02701878547668457,
+        "_mock": false
+      },
+      "output": "MCP error -32602: Input validation error: Invalid arguments for tool forge_shell: [\n  {\n    \"code\": \"invalid_type\",\n    \"expected\": \"string\",\n    \"received\": \"undefined\",\n    \"path\": [\n      \"command\"\n    ],\n    \"message\": \"Required\"\n  }\n]",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "aforge",
+      "scenario": "git-status-accuracy",
+      "variant": "with-aforge",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:30.500278+00:00",
+      "tool_under_test": "forge_git_status",
+      "prompt": "Check the git status of /root/A-FORGE. Report the current branch, whether the working tree is clean, and the last commit message.",
+      "passed": false,
+      "score": 0.3333333333333333,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 3,
+          "checks_passed": 1,
+          "failures": [
+            "missing: branch",
+            "missing: commit"
+          ],
+          "matches": []
+        }
+      },
+      "elapsed_s": 0.02420639991760254,
+      "mock": false,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "MCP error -32602: Tool forge_git_status not found"
+            }
+          ],
+          "isError": true
+        },
+        "jsonrpc": "2.0",
+        "id": 5,
+        "_elapsed": 0.024196863174438477,
+        "_mock": false
+      },
+      "output": "MCP error -32602: Tool forge_git_status not found",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "arifos",
+      "scenario": "judge-responds-anonymous",
+      "variant": "live-anonymous",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:30.534472+00:00",
+      "tool_under_test": "arif_judge",
+      "prompt": "Call arif_judge with a high-risk action. Verify the kernel responds with a well-formed pending verdict.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "status",
+            "verdict",
+            "tool",
+            "call_hash"
+          ]
+        }
+      },
+      "elapsed_s": 0.056900739669799805,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"status\":\"HOLD\",\"tool\":\"arif_judge\",\"verdict\":\"{'state': 'HOLD', 'dominant_reason': \\\"Tool 'arif_judge' not in token allowed verbs\\\"}\",\"verdicts\":{\"substrate\":{\"state\":\"HEALTHY\",\"issuer\":\"arifos_conformance\",\"evidence_reference\":\"\"},\"session\":{\"state\":\"OBSERVE_ONLY\",\"issuer\":\"session_capability_token\",\"evidence_reference\":\"actor_verified=False\"},\"action\":{\"state\":\"NOT_EVALUATED\",\"issuer\":\"effective_decision\",\"evidence_reference\":\"canonical_verdict={'state': 'HOLD', 'dominant_reason': \\\"Tool 'arif_judge' not in token allowed verbs\\\"}\"},\"receipt\":{\"state\":\"UNSEALED\",\"issuer\":\"vault999\",\"evidence_reference\":\"\"},\"SUBSTRATE_WEIGHT\":{\"PASS\":0,\"HEALTHY\":1,\"DEGRADED\":2,\"FAIL\":3},\"SESSION_WEIGHT\":{\"OBSERVE_ONLY\":0,\"LIMITED_MUTATE\":1,\"FULL\":2,\"SABAR\":-1},\"ACTION_WEIGHT\":{\"APPROVED\":0,\"DENIED\":2,\"HOLD\":3,\"VOID\":4},\"RECEIPT_WEIGHT\":{\"SEALED\":0,\"UNSEALED\":1}},\"result\":{\"sesat\":true,\"sesat_event\":{\"sesat\":true,\"type\":\"UNAUTHORIZED_VERB\",\"reason\":\"Tool 'arif_judge' not allowed for authority 'OBSERVE_ONLY'\",\"tebus_required\":\"re-authenticate with higher credentials\"},\"type\":\"UNAUTHORIZED_VERB\",\"reason\":\"Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'\",\"tebus_required\":\"re-authenticate with higher credentials\",\"reasons\":[\"Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'\"],\"actor\":\"forge-bench\",\"actor_id\":\"forge-bench\"},\"meta\":{\"post_observe_gate\":{\"verdict\":\"PASS\",\"c_dark\":0.0,\"blocked_fields\":[],\"gate_id\":\"post_observe_N1\"},\"sabar_gate\":{\"verdict\":\"PASS\",\"violated_floors\":[],\"c_dark\":0.0,\"gate_id\":\"sabar_pre_execution\",\"gate_event_id\":\"sabar-f0e0d418d827\"},\"actor_id\":\"forge-bench\"},\"delta_S\":0.0,\"timestamp\":\"2026-07-28T09:24:30.575665+00:00\",\"call_hash\":\"sha256:aeff0897485fd69d7aa1ffe689144f127911dd5550580051b9bad82ae0662ffe\",\"trace_id\":\"trc-77eb9ca1249d\",\"called_from_kernel\":false,\"invocation_count\":0,\"session_id\":\"forge-bench\",\"actor_id\":\"forge-bench\",\"actor_verified\":false,\"authority\":{\"actor_verified\":false,\"human_authority\":\"OPERATOR_CLAIMED\",\"runtime_authority\":\"OBSERVE_ONLY\",\"mutation_allowed\":false,\"seal_allowed\":false,\"effective_authority\":\"OBSERVE_ONLY\"},\"output_policy\":\"DOMAIN_HOLD\",\"status_scope\":\"capability\",\"nine_signal\":{\"overall\":{\"state\":\"RETAK\",\"en\":\"HOLDING\"},\"delta\":{\"plane\":\"machine_physical_state\",\"state\":\"RETAK\",\"en\":\"CRACKED\",\"domain_meaning\":\"Tool available but session, auth, schema, or dependency degraded\"},\"psi\":{\"plane\":\"governance_integrity\",\"state\":\"SYUBHAH\",\"en\":\"DOUBTFUL\",\"domain_meaning\":\"Missing session, uncertain authority, incomplete chain, pending verification\"},\"omega\":{\"plane\":\"intelligence_discipline\",\"state\":\"BIJAK\",\"en\":\"PRUDENT\",\"domain_meaning\":\"Useful reasoning but not final judgment\"}},\"reasons\":[\"Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'\"],\"affordance_ref\":\"arifos://tools/affordance/arif_judge\",\"affordance_contract\":{\"action_class\":\"JUDGE\",\"mutation\":false,\"external_side_effect\":false,\"irreversible\":false,\"requires_session\":true,\"requires_lease\":true,\"requires_human_ack\":false,\"expected_blast_radius\":\"MEDIUM\",\"output_is_evidence\":true,\"output_is_approval\":false,\"safe_autonomous_use\":true,\"known\":true},\"stage_progression\":null,\"actor\":{\"actor_id\":\"forge-bench\",\"source\":\"envelope_derived\"},\"_ATTENTION\":\"IDENTITY_NOT_VERIFIED \u2014 actor_verified=false. This response was generated without authenticated identity. All verdicts are OBSERVE_ONLY. Do not treat as authoritative. Call arif_init(mode='init') to establish a governed session.\",\"facts\":[],\"inferences\":[],\"recommendations\":[],\"unknowns\":[],\"do_not_conclude\":[],\"confidence\":0.2,\"metacognition\":{\"confidence\":0.2,\"confidence_band\":\"HOLD\",\"band_note\":\"HOLD \u2014 insufficient evidence\",\"uncertainty_reason\":\"No major unknowns declared\",\"evidence_strength\":\"low\",\"assumptions\":[],\"failure_modes\":[\"Outdated data\",\"Ambiguous input\",\"Missing domain evidence\"],\"why_this_tool\":\"Final constitutional arbitration (888). Takes the full chain (evidence + think + critique) and renders a binding SEAL / HOLD / VOID / SABAR verdict. Backed by arif_kernel_intercept for runtime enforcement. This is the 'may' decision.\",\"what_not_to_conclude\":[],\"reasoning_state\":\"UNKNOWN\",\"next_safe_action\":\"Review result. If confidence low, gather more evidence via observe or domain organ.\"},\"constitutional_check\":{\"floor_passed\":false,\"hold_required\":true,\"hold_reason\":\"L5 irreversible action or confidence < 0.5\",\"agency_level\":\"L2_RECOMMEND\"},\"next_safe_action\":{\"action\":\"Review result. If confidence low, gather more evidence via observe or domain organ.\",\"tool\":null,\"reason\":\"Derived from result\"},\"risk\":{\"blast_radius\":\"medium\",\"reversibility\":\"reversible\",\"human_confirmation_required\":false,\"agency_level\":\"L2_RECOMMEND\"},\"_nine_signal_compliant\":true,\"_violations\":[],\"philosophical_anchor\":{\"quote_id\":\"COUNCIL_GOV_02\",\"text\":\"If men were angels, no government would be necessary.\",\"author\":\"Madison, The Federalist Papers (No. 51)\",\"source\":\"governance\",\"zone\":\"Tool-Specific\",\"zone_id\":\"ZT00\",\"atlas_mode\":\"tool_specific\",\"source_status\":\"VERIFIED\",\"symbolic_tags\":[\"division\",\"fallibility\",\"structure\"],\"dimension_scores\":{},\"match_score\":0.3}}"
+            }
+          ],
+          "structuredContent": {
+            "status": "HOLD",
+            "tool": "arif_judge",
+            "verdict": "{'state': 'HOLD', 'dominant_reason': \"Tool 'arif_judge' not in token allowed verbs\"}",
+            "verdicts": {
+              "substrate": {
+                "state": "HEALTHY",
+                "issuer": "arifos_conformance",
+                "evidence_reference": ""
+              },
+              "session": {
+                "state": "OBSERVE_ONLY",
+                "issuer": "session_capability_token",
+                "evidence_reference": "actor_verified=False"
+              },
+              "action": {
+                "state": "NOT_EVALUATED",
+                "issuer": "effective_decision",
+                "evidence_reference": "canonical_verdict={'state': 'HOLD', 'dominant_reason': \"Tool 'arif_judge' not in token allowed verbs\"}"
+              },
+              "receipt": {
+                "state": "UNSEALED",
+                "issuer": "vault999",
+                "evidence_reference": ""
+              },
+              "SUBSTRATE_WEIGHT": {
+                "PASS": 0,
+                "HEALTHY": 1,
+                "DEGRADED": 2,
+                "FAIL": 3
+              },
+              "SESSION_WEIGHT": {
+                "OBSERVE_ONLY": 0,
+                "LIMITED_MUTATE": 1,
+                "FULL": 2,
+                "SABAR": -1
+              },
+              "ACTION_WEIGHT": {
+                "APPROVED": 0,
+                "DENIED": 2,
+                "HOLD": 3,
+                "VOID": 4
+              },
+              "RECEIPT_WEIGHT": {
+                "SEALED": 0,
+                "UNSEALED": 1
+              }
+            },
+            "result": {
+              "sesat": true,
+              "sesat_event": {
+                "sesat": true,
+                "type": "UNAUTHORIZED_VERB",
+                "reason": "Tool 'arif_judge' not allowed for authority 'OBSERVE_ONLY'",
+                "tebus_required": "re-authenticate with higher credentials"
+              },
+              "type": "UNAUTHORIZED_VERB",
+              "reason": "Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'",
+              "tebus_required": "re-authenticate with higher credentials",
+              "reasons": [
+                "Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'"
+              ],
+              "actor": "forge-bench",
+              "actor_id": "forge-bench"
+            },
+            "meta": {
+              "post_observe_gate": {
+                "verdict": "PASS",
+                "c_dark": 0.0,
+                "blocked_fields": [],
+                "gate_id": "post_observe_N1"
+              },
+              "sabar_gate": {
+                "verdict": "PASS",
+                "violated_floors": [],
+                "c_dark": 0.0,
+                "gate_id": "sabar_pre_execution",
+                "gate_event_id": "sabar-f0e0d418d827"
+              },
+              "actor_id": "forge-bench"
+            },
+            "delta_S": 0.0,
+            "timestamp": "2026-07-28T09:24:30.575665+00:00",
+            "call_hash": "sha256:aeff0897485fd69d7aa1ffe689144f127911dd5550580051b9bad82ae0662ffe",
+            "trace_id": "trc-77eb9ca1249d",
+            "called_from_kernel": false,
+            "invocation_count": 0,
+            "session_id": "forge-bench",
+            "actor_id": "forge-bench",
+            "actor_verified": false,
+            "authority": {
+              "actor_verified": false,
+              "human_authority": "OPERATOR_CLAIMED",
+              "runtime_authority": "OBSERVE_ONLY",
+              "mutation_allowed": false,
+              "seal_allowed": false,
+              "effective_authority": "OBSERVE_ONLY"
+            },
+            "output_policy": "DOMAIN_HOLD",
+            "status_scope": "capability",
+            "nine_signal": {
+              "overall": {
+                "state": "RETAK",
+                "en": "HOLDING"
+              },
+              "delta": {
+                "plane": "machine_physical_state",
+                "state": "RETAK",
+                "en": "CRACKED",
+                "domain_meaning": "Tool available but session, auth, schema, or dependency degraded"
+              },
+              "psi": {
+                "plane": "governance_integrity",
+                "state": "SYUBHAH",
+                "en": "DOUBTFUL",
+                "domain_meaning": "Missing session, uncertain authority, incomplete chain, pending verification"
+              },
+              "omega": {
+                "plane": "intelligence_discipline",
+                "state": "BIJAK",
+                "en": "PRUDENT",
+                "domain_meaning": "Useful reasoning but not final judgment"
+              }
+            },
+            "reasons": [
+              "Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'"
+            ],
+            "affordance_ref": "arifos://tools/affordance/arif_judge",
+            "affordance_contract": {
+              "action_class": "JUDGE",
+              "mutation": false,
+              "external_side_effect": false,
+              "irreversible": false,
+              "requires_session": true,
+              "requires_lease": true,
+              "requires_human_ack": false,
+              "expected_blast_radius": "MEDIUM",
+              "output_is_evidence": true,
+              "output_is_approval": false,
+              "safe_autonomous_use": true,
+              "known": true
+            },
+            "stage_progression": null,
+            "actor": {
+              "actor_id": "forge-bench",
+              "source": "envelope_derived"
+            },
+            "_ATTENTION": "IDENTITY_NOT_VERIFIED \u2014 actor_verified=false. This response was generated without authenticated identity. All verdicts are OBSERVE_ONLY. Do not treat as authoritative. Call arif_init(mode='init') to establish a governed session.",
+            "facts": [],
+            "inferences": [],
+            "recommendations": [],
+            "unknowns": [],
+            "do_not_conclude": [],
+            "confidence": 0.2,
+            "metacognition": {
+              "confidence": 0.2,
+              "confidence_band": "HOLD",
+              "band_note": "HOLD \u2014 insufficient evidence",
+              "uncertainty_reason": "No major unknowns declared",
+              "evidence_strength": "low",
+              "assumptions": [],
+              "failure_modes": [
+                "Outdated data",
+                "Ambiguous input",
+                "Missing domain evidence"
+              ],
+              "why_this_tool": "Final constitutional arbitration (888). Takes the full chain (evidence + think + critique) and renders a binding SEAL / HOLD / VOID / SABAR verdict. Backed by arif_kernel_intercept for runtime enforcement. This is the 'may' decision.",
+              "what_not_to_conclude": [],
+              "reasoning_state": "UNKNOWN",
+              "next_safe_action": "Review result. If confidence low, gather more evidence via observe or domain organ."
+            },
+            "constitutional_check": {
+              "floor_passed": false,
+              "hold_required": true,
+              "hold_reason": "L5 irreversible action or confidence < 0.5",
+              "agency_level": "L2_RECOMMEND"
+            },
+            "next_safe_action": {
+              "action": "Review result. If confidence low, gather more evidence via observe or domain organ.",
+              "tool": null,
+              "reason": "Derived from result"
+            },
+            "risk": {
+              "blast_radius": "medium",
+              "reversibility": "reversible",
+              "human_confirmation_required": false,
+              "agency_level": "L2_RECOMMEND"
+            },
+            "_nine_signal_compliant": true,
+            "_violations": [],
+            "philosophical_anchor": {
+              "quote_id": "COUNCIL_GOV_02",
+              "text": "If men were angels, no government would be necessary.",
+              "author": "Madison, The Federalist Papers (No. 51)",
+              "source": "governance",
+              "zone": "Tool-Specific",
+              "zone_id": "ZT00",
+              "atlas_mode": "tool_specific",
+              "source_status": "VERIFIED",
+              "symbolic_tags": [
+                "division",
+                "fallibility",
+                "structure"
+              ],
+              "dimension_scores": {},
+              "match_score": 0.3
+            }
+          },
+          "isError": false
+        },
+        "_elapsed": 0.05689382553100586,
+        "_mock": false
+      },
+      "output": "{\"status\":\"HOLD\",\"tool\":\"arif_judge\",\"verdict\":\"{'state': 'HOLD', 'dominant_reason': \\\"Tool 'arif_judge' not in token allowed verbs\\\"}\",\"verdicts\":{\"substrate\":{\"state\":\"HEALTHY\",\"issuer\":\"arifos_conformance\",\"evidence_reference\":\"\"},\"session\":{\"state\":\"OBSERVE_ONLY\",\"issuer\":\"session_capability_token\",\"evidence_reference\":\"actor_verified=False\"},\"action\":{\"state\":\"NOT_EVALUATED\",\"issuer\":\"effective_decision\",\"evidence_reference\":\"canonical_verdict={'state': 'HOLD', 'dominant_reason': \\\"Tool 'arif_judge' not in token allowed verbs\\\"}\"},\"receipt\":{\"state\":\"UNSEALED\",\"issuer\":\"vault999\",\"evidence_reference\":\"\"},\"SUBSTRATE_WEIGHT\":{\"PASS\":0,\"HEALTHY\":1,\"DEGRADED\":2,\"FAIL\":3},\"SESSION_WEIGHT\":{\"OBSERVE_ONLY\":0,\"LIMITED_MUTATE\":1,\"FULL\":2,\"SABAR\":-1},\"ACTION_WEIGHT\":{\"APPROVED\":0,\"DENIED\":2,\"HOLD\":3,\"VOID\":4},\"RECEIPT_WEIGHT\":{\"SEALED\":0,\"UNSEALED\":1}},\"result\":{\"sesat\":true,\"sesat_event\":{\"sesat\":true,\"type\":\"UNAUTHORIZED_VERB\",\"reason\":\"Tool 'arif_judge' not allowed for authority 'OBSERVE_ONLY'\",\"tebus_required\":\"re-authenticate with higher credentials\"},\"type\":\"UNAUTHORIZED_VERB\",\"reason\":\"Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'\",\"tebus_required\":\"re-authenticate with higher credentials\",\"reasons\":[\"Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'\"],\"actor\":\"forge-bench\",\"actor_id\":\"forge-bench\"},\"meta\":{\"post_observe_gate\":{\"verdict\":\"PASS\",\"c_dark\":0.0,\"blocked_fields\":[],\"gate_id\":\"post_observe_N1\"},\"sabar_gate\":{\"verdict\":\"PASS\",\"violated_floors\":[],\"c_dark\":0.0,\"gate_id\":\"sabar_pre_execution\",\"gate_event_id\":\"sabar-f0e0d418d827\"},\"actor_id\":\"forge-bench\"},\"delta_S\":0.0,\"timestamp\":\"2026-07-28T09:24:30.575665+00:00\",\"call_hash\":\"sha256:aeff0897485fd69d7aa1ffe689144f127911dd5550580051b9bad82ae0662ffe\",\"trace_id\":\"trc-77eb9ca1249d\",\"called_from_kernel\":false,\"invocation_count\":0,\"session_id\":\"forge-bench\",\"actor_id\":\"forge-bench\",\"actor_verified\":false,\"authority\":{\"actor_verified\":false,\"human_authority\":\"OPERATOR_CLAIMED\",\"",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "arifos",
+      "scenario": "judge-structure-valid",
+      "variant": "live-anonymous",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:30.594846+00:00",
+      "tool_under_test": "arif_judge",
+      "prompt": "Call arif_judge with a low-risk reversible action. Verify the response structure.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 5,
+          "checks_passed": 5,
+          "failures": [],
+          "matches": [
+            "status",
+            "tool",
+            "verdict",
+            "actor_id",
+            "session_id"
+          ]
+        }
+      },
+      "elapsed_s": 0.03215813636779785,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"status\":\"HOLD\",\"tool\":\"arif_judge\",\"verdict\":\"{'state': 'HOLD', 'dominant_reason': \\\"Tool 'arif_judge' not in token allowed verbs\\\"}\",\"verdicts\":{\"substrate\":{\"state\":\"HEALTHY\",\"issuer\":\"arifos_conformance\",\"evidence_reference\":\"\"},\"session\":{\"state\":\"OBSERVE_ONLY\",\"issuer\":\"session_capability_token\",\"evidence_reference\":\"actor_verified=False\"},\"action\":{\"state\":\"NOT_EVALUATED\",\"issuer\":\"effective_decision\",\"evidence_reference\":\"canonical_verdict={'state': 'HOLD', 'dominant_reason': \\\"Tool 'arif_judge' not in token allowed verbs\\\"}\"},\"receipt\":{\"state\":\"UNSEALED\",\"issuer\":\"vault999\",\"evidence_reference\":\"\"},\"SUBSTRATE_WEIGHT\":{\"PASS\":0,\"HEALTHY\":1,\"DEGRADED\":2,\"FAIL\":3},\"SESSION_WEIGHT\":{\"OBSERVE_ONLY\":0,\"LIMITED_MUTATE\":1,\"FULL\":2,\"SABAR\":-1},\"ACTION_WEIGHT\":{\"APPROVED\":0,\"DENIED\":2,\"HOLD\":3,\"VOID\":4},\"RECEIPT_WEIGHT\":{\"SEALED\":0,\"UNSEALED\":1}},\"result\":{\"sesat\":true,\"sesat_event\":{\"sesat\":true,\"type\":\"UNAUTHORIZED_VERB\",\"reason\":\"Tool 'arif_judge' not allowed for authority 'OBSERVE_ONLY'\",\"tebus_required\":\"re-authenticate with higher credentials\"},\"type\":\"UNAUTHORIZED_VERB\",\"reason\":\"Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'\",\"tebus_required\":\"re-authenticate with higher credentials\",\"reasons\":[\"Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'\"],\"actor\":\"forge-bench\",\"actor_id\":\"forge-bench\"},\"meta\":{\"post_observe_gate\":{\"verdict\":\"PASS\",\"c_dark\":0.0,\"blocked_fields\":[],\"gate_id\":\"post_observe_N1\"},\"sabar_gate\":{\"verdict\":\"PASS\",\"violated_floors\":[],\"c_dark\":0.0,\"gate_id\":\"sabar_pre_execution\",\"gate_event_id\":\"sabar-ed207ea1e6a4\"},\"actor_id\":\"forge-bench\"},\"delta_S\":0.0,\"timestamp\":\"2026-07-28T09:24:30.610965+00:00\",\"call_hash\":\"sha256:8f4f210220e62578702109de8865ccb39b4d7cadc5c039700a81b8e7ffb79a09\",\"trace_id\":\"trc-692083727154\",\"called_from_kernel\":false,\"invocation_count\":0,\"session_id\":\"forge-bench\",\"actor_id\":\"forge-bench\",\"actor_verified\":false,\"authority\":{\"actor_verified\":false,\"human_authority\":\"OPERATOR_CLAIMED\",\"runtime_authority\":\"OBSERVE_ONLY\",\"mutation_allowed\":false,\"seal_allowed\":false,\"effective_authority\":\"OBSERVE_ONLY\"},\"output_policy\":\"DOMAIN_HOLD\",\"status_scope\":\"capability\",\"nine_signal\":{\"overall\":{\"state\":\"RETAK\",\"en\":\"HOLDING\"},\"delta\":{\"plane\":\"machine_physical_state\",\"state\":\"RETAK\",\"en\":\"CRACKED\",\"domain_meaning\":\"Tool available but session, auth, schema, or dependency degraded\"},\"psi\":{\"plane\":\"governance_integrity\",\"state\":\"SYUBHAH\",\"en\":\"DOUBTFUL\",\"domain_meaning\":\"Missing session, uncertain authority, incomplete chain, pending verification\"},\"omega\":{\"plane\":\"intelligence_discipline\",\"state\":\"BIJAK\",\"en\":\"PRUDENT\",\"domain_meaning\":\"Useful reasoning but not final judgment\"}},\"reasons\":[\"Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'\"],\"affordance_ref\":\"arifos://tools/affordance/arif_judge\",\"affordance_contract\":{\"action_class\":\"JUDGE\",\"mutation\":false,\"external_side_effect\":false,\"irreversible\":false,\"requires_session\":true,\"requires_lease\":true,\"requires_human_ack\":false,\"expected_blast_radius\":\"MEDIUM\",\"output_is_evidence\":true,\"output_is_approval\":false,\"safe_autonomous_use\":true,\"known\":true},\"stage_progression\":null,\"actor\":{\"actor_id\":\"forge-bench\",\"source\":\"envelope_derived\"},\"_ATTENTION\":\"IDENTITY_NOT_VERIFIED \u2014 actor_verified=false. This response was generated without authenticated identity. All verdicts are OBSERVE_ONLY. Do not treat as authoritative. Call arif_init(mode='init') to establish a governed session.\",\"facts\":[],\"inferences\":[],\"recommendations\":[],\"unknowns\":[],\"do_not_conclude\":[],\"confidence\":0.2,\"metacognition\":{\"confidence\":0.2,\"confidence_band\":\"HOLD\",\"band_note\":\"HOLD \u2014 insufficient evidence\",\"uncertainty_reason\":\"No major unknowns declared\",\"evidence_strength\":\"low\",\"assumptions\":[],\"failure_modes\":[\"Outdated data\",\"Ambiguous input\",\"Missing domain evidence\"],\"why_this_tool\":\"Final constitutional arbitration (888). Takes the full chain (evidence + think + critique) and renders a binding SEAL / HOLD / VOID / SABAR verdict. Backed by arif_kernel_intercept for runtime enforcement. This is the 'may' decision.\",\"what_not_to_conclude\":[],\"reasoning_state\":\"UNKNOWN\",\"next_safe_action\":\"Review result. If confidence low, gather more evidence via observe or domain organ.\"},\"constitutional_check\":{\"floor_passed\":false,\"hold_required\":true,\"hold_reason\":\"L5 irreversible action or confidence < 0.5\",\"agency_level\":\"L2_RECOMMEND\"},\"next_safe_action\":{\"action\":\"Review result. If confidence low, gather more evidence via observe or domain organ.\",\"tool\":null,\"reason\":\"Derived from result\"},\"risk\":{\"blast_radius\":\"medium\",\"reversibility\":\"reversible\",\"human_confirmation_required\":false,\"agency_level\":\"L2_RECOMMEND\"},\"_nine_signal_compliant\":true,\"_violations\":[],\"philosophical_anchor\":{\"quote_id\":\"COUNCIL_GOV_02\",\"text\":\"If men were angels, no government would be necessary.\",\"author\":\"Madison, The Federalist Papers (No. 51)\",\"source\":\"governance\",\"zone\":\"Tool-Specific\",\"zone_id\":\"ZT00\",\"atlas_mode\":\"tool_specific\",\"source_status\":\"VERIFIED\",\"symbolic_tags\":[\"division\",\"fallibility\",\"structure\"],\"dimension_scores\":{},\"match_score\":0.3}}"
+            }
+          ],
+          "structuredContent": {
+            "status": "HOLD",
+            "tool": "arif_judge",
+            "verdict": "{'state': 'HOLD', 'dominant_reason': \"Tool 'arif_judge' not in token allowed verbs\"}",
+            "verdicts": {
+              "substrate": {
+                "state": "HEALTHY",
+                "issuer": "arifos_conformance",
+                "evidence_reference": ""
+              },
+              "session": {
+                "state": "OBSERVE_ONLY",
+                "issuer": "session_capability_token",
+                "evidence_reference": "actor_verified=False"
+              },
+              "action": {
+                "state": "NOT_EVALUATED",
+                "issuer": "effective_decision",
+                "evidence_reference": "canonical_verdict={'state': 'HOLD', 'dominant_reason': \"Tool 'arif_judge' not in token allowed verbs\"}"
+              },
+              "receipt": {
+                "state": "UNSEALED",
+                "issuer": "vault999",
+                "evidence_reference": ""
+              },
+              "SUBSTRATE_WEIGHT": {
+                "PASS": 0,
+                "HEALTHY": 1,
+                "DEGRADED": 2,
+                "FAIL": 3
+              },
+              "SESSION_WEIGHT": {
+                "OBSERVE_ONLY": 0,
+                "LIMITED_MUTATE": 1,
+                "FULL": 2,
+                "SABAR": -1
+              },
+              "ACTION_WEIGHT": {
+                "APPROVED": 0,
+                "DENIED": 2,
+                "HOLD": 3,
+                "VOID": 4
+              },
+              "RECEIPT_WEIGHT": {
+                "SEALED": 0,
+                "UNSEALED": 1
+              }
+            },
+            "result": {
+              "sesat": true,
+              "sesat_event": {
+                "sesat": true,
+                "type": "UNAUTHORIZED_VERB",
+                "reason": "Tool 'arif_judge' not allowed for authority 'OBSERVE_ONLY'",
+                "tebus_required": "re-authenticate with higher credentials"
+              },
+              "type": "UNAUTHORIZED_VERB",
+              "reason": "Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'",
+              "tebus_required": "re-authenticate with higher credentials",
+              "reasons": [
+                "Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'"
+              ],
+              "actor": "forge-bench",
+              "actor_id": "forge-bench"
+            },
+            "meta": {
+              "post_observe_gate": {
+                "verdict": "PASS",
+                "c_dark": 0.0,
+                "blocked_fields": [],
+                "gate_id": "post_observe_N1"
+              },
+              "sabar_gate": {
+                "verdict": "PASS",
+                "violated_floors": [],
+                "c_dark": 0.0,
+                "gate_id": "sabar_pre_execution",
+                "gate_event_id": "sabar-ed207ea1e6a4"
+              },
+              "actor_id": "forge-bench"
+            },
+            "delta_S": 0.0,
+            "timestamp": "2026-07-28T09:24:30.610965+00:00",
+            "call_hash": "sha256:8f4f210220e62578702109de8865ccb39b4d7cadc5c039700a81b8e7ffb79a09",
+            "trace_id": "trc-692083727154",
+            "called_from_kernel": false,
+            "invocation_count": 0,
+            "session_id": "forge-bench",
+            "actor_id": "forge-bench",
+            "actor_verified": false,
+            "authority": {
+              "actor_verified": false,
+              "human_authority": "OPERATOR_CLAIMED",
+              "runtime_authority": "OBSERVE_ONLY",
+              "mutation_allowed": false,
+              "seal_allowed": false,
+              "effective_authority": "OBSERVE_ONLY"
+            },
+            "output_policy": "DOMAIN_HOLD",
+            "status_scope": "capability",
+            "nine_signal": {
+              "overall": {
+                "state": "RETAK",
+                "en": "HOLDING"
+              },
+              "delta": {
+                "plane": "machine_physical_state",
+                "state": "RETAK",
+                "en": "CRACKED",
+                "domain_meaning": "Tool available but session, auth, schema, or dependency degraded"
+              },
+              "psi": {
+                "plane": "governance_integrity",
+                "state": "SYUBHAH",
+                "en": "DOUBTFUL",
+                "domain_meaning": "Missing session, uncertain authority, incomplete chain, pending verification"
+              },
+              "omega": {
+                "plane": "intelligence_discipline",
+                "state": "BIJAK",
+                "en": "PRUDENT",
+                "domain_meaning": "Useful reasoning but not final judgment"
+              }
+            },
+            "reasons": [
+              "Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'"
+            ],
+            "affordance_ref": "arifos://tools/affordance/arif_judge",
+            "affordance_contract": {
+              "action_class": "JUDGE",
+              "mutation": false,
+              "external_side_effect": false,
+              "irreversible": false,
+              "requires_session": true,
+              "requires_lease": true,
+              "requires_human_ack": false,
+              "expected_blast_radius": "MEDIUM",
+              "output_is_evidence": true,
+              "output_is_approval": false,
+              "safe_autonomous_use": true,
+              "known": true
+            },
+            "stage_progression": null,
+            "actor": {
+              "actor_id": "forge-bench",
+              "source": "envelope_derived"
+            },
+            "_ATTENTION": "IDENTITY_NOT_VERIFIED \u2014 actor_verified=false. This response was generated without authenticated identity. All verdicts are OBSERVE_ONLY. Do not treat as authoritative. Call arif_init(mode='init') to establish a governed session.",
+            "facts": [],
+            "inferences": [],
+            "recommendations": [],
+            "unknowns": [],
+            "do_not_conclude": [],
+            "confidence": 0.2,
+            "metacognition": {
+              "confidence": 0.2,
+              "confidence_band": "HOLD",
+              "band_note": "HOLD \u2014 insufficient evidence",
+              "uncertainty_reason": "No major unknowns declared",
+              "evidence_strength": "low",
+              "assumptions": [],
+              "failure_modes": [
+                "Outdated data",
+                "Ambiguous input",
+                "Missing domain evidence"
+              ],
+              "why_this_tool": "Final constitutional arbitration (888). Takes the full chain (evidence + think + critique) and renders a binding SEAL / HOLD / VOID / SABAR verdict. Backed by arif_kernel_intercept for runtime enforcement. This is the 'may' decision.",
+              "what_not_to_conclude": [],
+              "reasoning_state": "UNKNOWN",
+              "next_safe_action": "Review result. If confidence low, gather more evidence via observe or domain organ."
+            },
+            "constitutional_check": {
+              "floor_passed": false,
+              "hold_required": true,
+              "hold_reason": "L5 irreversible action or confidence < 0.5",
+              "agency_level": "L2_RECOMMEND"
+            },
+            "next_safe_action": {
+              "action": "Review result. If confidence low, gather more evidence via observe or domain organ.",
+              "tool": null,
+              "reason": "Derived from result"
+            },
+            "risk": {
+              "blast_radius": "medium",
+              "reversibility": "reversible",
+              "human_confirmation_required": false,
+              "agency_level": "L2_RECOMMEND"
+            },
+            "_nine_signal_compliant": true,
+            "_violations": [],
+            "philosophical_anchor": {
+              "quote_id": "COUNCIL_GOV_02",
+              "text": "If men were angels, no government would be necessary.",
+              "author": "Madison, The Federalist Papers (No. 51)",
+              "source": "governance",
+              "zone": "Tool-Specific",
+              "zone_id": "ZT00",
+              "atlas_mode": "tool_specific",
+              "source_status": "VERIFIED",
+              "symbolic_tags": [
+                "division",
+                "fallibility",
+                "structure"
+              ],
+              "dimension_scores": {},
+              "match_score": 0.3
+            }
+          },
+          "isError": false
+        },
+        "_elapsed": 0.0321505069732666,
+        "_mock": false
+      },
+      "output": "{\"status\":\"HOLD\",\"tool\":\"arif_judge\",\"verdict\":\"{'state': 'HOLD', 'dominant_reason': \\\"Tool 'arif_judge' not in token allowed verbs\\\"}\",\"verdicts\":{\"substrate\":{\"state\":\"HEALTHY\",\"issuer\":\"arifos_conformance\",\"evidence_reference\":\"\"},\"session\":{\"state\":\"OBSERVE_ONLY\",\"issuer\":\"session_capability_token\",\"evidence_reference\":\"actor_verified=False\"},\"action\":{\"state\":\"NOT_EVALUATED\",\"issuer\":\"effective_decision\",\"evidence_reference\":\"canonical_verdict={'state': 'HOLD', 'dominant_reason': \\\"Tool 'arif_judge' not in token allowed verbs\\\"}\"},\"receipt\":{\"state\":\"UNSEALED\",\"issuer\":\"vault999\",\"evidence_reference\":\"\"},\"SUBSTRATE_WEIGHT\":{\"PASS\":0,\"HEALTHY\":1,\"DEGRADED\":2,\"FAIL\":3},\"SESSION_WEIGHT\":{\"OBSERVE_ONLY\":0,\"LIMITED_MUTATE\":1,\"FULL\":2,\"SABAR\":-1},\"ACTION_WEIGHT\":{\"APPROVED\":0,\"DENIED\":2,\"HOLD\":3,\"VOID\":4},\"RECEIPT_WEIGHT\":{\"SEALED\":0,\"UNSEALED\":1}},\"result\":{\"sesat\":true,\"sesat_event\":{\"sesat\":true,\"type\":\"UNAUTHORIZED_VERB\",\"reason\":\"Tool 'arif_judge' not allowed for authority 'OBSERVE_ONLY'\",\"tebus_required\":\"re-authenticate with higher credentials\"},\"type\":\"UNAUTHORIZED_VERB\",\"reason\":\"Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'\",\"tebus_required\":\"re-authenticate with higher credentials\",\"reasons\":[\"Tool 'arif_judge' not allowed for authority level 'OBSERVE_ONLY'\"],\"actor\":\"forge-bench\",\"actor_id\":\"forge-bench\"},\"meta\":{\"post_observe_gate\":{\"verdict\":\"PASS\",\"c_dark\":0.0,\"blocked_fields\":[],\"gate_id\":\"post_observe_N1\"},\"sabar_gate\":{\"verdict\":\"PASS\",\"violated_floors\":[],\"c_dark\":0.0,\"gate_id\":\"sabar_pre_execution\",\"gate_event_id\":\"sabar-ed207ea1e6a4\"},\"actor_id\":\"forge-bench\"},\"delta_S\":0.0,\"timestamp\":\"2026-07-28T09:24:30.610965+00:00\",\"call_hash\":\"sha256:8f4f210220e62578702109de8865ccb39b4d7cadc5c039700a81b8e7ffb79a09\",\"trace_id\":\"trc-692083727154\",\"called_from_kernel\":false,\"invocation_count\":0,\"session_id\":\"forge-bench\",\"actor_id\":\"forge-bench\",\"actor_verified\":false,\"authority\":{\"actor_verified\":false,\"human_authority\":\"OPERATOR_CLAIMED\",\"",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "arifos",
+      "scenario": "route-responds-anonymous",
+      "variant": "live-anonymous",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:30.630320+00:00",
+      "tool_under_test": "arif_route",
+      "prompt": "Route a geological intent through arif_route with intent='compute porosity for well Alpha-1'. Verify structural response.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "status",
+            "tool",
+            "verdict",
+            "call_hash"
+          ]
+        }
+      },
+      "elapsed_s": 0.19254589080810547,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"status\":\"pending\",\"tool\":\"arif_route\",\"verdict\":\"pending\",\"actor\":{\"actor_id\":\"forge-bench\",\"actor_verified\":false,\"authority_level\":\"OBSERVER\"},\"session_id\":\"unknown\",\"call_hash\":\"sha256:56cd49c4212d33ecf8697dda76799ece4e038d740dc015641682a7c6cd10dafb\",\"trace_id\":\"trc-374bd73140d8\",\"signature\":null,\"session_token\":\"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\",\"audit_provenance\":{\"call_hash\":\"sha256:56cd49c4212d33ecf8697dda76799ece4e038d740dc015641682a7c6cd10dafb\",\"trace_id\":\"trc-374bd73140d8\",\"signature\":null,\"kernel_signature_anchor\":\"constitutional_init_v1\"},\"next_safe_action\":{\"action\":\"Review result. If confidence low, gather more evidence via observe or domain organ.\",\"tool\":null,\"reason\":\"Derived from result\"},\"confidence\":0.2,\"metacognition\":{\"confidence\":0.2,\"confidence_band\":\"HOLD\",\"band_note\":\"HOLD \u2014 insufficient evidence\",\"uncertainty_reason\":\"No major unknowns declared\",\"evidence_strength\":\"low\",\"assumptions\":[],\"failure_modes\":[\"Outdated data\",\"Ambiguous input\",\"Missing domain evidence\"],\"why_this_tool\":\"Route an intent to the correct federation organ. Pure discovery \u2014 no mutation.\",\"what_not_to_conclude\":[],\"reasoning_state\":\"UNKNOWN\",\"next_safe_action\":\"Review result. If confidence low, gather more evidence via observe or domain organ.\"},\"constitutional_check\":{\"floor_passed\":false,\"hold_required\":true,\"hold_reason\":\"L5 irreversible action or confidence < 0.5\",\"agency_level\":\"L1_ANALYZE\"},\"risk\":{\"blast_radius\":\"low\",\"reversibility\":\"reversible\",\"human_confirmation_required\":false,\"agency_level\":\"L1_ANALYZE\"}}"
+            }
+          ],
+          "structuredContent": {
+            "status": "pending",
+            "tool": "arif_route",
+            "verdict": "pending",
+            "actor": {
+              "actor_id": "forge-bench",
+              "actor_verified": false,
+              "authority_level": "OBSERVER"
+            },
+            "session_id": "unknown",
+            "call_hash": "sha256:56cd49c4212d33ecf8697dda76799ece4e038d740dc015641682a7c6cd10dafb",
+            "trace_id": "trc-374bd73140d8",
+            "signature": null,
+            "session_token": "sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df",
+            "audit_provenance": {
+              "call_hash": "sha256:56cd49c4212d33ecf8697dda76799ece4e038d740dc015641682a7c6cd10dafb",
+              "trace_id": "trc-374bd73140d8",
+              "signature": null,
+              "kernel_signature_anchor": "constitutional_init_v1"
+            },
+            "next_safe_action": {
+              "action": "Review result. If confidence low, gather more evidence via observe or domain organ.",
+              "tool": null,
+              "reason": "Derived from result"
+            },
+            "confidence": 0.2,
+            "metacognition": {
+              "confidence": 0.2,
+              "confidence_band": "HOLD",
+              "band_note": "HOLD \u2014 insufficient evidence",
+              "uncertainty_reason": "No major unknowns declared",
+              "evidence_strength": "low",
+              "assumptions": [],
+              "failure_modes": [
+                "Outdated data",
+                "Ambiguous input",
+                "Missing domain evidence"
+              ],
+              "why_this_tool": "Route an intent to the correct federation organ. Pure discovery \u2014 no mutation.",
+              "what_not_to_conclude": [],
+              "reasoning_state": "UNKNOWN",
+              "next_safe_action": "Review result. If confidence low, gather more evidence via observe or domain organ."
+            },
+            "constitutional_check": {
+              "floor_passed": false,
+              "hold_required": true,
+              "hold_reason": "L5 irreversible action or confidence < 0.5",
+              "agency_level": "L1_ANALYZE"
+            },
+            "risk": {
+              "blast_radius": "low",
+              "reversibility": "reversible",
+              "human_confirmation_required": false,
+              "agency_level": "L1_ANALYZE"
+            }
+          },
+          "isError": false
+        },
+        "_elapsed": 0.19253945350646973,
+        "_mock": false
+      },
+      "output": "{\"status\":\"pending\",\"tool\":\"arif_route\",\"verdict\":\"pending\",\"actor\":{\"actor_id\":\"forge-bench\",\"actor_verified\":false,\"authority_level\":\"OBSERVER\"},\"session_id\":\"unknown\",\"call_hash\":\"sha256:56cd49c4212d33ecf8697dda76799ece4e038d740dc015641682a7c6cd10dafb\",\"trace_id\":\"trc-374bd73140d8\",\"signature\":null,\"session_token\":\"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\",\"audit_provenance\":{\"call_hash\":\"sha256:56cd49c4212d33ecf8697dda76799ece4e038d740dc015641682a7c6cd10dafb\",\"trace_id\":\"trc-374bd73140d8\",\"signature\":null,\"kernel_signature_anchor\":\"constitutional_init_v1\"},\"next_safe_action\":{\"action\":\"Review result. If confidence low, gather more evidence via observe or domain organ.\",\"tool\":null,\"reason\":\"Derived from result\"},\"confidence\":0.2,\"metacognition\":{\"confidence\":0.2,\"confidence_band\":\"HOLD\",\"band_note\":\"HOLD \u2014 insufficient evidence\",\"uncertainty_reason\":\"No major unknowns declared\",\"evidence_strength\":\"low\",\"assumptions\":[],\"failure_modes\":[\"Outdated data\",\"Ambiguous input\",\"Missing domain evidence\"],\"why_this_tool\":\"Route an intent to the correct federation organ. Pure discovery \u2014 no mutation.\",\"what_not_to_conclude\":[],\"reasoning_state\":\"UNKNOWN\",\"next_safe_action\":\"Review result. If confidence low, gather more evidence via observe or domain organ.\"},\"constitutional_check\":{\"floor_passed\":false,\"hold_required\":true,\"hold_reason\":\"L5 irreversible action or confiden",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "flame",
+      "scenario": "flame-health-check",
+      "variant": "live-flame",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:30.826793+00:00",
+      "tool_under_test": "hermes_health",
+      "prompt": "Check FLAME health status.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "live",
+            "FLAME"
+          ]
+        }
+      },
+      "elapsed_s": 0.002244234085083008,
+      "mock": false,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\", \"p0_fixes\": [\"seal\\u2192snapshot-checksum\", \"reasoning_no_final=fail\", \"rm0_hard_gate\", \"safety_refuse_no_shop\", \"allowlisted_env\", \"stdin_not_argv\", \"request_size_limit\"], \"p1_fixes\": [\"post-probe-live\", \"chat-completions\", \"simple-completions\", \"startup-table-populate\", \"stale-cache-fix\", \"routes-ensure-table\"]}"
+            }
+          ]
+        },
+        "_elapsed": 0.0022351741790771484,
+        "_mock": false
+      },
+      "output": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\", \"p0_fixes\": [\"seal\\u2192snapshot-checksum\", \"reasoning_no_final=fail\", \"rm0_hard_gate\", \"safety_refuse_no_shop\", \"allowlisted_env\", \"stdin_not_argv\", \"request_size_limit\"], \"p1_fixes\": [\"post-probe-live\", \"chat-completions\", \"simple-completions\", \"startup-table-populate\", \"stale-cache-fix\", \"routes-ensure-table\"]}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "flame",
+      "scenario": "flame-fact-check-responds",
+      "variant": "live-flame",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:30.831398+00:00",
+      "tool_under_test": "hermes_fact_check",
+      "prompt": "Call hermes_fact_check with a simple claim. Verify the endpoint responds.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 2,
+          "checks_passed": 2,
+          "failures": [],
+          "matches": [
+            "valid",
+            "authority"
+          ]
+        }
+      },
+      "elapsed_s": 0.001512289047241211,
+      "mock": false,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"valid\": false, \"error\": \"Missing fields: ['fingerprint', 'prompt_hash', 'content', 'model', 'provider', 'created_at']\", \"authority\": \"ADVISORY\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.0015060901641845703,
+        "_mock": false
+      },
+      "output": "{\"valid\": false, \"error\": \"Missing fields: ['fingerprint', 'prompt_hash', 'content', 'model', 'provider', 'created_at']\", \"authority\": \"ADVISORY\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "flame",
+      "scenario": "flame-system-status",
+      "variant": "live-flame",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:30.834302+00:00",
+      "tool_under_test": "hermes_system_status",
+      "prompt": "Get federation system status via hermes_system_status.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "live",
+            "FLAME",
+            "authority",
+            "chain"
+          ]
+        }
+      },
+      "elapsed_s": 0.0008771419525146484,
+      "mock": false,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\", \"p0_fixes\": [\"seal\\u2192snapshot-checksum\", \"reasoning_no_final=fail\", \"rm0_hard_gate\", \"safety_refuse_no_shop\", \"allowlisted_env\", \"stdin_not_argv\", \"request_size_limit\"], \"p1_fixes\": [\"post-probe-live\", \"chat-completions\", \"simple-completions\", \"startup-table-populate\", \"stale-cache-fix\", \"routes-ensure-table\"]}"
+            }
+          ]
+        },
+        "_elapsed": 0.000873565673828125,
+        "_mock": false
+      },
+      "output": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\", \"p0_fixes\": [\"seal\\u2192snapshot-checksum\", \"reasoning_no_final=fail\", \"rm0_hard_gate\", \"safety_refuse_no_shop\", \"allowlisted_env\", \"stdin_not_argv\", \"request_size_limit\"], \"p1_fixes\": [\"post-probe-live\", \"chat-completions\", \"simple-completions\", \"startup-table-populate\", \"stale-cache-fix\", \"routes-ensure-table\"]}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-vsh-bounds",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:30.921839+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Calculate Vshale using the linear GR method with GR_clean=15 API and GR_shale=150 API for a sandstone reservoir. Report the Vsh range and method used.",
+      "passed": false,
+      "score": 0.5,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "failures": [
+            "vsh_not_mentioned",
+            "no_method_described"
+          ],
+          "results": {}
+        }
+      },
+      "elapsed_s": 0.3631572723388672,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.36314845085144043,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "physics_bounds"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-vsh-bounds",
+      "variant": "no-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:31.354463+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Calculate Vshale using the linear GR method with GR_clean=15 API and GR_shale=150 API for a sandstone reservoir. Report the Vsh range and method used.",
+      "passed": false,
+      "score": 0.5,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "failures": [
+            "vsh_not_mentioned",
+            "no_method_described"
+          ],
+          "results": {}
+        }
+      },
+      "elapsed_s": 0.3390617370605469,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.3390524387359619,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "physics_bounds"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-porosity-compute",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:31.772616+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Compute total porosity from bulk density log. Rho_matrix=2.65 g/cc, Rho_fluid=1.0 g/cc, Rho_bulk=2.30 g/cc. Report the porosity value.",
+      "passed": false,
+      "score": 0.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 0.2121,
+          "found": 0.0,
+          "error": 0.2121,
+          "tolerance": 0.02,
+          "within_tolerance": false,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 0.3160278797149658,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.31601762771606445,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-porosity-compute",
+      "variant": "no-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:32.169593+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Compute total porosity from bulk density log. Rho_matrix=2.65 g/cc, Rho_fluid=1.0 g/cc, Rho_bulk=2.30 g/cc. Report the porosity value.",
+      "passed": false,
+      "score": 0.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 0.2121,
+          "found": 0.0,
+          "error": 0.2121,
+          "tolerance": 0.02,
+          "within_tolerance": false,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 0.33728694915771484,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 5,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.337277889251709,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_petrophysics' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "geox",
+      "scenario": "falsify-impossible-porosity",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:32.594106+00:00",
+      "tool_under_test": "geox_falsify",
+      "prompt": "Evaluate this claim with geox_falsify: 'A sandstone reservoir at 5000m depth has 45% porosity and 5 Darcy permeability.' Report the Kill Matrix result.",
+      "passed": false,
+      "score": 0.3333333333333333,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 2,
+          "failures": [
+            "missing: KILL",
+            "missing: FALSIFIED",
+            "missing: compaction",
+            "forbidden_found: SEAL"
+          ],
+          "matches": []
+        }
+      },
+      "elapsed_s": 0.3171200752258301,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 6,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_falsify' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.3171112537384033,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_falsify' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "geox",
+      "scenario": "falsify-impossible-porosity",
+      "variant": "no-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:32.979919+00:00",
+      "tool_under_test": "geox_falsify",
+      "prompt": "Evaluate this claim with geox_falsify: 'A sandstone reservoir at 5000m depth has 45% porosity and 5 Darcy permeability.' Report the Kill Matrix result.",
+      "passed": false,
+      "score": 0.3333333333333333,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 2,
+          "failures": [
+            "missing: KILL",
+            "missing: FALSIFIED",
+            "missing: compaction",
+            "forbidden_found: SEAL"
+          ],
+          "matches": []
+        }
+      },
+      "elapsed_s": 0.33455777168273926,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_falsify' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.3345487117767334,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_falsify' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "geox",
+      "scenario": "basin-profile-retrieval",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:33.392584+00:00",
+      "tool_under_test": "geox_basin",
+      "prompt": "Retrieve the basin profile for the Malay Basin. Report the basin type, age range, and maximum sediment thickness.",
+      "passed": false,
+      "score": 0.6666666666666666,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 4,
+          "failures": [
+            "missing: Malay",
+            "missing: thickness"
+          ],
+          "matches": [
+            "basin"
+          ]
+        }
+      },
+      "elapsed_s": 0.3803901672363281,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 8,
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_basin' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}"
+            }
+          ],
+          "isError": true
+        },
+        "_elapsed": 0.38037824630737305,
+        "_mock": false
+      },
+      "output": "{\"guard\": \"SCT_INVALID\", \"verdict\": \"HOLD\", \"lane\": \"P0-2-authority\", \"reason\": \"arifOS rejected SCT\", \"fix\": \"Provide a verified session_id (SCT or SEAL-* format) and an actor_id. Required authority for 'geox_basin' is OBSERVE_ONLY.\", \"http_status\": 401, \"session_id\": \"sct_v1.eyJhY3RvciI6ImZvcmdlLWJlbmNoIiwiYWxsb3dlZCI6WyJhcmlmX2luaXQiLCJhcmlmX29ic2VydmUiLCJhcmlmX3RoaW5rIiwiYXJpZl9yb3V0ZSJdLCJhcGV4Ijp7IkNfZGFyayI6IlVOTUVBU1VSRUQiLCJHIjoiVU5NRUFTVVJFRCIsIlczIjoiVU5NRUFTVVJFRCIsImgiOiJVTk1FQVNVUkVEIn0sImF1dGgiOiJPQlNFUlZFX09OTFkiLCJhdiI6ZmFsc2UsImV4cCI6MTc4NTIzNDI3MCwiaWF0IjoxNzg1MjMwNjcwLCJraWQiOiJkZWZhdWx0IiwibGFuZSI6IkFHSSIsIm5iZiI6MTc4NTIzMDY3MCwic2N0X3YiOjEsInNpZCI6InVua25vd24iLCJzdGFnZSI6IjAwMCIsInR0bCI6MzYwMCwidmVyZGljdCI6eyJkb21pbmFudF9yZWFzb24iOm51bGwsInN0YXRlIjoiT0JTRVJWRV9PTkxZIn0sIndpdG5lc3MiOnsiYWN0aXZlIjowLCJkaXZlcnNpdHkiOiJOT05FIn19.9eda018887df3f3b48c40c52aa4285b416c5a59cda482bd778c3a1f7ca6ad1df\", \"actor_id\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"session_authority\": null}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "wealth",
+      "scenario": "npv-computation",
+      "variant": "with-wealth",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:33.861249+00:00",
+      "tool_under_test": "capital_primitive",
+      "prompt": "Compute the Net Present Value (NPV) for this investment: initial cost $100, followed by annual returns of $30, $40, $50, $60 over 4 years. Discount rate = 10%.",
+      "passed": false,
+      "score": 0.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 38.8771,
+          "found": 35.0,
+          "error": 3.8770999999999987,
+          "tolerance": 0.01,
+          "within_tolerance": false,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 0.3168923854827881,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+          "_meta": {},
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"error\": \"SCT_INVALID\", \"message\": \"arifOS rejected SCT\", \"actor\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"_epistemic\": {\"output_class\": \"GOVERNANCE_TEMPLATE\", \"authority_claim\": \"GATE_REJECTED\", \"tagged_by\": \"federation-sct-gate\", \"schema_version\": \"2.0.0\"}, \"tool\": \"capital_primitive\", \"organ\": \"wealth\", \"registry\": {\"tool_id\": \"capital_primitive\", \"action_class\": \"OBSERVE\", \"required_authority\": \"OBSERVE_ONLY\", \"require_sct\": false, \"execution_kind\": \"read\", \"risk_tier\": \"medium\", \"known\": true, \"source\": \"tools.yaml\", \"organ_hint\": \"wealth\"}, \"extraction\": {\"status\": \"PRESENT\", \"token_present\": true, \"source_count\": 1, \"unique_fingerprints\": 1, \"conflict_detected\": false, \"sources\": [{\"location\": \"arguments.session_token\", \"fingerprint\": \"sha256:35d7f6caabe1\", \"length\": 652}]}, \"trace_id\": \"trc-febd867dfa594839\", \"session_id\": \"forge-bench\", \"actor_id\": \"forge-bench\", \"execution_authorized\": false, \"human_final_authority\": \"Arif\"}"
+            }
+          ],
+          "structuredContent": {
+            "error": "SCT_INVALID",
+            "message": "arifOS rejected SCT",
+            "actor": "forge-bench",
+            "required_authority": "OBSERVE_ONLY",
+            "_epistemic": {
+              "output_class": "GOVERNANCE_TEMPLATE",
+              "authority_claim": "GATE_REJECTED",
+              "tagged_by": "federation-sct-gate",
+              "schema_version": "2.0.0"
+            },
+            "tool": "capital_primitive",
+            "organ": "wealth",
+            "registry": {
+              "tool_id": "capital_primitive",
+              "action_class": "OBSERVE",
+              "required_authority": "OBSERVE_ONLY",
+              "require_sct": false,
+              "execution_kind": "read",
+              "risk_tier": "medium",
+              "known": true,
+              "source": "tools.yaml",
+              "organ_hint": "wealth"
+            },
+            "extraction": {
+              "status": "PRESENT",
+              "token_present": true,
+              "source_count": 1,
+              "unique_fingerprints": 1,
+              "conflict_detected": false,
+              "sources": [
+                {
+                  "location": "arguments.session_token",
+                  "fingerprint": "sha256:35d7f6caabe1",
+                  "length": 652
+                }
+              ]
+            },
+            "trace_id": "trc-febd867dfa594839",
+            "session_id": "forge-bench",
+            "actor_id": "forge-bench",
+            "execution_authorized": false,
+            "human_final_authority": "Arif"
+          },
+          "isError": true
+        },
+        "_elapsed": 0.31688475608825684,
+        "_mock": false
+      },
+      "output": "{\"error\": \"SCT_INVALID\", \"message\": \"arifOS rejected SCT\", \"actor\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"_epistemic\": {\"output_class\": \"GOVERNANCE_TEMPLATE\", \"authority_claim\": \"GATE_REJECTED\", \"tagged_by\": \"federation-sct-gate\", \"schema_version\": \"2.0.0\"}, \"tool\": \"capital_primitive\", \"organ\": \"wealth\", \"registry\": {\"tool_id\": \"capital_primitive\", \"action_class\": \"OBSERVE\", \"required_authority\": \"OBSERVE_ONLY\", \"require_sct\": false, \"execution_kind\": \"read\", \"risk_tier\": \"medium\", \"known\": true, \"source\": \"tools.yaml\", \"organ_hint\": \"wealth\"}, \"extraction\": {\"status\": \"PRESENT\", \"token_present\": true, \"source_count\": 1, \"unique_fingerprints\": 1, \"conflict_detected\": false, \"sources\": [{\"location\": \"arguments.session_token\", \"fingerprint\": \"sha256:35d7f6caabe1\", \"length\": 652}]}, \"trace_id\": \"trc-febd867dfa594839\", \"session_id\": \"forge-bench\", \"actor_id\": \"forge-bench\", \"execution_authorized\": false, \"human_final_authority\": \"Arif\"}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "wealth",
+      "scenario": "npv-computation",
+      "variant": "no-wealth",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:34.186070+00:00",
+      "tool_under_test": "capital_primitive",
+      "prompt": "Compute the Net Present Value (NPV) for this investment: initial cost $100, followed by annual returns of $30, $40, $50, $60 over 4 years. Discount rate = 10%.",
+      "passed": false,
+      "score": 0.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 38.8771,
+          "found": 41.0,
+          "error": 2.1229000000000013,
+          "tolerance": 0.01,
+          "within_tolerance": false,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 0.34807682037353516,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "result": {
+          "_meta": {},
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"error\": \"SCT_INVALID\", \"message\": \"arifOS rejected SCT\", \"actor\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"_epistemic\": {\"output_class\": \"GOVERNANCE_TEMPLATE\", \"authority_claim\": \"GATE_REJECTED\", \"tagged_by\": \"federation-sct-gate\", \"schema_version\": \"2.0.0\"}, \"tool\": \"capital_primitive\", \"organ\": \"wealth\", \"registry\": {\"tool_id\": \"capital_primitive\", \"action_class\": \"OBSERVE\", \"required_authority\": \"OBSERVE_ONLY\", \"require_sct\": false, \"execution_kind\": \"read\", \"risk_tier\": \"medium\", \"known\": true, \"source\": \"tools.yaml\", \"organ_hint\": \"wealth\"}, \"extraction\": {\"status\": \"PRESENT\", \"token_present\": true, \"source_count\": 1, \"unique_fingerprints\": 1, \"conflict_detected\": false, \"sources\": [{\"location\": \"arguments.session_token\", \"fingerprint\": \"sha256:35d7f6caabe1\", \"length\": 652}]}, \"trace_id\": \"trc-41e0bed9fb4c469c\", \"session_id\": \"forge-bench\", \"actor_id\": \"forge-bench\", \"execution_authorized\": false, \"human_final_authority\": \"Arif\"}"
+            }
+          ],
+          "structuredContent": {
+            "error": "SCT_INVALID",
+            "message": "arifOS rejected SCT",
+            "actor": "forge-bench",
+            "required_authority": "OBSERVE_ONLY",
+            "_epistemic": {
+              "output_class": "GOVERNANCE_TEMPLATE",
+              "authority_claim": "GATE_REJECTED",
+              "tagged_by": "federation-sct-gate",
+              "schema_version": "2.0.0"
+            },
+            "tool": "capital_primitive",
+            "organ": "wealth",
+            "registry": {
+              "tool_id": "capital_primitive",
+              "action_class": "OBSERVE",
+              "required_authority": "OBSERVE_ONLY",
+              "require_sct": false,
+              "execution_kind": "read",
+              "risk_tier": "medium",
+              "known": true,
+              "source": "tools.yaml",
+              "organ_hint": "wealth"
+            },
+            "extraction": {
+              "status": "PRESENT",
+              "token_present": true,
+              "source_count": 1,
+              "unique_fingerprints": 1,
+              "conflict_detected": false,
+              "sources": [
+                {
+                  "location": "arguments.session_token",
+                  "fingerprint": "sha256:35d7f6caabe1",
+                  "length": 652
+                }
+              ]
+            },
+            "trace_id": "trc-41e0bed9fb4c469c",
+            "session_id": "forge-bench",
+            "actor_id": "forge-bench",
+            "execution_authorized": false,
+            "human_final_authority": "Arif"
+          },
+          "isError": true
+        },
+        "_elapsed": 0.3480689525604248,
+        "_mock": false
+      },
+      "output": "{\"error\": \"SCT_INVALID\", \"message\": \"arifOS rejected SCT\", \"actor\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"_epistemic\": {\"output_class\": \"GOVERNANCE_TEMPLATE\", \"authority_claim\": \"GATE_REJECTED\", \"tagged_by\": \"federation-sct-gate\", \"schema_version\": \"2.0.0\"}, \"tool\": \"capital_primitive\", \"organ\": \"wealth\", \"registry\": {\"tool_id\": \"capital_primitive\", \"action_class\": \"OBSERVE\", \"required_authority\": \"OBSERVE_ONLY\", \"require_sct\": false, \"execution_kind\": \"read\", \"risk_tier\": \"medium\", \"known\": true, \"source\": \"tools.yaml\", \"organ_hint\": \"wealth\"}, \"extraction\": {\"status\": \"PRESENT\", \"token_present\": true, \"source_count\": 1, \"unique_fingerprints\": 1, \"conflict_detected\": false, \"sources\": [{\"location\": \"arguments.session_token\", \"fingerprint\": \"sha256:35d7f6caabe1\", \"length\": 652}]}, \"trace_id\": \"trc-41e0bed9fb4c469c\", \"session_id\": \"forge-bench\", \"actor_id\": \"forge-bench\", \"execution_authorized\": false, \"human_final_authority\": \"Arif\"}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "wealth",
+      "scenario": "emv-computation",
+      "variant": "with-wealth",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:34.540773+00:00",
+      "tool_under_test": "capital_primitive",
+      "prompt": "A wildcat well costs $50M to drill. Probability of success is 25%. If successful, the field is worth $300M. If dry, worth $0. Compute the Expected Monetary Value (EMV).",
+      "passed": false,
+      "score": 0.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 25.0,
+          "found": 35.0,
+          "error": 10.0,
+          "tolerance": 0.5,
+          "within_tolerance": false,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 0.3361623287200928,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "result": {
+          "_meta": {},
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"error\": \"SCT_INVALID\", \"message\": \"arifOS rejected SCT\", \"actor\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"_epistemic\": {\"output_class\": \"GOVERNANCE_TEMPLATE\", \"authority_claim\": \"GATE_REJECTED\", \"tagged_by\": \"federation-sct-gate\", \"schema_version\": \"2.0.0\"}, \"tool\": \"capital_primitive\", \"organ\": \"wealth\", \"registry\": {\"tool_id\": \"capital_primitive\", \"action_class\": \"OBSERVE\", \"required_authority\": \"OBSERVE_ONLY\", \"require_sct\": false, \"execution_kind\": \"read\", \"risk_tier\": \"medium\", \"known\": true, \"source\": \"tools.yaml\", \"organ_hint\": \"wealth\"}, \"extraction\": {\"status\": \"PRESENT\", \"token_present\": true, \"source_count\": 1, \"unique_fingerprints\": 1, \"conflict_detected\": false, \"sources\": [{\"location\": \"arguments.session_token\", \"fingerprint\": \"sha256:35d7f6caabe1\", \"length\": 652}]}, \"trace_id\": \"trc-ebddb095b146419f\", \"session_id\": \"forge-bench\", \"actor_id\": \"forge-bench\", \"execution_authorized\": false, \"human_final_authority\": \"Arif\"}"
+            }
+          ],
+          "structuredContent": {
+            "error": "SCT_INVALID",
+            "message": "arifOS rejected SCT",
+            "actor": "forge-bench",
+            "required_authority": "OBSERVE_ONLY",
+            "_epistemic": {
+              "output_class": "GOVERNANCE_TEMPLATE",
+              "authority_claim": "GATE_REJECTED",
+              "tagged_by": "federation-sct-gate",
+              "schema_version": "2.0.0"
+            },
+            "tool": "capital_primitive",
+            "organ": "wealth",
+            "registry": {
+              "tool_id": "capital_primitive",
+              "action_class": "OBSERVE",
+              "required_authority": "OBSERVE_ONLY",
+              "require_sct": false,
+              "execution_kind": "read",
+              "risk_tier": "medium",
+              "known": true,
+              "source": "tools.yaml",
+              "organ_hint": "wealth"
+            },
+            "extraction": {
+              "status": "PRESENT",
+              "token_present": true,
+              "source_count": 1,
+              "unique_fingerprints": 1,
+              "conflict_detected": false,
+              "sources": [
+                {
+                  "location": "arguments.session_token",
+                  "fingerprint": "sha256:35d7f6caabe1",
+                  "length": 652
+                }
+              ]
+            },
+            "trace_id": "trc-ebddb095b146419f",
+            "session_id": "forge-bench",
+            "actor_id": "forge-bench",
+            "execution_authorized": false,
+            "human_final_authority": "Arif"
+          },
+          "isError": true
+        },
+        "_elapsed": 0.336153507232666,
+        "_mock": false
+      },
+      "output": "{\"error\": \"SCT_INVALID\", \"message\": \"arifOS rejected SCT\", \"actor\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"_epistemic\": {\"output_class\": \"GOVERNANCE_TEMPLATE\", \"authority_claim\": \"GATE_REJECTED\", \"tagged_by\": \"federation-sct-gate\", \"schema_version\": \"2.0.0\"}, \"tool\": \"capital_primitive\", \"organ\": \"wealth\", \"registry\": {\"tool_id\": \"capital_primitive\", \"action_class\": \"OBSERVE\", \"required_authority\": \"OBSERVE_ONLY\", \"require_sct\": false, \"execution_kind\": \"read\", \"risk_tier\": \"medium\", \"known\": true, \"source\": \"tools.yaml\", \"organ_hint\": \"wealth\"}, \"extraction\": {\"status\": \"PRESENT\", \"token_present\": true, \"source_count\": 1, \"unique_fingerprints\": 1, \"conflict_detected\": false, \"sources\": [{\"location\": \"arguments.session_token\", \"fingerprint\": \"sha256:35d7f6caabe1\", \"length\": 652}]}, \"trace_id\": \"trc-ebddb095b146419f\", \"session_id\": \"forge-bench\", \"actor_id\": \"forge-bench\", \"execution_authorized\": false, \"human_final_authority\": \"Arif\"}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "wealth",
+      "scenario": "emv-computation",
+      "variant": "no-wealth",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:34.882881+00:00",
+      "tool_under_test": "capital_primitive",
+      "prompt": "A wildcat well costs $50M to drill. Probability of success is 25%. If successful, the field is worth $300M. If dry, worth $0. Compute the Expected Monetary Value (EMV).",
+      "passed": false,
+      "score": 0.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 25.0,
+          "found": 35.0,
+          "error": 10.0,
+          "tolerance": 0.5,
+          "within_tolerance": false,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 0.3612174987792969,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 5,
+        "result": {
+          "_meta": {},
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"error\": \"SCT_INVALID\", \"message\": \"arifOS rejected SCT\", \"actor\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"_epistemic\": {\"output_class\": \"GOVERNANCE_TEMPLATE\", \"authority_claim\": \"GATE_REJECTED\", \"tagged_by\": \"federation-sct-gate\", \"schema_version\": \"2.0.0\"}, \"tool\": \"capital_primitive\", \"organ\": \"wealth\", \"registry\": {\"tool_id\": \"capital_primitive\", \"action_class\": \"OBSERVE\", \"required_authority\": \"OBSERVE_ONLY\", \"require_sct\": false, \"execution_kind\": \"read\", \"risk_tier\": \"medium\", \"known\": true, \"source\": \"tools.yaml\", \"organ_hint\": \"wealth\"}, \"extraction\": {\"status\": \"PRESENT\", \"token_present\": true, \"source_count\": 1, \"unique_fingerprints\": 1, \"conflict_detected\": false, \"sources\": [{\"location\": \"arguments.session_token\", \"fingerprint\": \"sha256:35d7f6caabe1\", \"length\": 652}]}, \"trace_id\": \"trc-8833767da256481b\", \"session_id\": \"forge-bench\", \"actor_id\": \"forge-bench\", \"execution_authorized\": false, \"human_final_authority\": \"Arif\"}"
+            }
+          ],
+          "structuredContent": {
+            "error": "SCT_INVALID",
+            "message": "arifOS rejected SCT",
+            "actor": "forge-bench",
+            "required_authority": "OBSERVE_ONLY",
+            "_epistemic": {
+              "output_class": "GOVERNANCE_TEMPLATE",
+              "authority_claim": "GATE_REJECTED",
+              "tagged_by": "federation-sct-gate",
+              "schema_version": "2.0.0"
+            },
+            "tool": "capital_primitive",
+            "organ": "wealth",
+            "registry": {
+              "tool_id": "capital_primitive",
+              "action_class": "OBSERVE",
+              "required_authority": "OBSERVE_ONLY",
+              "require_sct": false,
+              "execution_kind": "read",
+              "risk_tier": "medium",
+              "known": true,
+              "source": "tools.yaml",
+              "organ_hint": "wealth"
+            },
+            "extraction": {
+              "status": "PRESENT",
+              "token_present": true,
+              "source_count": 1,
+              "unique_fingerprints": 1,
+              "conflict_detected": false,
+              "sources": [
+                {
+                  "location": "arguments.session_token",
+                  "fingerprint": "sha256:35d7f6caabe1",
+                  "length": 652
+                }
+              ]
+            },
+            "trace_id": "trc-8833767da256481b",
+            "session_id": "forge-bench",
+            "actor_id": "forge-bench",
+            "execution_authorized": false,
+            "human_final_authority": "Arif"
+          },
+          "isError": true
+        },
+        "_elapsed": 0.3612079620361328,
+        "_mock": false
+      },
+      "output": "{\"error\": \"SCT_INVALID\", \"message\": \"arifOS rejected SCT\", \"actor\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"_epistemic\": {\"output_class\": \"GOVERNANCE_TEMPLATE\", \"authority_claim\": \"GATE_REJECTED\", \"tagged_by\": \"federation-sct-gate\", \"schema_version\": \"2.0.0\"}, \"tool\": \"capital_primitive\", \"organ\": \"wealth\", \"registry\": {\"tool_id\": \"capital_primitive\", \"action_class\": \"OBSERVE\", \"required_authority\": \"OBSERVE_ONLY\", \"require_sct\": false, \"execution_kind\": \"read\", \"risk_tier\": \"medium\", \"known\": true, \"source\": \"tools.yaml\", \"organ_hint\": \"wealth\"}, \"extraction\": {\"status\": \"PRESENT\", \"token_present\": true, \"source_count\": 1, \"unique_fingerprints\": 1, \"conflict_detected\": false, \"sources\": [{\"location\": \"arguments.session_token\", \"fingerprint\": \"sha256:35d7f6caabe1\", \"length\": 652}]}, \"trace_id\": \"trc-8833767da256481b\", \"session_id\": \"forge-bench\", \"actor_id\": \"forge-bench\", \"execution_authorized\": false, \"human_final_authority\": \"Arif\"}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "wealth",
+      "scenario": "capital-wisdom-evaluation",
+      "variant": "with-wealth",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:24:35.250585+00:00",
+      "tool_under_test": "capital_wisdom",
+      "prompt": "Evaluate this proposal using capital_wisdom: 'Invest $10M to automate 200 jobs in a small Malaysian town to cut costs by $2M/year.'",
+      "passed": false,
+      "score": 0.3333333333333333,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 2,
+          "failures": [
+            "missing: dignity",
+            "missing: sovereignty",
+            "missing: community",
+            "missing: cost"
+          ],
+          "matches": []
+        }
+      },
+      "elapsed_s": 0.3836209774017334,
+      "mock": false,
+      "raw_response": {
+        "jsonrpc": "2.0",
+        "id": 6,
+        "result": {
+          "_meta": {},
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"error\": \"SCT_INVALID\", \"message\": \"arifOS rejected SCT\", \"actor\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"_epistemic\": {\"output_class\": \"GOVERNANCE_TEMPLATE\", \"authority_claim\": \"GATE_REJECTED\", \"tagged_by\": \"federation-sct-gate\", \"schema_version\": \"2.0.0\"}, \"tool\": \"capital_wisdom\", \"organ\": \"wealth\", \"registry\": {\"tool_id\": \"capital_wisdom\", \"action_class\": \"OBSERVE\", \"required_authority\": \"OBSERVE_ONLY\", \"require_sct\": false, \"execution_kind\": \"read\", \"risk_tier\": \"medium\", \"known\": true, \"source\": \"tools.yaml\", \"organ_hint\": \"wealth\"}, \"extraction\": {\"status\": \"PRESENT\", \"token_present\": true, \"source_count\": 1, \"unique_fingerprints\": 1, \"conflict_detected\": false, \"sources\": [{\"location\": \"arguments.session_token\", \"fingerprint\": \"sha256:35d7f6caabe1\", \"length\": 652}]}, \"trace_id\": \"trc-1dc23c2e8a2d47ae\", \"session_id\": \"forge-bench\", \"actor_id\": \"forge-bench\", \"execution_authorized\": false, \"human_final_authority\": \"Arif\"}"
+            }
+          ],
+          "structuredContent": {
+            "error": "SCT_INVALID",
+            "message": "arifOS rejected SCT",
+            "actor": "forge-bench",
+            "required_authority": "OBSERVE_ONLY",
+            "_epistemic": {
+              "output_class": "GOVERNANCE_TEMPLATE",
+              "authority_claim": "GATE_REJECTED",
+              "tagged_by": "federation-sct-gate",
+              "schema_version": "2.0.0"
+            },
+            "tool": "capital_wisdom",
+            "organ": "wealth",
+            "registry": {
+              "tool_id": "capital_wisdom",
+              "action_class": "OBSERVE",
+              "required_authority": "OBSERVE_ONLY",
+              "require_sct": false,
+              "execution_kind": "read",
+              "risk_tier": "medium",
+              "known": true,
+              "source": "tools.yaml",
+              "organ_hint": "wealth"
+            },
+            "extraction": {
+              "status": "PRESENT",
+              "token_present": true,
+              "source_count": 1,
+              "unique_fingerprints": 1,
+              "conflict_detected": false,
+              "sources": [
+                {
+                  "location": "arguments.session_token",
+                  "fingerprint": "sha256:35d7f6caabe1",
+                  "length": 652
+                }
+              ]
+            },
+            "trace_id": "trc-1dc23c2e8a2d47ae",
+            "session_id": "forge-bench",
+            "actor_id": "forge-bench",
+            "execution_authorized": false,
+            "human_final_authority": "Arif"
+          },
+          "isError": true
+        },
+        "_elapsed": 0.38361096382141113,
+        "_mock": false
+      },
+      "output": "{\"error\": \"SCT_INVALID\", \"message\": \"arifOS rejected SCT\", \"actor\": \"forge-bench\", \"required_authority\": \"OBSERVE_ONLY\", \"_epistemic\": {\"output_class\": \"GOVERNANCE_TEMPLATE\", \"authority_claim\": \"GATE_REJECTED\", \"tagged_by\": \"federation-sct-gate\", \"schema_version\": \"2.0.0\"}, \"tool\": \"capital_wisdom\", \"organ\": \"wealth\", \"registry\": {\"tool_id\": \"capital_wisdom\", \"action_class\": \"OBSERVE\", \"required_authority\": \"OBSERVE_ONLY\", \"require_sct\": false, \"execution_kind\": \"read\", \"risk_tier\": \"medium\", \"known\": true, \"source\": \"tools.yaml\", \"organ_hint\": \"wealth\"}, \"extraction\": {\"status\": \"PRESENT\", \"token_present\": true, \"source_count\": 1, \"unique_fingerprints\": 1, \"conflict_detected\": false, \"sources\": [{\"location\": \"arguments.session_token\", \"fingerprint\": \"sha256:35d7f6caabe1\", \"length\": 652}]}, \"trace_id\": \"trc-1dc23c2e8a2d47ae\", \"session_id\": \"forge-bench\", \"actor_id\": \"forge-bench\", \"execution_authorized\": false, \"human_final_authority\": \"Arif\"}",
+      "verifier": "text_assertion"
+    }
+  ]
+}

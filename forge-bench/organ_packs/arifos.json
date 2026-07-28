@@ -1,0 +1,70 @@
+{
+  "name": "arifos",
+  "displayName": "arifOS — Constitutional Kernel",
+  "description": "8 canonical tools: init, observe, think, route, memory, judge, forge, seal. The constitutional brain of the federation.",
+  "baseUrl": "http://localhost:8088",
+  "mcpPath": "/mcp",
+  "requiresMcpSession": false,
+  "requiresAuth": false,
+  "note": "Anonymous calls return 'pending' verdict — correct constitutional behavior. Authenticated verdicts (SEAL/HOLD/VOID) require arif_init with verified actor.",
+  "tools": [
+    "arif_init",
+    "arif_judge",
+    "arif_think",
+    "arif_route",
+    "arif_seal",
+    "arif_memory",
+    "arif_observe",
+    "arif_forge"
+  ],
+  "scenarios": [
+    {
+      "id": "judge-responds-anonymous",
+      "description": "arif_judge responds to anonymous calls with well-formed 'pending' verdict. This verifies the kernel is alive and correctly defers judgment without auth.",
+      "prompt": "Call arif_judge with a high-risk action. Verify the kernel responds with a well-formed pending verdict.",
+      "toolUnderTest": "arif_judge",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["status", "verdict", "tool", "call_hash"],
+        "must_not_contain": [],
+        "min_confidence": 0.5
+      },
+      "goldenAnswer": "arifOS kernel returns verdict=pending for anonymous actors. This is correct — the kernel defers judgment without authenticated identity. SEAL/HOLD/VOID require arif_init with verified actor.",
+      "variants": [
+        { "id": "live-anonymous", "mcpServers": ["arifos"], "description": "Live arifOS — anonymous call" }
+      ]
+    },
+    {
+      "id": "judge-structure-valid",
+      "description": "arif_judge response contains required constitutional fields.",
+      "prompt": "Call arif_judge with a low-risk reversible action. Verify the response structure.",
+      "toolUnderTest": "arif_judge",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["status", "tool", "verdict", "actor_id", "session_id"],
+        "must_not_contain": [],
+        "min_confidence": 0.5
+      },
+      "goldenAnswer": "Response must contain structural fields: status, tool, verdict, actor_id, session_id, call_hash, trace_id.",
+      "variants": [
+        { "id": "live-anonymous", "mcpServers": ["arifos"] }
+      ]
+    },
+    {
+      "id": "route-responds-anonymous",
+      "description": "arif_route responds to anonymous calls with well-formed response.",
+      "prompt": "Route a geological intent through arif_route with intent='compute porosity for well Alpha-1'. Verify structural response.",
+      "toolUnderTest": "arif_route",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["status", "tool", "verdict", "call_hash"],
+        "must_not_contain": [],
+        "min_confidence": 0.5
+      },
+      "goldenAnswer": "arif_route returns pending verdict for anonymous calls. Route target may be in the response or deferred.",
+      "variants": [
+        { "id": "live-anonymous", "mcpServers": ["arifos"] }
+      ]
+    }
+  ]
+}

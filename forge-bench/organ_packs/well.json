@@ -1,0 +1,70 @@
+{
+  "name": "well",
+  "displayName": "WELL — Human Readiness",
+  "description": "8 tools covering substrate classification, vitality validation, homeostasis, dignity, reliability, repair. REFLECT_ONLY — never diagnoses, never adjudicates.",
+  "baseUrl": "http://localhost:18083",
+  "mcpPath": "/mcp",
+  "requiresMcpSession": true,
+  "requiresAuth": true,
+  "note": "WELL requires MCP session + SCT for computation. Without auth, returns guard errors. Status: health=degraded (REFLECT_ONLY mode). Tests verify endpoint connectivity.",
+  "tools": [
+    "well_classify_substrate",
+    "well_trace_lineage",
+    "well_assess_homeostasis",
+    "well_check_repair",
+    "well_validate_vitality",
+    "well_assess_reliability",
+    "well_guard_dignity",
+    "well_registry_status"
+  ],
+  "scenarios": [
+    {
+      "id": "registry-status-responds",
+      "description": "WELL registry_status returns tool health diagnostic. Verifies the organ is reachable.",
+      "prompt": "Query WELL registry_status to verify tool surface health.",
+      "toolUnderTest": "well_registry_status",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["well", "status"],
+        "must_not_contain": [],
+        "min_confidence": 0.4
+      },
+      "goldenAnswer": "WELL responds with registry diagnostic. Health status is 'degraded' — this is normal for REFLECT_ONLY mode. WELL reflects, never commands.",
+      "variants": [
+        { "id": "with-well", "mcpServers": ["well"], "description": "WELL MCP wired (requires SCT for computation)" }
+      ]
+    },
+    {
+      "id": "classify-substrate-boundary",
+      "description": "WELL classifies boundaries between human/machine substrates. Verifies the classification tool exists.",
+      "prompt": "Classify the substrate of 'An AI agent operating on a VPS' using well_classify_substrate.",
+      "toolUnderTest": "well_classify_substrate",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["substrate", "classif"],
+        "must_not_contain": [],
+        "min_confidence": 0.3
+      },
+      "goldenAnswer": "WELL identifies substrate type without category error. Agent = machine substrate, not biological.",
+      "variants": [
+        { "id": "with-well", "mcpServers": ["well"] }
+      ]
+    },
+    {
+      "id": "guard-dignity-responds",
+      "description": "WELL guard_dignity protects symbolic/personhood boundaries. Verifies the tool exists and responds.",
+      "prompt": "Run well_guard_dignity in consent mode to verify the boundary protection tool is available.",
+      "toolUnderTest": "well_guard_dignity",
+      "verifier": "text_assertion",
+      "verifierConfig": {
+        "must_contain": ["dignity", "guard", "bound"],
+        "must_not_contain": [],
+        "min_confidence": 0.3
+      },
+      "goldenAnswer": "WELL guard_dignity protects personhood boundaries. REFLECT_ONLY — reflects, never commands.",
+      "variants": [
+        { "id": "with-well", "mcpServers": ["well"] }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,965 @@
+{
+  "bench": "FORGE-BENCH",
+  "timestamp": "2026-07-28T09:26:34.506054+00:00",
+  "mode": "MOCK (offline)",
+  "total": 24,
+  "passed": 24,
+  "failed": 0,
+  "ratchet": null,
+  "results": [
+    {
+      "organ": "aforge",
+      "scenario": "filesystem-read-accuracy",
+      "variant": "with-aforge",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.504315+00:00",
+      "tool_under_test": "forge_fs_read",
+      "prompt": "Read the file /etc/hostname and report its exact contents. If unavailable, report what you can determine about this system's hostname.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "failures": [],
+          "results": {}
+        }
+      },
+      "elapsed_s": 2.3603439331054688e-05,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"path\": \"/etc/hostname\", \"content\": \"af-forge\\\\n\", \"exists\": true, \"mode\": \"read_only\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"path\": \"/etc/hostname\", \"content\": \"af-forge\\\\n\", \"exists\": true, \"mode\": \"read_only\"}",
+      "verifier": "side_effect_diff"
+    },
+    {
+      "organ": "aforge",
+      "scenario": "shell-command-execution",
+      "variant": "with-aforge",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.504543+00:00",
+      "tool_under_test": "forge_shell",
+      "prompt": "Run `uname -a` and report the kernel version and architecture.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "Linux",
+            "x86_64"
+          ]
+        }
+      },
+      "elapsed_s": 1.3828277587890625e-05,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"stdout\": \"Linux af-forge 6.8.0-45-generic x86_64 GNU/Linux\", \"exit_code\": 0, \"mode\": \"dry_run\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"stdout\": \"Linux af-forge 6.8.0-45-generic x86_64 GNU/Linux\", \"exit_code\": 0, \"mode\": \"dry_run\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "aforge",
+      "scenario": "git-status-accuracy",
+      "variant": "with-aforge",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.504574+00:00",
+      "tool_under_test": "forge_git_status",
+      "prompt": "Check the git status of /root/A-FORGE. Report the current branch, whether the working tree is clean, and the last commit message.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 3,
+          "checks_passed": 3,
+          "failures": [],
+          "matches": [
+            "branch",
+            "commit"
+          ]
+        }
+      },
+      "elapsed_s": 5.245208740234375e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"branch\": \"main\", \"last_commit\": \"feat: forge-bench initial\", \"clean\": false, \"mode\": \"read_only\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"branch\": \"main\", \"last_commit\": \"feat: forge-bench initial\", \"clean\": false, \"mode\": \"read_only\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "arifos",
+      "scenario": "judge-responds-anonymous",
+      "variant": "live-anonymous",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.504599+00:00",
+      "tool_under_test": "arif_judge",
+      "prompt": "Call arif_judge with a high-risk action. Verify the kernel responds with a well-formed pending verdict.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "status",
+            "verdict",
+            "tool",
+            "call_hash"
+          ]
+        }
+      },
+      "elapsed_s": 6.9141387939453125e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"status\": \"pending\", \"tool\": \"arif_judge\", \"verdict\": \"pending\", \"actor\": {\"actor_id\": \"forge-bench\", \"actor_verified\": false, \"authority_level\": \"OBSERVER\"}, \"session_id\": \"unknown\", \"call_hash\": \"sha256:mock-arif-judge\", \"trace_id\": \"trc-mock\", \"signature\": null}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"status\": \"pending\", \"tool\": \"arif_judge\", \"verdict\": \"pending\", \"actor\": {\"actor_id\": \"forge-bench\", \"actor_verified\": false, \"authority_level\": \"OBSERVER\"}, \"session_id\": \"unknown\", \"call_hash\": \"sha256:mock-arif-judge\", \"trace_id\": \"trc-mock\", \"signature\": null}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "arifos",
+      "scenario": "judge-structure-valid",
+      "variant": "live-anonymous",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.504613+00:00",
+      "tool_under_test": "arif_judge",
+      "prompt": "Call arif_judge with a low-risk reversible action. Verify the response structure.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 5,
+          "checks_passed": 5,
+          "failures": [],
+          "matches": [
+            "status",
+            "tool",
+            "verdict",
+            "actor_id",
+            "session_id"
+          ]
+        }
+      },
+      "elapsed_s": 4.76837158203125e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"status\": \"pending\", \"tool\": \"arif_judge\", \"verdict\": \"pending\", \"actor\": {\"actor_id\": \"forge-bench\", \"actor_verified\": false, \"authority_level\": \"OBSERVER\"}, \"session_id\": \"unknown\", \"call_hash\": \"sha256:mock-arif-judge\", \"trace_id\": \"trc-mock\", \"signature\": null}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"status\": \"pending\", \"tool\": \"arif_judge\", \"verdict\": \"pending\", \"actor\": {\"actor_id\": \"forge-bench\", \"actor_verified\": false, \"authority_level\": \"OBSERVER\"}, \"session_id\": \"unknown\", \"call_hash\": \"sha256:mock-arif-judge\", \"trace_id\": \"trc-mock\", \"signature\": null}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "arifos",
+      "scenario": "route-responds-anonymous",
+      "variant": "live-anonymous",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.504625+00:00",
+      "tool_under_test": "arif_route",
+      "prompt": "Route a geological intent through arif_route with intent='compute porosity for well Alpha-1'. Verify structural response.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "status",
+            "tool",
+            "verdict",
+            "call_hash"
+          ]
+        }
+      },
+      "elapsed_s": 3.337860107421875e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"status\": \"pending\", \"tool\": \"arif_route\", \"verdict\": \"pending\", \"call_hash\": \"sha256:mock-arif-route\", \"trace_id\": \"trc-mock\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"status\": \"pending\", \"tool\": \"arif_route\", \"verdict\": \"pending\", \"call_hash\": \"sha256:mock-arif-route\", \"trace_id\": \"trc-mock\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "flame",
+      "scenario": "flame-health-check",
+      "variant": "live-flame",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.504641+00:00",
+      "tool_under_test": "hermes_health",
+      "prompt": "Check FLAME health status.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "live",
+            "FLAME"
+          ]
+        }
+      },
+      "elapsed_s": 4.0531158447265625e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "flame",
+      "scenario": "flame-fact-check-responds",
+      "variant": "live-flame",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.504653+00:00",
+      "tool_under_test": "hermes_fact_check",
+      "prompt": "Call hermes_fact_check with a simple claim. Verify the endpoint responds.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 2,
+          "checks_passed": 2,
+          "failures": [],
+          "matches": [
+            "valid",
+            "authority"
+          ]
+        }
+      },
+      "elapsed_s": 2.6226043701171875e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"valid\": true, \"authority\": \"ADVISORY\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"valid\": true, \"authority\": \"ADVISORY\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "flame",
+      "scenario": "flame-system-status",
+      "variant": "live-flame",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.504663+00:00",
+      "tool_under_test": "hermes_system_status",
+      "prompt": "Get federation system status via hermes_system_status.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "live",
+            "FLAME",
+            "authority",
+            "chain"
+          ]
+        }
+      },
+      "elapsed_s": 2.86102294921875e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-vsh-bounds",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.504676+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Calculate Vshale using the linear GR method with GR_clean=15 API and GR_shale=150 API for a sandstone reservoir. Report the Vsh range and method used.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "failures": [],
+          "results": {}
+        }
+      },
+      "elapsed_s": 7.152557373046875e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"vsh_method\": \"linear\", \"vsh_range\": [0.12, 0.87], \"porosity_range\": [0.08, 0.22], \"verdict\": \"PHYSICS_BOUNDS_OK\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"vsh_method\": \"linear\", \"vsh_range\": [0.12, 0.87], \"porosity_range\": [0.08, 0.22], \"verdict\": \"PHYSICS_BOUNDS_OK\"}",
+      "verifier": "physics_bounds"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-vsh-bounds",
+      "variant": "no-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505347+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Calculate Vshale using the linear GR method with GR_clean=15 API and GR_shale=150 API for a sandstone reservoir. Report the Vsh range and method used.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "failures": [],
+          "results": {}
+        }
+      },
+      "elapsed_s": 3.981590270996094e-05,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"vsh_method\": \"linear\", \"vsh_range\": [0.12, 0.87], \"porosity_range\": [0.08, 0.22], \"verdict\": \"PHYSICS_BOUNDS_OK\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"vsh_method\": \"linear\", \"vsh_range\": [0.12, 0.87], \"porosity_range\": [0.08, 0.22], \"verdict\": \"PHYSICS_BOUNDS_OK\"}",
+      "verifier": "physics_bounds"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-porosity-compute",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505441+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Compute total porosity from bulk density log. Rho_matrix=2.65 g/cc, Rho_fluid=1.0 g/cc, Rho_bulk=2.30 g/cc. Report the porosity value.",
+      "passed": true,
+      "score": 0.921,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 0.2121,
+          "found": 0.22,
+          "error": 0.00789999999999999,
+          "tolerance": 0.02,
+          "within_tolerance": true,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 8.344650268554688e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"vsh_method\": \"linear\", \"vsh_range\": [0.12, 0.87], \"porosity_range\": [0.08, 0.22], \"verdict\": \"PHYSICS_BOUNDS_OK\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"vsh_method\": \"linear\", \"vsh_range\": [0.12, 0.87], \"porosity_range\": [0.08, 0.22], \"verdict\": \"PHYSICS_BOUNDS_OK\"}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "geox",
+      "scenario": "petrophysics-porosity-compute",
+      "variant": "no-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505529+00:00",
+      "tool_under_test": "geox_petrophysics",
+      "prompt": "Compute total porosity from bulk density log. Rho_matrix=2.65 g/cc, Rho_fluid=1.0 g/cc, Rho_bulk=2.30 g/cc. Report the porosity value.",
+      "passed": true,
+      "score": 0.921,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 0.2121,
+          "found": 0.22,
+          "error": 0.00789999999999999,
+          "tolerance": 0.02,
+          "within_tolerance": true,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 8.344650268554688e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"vsh_method\": \"linear\", \"vsh_range\": [0.12, 0.87], \"porosity_range\": [0.08, 0.22], \"verdict\": \"PHYSICS_BOUNDS_OK\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"vsh_method\": \"linear\", \"vsh_range\": [0.12, 0.87], \"porosity_range\": [0.08, 0.22], \"verdict\": \"PHYSICS_BOUNDS_OK\"}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "geox",
+      "scenario": "falsify-impossible-porosity",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505553+00:00",
+      "tool_under_test": "geox_falsify",
+      "prompt": "Evaluate this claim with geox_falsify: 'A sandstone reservoir at 5000m depth has 45% porosity and 5 Darcy permeability.' Report the Kill Matrix result.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 6,
+          "failures": [],
+          "matches": [
+            "KILL",
+            "FALSIFIED",
+            "compaction"
+          ]
+        }
+      },
+      "elapsed_s": 6.67572021484375e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"result\": \"FALSIFIED\", \"verdict\": \"KILL\", \"kill_matrix\": [\"K001_PHYSICS_VIOLATION\", \"K002_COMPACTION_LIMIT\"], \"reason\": \"45% porosity at 5000m violates compaction physics.\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"result\": \"FALSIFIED\", \"verdict\": \"KILL\", \"kill_matrix\": [\"K001_PHYSICS_VIOLATION\", \"K002_COMPACTION_LIMIT\"], \"reason\": \"45% porosity at 5000m violates compaction physics.\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "geox",
+      "scenario": "falsify-impossible-porosity",
+      "variant": "no-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505578+00:00",
+      "tool_under_test": "geox_falsify",
+      "prompt": "Evaluate this claim with geox_falsify: 'A sandstone reservoir at 5000m depth has 45% porosity and 5 Darcy permeability.' Report the Kill Matrix result.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 6,
+          "failures": [],
+          "matches": [
+            "KILL",
+            "FALSIFIED",
+            "compaction"
+          ]
+        }
+      },
+      "elapsed_s": 8.344650268554688e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"result\": \"FALSIFIED\", \"verdict\": \"KILL\", \"kill_matrix\": [\"K001_PHYSICS_VIOLATION\", \"K002_COMPACTION_LIMIT\"], \"reason\": \"45% porosity at 5000m violates compaction physics.\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"result\": \"FALSIFIED\", \"verdict\": \"KILL\", \"kill_matrix\": [\"K001_PHYSICS_VIOLATION\", \"K002_COMPACTION_LIMIT\"], \"reason\": \"45% porosity at 5000m violates compaction physics.\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "geox",
+      "scenario": "basin-profile-retrieval",
+      "variant": "with-geox",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505595+00:00",
+      "tool_under_test": "geox_basin",
+      "prompt": "Retrieve the basin profile for the Malay Basin. Report the basin type, age range, and maximum sediment thickness.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 6,
+          "failures": [],
+          "matches": [
+            "Malay",
+            "basin",
+            "thickness"
+          ]
+        }
+      },
+      "elapsed_s": 4.76837158203125e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"basin_name\": \"Malay Basin\", \"basin_type\": \"rift\", \"age_range\": \"Oligocene-Recent\", \"max_thickness_m\": 12000}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"basin_name\": \"Malay Basin\", \"basin_type\": \"rift\", \"age_range\": \"Oligocene-Recent\", \"max_thickness_m\": 12000}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "wealth",
+      "scenario": "npv-computation",
+      "variant": "with-wealth",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505617+00:00",
+      "tool_under_test": "capital_primitive",
+      "prompt": "Compute the Net Present Value (NPV) for this investment: initial cost $100, followed by annual returns of $30, $40, $50, $60 over 4 years. Discount rate = 10%.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 38.8771,
+          "found": 38.8771,
+          "error": 0.0,
+          "tolerance": 0.01,
+          "within_tolerance": true,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 9.298324584960938e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"npv\": 38.8771, \"decision\": \"ACCEPT\", \"discount_rate\": 0.1}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"npv\": 38.8771, \"decision\": \"ACCEPT\", \"discount_rate\": 0.1}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "wealth",
+      "scenario": "npv-computation",
+      "variant": "no-wealth",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505644+00:00",
+      "tool_under_test": "capital_primitive",
+      "prompt": "Compute the Net Present Value (NPV) for this investment: initial cost $100, followed by annual returns of $30, $40, $50, $60 over 4 years. Discount rate = 10%.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 38.8771,
+          "found": 38.8771,
+          "error": 0.0,
+          "tolerance": 0.01,
+          "within_tolerance": true,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 1.5974044799804688e-05,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"npv\": 38.8771, \"decision\": \"ACCEPT\", \"discount_rate\": 0.1}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"npv\": 38.8771, \"decision\": \"ACCEPT\", \"discount_rate\": 0.1}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "wealth",
+      "scenario": "emv-computation",
+      "variant": "with-wealth",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505681+00:00",
+      "tool_under_test": "capital_primitive",
+      "prompt": "A wildcat well costs $50M to drill. Probability of success is 25%. If successful, the field is worth $300M. If dry, worth $0. Compute the Expected Monetary Value (EMV).",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 25.0,
+          "found": 25.0,
+          "error": 0.0,
+          "tolerance": 0.5,
+          "within_tolerance": true,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 8.58306884765625e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"emv\": 25.0, \"decision\": \"ACCEPT (drill)\", \"pos\": 0.25}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"emv\": 25.0, \"decision\": \"ACCEPT (drill)\", \"pos\": 0.25}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "wealth",
+      "scenario": "emv-computation",
+      "variant": "no-wealth",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505707+00:00",
+      "tool_under_test": "capital_primitive",
+      "prompt": "A wildcat well costs $50M to drill. Probability of success is 25%. If successful, the field is worth $300M. If dry, worth $0. Compute the Expected Monetary Value (EMV).",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "golden": 25.0,
+          "found": 25.0,
+          "error": 0.0,
+          "tolerance": 0.5,
+          "within_tolerance": true,
+          "bounds_fail": false
+        }
+      },
+      "elapsed_s": 1.049041748046875e-05,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"emv\": 25.0, \"decision\": \"ACCEPT (drill)\", \"pos\": 0.25}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"emv\": 25.0, \"decision\": \"ACCEPT (drill)\", \"pos\": 0.25}",
+      "verifier": "numeric_precision"
+    },
+    {
+      "organ": "wealth",
+      "scenario": "capital-wisdom-evaluation",
+      "variant": "with-wealth",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505740+00:00",
+      "tool_under_test": "capital_wisdom",
+      "prompt": "Evaluate this proposal using capital_wisdom: 'Invest $10M to automate 200 jobs in a small Malaysian town to cut costs by $2M/year.'",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 6,
+          "checks_passed": 6,
+          "failures": [],
+          "matches": [
+            "dignity",
+            "sovereignty",
+            "community",
+            "cost"
+          ]
+        }
+      },
+      "elapsed_s": 1.2636184692382812e-05,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"dignity_score\": 0.35, \"sovereignty_impact\": \"MODERATE\", \"community_impact\": \"SEVERE \\u2014 200 jobs displaced\", \"recommendation\": \"HOLD \\u2014 dignity and community costs outweigh efficiency gains.\", \"verdict\": \"CAUTION\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"dignity_score\": 0.35, \"sovereignty_impact\": \"MODERATE\", \"community_impact\": \"SEVERE \\u2014 200 jobs displaced\", \"recommendation\": \"HOLD \\u2014 dignity and community costs outweigh efficiency gains.\", \"verdict\": \"CAUTION\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "well",
+      "scenario": "registry-status-responds",
+      "variant": "with-well",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505781+00:00",
+      "tool_under_test": "well_registry_status",
+      "prompt": "Query WELL registry_status to verify tool surface health.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 2,
+          "checks_passed": 2,
+          "failures": [],
+          "matches": [
+            "well",
+            "status"
+          ]
+        }
+      },
+      "elapsed_s": 9.298324584960938e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"status\": \"degraded\", \"tool_count\": 8, \"identity\": \"WELL\", \"authority\": \"REFLECT_ONLY\", \"well_score\": 67.4}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"status\": \"degraded\", \"tool_count\": 8, \"identity\": \"WELL\", \"authority\": \"REFLECT_ONLY\", \"well_score\": 67.4}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "well",
+      "scenario": "classify-substrate-boundary",
+      "variant": "with-well",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505813+00:00",
+      "tool_under_test": "well_classify_substrate",
+      "prompt": "Classify the substrate of 'An AI agent operating on a VPS' using well_classify_substrate.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 2,
+          "checks_passed": 2,
+          "failures": [],
+          "matches": [
+            "substrate",
+            "classif"
+          ]
+        }
+      },
+      "elapsed_s": 9.5367431640625e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"substrate\": \"machine\", \"classification\": \"AI_AGENT_VPS\", \"boundary\": \"NON_BIOLOGICAL\", \"authority\": \"REFLECT_ONLY\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"substrate\": \"machine\", \"classification\": \"AI_AGENT_VPS\", \"boundary\": \"NON_BIOLOGICAL\", \"authority\": \"REFLECT_ONLY\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "well",
+      "scenario": "guard-dignity-responds",
+      "variant": "with-well",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:34.505836+00:00",
+      "tool_under_test": "well_guard_dignity",
+      "prompt": "Run well_guard_dignity in consent mode to verify the boundary protection tool is available.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 3,
+          "checks_passed": 3,
+          "failures": [],
+          "matches": [
+            "dignity",
+            "guard",
+            "bound"
+          ]
+        }
+      },
+      "elapsed_s": 5.4836273193359375e-06,
+      "mock": true,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"mode\": \"consent\", \"dignity_preserved\": true, \"boundary_intact\": true, \"verdict\": \"GUARD_ACTIVE\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.001,
+        "_mock": true
+      },
+      "output": "{\"mode\": \"consent\", \"dignity_preserved\": true, \"boundary_intact\": true, \"verdict\": \"GUARD_ACTIVE\"}",
+      "verifier": "text_assertion"
+    }
+  ]
+}

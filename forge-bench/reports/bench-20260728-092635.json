@@ -1,0 +1,133 @@
+{
+  "bench": "FORGE-BENCH",
+  "timestamp": "2026-07-28T09:26:35.594731+00:00",
+  "mode": "LIVE",
+  "total": 3,
+  "passed": 3,
+  "failed": 0,
+  "ratchet": null,
+  "results": [
+    {
+      "organ": "flame",
+      "scenario": "flame-health-check",
+      "variant": "live-flame",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:35.589510+00:00",
+      "tool_under_test": "hermes_health",
+      "prompt": "Check FLAME health status.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "live",
+            "FLAME"
+          ]
+        }
+      },
+      "elapsed_s": 0.0011630058288574219,
+      "mock": false,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\", \"p0_fixes\": [\"seal\\u2192snapshot-checksum\", \"reasoning_no_final=fail\", \"rm0_hard_gate\", \"safety_refuse_no_shop\", \"allowlisted_env\", \"stdin_not_argv\", \"request_size_limit\"], \"p1_fixes\": [\"post-probe-live\", \"chat-completions\", \"simple-completions\", \"startup-table-populate\", \"stale-cache-fix\", \"routes-ensure-table\"]}"
+            }
+          ]
+        },
+        "_elapsed": 0.0011577606201171875,
+        "_mock": false
+      },
+      "output": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\", \"p0_fixes\": [\"seal\\u2192snapshot-checksum\", \"reasoning_no_final=fail\", \"rm0_hard_gate\", \"safety_refuse_no_shop\", \"allowlisted_env\", \"stdin_not_argv\", \"request_size_limit\"], \"p1_fixes\": [\"post-probe-live\", \"chat-completions\", \"simple-completions\", \"startup-table-populate\", \"stale-cache-fix\", \"routes-ensure-table\"]}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "flame",
+      "scenario": "flame-fact-check-responds",
+      "variant": "live-flame",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:35.591978+00:00",
+      "tool_under_test": "hermes_fact_check",
+      "prompt": "Call hermes_fact_check with a simple claim. Verify the endpoint responds.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 2,
+          "checks_passed": 2,
+          "failures": [],
+          "matches": [
+            "valid",
+            "authority"
+          ]
+        }
+      },
+      "elapsed_s": 0.0006287097930908203,
+      "mock": false,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"valid\": false, \"error\": \"Missing fields: ['fingerprint', 'prompt_hash', 'content', 'model', 'provider', 'created_at']\", \"authority\": \"ADVISORY\"}"
+            }
+          ]
+        },
+        "_elapsed": 0.0006253719329833984,
+        "_mock": false
+      },
+      "output": "{\"valid\": false, \"error\": \"Missing fields: ['fingerprint', 'prompt_hash', 'content', 'model', 'provider', 'created_at']\", \"authority\": \"ADVISORY\"}",
+      "verifier": "text_assertion"
+    },
+    {
+      "organ": "flame",
+      "scenario": "flame-system-status",
+      "variant": "live-flame",
+      "model": "mock",
+      "timestamp": "2026-07-28T09:26:35.593367+00:00",
+      "tool_under_test": "hermes_system_status",
+      "prompt": "Get federation system status via hermes_system_status.",
+      "passed": true,
+      "score": 1.0,
+      "errors": [],
+      "details": {
+        "health": "OK",
+        "verifier": {
+          "checks_total": 4,
+          "checks_passed": 4,
+          "failures": [],
+          "matches": [
+            "live",
+            "FLAME",
+            "authority",
+            "chain"
+          ]
+        }
+      },
+      "elapsed_s": 0.0006134510040283203,
+      "mock": false,
+      "raw_response": {
+        "result": {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\", \"p0_fixes\": [\"seal\\u2192snapshot-checksum\", \"reasoning_no_final=fail\", \"rm0_hard_gate\", \"safety_refuse_no_shop\", \"allowlisted_env\", \"stdin_not_argv\", \"request_size_limit\"], \"p1_fixes\": [\"post-probe-live\", \"chat-completions\", \"simple-completions\", \"startup-table-populate\", \"stale-cache-fix\", \"routes-ensure-table\"]}"
+            }
+          ]
+        },
+        "_elapsed": 0.0006108283996582031,
+        "_mock": false
+      },
+      "output": "{\"name\": \"FLAME API\", \"status\": \"live\", \"chain\": \"RM0-TOOLS-FREELOOP\", \"mode\": \"RM0-TOOLS-FREELOOP\", \"authority\": \"ADVISORY\", \"p0_fixes\": [\"seal\\u2192snapshot-checksum\", \"reasoning_no_final=fail\", \"rm0_hard_gate\", \"safety_refuse_no_shop\", \"allowlisted_env\", \"stdin_not_argv\", \"request_size_limit\"], \"p1_fixes\": [\"post-probe-live\", \"chat-completions\", \"simple-completions\", \"startup-table-populate\", \"stale-cache-fix\", \"routes-ensure-table\"]}",
+      "verifier": "text_assertion"
+    }
+  ]
+}
