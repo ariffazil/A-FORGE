@@ -25,6 +25,8 @@ truth_rule: MCP tools/list on :7072 beats any static count in prose
 > **A-FORGE is the hands. arifOS is the brain. The hands execute. The brain judges. The hands never adjudicate.**
 >
 > **DITEMPA BUKAN DIBERI — Execution is forged, not given.**
+>
+> **🔒 Dry-Run by Default:** All `arif_forge` operations default to `mode=dry_run`. Explicit `ack_irreversible=true` required for any mutation. No silent default to execute. See `/root/AGENTS.md` §6 for gate architecture.
 
 ---
 
