@@ -1,6 +1,6 @@
 <!-- SOT-MANIFEST
-federation_release: v2026.07.25
-last_verified: 2026-07-25T06:30Z
+federation_release: v2026.07.28
+last_verified: 2026-07-28T18:00Z
 live_commit: 71848c0
 qqq_version: v1.1.1 (10/10 tests passing, verdict round-trip closed)
 seal_chain: append-only (chattr +a) + Merkle anchor every 100 receipts
@@ -11,7 +11,7 @@ owner_summary: GREEN
 truth_rule: MCP tools/list on :7072 beats any static count in prose
 -->
 
-**SOT:** 2026-07-24 | **seal_seq:** `b6b995b`
+**SOT:** 2026-07-28 | **seal_seq:** `b6b995b`
 
 # A-FORGE — Governed Execution Shell
 
@@ -19,6 +19,7 @@ truth_rule: MCP tools/list on :7072 beats any static count in prose
 [![Boundary Guard](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml)
 [![Governance Gate](https://github.com/ariffazil/A-FORGE/actions/workflows/governance-gate.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions/workflows/governance-gate.yml)
 [![🔥 FORGE](https://img.shields.io/badge/%F0%9F%94%A5%20FORGE-52%20tools-orange)](https://mcp.arif-fazil.com/mcp)
+[![Federation](https://img.shields.io/badge/Federation-v2026.07.28-0a7b83)](https://arifos.arif-fazil.com)
 [![License](https://img.shields.io/github/license/ariffazil/A-FORGE?label=License)](LICENSE)
 
 > **A-FORGE is the hands. arifOS is the brain. The hands execute. The brain judges. The hands never adjudicate.**
@@ -315,7 +316,7 @@ curl -s http://localhost:7071/health | python3 -m json.tool
 | **HERMES** | Multi-modal bridge | [repo](https://github.com/ariffazil/HERMES) | — | — | — |
 
 **Public:** [arif-fazil.com](https://arif-fazil.com) · **Federation root:** [arifos.arif-fazil.com](https://arifos.arif-fazil.com)
-**SOT:** 2026-07-24
+**SOT:** 2026-07-28
 
 
 
