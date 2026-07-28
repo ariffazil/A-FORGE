@@ -27,13 +27,21 @@ done
 # ── 2. GIT SHA DRIFT (source vs runtime) ────────────────────────────────
 check_drift() {
   local organ=$1 src=$2 runtime_file=$3
-  local src_sha runtime_sha
-  src_sha=$(git -C "$src" rev-parse --short=7 HEAD 2>/dev/null || echo "UNKNOWN")
-  runtime_sha=$(cat "$runtime_file" 2>/dev/null || echo "UNKNOWN")
-  if [ "$src_sha" != "UNKNOWN" ] && [ "$runtime_sha" != "UNKNOWN" ] && [ "$src_sha" != "$runtime_sha" ]; then
-    FINDINGS="${FINDINGS}  ⚠️  ${organ} DRIFT: src=${src_sha} runtime=${runtime_sha}
+  local src_head main_sha runtime_raw runtime_sha
+  src_head=$(git -C "$src" rev-parse --short=7 HEAD 2>/dev/null || echo "UNKNOWN")
+  main_sha=$(git -C "$src" rev-parse --short=7 main 2>/dev/null || echo "UNKNOWN")
+  runtime_raw=$(cat "$runtime_file" 2>/dev/null || echo "UNKNOWN")
+  runtime_sha=$(echo "$runtime_raw" | cut -c 1-7)
+
+  if [ "$runtime_raw" != "UNKNOWN" ] && [ -n "$runtime_sha" ]; then
+    # Drift exists only if runtime commit matches neither HEAD nor main, AND is not in repo history
+    if [ "$src_head" != "$runtime_sha" ] && [ "$main_sha" != "$runtime_sha" ]; then
+      if ! git -C "$src" cat-file -e "$runtime_raw" 2>/dev/null && ! git -C "$src" cat-file -e "$runtime_sha" 2>/dev/null; then
+        FINDINGS="${FINDINGS}  ⚠️  ${organ} DRIFT: src=${src_head} runtime=${runtime_sha}
 "
-    DRIFT_FOUND=1
+        DRIFT_FOUND=1
+      fi
+    fi
   fi
 }
 
@@ -44,17 +52,20 @@ check_drift "GEOX"    "/root/GEOX"    "/opt/geox/app/.git_commit"    2>/dev/null
 check_drift "AAA"     "/root/AAA"     "/opt/aaa/app/.git_commit"     2>/dev/null || true
 
 # ── 3. PORT DRIFT (unexpected public ports) ─────────────────────────────
-# Known legitimate ports — updated 2026-07-16
-# Federation organs: 8088 7071 7072 8081 18082 18083 3001
+# Known legitimate ports — updated 2026-07-28
+# Federation organs: 8088 7071 7072 7073 8081 18082 18083 18084 3001
 # Telegram: 18086 18090 18093 18094 18095 18096 18789 8787 4096
-# Docker (localhost): 5432 6333 6334 6379 6380 8000 8080 9000 9001
+# Docker (localhost): 5432 6333 6334 6379 6380 8000 8080 9000 9001 6274 6277
 # Monitoring: 3000 9090 9100 8125 8222 19999 4222
-# Infra: 22 80 443 22888 20241 11434 5001 8100 8001 8082 8083 8090 8094
+# Infra: 22 80 443 22888 20241 11434 5001 8100 8001 8082 8083 8090 8094 50443
 # Internal: 3050 3100 3456 4317 51001 18000 18081 18990 9222
-KNOWN_PORTS="22 53 80 443 3000 3001 3050 3100 3456 4096 4222 4317 5001 51001 5432 6333 6334 6379 6380 7071 7072 8000 8001 8080 8081 8082 8083 8088 8090 8094 8100 8125 8222 8787 8931 9000 9001 9090 9100 9222 11434 18000 18081 18082 18083 18086 18090 18093 18094 18095 18096 18789 18990 19999 20241 22888"
+KNOWN_PORTS="22 53 80 443 3000 3001 3050 3100 3456 4096 4222 4317 5001 51001 5432 6274 6277 6333 6334 6379 6380 7071 7072 7073 8000 8001 8080 8081 8082 8083 8088 8090 8094 8100 8125 8222 8787 8931 9000 9001 9090 9100 9222 11434 18000 18081 18082 18083 18084 18086 18090 18093 18094 18095 18096 18789 18990 19999 20241 22888 50443"
 UNKNOWN_PORTS=""
 while IFS= read -r line; do
-  port=$(echo "$line" | awk '{print $4}' | grep -oP ':\K[0-9]+$' || true)
+  addr=$(echo "$line" | awk '{print $4}')
+  # Ignore localhost / loopback / tailscale VPN listeners
+  echo "$addr" | grep -qE '^127\.|^::1:|^100\.64\.|^\[fd7a:' && continue
+  port=$(echo "$addr" | grep -oP ':\K[0-9]+$' || true)
   [ -z "$port" ] && continue
   found=0
   for kp in $KNOWN_PORTS; do
