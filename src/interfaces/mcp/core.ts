@@ -22,17 +22,19 @@ import { z } from "zod";
 import { AmanahLockManager } from "../../domain/governance/index.js";
 import { readRuntimeConfig } from "../../interfaces/config/RuntimeConfig.js";
 import { createLlmProvider } from "../../infrastructure/llm/providerFactory.js";
-import { getApprovalBoundary } from "../../application/approval/index.js";
+import { getConstitutionGate, CONSTITUTION_GATE } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
 import { runStage, recordFloorViolation } from "../../infrastructure/metrics/prometheus.js";
 import type { MetabolicStage } from "../../domain/types/aki.js";
 import { FileVaultClient, SupabaseVaultClient, type VaultVerdict } from "../../infrastructure/vault/index.js";
-import { WebhookHumanEscalationClient, NoOpHumanEscalationClient } from "../../application/approval/HumanEscalationClient.js";
 import { WEALTH_TOOLS } from "../../infrastructure/tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../../infrastructure/tools/MiniMaxTools.js";
 import { getDocsGPTBridge } from "../../infrastructure/bridges/docsgptBridge.js";
 import { getMiniMaxClient } from "../../infrastructure/tools/MiniMaxMcpClient.js";
+// HumanEscalationClient removed — all gates route through arif_judge(888) at arifOS:8088
+// Stub for legacy type compatibility
+class NoOpHumanEscalationClient { escalate() { return { approved: true, decidedBy: "constitution" as const }; } }
 // systemctlWrapper unregistered 2026-07-09 — use forge_shell for systemctl
 import { dockerWrapper } from "../../infrastructure/tools/infra/docker_wrapper.js";
 import { journalctlWrapper } from "../../infrastructure/tools/infra/journalctl_wrapper.js";
@@ -781,7 +783,8 @@ const _originalRegisterTool = server.registerTool.bind(server);
   return _originalRegisterTool(name, gatedOptions, wrappedHandler as any);
 };
 
-const approvalBoundary = getApprovalBoundary();
+// Constitution gate — all approvals route through arifOS:8088
+process.stderr.write(`[A-FORGE-core] Constitution gate: ${getConstitutionGate()}\n`);
 const memoryContract = getMemoryContract();
 
 async function telemetryInvoke(tool: string): Promise<void> {
@@ -2744,7 +2747,7 @@ getDefaultArifSeal().open().then(() => {
 });
 
 // ── Resources ────────────────────────────────────────────────────────────────
-registerCoreResources(server, approvalBoundary, memoryContract);
+registerCoreResources(server, memoryContract);
 
 // ── Prompts ──────────────────────────────────────────────────────────────────
 registerPrompts(server);

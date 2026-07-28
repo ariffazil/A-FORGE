@@ -154,18 +154,18 @@ export async function runCliCommand(
         const status = parseTicketStatus(typeof options.status === "string" ? options.status : undefined);
         const sessionId = typeof options.sessionId === "string" ? options.sessionId : undefined;
         const riskLevel = parseRiskLevel(typeof options.riskLevel === "string" ? options.riskLevel : undefined);
-        const tickets = await fileStore.query({ status, sessionId, riskLevel });
-        return JSON.stringify({ ok: true, count: tickets.length, tickets }, null, 2);
+        const { tickets: ticketList } = await fileStore.query({ status, sessionId, riskLevel });
+        return JSON.stringify({ ok: true, count: ticketList.length, tickets: ticketList }, null, 2);
       }
       const status = parseTicketStatus(typeof options.status === "string" ? options.status : undefined);
       const sessionId = typeof options.sessionId === "string" ? options.sessionId : undefined;
       const riskLevel = parseRiskLevel(typeof options.riskLevel === "string" ? options.riskLevel : undefined);
-      const tickets = await store.query({
+      const { tickets: ticketList2 } = await store.query({
         status,
         sessionId,
         riskLevel,
       });
-      return JSON.stringify({ ok: true, count: tickets.length, tickets }, null, 2);
+      return JSON.stringify({ ok: true, count: ticketList2.length, tickets: ticketList2 }, null, 2);
     }
     if (subcommand === "vault") {
       const vaultClient = new FileVaultClient();

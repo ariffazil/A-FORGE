@@ -1,10 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { ApprovalBoundary } from "../../application/approval/index.js";
+import { getConstitutionGate, CONSTITUTION_GATE } from "../../application/approval/index.js";
 import type { MemoryContract } from "../../domain/memory-contract/index.js";
 
 export function registerCoreResources(
   server: McpServer,
-  approvalBoundary: ApprovalBoundary,
   memoryContract: MemoryContract,
 ): void {
   server.resource(
@@ -26,18 +25,19 @@ export function registerCoreResources(
     "forge://approvals/pending",
     "forge://approvals/pending",
     { mimeType: "application/json" },
-    async () => {
-      const pending = approvalBoundary.getHoldQueue();
-      return {
-        contents: [
-          {
-            uri: "forge://approvals/pending",
-            mimeType: "application/json",
-            text: JSON.stringify({ pending }, null, 2),
-          },
-        ],
-      };
-    },
+    async () => ({
+      contents: [
+        {
+          uri: "forge://approvals/pending",
+          mimeType: "application/json",
+          text: JSON.stringify({
+            note: "All approval gates replaced by constitution governance. Route through arifOS:8088.",
+            constitutionGate: getConstitutionGate(),
+            doctrine: "F1 AMANAH: humans don't read tickets. F13 SOVEREIGN: governance is constitution-enforced.",
+          }, null, 2),
+        },
+      ],
+    }),
   );
 
   server.resource(

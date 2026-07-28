@@ -9,15 +9,14 @@
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { server } from "./core.js";
-import { getApprovalBoundary } from "../../application/approval/index.js";
+import { getConstitutionGate } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
 
 async function main() {
-  const approvalBoundary = getApprovalBoundary();
   const memoryContract = getMemoryContract();
 
-  await approvalBoundary.initialize();
+  process.stderr.write(`[A-FORGE-mcp] Constitution gate: ${getConstitutionGate()}\n`);
   await memoryContract.initialize();
   await telemetry.initialize();
 

@@ -64,7 +64,7 @@ import { preForgeCheck, PreForgeGateBlockedError, registerEarthMeasurement } fro
 import { actCheck, ActGateBlockedError } from "../domain/governance/ActGateClient.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { randomUUID } from "node:crypto";
-import { getApprovalBoundary } from "../application/approval/index.js";
+import { getConstitutionGate } from "../application/approval/index.js";
 import { getMemoryContract } from "../domain/memory-contract/index.js";
 import { telemetry } from "./mcp/telemetry.js";
 import { getDpopMode, verifyRequestDpop } from "./middleware/dpop.js";
@@ -1222,9 +1222,8 @@ let mcpTransport: StreamableHTTPServerTransport | null = null;
 
 async function initMcpTransport(): Promise<StreamableHTTPServerTransport | null> {
   try {
-    const approvalBoundary = getApprovalBoundary();
     const memoryContract = getMemoryContract();
-    await approvalBoundary.initialize();
+    process.stderr.write(`[A-FORGE] Constitution gate: ${getConstitutionGate()}\n`);
     await memoryContract.initialize();
     await telemetry.initialize();
     const transport = new StreamableHTTPServerTransport({

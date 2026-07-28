@@ -21,7 +21,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { server } from "./core.js";
-import { getApprovalBoundary } from "../../application/approval/index.js";
+import { getConstitutionGate, CONSTITUTION_GATE } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
 import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpPolicyGate.js";
@@ -362,10 +362,10 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
   // Seal-A condition 3: production + FORGE_SCT_REQUIRE_MUTATE=0 → FATAL before bind.
   assertSctMutationGateOrExit(process.env);
 
-  const approvalBoundary = getApprovalBoundary();
   const memoryContract = getMemoryContract();
 
-  await approvalBoundary.initialize();
+  // Constitution gate active — all approvals route through arifOS:8088
+  process.stderr.write(`[A-FORGE-MCP] Constitution gate: ${getConstitutionGate()}\n`);
   await memoryContract.initialize();
   await telemetry.initialize();
 

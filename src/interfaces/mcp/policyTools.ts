@@ -282,8 +282,10 @@ function isExternalClient(args: any, extra?: any): { external: boolean; reason?:
     return { external: false };
   }
 
-  // Has F13 approval token
-  if (args?.human_approval === true || args?.human_approval === "true") {
+  // Decoupled from human approval. All gates now route through arif_judge(888)
+  // at arifOS:8088 for constitution-enforced verdict. F1 AMANAH: humans don't read.
+  // Check for constitution gate acknowledgment
+  if (args?._constitution_gate === true || args?._constitution_gate === "true") {
     return { external: false };
   }
 

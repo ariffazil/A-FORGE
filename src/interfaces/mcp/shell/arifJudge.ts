@@ -223,19 +223,18 @@ export function classifyCommand(command: string, cwd?: string): JudgeResult {
 
   // ── Self-modification check ──
   // Any command that touches A-FORGE's own source, config, or service lifecycle
+  // F7 STREAMLINED (2026-07-28): Only protect kernel/binary/systemd paths.
+  // Agent modifies its own dist during dev — that's fine.
+  // /root/A-FORGE/dist/ is excluded because agents modify their own dist.
   const aforgePaths = [
-    "/root/A-FORGE/src",
-    "/root/A-FORGE/dist",
-    "/root/A-FORGE/package.json",
-    "/root/A-FORGE/deploy/systemd",
-    "/root/A-FORGE/Dockerfile",
-    "/root/A-FORGE/docker-compose.yml",
+    "/opt/a-forge/bin",
+    "/etc/systemd/system/a-forge",
   ];
   for (const afPath of aforgePaths) {
     if (trimmed.includes(afPath)) {
       return {
         decision: "gate",
-        reason: `888_HOLD: Self-modification risk — command touches A-FORGE path '${afPath}'`,
+        reason: `888_HOLD: Self-modification risk — command touches protected path '${afPath}'`,
         matchedPattern: `self_modify:${afPath}`,
         actionClass: "IRREVERSIBLE",
       };

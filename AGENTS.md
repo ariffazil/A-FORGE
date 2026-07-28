@@ -242,9 +242,8 @@ Hard violation → `VOID` (blocked). Soft tension → `CAUTION` or `HOLD`.
 | **PlanGovernanceGate** | `PlanValidator.ts` | AgentEngine L332-399 | Validates plan DAG against governance card. BLOCK/HOLD/ALLOW. |
 | **AmanahLockManager** | `AmanahLockManager.ts` | FileTools/EditorTools | Distributed mutex for file operations — acquires before writes, verifies lock before mutations. NOT in execution pipeline; operates at file level. |
 | **GovernanceBridge** | `GovernanceBridge.ts` | evaluate.ts | APEX G computation bridge for tool registration. HTTP bridge to arifOS for risk classification. NOT in execution pipeline. |
-| **ApprovalBoundary** | `ApprovalBoundary.ts` | Hold queue | Ticket creation when PlanGovernanceGate returns HOLD. State machine: thinking→drafting→holding→ready→approved→executing→executed. NOT an active blocking gate. |
-
-**Note:** The previous "4-layer sequential gate" was documentation that diverged from code. The actual architecture is 2 pipeline gates (ModelCapability + PlanGovernance) with 2 supporting mechanisms (AmanahLock distributed mutex + ApprovalBoundary hold queue) and 1 cross-cutting bridge (GovernanceBridge for G computation). See `/root/A-FORGE/forge_work/2026-07-27/gate-eval-phase1/PHASE1-SEAL.json` for the full audit.
+|
+|**Note:** The previous "4-layer sequential gate" was documentation that diverged from code. The actual architecture is 2 pipeline gates (ModelCapability + PlanGovernance) with 1 supporting mechanism (AmanahLock distributed mutex) and 1 cross-cutting bridge (GovernanceBridge for G computation). See `/root/A-FORGE/forge_work/2026-07-27/gate-eval-phase1/PHASE1-SEAL.json` for the full audit.
 
 ---
 

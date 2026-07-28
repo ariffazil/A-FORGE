@@ -250,7 +250,7 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     if (!sessionId) {
       const err = new Error(
         `MCP Bridge: ${actionClass} tool "${canonicalTool}" requires a governed session. ` +
-        `888_HOLD: No session_id provided. Call arif_session_init first.`
+        `No session_id provided. Call arif_session_init first.`
       ) as Error & { error_code: string; source_layer: string };
       err.error_code = "SESSION_REQUIRED";
       err.source_layer = "A-FORGE::BRIDGE";

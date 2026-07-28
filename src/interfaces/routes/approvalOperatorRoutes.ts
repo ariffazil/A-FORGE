@@ -21,12 +21,12 @@ export function createHumanExpertRouter(): Router {
       const status = parseTicketStatus(toQueryString(req.query.status));
       const sessionId = toQueryString(req.query.sessionId);
       const riskLevel = parseRiskLevel(toQueryString(req.query.riskLevel));
-      const tickets = await store.query({
+      const { tickets: ticketList } = await store.query({
         status,
         sessionId,
         riskLevel,
       });
-      res.json({ ok: true, count: tickets.length, tickets });
+      res.json({ ok: true, count: ticketList.length, tickets: ticketList });
     } catch (error) {
       console.error("[A-FORGE] /human-expert/tickets error:", error);
       res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
@@ -168,12 +168,12 @@ export function createOperatorRouter(): Router {
       const status = parseTicketStatus(toQueryString(req.query.status));
       const sessionId = toQueryString(req.query.sessionId);
       const riskLevel = parseRiskLevel(toQueryString(req.query.riskLevel));
-      const tickets = await store.query({
+      const { tickets: ticketList } = await store.query({
         status,
         sessionId,
         riskLevel,
       });
-      res.json({ ok: true, count: tickets.length, tickets });
+      res.json({ ok: true, count: ticketList.length, tickets: ticketList });
     } catch (error) {
       console.error("[A-FORGE] /operator/approvals error:", error);
       res.status(500).json({ ok: false, error: { type: "internal_error", message: String(error) } });
