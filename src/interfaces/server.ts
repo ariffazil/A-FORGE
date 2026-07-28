@@ -975,12 +975,15 @@ app.get("/health", (_req: Request, res: Response) => {
   // See: /root/AAA/governance/FEDERATION_SCHEMA_ALIGNMENT.md
   // T5 2026-07-17 — canonical 5-field federation header + organ payload.
   // ok retained for legacy callers; status is canonical.
+  const liveToolCount = getRegisteredMcpToolCount();
   res.json({
     ok: !isDegradedMode && !deploymentDrift, // legacy alias — prefer status
     degraded_mode: isDegradedMode || deploymentDrift,
     service: "A-FORGE-sense",
     version: "v2026.07.24",
     federation_schema_version: "2.0.0",
+    tool_count: liveToolCount,
+    tools_loaded: liveToolCount,
     // P5 (2026-06-13): Substrate doctrine — A-FORGE is the substrate engineering organ.
     // Profile bounded by F13; options: enterprise | agentic | sovereign | civilization.
     profile: "enterprise",
