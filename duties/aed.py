@@ -616,6 +616,22 @@ def run_aed_cycle() -> dict:
                 print(f"  precommit CLEAN on {len(gate_results)} dirty repos")
 
     if int(cycle_id, 16) % 6 == 0:
+        print("[AED:T1] Memory promotion smoke (L1→L6)...")
+        mem_out, _, mem_rc = sh(
+            "/usr/bin/python3 /root/A-FORGE/duties/memory_promotion_smoke.py", timeout=30
+        )
+        try:
+            mem_data = json.loads(mem_out) if mem_out else {}
+        except json.JSONDecodeError:
+            mem_data = {"raw": mem_out[:200], "rc": mem_rc}
+        results["steps"]["memory_smoke"] = {
+            "verdict": mem_data.get("verdict", "HOLD" if mem_rc else "SEAL"),
+            "summary": mem_data.get("summary"),
+        }
+        if mem_rc != 0:
+            print(f"  memory smoke HOLD rc={mem_rc}")
+
+    if int(cycle_id, 16) % 6 == 0:
         print("[AED:T1] Running breakage detection...")
         break_out, _, break_rc = sh(
             "/usr/bin/python3 /root/A-FORGE/duties/ara_breakage_detect.py", timeout=30
@@ -680,7 +696,12 @@ def run_aed_cycle() -> dict:
             f"(actor={fq_info.get('actor_fq')}, global={fq_info.get('quotient')})"
         )
         results["steps"]["fq_throttle"] = {
-            "skipped": ["rsi_mini", "orchestrator", "goal_resume", "seed_carry_forward"],
+            "skipped": [
+                "rsi_mini",
+                "orchestrator",
+                "goal_resume",
+                "seed_carry_forward",
+            ],
             "reason": "actor or global FQ > 5.0 Overheat",
         }
         write_receipt(
@@ -710,6 +731,45 @@ def run_aed_cycle() -> dict:
                     "T3",
                 )
             else:
+                # World-model lite: predict-before-mutate on T2 restart
+                pred_gate: dict = {}
+                try:
+                    from world_model_lite import gate_or_hold, t2_restart
+
+                    pred = gate_or_hold(t2_restart(name, cfg["systemd"]))
+                    pred_gate = {
+                        "allow_mutate": pred.allow_mutate,
+                        "confidence": pred.confidence,
+                        "hold_reason": pred.hold_reason,
+                        "prediction_id": pred.prediction_id,
+                    }
+                    if not pred.allow_mutate:
+                        print(
+                            f"[AED:T2] HOLD restart {name}: {pred.hold_reason} "
+                            f"(wm-lite conf={pred.confidence})"
+                        )
+                        write_receipt(
+                            f"restart_{name}_wm_hold",
+                            "HOLD",
+                            f"World-model lite blocked restart {cfg['systemd']}: "
+                            f"{pred.hold_reason}",
+                            "T2",
+                            evidence=pred_gate,
+                        )
+                        results.setdefault("restarts", []).append(
+                            {
+                                "organ": name,
+                                "systemd": cfg["systemd"],
+                                "success": False,
+                                "wm_hold": pred_gate,
+                            }
+                        )
+                        continue
+                except Exception as wm_err:
+                    # Fail-open for liveness if gate import fails, but log it
+                    pred_gate = {"wm_error": str(wm_err)[:120], "fail_open": True}
+                    print(f"[AED:T2] world_model_lite unavailable: {wm_err}")
+
                 print(f"[AED:T2] Restarting {name} ({cfg['systemd']})...")
                 out, err, rc = sh(f"systemctl restart {cfg['systemd']}", timeout=30)
                 time.sleep(2)
@@ -720,6 +780,7 @@ def run_aed_cycle() -> dict:
                         "systemd": cfg["systemd"],
                         "success": rc == 0 and healthy,
                         "stderr": err[:200] if err else "",
+                        "wm_gate": pred_gate,
                     }
                 )
                 write_receipt(
@@ -727,6 +788,7 @@ def run_aed_cycle() -> dict:
                     "SEAL" if healthy else "HOLD",
                     f"Auto-restarted {cfg['systemd']}: {'OK' if healthy else 'FAIL'}",
                     "T2",
+                    evidence=pred_gate or None,
                 )
 
     execute_ns += time.time_ns() - t0
@@ -739,20 +801,30 @@ def run_aed_cycle() -> dict:
             post_alive += 1
     results["steps"]["post_verify"] = {"alive": post_alive, "total": total}
 
-    # Metabolism catch-up: if this cycle's execute wall-time >> verify so far,
-    # re-probe once more so Verify cost tracks real confirmation work.
+    # Metabolism catch-up: if execute wall-time >> verify so far,
+    # run real audit work (entropy sweep, git sync, seal chain) as
+    # proportional cooling — not just organ re-probe. F2: verify cost
+    # must reflect actual verification, not fictional padding.
     if execute_ns > max(verify_ns, 1) * 3:
-        print("[AED:FQ] Execute>>Verify this cycle — extra organ re-probe for cooling")
-        extra_alive = 0
-        for name in ORGANS:
-            if curl_health(ORGANS[name]["port"]):
-                extra_alive += 1
+        ratio = execute_ns / max(verify_ns, 1)
+        print(f"[AED:FQ] Execute>>Verify ({ratio:.1f}×) — running audit catch-up")
+        catchup_work = []
+        if not entropy:
+            entropy = t1_entropy_sweep()
+            catchup_work.append("entropy_sweep")
+        if not git_sync:
+            git_sync = t1_git_sync_check()
+            catchup_work.append("git_sync")
+        if not chain:
+            chain = t1_seal_chain_check()
+            catchup_work.append("seal_chain")
         results["steps"]["verify_catchup"] = {
-            "alive": extra_alive,
-            "total": total,
-            "reason": "execute_ns > 3× verify_ns",
+            "ratio": round(ratio, 1),
+            "catchup_work": catchup_work,
+            "entropy": entropy,
+            "git_sync": git_sync,
+            "chain": chain,
         }
-        post_alive = extra_alive
 
     verify_ns += time.time_ns() - t0
 
