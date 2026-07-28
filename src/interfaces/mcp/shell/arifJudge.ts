@@ -75,8 +75,12 @@ const DENY_PATTERNS: RegExp[] = [
   /\binit\s+0\b/,                  // init 0
   /\binit\s+6\b/,                  // init 6
 
-  // Service management (unsupervised — requires GATE at minimum)
-  /\bsystemctl\s+(stop|restart|start|enable|disable|mask|unmask)\b/,
+  // ── HITV v0.1 (2026-07-28): systemctl moved from DENY→GATE ──
+  // systemctl stop/restart/start is now in GATE list below.
+  // Rationale: restarting a dev service ≠ rm -rf /. Self-modification
+  // check (L244-258) separately protects A-FORGE services.
+  // DENY only: systemctl operations with permanent/system-wide effects
+  /\bsystemctl\s+(disable|mask|unmask|set-default)\b/,  // permanent system changes
 
   // Container escape
   /\bdocker\s+exec\s+-it\b/,      // interactive docker exec
@@ -127,31 +131,44 @@ const GATE_PATTERNS: RegExp[] = [
   /\brm\s+-r\b/,                   // recursive rm
   /\brmdir\b/,                     // directory removal
 
-  // Network-modifying git
-  /\bgit\s+push\b/,                // git push (network write)
-  /\bgit\s+fetch\b/,               // git fetch (network read but triggers hooks)
-  /\bgit\s+pull\b/,                // git pull (network + merge)
+  // ── HITV v0.1 reclassification (2026-07-28) ──
+  // Moved from GATE→ALLOW:
+  //   git push (non-force) — reversible, feature branch push is T1
+  //   git fetch              — READ-ONLY, pure BANGANG to gate this
+  //   git pull               — reversible merge, T1 per doctrine
+  //   npm/yarn/pip install   — routine dev, T1 per doctrine
+  //   systemctl reload       — already governed by T2 ANNOUNCE doctrine
+  // Remaining in GATE:
+  //   git push --force       → DENY (line 86)
+  //   npm publish/uninstall  → GATE (irreversible publish, potential break)
+  //   systemctl stop/restart → DENY (line 79)
+  //
+  // NOTE: The removed patterns are now classified as ALLOW.
+  // They are still logged via F11 AUDIT and reversible under F1 AMANAH.
+  // HITV protocol (§5): Class 0-1 gates fail-closed but auto-recover.
 
-  // Package management
-  /\bnpm\s+(install|publish|uninstall)\b/,
-  /\byarn\s+(add|remove|publish)\b/,
-  /\bpip\s+(install|uninstall)\b/,
-  /\bapt\s+(install|remove)\b/,
-  /\bapt-get\s+(install|remove)\b/,
-  /\bdnf\s+(install|remove)\b/,
-  /\bbrew\s+(install|uninstall)\b/,
-  /\bcargo\s+(install|publish)\b/,
+  // Package management — publish/uninstall only (install is ALLOW)
+  /\bnpm\s+(publish|uninstall)\b/,
+  /\byarn\s+(publish)\b/,
+  /\bpip\s+uninstall\b/,
+  /\bapt\s+remove\b/,
+  /\bapt-get\s+remove\b/,
+  /\bdnf\s+remove\b/,
+  /\bbrew\s+uninstall\b/,
+  /\bcargo\s+publish\b/,
 
-  // Network writes
+  // Network writes (still gated — external side effects)
   /\bcurl\s+.*-X\s*(POST|PUT|DELETE|PATCH)\b/,
   /\bwget\s+.*-O\s+/,
   /\bscp\b/,
   /\brsync\b/,
 
-  // Service management (non-destructive)
-  /\bsystemctl\s+(reload|reload-or-restart)\b/,
+  // Docker container teardown (still gated — production impact)
   /\bdocker\s+(stop|kill|rm)\s+/,
   /\bdocker\s+compose\s+(down|stop|rm)\b/,
+
+  // Service management (HITV Class 2: requires veto consent, not DENY)
+  /\bsystemctl\s+(stop|restart|start)\b/,
 
   // File mutations outside workspace
   /\/var\/log\//,

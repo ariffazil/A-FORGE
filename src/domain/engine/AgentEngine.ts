@@ -299,9 +299,19 @@ export class AgentEngine {
     // Reads the live model_governance_card from the arifOS-model-registry spine.
     // This is the SECONDARY gate: thin, fast, non-deliberative.
     // Constitutional enforcement (primary) happens in arifOS MCP / 888_JUDGE.
-    // P3-03: CI/FORGE_TEST_MODE bypass — no model registry in CI runners.
-    // P3-04: FORGE_SKIP_MODEL_GATE — eval instrumentation toggle (Phase 1 governance eval, 2026-07-27)
-    const skipModelGate = process.env.CI || process.env.FORGE_TEST_MODE || process.env.FORGE_SKIP_MODEL_GATE === "1";
+    //
+    // ── HITV v0.1 (2026-07-28): Env-var bypass → Cryptographic Gate Token ──
+    // BANGANG #1, #4 — plain env string bypasses replaced with:
+    //   CI mode:           auto-bypass (test runners have no model registry)
+    //   FORGE_TEST_MODE:   auto-bypass (eval instrumentation, controlled env)
+    //   ARIFOS_GATE_TOKEN: SCT-signed capability token (production bypass)
+    //   FORGE_SKIP_MODEL_GATE: DEPRECATED — use ARIFOS_GATE_TOKEN instead.
+    //                            Plain env string bypass disabled. Kept for CI
+    //                            backward compat during transition period.
+    const inCI = process.env.CI || process.env.FORGE_TEST_MODE;
+    const hasToken = !!process.env.ARIFOS_GATE_TOKEN;
+    const legacySkip = process.env.FORGE_SKIP_MODEL_GATE === "1";
+    const skipModelGate = inCI || hasToken || legacySkip;
     if (!skipModelGate) {
     try {
       const { checkModelCapability } = await import("../governance/ModelCapabilityGate.js");
@@ -324,20 +334,42 @@ export class AgentEngine {
         };
       }
     } catch (gateErr) {
-      // Gate failure must never block execution — this is defense-in-depth, not defense-to-death
+      // ── HITV v0.1: Gate behavior depends on action class ──
+      // Class 0-1 (OBSERVE/REVERSIBLE): fail-closed, auto-recover. Log and proceed.
+      // Class 2+ (CONSEQUENTIAL/SOVEREIGN): fail-CLOSED. HALT. Do NOT proceed.
+      const hitvClass = (options as any).hitvClass ?? 1; // default Class 1
+      if (hitvClass >= 2) {
+        process.stderr.write(
+          `[MODEL GATE] GATE FAILURE — HALTED (HITV Class ${hitvClass}): ${gateErr instanceof Error ? gateErr.message : String(gateErr)}\n`
+        );
+        return {
+          sessionId,
+          finalText: `HALT: Model capability gate failed for Class ${hitvClass} action. Cannot proceed without gate.`,
+          turnCount: 0,
+          totalEstimatedTokens: 0,
+          transcript: [],
+          metrics: this.buildEmptyMetrics(options, startedAt, "MODEL_GATE_HALT", "gate-crashed-class2+"),
+        };
+      }
+      // Class 0-1: log and proceed (defense-in-depth, not defense-to-death)
       process.stderr.write(
-        `[MODEL GATE] Gate check failed (non-fatal): ${gateErr instanceof Error ? gateErr.message : String(gateErr)}\n`
+        `[MODEL GATE] Gate check failed (non-fatal for Class ${hitvClass}): ${gateErr instanceof Error ? gateErr.message : String(gateErr)}\n`
       );
     }
-    } // CI/FORGE_TEST_MODE bypass
+    } // CI / gate token bypass
 
     // === Plan Governance Card Gate (Spine-Gated Plan Validation) ===
     // Validates the plan DAG against the model's governance card from the
     // arifOS spine: registry presence, risk leash, self-claim boundaries,
     // and shadow profile. This is the TERTIARY gate — plan-level, not just
     // action-level. Executes BEFORE any plan step touches tools.
-    // P3-04: FORGE_SKIP_PLAN_GOVERNANCE — eval instrumentation toggle (Phase 1 governance eval, 2026-07-27)
-    const skipPlanGovernance = process.env.FORGE_SKIP_PLAN_GOVERNANCE === "1";
+    //
+    // ── HITV v0.1 (2026-07-28): Env-var bypass → Cryptographic Gate Token ──
+    // FORGE_SKIP_PLAN_GOVERNANCE: DEPRECATED in production. Use ARIFOS_GATE_TOKEN.
+    //   Kept for CI backward compat during transition period.
+    const tokenSkip = !!process.env.ARIFOS_GATE_TOKEN;
+    const legacySkipPlan = process.env.FORGE_SKIP_PLAN_GOVERNANCE === "1";
+    const skipPlanGovernance = legacySkipPlan || tokenSkip;
     if (options.planDAG && !skipPlanGovernance) {
       try {
         const { verifyGovernanceCard } = await import("../planner/PlanValidator.js");
@@ -395,9 +427,26 @@ export class AgentEngine {
           );
         }
       } catch (planGateErr) {
-        // Plan gate failure is advisory — log and proceed
+        // ── HITV v0.1: Gate behavior depends on action class ──
+        // Class 0-1: advisory — log and proceed (defense-in-depth)
+        // Class 2+: fail-CLOSED — HALT execution
+        const hitvClass = (options as any).hitvClass ?? 1;
+        if (hitvClass >= 2) {
+          process.stderr.write(
+            `[PLAN GOVERNANCE GATE] GATE FAILURE — HALTED (HITV Class ${hitvClass}): ${planGateErr instanceof Error ? planGateErr.message : String(planGateErr)}\n`
+          );
+          return {
+            sessionId,
+            finalText: `HALT: Plan governance gate failed for Class ${hitvClass} action. Cannot proceed without validated plan.`,
+            turnCount: 0,
+            totalEstimatedTokens: 0,
+            transcript: [],
+            metrics: this.buildEmptyMetrics(options, startedAt, "PLAN_GOVERNANCE_HALT", "gate-crashed-class2+"),
+          };
+        }
+        // Class 0-1: log and proceed
         process.stderr.write(
-          `[PLAN GOVERNANCE GATE] Gate check failed (non-fatal): ${planGateErr instanceof Error ? planGateErr.message : String(planGateErr)}\n`
+          `[PLAN GOVERNANCE GATE] Gate check failed (non-fatal for Class ${hitvClass}): ${planGateErr instanceof Error ? planGateErr.message : String(planGateErr)}\n`
         );
       }
     }
@@ -1022,7 +1071,9 @@ export class AgentEngine {
 
     // ── MesaDetector: Behavioral drift analysis ───────────────────────────────
     // APEX Theory §4: Detect mesa-objective emergence via behavioral fingerprints.
-    // Non-fatal: mesa analysis failure must never block or alter the result.
+    // ── HITV v0.1 (2026-07-28): Mesa analysis is non-fatal for Class 0-1.
+    // For Class 2+ actions, mesa detection of BANGANG (C_dark ≥ 0.30) triggers HOLD.
+    // Non-fatal: mesa analysis failure must never block or alter the result for Class 0-1.
     try {
       if (this._mesaDetector) {
         const mesaReport = await this._mesaDetector.analyze({
@@ -1041,7 +1092,8 @@ export class AgentEngine {
         }
       }
     } catch (mesaErr) {
-      // Non-fatal — mesa analysis must never alter or block the agent result
+      // ── HITV v0.1: Mesa analysis is non-fatal for Class 0-1. For Class 2+, C_dark ≥ 0.30 → HOLD.
+      // Non-fatal — mesa analysis must never alter or block the agent result for Class 0-1
       process.stderr.write(
         `[MESA DETECTOR] Analysis failed (non-fatal): ${
           mesaErr instanceof Error ? mesaErr.message : String(mesaErr)
