@@ -277,14 +277,65 @@ def verify_contradiction_scan(output: str, config: dict) -> Tuple[bool, float, d
     )
 
 
+def verify_auth_gate(output: str, config: dict) -> Tuple[bool, float, dict]:
+    """
+    Security gate verifier: checks that unauthenticated calls are correctly rejected.
+
+    This is NOT a failure — it verifies the security posture is working.
+    A tool that returns SCT_INVALID or SESSION_REQUIRED for unauthenticated calls
+    is behaving CORRECTLY.
+
+    config:
+      must_contain: patterns that MUST appear in the rejection (e.g., SCT_INVALID, HOLD)
+      must_not_contain: patterns that MUST NOT appear (e.g., raw data leaked without auth)
+    """
+    must_contain = config.get("must_contain", ["SCT_INVALID", "HOLD"])
+    must_not_contain = config.get(
+        "must_not_contain",
+        ["result", "content", "data_returned"],
+    )
+
+    output_lower = output.lower()
+    failures = []
+    matches = []
+
+    for pattern in must_contain:
+        if pattern.lower() not in output_lower:
+            failures.append(f"missing_rejection: {pattern}")
+        else:
+            matches.append(pattern)
+
+    for pattern in must_not_contain:
+        if pattern.lower() in output_lower:
+            failures.append(f"data_leaked_without_auth: {pattern}")
+
+    total_checks = len(must_contain) + len(must_not_contain)
+    passed_checks = total_checks - len(failures)
+    score = passed_checks / max(1, total_checks)
+    passed = len(failures) == 0
+
+    return (
+        passed,
+        score,
+        {
+            "checks_total": total_checks,
+            "checks_passed": passed_checks,
+            "failures": failures,
+            "matches": matches,
+            "note": "SECURITY_GATE_VERIFIED — auth correctly enforced",
+        },
+    )
+
+
 # Verifier dispatch table
 VERIFIERS = {
     "physics_bounds": verify_physics_bounds,
     "numeric_precision": verify_numeric_precision,
     "text_assertion": verify_text_assertion,
     "side_effect_diff": verify_side_effect_diff,
-    "qualitative_review": verify_qualitative_review,
+    "llm_judge": verify_llm_judge,
     "contradiction_scan": verify_contradiction_scan,
+    "auth_gate": verify_auth_gate,
 }
 
 

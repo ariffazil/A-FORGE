@@ -3,120 +3,27 @@
     "name": "FLAME \u2014 Free Loop AI Model Engine",
     "version": "2.1.0-p1",
     "forged": "2026-07-20",
-    "updated": "2026-07-25T13:40:00Z",
+    "updated": "2026-07-28T17:30:00Z",
     "doctrine": "DITEMPA BUKAN DIBERI",
     "cost": "RM0 \u2014 all tiers on free provider plans. Hard RM0 gate enforced in code (P0.5).",
     "purpose": "Sequential fallback inference mesh for tools, workers, and advisory throughput. Zero governance authority \u2014 pure throughput. FLAME produces proposals; consuming tools determine admissibility.",
     "constitutional_note": "TOOL LANE only. Agents use the governed constitutional cascade. FLAME never judges, seals, promotes memory, or touches sovereign data. P0 hardened 2026-07-20: false SEAL removed, RM0 hard gate, safety refusal no-shop, sensitivity gate, provenance fingerprints.",
-    "fleet": "12 core verified models across 6 providers. Primary: Groq Qwen3.6-27b (292ms). Fallbacks: Groq, Cerebras, Gemini, SEA-LION, OpenRouter, Cloudflare. Dropped: Ollama (18ms connection refused). Restructured 2026-07-25 per FLAME upgrade P1. Cloudflare added 2026-07-25: Llama 3.3 70B FP8, Qwen3 30B A3B, Mistral Small 3.1 24B."
+    "fleet": "12 core verified models across 6 providers. Primary: Groq Qwen3.6-27b (292ms). Fallbacks: Groq, Cerebras, Gemini, SEA-LION, OpenRouter, Cloudflare. Dropped: Ollama (18ms connection refused). Restructured 2026-07-25 per FLAME upgrade P1. Cloudflare added 2026-07-25: Llama 3.3 70B FP8, Qwen3 30B A3B, Mistral Small 3.1 24B.",
+    "tiers_ref": "/root/AAA/registries/models/MODEL_TIERS.json",
+    "tiers_aligned": "T3_recovery + T4_local",
+    "stale_providers_removed": [
+      "sambanova",
+      "cloudflare",
+      "cerebras",
+      "mistral",
+      "huggingface",
+      "fireworks"
+    ],
+    "total_free_models": 12
   },
   "chains": {
-    "TOKENROUTER-PRIMARY": {
-      "description": "Primary agent lane \u2014 TokenRouter (DeepSeek V4 Pro) first, graceful fallback to free models. For non-constitutional agent work.",
-      "strategy": "least_latency",
-      "fallback": "sequential",
-      "max_retries": 2,
-      "timeout_ms": 20000,
-      "tiers": [
-        {
-          "provider": "tokenrouter",
-          "model": "deepseek/deepseek-v4-pro",
-          "weight": 100,
-          "tags": [
-            "paid",
-            "primary",
-            "deep-reasoning",
-            "1m-context"
-          ]
-        },
-        {
-          "provider": "tokenrouter",
-          "model": "deepseek/deepseek-v4-flash",
-          "weight": 95,
-          "tags": [
-            "paid",
-            "fast",
-            "flash"
-          ]
-        },
-        {
-          "provider": "groq",
-          "model": "llama-3.1-8b-instant",
-          "weight": 10,
-          "tags": [
-            "fastest",
-            "high-volume",
-            "fallback"
-          ]
-        },
-        {
-          "provider": "groq",
-          "model": "llama-3.3-70b-versatile",
-          "weight": 9,
-          "tags": [
-            "deep-reasoning",
-            "fallback"
-          ]
-        },
-        {
-          "provider": "sea-lion",
-          "model": "aisingapore/Qwen-SEA-LION-v4-32B-IT",
-          "weight": 8,
-          "tags": [
-            "bm-native",
-            "malay",
-            "fallback"
-          ]
-        },
-        {
-          "provider": "sea-lion",
-          "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
-          "weight": 7,
-          "tags": [
-            "bm-native",
-            "deep",
-            "fallback"
-          ]
-        },
-        {
-          "provider": "gemini",
-          "model": "gemini-2.5-flash",
-          "weight": 7,
-          "tags": [
-            "general",
-            "deep-context",
-            "fallback"
-          ]
-        },
-        {
-          "provider": "cerebras",
-          "model": "gemma-4-31b",
-          "weight": 0,
-          "tags": [
-            "multimodal",
-            "vision",
-            "fallback",
-            "credit-expired",
-            "credit-expired"
-          ],
-          "active": false
-        },
-        {
-          "provider": "ollama",
-          "model": "qwen2.5-coder:3b",
-          "weight": 0,
-          "active": false,
-          "tags": [
-            "local",
-            "dead-node",
-            "connection-refused",
-            "dropped-2026-07-25"
-          ]
-        }
-      ]
-    },
     "GOVERNED-ONLY": {
-      "description": "Constitutional lane \u2014 TokenRouter ONLY. NO free-model fallback. HOLD on failure. For arif_judge, arif_seal, capital_wisdom, well_*.",
+      "description": "Constitutional lane \u2014 Go/TokenRouter. For governed agents only (NOT FLAME tools). HOLD on failure. NEVER use free models here.",
       "strategy": "least_latency",
       "fallback": "none",
       "max_retries": 1,
@@ -128,19 +35,30 @@
           "weight": 100,
           "tags": [
             "paid",
-            "primary",
             "constitutional",
-            "no-fallback"
+            "governed",
+            "1m-context"
+          ]
+        },
+        {
+          "provider": "tokenrouter",
+          "model": "deepseek/deepseek-v4-flash",
+          "weight": 95,
+          "tags": [
+            "paid",
+            "fast",
+            "governed"
           ]
         }
       ]
     },
     "RM0-TOOLS-FREELOOP": {
-      "description": "Primary tool lane \u2014 sequential fallback, 22 models across 9 providers. Restructured 2026-07-25: Groq Qwen3.6 promoted to primary (292ms stable), SambaNova + Mistral + Fireworks added, Cerebras shadow-mode warmup activated, Ollama dropped, OpenRouter relegated to Tier-3 fallback.",
+      "description": "RM0 FREE tool lane \u2014 sequential fallback. ONLY truly free providers. Aligned with MODEL_TIERS.json T3/T4. TOOLS ONLY \u2014 never agents, never constitutional.",
+      "doctrine": "MODEL > PROVIDER > BILLING (FREE only). No paid models. No governed inference.",
       "strategy": "least_latency",
       "fallback": "sequential",
-      "max_retries": 3,
-      "timeout_ms": 15000,
+      "max_retries": 2,
+      "timeout_ms": 20000,
       "tiers": [
         {
           "provider": "groq",
@@ -148,231 +66,121 @@
           "weight": 100,
           "tags": [
             "primary",
-            "stable",
-            "low-latency",
+            "fast",
             "general",
-            "promoted-2026-07-25"
-          ]
-        },
-        {
-          "provider": "sambanova",
-          "model": "Meta-Llama-3.3-70B-Instruct",
-          "weight": 92,
-          "tags": [
-            "ultra-fast",
-            "deep-reasoning",
-            "1k-tok-per-sec",
-            "added-2026-07-25"
+            "500t/s",
+            "1K/d"
           ]
         },
         {
           "provider": "groq",
           "model": "llama-3.3-70b-versatile",
-          "weight": 90,
+          "weight": 95,
           "tags": [
             "deep-reasoning",
-            "fallback-3"
-          ]
-        },
-        {
-          "provider": "cloudflare",
-          "model": "@cf/qwen/qwen3-30b-a3b-fp8",
-          "weight": 0.8,
-          "active": true,
-          "note": "Cloudflare Workers AI free tier"
-        },
-        {
-          "provider": "cloudflare",
-          "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-          "weight": 0.8,
-          "active": true,
-          "note": "Cloudflare Workers AI free tier"
-        },
-        {
-          "provider": "cloudflare",
-          "model": "@cf/mistralai/mistral-small-3.1-24b-instruct",
-          "weight": 0.8,
-          "active": true,
-          "note": "Cloudflare Workers AI free tier"
-        },
-        {
-          "provider": "groq",
-          "model": "llama-3.1-8b-instant",
-          "weight": 85,
-          "tags": [
-            "fastest",
-            "high-volume",
-            "fallback-4"
-          ]
-        },
-        {
-          "provider": "cerebras",
-          "model": "gpt-oss-120b",
-          "weight": 0,
-          "tags": [
-            "shadow-warmup",
-            "credit-expires-aug20",
-            "build-hitrate",
-            "p0-2026-07-25",
-            "credit-expired"
-          ],
-          "note": "Shadow warmup tier \u2014 Cerebras credit expires Aug 20",
-          "active": false
-        },
-        {
-          "provider": "sambanova",
-          "model": "DeepSeek-V3.1",
-          "weight": 80,
-          "tags": [
-            "fast-reasoning",
-            "deepseek",
-            "code-capable",
-            "added-2026-07-25"
+            "280t/s",
+            "1K/d"
           ]
         },
         {
           "provider": "groq",
           "model": "openai/gpt-oss-120b",
-          "weight": 65,
+          "weight": 90,
           "tags": [
-            "deep",
-            "fallback-7"
+            "coding",
+            "500t/s",
+            "1K/d"
           ]
         },
         {
-          "provider": "sambanova",
-          "model": "gemma-4-31B-it",
-          "weight": 58,
+          "provider": "groq",
+          "model": "openai/gpt-oss-20b",
+          "weight": 85,
+          "tags": [
+            "fastest",
+            "1000t/s",
+            "1K/d"
+          ]
+        },
+        {
+          "provider": "groq",
+          "model": "llama-3.1-8b-instant",
+          "weight": 80,
+          "tags": [
+            "ultra-fast",
+            "560t/s",
+            "14K/d"
+          ]
+        },
+        {
+          "provider": "gemini",
+          "model": "gemini-2.5-flash",
+          "weight": 75,
           "tags": [
             "multimodal",
-            "vision",
-            "added-2026-07-25"
+            "1M-ctx",
+            "1.5K/d"
           ]
-        },
-        {
-          "provider": "mistral",
-          "model": "ministral-8b-2512",
-          "weight": 52,
-          "tags": [
-            "json-native",
-            "fast",
-            "schema-optimized",
-            "added-2026-07-25"
-          ]
-        },
-        {
-          "provider": "mistral",
-          "model": "open-mistral-nemo",
-          "weight": 48,
-          "tags": [
-            "general",
-            "balanced",
-            "added-2026-07-25"
-          ]
-        },
-        {
-          "provider": "mistral",
-          "model": "codestral-2508",
-          "weight": 45,
-          "tags": [
-            "code",
-            "fill-in-middle",
-            "added-2026-07-25"
-          ]
-        },
-        {
-          "provider": "cerebras",
-          "model": "gemma-4-31b",
-          "weight": 0,
-          "tags": [
-            "multimodal",
-            "vision",
-            "fallback-9",
-            "credit-expired",
-            "credit-expired"
-          ],
-          "active": false
         },
         {
           "provider": "gemini",
           "model": "gemini-flash-lite-latest",
-          "weight": 50,
+          "weight": 70,
           "tags": [
-            "general",
-            "deep-context",
-            "fallback-10"
-          ]
-        },
-        {
-          "provider": "sea-lion",
-          "model": "aisingapore/Qwen-SEA-LION-v4-32B-IT",
-          "weight": 40,
-          "tags": [
-            "bm-native",
-            "malay",
-            "bnb-fallback"
+            "fast",
+            "1M-ctx",
+            "1.5K/d"
           ]
         },
         {
           "provider": "sea-lion",
           "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
-          "weight": 35,
+          "weight": 60,
           "tags": [
             "bm-native",
-            "deep",
-            "bnb-fallback"
+            "deep-reasoning",
+            "10rpm"
+          ]
+        },
+        {
+          "provider": "sea-lion",
+          "model": "aisingapore/Qwen-SEA-LION-v4-32B-IT",
+          "weight": 55,
+          "tags": [
+            "bm-native",
+            "malay",
+            "10rpm"
           ]
         },
         {
           "provider": "sea-lion",
           "model": "aisingapore/Gemma-SEA-LION-v4-27B-IT",
-          "weight": 30,
+          "weight": 50,
           "tags": [
             "bm-native",
             "fast",
-            "bnb-fallback"
-          ]
-        },
-        {
-          "provider": "huggingface",
-          "model": "Qwen/Qwen2.5-7B-Instruct",
-          "weight": 8,
-          "tags": [
-            "specialized",
-            "cold-start",
-            "gap-fill",
-            "added-2026-07-25"
+            "10rpm"
           ]
         },
         {
           "provider": "openrouter",
           "model": "free-aggregator",
-          "weight": 5,
+          "weight": 30,
           "tags": [
             "aggregator",
-            "gap-fill",
-            "rate-limited",
-            "tier-3-fallback",
-            "relegated-2026-07-25"
-          ],
-          "allowlist": [
-            "cohere/north-mini-code:free",
-            "inclusionai/ling-3.0-flash:free",
-            "poolside/laguna-s-2.1:free",
-            "google/gemma-4-31b-it:free",
-            "nvidia/nemotron-3-super-120b-a12b:free"
+            "RM0",
+            "20rpm",
+            "tier-3-fallback"
           ]
         },
         {
-          "provider": "fireworks",
-          "model": "accounts/fireworks/models/deepseek-v4-pro",
-          "weight": 3,
+          "provider": "ollama",
+          "model": "qwen2.5-coder:3b",
+          "weight": 20,
           "tags": [
-            "deepseek",
-            "1m-context",
-            "heavy",
-            "gap-fill",
-            "added-2026-07-25"
+            "local",
+            "always-available",
+            "zero-cost"
           ]
         }
       ]
@@ -450,45 +258,6 @@
       "cost_band": "free",
       "timeout_ms": 12000
     },
-    "cerebras": {
-      "base_url": "https://api.cerebras.ai/v1",
-      "api_key_env": "CEREBRAS_API_KEY",
-      "cost_band": "free",
-      "timeout_ms": 12000
-    },
-    "cloudflare": {
-      "base_url": "https://api.cloudflare.com/client/v4/accounts/22cc94b77b6481d2b054bee7952710e6/ai/v1",
-      "api_key_env": "CLOUDFLARE_WORKERS_AI_TOKEN",
-      "cost_band": "free",
-      "timeout_ms": 15000,
-      "note": "Cloudflare Workers AI \u2014 OpenAI-compatible. 10k neurons/day free. Circuit breakers: 10000=auth, 3036=neuron limit, 1027=rate limit. Verified LIVE 2026-07-25 \u2014 Llama 3.3 70B, Qwen3 30B, Mistral Small 24B.",
-      "models": [
-        "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-        "@cf/qwen/qwen3-30b-a3b-fp8",
-        "@cf/mistralai/mistral-small-3.1-24b-instruct"
-      ]
-    },
-    "sambanova": {
-      "base_url": "https://api.sambanova.ai/v1",
-      "api_key_env": "SAMBANOVA_API_KEY",
-      "cost_band": "free",
-      "timeout_ms": 12000,
-      "note": "SambaNova RDU ~1,000 tok/s \u2014 ultra-fast free tier. Llama 3.3 70B, DeepSeek V3.1, Gemma 4 31B, GPT-OSS 120B. Added 2026-07-25."
-    },
-    "mistral": {
-      "base_url": "https://api.mistral.ai/v1",
-      "api_key_env": "MISTRAL_API_KEY",
-      "cost_band": "free",
-      "timeout_ms": 15000,
-      "note": "Mistral AI \u2014 open-mistral-nemo (free), ministral (lightning fast), function-calling native. Added 2026-07-25."
-    },
-    "huggingface": {
-      "base_url": "https://api-inference.huggingface.co/v1",
-      "api_key_env": "HF_TOKEN",
-      "cost_band": "free",
-      "timeout_ms": 20000,
-      "note": "HuggingFace Inference API \u2014 30k+ free models. Rate-limited but infinite model selection. Slow cold-start. Use for specialized models only. Added 2026-07-25."
-    },
     "openrouter": {
       "base_url": "https://openrouter.ai/api/v1",
       "api_key_env": "OPENROUTER_API_KEY",
@@ -505,13 +274,6 @@
         "rpd": 50,
         "note": "1000rpd after $10 lifetime credit purchase"
       }
-    },
-    "fireworks": {
-      "base_url": "https://api.fireworks.ai/inference/v1",
-      "api_key_env": "FIREWORKS_API_KEY",
-      "cost_band": "free",
-      "timeout_ms": 20000,
-      "note": "Fireworks AI \u2014 DeepSeek V4 Pro (1M context) available. Other models need serverless deployment. Added 2026-07-25."
     }
   },
   "routing": {
