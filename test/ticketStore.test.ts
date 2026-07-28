@@ -36,5 +36,5 @@ test("TicketStore lifecycle: create, query, update, replay", async () => {
   assert.equal(open, 0);
 
   const all = await store.query({ sessionId: "s1" });
-  assert.equal(all.length, 1); // query deduplicates to latest state per ticketId
+  assert.equal(all.tickets.length, 1); // query deduplicates to latest state per ticketId
 });

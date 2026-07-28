@@ -100,7 +100,7 @@ export function createGovernanceRouter(): Router {
       try {
         const tickets = getTicketStore();
         const all = await tickets.query();
-        openTickets = all.filter((t: any) => t.status === "PENDING" || t.status === "OPEN");
+        openTickets = all.tickets.filter((t: any) => t.status === "PENDING" || t.status === "OPEN");
       } catch (storeErr) {
         // Postgres/SSL unavailable — fall through with empty holds, mark source
         storeSource = "a-forge-advisory-degraded";

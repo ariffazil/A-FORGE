@@ -159,23 +159,23 @@ test("TicketStore query deduplicates and filters correctly", async () => {
     await store.updateTicket("t1", { status: "DISPATCHED" });
 
     const pending = await store.query({ status: "PENDING" });
-    assert.equal(pending.length, 0);
+    assert.equal(pending.tickets.length, 0);
 
     const dispatched = await store.query({ status: "DISPATCHED" });
-    assert.equal(dispatched.length, 1);
-    assert.equal(dispatched[0]!.ticketId, "t1");
+    assert.equal(dispatched.tickets.length, 1);
+    assert.equal(dispatched.tickets[0]!.ticketId, "t1");
 
     const high = await store.query({ riskLevel: "high" });
-    assert.equal(high.length, 1);
+    assert.equal(high.tickets.length, 1);
 
     const sess1 = await store.query({ sessionId: "sess-1" });
-    assert.equal(sess1.length, 1);
+    assert.equal(sess1.tickets.length, 1);
 
     const all = await store.query();
-    assert.equal(all.length, 2);
+    assert.equal(all.tickets.length, 2);
     // newest first
-    assert.equal(all[0]!.ticketId, "t2");
-    assert.equal(all[1]!.ticketId, "t1");
+    assert.equal(all.tickets[0]!.ticketId, "t2");
+    assert.equal(all.tickets[1]!.ticketId, "t1");
   });
 });
 
