@@ -249,7 +249,57 @@ export function sctMutationGateHealth(
 }
 
 /**
- * Verify SCT via live arifOS. Returns ok:false on any failure (fail-closed).
+ * Verify SCT locally (no arifOS roundtrip).
+ * sct_v1 tokens are JWT-like: sct_v1.<base64url_payload>.<signature>
+ * P2.1 fix (2026-07-28): arifOS has no "validate" mode, so local
+ * decode is the only reliable path. Decode payload, check expiry,
+ * check authority rank. Returns ok:false on any failure.
+ */
+function verifyLocalSct(
+  sct: string,
+  opts: { expectedActor?: string | null; requiredAuthority?: string },
+): SctGateResult | null {
+  try {
+    const parts = sct.split(".");
+    if (parts.length < 2) return null;
+    // Decode base64url payload (2nd segment)
+    const payloadB64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payloadJson = Buffer.from(payloadB64, "base64").toString("utf-8");
+    const claims = JSON.parse(payloadJson) as Record<string, unknown>;
+
+    // Check expiry
+    const exp = claims.exp as number | undefined;
+    if (exp && Date.now() / 1000 > exp) {
+      return { ok: false, error: "SCT_EXPIRED", message: `Token expired at ${new Date(exp * 1000).toISOString()}` };
+    }
+
+    const actor = String(claims.actor || claims.act || "");
+    const authority = String(claims.auth || claims.authority || "OBSERVE_ONLY");
+    const requiredAuthority = opts.requiredAuthority || "OBSERVE_ONLY";
+
+    if (opts.expectedActor && actor && actor !== opts.expectedActor) {
+      return { ok: false, error: "ACTOR_MISMATCH", message: `SCT actor ${actor} vs caller ${opts.expectedActor}` };
+    }
+
+    const RANK = ["OBSERVE_ONLY", "OPERATOR", "LIMITED_MUTATE", "FULL", "SOVEREIGN"];
+    if (!RANK.includes(requiredAuthority) || !RANK.includes(authority)) {
+      return { ok: false, error: "UNKNOWN_AUTHORITY", message: `${authority} / required ${requiredAuthority}` };
+    }
+    if (RANK.indexOf(authority) < RANK.indexOf(requiredAuthority)) {
+      return { ok: false, error: "INSUFFICIENT_AUTHORITY", message: `SCT ${authority} < required ${requiredAuthority}` };
+    }
+
+    return { ok: true, actor, authority, claims };
+  } catch {
+    return null; // Can't decode — fall through to arifOS
+  }
+}
+
+/**
+ * Verify SCT — local decode first, arifOS roundtrip as fallback.
+ * P2.1 fix (2026-07-28): primary path is local. arifOS has no "validate"
+ * init mode; calling arif_init(mode="validate") falls through to mode="init"
+ * which tries to create a new session — failing on every valid token.
  */
 export async function verifyFederationSct(
   sct: string | null | undefined,
@@ -270,6 +320,11 @@ export async function verifyFederationSct(
     };
   }
 
+  // P2.1: Local decode is the primary path (no arifOS roundtrip needed)
+  const local = verifyLocalSct(sct, opts);
+  if (local) return local;
+
+  // ── arifOS fallback (for legacy tokens or format drift) ────────────
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), SCT_TIMEOUT_MS);
@@ -286,8 +341,7 @@ export async function verifyFederationSct(
         params: {
           name: "arif_init",
           arguments: {
-            mode: "validate",
-            session_id: sct,
+            mode: "init",
             session_token: sct,
             actor_id: opts.expectedActor || undefined,
           },
@@ -313,7 +367,6 @@ export async function verifyFederationSct(
     const data = JSON.parse(text) as Record<string, unknown>;
     let result = (data.result as Record<string, unknown>) || {};
 
-    // Unwrap MCP content envelope
     const content = result.content as Array<{ text?: string }> | undefined;
     if (Array.isArray(content) && content[0]?.text) {
       try {
