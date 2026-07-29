@@ -30,7 +30,7 @@ import { getDefaultArifSeal } from "./arifSeal.js";
 import { checkModificationIntent, isGodelLocked } from "./godelLock.js";
 import { classifyShellCommand, type ActionClass } from "../../../domain/governance/execution-authority.js";
 import { classifyUnknown, isStructuredError } from "../../../domain/governance/error-classifier.js";
-import { buildWmMetadata, hashAction, type WmMetadata } from "../../../domain/governance/worldModel.js";
+import { buildWmMetadata, hashAction, NO_PREDICTION_SENTINEL, normalizePrediction, type WmMetadata } from "../../../domain/governance/worldModel.js";
 import { logTrajectory } from "../../../domain/governance/worldModelLogger.js";
 import { Memory, Epistemic, enrichResult } from "../../../domain/governance/epistemic-signal.js";
 import { callMCP } from "../client.js";
@@ -660,10 +660,12 @@ export function registerShellTools(server: McpServer): void {
       timeout: z.number().default(DEFAULT_TIMEOUT_MS).describe("Timeout in ms (max " + MAX_TIMEOUT_MS + ")"),
       session_id: z.string().optional().describe("arifOS-issued session_id from arif_init(). REQUIRED for execution."),
       lease_id: z.string().optional().describe("Governed lease ID"),
-      expected_output: z.string().optional().describe(
-        "OPTIONAL: what the agent expects this command to produce. " +
-        "Used for world model surprise scoring (AGENTIC-WORLD-MODEL-EUREKA L3). " +
-        "The gap between expected vs actual is the richest training signal."
+      expected_output: z.string().min(1).max(4000).describe(
+        "REQUIRED (2026-07-29 doctrine): what the agent expects this command to produce. " +
+        "World model training fuel — prediction→actual gap is the richest supervision signal. " +
+        "Sentinel '__NO_PREDICTION__' accepted when agent genuinely cannot predict output. " +
+        "Sentinel usage is logged and tracked as prediction_rate health metric. " +
+        "The gap between expected vs actual trains the ECHO world model (grpo.ts λ=0.03)."
       ),
     },
     async ({ command, cwd, timeout, session_id, lease_id, expected_output }) => {
@@ -919,23 +921,27 @@ export function registerShellTools(server: McpServer): void {
       const result = await executeShell(command, safeCwd, safeTimeout);
 
       // ── World Model: build metadata from this execution (L1-L5) ──
+      // Sentinel handling via worldModel.ts normalizePrediction
+      const resolvedPrediction = normalizePrediction(expected_output);
+      const agentConfidence = resolvedPrediction ? 0.85 : 0.30; // honest uncertainty = low confidence
+
       const combinedOutput = [result.stdout, result.stderr].filter(Boolean).join("\n");
       const wmMeta = buildWmMetadata({
         tool: "forge_shell",
         args: { command: command.slice(0, 200), cwd: safeCwd },
         observation: combinedOutput.slice(0, 20000),
-        agentConfidence: 0.85,
-        predictedObservation: null,
+        agentConfidence,
+        predictedObservation: resolvedPrediction,
         exitCode: result.exitCode,
       });
 
-      // Fire-and-forget trajectory logging
+      // Fire-and-forget trajectory logging (with prediction data)
       logTrajectory({
         tool: "forge_shell",
         args: { command: command.slice(0, 200), cwd: safeCwd },
         observation: combinedOutput.slice(0, 20000),
-        agentConfidence: 0.85,
-        predictedObservation: null,
+        agentConfidence,
+        predictedObservation: resolvedPrediction,
         exitCode: result.exitCode,
       }).catch(err => console.error(`[forge_shell] WM log error: ${err.message}`));
 

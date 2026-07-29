@@ -610,10 +610,20 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                   type: "object" as const,
                   properties: t.inputSchema?.shape
                     ? Object.entries(t.inputSchema.shape).reduce((acc: any, [k, v]: [string, any]) => {
-                        acc[k] = { type: v._def?.typeName?.includes("optional") ? "string" : "string", description: v.description };
+                        const isOptional = v._def?.typeName?.includes("optional");
+                        acc[k] = {
+                          type: "string",
+                          description: v.description || "",
+                          optional: isOptional,
+                        };
                         return acc;
                       }, {})
                     : {},
+                  required: t.inputSchema?.shape
+                    ? Object.entries(t.inputSchema.shape)
+                        .filter(([_, v]: [string, any]) => !v._def?.typeName?.includes("optional"))
+                        .map(([k]) => k)
+                    : [],
                 },
                 annotations: {
                   readOnlyHint: isObserve,

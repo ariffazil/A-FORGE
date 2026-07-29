@@ -220,15 +220,25 @@ export function observationEntropyProxy(text: string): number {
 // ── Surprise Score ──────────────────────────────────────────────────────────
 
 /**
+ * Normalize an expected_output value: convert sentinel to null.
+ * Call this before passing to computeSurpriseScore / computePredictionGap.
+ */
+export function normalizePrediction(raw: string | undefined | null): string | null {
+  if (!raw || raw === NO_PREDICTION_SENTINEL) return null;
+  return raw;
+}
+
+/**
  * Compute surprise score based on prediction gap.
  *
  * Surprise = 1 - similarity(predicted, actual)
  *
- * When no prediction was made, uses entropy as a proxy.
+ * When no prediction was made (null), uses entropy as a proxy.
+ * When sentinel was used, surprise is always 1.0 (agent admitted ignorance).
  */
 export function computeSurpriseScore(predicted: string | null, actual: string): number {
   if (!predicted) {
-    // No prediction made — use entropy as surprise proxy
+    // No prediction attempted — use entropy as proxy
     const entropy = observationEntropyProxy(actual);
     return Math.min(entropy / 10, 1.0);
   }
@@ -251,6 +261,7 @@ export function computeSurpriseScore(predicted: string | null, actual: string): 
  *
  * Gap = 0  → prediction perfectly matched reality
  * Gap > 1  → significant surprise (high-value training signal)
+ * Gap = -1 → no prediction attempted (sentinel or null)
  *
  * This is the single richest signal for world model training (L3).
  */
@@ -305,8 +316,9 @@ export function buildWmMetadata(input: WmMetadataInput): WmMetadata {
   const priority = classifyWmPriority(tool);
   const eligible = isWmEligible(tool, observation);
   const entropy = observationEntropyProxy(observation);
-  const surprise = computeSurpriseScore(predictedObservation, observation);
-  const predictionGap = computePredictionGap(predictedObservation, observation);
+  const normalizedPrediction = normalizePrediction(predictedObservation);
+  const surprise = computeSurpriseScore(normalizedPrediction, observation);
+  const predictionGap = computePredictionGap(normalizedPrediction, observation);
 
   return {
     action_hash: actionHash,
@@ -365,6 +377,9 @@ export function isUncertainAction(confidence: number, threshold: number = 0.7): 
 }
 
 // ── Constants ───────────────────────────────────────────────────────────────
+
+/** Sentinel value for forge_shell.expected_output: "agent cannot predict this output" */
+export const NO_PREDICTION_SENTINEL = "__NO_PREDICTION__";
 
 /** Default λ weight for WM loss in hybrid objective (from ECHO §3.2) */
 export const WM_LAMBDA_DEFAULT = 0.03;
