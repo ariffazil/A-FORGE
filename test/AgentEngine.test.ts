@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mkdir, readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { AgentEngine } from "../src/domain/engine/AgentEngine.js";
@@ -152,6 +153,7 @@ test("agent engine supports multi-turn tool execution", async () => {
   }
 
   assert.ok(result.finalText.startsWith("Completed after writing and reading the file."));
+  assert.ok(existsSync(targetFile), JSON.stringify(result.transcript, null, 2));
   const written = await readFile(targetFile, "utf8");
   assert.equal(written, "hello from the agent");
   assert.equal(result.turnCount, 3);
