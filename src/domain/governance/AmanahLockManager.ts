@@ -124,8 +124,9 @@ export class AmanahLockManager {
     // 1. Check existing active lock
     const existing = await this.getActiveLock(resourceId);
     if (existing) {
-      // If same actor/session, allow re-entrant lock
-      if (existing.actor_id === actorId && existing.session_id === sessionId) {
+      // P0 BOUNDARY FIX (2026-07-29): case-insensitive actor matching
+      if (String(existing.actor_id).trim().toLowerCase() === String(actorId).trim().toLowerCase()
+          && existing.session_id === sessionId) {
         return {
           granted: true,
           lock_id: existing.lock_id,
@@ -178,7 +179,8 @@ export class AmanahLockManager {
     if (!record) {
       return { released: false, verdict: "VOID", message: `Lock ${lockId} not found` };
     }
-    if (record.actor_id !== actorId) {
+    // P0 BOUNDARY FIX (2026-07-29): case-insensitive actor matching
+    if (String(record.actor_id).trim().toLowerCase() !== String(actorId).trim().toLowerCase()) {
       return {
         released: false,
         verdict: "VOID",

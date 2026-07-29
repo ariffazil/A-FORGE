@@ -217,8 +217,14 @@ export function verifySCT(sct: string, expectedActorId: string, expectedSessionI
   } catch {
     return { valid: false, reason: "payload JSON parse failed" };
   }
-  if (payload.actor_id !== expectedActorId) {
-    return { valid: false, reason: `actor_id mismatch: SCT says "${payload.actor_id}" expected "${expectedActorId}"` };
+  // P0 BOUNDARY FIX (2026-07-29): case-insensitive actor canonicalization.
+  // arifOS kernel mints SCTs with claim key "actor" (lowercase).
+  // A-FORGE historically used "actor_id". Normalize both key and case.
+  const sctActorRaw = (payload as any).actor ?? payload.actor_id ?? "";
+  const sctActor = String(sctActorRaw).trim().toLowerCase();
+  const expectedActor = String(expectedActorId).trim().toLowerCase();
+  if (sctActor !== expectedActor) {
+    return { valid: false, reason: `actor mismatch: SCT says "${sctActor}" expected "${expectedActor}" (case-insensitive)` };
   }
   if (payload.session_id !== expectedSessionId) {
     return { valid: false, reason: `session_id mismatch: SCT says "${payload.session_id}" expected "${expectedSessionId}"` };
@@ -636,9 +642,11 @@ export class McpPolicyGate {
   }
 
   private resolvePolicy(actorId: string): McpPolicy {
-    // Prefer an actor-specific policy, then fall back to default sovereign
+    // Prefer an actor-specific policy, then fall back to default sovereign.
+    // P0 BOUNDARY FIX (2026-07-29): case-insensitive matching.
+    const normalized = String(actorId).trim().toLowerCase();
     for (const p of this.policies.values()) {
-      if (p.actor_id === actorId) return p;
+      if (String(p.actor_id || "").trim().toLowerCase() === normalized) return p;
     }
     return this.defaultPolicy;
   }
