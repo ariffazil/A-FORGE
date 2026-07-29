@@ -127,7 +127,10 @@ export class AgentEngine {
       archivePath: join(workingDirectory, ".arifos", "archive.jsonl"),
       onEvict: async (summary) => {
         try {
-          await this.dependencies.longTermMemory.appendRunningSummary(summary);
+          await this.dependencies.longTermMemory.appendRunningSummary(summary, 2048, {
+            actorId: this.profile.name,
+            sessionId,
+          });
         } catch {
           // Non-fatal: eviction failure must not break the agent loop
         }
@@ -949,16 +952,19 @@ export class AgentEngine {
       // APEX computation is best-effort — do not block verdict on failure
     }
 
-    await this.dependencies.longTermMemory.store({
-      id: sessionId,
-      summary: finalResponse,
-      keywords: extractKeywords(options.task, finalResponse),
-      createdAt: new Date().toISOString(),
-      metadata: {
-        profile: this.profile.name,
-        turnCount,
+    await this.dependencies.longTermMemory.store(
+      {
+        id: sessionId,
+        summary: finalResponse,
+        keywords: extractKeywords(options.task, finalResponse),
+        createdAt: new Date().toISOString(),
+        metadata: {
+          profile: this.profile.name,
+          turnCount,
+        },
       },
-    });
+      { actorId: this.profile.name, sessionId },
+    );
 
     const testsPassed = options.testsPassed ?? inferTestsPassed(this.profile.name, finalResponse, !errorMessage);
     const completion = !errorMessage && !finalResponse.startsWith("Stopped because");
