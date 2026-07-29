@@ -311,6 +311,149 @@ export async function executeInSandbox(
   });
 }
 
+// ── Overlay-Aware Execution ───────────────────────────────────
+/**
+ * Execute inside a persistent overlay sandbox.
+ * Uses the Docker overlay2 pattern: overlay is mounted OUTSIDE bwrap,
+ * and the merged directory is bind-mounted INTO bwrap as the workspace.
+ *
+ * This allows pause/resume — all writes go to upperdir on host.
+ */
+export async function executeInOverlaySandbox(
+  policy: SandboxPolicy,
+  command: string,
+  mergedDir: string,
+): Promise<ContainmentResult> {
+  const backend = policy.backend === 'auto' ? detectBackend() : policy.backend;
+  const sandboxId = `aforge-sandbox-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const startTime = Date.now();
+
+  let stdout = '';
+  let stderr = '';
+  let exitCode: number | null = null;
+  let killed = false;
+
+  return new Promise((resolve, reject) => {
+    let childProcess;
+
+    switch (backend) {
+      case 'bwrap': {
+        const bwrapArgs = buildBwrapOverlayArgs(policy, mergedDir);
+        console.error(
+          `[containment:overlay-bwrap] ${sandboxId} policy=${policy.name} ` +
+          `merged=${mergedDir} backend=bwrap`,
+        );
+        childProcess = spawn('bwrap', [...bwrapArgs, '--', '/bin/sh', '-c', command], {
+          stdio: ['pipe', 'pipe', 'pipe'],
+          env: {},
+        });
+        break;
+      }
+      default: {
+        // Fallback to standard execution for non-bwrap backends
+        reject(new Error(`Overlay execution only supported for bwrap backend, got: ${backend}`));
+        return;
+      }
+    }
+
+    const timeout = policy.resources?.timeoutSeconds || 300;
+    const timer = setTimeout(() => {
+      killed = true;
+      childProcess.kill('SIGKILL');
+    }, timeout * 1000);
+
+    childProcess.stdout?.on('data', (data: Buffer) => {
+      stdout += data.toString();
+    });
+
+    childProcess.stderr?.on('data', (data: Buffer) => {
+      stderr += data.toString();
+    });
+
+    childProcess.on('close', (code) => {
+      clearTimeout(timer);
+      exitCode = code;
+      resolve({
+        exitCode,
+        stdout,
+        stderr,
+        backend,
+        policyName: policy.name,
+        sandboxId,
+        wallTimeMs: Date.now() - startTime,
+        killed,
+      });
+    });
+
+    childProcess.on('error', (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
+
+/**
+ * Build bwrap args for overlay-based sandbox.
+ * Pattern: mount host / as ro, bind overlay merged dir as /workspace.
+ * Writes go through overlay into upperdir (on host fs).
+ */
+function buildBwrapOverlayArgs(policy: SandboxPolicy, mergedDir: string): string[] {
+  const args: string[] = [];
+
+  // Namespaces (no --unshare-user — need root to write to overlay)
+  args.push('--unshare-ipc', '--unshare-uts', '--unshare-pid', '--unshare-cgroup');
+
+  // Virtual filesystems
+  args.push('--proc', '/proc');
+  args.push('--dev', '/dev');
+  args.push('--tmpfs', '/tmp');
+
+  // System filesystem: read-only
+  args.push('--ro-bind', '/', '/');
+
+  // Denied paths: override sensitive dirs with empty tmpfs
+  for (const denied of policy.filesystem.denied) {
+    try {
+      const { realpathSync, lstatSync } = require('node:fs');
+      const resolved = realpathSync(denied);
+      args.push('--tmpfs', resolved);
+      if (denied !== resolved && !lstatSync(denied).isSymbolicLink()) {
+        args.push('--tmpfs', denied);
+      }
+    } catch {
+      // Path doesn't exist — skip
+    }
+  }
+
+  // Bind overlay merged dir as workspace (THIS is where writes go)
+  args.push('--bind', mergedDir, '/workspace');
+
+  // Working directory
+  args.push('--chdir', '/workspace');
+
+  // Environment
+  if (policy.environment?.cleanEnvironment) {
+    args.push('--clearenv');
+  }
+  for (const envVar of (policy.environment?.allowed || [])) {
+    if (process.env[envVar]) {
+      args.push('--setenv', envVar, process.env[envVar]!);
+    }
+  }
+  if (policy.environment?.set) {
+    for (const [key, val] of Object.entries(policy.environment.set)) {
+      args.push('--setenv', key, val);
+    }
+  }
+
+  // Network
+  if (policy.network?.denyAll || policy.network?.unshareNetwork) {
+    args.push('--unshare-net');
+  }
+
+  return args;
+}
+
 // ── Dry-Run (Policy Validation) ───────────────────────────────
 export function validatePolicy(policy: SandboxPolicy): { valid: boolean; errors: string[] } {
   const errors: string[] = [];

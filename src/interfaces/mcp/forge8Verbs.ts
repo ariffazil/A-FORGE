@@ -39,6 +39,18 @@ import {
   SANDBOX_RESOURCE_LIMITS,
 } from "./contract/forge8_execution_verbs.js";
 
+// ── Sandbox Persistence (Pause/Resume) ────────────────────────────────────
+import {
+  pauseSandbox,
+  resumeSandbox,
+  listPaused,
+  autoEvict,
+  getSession,
+  createSandbox,
+  runInSandbox,
+} from "../../domain/containment/ExecutionSandbox.js";
+import { SandboxStorage } from "../../domain/containment/SandboxStorage.js";
+
 // ── Storage paths ──────────────────────────────────────────────────────────
 const FORGE8_STAGING_DIR = "/tmp/forge8/staging";
 const FORGE8_BUFFER_DIR = "/tmp/forge8/buffer";
@@ -870,6 +882,124 @@ async function verifyHumanSealToken(token: string, stage_id: string): Promise<bo
   }
 }
 
+// ── Sandbox Persistence Tools ──────────────────────────────────────────────
+//
+// forge_sandbox_pause  — tar upperdir, unmount overlay, SHA256 integrity, cold storage
+// forge_sandbox_resume — extract tarball, re-mount overlay, lease re-verify, restore
+// forge_sandbox_list_paused  — list paused sandboxes for actor
+// forge_sandbox_auto_evict  — purge snapshots older than 24h
+//
+// F1 AMANAH:  Pause = reversible. Snapshot = full rollback capability.
+// F11 AUDIT:  Every pause/resume/evict event logged.
+// F13 SOVEREIGN: Lease re-verification gate on resume.
+
+const ForgeSandboxPauseRequestSchema = z.object({
+  sandboxId: z.string().min(1).describe("Sandbox session ID to pause"),
+  leaseHash: z.string().optional().describe("Lease hash for audit binding"),
+  sessionId: z.string().optional().describe("arifOS session ID"),
+  actorId: z.string().optional().describe("Actor ID"),
+});
+
+const ForgeSandboxResumeRequestSchema = z.object({
+  sandboxId: z.string().min(1).describe("Sandbox session ID to resume"),
+  currentLeaseHash: z.string().describe("Fresh lease hash from arif_judge re-verification"),
+  allowLeaseChange: z.boolean().default(false).describe("Allow resume even if lease changed? (DEFAULT: false)"),
+});
+
+const ForgeSandboxListPausedRequestSchema = z.object({
+  actorId: z.string().optional().describe("Filter by actor ID"),
+});
+
+const ForgeSandboxAutoEvictRequestSchema = z.object({});
+
+async function forgeSandboxPauseHandler(args: z.infer<typeof ForgeSandboxPauseRequestSchema>) {
+  const session = getSession(args.sandboxId);
+  if (!session) throw new Error(`Sandbox ${args.sandboxId} not found`);
+
+  const snapshot = pauseSandbox(session, {
+    leaseHash: args.leaseHash,
+    sessionId: args.sessionId,
+    actorId: args.actorId,
+  });
+
+  return {
+    content: [{
+      type: "text" as const,
+      text: JSON.stringify({
+        sandboxId: snapshot.sandboxId,
+        pausedAt: snapshot.pausedAt,
+        tarballSha256: snapshot.tarballSha256,
+        tarballSizeBytes: snapshot.tarballSizeBytes,
+        policyName: snapshot.policyName,
+        state: snapshot.state,
+        _epistemic: epistemicTag("forge_sandbox_pause"),
+      }, null, 2),
+    }],
+  };
+}
+
+async function forgeSandboxResumeHandler(args: z.infer<typeof ForgeSandboxResumeRequestSchema>) {
+  const session = getSession(args.sandboxId);
+  if (!session) throw new Error(`Sandbox ${args.sandboxId} not found`);
+
+  const restored = resumeSandbox(session, {
+    currentLeaseHash: args.currentLeaseHash,
+    allowLeaseChange: args.allowLeaseChange,
+  });
+
+  return {
+    content: [{
+      type: "text" as const,
+      text: JSON.stringify({
+        sandboxId: restored.sandboxId,
+        state: restored.state,
+        leaseHash: restored.leaseHash,
+        mergedPath: restored.overlay?.mergedDir,
+        _epistemic: epistemicTag("forge_sandbox_resume"),
+      }, null, 2),
+    }],
+  };
+}
+
+async function forgeSandboxListPausedHandler(args: z.infer<typeof ForgeSandboxListPausedRequestSchema>) {
+  const paused = listPaused(args.actorId || "any");
+
+  return {
+    content: [{
+      type: "text" as const,
+      text: JSON.stringify({
+        count: paused.length,
+        snapshots: paused.map(s => ({
+          sandboxId: s.sandboxId,
+          actorId: s.actorId,
+          pausedAt: s.pausedAt,
+          tarballSha256: s.tarballSha256,
+          tarballSizeBytes: s.tarballSizeBytes,
+          ageHours: ((Date.now() - new Date(s.pausedAt).getTime()) / 3600000).toFixed(1),
+        })),
+        _epistemic: epistemicTag("forge_sandbox_list_paused"),
+      }, null, 2),
+    }],
+  };
+}
+
+async function forgeSandboxAutoEvictHandler(_args: z.infer<typeof ForgeSandboxAutoEvictRequestSchema>) {
+  const result = autoEvict();
+
+  return {
+    content: [{
+      type: "text" as const,
+      text: JSON.stringify({
+        evicted: result.evicted,
+        errors: result.errors,
+        evictedCount: result.evicted.length,
+        errorCount: result.errors.length,
+        _epistemic: epistemicTag("forge_sandbox_auto_evict"),
+      }, null, 2),
+    }],
+  };
+}
+
 // ── Tool Registration ──────────────────────────────────────────────────────
 
 export function registerForge8Verbs(server: McpServer) {
@@ -954,5 +1084,34 @@ export function registerForge8Verbs(server: McpServer) {
     forgeExecuteHandler
   );
 
-  console.log("[A-FORGE] Registered 8 FORGE execution verbs (+ 1 split skillstore)");
+  // ── Sandbox Persistence (Pause/Resume) ──────────────────────────────────
+  server.tool(
+    "forge_sandbox_pause",
+    "PAUSE a persistent sandbox — tar upperdir, SHA256 integrity, unmount overlay, cold storage. F1 reversible. F13 lease-gated on resume.",
+    ForgeSandboxPauseRequestSchema.shape,
+    forgeSandboxPauseHandler
+  );
+
+  server.tool(
+    "forge_sandbox_resume",
+    "RESUME a paused sandbox — extract tarball, re-mount overlay, lease re-verify gate. F13 HOLD if lease mismatch or >24h age.",
+    ForgeSandboxResumeRequestSchema.shape,
+    forgeSandboxResumeHandler
+  );
+
+  server.tool(
+    "forge_sandbox_list_paused",
+    "List all paused sandboxes. Filter by actorId. Returns snapshot metadata with age.",
+    ForgeSandboxListPausedRequestSchema.shape,
+    forgeSandboxListPausedHandler
+  );
+
+  server.tool(
+    "forge_sandbox_auto_evict",
+    "Auto-evict sandbox snapshots older than 24h (MAX_PAUSE_AGE_HOURS). Purges expired snapshots from cold storage.",
+    ForgeSandboxAutoEvictRequestSchema.shape,
+    forgeSandboxAutoEvictHandler
+  );
+
+  console.log("[A-FORGE] Registered 8 FORGE execution verbs (+ 1 split skillstore) + 4 sandbox persistence tools");
 }
