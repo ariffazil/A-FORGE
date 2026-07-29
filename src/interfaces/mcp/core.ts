@@ -32,9 +32,8 @@ import { WEALTH_TOOLS } from "../../infrastructure/tools/WealthTools.js";
 import { MiniMaxWebSearchTool, MiniMaxUnderstandImageTool } from "../../infrastructure/tools/MiniMaxTools.js";
 import { getDocsGPTBridge } from "../../infrastructure/bridges/docsgptBridge.js";
 import { getMiniMaxClient } from "../../infrastructure/tools/MiniMaxMcpClient.js";
-// HumanEscalationClient removed — all gates route through arif_judge(888) at arifOS:8088
-// Stub for legacy type compatibility
-class NoOpHumanEscalationClient { escalate() { return { approved: true, decidedBy: "constitution" as const }; } }
+// HumanEscalationClient — all gates route through arif_judge(888) at arifOS:8088
+import { NoOpHumanEscalationClient } from "../../application/approval/index.js";
 // systemctlWrapper unregistered 2026-07-09 — use forge_shell for systemctl
 import { dockerWrapper } from "../../infrastructure/tools/infra/docker_wrapper.js";
 import { journalctlWrapper } from "../../infrastructure/tools/infra/journalctl_wrapper.js";

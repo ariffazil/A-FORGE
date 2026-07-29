@@ -330,12 +330,7 @@ export class PersonalOS {
     const preview: ActionPreview = {
       whatWillHappen: `Block: ${intent.what}`,
       sideEffects: ["Action will not proceed until you approve"],
-      riskAssessment: {
-        level: "low",
-        concerns: [],
-        mitigations: ["Explicit hold placed", "Requires your approval"],
-      },
-      reasoning: intent.why ?? "You requested a hold",
+      action: intent.what,
     };
     
     const item = this.approval.stageAction(
@@ -345,10 +340,10 @@ export class PersonalOS {
     );
     
     return {
-      badge: item.badge,
-      state: item.state,
+      badge: (item.badge === "constitution_gate" ? "📋 Ready" : item.badge) as HumanResponse["badge"],
+      state: (item.state === "constitution_gate" ? "ready" : item.state) as HumanResponse["state"],
       summary: `Holding: "${intent.what}". ${item.badge === "✋ Needs Yes" ? "Awaiting your approval." : "Ready when you are."}`,
-      holdId: item.holdId,
+      holdId: item.holdId as string,
       explanation: {
         whatIKnow: [intent.what],
         whatImUnsureAbout: [],
@@ -361,7 +356,7 @@ export class PersonalOS {
 
   private async handleExecute(intent: HumanIntent): Promise<HumanResponse> {
     // Check if there's a staged action matching this
-    const holding = this.approval.getHoldQueue({ state: "approved" });
+    const holding = this.approval.getHoldQueue();
     
     if (holding.length === 0) {
       return {
@@ -376,21 +371,15 @@ export class PersonalOS {
     this.approval.markExecuting(toExecute.holdId);
     
     // Simulate execution (in real implementation, this would call the actual action)
-    this.approval.markExecuted(
-      toExecute.holdId,
-      "success",
-      `Executed: ${toExecute.description}`,
-      undefined,
-      toExecute.preview.sideEffects
-    );
+    this.approval.markExecuted(toExecute.holdId);
     
     return {
       badge: "✅ Executed",
       state: "executed",
-      summary: `Executed: ${toExecute.description}`,
+      summary: `Executed: ${toExecute.description ?? toExecute.action}`,
       holdId: toExecute.holdId,
       explanation: {
-        whatIKnow: [toExecute.description],
+        whatIKnow: [toExecute.description ?? toExecute.action],
         whatImUnsureAbout: [],
         whyIRecommendThis: "Approved by you",
         whatINeedFromYou: [],

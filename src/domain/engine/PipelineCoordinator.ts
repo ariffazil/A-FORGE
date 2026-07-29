@@ -746,9 +746,12 @@ export class PipelineCoordinator {
         const ticketStore = this.deps.ticketStore ?? getTicketStore();
         await ticketStore.initialize();
         const ticket: ApprovalTicket = {
+          id: `ticket_${Date.now()}`,
           ticketId: `ticket_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
           sessionId,
           status: "PENDING",
+          action: options.task,
+          gate: "PIPELINE_HOLD",
           riskLevel,
           intentModel: options.intentModel ?? "advisory",
           domain: (options.metadata?.domain as string | undefined) ?? "unspecified",

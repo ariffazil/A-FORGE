@@ -398,9 +398,12 @@ export class AgentEngine {
           const ticketStore = this.dependencies.ticketStore ?? getTicketStore();
           await ticketStore.initialize();
           const ticket: import("../../application/approval/index.js").ApprovalTicket = {
+            id: `ticket_${Date.now()}`,
             ticketId: `ticket_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
             sessionId,
             status: "PENDING",
+            action: options.task,
+            gate: "PLAN_GOVERNANCE_HOLD",
             riskLevel,
             intentModel: options.intentModel ?? "advisory",
             domain: (options.metadata?.domain as string | undefined) ?? "unspecified",
@@ -1550,16 +1553,19 @@ export class AgentEngine {
     const telemetrysnapshot = this.computeTelemetry(finalText, floorsTriggered, options.intentModel, options.riskLevel);
     const ticketStore = this.dependencies.ticketStore ?? getTicketStore();
     const ticket: ApprovalTicket = {
+      id: `ticket_${Date.now()}`,
       ticketId: `ticket_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       sessionId,
       status: "PENDING",
+      action: options.task,
+      gate: "ESCALATION",
       riskLevel,
       intentModel: options.intentModel ?? "advisory",
       domain: (options.metadata?.domain as string | undefined) ?? "unspecified",
       prompt: options.task,
       planSummary: finalText.slice(0, 500),
       floorsTriggered,
-      telemetrySnapshot: telemetrysnapshot,
+      telemetrySnapshot: telemetrysnapshot as unknown as Record<string, unknown>,
       createdAt: new Date().toISOString(),
     };
     await ticketStore.createTicket(ticket);
@@ -1576,21 +1582,12 @@ export class AgentEngine {
       timestamp: new Date().toISOString(),
     };
 
-    const response = await this.dependencies.escalationClient!.escalate(request);
-    if (!response) {
-      await ticketStore.updateTicket(ticket.ticketId, { status: "DISPATCHED", dispatchedAt: new Date().toISOString() });
-      const updatedText = `${finalText}\n[ESCALATION: Dispatched to human expert (ticket ${ticket.ticketId}), but webhook unreachable. Awaiting manual review.]`;
-      return { escalated: true, ticketId: ticket.ticketId, finalText: updatedText };
-    }
-
-    await ticketStore.updateTicket(ticket.ticketId, {
-      status: "DISPATCHED",
-      dispatchedAt: new Date().toISOString(),
-    });
-
-    const decisionText = `[ESCALATION: Human expert (${response.humanId ?? "unknown"}) responded with ${response.decision} on ticket ${ticket.ticketId}. ${response.notes ?? ""}]`;
-
-    return { escalated: true, ticketId: ticket.ticketId, decision: response.decision, humanId: response.humanId, finalText: `${finalText}\n${decisionText}` };
+    await this.dependencies.escalationClient!.escalate(request);
+    // escalate() returns void in constitutional governance stub —
+    // human decisions are now routed through arifOS:8088
+    await ticketStore.updateTicket(ticket.ticketId, { status: "DISPATCHED", dispatchedAt: new Date().toISOString() });
+    const updatedText = `${finalText}\n[ESCALATION: Dispatched to human expert (ticket ${ticket.ticketId}). Constitution gate active at arifOS:8088.]`;
+    return { escalated: true, ticketId: ticket.ticketId, finalText: updatedText };
   }
 
   private async sealTerminal(

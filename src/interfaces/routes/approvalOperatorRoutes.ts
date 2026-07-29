@@ -10,6 +10,8 @@ import {
 import { getTicketStore } from "../../application/approval/index.js";
 import { recordEscalationLatency, recordHumanDecision } from "../../infrastructure/metrics/prometheus.js";
 import { FileVaultClient } from "../../infrastructure/vault/index.js";
+import type { VaultVerdict } from "../../domain/types/sovereign.js";
+import type { VaultTelemetrySnapshot } from "../../infrastructure/vault/VaultClient.js";
 
 export function createHumanExpertRouter(): Router {
   const router = Router();
@@ -89,24 +91,26 @@ export function createHumanExpertRouter(): Router {
       });
 
       recordHumanDecision(parsedDecision, ticket.domain ?? "unspecified", ticket.riskLevel);
-      if (ticket.dispatchedAt && updated?.decidedAt) {
-        const latencySec = (new Date(updated.decidedAt).getTime() - new Date(ticket.dispatchedAt).getTime()) / 1000;
+      const dispatchedAt = (ticket as Record<string, unknown>).dispatchedAt;
+      const decidedAt = (updated as Record<string, unknown>)?.decidedAt;
+      if (dispatchedAt && decidedAt) {
+        const latencySec = (new Date(String(dispatchedAt)).getTime() - new Date(String(decidedAt)).getTime()) / 1000;
         recordEscalationLatency(latencySec, ticket.domain ?? "unspecified");
       }
 
       // Best-effort VAULT999 seal of the decision
-      const vaultClient = new FileVaultClient();
-      await vaultClient
-        .seal({
+      try {
+        const vaultClient = new FileVaultClient();
+        await vaultClient.seal({
           sealId: randomUUID(),
-          sessionId: ticket.sessionId,
-          verdict: parsedDecision === "APPROVE" ? "SEAL" : "HOLD",
+          sessionId: ticket.sessionId ?? "unknown",
+          verdict: (parsedDecision === "APPROVE" ? "SEAL" : "HOLD") as VaultVerdict,
           hashofinput: "",
-          telemetrysnapshot: ticket.telemetrySnapshot,
-          floors_triggered: ticket.floorsTriggered,
+          telemetrysnapshot: (ticket.telemetrySnapshot ?? { dS: 0, peace2: 0, psi_le: 0, W3: 0, G: 0 }) as VaultTelemetrySnapshot,
+          floors_triggered: ticket.floorsTriggered ?? [],
           irreversibilityacknowledged: false,
           timestamp: new Date().toISOString(),
-          task: ticket.prompt,
+          task: ticket.prompt ?? "human_decision",
           finalText: `Human decision: ${parsedDecision}. Notes: ${notes ?? ""}`,
           turnCount: 0,
           profileName: "human-expert",
@@ -114,11 +118,13 @@ export function createHumanExpertRouter(): Router {
             escalated: true,
             humanEndpoint: "webhook",
             humanDecision: parsedDecision,
-            humanId,
+            humanId: humanId as string | undefined,
             ticketId,
           },
-        })
-        .catch(() => {});
+        });
+      } catch {
+        // Best-effort — non-critical vault write failure
+      }
 
       res.json({ ok: true, ticket: updated });
     } catch (error) {
@@ -200,7 +206,7 @@ export function createOperatorRouter(): Router {
     try {
       const vaultClient = new FileVaultClient();
       const sessionId = toQueryString(req.query.sessionId);
-      const verdict = parseVaultVerdict(toQueryString(req.query.verdict));
+      const verdict = parseVaultVerdict(toQueryString(req.query.verdict)) as VaultVerdict | undefined;
       const since = toQueryString(req.query.since);
       const until = toQueryString(req.query.until);
       const limitRaw = toQueryString(req.query.limit);

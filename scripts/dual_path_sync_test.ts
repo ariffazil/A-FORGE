@@ -142,7 +142,7 @@ async function main() {
   console.log("║       VAULT999 DUAL-PATH SYNC TEST          ║");
   console.log("╚══════════════════════════════════════════════╝");
   console.log(`Supabase: ${SUPABASE_URL}`);
-  console.log(`Local PG: ${LOCAL_PG.replace(/:[^@]+@/, ":***@")}`);
+  console.log(`Local PG: ${(LOCAL_PG ?? "not set").replace(/:[^@]+@/, ":***@")}`);
 
   // Step 1: Write via REST, read back via REST
   const testName = await testSupabaseWriteAndRead();

@@ -13,6 +13,7 @@ import type { RuntimeConfig } from "../../interfaces/config/RuntimeConfig.js";
 import { ForgeScoreboard } from "../../domain/scoreboard/ForgeScoreboard.js";
 import { getTicketStore } from "../../application/approval/index.js";
 import { FileVaultClient } from "../../infrastructure/vault/index.js";
+import type { VaultVerdict } from "../../domain/types/sovereign.js";
 import {
   parseRiskLevel,
   parseTicketStatus,
@@ -178,7 +179,7 @@ export async function runCliCommand(
       const limit = toNumberOption(options.limit);
       const records = await vaultClient.query({
         sessionId,
-        verdict,
+        verdict: verdict as VaultVerdict | undefined,
         since,
         until,
         limit,

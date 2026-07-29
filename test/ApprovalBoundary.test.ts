@@ -33,7 +33,7 @@ describe("ApprovalBoundary — Gate Fixtures", () => {
   let boundary: ApprovalBoundary;
 
   beforeEach(() => {
-    boundary = new ApprovalBoundary({ storePath: "/tmp/test-approvals.json" });
+    boundary = new ApprovalBoundary();
     delete process.env.AFK_MODE;
     delete process.env.ENABLE_AFK_AUTO_APPROVE;
     delete process.env.ENABLE_DANGEROUS_TOOLS;
@@ -90,24 +90,27 @@ describe("ApprovalBoundary — Gate Fixtures", () => {
     it("FIXTURE:HOLD_QUEUE_LIFECYCLE — approve transitions holding to approved [PASS]", () => {
       const preview = makePreview("medium");
       const item = boundary.stageAction("Deploy release", preview);
-      boundary.approve(item.holdId);
-      const retrieved = boundary.getHoldItem(item.holdId);
+      const holdId = item.holdId as string;
+      boundary.approve(holdId);
+      const retrieved = boundary.getHoldItem(holdId);
       assert.strictEqual(retrieved?.state, "approved");
     });
 
     it("FIXTURE:HOLD_QUEUE_LIFECYCLE — reject transitions holding to rejected [PASS]", () => {
       const preview = makePreview("medium");
       const item = boundary.stageAction("Dangerous op", preview);
-      boundary.reject(item.holdId);
-      const retrieved = boundary.getHoldItem(item.holdId);
+      const holdId = item.holdId as string;
+      boundary.reject(holdId);
+      const retrieved = boundary.getHoldItem(holdId);
       assert.strictEqual(retrieved?.state, "rejected");
     });
 
     it("FIXTURE:HOLD_QUEUE_LIFECYCLE — cannot approve already rejected item [BLOCK]", () => {
       const preview = makePreview("medium");
       const item = boundary.stageAction("Rejected op", preview);
-      boundary.reject(item.holdId);
-      assert.throws(() => boundary.approve(item.holdId), /rejected/);
+      const holdId = item.holdId as string;
+      boundary.reject(holdId);
+      assert.throws(() => boundary.approve(holdId), /rejected/);
     });
   });
 

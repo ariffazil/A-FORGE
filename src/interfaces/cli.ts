@@ -65,7 +65,7 @@ function createVaultClient(runtimeConfig: RuntimeConfig) {
 function createTicketStore(runtimeConfig: RuntimeConfig) {
   if (runtimeConfig.postgresUrl) {
     try {
-      const store = new PostgresTicketStore(runtimeConfig.postgresUrl);
+      const store = new PostgresTicketStore({ connectionString: runtimeConfig.postgresUrl });
       return store;
     } catch {
       process.stderr.write("[WARN] Postgres ticket store unavailable; falling back to FileTicketStore\n");
@@ -77,7 +77,7 @@ function createTicketStore(runtimeConfig: RuntimeConfig) {
 function createEngine(profile: AgentProfile): AgentEngine {
   const runtimeConfig = readRuntimeConfig();
   const escalationClient = runtimeConfig.humanEscalationWebhookUrl
-    ? new WebhookHumanEscalationClient(runtimeConfig.humanEscalationWebhookUrl)
+    ? new WebhookHumanEscalationClient()
     : new NoOpHumanEscalationClient();
   const vaultClient = createVaultClient(runtimeConfig);
   const sealService = new SealService(new PlanValidator());
