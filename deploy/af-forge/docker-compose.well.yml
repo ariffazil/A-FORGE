@@ -9,7 +9,7 @@ services:
     ports:
       - "127.0.0.1:8091:8000"
     volumes:
-      - /root/well:/app:rw
+      - /root/well-runtime:/app:rw
       - /root/WELL:/root/WELL
       - /root/arifOS/core/vault999:/root/arifOS/core/vault999
     environment:
