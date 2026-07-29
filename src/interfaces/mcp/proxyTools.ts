@@ -709,7 +709,19 @@ export function registerFilesystemTools(server: McpServer): void {
 }
 
 export function registerPostgresTools(server: McpServer): void {
-  const pgUrl = process.env.PG_URL || process.env.DATABASE_URL || "postgresql://arifos_admin:ArifPostgres2026!@localhost:5432/vault999";
+  const pgUrl = process.env.PG_URL || process.env.DATABASE_URL;
+  // P2 FIX (2026-07-29): Removed hardcoded credential fallback.
+  // Database URL MUST come from environment. Fail closed when absent.
+  if (!pgUrl) {
+    // Return a tool that always fails — never connect with default credentials
+    server.registerTool("forge_postgres", {
+      description: "Canonical Postgres primitive — DISABLED (no DATABASE_URL configured)",
+      inputSchema: z.object({ mode: z.enum(["query", "schema"]) }),
+    }, async () => ({
+      content: [{ type: "text", text: "ERROR: DATABASE_URL not configured. Postgres tools disabled." }],
+    }));
+    return;
+  }
   server.registerTool("forge_postgres", {
     description: "Canonical Postgres primitive — query and schema inspection.",
     inputSchema: z.object({

@@ -16,9 +16,12 @@ const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_KEY ??
   "";
 
-const LOCAL_PG =
-  process.env.DATABASE_URL ??
-  "postgresql://arifos_admin:ArifPostgresVault2026%21@localhost:5432/arifos_vault";
+// P2 FIX (2026-07-29): Removed hardcoded credential. DATABASE_URL is required.
+const LOCAL_PG = process.env.DATABASE_URL;
+if (!LOCAL_PG) {
+  console.error("FATAL: DATABASE_URL environment variable is REQUIRED but not set.");
+  process.exit(1);
+}
 
 async function getPool() {
   const { Pool } = await import("pg");

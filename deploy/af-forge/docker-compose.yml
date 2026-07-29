@@ -68,7 +68,9 @@ services:
       SEA_LION_API_KEY: ${SEA_LION_API_KEY:-}
 
       # Memory engine (Postgres + Qdrant + Ollama)
-      DATABASE_URL: postgresql://arifos_admin:ArifPostgresVault2026!@postgres:5432/vault999
+      # P2 FIX (2026-07-29): DATABASE_URL must be provided via environment or .env file.
+      # No hardcoded fallback credentials. See /root/.secrets/kunci-mas.env for canonical values.
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       QDRANT_URL: http://host.docker.internal:6333
       OLLAMA_URL: http://ollama:11434
       EMBEDDING_MODEL: bge-m3
