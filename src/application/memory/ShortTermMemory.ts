@@ -10,6 +10,8 @@ export interface ShortTermMemoryOptions {
   maxTokens?: number;
   onEvict?: (summary: string) => void | Promise<void>;
   archivePath?: string;
+  actorId?: string;
+  sessionId?: string;
 }
 
 /**
@@ -38,8 +40,8 @@ export class ShortTermMemory {
     this.maxTokens = options?.maxTokens ?? 16384;
     this.onEvict = options?.onEvict;
     this.archivePath = options?.archivePath;
-    this.defaultActor = "a-forge::short-term-memory";
-    this.defaultSession = "SEAL-5eed5eed5eed5eed";
+    this.defaultActor = options?.actorId ?? "a-forge::short-term-memory";
+    this.defaultSession = options?.sessionId ?? "SEAL-5eed5eed5eed5eed";
   }
 
   /**

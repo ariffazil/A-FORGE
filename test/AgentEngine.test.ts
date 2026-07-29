@@ -263,13 +263,13 @@ test("long-term memory retrieves relevant past tasks by keyword", async () => {
     summary: "Fixed the TypeScript build issue in the agent engine.",
     keywords: ["typescript", "build", "engine"],
     createdAt: new Date().toISOString(),
-  }, { actorId: "test-agent", sessionId });
+  }, { actorId: "a-forge::long-term-memory", sessionId });
   await memory.store({
     id: "2",
     summary: "Documented deployment notes for the VPS.",
     keywords: ["deployment", "vps", "docs"],
     createdAt: new Date().toISOString(),
-  }, { actorId: "test-agent", sessionId });
+  }, { actorId: "a-forge::long-term-memory", sessionId });
 
   const results = await memory.searchRelevant("Investigate the TypeScript engine failure");
   assert.equal(results[0]?.id, "1");

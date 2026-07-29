@@ -125,10 +125,12 @@ export class AgentEngine {
       maxMessages: 20,
       maxTokens: 16384,
       archivePath: join(workingDirectory, ".arifos", "archive.jsonl"),
+      actorId: "a-forge::short-term-memory",
+      sessionId,
       onEvict: async (summary) => {
         try {
           await this.dependencies.longTermMemory.appendRunningSummary(summary, 2048, {
-            actorId: this.profile.name,
+            actorId: "a-forge::long-term-memory",
             sessionId,
           });
         } catch {
@@ -963,7 +965,7 @@ export class AgentEngine {
           turnCount,
         },
       },
-      { actorId: this.profile.name, sessionId },
+      { actorId: "a-forge::long-term-memory", sessionId },
     );
 
     const testsPassed = options.testsPassed ?? inferTestsPassed(this.profile.name, finalResponse, !errorMessage);
