@@ -10,9 +10,32 @@
  * DITEMPA BUKAN DIBERI — Tokens are forged, not assumed.
  */
 
+import * as crypto from "crypto";
+
 const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
 const SCT_TIMEOUT_MS = Number(process.env.ARIFOS_SCT_TIMEOUT_MS || "2500");
 const SCT_RE = /^sct_v1\.[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?$/;
+
+// ── Actor Identity Canonicalization ──────────────────────────────────────
+// Mirrors arifOS _resolve_canonical_actor (session.py:1506).
+// canonical_actor_id = lowercase, dash-not-underscore machine identifier.
+// display_name (e.g. "ARIF") is human-only — never used for comparison.
+// P0 FIX (2026-07-29): No scattered .toLowerCase() — one canonical source.
+const SOVEREIGN_IDENTITY_MAP: Record<string, string> = {
+  ariffazil: "ariffazil",
+};
+const ACTOR_ALIAS_MAP: Record<string, string> = {
+  "arif-fazil": "ariffazil",
+};
+
+export function canonicalizeActor(raw: string | null | undefined): string {
+  const s = (raw || "").trim();
+  if (!s) return "anonymous";
+  const normalized = s.toLowerCase().replace(/_/g, "-");
+  if (SOVEREIGN_IDENTITY_MAP[normalized]) return SOVEREIGN_IDENTITY_MAP[normalized];
+  if (ACTOR_ALIAS_MAP[normalized]) return ACTOR_ALIAS_MAP[normalized];
+  return normalized;
+}
 
 export type SctGateResult =
   | { ok: true; actor?: string; authority?: string; claims?: Record<string, unknown> }
@@ -250,37 +273,102 @@ export function sctMutationGateHealth(
 
 /**
  * Verify SCT locally (no arifOS roundtrip).
- * sct_v1 tokens are JWT-like: sct_v1.<base64url_payload>.<signature>
- * P2.1 fix (2026-07-28): arifOS has no "validate" mode, so local
- * decode is the only reliable path. Decode payload, check expiry,
- * check authority rank. Returns ok:false on any failure.
+ *
+ * Canonical wire format (arifOS session.py _sign_session_payload):
+ *   <base64url(payload_json)>.<hmac_hex_trunc16>
+ *
+ * The sct_v1. prefix is a federation convention applied by callers.
+ * HMAC uses SHA-256 with ARIFOS_SESSION_SECRET, truncated to 16 hex chars
+ * (64 bits) matching arifOS session.py[:16]. Both sides MUST use identical
+ * truncation until a coordinated upgrade to full HMAC is deployed.
+ *
+ * P0 FIX (2026-07-29): HMAC-SHA256 signature is NOW verified against
+ * the shared ARIFOS_SESSION_SECRET. Previously the signature was
+ * extracted but never checked — a fail-open path that accepted any
+ * well-formed payload regardless of who signed it.
+ *
+ * Verification order: format → prefix → HMAC signature → expiry → actor → authority.
+ * Any failure returns {ok:false} BEFORE claims are parsed.
  */
 function verifyLocalSct(
   sct: string,
   opts: { expectedActor?: string | null; requiredAuthority?: string },
 ): SctGateResult | null {
   try {
+    // ── 1. Format check: exactly 3 segments ────────────────────────────
     const parts = sct.split(".");
-    if (parts.length < 2) return null;
-    // Decode base64url payload (2nd segment)
-    const payloadB64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const payloadJson = Buffer.from(payloadB64, "base64").toString("utf-8");
+    if (parts.length !== 3 || parts[0] !== "sct_v1") {
+      // Malformed token — no legacy fallthrough. A token with wrong segment
+      // count can never be valid. Return hard error rather than null to
+      // prevent arifOS roundtrip on clearly-invalid tokens.
+      return { ok: false, error: "ERR_SCT_MALFORMED", message: `Expected sct_v1.<payload>.<sig> (3 segments), got ${parts.length}` };
+    }
+
+    const [_prefix, payloadB64, sigHex] = parts;
+
+    // ── 2. HMAC-SHA256 signature verification (P0 FIX) ─────────────────
+    // Reject signatures shorter than 16 hex chars (truncation floor).
+    if (!sigHex || sigHex.length < 16) {
+      return { ok: false, error: "ERR_SCT_SIGNATURE_SHORT", message: "HMAC signature too short" };
+    }
+
+    // Canonical wire format: arifOS session.py _sign_session_payload() uses
+    // hexdigest()[:16] (16 hex chars = 64-bit truncation).
+    // Both sides MUST use identical truncation or verification fails.
+    // P0.1 (2026-07-29): Aligned with arifOS issuer.
+    // P0.2 (TODO): Upgrade both sides to full 64-char HMAC for 256-bit security.
+    const secret = process.env.ARIFOS_SESSION_SECRET;
+    if (!secret) {
+      return { ok: false, error: "ERR_SCT_NO_SECRET", message: "ARIFOS_SESSION_SECRET not configured" };
+    }
+    const expectedSig = crypto
+      .createHmac("sha256", secret)
+      .update(payloadB64, "ascii")
+      .digest("hex")
+      .slice(0, 16); // Match arifOS session.py[:16] — canonical issuer determines truncation
+    const receivedSig = sigHex.slice(0, 16); // Accept longer sigs, compare first 16 chars
+    if (!crypto.timingSafeEqual(Buffer.from(expectedSig, "ascii"), Buffer.from(receivedSig, "ascii"))) {
+      return { ok: false, error: "ERR_SCT_SIGNATURE_INVALID", message: "HMAC-SHA256 signature mismatch" };
+    }
+
+    // ── 3. Decode payload ──────────────────────────────────────────────
+    const payloadB64Std = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const payloadJson = Buffer.from(payloadB64Std, "base64").toString("utf-8");
     const claims = JSON.parse(payloadJson) as Record<string, unknown>;
 
-    // Check expiry
+    // ── 4. Version check ───────────────────────────────────────────────
+    if (claims.sct_v !== 1) {
+      return { ok: false, error: "SCT_VERSION", message: `Unsupported SCT version: ${claims.sct_v}` };
+    }
+
+    // ── 5. Expiry check ────────────────────────────────────────────────
     const exp = claims.exp as number | undefined;
     if (exp && Date.now() / 1000 > exp) {
       return { ok: false, error: "SCT_EXPIRED", message: `Token expired at ${new Date(exp * 1000).toISOString()}` };
     }
+    const nbf = claims.nbf as number | undefined;
+    if (nbf && Date.now() / 1000 < nbf) {
+      return { ok: false, error: "SCT_NOT_YET_VALID", message: `Token not valid before ${new Date(nbf * 1000).toISOString()}` };
+    }
 
-    const actor = String(claims.actor || claims.act || "");
+    // ── 6. Actor canonicalization ──────────────────────────────────────
+    const rawActor = String(claims.canonical_actor_id || claims.actor || claims.act || "");
+    const actor = canonicalizeActor(rawActor);
     const authority = String(claims.auth || claims.authority || "OBSERVE_ONLY");
     const requiredAuthority = opts.requiredAuthority || "OBSERVE_ONLY";
 
-    if (opts.expectedActor && actor && actor.toLowerCase() !== opts.expectedActor.toLowerCase()) {
-      return { ok: false, error: "ACTOR_MISMATCH", message: `SCT actor ${actor} vs caller ${opts.expectedActor}` };
+    if (opts.expectedActor) {
+      const expected = canonicalizeActor(opts.expectedActor);
+      if (actor !== expected) {
+        return {
+          ok: false,
+          error: "ACTOR_MISMATCH",
+          message: `SCT actor "${actor}" (raw: "${rawActor}") vs caller "${expected}" (raw: "${opts.expectedActor}")`,
+        };
+      }
     }
 
+    // ── 7. Authority rank check ────────────────────────────────────────
     const RANK = ["OBSERVE_ONLY", "OPERATOR", "LIMITED_MUTATE", "FULL", "SOVEREIGN"];
     if (!RANK.includes(requiredAuthority) || !RANK.includes(authority)) {
       return { ok: false, error: "UNKNOWN_AUTHORITY", message: `${authority} / required ${requiredAuthority}` };
