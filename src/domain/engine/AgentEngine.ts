@@ -300,18 +300,12 @@ export class AgentEngine {
     // This is the SECONDARY gate: thin, fast, non-deliberative.
     // Constitutional enforcement (primary) happens in arifOS MCP / 888_JUDGE.
     //
-    // ── HITV v0.1 (2026-07-28): Env-var bypass → Cryptographic Gate Token ──
-    // BANGANG #1, #4 — plain env string bypasses replaced with:
-    //   CI mode:           auto-bypass (test runners have no model registry)
-    //   FORGE_TEST_MODE:   auto-bypass (eval instrumentation, controlled env)
-    //   ARIFOS_GATE_TOKEN: SCT-signed capability token (production bypass)
-    //   FORGE_SKIP_MODEL_GATE: DEPRECATED — use ARIFOS_GATE_TOKEN instead.
-    //                            Plain env string bypass disabled. Kept for CI
-    //                            backward compat during transition period.
-    const inCI = process.env.CI || process.env.FORGE_TEST_MODE;
+    // ── HITV v0.2 (2026-07-29): BANGANG #1,#4 FIXED — env-var bypass removed ──
+    // Only ARIFOS_GATE_TOKEN (SCT-signed capability token) can bypass.
+    // CI/FORGE_TEST_MODE/FORGE_SKIP_MODEL_GATE string bypasses: REMOVED.
+    // CI must use ARIFOS_GATE_TOKEN via GitHub Secrets — no plain env bypass.
     const hasToken = !!process.env.ARIFOS_GATE_TOKEN;
-    const legacySkip = process.env.FORGE_SKIP_MODEL_GATE === "1";
-    const skipModelGate = inCI || hasToken || legacySkip;
+    const skipModelGate = hasToken;
     if (!skipModelGate) {
     try {
       const { checkModelCapability } = await import("../governance/ModelCapabilityGate.js");
@@ -364,12 +358,11 @@ export class AgentEngine {
     // and shadow profile. This is the TERTIARY gate — plan-level, not just
     // action-level. Executes BEFORE any plan step touches tools.
     //
-    // ── HITV v0.1 (2026-07-28): Env-var bypass → Cryptographic Gate Token ──
-    // FORGE_SKIP_PLAN_GOVERNANCE: DEPRECATED in production. Use ARIFOS_GATE_TOKEN.
-    //   Kept for CI backward compat during transition period.
+    // ── HITV v0.2 (2026-07-29): BANGANG #2 FIXED — env-var bypass removed ──
+    // Only ARIFOS_GATE_TOKEN (SCT-signed capability token) can bypass.
+    // FORGE_SKIP_PLAN_GOVERNANCE string bypass: REMOVED.
     const tokenSkip = !!process.env.ARIFOS_GATE_TOKEN;
-    const legacySkipPlan = process.env.FORGE_SKIP_PLAN_GOVERNANCE === "1";
-    const skipPlanGovernance = legacySkipPlan || tokenSkip;
+    const skipPlanGovernance = tokenSkip;
     if (options.planDAG && !skipPlanGovernance) {
       try {
         const { verifyGovernanceCard } = await import("../planner/PlanValidator.js");

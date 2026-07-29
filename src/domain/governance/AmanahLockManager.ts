@@ -107,14 +107,16 @@ export class AmanahLockManager {
     sessionId?: string,
     ttlMs = DEFAULT_TTL_MS
   ): Promise<AcquireResult> {
-    // P3-04: FORGE_SKIP_AMANAH_LOCK — eval instrumentation toggle (Phase 1 governance eval, 2026-07-27)
-    if (process.env.FORGE_SKIP_AMANAH_LOCK === "1") {
-      const lockId = `amanah-eval-${randomBytes(4).toString("hex")}`;
+    // HITV v0.2 (2026-07-29): BANGANG #3 FIXED — FORGE_SKIP_AMANAH_LOCK removed.
+    // Only ARIFOS_GATE_TOKEN (SCT-signed capability token) can bypass.
+    // Plain env string bypass: REMOVED. CI must use ARIFOS_GATE_TOKEN.
+    if (process.env.ARIFOS_GATE_TOKEN) {
+      const lockId = `amanah-gate-${randomBytes(8).toString("hex")}`;
       return {
         granted: true,
         lock_id: lockId,
         verdict: "SEAL",
-        message: `Amanah lock bypassed (FORGE_SKIP_AMANAH_LOCK=1) for ${resourceId}`,
+        message: `Amanah lock gate-authorized (ARIFOS_GATE_TOKEN) for ${resourceId}`,
       };
     }
     await this.initialize();
@@ -212,16 +214,17 @@ export class AmanahLockManager {
   }
 
   async getActiveLock(resourceId: string): Promise<AmanahLockRecord | null> {
-    // P3-04: FORGE_SKIP_AMANAH_LOCK — eval instrumentation toggle (Phase 1 governance eval, 2026-07-27)
-    if (process.env.FORGE_SKIP_AMANAH_LOCK === "1") {
+    // HITV v0.2 (2026-07-29): BANGANG #4 FIXED — FORGE_SKIP_AMANAH_LOCK removed.
+    // Only ARIFOS_GATE_TOKEN (SCT-signed capability token) can bypass.
+    if (process.env.ARIFOS_GATE_TOKEN) {
       const now = new Date().toISOString();
       return {
-        lock_id: `amanah-eval-synthetic`,
+        lock_id: `amanah-gate-synthetic`,
         resource_id: resourceId,
-        actor_id: "eval-harness",
-        session_id: "eval-session",
+        actor_id: "gate-authorized",
+        session_id: "gate-session",
         status: "HELD",
-        justification: "FORGE_SKIP_AMANAH_LOCK=1 bypass",
+        justification: "ARIFOS_GATE_TOKEN authorized",
         acquired_at: now,
         expires_at: new Date(Date.now() + 3600000).toISOString(),
       };

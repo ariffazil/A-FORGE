@@ -188,8 +188,9 @@ export class CoolingGate {
       };
       await writeFile(statePath, JSON.stringify(data, null, 2), "utf8");
     } catch (err) {
-      // Non-fatal in CI/test — persistence path may not exist
-      if (process.env.CI || process.env.FORGE_TEST_MODE) return;
+      // HITV v0.2 (2026-07-29): BANGANG #5 FIXED — CI/FORGE_TEST_MODE bypass removed.
+      // Only ARIFOS_GATE_TOKEN (SCT-signed capability token) allows skip.
+      if (process.env.ARIFOS_GATE_TOKEN) return;
       throw err;
     }
   }

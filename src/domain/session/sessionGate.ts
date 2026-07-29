@@ -108,10 +108,10 @@ export function validateSession(
   // Check if already explicitly registered
   let record = sessions.get(session_id);
 
-  // P0.2: In CI/test environments, auto-register unknown sessions
-  // so that automated test suites don't need kernel bootstrapping.
-  if (!record && (process.env.CI || process.env.FORGE_TEST_MODE)) {
-    registerSession(session_id, "ci-test-agent", 3600_000);
+  // HITV v0.2 (2026-07-29): BANGANG #7 FIXED — CI/FORGE_TEST_MODE auto-register removed.
+  // Only ARIFOS_GATE_TOKEN allows auto-registration of unknown sessions.
+  if (!record && process.env.ARIFOS_GATE_TOKEN) {
+    registerSession(session_id, "gate-authorized-agent", 3600_000);
     record = sessions.get(session_id);
   }
 
