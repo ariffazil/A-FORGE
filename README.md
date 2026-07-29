@@ -1,6 +1,6 @@
 <!-- SOT-MANIFEST
-federation_release: v2026.07.28
-last_verified: 2026-07-28T18:00Z
+federation_release: v2026.07.29
+last_verified: 2026-07-29T18:00Z
 live_commit: 71848c0
 qqq_version: v1.1.1 (10/10 tests passing, verdict round-trip closed)
 seal_chain: append-only (chattr +a) + Merkle anchor every 100 receipts
