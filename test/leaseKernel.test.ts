@@ -15,6 +15,10 @@ import { requireMutationApproval } from "../src/infrastructure/tools/infra/safet
 let mockServer: ReturnType<typeof createServer> | null = null;
 let mockUrl: string = "";
 
+test.beforeEach(() => {
+  delete process.env.ARIFOS_KERNEL_URL;
+});
+
 function startMockServer(handler: (req: any) => Promise<{ status?: number; body: any }>): Promise<string> {
   return new Promise((resolve) => {
     const server = createServer(async (req, res) => {
@@ -48,6 +52,7 @@ test.afterEach(async () => {
     await new Promise<void>((resolve) => mockServer!.close(() => resolve()));
     mockServer = null;
   }
+  delete process.env.ARIFOS_MCP_URL;
 });
 
 test("OBSERVE actions pass without a lease_id", async () => {
@@ -74,6 +79,7 @@ test("valid kernel lease permits action within scope and class", async () => {
           expires_at: new Date(Date.now() + 60000).toISOString(),
           forbidden: [],
           revoked: false,
+          verdict_geometry: { trace_id: "trace-valid-lease" },
         },
       },
     },
@@ -101,6 +107,7 @@ test("revoked lease is rejected even if local cache says active", async () => {
             expires_at: new Date(Date.now() + 60000).toISOString(),
             forbidden: [],
             revoked,
+            verdict_geometry: { trace_id: "trace-revocation-check" },
           },
         },
       },

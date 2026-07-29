@@ -101,6 +101,11 @@ import { validateSession, registerSession, setKernelVerifier } from "../../domai
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
+import {
+  ForgeVaultInputSchema,
+  vaultRecordMetadata,
+  vaultRecordValue,
+} from "./vaultContract.js";
 
 // ── Module-level actor ID for stdio transport ───────────────────────────
 // Read ONCE at module load time, not per-call. Ensures the env var is
@@ -2018,53 +2023,62 @@ server.tool(
 // ── Tier 06 Stewardship (Vault) ──────────────────────────────────────────────
 
 // Merged: forge_vault — single tool with mode parameter
-// Modes: read, list, write, seal
+// Modes: read, list, write, receipt
 // Replaces: forge_vault_read, forge_vault_list, forge_vault_write, forge_vault_seal
 // forge_vault_delete REMOVED — VAULT999 is append-only.
-// forge_vault mode=seal REMOVED (2026-07-24, DIE-16) — write/seal route through arifOS arif_seal.
-//   Keep read/list as A-FORGE native cache layer. Write kept for non-seal cache writes.
-//   Path C unification: VAULT999 sealing is the kernel's job (port 8088 /mcp arif_seal).
+// forge_vault mode=seal DEPRECATED 2026-07-29 — auto-routes to mode=receipt.
+//   mode=receipt writes a receipt-marked cache entry (lighter than arifOS arif_seal).
+//   Full VAULT999 sealing is the kernel's job (port 8088 /mcp arif_seal).
 //   See /root/scripts/federation_ritual.py seal + AAA A2A skill arifos.session.seal.
+//   Pattern: Stripe additive-only API evolution — old mode stays valid, routes to canonical.
 
 server.registerTool("forge_vault", {
-  description: "VAULT999 primitive (A-FORGE cache layer). Modes: read, list, write. For seal: use arifOS arif_seal (port 8088) or /root/scripts/federation_ritual.py seal.",
-  inputSchema: z.object({
-    mode: z.enum(["read", "list", "write"]).describe("Vault operation (read|list|write; seal removed 2026-07-24 DIE-16)"),
-    name: z.string().optional().describe("Record name (read/write)"),
-    category: z.string().optional().describe("Category filter (list) / Record category (write)"),
-    limit: z.number().optional().describe("Max records (list, default 100)"),
-    value: z.string().optional().describe("Record value (write)"),
-    metadata: z.record(z.string(), z.unknown()).optional().describe("Optional metadata (write)"),
-  }),
-}, async ({ mode, name, category, limit, value, metadata }) => {
+  description: "VAULT999 primitive (A-FORGE cache layer). Modes: read, list, write, receipt. For seal: use arifOS arif_seal (port 8088) or /root/scripts/federation_ritual.py seal.",
+  inputSchema: ForgeVaultInputSchema,
+}, async (input) => {
+  const { mode, name, category, limit } = input;
   const startedAt = Date.now();
-  await telemetryInvoke(`forge_vault:${mode}`);
+  // ── DEPRECATION: mode=seal → auto-route to receipt ──
+  let normalizedMode = mode;
+  let deprecationWarning: string | undefined;
+  if (mode === "seal") {
+    normalizedMode = "receipt";
+    deprecationWarning = "forge_vault mode=seal is DEPRECATED (2026-07-29). Auto-routing to mode=receipt. For full VAULT999 sealing, use arifOS arif_seal (port 8088).";
+    console.warn(deprecationWarning);
+  }
+  await telemetryInvoke(`forge_vault:${normalizedMode}${mode !== normalizedMode ? `:deprecated:${mode}` : ""}`);
   return runStage("999_VAULT" as MetabolicStage, async () => {
     try {
       const sbClient = new SupabaseVaultClient();
       let result: any;
-      if (mode === "read") {
+      if (normalizedMode === "read") {
         if (!name) return { content: [{ type: "text" as const, text: "name is required for mode=read" }], isError: true };
         const record = await sbClient.read(name);
         result = { found: !!record, record };
-      } else if (mode === "list") {
+      } else if (normalizedMode === "list") {
         const records = await sbClient.list(category, limit ?? 100);
         result = { count: records.length, records };
-      } else if (mode === "write") {
-        if (!name || !category || !value) return { content: [{ type: "text" as const, text: "name, category, value required for mode=write" }], isError: true };
-        const record = await sbClient.write({ name, category, value, metadata });
-        result = { status: "written", record };
+      } else if (normalizedMode === "write" || normalizedMode === "receipt") {
+        const value = vaultRecordValue(input);
+        if (!name || !category || !value) return { content: [{ type: "text" as const, text: `name, category, content (or value) required for mode=${normalizedMode}` }], isError: true };
+        const record = await sbClient.write({
+          name,
+          category,
+          value,
+          metadata: vaultRecordMetadata(input, normalizedMode),
+        });
+        result = { status: "written", mode: normalizedMode, record, ...(deprecationWarning ? { deprecation_warning: deprecationWarning } : {}) };
       }
-      await telemetrySuccess(`forge_vault:${mode}`, startedAt);
+      await telemetrySuccess(`forge_vault:${normalizedMode}`, startedAt);
       return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
     } catch (err) {
-      await telemetryFailure(`forge_vault:${mode}`, startedAt, err);
+      await telemetryFailure(`forge_vault:${normalizedMode}`, startedAt, err);
       return { content: [{ type: "text" as const, text: JSON.stringify({ error: String(err) }, null, 2) }], isError: true };
     }
   });
 });
 
-// NOTE: forge_vault mode=seal REMOVED 2026-07-24 (DIE-16) — route through arifOS arif_seal.
+// NOTE: forge_vault mode=seal DEPRECATED 2026-07-29 — auto-routes to mode=receipt.
 // NOTE: forge_remember REMOVED — duplicate of arif_vault_seal.
 
 // ── Domain Tools (Tier 03) ───────────────────────────────────────────────────

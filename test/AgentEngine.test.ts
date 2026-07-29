@@ -16,6 +16,7 @@ import { redactForExternalMode } from "../src/domain/engine/redact.js";
 import { ForgeScoreboard } from "../src/domain/scoreboard/ForgeScoreboard.js";
 import { RunReporter } from "../src/domain/engine/RunReporter.js";
 import { NoOpVaultClient } from "../src/infrastructure/vault/index.js";
+import { registerSession } from "../src/domain/session/sessionGate.js";
 
 class ScriptedProvider implements LlmProvider {
   readonly name = "scripted";
@@ -52,6 +53,8 @@ test("agent engine stores task summaries in long-term memory", async () => {
   const root = resolve(tmpdir(), `agent-workbench-${Date.now()}`);
   await mkdir(root, { recursive: true });
   const memoryPath = resolve(root, "memory.json");
+  const sessionId = "test-session-task-summary";
+  registerSession(sessionId, "test-agent");
 
   const registry = new ToolRegistry();
   registry.register(new WriteFileTool());
@@ -66,6 +69,7 @@ test("agent engine stores task summaries in long-term memory", async () => {
   const result = await engine.run({
     task: "Write a brief fix summary without calling any tool.",
     workingDirectory: root,
+    sessionId,
   });
 
   assert.equal(typeof result.finalText, "string");
@@ -130,6 +134,7 @@ test("agent engine supports multi-turn tool execution", async () => {
 
   // Pre-acquire Amanah lock so WriteFileTool can proceed (Seri Kembangan Phase 1)
   const testSessionId = "test-session-turns";
+  registerSession(testSessionId, "test-agent");
   const lockResult = await AmanahLockManager.getInstance().acquireLock(
     targetFile, "test-agent", "Multi-turn test", testSessionId, 5000
   );
@@ -250,19 +255,21 @@ test("long-term memory retrieves relevant past tasks by keyword", async () => {
   const root = resolve(tmpdir(), `agent-workbench-memory-${Date.now()}`);
   await mkdir(root, { recursive: true });
   const memory = new LongTermMemory(resolve(root, "memory.json"));
+  const sessionId = "test-session-memory-search";
+  registerSession(sessionId, "test-agent");
 
   await memory.store({
     id: "1",
     summary: "Fixed the TypeScript build issue in the agent engine.",
     keywords: ["typescript", "build", "engine"],
     createdAt: new Date().toISOString(),
-  });
+  }, { actorId: "test-agent", sessionId });
   await memory.store({
     id: "2",
     summary: "Documented deployment notes for the VPS.",
     keywords: ["deployment", "vps", "docs"],
     createdAt: new Date().toISOString(),
-  });
+  }, { actorId: "test-agent", sessionId });
 
   const results = await memory.searchRelevant("Investigate the TypeScript engine failure");
   assert.equal(results[0]?.id, "1");

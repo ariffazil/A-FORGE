@@ -7,15 +7,27 @@
  *
  * DITEMPA BUKAN DIBERI — Forged 2026-07-29
  */
-import test from "node:test";
+import test, { after } from "node:test";
 import assert from "node:assert/strict";
+import { promises as fs } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import {
+  createScarLedger,
+} from "../src/domain/forge/scar.js";
+import type { GovernedDomain } from "../src/contracts/types.js";
+
+const testRoot = await fs.mkdtemp(join(tmpdir(), "aforge-scar-ledger-"));
+const {
   sealFailure,
   listFailures,
   consultFailurePressure,
   revokeFailure,
-} from "../src/domain/forge/scar.js";
-import type { GovernedDomain } from "../src/contracts/types.js";
+} = createScarLedger(join(testRoot, "index.json"));
+
+after(async () => {
+  await fs.rm(testRoot, { recursive: true, force: true });
+});
 
 // ─── SCAR CREATION ─────────────────────────────────────
 

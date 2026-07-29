@@ -312,7 +312,7 @@ function isMutateOperation(toolName: string, args: any): boolean {
   if (toolName === "forge_postgres" && args?.mutate === true) {
     return true;
   }
-  if (toolName === "forge_vault" && (mode === "write" || mode === "seal" || mode === "delete")) {
+  if (toolName === "forge_vault" && (mode === "write" || mode === "receipt" || mode === "seal" || mode === "delete")) {
     return true;
   }
   if (toolName === "forge_docker") {

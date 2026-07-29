@@ -102,6 +102,9 @@ export type LeaseRecord = {
   expires_at: number;
   forbidden: string[];
   revoked: boolean;
+  verdict_geometry?: VerdictGeometry;
+  session_geometry?: VerdictGeometry;
+  restraint_flags?: string[];
 };
 
 const activeLeases = new Map<string, LeaseRecord>();
@@ -345,6 +348,9 @@ function arifosLeaseToLocal(lease: any): LeaseRecord {
     expires_at: expiresAt,
     forbidden: Array.isArray(lease.forbidden) ? lease.forbidden : [],
     revoked: lease.revoked === true,
+    verdict_geometry: lease.verdict_geometry,
+    session_geometry: lease.session_geometry,
+    restraint_flags: Array.isArray(lease.restraint_flags) ? lease.restraint_flags : [],
   };
 }
 
