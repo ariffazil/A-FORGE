@@ -1,0 +1,37 @@
+# Gitleaks Ignore — arifOS Federation A-FORGE
+# P2.6 — Fingerprint-based false positive suppression (2026-07-29)
+#
+# Format: <Fingerprint>:<RuleID>:<Commit>:<File>:<Line>
+#
+# Known false positives:
+
+# Identity Ed25519 private keys — intentionally stored, mode 600
+# These are agent identity keys used for Ed25519 signing, not leaked secrets.
+# Each is owned by ariffazil:ariffazil with mode 600.
+# File: IDENTITY/keys/arif/arif_ed25519_private.pem
+# File: IDENTITY/keys/codex/codex_ed25519_private.pem
+# File: IDENTITY/keys/grok-build/grok-build_ed25519_private.pem
+# File: IDENTITY/keys/hermes/hermes_ed25519_private.pem
+# File: IDENTITY/keys/kimi-code/kimi-code_ed25519_private.pem
+# File: IDENTITY/keys/openclaw/openclaw_ed25519_private.pem
+# File: IDENTITY/keys/opencode/opencode_ed25519_private.pem
+
+# Test stubs in compiled test files (dist/test/*.js, deploy/rollback/*)
+# These are deterministic test values, never real credentials.
+# stg_evolutiontest1234 — AutonomousForgeGate test staging token
+# stg_dangeroustest123 — AutonomousForgeGate test staging token
+# sk-abcdef1234567890 — AgentEngine test API key
+# test-organ-secret-12345 — AAESignatureRequired test secret
+# arifos-f13-rootkey-ed25519-stub — PeerContractService test stub
+# a-forge-ed25519-stub — PeerContractService test stub
+
+# Agent identity public data (data/agent_identities.json)
+# Contains base64-encoded Ed25519 PUBLIC keys and identity hashes.
+# These are PUBLIC by design — used for identity verification, not secrets.
+
+# SearXNG settings (deploy/searxng/settings.yml)
+# Contains a local-only SearXNG instance key used for self-hosted search.
+# Bound to 127.0.0.1, not externally exposed.
+
+# All deploy configs with env var references use ${VAR:?} placeholders
+# after P0-2 credential removal fix.

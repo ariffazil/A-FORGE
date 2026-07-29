@@ -1,0 +1,101 @@
+# Gitleaks Configuration — arifOS Federation A-FORGE
+# P2.6 — Secret scanning defence-in-depth (2026-07-29)
+#
+# Rules: allow known identity keys (mode 600, intentional), test stubs,
+#        and deployment config examples. Block everything else.
+
+title = "arifOS Federation A-FORGE — Gitleaks Config"
+
+# ── Allow rules ──────────────────────────────────────────────────────────
+[allowlist]
+  description = "Known false positives — intentional identity keys, test stubs, examples"
+
+  # Identity Ed25519 private keys (mode 600, intentionally stored for agent identity)
+  paths = [
+    '''IDENTITY/keys/.*_ed25519_private\.pem''',
+    '''deploy/rollback/.*''',
+    '''dist/.*''',
+    '''node_modules/.*''',
+    '''apps/.*/node_modules/.*''',
+    '''forge_work/.*''',
+    '''deploy/credential-rotation-runbook\.sh''',
+    '''scripts/pre-commit-secrets\.sh''',
+  ]
+
+  # Test stubs — never real credentials
+  regexes = [
+    '''stg_evolutiontest\d+''',
+    '''stg_dangeroustest\d+''',
+    '''sk-abcdef\d+''',
+    '''test-organ-secret-\d+''',
+    '''arifos-f13-rootkey-ed25519-stub''',
+    '''a-forge-ed25519-stub''',
+    '''arifos-session-secret-dev-only''',
+  ]
+
+  # Agent identity public keys (base64, not secrets)
+  regexTarget = "line"
+
+# ── Detection rules ──────────────────────────────────────────────────────
+[[rules]]
+  id = "private-key"
+  description = "Private key detected"
+  regex = '''-----BEGIN (RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----'''
+  tags = ["key", "pem"]
+  [rules.allowlist]
+    paths = [
+      '''IDENTITY/keys/.*_ed25519_private\.pem''',
+      '''deploy/rollback/.*''',
+      '''dist/.*''',
+      '''node_modules/.*''',
+    ]
+
+[[rules]]
+  id = "generic-api-key"
+  description = "Generic API key"
+  regex = '''(?i)(secret|token|key|password|auth|api)([0-9a-z\-_\t .]{0,20})([\s='"]+)[0-9a-f]{32,}'''
+  entropy = 3.5
+  [rules.allowlist]
+    paths = [
+      '''dist/test/.*''',
+      '''dist/src/.*''',
+      '''deploy/rollback/.*''',
+      '''test/.*\.test\.ts''',
+      '''data/agent_identities\.json''',
+      '''src/application/jobs/BackupManager\.ts''',
+      '''.env\.example''',
+      '''deploy/.*/\.env\.example''',
+      '''deploy/agent-plane/docker-compose\.yml''',
+    ]
+    regexes = [
+      '''stg_[a-z0-9_]+''',
+      '''sk-[a-z0-9]+''',
+      '''test-[a-z0-9-]+''',
+    ]
+
+[[rules]]
+  id = "postgres-dsn"
+  description = "PostgreSQL connection string with credentials"
+  regex = '''postgres(ql)?://[^@\s]+:[^@\s]+@[^/\s]+'''
+  tags = ["database", "postgres"]
+  [rules.allowlist]
+    paths = [
+      '''deploy/af-forge/docker-compose\.yml''',
+      '''deploy/agent-plane/docker-compose\.yml''',
+      '''.env\.example''',
+      '''deploy/agent-plane/\.env\.example''',
+      '''src/application/jobs/BackupManager\.ts''',
+    ]
+    description = "Uses ${VAR:?} placeholders after P0-2 fix"
+
+[[rules]]
+  id = "supabase-key"
+  description = "Supabase service_role or anon key"
+  regex = '''(eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,})'''
+  tags = ["supabase", "jwt"]
+  [rules.allowlist]
+    paths = [
+      '''deploy/.*\.yml''',
+      '''deploy/.*\.env''',
+    ]
+    description = "Deploy configs use env var references"
