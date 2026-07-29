@@ -277,7 +277,7 @@ function verifyLocalSct(
     const authority = String(claims.auth || claims.authority || "OBSERVE_ONLY");
     const requiredAuthority = opts.requiredAuthority || "OBSERVE_ONLY";
 
-    if (opts.expectedActor && actor && actor !== opts.expectedActor) {
+    if (opts.expectedActor && actor && actor.toLowerCase() !== opts.expectedActor.toLowerCase()) {
       return { ok: false, error: "ACTOR_MISMATCH", message: `SCT actor ${actor} vs caller ${opts.expectedActor}` };
     }
 

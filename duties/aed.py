@@ -122,6 +122,25 @@ def clamp_cost_ns(ns: int) -> int:
     return max(COST_MIN_NS, min(COST_MAX_NS, int(ns)))
 
 
+def notify_telegram(title: str, body: str, tier: str = "T2") -> bool:
+    """Send Telegram notification via forge-notify.sh. [T2]
+
+    Fails silently if token missing or network down — notification is
+    advisory, never blocking. Returns True if sent successfully.
+    """
+    import shlex
+
+    msg = f"[AED:{tier}] {title}\n{body}"
+    try:
+        out, _, rc = sh(
+            f"/root/A-FORGE/duties/forge-notify.sh {shlex.quote(msg)}",
+            timeout=15,
+        )
+        return rc == 0
+    except Exception:
+        return False
+
+
 def read_live_fq(actor_id: Optional[str] = None) -> dict:
     """Read live FQ from arifFlow /health (single source of truth).
 
@@ -359,6 +378,132 @@ def t1_seal_chain_check() -> dict:
     return {"status": "ok", "lines": lines, "last_seq": last_seq}
 
 
+def t1_memory_smoke_test() -> dict:
+    """L1→L6 memory promotion path smoke test. [OBS]
+
+    Probes all 6 memory layers, attempts Redis repair if L1/L2 dead.
+    Returns per-layer status + auto-repair results.
+
+    Layers:
+      L1 Redis (ephemeral)   L2 Redis (session)    L3 Qdrant (fuzzy)
+      L4 Supabase (records)  L5 Graphiti/Ollama   L6 VAULT999 (sealed)
+    """
+    print("[AED:T1] L1→L6 memory smoke test...")
+    result: dict = {"layers": {}, "all_alive": True, "repairs": []}
+
+    # L1 / L2 — Redis (both tiers share redis-server)
+    redis_alive = False
+    try:
+        out, _, rc = sh(
+            "redis-cli -s /run/redis/redis-server.sock ping 2>/dev/null", timeout=5
+        )
+        redis_alive = rc == 0 and "PONG" in out
+    except Exception:
+        pass
+    if not redis_alive:
+        try:
+            out, _, rc = sh("redis-cli ping 2>/dev/null", timeout=5)
+            redis_alive = rc == 0 and "PONG" in out
+        except Exception:
+            pass
+    result["layers"]["L1_Redis"] = redis_alive
+    result["layers"]["L2_Redis"] = redis_alive  # same server
+    if not redis_alive:
+        print("  [AED:T2] Redis dead — attempting auto-restart...")
+        _, _, restart_rc = sh("systemctl restart redis 2>/dev/null", timeout=15)
+        import time as _time
+
+        _time.sleep(2)
+        try:
+            out2, _, rc2 = sh("redis-cli ping 2>/dev/null", timeout=5)
+            recovered = rc2 == 0 and "PONG" in out2
+        except Exception:
+            recovered = False
+        result["repairs"].append(
+            {
+                "layer": "L1/L2-Redis",
+                "restarted": restart_rc == 0,
+                "recovered": recovered,
+            }
+        )
+        if recovered:
+            result["layers"]["L1_Redis"] = True
+            result["layers"]["L2_Redis"] = True
+            print("  [AED:T2] Redis recovered after restart")
+        else:
+            result["all_alive"] = False
+            print("  [AED:HOLD] Redis still dead after restart attempt")
+
+    # L3 — Qdrant vector DB
+    qdrant_alive = False
+    try:
+        out, _, rc = sh(
+            'curl -sf http://127.0.0.1:6333/collections 2>/dev/null | python3 -c \'import json,sys; d=json.load(sys.stdin); print(len(d.get("result",{}).get("collections",[])))\' 2>/dev/null',
+            timeout=5,
+        )
+        qdrant_alive = rc == 0
+    except Exception:
+        pass
+    result["layers"]["L3_Qdrant"] = qdrant_alive
+    if not qdrant_alive:
+        result["all_alive"] = False
+
+    # L4 — Supabase / Postgres
+    pg_alive = False
+    try:
+        out, _, rc = sh(
+            "psql -h 127.0.0.1 -U postgres -d postgres -c 'SELECT 1' -t 2>/dev/null",
+            timeout=5,
+        )
+        pg_alive = rc == 0
+    except Exception:
+        pass
+    if not pg_alive:
+        try:
+            out, _, rc = sh(
+                "curl -sf http://127.0.0.1:54321/rest/v1/ 2>/dev/null | head -1",
+                timeout=5,
+            )
+            pg_alive = rc == 0
+        except Exception:
+            pass
+    result["layers"]["L4_Supabase"] = pg_alive
+    if not pg_alive:
+        result["all_alive"] = False
+
+    # L5 — Graphiti (FalkorDB / Ollama)
+    ollama_alive = False
+    try:
+        out, _, rc = sh(
+            "curl -sf http://127.0.0.1:11434/api/tags 2>/dev/null | python3 -c 'import json,sys; d=json.load(sys.stdin); print(len(d.get(\"models\",[])))' 2>/dev/null",
+            timeout=5,
+        )
+        ollama_alive = rc == 0 and out.strip().isdigit()
+    except Exception:
+        pass
+    result["layers"]["L5_Graphiti"] = ollama_alive
+    if not ollama_alive:
+        result["all_alive"] = False
+
+    # L6 — VAULT999 immutable ledger
+    vault_path = Path("/root/.local/share/arifos/vault999/outcomes.jsonl")
+    vault_alive = vault_path.exists()
+    if vault_alive:
+        try:
+            lines_count = sum(1 for _ in vault_path.open())
+            vault_alive = lines_count > 0
+        except Exception:
+            vault_alive = False
+    result["layers"]["L6_VAULT999"] = vault_alive
+    if not vault_alive:
+        result["all_alive"] = False
+
+    alive_count = sum(1 for v in result["layers"].values() if v)
+    total = len(result["layers"])
+    print(f"  memory_alive={alive_count}/{total} repairs={len(result['repairs'])}")
+    return result
+
+
 # ── T1.5 Proposal Generation ──────────────────────────────────────────────
 
 
@@ -585,6 +730,12 @@ def run_aed_cycle() -> dict:
         chain = t1_seal_chain_check()
         results["steps"]["seal_chain"] = chain
 
+    # L1→L6 memory promotion path smoke test (every 3 cycles)
+    memory = {}
+    if int(cycle_id, 16) % 3 == 0:
+        memory = t1_memory_smoke_test()
+        results["steps"]["memory_smoke"] = memory
+
     if int(cycle_id, 16) % 12 == 0:
         proposals = t15_scan_for_patterns(cf)
         results["steps"]["t15_proposals"] = {
@@ -618,7 +769,8 @@ def run_aed_cycle() -> dict:
     if int(cycle_id, 16) % 6 == 0:
         print("[AED:T1] Memory promotion smoke (L1→L6)...")
         mem_out, _, mem_rc = sh(
-            "/usr/bin/python3 /root/A-FORGE/duties/memory_promotion_smoke.py", timeout=30
+            "/usr/bin/python3 /root/A-FORGE/duties/memory_promotion_smoke.py",
+            timeout=30,
         )
         try:
             mem_data = json.loads(mem_out) if mem_out else {}
@@ -818,12 +970,16 @@ def run_aed_cycle() -> dict:
         if not chain:
             chain = t1_seal_chain_check()
             catchup_work.append("seal_chain")
+        if not memory:
+            memory = t1_memory_smoke_test()
+            catchup_work.append("memory_smoke")
         results["steps"]["verify_catchup"] = {
             "ratio": round(ratio, 1),
             "catchup_work": catchup_work,
             "entropy": entropy,
             "git_sync": git_sync,
             "chain": chain,
+            "memory": memory,
         }
 
     verify_ns += time.time_ns() - t0
