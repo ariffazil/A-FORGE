@@ -5,6 +5,16 @@
 build: security-audit
 	npm run build
 
+# Deploy to /opt and sync commit markers (prevents deployment_drift)
+deploy: build
+	@GIT_SHA=$$(git rev-parse --short HEAD); \
+	echo "$$GIT_SHA" > /root/A-FORGE/.git_commit; \
+	rsync -av --delete dist/ /opt/a-forge/app/dist/; \
+	rsync -av package.json /opt/a-forge/app/; \
+	echo "$$GIT_SHA" > /opt/a-forge/app/.git_commit; \
+	systemctl restart a-forge.service a-forge-mcp.service; \
+	echo "✅ A-FORGE deployed: $$GIT_SHA"
+
 up:
 	docker compose up -d --build --remove-orphans
 

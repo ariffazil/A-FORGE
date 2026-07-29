@@ -1077,9 +1077,42 @@ server.tool(
         // cannot validate sessions — they get SESSION_UNKNOWN on every call.
         if (!kernelVerifierWired) {
           setKernelVerifier(async (sid, aid) => {
+            // P0.6 BRIDGE FIX (2026-07-29): Verify with arifOS kernel.
+            // The old verifier called validateSession() again (circular — 
+            // just re-checked the in-memory Map). Now we call arifOS
+            // to cryptographically verify the session token.
             const sv = validateSession(sid);
             if (sv.valid) return { verified: true, actor_id: sv.actor_id };
-            return { verified: false, reason: sv.reason };
+            
+            // Session not in local registry — ask arifOS kernel
+            const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
+            try {
+              const resp = await fetch(`${ARIFOS_BASE}/mcp`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  jsonrpc: "2.0", id: 1, method: "tools/call",
+                  params: {
+                    name: "arif_init",
+                    arguments: { mode: "validate", session_id: sid, actor_id: aid ?? "opencode" },
+                  },
+                }),
+                signal: AbortSignal.timeout(3000),
+              });
+              if (resp.ok) {
+                const body = await resp.json() as any;
+                const text = body?.result?.content?.[0]?.text;
+                if (text) {
+                  const result = typeof text === "string" ? JSON.parse(text) : text;
+                  if (result?.actor?.actor_verified || result?.status === "resumed" || result?.verdict === "SEAL") {
+                    const actor = result?.actor?.actor_id || aid || "opencode";
+                    return { verified: true, actor_id: actor };
+                  }
+                }
+              }
+            } catch {}
+            
+            return { verified: false, reason: "KERNEL_UNREACHABLE: arifOS kernel did not verify this session" };
           });
           kernelVerifierWired = true;
         }

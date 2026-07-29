@@ -333,6 +333,28 @@ class H(BaseHTTPRequestHandler):
                 "routing_table": engine.routing_table.snapshot(),
                 "authority": "ADVISORY",
             }
+        elif action == "models":
+            # P2: OpenAI-compatible /v1/models — normalized model listing
+            engine = _get_engine()
+            engine._ensure_table()
+            routes = engine.routing_table.snapshot().get("routes", [])
+            models = []
+            seen = set()
+            for route in routes:
+                model_id = route.get("model", "")
+                provider = route.get("provider", "unknown")
+                if model_id and model_id not in seen:
+                    seen.add(model_id)
+                    models.append({
+                        "id": model_id,
+                        "object": "model",
+                        "created": int(time.time()),
+                        "owned_by": provider,
+                    })
+            result = {
+                "object": "list",
+                "data": models,
+            }
         elif action == "metrics":
             self._handle_metrics()
             return
@@ -350,6 +372,7 @@ class H(BaseHTTPRequestHandler):
                     "/classify",
                     "/verify",
                     "/v1/chat/completions",
+                    "/v1/models",
                     "/completions",
                 ],
                 "authority": "ADVISORY",

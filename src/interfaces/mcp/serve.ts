@@ -29,7 +29,7 @@ import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
 import { assertSctMutationGateOrExit } from "../../infrastructure/governance/sctIngress.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
-import { validateSession } from "../../domain/session/sessionGate.js";
+import { validateSession, validateSessionAsync } from "../../domain/session/sessionGate.js";
 
 const AFORGE_ROOT = process.cwd();
 
@@ -848,7 +848,17 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             const actionClass = classifyTool(toolName);
             if (requiresGovernance(actionClass)) {
               const callerSession = (typeof toolArgs?.session_id === "string") ? toolArgs.session_id : undefined;
-              const sessionCheck = callerSession ? validateSession(callerSession) : { valid: false, reason: "SESSION_REQUIRED: No session_id provided for MUTATE-class tool" } as const;
+              const callerSct = (typeof toolArgs?.session_token === "string")
+                ? toolArgs.session_token
+                : (typeof toolArgs?.sct === "string") ? toolArgs.sct : undefined;
+              const callerActor = (typeof toolArgs?.actor_id === "string")
+                ? toolArgs.actor_id
+                : (typeof toolArgs?.actorId === "string") ? toolArgs.actorId : undefined;
+              // P0.6 BRIDGE FIX (2026-07-29): Use async validation that verifies
+              // SCT tokens with arifOS kernel when session is not in local Map.
+              const sessionCheck = callerSession
+                ? await validateSessionAsync(callerSession, callerActor, callerSct)
+                : { valid: false, reason: "SESSION_REQUIRED: No session_id provided for MUTATE-class tool" } as const;
               if (!sessionCheck.valid) {
                 process.stderr.write(`[A-FORGE-MCP] SESSION_GATE blocked stateless ${toolName} (${actionClass}): ${sessionCheck.reason}\n`);
                 res.writeHead(200, {

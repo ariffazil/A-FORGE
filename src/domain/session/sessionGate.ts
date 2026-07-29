@@ -145,16 +145,29 @@ export function validateSession(
 export async function validateSessionAsync(
   session_id: string | undefined,
   actor_id?: string,
+  session_token?: string,
 ): Promise<{ valid: true; actor_id: string } | { valid: false; reason: string }> {
   // Try synchronous first
   const syncResult = validateSession(session_id);
   if (syncResult.valid) return syncResult;
 
+  // ── P0.6 BRIDGE FIX (2026-07-29): Verify SCT token with arifOS kernel ──
+  // Stateless HTTP callers carry a session_token (sct_v1.eyJ...)
+  // but the session isn't in the in-memory Map because it was minted
+  // by arifOS on a different transport. Verify the SCT cryptographically.
+  if (session_token && session_id) {
+    const sctVerified = await verifySessionTokenWithKernel(session_token, session_id, actor_id);
+    if (sctVerified.verified) {
+      registerSession(session_id, sctVerified.actor_id);
+      return { valid: true, actor_id: sctVerified.actor_id };
+    }
+    return { valid: false, reason: `SCT_VERIFY_FAILED: ${sctVerified.reason}` };
+  }
+
   // If session unknown and kernel verifier is configured, try async verification
   if (kernelVerifyFn && session_id) {
     const verified = await kernelVerifyFn(session_id, actor_id);
     if (verified.verified) {
-      // Register the verified session
       registerSession(session_id, verified.actor_id);
       return { valid: true, actor_id: verified.actor_id };
     }
@@ -162,6 +175,64 @@ export async function validateSessionAsync(
   }
 
   return syncResult;
+}
+
+/**
+ * P0.6 BRIDGE FIX (2026-07-29): Verify an SCT session token with arifOS kernel.
+ * 
+ * The bridge gap: OpenCode binds via arif_init → gets session_token (sct_v1.eyJ...).
+ * A-FORGE receives this token in tool calls but has no local session registry entry.
+ * This function calls arifOS kernel to verify the token and extract actor identity.
+ */
+async function verifySessionTokenWithKernel(
+  token: string,
+  session_id: string,
+  actor_id?: string,
+): Promise<{ verified: true; actor_id: string } | { verified: false; reason: string }> {
+  const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
+  try {
+    const resp = await fetch(`${ARIFOS_BASE}/mcp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "arif_init",
+          arguments: {
+            mode: "validate",
+            session_id,
+            session_token: token,
+            actor_id: actor_id ?? "opencode",
+          },
+        },
+      }),
+      signal: AbortSignal.timeout(3000),
+    });
+
+    if (!resp.ok) {
+      return { verified: false, reason: `arifOS kernel returned HTTP ${resp.status}` };
+    }
+
+    const body = await resp.json() as any;
+    const resultText = body?.result?.content?.[0]?.text;
+    if (!resultText) {
+      return { verified: false, reason: "arifOS kernel returned empty response" };
+    }
+
+    const result = typeof resultText === "string" ? JSON.parse(resultText) : resultText;
+    const verified = result?.actor?.actor_verified === true || result?.status === "resumed" || result?.verdict === "SEAL";
+    const resolvedActor = result?.actor?.actor_id || actor_id || "opencode";
+
+    if (verified) {
+      return { verified: true, actor_id: resolvedActor };
+    }
+
+    return { verified: false, reason: `arifOS rejected: ${result?.verdict || result?.status || "unknown"}` };
+  } catch (err: any) {
+    return { verified: false, reason: `arifOS unreachable: ${err.message || err}` };
+  }
 }
 
 export function sessionExists(session_id: string): boolean {
