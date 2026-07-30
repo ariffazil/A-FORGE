@@ -127,6 +127,12 @@ const STATELESS_TOOLS = new Set([
   "forge_fetch_url",      // proxy → forge_fetch(mode=readable)
   "forge_fetch_json",     // proxy → forge_fetch(mode=json)
   "forge_fetch_metadata", // proxy → forge_fetch(mode=metadata)
+
+  // ── Web zen (2026-07-30) — OBSERVE site control surface ───────────
+  // Thin wrapper around web_zen CLI. doctor/sense/verify/orphan(preview)/
+  // ephemeral(sandbox)/caddy-reload-hint. No production rsync --delete apply.
+  "forge_web_zen",
+  "forge_probe_site",
   "forge_fetch_links",    // proxy → forge_fetch(mode=links)
 
   // ── Viz OBSERVE (2026-07-09) — pure render from payload, no host mutation ──

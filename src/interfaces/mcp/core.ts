@@ -87,6 +87,9 @@ import { registerVerifyTimelineTools } from "./verifyTimelineTools.js";
 import { registerParallelTools } from "./parallelTools.js";
 import { registerCoolingVerbs } from "./coolingVerbs.js";
 import { registerRuntimeVerifyTool } from "./runtimeVerify.js";
+import { registerMultimodalTools, registerMultimodalHealthCheck } from "./multimodalTools.js";
+import { registerEphemeralTools } from "./ephemeralTools.js";
+import { registerWebZenTools } from "./webZenTools.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { elicitUser, tradeConfirmationSchema, isGenuineAuthorization } from "./elicitation.js";
 import {
@@ -2771,6 +2774,24 @@ registerCoolingVerbs(server);
 // Compares git commit vs installed wheel vs import path.
 // Returns MATCH | DRIFT | UNKNOWN. Fail-closed on DRIFT.
 registerRuntimeVerifyTool(server);
+
+// ── MuleRouter Multimodal Surface — forge_multimodal_* (Δ Perception) ──────────
+// Wolf Cabinet Layer: Δ Perception — governed multimodal generation.
+// 4 tools: vision (OBSERVE), image/tts/music (EXECUTE_REVERSIBLE).
+// F5 PEACE² content policy + F11 AUDIT receipts on every generation.
+// Forged 2026-07-30 by 333-AGI under F13 directive.
+registerMultimodalTools(server);
+registerMultimodalHealthCheck(server);
+
+// ── Ephemeral Tool Genesis — Capability Metabolism (Ψ Survival) ─────────────
+// The phase transition: from accumulating permanent tools to metabolizing capability.
+// forge_ephemeral with 9 modes: inspect_gap, generate, sandbox_test, invoke,
+// verify, retire, list_templates, list_active, propose_promotion.
+// 5 built-in templates: mulerouter_image_gen, mulerouter_tts, mulerouter_music,
+// mulerouter_vision, generic_api_wrapper.
+// Forged 2026-07-30 by 333-AGI under F13 directive.
+registerEphemeralTools(server);
+registerWebZenTools(server);
 
 // Run startup isomorphism check — verifies GEOX ↔ arifOS witness functions
 startupIsomorphismCheck();

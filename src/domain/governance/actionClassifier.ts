@@ -57,7 +57,7 @@ const IRREVERSIBLE_TOOLS = new Set([
   "arif_seal",
   "forge_vault_seal",
   "forge_kernel_seal",
-  "forge_approve",
+  // "forge_approve", — DEPRECATED 2026-07-30: tool self-refuses, never executes. Route to arif_judge.
   "arif_forge_execute",
   "docker_container_remove",
   "docker_volume_remove",
@@ -149,6 +149,11 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_abort",               // safe stop + rollback — EXECUTE_REVERSIBLE
   "forge_parallel",            // spawn N concurrent tasks — EXECUTE_REVERSIBLE
   "forge_parallel_cancel",     // cancel parallel agents — EXECUTE_REVERSIBLE
+  // ── MuleRouter Multimodal (2026-07-30) — EXECUTE_REVERSIBLE ──
+  "forge_multimodal_image",    // image generation — EXECUTE_REVERSIBLE (can regenerate)
+  "forge_multimodal_tts",      // TTS generation — EXECUTE_REVERSIBLE (can regenerate)
+  "forge_multimodal_music",    // music generation — EXECUTE_REVERSIBLE (can regenerate)
+  "forge_ephemeral",           // ephemeral tool genesis — EXECUTE_REVERSIBLE (generate/invoke/retire are reversible)
 ]);
 
 // Tools that should always be simulated first
@@ -278,6 +283,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_netdata_alarms",      // netdata alarms — OBSERVE
   "forge_netdata_metrics",     // netdata metrics — OBSERVE
   "forge_probe_site",          // site probe — OBSERVE
+  "forge_web_zen",             // web zen CLI wrapper — OBSERVE (doctor/sense/verify; orphan dry-run; ephemeral sandbox)
   "forge_receipt_draft",       // receipt drafting — OBSERVE (generates draft, no mutation)
   "forge_registry",            // registry read — OBSERVE
   "forge_scar",                // scar ledger — mode-aware (list/consult=OBSERVE)
@@ -299,6 +305,10 @@ const OBSERVE_TOOLS = new Set([
   "forge_scar_scan",           // artifact check against SCAR DB — OBSERVE
   "forge_predict",             // pre-action simulation — SIMULATE (moved to simulate set below)
   "forge_document_ingest",     // already above, kept for clarity
+  // ── MuleRouter Multimodal (2026-07-30) ──
+  "forge_multimodal_vision",   // vision analysis — OBSERVE (read-only, no mutation)
+  "forge_multimodal_health",   // multimodal health check — OBSERVE
+  "forge_ephemeral",           // ephemeral tool genesis — mode-aware (inspect_gap/list=list/list_active=OBSERVE)
 ]);
 
 /**

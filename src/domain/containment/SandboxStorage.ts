@@ -18,7 +18,7 @@
  */
 
 import { execSync, spawn } from 'node:child_process';
-import { mkdirSync, rmSync, existsSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdirSync, rmSync, existsSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 
@@ -287,7 +287,7 @@ export class SandboxStorage {
     if (!existsSync(SANDBOX_STORAGE_ROOT)) return [];
 
     const results: SnapshotMetadata[] = [];
-    const { readdirSync: fsReaddir } = require('node:fs');
+    const fsReaddir = readdirSync;
 
     for (const entry of fsReaddir(SANDBOX_STORAGE_ROOT, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
@@ -344,7 +344,7 @@ export class SandboxStorage {
 
     const now = Date.now();
     const maxAgeMs = MAX_PAUSE_AGE_HOURS * 3600 * 1000;
-    const { readdirSync: fsReaddir } = require('node:fs');
+    const fsReaddir = readdirSync;
 
     for (const entry of fsReaddir(SANDBOX_STORAGE_ROOT, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
@@ -402,7 +402,7 @@ export class SandboxStorage {
 
     const now = Date.now();
     let oldestMs = Infinity;
-    const { readdirSync: fsReaddir } = require('node:fs');
+    const fsReaddir = readdirSync;
 
     for (const entry of fsReaddir(SANDBOX_STORAGE_ROOT, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;

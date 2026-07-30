@@ -1419,8 +1419,11 @@ export function registerFetchTools(server: McpServer): void {
   // ── External aliases — MCP-friendly fetch surface ────────────────────────────
   // These call executeFetch directly (no server._callTool — doesn't exist on McpServer).
 
+  // ── DEPRECATED ALIASES — use forge_fetch(mode=...) instead ──────────────────
+  // Retained for backward compatibility. Will be removed 2026-08-30.
+
   server.registerTool("forge_fetch_url", {
-    description: "Fetch a URL and return content as markdown.",
+    description: "[DEPRECATED — use forge_fetch(mode='readable')] ACTUATOR · research · OBSERVE. Fetch a URL and return content as markdown.",
     inputSchema: z.object({
       url: z.string().url(),
       max_chars: z.number().default(50000),
@@ -1430,7 +1433,7 @@ export function registerFetchTools(server: McpServer): void {
   });
 
   server.registerTool("forge_fetch_json", {
-    description: "Fetch a URL and parse as JSON.",
+    description: "[DEPRECATED — use forge_fetch(mode='json')] ACTUATOR · research · OBSERVE. Fetch a URL and parse as JSON.",
     inputSchema: z.object({
       url: z.string().url(),
       max_chars: z.number().default(50000),
@@ -1440,7 +1443,7 @@ export function registerFetchTools(server: McpServer): void {
   });
 
   server.registerTool("forge_fetch_metadata", {
-    description: "Fetch URL metadata (title, author, description, dates, links).",
+    description: "[DEPRECATED — use forge_fetch(mode='metadata')] ACTUATOR · research · OBSERVE. Fetch URL metadata (title, author, description, dates, links).",
     inputSchema: z.object({
       url: z.string().url(),
     }),
@@ -1449,7 +1452,7 @@ export function registerFetchTools(server: McpServer): void {
   });
 
   server.registerTool("forge_fetch_links", {
-    description: "Extract all links from a URL.",
+    description: "[DEPRECATED — use forge_fetch(mode='links')] ACTUATOR · research · OBSERVE. Extract all links from a URL.",
     inputSchema: z.object({
       url: z.string().url(),
     }),
