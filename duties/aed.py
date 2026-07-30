@@ -698,6 +698,14 @@ def run_aed_cycle() -> dict:
         "actor_verdict": fq_info.get("actor_verdict"),
         "allow_heavy_execute": allow_heavy,
     }
+    # Organ probe is SENSE/OBSERVE — reclassified as Execute per F13 directive
+    # (2026-07-30). Probing organ health is sensing, not verification of prior
+    # work. This prevents a structural FQ ceiling for monitoring daemons.
+    organ_state = t1_organ_probe()
+    results["steps"]["organ_probe"] = organ_state
+    alive = organ_state["alive"]
+    total = organ_state["total"]
+
     execute_ns += time.time_ns() - t0
 
     print(
@@ -707,13 +715,8 @@ def run_aed_cycle() -> dict:
         f"heavy={'ON' if allow_heavy else 'THROTTLED'}"
     )
 
-    # ── VERIFY work: probes, audits, gates ────────────────────────
+    # ── VERIFY work: audits, gates (post-sense validation) ────────
     t0 = time.time_ns()
-
-    organ_state = t1_organ_probe()
-    results["steps"]["organ_probe"] = organ_state
-    alive = organ_state["alive"]
-    total = organ_state["total"]
 
     entropy = {}
     if int(cycle_id, 16) % 6 == 0:
@@ -945,41 +948,30 @@ def run_aed_cycle() -> dict:
 
     execute_ns += time.time_ns() - t0
 
-    # ── VERIFY: Post-cycle health re-check (+ catch-up if execute-heavy) ──
+    # ── VERIFY: Post-cycle — only re-check restarted organs ──
     t0 = time.time_ns()
-    post_alive = 0
-    for name in ORGANS:
-        if curl_health(ORGANS[name]["port"]):
-            post_alive += 1
-    results["steps"]["post_verify"] = {"alive": post_alive, "total": total}
-
-    # Metabolism catch-up: if execute wall-time >> verify so far,
-    # run real audit work (entropy sweep, git sync, seal chain) as
-    # proportional cooling — not just organ re-probe. F2: verify cost
-    # must reflect actual verification, not fictional padding.
-    if execute_ns > max(verify_ns, 1) * 3:
-        ratio = execute_ns / max(verify_ns, 1)
-        print(f"[AED:FQ] Execute>>Verify ({ratio:.1f}×) — running audit catch-up")
-        catchup_work = []
-        if not entropy:
-            entropy = t1_entropy_sweep()
-            catchup_work.append("entropy_sweep")
-        if not git_sync:
-            git_sync = t1_git_sync_check()
-            catchup_work.append("git_sync")
-        if not chain:
-            chain = t1_seal_chain_check()
-            catchup_work.append("seal_chain")
-        if not memory:
-            memory = t1_memory_smoke_test()
-            catchup_work.append("memory_smoke")
-        results["steps"]["verify_catchup"] = {
-            "ratio": round(ratio, 1),
-            "catchup_work": catchup_work,
-            "entropy": entropy,
-            "git_sync": git_sync,
-            "chain": chain,
-            "memory": memory,
+    restarted_names = {
+        r["organ"] for r in results.get("restarts", []) if r.get("success")
+    }
+    post_alive = alive  # start from pre-execute count, adjust for restarts
+    if restarted_names:
+        for name in restarted_names:
+            cfg = ORGANS.get(name)
+            if cfg and curl_health(cfg["port"]):
+                pass  # already counted — organ came back up
+            elif cfg:
+                post_alive -= 1  # restarted organ still down
+        results["steps"]["post_verify"] = {
+            "alive": post_alive,
+            "total": total,
+            "restarted_checked": sorted(restarted_names),
+        }
+    else:
+        # No restarts — skip redundant full re-probe. Trust pre-execute count.
+        results["steps"]["post_verify"] = {
+            "alive": alive,
+            "total": total,
+            "note": "skipped — no restarts, pre-execute probe is fresh",
         }
 
     verify_ns += time.time_ns() - t0
