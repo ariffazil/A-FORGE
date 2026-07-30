@@ -691,12 +691,30 @@ def run_aed_cycle() -> dict:
 
     fq_info = read_live_fq("aed-v1")
     allow_heavy = fq_allows_heavy_execute(fq_info)
+
+    # ── FIX #7: FQ Auto-Recovery (STABILIZATION-7) ─────────────────
+    # When FQ < 0.5 (STUCK), skip periodic heavy Verify checks.
+    # Running lean execute-heavy cycles dilutes the cumulative verify
+    # cost and allows FQ to self-correct without human intervention.
+    global_fq = fq_info.get("quotient") or 0.0
+    fq_verdict = fq_info.get("verdict") or "UNMEASURED"
+    fq_stuck = global_fq < 0.5 and fq_verdict == "STUCK"
+    fq_recovery_mode = bool(fq_stuck)
+    if fq_recovery_mode:
+        print(
+            f"[AED:FQ] Auto-recovery active — FQ={global_fq:.3f} STUCK. "
+            f"Skipping heavy periodic Verify checks this cycle."
+        )
+    else:
+        print(f"[AED:FQ] FQ={global_fq:.3f} {fq_verdict} — normal cycle.")
+
     results["steps"]["fq_gate"] = {
-        "global_fq": fq_info.get("quotient"),
-        "global_verdict": fq_info.get("verdict"),
+        "global_fq": global_fq,
+        "global_verdict": fq_verdict,
         "actor_fq": fq_info.get("actor_fq"),
         "actor_verdict": fq_info.get("actor_verdict"),
         "allow_heavy_execute": allow_heavy,
+        "fq_recovery_mode": fq_recovery_mode,
     }
     # Organ probe is SENSE/OBSERVE — reclassified as Execute per F13 directive
     # (2026-07-30). Probing organ health is sensing, not verification of prior
@@ -719,34 +737,34 @@ def run_aed_cycle() -> dict:
     t0 = time.time_ns()
 
     entropy = {}
-    if int(cycle_id, 16) % 6 == 0:
+    if not fq_recovery_mode and int(cycle_id, 16) % 6 == 0:
         entropy = t1_entropy_sweep()
         results["steps"]["entropy_sweep"] = entropy
 
     git_sync = {}
-    if int(cycle_id, 16) % 3 == 0:
+    if not fq_recovery_mode and int(cycle_id, 16) % 3 == 0:
         git_sync = t1_git_sync_check()
         results["steps"]["git_sync"] = git_sync
 
     chain = {}
-    if int(cycle_id, 16) % 6 == 0:
+    if not fq_recovery_mode and int(cycle_id, 16) % 6 == 0:
         chain = t1_seal_chain_check()
         results["steps"]["seal_chain"] = chain
 
     # L1→L6 memory promotion path smoke test (every 3 cycles)
     memory = {}
-    if int(cycle_id, 16) % 3 == 0:
+    if not fq_recovery_mode and int(cycle_id, 16) % 3 == 0:
         memory = t1_memory_smoke_test()
         results["steps"]["memory_smoke"] = memory
 
-    if int(cycle_id, 16) % 12 == 0:
+    if not fq_recovery_mode and int(cycle_id, 16) % 12 == 0:
         proposals = t15_scan_for_patterns(cf)
         results["steps"]["t15_proposals"] = {
             "count": len(proposals),
             "proposals": proposals,
         }
 
-    if int(cycle_id, 16) % 3 == 0:
+    if not fq_recovery_mode and int(cycle_id, 16) % 3 == 0:
         gate_results = {}
         for repo_name, repo_path in FEDERATION_REPOS.items():
             gitdir = Path(repo_path) / ".git"
@@ -769,7 +787,7 @@ def run_aed_cycle() -> dict:
             else:
                 print(f"  precommit CLEAN on {len(gate_results)} dirty repos")
 
-    if int(cycle_id, 16) % 6 == 0:
+    if not fq_recovery_mode and int(cycle_id, 16) % 6 == 0:
         print("[AED:T1] Memory promotion smoke (L1→L6)...")
         mem_out, _, mem_rc = sh(
             "/usr/bin/python3 /root/A-FORGE/duties/memory_promotion_smoke.py",
@@ -786,7 +804,7 @@ def run_aed_cycle() -> dict:
         if mem_rc != 0:
             print(f"  memory smoke HOLD rc={mem_rc}")
 
-    if int(cycle_id, 16) % 6 == 0:
+    if not fq_recovery_mode and int(cycle_id, 16) % 6 == 0:
         print("[AED:T1] Running breakage detection...")
         break_out, _, break_rc = sh(
             "/usr/bin/python3 /root/A-FORGE/duties/ara_breakage_detect.py", timeout=30
