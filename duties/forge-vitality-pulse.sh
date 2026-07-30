@@ -99,9 +99,15 @@ if [ "$DUPES" -gt 0 ]; then
 "
 fi
 
-# Check for broken cross-references (files referenced but not existing)
+# Check for broken cross-references (canonical SOT surfaces only).
+# TOOLREGISTRY.json was quarantined 2026-07 — topology SOT is ORGAN.md + organs.yaml.
 BROKEN_REFS=0
-for ref in "/root/AAA/docs/deprecation-registry.json" "/root/AAA/docs/INVARIANTS.md" "/root/AAA/docs/TOOLREGISTRY.json"; do
+for ref in \
+  "/root/AAA/docs/deprecation-registry.json" \
+  "/root/AAA/docs/INVARIANTS.md" \
+  "/root/AAA/docs/ORGAN.md" \
+  "/root/AAA/federation/organs.yaml"
+do
   if [ ! -f "$ref" ]; then
     BROKEN_REFS=$((BROKEN_REFS + 1))
     CONTRA_DETAILS="${CONTRA_DETAILS}  ❌ Missing reference: ${ref}
@@ -153,13 +159,16 @@ VPS_OUTPUT=$(python3 /root/WELL/vps_compute.py --json 2>/dev/null || echo '{}')
 VPS_SCORE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('score') or '—')" 2>/dev/null || echo "—")
 VPS_BAND=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('band','UNKNOWN'))" 2>/dev/null || echo "UNKNOWN")
 VPS_VERDICT=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('verdict','UNKNOWN'))" 2>/dev/null || echo "UNKNOWN")
+VPS_H_SCORE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dimensions']['human'].get('score') if d['dimensions']['human'].get('score') is not None else '—')" 2>/dev/null || echo "—")
 VPS_H_STATE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dimensions']['human']['state'])" 2>/dev/null || echo "UNKNOWN")
 VPS_M_SCORE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dimensions']['machine'].get('score','—'))" 2>/dev/null || echo "—")
 VPS_M_STATE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dimensions']['machine']['state'])" 2>/dev/null || echo "UNKNOWN")
 VPS_G_SCORE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dimensions']['governance'].get('score','—'))" 2>/dev/null || echo "—")
 VPS_G_STATE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dimensions']['governance']['state'])" 2>/dev/null || echo "UNKNOWN")
+VPS_C_SCORE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dimensions']['coupling'].get('score') if d['dimensions']['coupling'].get('score') is not None else '—')" 2>/dev/null || echo "—")
 VPS_C_STATE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['dimensions']['coupling']['state'])" 2>/dev/null || echo "UNKNOWN")
 VPS_CAUSE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('primary_cause','Unknown'))" 2>/dev/null || echo "Unknown")
+VPS_EVIDENCE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('evidence_confidence','?'))" 2>/dev/null || echo "?")
 
 # ── REPORT ──────────────────────────────────────────────────────────────
 cat > "$REPORT" <<EOF
@@ -180,16 +189,17 @@ cat > "$REPORT" <<EOF
 
 | Dimension | Score | State | Weight |
 |-----------|-------|-------|--------|
-| **Human** | — | ${VPS_H_STATE} | 0.40 |
+| **Human** | ${VPS_H_SCORE} | ${VPS_H_STATE} | 0.40 |
 | **Machine** | ${VPS_M_SCORE} | ${VPS_M_STATE} | 0.20 |
 | **Governance** | ${VPS_G_SCORE} | ${VPS_G_STATE} | 0.25 |
-| **Coupling** | — | ${VPS_C_STATE} | 0.15 |
+| **Coupling** | ${VPS_C_SCORE} | ${VPS_C_STATE} | 0.15 |
 
 **VPS: ${VPS_SCORE} — ${VPS_BAND}**
 **Verdict: ${VPS_VERDICT}**
 **Primary cause: ${VPS_CAUSE}**
+**Evidence confidence: ${VPS_EVIDENCE}**
 
-**F2 label: OBS** (live probes) + **DER** (computed scores)
+**F2 label: OBS** (live probes) + **DER** (computed scores) · H from WELL self-report when sensors absent (HR3)
 
 ## Organ Vitals
 
@@ -232,8 +242,8 @@ ${TODAY} $(date +%H:%M) MYT
 
 VPS: ${VPS_SCORE} — ${VPS_BAND}
 Verdict: ${VPS_VERDICT}
-Human: ${VPS_H_STATE} | Machine: ${VPS_M_STATE}
-Governance: ${VPS_G_STATE} | Coupling: ${VPS_C_STATE}
+Human: ${VPS_H_SCORE} ${VPS_H_STATE} | Machine: ${VPS_M_SCORE} ${VPS_M_STATE}
+Governance: ${VPS_G_SCORE} ${VPS_G_STATE} | Coupling: ${VPS_C_SCORE} ${VPS_C_STATE}
 
 ${VITAL_EMOJI} Organs: ${ALIVE}/${TOTAL_ORGANS}
 ${ENTRO_EMOJI} Entropy: ${ENTROPY_SCORE}/6
