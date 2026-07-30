@@ -279,7 +279,7 @@ async function preExecutionGate(
       executable,
       arguments: args,
       actorPrivilege: process.env.USER === "root" ? "root" : "user",
-      actorId: envelope?.actor_id || "aforge",
+      actorId: envelope?.actor_id || "ANON_PROBE",
       sessionId: envelope?.session_id || "unknown",
       targetEnvironment: process.env.DEPLOY_ENV || "unknown",
     });
@@ -780,7 +780,7 @@ export function registerShellTools(server: McpServer): void {
       let envelope: AuthorityEnvelope = {
         valid: true,
         session_id: "stateless-safe",
-        actor_id: "safe-probe",
+        actor_id: "ANON_PROBE",
         authority_mode: "OBSERVE",
         verdict: "SAFE",
       };
