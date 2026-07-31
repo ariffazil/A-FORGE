@@ -108,8 +108,55 @@ function estimateA(spec: CandidateSpec): { score: number; rationale: string[] } 
     rationale.push("A↓: implementation too short — likely template scaffold");
   }
 
-  // Tool name quality
+  // Tool name quality — constitutional naming standard (2026-07-31)
+  // See: /root/AAA/docs/MCP_NAMING_STANDARD.md
   if (spec.tool_name.match(/^forge_[a-z0-9_]+$/)) score += 0.05;
+  
+  // NAMING LINT: organ prefix gate
+  const domainPrefixes: Record<string, { prefix: string; forbidden: string[] }> = {
+    arifos:  { prefix: "arif_",  forbidden: [] },
+    aforge:  { prefix: "forge_", forbidden: [] },
+    geox:    { prefix: "geox_",  forbidden: [] },
+    wealth:  { prefix: "capital_", forbidden: ["wealth_"] },
+    well:    { prefix: "well_",  forbidden: [] },
+    hermes:  { prefix: "hermes_", forbidden: [] },
+    arifflow:{ prefix: "flow_",  forbidden: [] },
+    aaa:     { prefix: "aaa_",   forbidden: [] },
+  };
+  
+  const domainRule = domainPrefixes[spec.domain];
+  if (domainRule) {
+    // Forbidden prefix check (e.g., wealth_ on WEALTH organ)
+    for (const forbidPrefix of domainRule.forbidden) {
+      if (spec.tool_name.startsWith(forbidPrefix)) {
+        score -= 0.20;
+        rationale.push(
+          `A↓ NAMING VIOLATION: '${spec.tool_name}' uses forbidden prefix '${forbidPrefix}'. ` +
+          `WEALTH tools MUST use '${domainRule.prefix}' prefix per MCP_NAMING_STANDARD.md §1.1. ` +
+          `Existing '${forbidPrefix}*' tools are legacy only — new tools rejected.`
+        );
+      }
+    }
+    // Correct prefix boost
+    if (spec.tool_name.startsWith(domainRule.prefix)) {
+      score += 0.03;
+    } else {
+      score -= 0.10;
+      rationale.push(
+        `A↓ NAMING MISMATCH: '${spec.tool_name}' should start with '${domainRule.prefix}' for domain '${spec.domain}'`
+      );
+    }
+  }
+  
+  // Double-prefix advisory (geox_geox_, well_well_, hermes_hermes_)
+  const doublePrefixPattern = /^(geox_geox_|well_well_|hermes_hermes_)/;
+  if (doublePrefixPattern.test(spec.tool_name)) {
+    // Advisory only — existing tools grandfathered, new tools warned
+    rationale.push(
+      `A↓ NAMING ADVISORY: '${spec.tool_name}' uses double-prefix pattern. ` +
+      `New tools SHOULD use differentiated prefix per MCP_NAMING_STANDARD.md §2.2.`
+    );
+  }
 
   return { score: Math.max(0, Math.min(1, score)), rationale };
 }

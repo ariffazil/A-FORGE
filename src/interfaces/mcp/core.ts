@@ -1029,7 +1029,8 @@ server.tool(
     session_token: z.string().optional().describe("arifOS SCT for session continuity"),
     sct: z.string().optional().describe("Alias for session_token"),
   },
-  async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct }) => {
+  async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct, session_id: _govSessionId }) => {
+    const effectiveSessionId = _govSessionId ?? parent_session_id;
     const startedAt = Date.now();
     await telemetryInvoke("forge_session_init");
     return runStage("000_INIT" as MetabolicStage, async () => {
@@ -1042,7 +1043,7 @@ server.tool(
             actor_id,
             intent: intent ?? "aforge session",
             mode: "light",
-            session_id: parent_session_id ?? undefined,
+            session_id: effectiveSessionId ?? undefined,
             session_token: _reqToken ?? _reqSct ?? undefined,
           });
         } catch (primaryErr) {
@@ -1052,7 +1053,7 @@ server.tool(
             actor_id,
             intent: intent ?? "aforge session",
             mode: "light",
-            session_id: parent_session_id ?? undefined,
+            session_id: effectiveSessionId ?? undefined,
             session_token: _reqToken ?? _reqSct ?? undefined,
           });
         }
