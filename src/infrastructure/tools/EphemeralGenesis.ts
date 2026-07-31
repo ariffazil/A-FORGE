@@ -101,7 +101,7 @@ export class ContainmentUnavailableError extends Error {
  * `ContainmentUnavailableError` so the engine reports a distinct
  * failure code, not a silent `ok=false`.
  */
-class DefaultSandboxExecutor implements SandboxExecutor {
+export class DefaultSandboxExecutor implements SandboxExecutor {
   async isAvailable(): Promise<boolean> {
     const { containmentHealth } = await import("../../domain/containment/ExecutionSandbox.js");
     const health = await containmentHealth();
@@ -166,6 +166,8 @@ class DefaultSandboxExecutor implements SandboxExecutor {
 function getDefaultSandboxExecutor(): SandboxExecutor {
   return new DefaultSandboxExecutor();
 }
+
+export { getDefaultSandboxExecutor };
 
 export type TemplateType = "api_wrapper" | "data_parser" | "compute_fn" | "format_converter";
 

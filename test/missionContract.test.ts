@@ -71,7 +71,6 @@ describe("MissionContract — missing capability detection", () => {
       credential_refs: [],
       author: "t",
       arifos_witness_required: false,
-      hash: "h",
     });
     const c = createMissionContract(baseInput());
     assert.deepEqual(findMissingCapabilities(c, reg), []);
