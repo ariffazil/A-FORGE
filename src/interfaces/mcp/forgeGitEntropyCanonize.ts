@@ -320,12 +320,18 @@ export async function registerForgeEntropySweep(server: McpServer): Promise<void
           uncommitted = parseInt(status) || 0;
         } catch { /* not a git repo */ }
         
-        // Dead processes
+        // Dead processes (zombie state)
+        // F9 ANTI-HANTU FIX 2026-07-31: previous regex `grep -c '[Z]'` matched the
+        // literal character Z anywhere in `ps aux` output, including Supabase
+        // passwords containing Z and the grep command itself. This produced false
+        // positives. New check parses the STAT column (8th column) for actual
+        // zombie state Z (or Z+ for multi-thread zombies).
         let deadProcesses = 0;
         try {
-          const zombies = execSync("ps aux 2>/dev/null | grep -c '[Z]'", {
-            encoding: "utf-8", timeout: 5000,
-          }).trim();
+          const zombies = execSync(
+            "ps -eo stat 2>/dev/null | awk '$1 ~ /^Z/' | wc -l",
+            { encoding: "utf-8", timeout: 5000 },
+          ).trim();
           deadProcesses = parseInt(zombies) || 0;
         } catch { /* no ps */ }
 
