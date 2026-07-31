@@ -119,7 +119,7 @@ class DefaultSandboxExecutor implements SandboxExecutor {
     const { createSandbox, runInSandbox, deprovisionSandbox } = await import(
       "../../domain/containment/ExecutionSandbox.js"
     );
-    const { createGreenLease, type: _t } = await import("../../domain/forge/CapabilityLease.js");
+    const { createGreenLease } = await import("../../domain/forge/CapabilityLease.js");
     // Use the green lease factory as the default YELLOW-or-GREEN lease.
     // Domain allowlist only honored if non-empty.
     const lease = createGreenLease({
@@ -150,7 +150,7 @@ class DefaultSandboxExecutor implements SandboxExecutor {
     try {
       const result = await runInSandbox(session, command);
       return {
-        exitCode: result.exitCode,
+        exitCode: result.exitCode ?? -1,
         killed: result.killed,
         stdout: result.stdout,
         stderr: result.stderr,
@@ -357,6 +357,8 @@ export class EphemeralGenesis {
   private readonly defaultTtlMs: number;
   /** Per-tool verifier receipts, kept for promotion evaluation. */
   private readonly receipts: Map<string, VerifierReceipt[]> = new Map();
+  /** Last flow receipt, used as the chain head for the next mint. */
+  private lastChainReceipt: import("../receipts/flowReceiptStore.js").FlowReceipt | null = null;
 
   constructor(opts: EphemeralGenesisOptions = {}) {
     this.registry = new TemplateRegistry();
@@ -714,6 +716,31 @@ export class EphemeralGenesis {
     const list = this.receipts.get(toolId) ?? [];
     list.push(receipt);
     this.receipts.set(toolId, list);
+
+    // P1.4 — Chain the receipt via flowReceiptStore (F11 AUDIT).
+    // When DATABASE_URL is unset, this no-ops gracefully.
+    try {
+      const { mintReceipt, persistReceipt } = await import(
+        "../receipts/flowReceiptStore.js"
+      );
+      const prev = this.lastChainReceipt;
+      const sessionId = ctx.arifosSessionId ?? tool.sessionId ?? "ephemeral";
+      const flowReceipt = mintReceipt(prev, {
+        actor_id: tool.metadata.createdBy,
+        session_id: sessionId,
+        trace_id: tool.id,
+        step_number: list.length,
+        step_type: "Verify",
+        epistemic_label: "Seal",
+        cost_ns: 0,
+      });
+      const stored = await persistReceipt(flowReceipt);
+      if (stored.stored) this.lastChainReceipt = flowReceipt;
+    } catch {
+      // F11 persistence is best-effort; the verifier receipt_hash is
+      // still stored on the tool and emitted to VAULT999 via the
+      // canonical arifOS judge path.
+    }
 
     tool.state = "verified";
     tool.verification = {

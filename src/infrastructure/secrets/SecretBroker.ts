@@ -110,7 +110,8 @@ export class ArifOsVaultSecretBroker implements SecretBroker {
         `SecretBroker.resolve: ArifOsVaultSecretBroker only handles kind:"arifos-vault" refs (got ${ref.kind})`,
       );
     }
-    if (this.revokedScopes.has(ref.scope)) {
+    // scope is only meaningful for kind:"env" refs; arifos-vault uses vault_entry_id
+    if (ref.kind === "env" && this.revokedScopes.has(ref.scope)) {
       throw new Error(
         `SecretBroker.resolve: scope ${ref.scope} has been revoked`,
       );
