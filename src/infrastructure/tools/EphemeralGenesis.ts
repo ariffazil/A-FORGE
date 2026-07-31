@@ -683,7 +683,7 @@ export class EphemeralGenesis {
     const tool = this.store.get(toolId);
     if (!tool) return { ok: false, error: `Ephemeral tool '${toolId}' not found` };
 
-    if (verifierMethod === SELF_CERTIFIED) {
+    if ((verifierMethod as string) === SELF_CERTIFIED) {
       return {
         ok: false,
         tool,
@@ -818,7 +818,7 @@ export class EphemeralGenesis {
     let n = 0;
     for (const [, list] of this.receipts) {
       for (const r of list) {
-        if (r.passed && r.method !== SELF_CERTIFIED) n += 1;
+        if (r.passed && (r.method as string) !== SELF_CERTIFIED) n += 1;
       }
     }
     return n;
