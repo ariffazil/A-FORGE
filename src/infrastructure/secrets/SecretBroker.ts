@@ -110,12 +110,8 @@ export class ArifOsVaultSecretBroker implements SecretBroker {
         `SecretBroker.resolve: ArifOsVaultSecretBroker only handles kind:"arifos-vault" refs (got ${ref.kind})`,
       );
     }
-    // scope is only meaningful for kind:"env" refs; arifos-vault uses vault_entry_id
-    if (ref.kind === "env" && this.revokedScopes.has(ref.scope)) {
-      throw new Error(
-        `SecretBroker.resolve: scope ${ref.scope} has been revoked`,
-      );
-    }
+    // arifos-vault refs use vault_entry_id for identification; scope revocation
+    // is only applicable to kind:"env" refs and is checked before narrowing above.
     // The real call delegates to arif_seal; for the unit test contract
     // we surface a deterministic placeholder. The engine's sandboxTest
     // path routes the actual call through MCP.
