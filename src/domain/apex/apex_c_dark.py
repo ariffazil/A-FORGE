@@ -1,16 +1,31 @@
 """
 ⚠️ DEAD DUAL PATH (2026-07-25 H2 entropy kill)
+═══════════════════════════════════════════════════════════════════════════════
 
 This file previously re-implemented G = A·P·E·X·Φ inside A-FORGE.
 That is illegal for constitutional G.
 
-CANONICAL G-FOLD (Δ plane only):
+CANONICAL G-FOLD (V3 sealed 2026-07-28, F13 SOVEREIGN):
   arif_think(mode='apex') → arifosmcp.runtime.apex_canonical.compute_apex
+  Formula: G = (A × P × E × X)^(1/4)  ← four-dial geometric mean
+  Φ is a separate scar-gate dimension (H·AI·Ext tri-witness), NOT a 5th dial.
+  Reference: /root/arifOS/docs/APEX_MATH_CANON.md (F13 RATIFIED 2026-07-28).
+
+CROSS-ORGAN DRIFT NOTICE (2026-07-31, FI-008 surfaced):
+  arifOS arifosmcp/runtime/apex_canonical.py still computes
+  G = A · P · E · X · Φ (5-factor, pre-V3 seal 2026-07-13). This is stale
+  relative to the F13 V3 seal. AWAITING SOVEREIGN RATIFICATION on which
+  side of the federation gets updated. P0.1 confines A-FORGE local
+  estimates to the V3 four-dial geometric mean; constitutional G remains
+  in arifOS until the cross-organ sync lands.
 
 This module remains as a **compatibility shim** that:
   - documents the kill
   - raises RuntimeError if used for constitutional G
   - provides offline local estimates only when AFORGE_LOCAL_G_OK=1
+  - its own G = A·P·E·X·Φ computation is the PRE-V3 form, not V3-canonical
+    — it is kept for backward compatibility only and will be deprecated
+    once arifOS apex_canonical is updated to V3
 
 Do not import for new code. Prefer GovernanceBridge → arifOS.
 

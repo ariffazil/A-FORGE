@@ -11,7 +11,10 @@
  * @module cognition/taskJacobian
  * @constitutional F2 TRUTH — every sensitivity claim must be measured, not asserted
  * @constitutional F7 HUMILITY — confidence capped at 0.90 on Jacobian estimates
- * @constitutional F8 GENIUS — G = A · P · E · X · Φ now computable from live task state
+ * @constitutional F8 GENIUS — local G-estimate = (A·P·E·X)^(1/4) ONLY when
+ *   invoked. The CONSTITUTIONAL G lives in arifOS apex_canonical (V3 seal
+ *   2026-07-28, G = (A×P×E×X)^(1/4), Φ is a separate scar-gate dimension
+ *   — NOT a 5th dial). Older five-factor explanations are stale.
  * @constitutional F11 AUDIT — every Jacobian snapshot is provenance-bound
  */
 
@@ -267,20 +270,33 @@ export function needsRecompute(
 /**
  * Local Jacobian vitality estimate — NOT the canonical G-fold.
  *
- * AAA scalar physics: canonical tool evaluation G = (A·P·E·X)^(1/4)
- * (geometric mean) lives ONLY in src/domain/forge/evaluate.ts and
- * arif_think(mode='apex') in the arifOS Python kernel (Δ plane).
- * arif_think(mode='apex') → arifOS apex_canonical (Δ Python substrate).
+ * V3 RATIFIED (2026-07-28, F13 sovereign seal): G = (A×P×E×X)^(1/4).
+ * Φ is a separate scar-gate dimension (H·AI·Ext tri-witness), NOT a
+ * multiplicative 5th dial. Older five-factor descriptions (G = A·P·E·X·Φ)
+ * are stale and must not be re-introduced.
+ *
+ * Local-estimator divergence: arifOS apex_canonical.py was last updated
+ * 2026-07-13 (pre-V3) and STILL computes G = A·P·E·X·Φ. This is a known
+ * cross-organ drift awaiting sovereign ratification. P0.1 fix confines
+ * this local estimate to the V3 four-dial geometric mean; constitutional
+ * G stays in arifOS where the V3 seal belongs.
+ *
+ * Canonical tool evaluation G = (A·P·E·X)^(1/4) lives ONLY in:
+ *   - src/domain/governance/gAuthority.ts (A-FORGE canonical labels)
+ *   - arif_think(mode='apex') → apex_canonical V3 (Δ Python substrate)
+ *
  * This function is a Ψ-plane actuator heuristic for task sensitivity
  * recompute. Consumers must NOT treat the return as constitutional G.
  * Prefer goal.G only as continuity evidence; re-derive via arif_think apex.
  *
  * @constitutional F8 — local estimate only; kernel G is authoritative
  * @constitutional F7 — humilityCap reserve; never claim ≥0.95 certainty
+ * @constitutional F2 — must match V3 four-dial geometric mean; comment
+ *   and code must agree on the formula
  */
 export function computeGFromJacobian(
   entries: TaskVectorEntry[],
-  humilityCap = 0.08,  // F7: Ω₀ ∈ [0.03, 0.05]; use upper bound as humility reserve
+  humilityCap = 0.08,  // F7: Ω₀ ∈ [0.03, 0.05]; reserve; not a multiplicative dial
 ): number {
   if (entries.length === 0) return 0;
 
@@ -301,10 +317,14 @@ export function computeGFromJacobian(
   }, 0) / entries.length;
   const E = 1 - avgSensitivity;
 
-  // Canonical G = A · P · E · X · Φ — local actuator estimate (NOT kernel G)
-  //   Φ = 1 - humilityCap (F7 humility reserve as alignment factor)
-  //   E is used once (not squared) per canonical formula
-  const G = A * P * E * X * (1 - humilityCap);
+  // V3 four-dial geometric mean (NOT five-factor). Φ is scar-gate, not dial.
+  //   G_local = (A · P · E · X)^(1/4)
+  //   humilityCap is a reserve — it REDUCES the ceiling, it does not multiply.
+  //   The reserve is applied as a post-multiplier ceiling clamp, mirroring
+  //   F7 humility reserve semantics, NOT as a 5th dial.
+  const product = A * P * E * X;
+  if (product <= 0) return 0;
+  const G = Math.pow(product, 1 / 4) * (1 - humilityCap);
 
   return Math.round(G * 10000) / 10000;
 }

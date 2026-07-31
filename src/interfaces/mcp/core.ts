@@ -1026,8 +1026,10 @@ server.tool(
       + "Returned unchanged as parent_session_id in the response so cross-organ session chains reconstruct. "
       + "B1 fix 2026-07-17 (T7 deliverable #4 propagation)."
     ),
+    session_token: z.string().optional().describe("arifOS SCT for session continuity"),
+    sct: z.string().optional().describe("Alias for session_token"),
   },
-  async ({ actor_id, intent, mode, parent_session_id }) => {
+  async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct }) => {
     const startedAt = Date.now();
     await telemetryInvoke("forge_session_init");
     return runStage("000_INIT" as MetabolicStage, async () => {
@@ -1040,6 +1042,8 @@ server.tool(
             actor_id,
             intent: intent ?? "aforge session",
             mode: "light",
+            session_id: parent_session_id ?? undefined,
+            session_token: _reqToken ?? _reqSct ?? undefined,
           });
         } catch (primaryErr) {
           console.error(`[forge_session_init] primary arif_init failed:`, primaryErr instanceof Error ? primaryErr.message : primaryErr);
@@ -1048,6 +1052,8 @@ server.tool(
             actor_id,
             intent: intent ?? "aforge session",
             mode: "light",
+            session_id: parent_session_id ?? undefined,
+            session_token: _reqToken ?? _reqSct ?? undefined,
           });
         }
         const response = kernelResponse as Record<string, unknown>;

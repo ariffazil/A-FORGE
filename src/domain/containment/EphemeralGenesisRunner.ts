@@ -9,6 +9,14 @@
  * DO NOT add new state logic here. Route through the canonical engine.
  * ═══════════════════════════════════════════════════════════════════════
  *
+ * REDIRECT MAP (2026-07-31 FI-008 P0.2 cleanup):
+ *   All lifecycle methods here must call the canonical engine
+ *   `getEphemeralGenesis()` from `infrastructure/tools/EphemeralGenesis.ts`.
+ *   This fork's only legitimate role is to provide:
+ *     (a) the SandboxPolicy / ExecutionSandbox bridge (containment-specific)
+ *     (b) the GenesisReceipt projection that callers expect
+ *   Both must wrap canonical-engine calls; neither may reimplement them.
+ *
  * DITEMPA BUKAN DIBERI — Forged 2026-07-30 under F13 directive.
  *
  * arif_forge remains the SINGLE constitutional gateway.

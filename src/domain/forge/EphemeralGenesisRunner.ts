@@ -18,6 +18,23 @@
  * is a containment-specific fork. Both must delegate to the canonical
  * engine for core lifecycle operations.
  *
+ * REDIRECT MAP (2026-07-31 FI-008 P0.2 cleanup):
+ *   gapDetect()           → canonical.analyzeGap()
+ *   reuseCheck()          → canonical.analyzeGap() (existingTools path)
+ *   capabilitySpec()      → canonical.generate() (template_id + params)
+ *   generate()            → canonical.generate()
+ *   sandboxTest()         → canonical.sandboxTest()
+ *   leaseGrant()          → canonical.createGreenLease() / createYellowLease()
+ *   invoke()              → canonical.invoke()
+ *   outputVerify()        → canonical.verify() (with verifier_method)
+ *   retire()              → canonical.retire()
+ *   proposePromotion()    → canonical.evaluatePromotion() (EvidencePromotionGate)
+ *
+ * Any caller that needs the rich state-machine semantics should:
+ *   1. import { getEphemeralGenesis } from "../../infrastructure/tools/EphemeralGenesis.js";
+ *   2. call the canonical methods directly.
+ *   3. keep their own GenesisReceipt projection if they need it for audits.
+ *
  * State machine (domain adapter — canonical engine has simpler states):
  *   GAP_DETECTED → REUSE_CHECKED → CAPABILITY_SPECIFIED → GENERATED
  *   → SANDBOX_TESTED → LEASE_GRANTED → INVOKED → OUTPUT_VERIFIED
