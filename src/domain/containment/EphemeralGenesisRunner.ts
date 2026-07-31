@@ -27,6 +27,7 @@ import type { SandboxPolicy } from './SandboxPolicy.js';
 import { createSandbox, runInSandbox, deprovisionSandbox } from './ExecutionSandbox.js';
 import type { SandboxSession } from './ExecutionSandbox.js';
 import type { ContainmentResult } from './ContainmentEngine.js';
+import { createHash } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -464,9 +465,15 @@ export class EphemeralGenesisRunner {
 
       this.errors.push(
         `Sandbox test failed: exit=${this.sandboxResult.exitCode} killed=${this.sandboxResult.killed} ` +
-        `stderr=${this.sandboxResult.stderr.slice(0, 200)}`
+        `stderr_hash=sha256:${createHash('sha256').update(this.sandboxResult.stderr).digest('hex').slice(0,16)} ` +
+        `stderr_bytes=${this.sandboxResult.stderr.length}`
       );
       this.transition('FAILED', 'Sandbox test failed');
+      // F11 AUDIT: surface the full stderr to the receipt for downstream
+      // inspection. The audit log records the hash; the body is preserved.
+      this.lease.warnings.push(
+        `sandbox_test_failed_stderr=${this.sandboxResult.stderr.slice(0, 2000)}`,
+      );
       return this.sandboxResult;
 
     } catch (err: any) {
@@ -563,7 +570,12 @@ export class EphemeralGenesisRunner {
 
       if (this.sandboxResult.exitCode !== 0 || this.sandboxResult.killed) {
         this.errors.push(
-          `Invocation failed: exit=${this.sandboxResult.exitCode} killed=${this.sandboxResult.killed}`
+          `Invocation failed: exit=${this.sandboxResult.exitCode} killed=${this.sandboxResult.killed} ` +
+          `stderr_hash=sha256:${createHash('sha256').update(this.sandboxResult.stderr).digest('hex').slice(0,16)} ` +
+          `stderr_bytes=${this.sandboxResult.stderr.length}`
+        );
+        this.lease.warnings.push(
+          `invoke_failed_stderr=${this.sandboxResult.stderr.slice(0, 2000)}`,
         );
         this.transition('FAILED', 'Tool execution failed');
         return this.sandboxResult;

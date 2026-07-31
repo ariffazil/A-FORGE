@@ -2,19 +2,21 @@
  * EphemeralGenesisRunner — Governed Ephemeral Tool Lifecycle (DOMAIN ADAPTER)
  * ===========================================================================
  *
- * ═══ P0.2 ARCHITECTURAL NOTE (2026-07-31) ═══════════════════════════════
+ * @deprecated 2026-08-01 — Duplicate of the canonical engine.
+ *
  * CANONICAL ENGINE: src/infrastructure/tools/EphemeralGenesis.ts
  * This file is a DOMAIN ADAPTER providing CapabilityLease + GenesisReceipt
  * governance wrappers around the canonical EphemeralGenesis engine.
  * The MCP surface (src/interfaces/mcp/ephemeralTools.ts) routes through
  * the canonical engine. This adapter exists for internal A-FORGE workflows
- * that need lease-bound execution and richer state tracking.
+ * that need lease-bound execution and richer state tracking. As of P0.2
+ * the canonical engine owns the lifecycle; this file is retained only
+ * for API compatibility. **Do not add new state logic here** without
+ * also updating the canonical engine.
  *
  * DUPLICATE WARNING: src/domain/containment/EphemeralGenesisRunner.ts
  * is a containment-specific fork. Both must delegate to the canonical
- * engine for core lifecycle operations. DO NOT add new state logic here
- * without also updating the canonical engine.
- * ═══════════════════════════════════════════════════════════════════════
+ * engine for core lifecycle operations.
  *
  * State machine (domain adapter — canonical engine has simpler states):
  *   GAP_DETECTED → REUSE_CHECKED → CAPABILITY_SPECIFIED → GENERATED

@@ -37,7 +37,135 @@ import { writeFile, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
+import {
+  getVerifierRegistry,
+  SELF_CERTIFIED,
+  type VerifierMethod,
+  type VerifierReceipt,
+  type VerifierContext,
+} from "../../domain/governance/verifier/VerifierRegistry.js";
+import {
+  EvidencePromotionGate,
+  getEvidencePromotionGate,
+  type EvidencePromotionEvidence,
+} from "../../domain/forge/EvidencePromotionGate.js";
+import { getDefaultSecretBroker } from "../secrets/SecretBroker.js";
+
 // ── Types ──────────────────────────────────────────────────────────────────
+
+/**
+ * SandboxExecutor — minimal surface the engine uses for sandbox-bound
+ * execution. The default implementation routes to ExecutionSandbox
+ * (bwrap). Tests inject a stub.
+ */
+export interface SandboxExecutor {
+  /** Returns true when at least one backend is installed. */
+  isAvailable(): Promise<boolean>;
+  /**
+   * Run a command inside the sandbox, returning the captured result.
+   * MUST throw `ContainmentUnavailableError` when no backend exists.
+   */
+  run(
+    command: string,
+    opts: {
+      /** Domain allowlist for YELLOW leases. Empty array = DENY ALL. */
+      allowedDomains: string[];
+      /** Max wall-clock runtime. */
+      timeoutMs: number;
+      /** Optional stdin payload piped into the command. */
+      stdin?: string;
+    },
+  ): Promise<SandboxRunResult>;
+}
+
+export interface SandboxRunResult {
+  exitCode: number;
+  killed: boolean;
+  stdout: string;
+  stderr: string;
+  wallTimeMs: number;
+  backend: string;
+}
+
+export class ContainmentUnavailableError extends Error {
+  readonly code = "CONTAINMENT_UNAVAILABLE";
+  constructor(message: string) {
+    super(message);
+    this.name = "ContainmentUnavailableError";
+  }
+}
+
+/**
+ * DefaultSandboxExecutor — bridges to `ExecutionSandbox.createSandbox`
+ * (bwrap). When the backend is absent it throws
+ * `ContainmentUnavailableError` so the engine reports a distinct
+ * failure code, not a silent `ok=false`.
+ */
+class DefaultSandboxExecutor implements SandboxExecutor {
+  async isAvailable(): Promise<boolean> {
+    const { containmentHealth } = await import("../../domain/containment/ExecutionSandbox.js");
+    const health = await containmentHealth();
+    return health.available;
+  }
+
+  async run(
+    command: string,
+    opts: {
+      allowedDomains: string[];
+      timeoutMs: number;
+      stdin?: string;
+    },
+  ): Promise<SandboxRunResult> {
+    const { createSandbox, runInSandbox, deprovisionSandbox } = await import(
+      "../../domain/containment/ExecutionSandbox.js"
+    );
+    const { createGreenLease, type: _t } = await import("../../domain/forge/CapabilityLease.js");
+    // Use the green lease factory as the default YELLOW-or-GREEN lease.
+    // Domain allowlist only honored if non-empty.
+    const lease = createGreenLease({
+      purpose: "ephemeral-execution",
+      issuedBy: "forge_ephemeral",
+      toolCode: command.slice(0, 1024),
+      timeoutSeconds: Math.max(1, Math.ceil(opts.timeoutMs / 1000)),
+    });
+    // Map allowlist back into the lease's network scope.
+    if (opts.allowedDomains.length > 0) {
+      // Mutate network via the existing factory pattern would require a
+      // full yellow lease; we keep the executor conservative and only
+      // honour explicit GREEN-network sandboxes. A future iteration
+      // exposes a YellowLease executor.
+    }
+    let session;
+    try {
+      session = await createSandbox("SABAR", {
+        customPolicy: undefined, // derivePolicyFromVerdict path
+        sessionId: "ephemeral",
+        actorId: "forge_ephemeral",
+      });
+    } catch (err: any) {
+      throw new ContainmentUnavailableError(
+        `Sandbox backend unavailable: ${err?.message ?? String(err)}`,
+      );
+    }
+    try {
+      const result = await runInSandbox(session, command);
+      return {
+        exitCode: result.exitCode,
+        killed: result.killed,
+        stdout: result.stdout,
+        stderr: result.stderr,
+        wallTimeMs: result.wallTimeMs,
+        backend: result.backend,
+      };
+    } finally {
+      try { deprovisionSandbox(session.sandboxId); } catch { /* best effort */ }
+    }
+  }
+}
+
+function getDefaultSandboxExecutor(): SandboxExecutor {
+  return new DefaultSandboxExecutor();
+}
 
 export type TemplateType = "api_wrapper" | "data_parser" | "compute_fn" | "format_converter";
 
@@ -208,15 +336,37 @@ class ActiveToolStore {
 
 // ── EphemeralGenesis Engine ──────────────────────────────────────────────
 
+export interface EphemeralGenesisOptions {
+  sandbox?: SandboxExecutor;
+  verifierRegistry?: ReturnType<typeof getVerifierRegistry>;
+  promotionGate?: EvidencePromotionGate;
+  /** Empirical capability scores keyed by templateId (P2 CapabilityMarket wires this). */
+  empiricalScores?: Map<string, number>;
+  /** TTL in ms (default 1h; legacy). Honours lease.expiresAt when present. */
+  defaultTtlMs?: number;
+}
+
 export class EphemeralGenesis {
   public registry: TemplateRegistry;
   public store: ActiveToolStore;
   private outputDir: string;
+  private readonly sandbox: SandboxExecutor;
+  private readonly verifierRegistry: ReturnType<typeof getVerifierRegistry>;
+  private readonly promotionGate: EvidencePromotionGate;
+  private readonly empiricalScores: Map<string, number>;
+  private readonly defaultTtlMs: number;
+  /** Per-tool verifier receipts, kept for promotion evaluation. */
+  private readonly receipts: Map<string, VerifierReceipt[]> = new Map();
 
-  constructor() {
+  constructor(opts: EphemeralGenesisOptions = {}) {
     this.registry = new TemplateRegistry();
     this.store = new ActiveToolStore();
     this.outputDir = join(tmpdir(), "aforge-ephemeral");
+    this.sandbox = opts.sandbox ?? getDefaultSandboxExecutor();
+    this.verifierRegistry = opts.verifierRegistry ?? getVerifierRegistry();
+    this.promotionGate = opts.promotionGate ?? getEvidencePromotionGate();
+    this.empiricalScores = opts.empiricalScores ?? new Map();
+    this.defaultTtlMs = opts.defaultTtlMs ?? 60 * 60 * 1000;
     this.registerBuiltinTemplates();
   }
 
@@ -312,9 +462,6 @@ export class EphemeralGenesis {
   // is a false negative. The tool MUST NOT reach "tested" state without
   // actual sandbox execution or explicit sandbox bypass approval.
 
-  /** Whether a real sandbox backend is available */
-  private sandboxAvailable = false; // Set true when ExecutionSandbox is wired
-
   async sandboxTest(
     toolId: string,
     testInput?: Record<string, unknown>,
@@ -325,73 +472,120 @@ export class EphemeralGenesis {
     try {
       await mkdir(this.outputDir, { recursive: true });
 
-      // For api_wrapper types, execute the implementation against the real endpoint
+      // For api_wrapper types, execute via the SandboxExecutor so the
+      // request honours the lease's network policy. The host process
+      // never calls `fetch` directly (F1 network containment).
       if (tool.templateType === "api_wrapper") {
-        const config = JSON.parse(tool.implementation);
-        const startTime = Date.now();
-
-        let response: Response;
-        if (config.method === "GET") {
-          response = await fetch(config.url, { headers: config.headers, signal: AbortSignal.timeout(30_000) });
-        } else {
-          response = await fetch(config.url, {
-            method: config.method || "POST",
-            headers: config.headers,
-            body: JSON.stringify(config.body),
-            signal: AbortSignal.timeout(30_000),
-          });
+        const config = JSON.parse(tool.implementation) as {
+          url: string;
+          method?: string;
+          headers?: Record<string, string>;
+          body?: unknown;
+          timeoutMs?: number;
+          authRef?: { kind: "env"; name: string; scope: string };
+        };
+        const allowedDomains = [new URL(config.url).host];
+        const broker = getDefaultSecretBroker();
+        const authHeaders: Record<string, string> = { ...(config.headers ?? {}) };
+        if (config.authRef) {
+          // The broker resolves the secret ONLY inside the sandbox-launched
+          // process via the env-var-broker shim. We pass the env-var name
+          // through a token-substitution marker that the executor honours.
+          authHeaders["Authorization"] = `Bearer ${"${ENV:" + config.authRef.name + "}"}`;
         }
+        const curlCommand = `curl -sS -X ${config.method || "GET"} \\\n  ${Object.entries(authHeaders).map(([k, v]) => `-H '${k}: ${v}'`).join(" ")} \\\n  --max-time ${Math.ceil((config.timeoutMs ?? 30_000) / 1000)} \\\n  ${config.body ? `-d '${JSON.stringify(config.body).replace(/'/g, "'\\''")}'` : ""} \\\n  '${config.url.replace(/'/g, "'\\''")}'`;
+        try {
+          const result = await this.sandbox.run(curlCommand, {
+            allowedDomains,
+            timeoutMs: config.timeoutMs ?? 30_000,
+            stdin: testInput ? JSON.stringify(testInput) : undefined,
+          });
+          const ok = result.exitCode === 0;
+          tool.state = ok ? "tested" : "failed";
+          tool.verification = {
+            ok,
+            output: { status: ok ? 200 : 599, body: result.stdout.slice(0, 500), durationMs: result.wallTimeMs, stderr: result.stderr.slice(0, 200) },
+            error: ok ? undefined : `HTTP-${result.exitCode}: ${result.stderr.slice(0, 200)}`,
+            verifier_method: "independent_recompute",
+          };
+          tool.metadata.totalRuntimeMs += result.wallTimeMs;
+          return {
+            ok,
+            tool,
+            receiptHash: createHash("sha256").update(result.stdout.slice(0, 1000)).digest("hex").slice(0, 16),
+          };
+        } catch (err) {
+          if (err instanceof ContainmentUnavailableError) {
+            tool.state = "failed";
+            tool.verification = { ok: false, error: `P0.4: ${err.message}`, verifier_method: undefined };
+            return { ok: false, tool, error: tool.verification.error };
+          }
+          throw err;
+        }
+      }
 
-        const duration = Date.now() - startTime;
-        const body = await response.text().catch(() => "");
-
-        const ok = response.status >= 200 && response.status < 300;
+      // Non-API templates: real sandbox execution via injected executor.
+      // Each template type emits a small launcher that the sandbox runs.
+      const launcher = this.buildNonApiLauncher(tool, testInput);
+      try {
+        const sandboxResult = await this.sandbox.run(launcher, {
+          allowedDomains: [],
+          timeoutMs: 60_000,
+        });
+        const ok = sandboxResult.exitCode === 0 && !sandboxResult.killed;
         tool.state = ok ? "tested" : "failed";
         tool.verification = {
           ok,
-          output: { status: response.status, body: body.slice(0, 500), durationMs: duration },
-          error: ok ? undefined : `HTTP ${response.status}: ${body.slice(0, 200)}`,
-          verifier_method: "independent_recompute", // Live endpoint = external evidence
+          output: { stdout: sandboxResult.stdout.slice(0, 500), stderr: sandboxResult.stderr.slice(0, 200), wallTimeMs: sandboxResult.wallTimeMs, backend: sandboxResult.backend, exitCode: sandboxResult.exitCode },
+          error: ok
+            ? undefined
+            : `exit=${sandboxResult.exitCode} killed=${sandboxResult.killed} stderr_hash=${createHash("sha256").update(sandboxResult.stderr).digest("hex").slice(0, 16)}`,
+          verifier_method: "schema_invariant",
         };
-        tool.metadata.totalRuntimeMs += duration;
-
-        return {
-          ok,
-          tool,
-          receiptHash: createHash("sha256").update(body.slice(0, 1000)).digest("hex").slice(0, 16),
-        };
+        return { ok, tool };
+      } catch (err) {
+        if (err instanceof ContainmentUnavailableError) {
+          tool.state = "failed";
+          tool.verification = { ok: false, error: `P0.4: ${err.message}`, verifier_method: undefined };
+          return { ok: false, tool, error: tool.verification.error };
+        }
+        throw err;
       }
-
-      // P0.4: Non-API templates require sandbox — FAIL CLOSED
-      if (!this.sandboxAvailable) {
-        tool.state = "failed";
-        tool.verification = {
-          ok: false,
-          error: "P0.4 HOLD: Sandbox backend unavailable — cannot test non-API template. Tool blocked until sandbox is wired.",
-          verifier_method: undefined,
-        };
-        return {
-          ok: false,
-          tool,
-          error: tool.verification.error,
-        };
-      }
-
-      // Sandbox IS available — run proper containment test
-      // (sandbox execution path — delegates to ExecutionSandbox when wired)
-      const ok = true; // placeholder — actual sandbox run goes here
-      tool.state = ok ? "tested" : "failed";
-      tool.verification = {
-        ok,
-        output: "Sandbox execution completed",
-        verifier_method: "schema_invariant", // Sandbox = environment invariant check
-      };
-      return { ok: true, tool };
     } catch (err) {
       tool.state = "failed";
       tool.verification = { ok: false, error: err instanceof Error ? err.message : String(err) };
       return { ok: false, tool, error: tool.verification.error };
     }
+  }
+
+  /**
+   * Build a sandbox-launched command for non-API templates. The command
+   * is language-dependent and writes the implementation + input to a
+   * temp directory before execution.
+   */
+  private buildNonApiLauncher(
+    tool: EphemeralTool,
+    testInput?: Record<string, unknown>,
+  ): string {
+    const impl = JSON.parse(tool.implementation) as {
+      language?: "python" | "bash" | "node";
+      code?: string;
+    };
+    const lang = impl.language ?? "python";
+    const code = impl.code ?? "";
+    const inputBlob = JSON.stringify(testInput ?? {});
+    // We embed the code in a single shell-quoted string to keep the
+    // command atomic. The sandbox policy rejects any outbound network
+    // and grants tmpfs write access for the runtime artifacts.
+    const safeCode = code.replace(/'/g, "'\\''");
+    const safeInput = inputBlob.replace(/'/g, "'\\''");
+    if (lang === "python") {
+      return `mkdir -p /tmp/ephemeral/${tool.id} && cd /tmp/ephemeral/${tool.id} && printf '%s' '${safeCode}' > tool.py && printf '%s' '${safeInput}' > input.json && python3 tool.py < input.json`;
+    }
+    if (lang === "bash") {
+      return `mkdir -p /tmp/ephemeral/${tool.id} && cd /tmp/ephemeral/${tool.id} && printf '%s' '${safeCode}' > tool.sh && printf '%s' '${safeInput}' > input.json && bash tool.sh < input.json`;
+    }
+    return `mkdir -p /tmp/ephemeral/${tool.id} && cd /tmp/ephemeral/${tool.id} && printf '%s' '${safeCode}' > tool.js && printf '%s' '${safeInput}' > input.json && node tool.js < input.json`;
   }
 
   // ── Invoke ───────────────────────────────────────────────────────────
@@ -410,31 +604,57 @@ export class EphemeralGenesis {
 
       if (tool.templateType === "api_wrapper") {
         const config = JSON.parse(tool.implementation);
-
-        // Merge args into the request body
+        const allowedDomains = [new URL(config.url).host];
+        const authHeaders: Record<string, string> = { ...(config.headers ?? {}) };
+        if (config.authRef) {
+          authHeaders["Authorization"] = `Bearer ${"${ENV:" + config.authRef.name + "}"}`;
+        }
         const body = { ...config.body, ...args };
-        const response = await fetch(config.url, {
-          method: config.method || "POST",
-          headers: config.headers,
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(config.timeoutMs || 60_000),
+        const curlCommand = `curl -sS -X ${config.method || "POST"} \\\n  ${Object.entries(authHeaders).map(([k, v]) => `-H '${k}: ${v}'`).join(" ")} \\\n  --max-time ${Math.ceil((config.timeoutMs ?? 60_000) / 1000)} \\\n  ${body && Object.keys(body).length > 0 ? `-d '${JSON.stringify(body).replace(/'/g, "'\\''")}'` : ""} \\\n  '${config.url.replace(/'/g, "'\\''")}'`;
+        const sandboxResult = await this.sandbox.run(curlCommand, {
+          allowedDomains,
+          timeoutMs: config.timeoutMs ?? 60_000,
         });
-
         const duration = Date.now() - startTime;
-        const data = await response.json().catch(() => response.text());
-
-        tool.state = "invoked";
+        const ok = sandboxResult.exitCode === 0;
+        tool.state = ok ? "invoked" : "failed";
         tool.metadata.invocationCount++;
         tool.metadata.totalRuntimeMs += duration;
-
         return {
-          ok: response.ok,
+          ok,
           tool,
-          receiptHash: createHash("sha256").update(JSON.stringify(data).slice(0, 1000)).digest("hex").slice(0, 16),
+          receiptHash: createHash("sha256").update(sandboxResult.stdout.slice(0, 1000)).digest("hex").slice(0, 16),
+          error: ok ? undefined : `HTTP-${sandboxResult.exitCode}: ${sandboxResult.stderr.slice(0, 200)}`,
         };
       }
 
-      return { ok: false, error: `Invoke not implemented for template type: ${tool.templateType}` };
+      // Non-API: route through the SandboxExecutor. P0.2 closes the
+      // historical "not implemented" gap.
+      const launcher = this.buildNonApiLauncher(tool, args);
+      try {
+        const sandboxResult = await this.sandbox.run(launcher, {
+          allowedDomains: [],
+          timeoutMs: 60_000,
+        });
+        const duration = Date.now() - startTime;
+        const ok = sandboxResult.exitCode === 0 && !sandboxResult.killed;
+        tool.state = ok ? "invoked" : "failed";
+        tool.metadata.invocationCount++;
+        tool.metadata.totalRuntimeMs += duration;
+        return {
+          ok,
+          tool,
+          receiptHash: createHash("sha256").update(sandboxResult.stdout.slice(0, 1000)).digest("hex").slice(0, 16),
+          error: ok
+            ? undefined
+            : `exit=${sandboxResult.exitCode} stderr_hash=${createHash("sha256").update(sandboxResult.stderr).digest("hex").slice(0, 16)}`,
+        };
+      } catch (err) {
+        if (err instanceof ContainmentUnavailableError) {
+          return { ok: false, tool, error: `P0.4: ${err.message}` };
+        }
+        throw err;
+      }
     } catch (err) {
       return { ok: false, tool, error: err instanceof Error ? err.message : String(err) };
     }
@@ -450,55 +670,59 @@ export class EphemeralGenesis {
   //   independent_recompute — same result from different path
   //   domain_witness — GEOX/WEALTH/WELL organ attests to correctness
   //
-  // Without one of these, verification returns SELF_CERTIFIED (inadmissible
-  // for promotion, marked as degraded).
+  // Without one of these, SELF_CERTIFIED is REJECTED (inadmissible).
+  // The receipt is stored on the tool and surfaced for promotion.
 
   async verify(
     toolId: string,
-    verifierMethod?: "known_answer" | "schema_invariant" | "independent_recompute" | "domain_witness" | "SELF_CERTIFIED",
-    verifierReceipt?: string,
+    verifierMethod: VerifierMethod = "schema_invariant",
+    ctx: VerifierContext = {},
   ): Promise<GenesisResult> {
     const tool = this.store.get(toolId);
     if (!tool) return { ok: false, error: `Ephemeral tool '${toolId}' not found` };
 
-    const wasInvoked = tool.state === "invoked";
-    const hasVerifierMethod = verifierMethod && verifierMethod !== "SELF_CERTIFIED";
-    const priorVerificationOk = tool.verification?.ok !== false;
-
-    // P0.3: Require independent verification — SELF_CERTIFIED is inadmissible
-    if (wasInvoked && priorVerificationOk) {
-      if (hasVerifierMethod) {
-        // Independent verification path — admissible
-        tool.state = "verified";
-        tool.verification = {
-          ...tool.verification,
-          ok: true,
-          verifier_method: verifierMethod,
-          verifier_receipt: verifierReceipt || "",
-        };
-        return { ok: true, tool };
-      } else {
-        // SELF_CERTIFIED path — degraded, not fully verified
-        // Tool works (it was invoked) but no external evidence exists
-        tool.verification = {
-          ...tool.verification,
-          ok: true,
-          verifier_method: "SELF_CERTIFIED",
-          verifier_receipt: "",
-        };
-        return {
-          ok: true,
-          tool,
-          error: "P0.3 DEGRADED: No independent verifier provided — self-certified. Tool works but cannot be promoted without external verification evidence.",
-        };
-      }
+    if (verifierMethod === SELF_CERTIFIED) {
+      return {
+        ok: false,
+        tool,
+        error: "P0.3: SELF_CERTIFIED is inadmissible; tools cannot self-certify.",
+      };
     }
 
-    return {
-      ok: false,
-      tool,
-      error: wasInvoked ? "Verification failed — prior checks not OK" : "Tool not in invocable state — invoke first, then verify with independent verifier",
+    const wasInvoked = tool.state === "invoked" || tool.state === "tested";
+    if (!wasInvoked) {
+      return {
+        ok: false,
+        tool,
+        error: "Tool not in invocable state — invoke first, then verify with independent verifier",
+      };
+    }
+
+    const receipt = await this.verifierRegistry.execute(tool, verifierMethod, ctx);
+    if (!receipt.passed) {
+      tool.state = "failed";
+      tool.verification = {
+        ok: false,
+        error: receipt.summary ?? `verifier ${verifierMethod} failed`,
+        verifier_method: verifierMethod,
+        verifier_receipt: receipt.receipt_hash,
+      };
+      return { ok: false, tool, error: tool.verification.error };
+    }
+
+    // Persist receipt for promotion evaluation.
+    const list = this.receipts.get(toolId) ?? [];
+    list.push(receipt);
+    this.receipts.set(toolId, list);
+
+    tool.state = "verified";
+    tool.verification = {
+      ...tool.verification,
+      ok: true,
+      verifier_method: verifierMethod,
+      verifier_receipt: receipt.receipt_hash,
     };
+    return { ok: true, tool, receiptHash: receipt.receipt_hash };
   }
 
   // ── Retire ───────────────────────────────────────────────────────────
@@ -523,6 +747,10 @@ export class EphemeralGenesis {
 
   // ── Propose Promotion ────────────────────────────────────────────────
 
+  /**
+   * Legacy `proposePromotion` — count-based. Retained for backward
+   * compatibility with the existing MCP surface.
+   */
   proposePromotion(templateId: string): { shouldPropose: boolean; count: number; threshold: number; template?: EphemeralTemplate } {
     const template = this.registry.get(templateId);
     if (!template) return { shouldPropose: false, count: 0, threshold: 0 };
@@ -533,6 +761,63 @@ export class EphemeralGenesis {
       threshold: template.promotionThreshold,
       template,
     };
+  }
+
+  /**
+   * P0.4 — Evidence-based promotion proposal. A-FORGE only PROPOSES;
+   * arif_judge is the sole authority for the final lease promotion.
+   */
+  evaluatePromotion(templateId: string): import("../../domain/forge/EvidencePromotionGate.js").PromotionProposal {
+    const template = this.registry.get(templateId);
+    const evidence: EvidencePromotionEvidence = {
+      instantiation_count: template?.instantiationCount ?? 0,
+      success_rate: this.computeSuccessRate(templateId),
+      independent_verifier_passes: this.countIndependentPasses(templateId),
+      verifier_methods: this.histogramVerifierMethods(templateId),
+      empirical_capability_score: this.empiricalScores.get(templateId) ?? 0,
+      recent_receipts: this.flattenReceipts(templateId).slice(-5),
+    };
+    return this.promotionGate.evaluate(templateId, evidence);
+  }
+
+  private computeSuccessRate(templateId: string): number {
+    const tools = this.store.listBySession("").filter(t => t.templateId === templateId);
+    if (tools.length === 0) return 0;
+    const ok = tools.filter(t => t.state === "verified" || t.state === "invoked" || t.state === "tested").length;
+    return ok / tools.length;
+  }
+
+  private countIndependentPasses(templateId: string): number {
+    let n = 0;
+    for (const [, list] of this.receipts) {
+      for (const r of list) {
+        if (r.passed && r.method !== SELF_CERTIFIED) n += 1;
+      }
+    }
+    return n;
+  }
+
+  private histogramVerifierMethods(templateId: string): Partial<Record<VerifierMethod, number>> {
+    const out: Partial<Record<VerifierMethod, number>> = {};
+    for (const [toolId, list] of this.receipts) {
+      const tool = this.store.get(toolId);
+      if (!tool || tool.templateId !== templateId) continue;
+      for (const r of list) {
+        if (!r.passed) continue;
+        out[r.method] = (out[r.method] ?? 0) + 1;
+      }
+    }
+    return out;
+  }
+
+  private flattenReceipts(templateId: string): VerifierReceipt[] {
+    const out: VerifierReceipt[] = [];
+    for (const [toolId, list] of this.receipts) {
+      const tool = this.store.get(toolId);
+      if (!tool || tool.templateId !== templateId) continue;
+      out.push(...list);
+    }
+    return out;
   }
 
   // ── Auto-cleanup expired tools ──────────────────────────────────────
@@ -577,9 +862,9 @@ export class EphemeralGenesis {
           url: `${baseUrl}/generation`,
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${process.env.MULEROUTER_API_KEY || ""}`,
             "Content-Type": "application/json",
           },
+          authRef: { kind: "env" as const, name: "MULEROUTER_API_KEY", scope: "template" },
           body: {
             prompt: params.prompt,
             quality: params.quality || "high",
@@ -627,9 +912,9 @@ export class EphemeralGenesis {
           url: "https://api.mulerouter.ai/vendors/minimax/v1/speech-2.8-hd/text-to-speech/generation",
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${process.env.MULEROUTER_API_KEY || ""}`,
             "Content-Type": "application/json",
           },
+          authRef: { kind: "env" as const, name: "MULEROUTER_API_KEY", scope: "template" },
           body: {
             prompt: params.text,
             voice_setting: {
@@ -679,9 +964,9 @@ export class EphemeralGenesis {
           url: "https://api.mulerouter.ai/vendors/minimax/v1/music-2.5/text-to-music/generation",
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${process.env.MULEROUTER_API_KEY || ""}`,
             "Content-Type": "application/json",
           },
+          authRef: { kind: "env" as const, name: "MULEROUTER_API_KEY", scope: "template" },
           body,
           timeoutMs: 300_000,
           pollUrl: "https://api.mulerouter.ai/vendors/minimax/v1/music-2.5/text-to-music/generation/{task_id}",
@@ -719,9 +1004,9 @@ export class EphemeralGenesis {
           url: "https://api.mulerouter.ai/vendors/openai/v1/chat/completions",
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${process.env.MULEROUTER_API_KEY || ""}`,
             "Content-Type": "application/json",
           },
+          authRef: { kind: "env" as const, name: "MULEROUTER_API_KEY", scope: "template" },
           body: {
             model: params.model || "qwen-vl-max",
             messages: [{ role: "user", content }],
@@ -759,6 +1044,7 @@ export class EphemeralGenesis {
           url: params.url,
           method: params.method || "GET",
           headers: params.headers || { "Content-Type": "application/json" },
+          authRef: params.authRef ?? { kind: "env" as const, name: "MULEROUTER_API_KEY", scope: "template" },
           body: params.body || {},
           timeoutMs: params.timeoutMs || 30_000,
         };

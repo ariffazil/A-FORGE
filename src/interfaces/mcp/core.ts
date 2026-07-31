@@ -2749,6 +2749,20 @@ registerPredictTools(server);
 // Before: G = UNMEASURED. After: G = scalar from live task state.
 registerCognitionTools(server);
 
+// ── Ephemeral Tool Genesis — Capability Metabolism (Ψ Survival) ─────────────
+// The phase transition: from accumulating permanent tools to metabolizing capability.
+// forge_ephemeral with 9 modes: inspect_gap, generate, sandbox_test, invoke,
+// verify, retire, list_templates, list_active, propose_promotion.
+// 5 built-in templates: mulerouter_image_gen, mulerouter_tts, mulerouter_music,
+// mulerouter_vision, generic_api_wrapper.
+// Forged 2026-07-30 by 333-AGI under F13 directive.
+//
+// P0.6 (2026-07-31): registerEphemeralTools MUST run BEFORE
+// installPolicyInterceptor / installElicitationGate so the policy
+// gate wraps it. P0.6 also adds forge_ephemeral to the MUTATE set.
+registerEphemeralTools(server);
+registerWebZenTools(server);
+
 // Install the 5-layer policy pre-check wrapper on every registered tool.
 // Called AFTER all other registerXTools() so it wraps them all.
 // Idempotent: only forge_policy_* tools themselves are excluded to avoid loops.
@@ -2783,16 +2797,9 @@ registerRuntimeVerifyTool(server);
 // forge_multimodal_music → forge_ephemeral(template='mulerouter_music')
 // forge_multimodal_health → DELETED (orphaned health check)
 // Reduction: 5 redundant tools → 0. ΔS = −5. F4 CLARITY.
-
-// ── Ephemeral Tool Genesis — Capability Metabolism (Ψ Survival) ─────────────
-// The phase transition: from accumulating permanent tools to metabolizing capability.
-// forge_ephemeral with 9 modes: inspect_gap, generate, sandbox_test, invoke,
-// verify, retire, list_templates, list_active, propose_promotion.
-// 5 built-in templates: mulerouter_image_gen, mulerouter_tts, mulerouter_music,
-// mulerouter_vision, generic_api_wrapper.
-// Forged 2026-07-30 by 333-AGI under F13 directive.
-registerEphemeralTools(server);
-registerWebZenTools(server);
+//
+// forge_ephemeral is registered earlier in this file (P0.6 — BEFORE
+// installPolicyInterceptor) so the policy and elicitation gates wrap it.
 
 // Run startup isomorphism check — verifies GEOX ↔ arifOS witness functions
 startupIsomorphismCheck();

@@ -236,6 +236,7 @@ const ELICITATION_GATE_TOOLS = new Set([
   "forge_lease",          // lease changes
   "forge_git",            // push/commit/mutate
   "forge_github_create",  // PR/issue/file creation
+  "forge_ephemeral",      // P0.6 — capability metabolism (generate/invoke/retire)
 ]);
 
 /** UUID v4 generator for elicitation IDs */

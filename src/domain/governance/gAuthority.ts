@@ -18,8 +18,25 @@ export const CANONICAL_G_SOURCE = "arif_think.mode=apex" as const;
 /** Canonical module on the Δ plane */
 export const CANONICAL_G_MODULE = "arifosmcp.runtime.apex_canonical" as const;
 
-/** Constitutional formula (V2 sealed in apex_canonical) */
-export const CANONICAL_G_EQUATION = "G = A · P · E · X · Φ" as const;
+/**
+ * Constitutional formula (V3 sealed in apex_canonical 2026-07-28).
+ * G is the geometric mean of the four canonical dials (A, P, E, X).
+ * Φ is a separate scar-gate dimension, not a 5th dial — see T6 theorem
+ * in arifOS/docs/APEX_MATH_CANON.md. Older five-factor explanations
+ * (G = A·P·E·X·Φ) are *removed* from the canonical source. Local
+ * displays may still show legacy strings, but the truth lives here.
+ */
+export const CANONICAL_G_EQUATION = "G = (A × P × E × X)^(1/4)" as const;
+
+/** Canonical dial labels (length 4; Φ is excluded). */
+export const CANONICAL_G_DIALS = ["A", "P", "E", "X"] as const;
+export type CanonicalGDial = typeof CANONICAL_G_DIALS[number];
+
+/** Number of canonical dials — pinned for arifOS parity tests. */
+export const CANONICAL_G_DIAL_COUNT = 4 as const;
+
+/** Geometric mean is the canonical aggregator (no weighted Φ term). */
+export const CANONICAL_G_IS_GEOMETRIC_MEAN = true as const;
 
 export type GAuthority =
   | "arif_think.mode=apex" // only this is constitutional
