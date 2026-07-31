@@ -1,7 +1,7 @@
 <!-- SOT-MANIFEST
 federation_release: v2026.07.31
 last_verified: 2026-07-31T03:28:00Z
-live_commit: ec15ba5
+live_commit: d642568
 qqq_version: v1.1.1 (10/10 tests passing, verdict round-trip closed)
 seal_chain: append-only (chattr +a) + Merkle anchor every 100 receipts
 sense_port: 7071 (healthy)
