@@ -151,3 +151,4 @@ python/aforge_publish/artifacts/figures_*/*.png
 CONTRIBUTING.md
 .runtime/
 deploy/rollback/
+.serena/
