@@ -736,14 +736,32 @@ class OpenRouterProvider:
     BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
 
     # Allowlisted free models — only these are routed (no auto-discover)
-    # These are models FLAME cannot reach directly via free tiers:
-    # Cohere, InclusionAI, Poolside are NOT accessible via Groq/Gemini/Cerebras/SEA-LION
+    # Expanded 2026-07-31: 14 free models available on OpenRouter (was 5)
+    # Primary: openrouter/free auto-router — auto-discovers new free models
+    # Secondary: individual :free models for targeted capability routing
+    # ALL models here are RM0 — zero cost, zero budget impact
+    # POVERTY-MODE (2026-07-31): $1 budget → 100% free tier only
     ALLOWLIST = [
+        "openrouter/free",  # Auto-router over ALL 14 free models — primary gap-fill
+        # ── 1M context ──
+        "nvidia/nemotron-3-ultra-550b-a55b:free",  # 550B/55B MoE, hard-reasoning, 1M ctx
+        # ── 262K context ──
+        "inclusionai/ling-3.0-flash:free",  # 124B MoE, 5.1B active, agentic-optimized
+        "poolside/laguna-s-2.1:free",  # Poolside — 118B/8B coding agent
+        "poolside/laguna-xs-2.1:free",  # Poolside — coding, lightweight
+        "google/gemma-4-31b-it:free",  # Google — 31B dense, multimodal
+        "google/gemma-4-26b-a4b-it:free",  # Google — 26B MoE, multimodal
+        # ── 256K context ──
         "cohere/north-mini-code:free",  # Cohere — lightweight coding
-        "inclusionai/ling-3.0-flash:free",  # InclusionAI — 124B MoE, 5.1B active/token
-        "poolside/laguna-s-2.1:free",  # Poolside — coding specialist
-        "google/gemma-4-31b-it:free",  # Google — already available via Cerebras direct
-        "nvidia/nemotron-3-super-120b-a12b:free",  # NVIDIA — 120B, 12B active
+        "nvidia/nemotron-3-super-120b-a12b:free",  # 120B/12B MoE
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",  # Reasoning + multimodal
+        "nvidia/nemotron-3-nano-30b-a3b:free",  # 30B/3B MoE
+        # ── 131K context ──
+        "openai/gpt-oss-20b:free",  # OpenAI — reasoning
+        # ── 128K context ──
+        "nvidia/nemotron-3.5-content-safety:free",  # Content safety
+        "nvidia/nemotron-nano-12b-v2-vl:free",  # Vision-language
+        "nvidia/nemotron-nano-9b-v2:free",  # 9B lightweight
     ]
 
     MAX_RPD = 200  # Conservative — respect 50-1000 rpd limit

@@ -11,8 +11,13 @@
  */
 
 import * as crypto from "crypto";
+import * as fs from "fs";
+import * as path from "path";
 
 const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
+const SCT_DECISION_EVENT_DIR =
+  process.env.SCT_DECISION_EVENT_DIR ||
+  "/root/A-FORGE/forge_work/2026-07-17/sct_decision_events";
 const SCT_TIMEOUT_MS = Number(process.env.ARIFOS_SCT_TIMEOUT_MS || "2500");
 const SCT_RE = /^sct_v1\.[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?$/;
 
@@ -552,6 +557,13 @@ export async function gateToolIngress(
     null;
 
   if (extraction.status === "AMBIGUOUS") {
+    emitDecisionEvent({
+      tool: toolName, decision: "REJECT", reason_code: "SCT_AMBIGUOUS",
+      actor_id: actor || undefined, require_sct: true,
+      sct_source_count: extraction.source_count,
+      sct_unique_tokens: extraction.unique_fingerprints,
+      extraction_locations: extraction.sources.map(s => s.location),
+    });
     return {
       ok: false,
       error: "SCT_AMBIGUOUS",
@@ -574,10 +586,24 @@ export async function gateToolIngress(
         expectedActor: actor,
         requiredAuthority: opts.requiredAuthority || "OBSERVE_ONLY",
       });
-      if (verified.ok) return verified;
+      if (verified.ok) {
+        emitDecisionEvent({
+          tool: toolName, decision: "ALLOW", reason_code: "OK_SESSION_FALLBACK",
+          actor_id: verified.actor || actor || undefined,
+          require_sct: true,
+          sct_fingerprint: opts.sessionFallbackToken
+            ? `sha256:${crypto.createHash("sha256").update(opts.sessionFallbackToken).digest("hex").slice(0, 16)}`
+            : "",
+        });
+        return verified;
+      }
       // Fallback failed — continue to normal SCT_REQUIRED path
     }
     if (opts.requireSct) {
+      emitDecisionEvent({
+        tool: toolName, decision: "REJECT", reason_code: "SCT_REQUIRED",
+        actor_id: actor || undefined, require_sct: true,
+      });
       return {
         ok: false,
         error: "SCT_REQUIRED",
@@ -586,6 +612,10 @@ export async function gateToolIngress(
         extraction,
       };
     }
+    emitDecisionEvent({
+      tool: toolName, decision: "ALLOW", reason_code: "OK_NO_SCT_OBSERVE",
+      actor_id: actor || undefined, require_sct: false,
+    });
     return { ok: true, skipped: true };
   }
 
@@ -594,7 +624,112 @@ export async function gateToolIngress(
     requiredAuthority: opts.requiredAuthority || "OBSERVE_ONLY",
   });
   if (!verified.ok) {
+    emitDecisionEvent({
+      tool: toolName, decision: "REJECT", reason_code: verified.error || "SCT_INVALID",
+      actor_id: actor || undefined, require_sct: true,
+      sct_fingerprint: extraction.sources.length > 0
+        ? `sha256:${crypto.createHash("sha256").update(extraction.token).digest("hex").slice(0, 16)}`
+        : "",
+      sct_source_count: extraction.source_count,
+      sct_unique_tokens: extraction.unique_fingerprints,
+      extraction_locations: extraction.sources.map(s => s.location),
+    });
     return { ...verified, extraction };
   }
+  emitDecisionEvent({
+    tool: toolName, decision: "ALLOW", reason_code: "OK",
+    actor_id: verified.actor || actor || undefined,
+    require_sct: true,
+    sct_fingerprint: `sha256:${crypto.createHash("sha256").update(extraction.token).digest("hex").slice(0, 16)}`,
+    sct_source_count: extraction.source_count,
+    sct_unique_tokens: extraction.unique_fingerprints,
+    extraction_locations: extraction.sources.map(s => s.location),
+  });
   return verified;
+}
+
+// ── PR4 Decision Event Emitter ────────────────────────────────────────────
+// Writes structured SCT decision events to the same JSONL directory used by
+// Python organs (GEOX, WELL, WEALTH, arifOS). Format matches
+// AAA/governance/sct_decision_event.py SctDecisionEvent schema v1.
+
+interface DecisionEvent {
+  schema: "sct_decision_event.v1";
+  schema_id: string;
+  event_id: string;
+  trace_id: string;
+  ts: string;
+  organ: string;
+  tool: string;
+  action_class: string;
+  required_authority: string;
+  require_sct: boolean;
+  decision: "ALLOW" | "REJECT";
+  reason_code: string;
+  actor_id: string;
+  sct_fingerprint: string;
+  sct_source_count: number;
+  sct_unique_tokens: number;
+  registry_source: string;
+  registry_known: boolean;
+  extraction_locations: string[];
+  meta: Record<string, unknown>;
+}
+
+function newEventId(): string {
+  const hex = crypto.randomBytes(6).toString("hex");
+  return `sde-${hex}`;
+}
+
+function newTraceId(): string {
+  const hex = crypto.randomBytes(8).toString("hex");
+  return `trc-${hex}`;
+}
+
+function emitDecisionEvent(opts: {
+  tool: string;
+  decision: "ALLOW" | "REJECT";
+  reason_code: string;
+  actor_id?: string;
+  action_class?: string;
+  require_sct?: boolean;
+  sct_fingerprint?: string;
+  sct_source_count?: number;
+  sct_unique_tokens?: number;
+  extraction_locations?: string[];
+  trace_id?: string;
+}): void {
+  try {
+    const day = new Date().toISOString().slice(0, 10);
+    const filePath = path.join(SCT_DECISION_EVENT_DIR, `sct_decisions_${day}.jsonl`);
+    fs.mkdirSync(SCT_DECISION_EVENT_DIR, { recursive: true });
+
+    const event: DecisionEvent = {
+      schema: "sct_decision_event.v1",
+      schema_id: "https://arif-fazil.com/schema/sct_decision_event/v1",
+      event_id: newEventId(),
+      trace_id: opts.trace_id || newTraceId(),
+      ts: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
+      organ: "aforge",
+      tool: opts.tool,
+      action_class: opts.action_class || "",
+      required_authority: "",
+      require_sct: opts.require_sct ?? false,
+      decision: opts.decision,
+      reason_code: opts.reason_code,
+      actor_id: opts.actor_id || "anonymous",
+      sct_fingerprint: opts.sct_fingerprint || "",
+      sct_source_count: opts.sct_source_count ?? 0,
+      sct_unique_tokens: opts.sct_unique_tokens ?? 0,
+      registry_source: "sctIngress.ts",
+      registry_known: true,
+      extraction_locations: opts.extraction_locations || [],
+      meta: {},
+    };
+
+    const line = JSON.stringify(event, Object.keys(event).sort()) + "\n";
+    fs.appendFileSync(filePath, line, "utf-8");
+  } catch (_err) {
+    // Fail-open for observability — never block the gate on log write failure
+  }
 }
