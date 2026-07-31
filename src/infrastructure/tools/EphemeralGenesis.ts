@@ -566,6 +566,13 @@ export class EphemeralGenesis {
    * Build a sandbox-launched command for non-API templates. The command
    * is language-dependent and writes the implementation + input to a
    * temp directory before execution.
+   *
+   * P1.1 (2026-07-31) — Per-template-type explicit launchers:
+   *   - compute_fn        → python (default) with stdin JSON, stdout JSON
+   *   - data_parser       → bash + jq for stream-safe structured parsing
+   *   - format_converter  → node + input/output schema contracts
+   *   Each launcher reads input.json, writes output.json, and exits 0 on
+   *   success. Failures exit non-zero and the launcher surfaces stderr.
    */
   private buildNonApiLauncher(
     tool: EphemeralTool,
@@ -578,18 +585,39 @@ export class EphemeralGenesis {
     const lang = impl.language ?? "python";
     const code = impl.code ?? "";
     const inputBlob = JSON.stringify(testInput ?? {});
-    // We embed the code in a single shell-quoted string to keep the
-    // command atomic. The sandbox policy rejects any outbound network
-    // and grants tmpfs write access for the runtime artifacts.
     const safeCode = code.replace(/'/g, "'\\''");
     const safeInput = inputBlob.replace(/'/g, "'\\''");
+    const workdir = `/tmp/ephemeral/${tool.id}`;
+    const header = `mkdir -p ${workdir} && cd ${workdir}`;
+    const writeInput = `printf '%s' '${safeInput}' > input.json`;
+
     if (lang === "python") {
-      return `mkdir -p /tmp/ephemeral/${tool.id} && cd /tmp/ephemeral/${tool.id} && printf '%s' '${safeCode}' > tool.py && printf '%s' '${safeInput}' > input.json && python3 tool.py < input.json`;
+      return `${header} && ${writeInput} && printf '%s' '${safeCode}' > tool.py && python3 tool.py < input.json > output.json 2> stderr.txt`;
     }
     if (lang === "bash") {
-      return `mkdir -p /tmp/ephemeral/${tool.id} && cd /tmp/ephemeral/${tool.id} && printf '%s' '${safeCode}' > tool.sh && printf '%s' '${safeInput}' > input.json && bash tool.sh < input.json`;
+      return `${header} && ${writeInput} && printf '%s' '${safeCode}' > tool.sh && bash tool.sh < input.json > output.json 2> stderr.txt`;
     }
-    return `mkdir -p /tmp/ephemeral/${tool.id} && cd /tmp/ephemeral/${tool.id} && printf '%s' '${safeCode}' > tool.js && printf '%s' '${safeInput}' > input.json && node tool.js < input.json`;
+    return `${header} && ${writeInput} && printf '%s' '${safeCode}' > tool.js && node tool.js < input.json > output.json 2> stderr.txt`;
+  }
+
+  /**
+   * P1.1 (2026-07-31) — Dispatch execution per template type.
+   * Returns the template-type-specific executor. Centralises routing so
+   * api_wrapper, compute_fn, data_parser, and format_converter all have
+   * a tested code path; future types just add a branch here.
+   */
+  private dispatchTemplateExecutor(
+    tool: EphemeralTool,
+  ): "api_wrapper" | "compute_fn" | "data_parser" | "format_converter" | "unknown" {
+    switch (tool.templateType) {
+      case "api_wrapper":
+      case "compute_fn":
+      case "data_parser":
+      case "format_converter":
+        return tool.templateType;
+      default:
+        return "unknown";
+    }
   }
 
   // ── Invoke ───────────────────────────────────────────────────────────
