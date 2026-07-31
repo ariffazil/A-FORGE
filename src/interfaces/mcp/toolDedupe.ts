@@ -50,6 +50,7 @@ function fingerprintTool(name: string, description: string, schema: unknown): To
 }
 
 // Known deprecated tool names that should not be callable
+// 2026-07-31 entropy sweep: added 13 tools deleted in proxyTools.ts + multimodalTools.ts
 const KNOWN_DEPRECATED = [
   "forge_run",           // merged into forge_execute
   "forge_vault_seal",    // merged into forge_vault mode=seal
@@ -58,18 +59,41 @@ const KNOWN_DEPRECATED = [
   "forge_vault_write",   // merged into forge_vault mode=write
   "forge_vault_delete",  // VAULT999 is append-only
   "forge_remember",      // duplicate of arif_vault_seal
-  "forge_approve",       // self-authorize refused, use forge_judge_proxy
+  "forge_approve",       // self-authorize refused — DELETED 2026-07-31, use forge_judge_proxy
   "forge_docker_ps",     // merged into forge_docker mode=ps
   "forge_docker_logs",   // merged into forge_docker mode=logs
   "forge_docker_exec",   // merged into forge_docker mode=exec
   "forge_docker_images", // merged into forge_docker mode=images
+  // ── 2026-07-31 entropy sweep additions ──
+  "forge_fetch_url",       // DELETED → forge_fetch(mode='readable')
+  "forge_fetch_json",      // DELETED → forge_fetch(mode='json')
+  "forge_fetch_metadata",  // DELETED → forge_fetch(mode='metadata')
+  "forge_fetch_links",     // DELETED → forge_fetch(mode='links')
+  "forge_filesystem_read",    // DELETED → forge_filesystem(mode='read')
+  "forge_filesystem_write",   // DELETED → forge_filesystem(mode='write')
+  "forge_filesystem_patch",   // DELETED → forge_filesystem(mode='patch')
+  "forge_filesystem_tree",    // DELETED → forge_filesystem(mode='tree')
+  "forge_filesystem_search",  // DELETED → forge_filesystem(mode='grep')
+  "forge_filesystem_stat",    // DELETED → forge_filesystem(mode='stat')
+  "forge_filesystem_move",    // DELETED → forge_filesystem(mode='move')
+  "forge_filesystem_delete",  // DELETED → forge_filesystem(mode='delete')
+  "forge_github_search_code",          // DELETED → forge_github(mode='search',type='code')
+  "forge_github_search_repos",         // DELETED → forge_github(mode='search',type='repositories')
+  "forge_github_create_pull_request",  // DELETED → forge_github(mode='pr',action='create')
+  "forge_multimodal_vision",  // DELETED → forge_ephemeral(template='mulerouter_vision')
+  "forge_multimodal_image",   // DELETED → forge_ephemeral(template='mulerouter_image_gen')
+  "forge_multimodal_tts",     // DELETED → forge_ephemeral(template='mulerouter_tts')
+  "forge_multimodal_music",   // DELETED → forge_ephemeral(template='mulerouter_music')
+  "forge_multimodal_health",  // DELETED — orphaned health check
+  "forge_minimax_search",     // DELETED — MiniMax backend deprecating, use forge_search (Brave)
 ];
 
-// Known alias groups — tools that intentionally share functionality
+// Known alias groups — 2026-07-31 entropy sweep: all filesystem + fetch aliases DELETED.
+// forge_filesystem now covers all 8 modes; forge_fetch covers all 4 modes.
+// Groups retained as audit trail of what was collapsed.
 const KNOWN_ALIAS_GROUPS: Record<string, string[]> = {
-  "forge_filesystem": ["forge_filesystem_read", "forge_filesystem_write", "forge_filesystem_patch", "forge_filesystem_tree", "forge_filesystem_search", "forge_filesystem_stat", "forge_filesystem_move", "forge_filesystem_delete"],
-  "forge_fetch": ["forge_fetch_url", "forge_fetch_json", "forge_fetch_metadata", "forge_fetch_links"],
   // forge_systemctl removed 2026-07-09 — use forge_shell('systemctl ...')
+  // ALL filesystem + fetch + github + multimodal aliases DELETED 2026-07-31 — entropy sweep
 };
 
 /**

@@ -26,13 +26,17 @@
  *   G < 0.50 OR  C_dark > 0.80 → VOID
  *   Ω₀ ∉ [0.03, 0.05]          → REVIEW (uncalibrated evaluator)
  *
- * Layer reconciliation (2026-07-05): this 5-term A·P·E·X·Φ is the
- * engine tool-registration gate (Decision Field). The `reality-loop`
- * prompt uses a different 4-term Q·V·Ψ·Φ as the per-iteration
- * decision frame. Same letter Φ appears in both: here Φ is
- * scar-adjusted wisdom from `forge_scar` consultation; in the
- * prompt, Φ is agent-reasoning wisdom. Different carriers — do
- * not collapse by symbol alone. See /root/.agents/skills/reality-loop-operator.
+ * CANONICAL FORMULA (2026-07-31, P0.1 ratified):
+ *   G_local = (A·P·E·X)^(1/4) — 4-term Nash Bargaining Product (geometric mean)
+ *   Φ (Wisdom/Scar) is CONSULTED but NOT multiplied into G — it is a
+ *   SEPARATE gate that modifies the SEAL threshold via scar_pressure.
+ *   This file is the SINGLE authoritative source for tool evaluation G.
+ *   All other files must reference this formula or explicitly declare
+ *   they are using a different measurement instrument for a different purpose.
+ *
+ * The `reality-loop` prompt uses Q·V·Ψ·Φ (different measurement frame).
+ * The `decisionField.ts` uses Q·V·Ψ·Φ (skill forge, not tool evaluation).
+ * These are separate instruments — do not collapse by symbol alone.
  *
  * Demoted from "physics" to "instrument" per v36Ω validation report:
  *   - G is a non-compensatory veto score, not a thermodynamic law
@@ -348,13 +352,17 @@ function computeGate(scores: Omit<EstimatorScores, "rationale" | "Omega">): {
  * computeGateWithKernelG — G-fold gate with canonical kernel G override.
  *
  * 4-layer forge gate integration:
- *   Layer 1 — Local estimate (A·P·E·X·Φ product)
+ *   Layer 1 — Local estimate: G = (A·P·E·X)^(1/4)  (4-term geometric mean)
  *   Layer 2 — Canonical kernel G via GovernanceBridge.fetchCanonicalG()
  *   Layer 3 — Fallback to local estimate on kernel unreachable
  *   Layer 4 — Authority stamp reflects which layer fired
  *
+ * Φ (Wisdom/Scar) is a SEPARATE pre-gate consulted before evaluation.
+ * It does NOT multiply into G. Scar pressure modifies the SEAL threshold
+ * in the registration gate, not the evaluation formula itself.
+ *
  * When the canonical G from the arifOS APEX kernel is available, it
- * replaces the local A·P·E·X·Φ product entirely. C_dark remains local
+ * replaces the local 4-term geometric mean entirely. C_dark remains local
  * as it is a local misalignment signal, not a kernel scalar.
  */
 async function computeGateWithKernelG(

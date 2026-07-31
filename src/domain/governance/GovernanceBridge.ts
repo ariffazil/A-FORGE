@@ -159,7 +159,7 @@ export class GovernanceBridge {
    * Timeout 2s. Returns null on failure (graceful degradation).
    *
    * Layer 2 of the 4-layer forge gate: the canonical kernel G replaces
-   * the local A·P·E·X·Φ product when available.
+   * the local G = (A·P·E·X)^(1/4) estimate when available.
    */
   async fetchCanonicalG(): Promise<{ G: number; source: string } | null> {
     try {

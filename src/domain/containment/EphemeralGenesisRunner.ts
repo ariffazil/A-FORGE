@@ -1,28 +1,26 @@
 /**
- * Ephemeral Tool Genesis — CapabilityLease + GenesisRunner
- * ═══════════════════════════════════════════════════════════
+ * Ephemeral Tool Genesis — CapabilityLease + GenesisRunner (CONTAINMENT FORK)
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * ═══ P0.2 DEPRECATION NOTICE (2026-07-31) ═══════════════════════════════
+ * CANONICAL ENGINE: src/infrastructure/tools/EphemeralGenesis.ts
+ * This file is a CONTAINMENT-SPECIFIC FORK of the domain/forge adapter.
+ * Both domain adapters delegate core lifecycle to the canonical engine.
+ * DO NOT add new state logic here. Route through the canonical engine.
+ * ═══════════════════════════════════════════════════════════════════════
  *
  * DITEMPA BUKAN DIBERI — Forged 2026-07-30 under F13 directive.
  *
- * IRON RULE (DESIGN_INVARIANT, ratification pending enforcement):
- *   Agent creates CAPABILITY. Agent NEVER creates AUTHORITY.
- *
- * Architecture: 6 missions (human) ride on 7 primitives (machine).
- * This module implements the 8th capability: ephemeral tool genesis.
- *
  * arif_forge remains the SINGLE constitutional gateway.
- * A-FORGE owns the implementation. arifOS controls authority.
  *
  * CONTAINMENT RULES:
  *   - No ambient credentials
- *   - No direct access to arif_judge, arif_seal, or privilege APIs
- *   - Network: deny-by-default
- *   - Filesystem: allowlist only
+ *   - Network: deny-by-default, Filesystem: allowlist only
  *   - CPU, RAM, storage, time: bounded
  *   - Output: untrusted until verified
  *   - Artifact: hashed and provenance-tracked
  *   - Workspace: destroyed after expiry
- *   - Fail-closed: if containment unavailable, REJECT
+ *   - Fail-closed: if containment unavailable, REJECT (P0.4)
  */
 
 import type { SandboxPolicy } from './SandboxPolicy.js';

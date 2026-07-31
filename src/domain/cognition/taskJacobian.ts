@@ -267,7 +267,9 @@ export function needsRecompute(
 /**
  * Local Jacobian vitality estimate — NOT the canonical G-fold.
  *
- * AAA scalar physics: canonical G = A·P·E·X·Φ lives ONLY in
+ * AAA scalar physics: canonical tool evaluation G = (A·P·E·X)^(1/4)
+ * (geometric mean) lives ONLY in src/domain/forge/evaluate.ts and
+ * arif_think(mode='apex') in the arifOS Python kernel (Δ plane).
  * arif_think(mode='apex') → arifOS apex_canonical (Δ Python substrate).
  * This function is a Ψ-plane actuator heuristic for task sensitivity
  * recompute. Consumers must NOT treat the return as constitutional G.

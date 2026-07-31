@@ -24,10 +24,11 @@
  * Layer reconciliation (2026-07-05): this 4-term A·P·E·X is the
  * kernel execution gate (per-action receipt). The `reality-loop`
  * prompt uses a separate 4-term Q·V·Ψ·Φ as per-iteration decision
- * frame, and forge_evaluate v36Ω (separately) uses 5-term A·P·E·X·Φ
- * as tool-registration gate. Three distinct APEX-shaped formulas
- * across three layers — none aliased. Same letter Φ appears in
- * two (this file does not use Φ; the prompt and forge_evaluate do).
+ * frame, and forge_evaluate v36Ω (separately) uses 4-term
+ * G=(A·P·E·X)^(1/4) geometric mean as tool-registration gate.
+ * Three distinct APEX-shaped formulas across three layers — none
+ * aliased. Φ appears in reality-loop prompt only (as wisdom);
+ * forge_evaluate consults Φ as separate scar gate, not in formula.
  *
  * Required for:
  *   - Skill promotion (STAGED → REVIEWED → TRUSTED)

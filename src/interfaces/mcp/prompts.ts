@@ -679,7 +679,7 @@ ZEN MAXIM: The best engineer is the one you barely notice. The system runs itsel
 
   server.prompt(
     "reality-loop",
-    "Intent compiler: human shadow → system architecture. 7 stages: MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN. QUANTUM/APEX/GÖDEL are subskills within ENCODE+IMPROVE+VERIFY. State-tracking ledger with agent orchestration. NOTE: This prompt's G=Q·V·Ψ·Φ is the per-iteration decision frame; engine gates forge_evaluate (G=A·P·E·X·Φ v36Ω, 5-term) and APEXRuntimeReceipt (G=A·P·E·X, 4-term) are separate layers — same letter Φ appears in both, different carriers.",
+    "Intent compiler: human shadow → system architecture. 7 stages: MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN. QUANTUM/APEX/GÖDEL are subskills within ENCODE+IMPROVE+VERIFY. State-tracking ledger with agent orchestration. NOTE: Three separate APEX instruments exist: (1) reality-loop prompt G=Q·V·Ψ·Φ (per-iteration decision frame), (2) forge_evaluate G=(A·P·E·X)^(1/4) (4-term geometric mean, tool evaluation), (3) APEXRuntimeReceipt G=A·P·E·X (per-action execution gate). Φ means different things across layers — do not collapse by symbol alone. Canonical tool evaluation formula: G=(A·P·E·X)^(1/4).",
     {
       session_id: z.string().optional().describe("Existing session ID to resume. Omit to start a new loop."),
       intent: z.string().optional().describe("What this loop should focus on. Default: self-sustaining federation health."),
@@ -748,8 +748,9 @@ STAGE 2 — ENCODE  ⚛️
     Threshold: G ≥ config.min_g_score (default 0.70, PHASE 1 HEURISTIC).
     Calibrate via ROC on held-out SEAL/REJECT set before Phase 2.
     This is layer-1 of 3 APEX gates; see forge_evaluate (layer 2,
-    A·P·E·X·Φ v36Ω) and APEXRuntimeReceipt (layer 3, A·P·E·X).
-    Same letter Φ appears in layers 1+2; carriers differ.
+    G=(A·P·E·X)^(1/4) 4-term geometric mean) and APEXRuntimeReceipt
+    (layer 3, G=A·P·E·X per-action gate). Φ means wisdom here,
+    scar pressure in forge_evaluate — different carriers.
   Output: physics{S,T,M,I}, hypotheses[], G_score, godel_verdict
 
 STAGE 3 — IMPROVE  🧠

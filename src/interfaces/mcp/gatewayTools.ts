@@ -908,20 +908,10 @@ export function registerGatewayTools(server: McpServer): void {
     page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
   }, handleForgeBrowserEvaluateJs);
 
-  // GitHub
-  server.tool("forge_github_search_code", "Search GitHub code.", {
-    q: z.string().describe("GitHub code search query"),
-    per_page: z.number().min(1).max(100).default(30).describe("Results per page"),
-    page: z.number().default(1).describe("Page"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeGitHubSearchCode);
-
-  server.tool("forge_github_search_repos", "Search GitHub repositories.", {
-    q: z.string().describe("Repository search query"),
-    per_page: z.number().min(1).max(100).default(30).describe("Results per page"),
-    page: z.number().default(1).describe("Page"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeGitHubSearchRepos);
+  // ── GitHub — search/repos collapsed into forge_github(mode='search', type='code'|'repositories') — 2026-07-31 entropy sweep ──
+  // forge_github_search_code + forge_github_search_repos were thin wrappers.
+  // Canonical: forge_github(mode='search', type='code'|'repositories')
+  // Reduction: 2 tools → 0 (already covered by forge_github). ΔS = −2.
 
   server.tool("forge_github_get_file", "Read a file from GitHub.", {
     owner: z.string().describe("Repository owner"),
@@ -956,17 +946,8 @@ export function registerGatewayTools(server: McpServer): void {
     lease_id: z.string().describe("Kernel-issued lease ID"),
   }, handleForgeGitHubCreateIssue);
 
-  server.tool("forge_github_create_pull_request", "Create a GitHub pull request.", {
-    owner: z.string().describe("Repository owner"),
-    repo: z.string().describe("Repository name"),
-    title: z.string().describe("PR title"),
-    body: z.string().describe("PR body"),
-    head: z.string().describe("Head branch"),
-    base: z.string().default("main").describe("Base branch"),
-    draft: z.boolean().default(true).describe("Draft PR"),
-    request_id: z.string().describe("Caller request ID"),
-    lease_id: z.string().describe("Kernel-issued lease ID"),
-  }, handleForgeGitHubCreatePullRequest);
+  // ── forge_github_create_pull_request collapsed into forge_github(mode='pr',action='create') — 2026-07-31 ──
+  // Reduction: 1 tool → 0. ΔS = −1.
 
   // Worktree
   server.tool("forge_worktree", "Local git physics sensor — reports branch, dirty state, stash, conflicts, and blast radius.", {

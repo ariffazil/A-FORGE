@@ -6,7 +6,7 @@ qqq_version: v1.1.1 (10/10 tests passing, verdict round-trip closed)
 seal_chain: append-only (chattr +a) + Merkle anchor every 100 receipts
 sense_port: 7071 (healthy)
 mcp_port: 7072 (healthy)
-tools_exposed_via_mcp: 131 (live-witnessed tools_loaded: 131)
+tools_exposed_via_mcp: 110 (live-witnessed 2026-07-31 via MCP tools/list on :7072)
 authority_ceiling: 777_FORGE (execution only — never adjudicate)
 owner_summary: GREEN (identity_present, service_healthy, deployment_drift: false)
 truth_rule: MCP tools/list on :7072 beats any static count in prose
@@ -17,11 +17,11 @@ truth_rule: MCP tools/list on :7072 beats any static count in prose
 [![Agentic CI](https://github.com/ariffazil/A-FORGE/actions/workflows/agentic-ci.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions)
 [![Boundary Guard](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions)
 [![Governance Gate](https://github.com/ariffazil/A-FORGE/actions/workflows/governance-gate.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions)
-[![🔥 FORGE](https://img.shields.io/badge/%F0%9F%94%A5%20FORGE-131%20Canonical%20Tools-orange)](https://forge.arif-fazil.com/mcp)
+[![🔥 FORGE](https://img.shields.io/badge/%F0%9F%94%A5%20FORGE-110%20Canonical%20Tools-orange)](https://forge.arif-fazil.com/mcp)
 [![Federation](https://img.shields.io/badge/Federation-v2026.07.31-0a7b83)](https://arifos.arif-fazil.com)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](./LICENSE)
 
-**A-FORGE** is the governed execution subprocessor and systems engineering engine for the arifOS Federation. Operating on ports **7071** (Sense REST API) and **7072** (FastMCP Gateway), A-FORGE exposes **131 high-performance tools** providing safe, audited access to filesystem mutations, Git operations, Docker container fleets, and CI/CD pipelines.
+**A-FORGE** is the governed execution subprocessor and systems engineering engine for the arifOS Federation. Operating on ports **7071** (Sense REST API) and **7072** (FastMCP Gateway), A-FORGE exposes **110 governed tools** providing safe, audited access to filesystem mutations, Git operations, Docker container fleets, and CI/CD pipelines.
 
 > **The Separation Principle:**  
 > *A-FORGE is the hands. arifOS is the brain. The hands execute. The brain judges. The hands never self-authorize.*
@@ -61,9 +61,9 @@ A-FORGE **cannot seal its own execution outcomes**. The executor cannot certify 
 
 ---
 
-## 🛠️ Core Capabilities (131 Live Tools)
+## 🛠️ Core Capabilities (110 Live Tools)
 
-A-FORGE hosts 131 canonical tools across five primary operational domains:
+A-FORGE hosts 110 governed tools across five primary operational domains:
 
 - **Filesystem & Codebase Operations:** Safe file edits, structural refactoring, multi-replace operations, and workspace boundary checks.
 - **Git & Repository Management:** Automated commits, branch isolation, PR governance checklist validation, and release attestation.

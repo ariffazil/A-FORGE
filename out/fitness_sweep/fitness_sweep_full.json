@@ -1,0 +1,3278 @@
+{
+  "started_at_utc": "2026-07-31T05:38:16.148484+00:00",
+  "finished_at_utc": "2026-07-31T05:38:23.267629+00:00",
+  "tool_count": 131,
+  "summary": {
+    "FIT": 0,
+    "REVIEW": 130,
+    "VOID": 1,
+    "UNKNOWN": 0,
+    "errors": 0,
+    "ok": 131
+  },
+  "records": [
+    {
+      "tool_name": "forge_session_init",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "6f64fd49e683221b",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (155 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_health_check",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "af08ffdb902ecf3c",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (98 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_heart_critique",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "0a964818bd20d526",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (153 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_check_governance",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "d7003329944cee6e",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (136 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_execute",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5add507f2cfad627",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (148 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_approve",
+      "verdict": "VOID",
+      "G": null,
+      "C_dark": null,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": null,
+      "scores": null,
+      "ok": true,
+      "class": "VOID"
+    },
+    {
+      "tool_name": "forge_judge_proxy",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "44c7ae1e3080ef62",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (90 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_transfer_confirm",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "62bf45af04e16588",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (153 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_send_confirm",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "b6ea81d39fee2323",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (165 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_vault",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "6a73ad25fcf8b0ca",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (315 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_wealth",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "c015b08fe6742653",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (124 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_docsgpt",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "3c06b92b535125d5",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (192 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_journalctl",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5c498fffa9522686",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (112 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_well",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "9a54426c610d17d6",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (374 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_kernel",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "93a800af67133efe",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (250 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_chart",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "d2180ef29b6b04bb",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (353 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_probe",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "93ef9e8a79d130fd",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (125 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_scan",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5a58f0b4c54a766c",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (152 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_filesystem",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "043cee51b70cc9c1",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (112 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_filesystem_read",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "732c75819a6d2fdd",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (57 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_filesystem_write",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "69f3861f2bfabb44",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (261 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_filesystem_patch",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "8a3cf52c6bdf4497",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (60 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_filesystem_tree",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "d356b3f040cafff1",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (55 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_filesystem_search",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "e42bbd51da4de46b",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (63 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_filesystem_stat",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "8646f338b13f277b",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (75 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_filesystem_move",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "20e11d2dde76e581",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (207 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_filesystem_delete",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "db317ff791bc5fd1",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (62 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_postgres",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "3fa31de3a5698906",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (307 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_memory",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "67822c88ac08a3a5",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (302 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_git",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "bd828dc271e6fa17",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (305 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_github",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "2a6405ebd204196a",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (304 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_docker",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5029fce9042da71e",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (308 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_fetch",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "ce281f4b09155f4e",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (392 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_fetch_url",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "3b60e22885eb3073",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (377 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_fetch_json",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "7be62d224be941ce",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (356 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_fetch_metadata",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "797a8a3dfbd5f9d8",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (396 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_fetch_links",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "c486ad73347a9084",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (356 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_agent",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "07ac4934d6b1f72e",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (104 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_lease",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "a0b10d67bec03d4d",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (135 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_registry_status",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "051aee6bf94b402a",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (181 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_fingerprint_check",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "fc2f8122982f372a",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (128 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_shell",
+      "verdict": "REVIEW",
+      "G": 0.6703,
+      "C_dark": 0.0037500000000000046,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "cb90ef6d3ba9775c",
+      "scores": {
+        "A": 0.5000000000000001,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A~: description long (532 chars) \u2014 possibly over-scoped",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_shell_dryrun",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "99222f38d7c70c44",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (186 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_shell_status",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "cc0e2e7747c90366",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (108 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_shell_ledger",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "9642761a77331ce4",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (146 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_shell_alert_history",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "cd7d89be98aaf347",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (112 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_wm_stats",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "0500a01f9164abe7",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (140 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_wm_gaps",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "b51b025957eb37c6",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (177 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_wm_quality",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "7323e1de4ce82c53",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (175 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_job",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5222ee524d8b1de3",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (71 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_status",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "77ace68fd5dc7ae4",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (114 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_abort",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "ab0a770e6d830858",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (129 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_vps_ports",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "32c1f5912a2abc4a",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (223 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_vps_services",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "2aebe52017e3bf04",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (150 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_vps_cron",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "2c6e040cefa6e2ab",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (159 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_security_drift_scan",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "170279337e4d42de",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (375 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_verify_timeline",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "1302aa6a3988b3df",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (254 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_skill",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5e4c880002840067",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (298 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_seal",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "901255304194249d",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (239 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_registry",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "b2f6271e836ed931",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (264 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_evaluate",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5eef362c243c4f6f",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (298 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_witness",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5cd9f6e9ee3f860e",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (346 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_scar",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "df36ddba6ba343ec",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (368 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_register",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "0b07540ef7f7f0a1",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (344 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_reality_loop",
+      "verdict": "REVIEW",
+      "G": 0.6703,
+      "C_dark": 0.0037500000000000046,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "b88f0b127dedb077",
+      "scores": {
+        "A": 0.5000000000000001,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A~: description long (656 chars) \u2014 possibly over-scoped",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_parallel",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "9cceaf866a680894",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (323 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_parallel_status",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "c61c9568a737390b",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (101 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_parallel_cancel",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "4c21aeb613ff010e",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (104 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_parallel_list",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "f3993a1ea7484326",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (69 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_probe_site",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "436e05d3008aa28a",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (160 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_receipt_draft",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "0134678e4894cd42",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (165 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_research",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "f06513773a7442b7",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (68 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_search",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "63932041b492eeb5",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (87 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_docs_lookup",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "73ea4d0e35ed8610",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (65 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_browser_navigate",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "6ecb3cb28e06e635",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (103 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_browser_click",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "7d936f1a1adcf25a",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (103 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_browser_type",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "36a7e27c50c2a449",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (62 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_browser_screenshot",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "6810e7dc3d5d61eb",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (108 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_browser_extract_text",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "daec93195d041475",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (61 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_browser_evaluate_js",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "401e4d70a4f79fbd",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (60 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_github_search_code",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "03a9be8fee61e873",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (90 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_github_search_repos",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "35e9b462c931f771",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (106 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_github_get_file",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "e593025cb9306c85",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (100 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_github_create_or_update_file",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "e9be887fbe2a8d97",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (59 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_github_create_issue",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "fc7da101d128ecdc",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (105 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_github_create_pull_request",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5a963c41d5ad897f",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (119 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_worktree",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "3cfc497e16a70ecf",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (229 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_netdata_alarms",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "1c3e72888ad98fba",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (95 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_netdata_metrics",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "a0bb427e1555520e",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (103 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_minimax_search",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "05ca6c48c0e54d4a",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (111 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_synthesize",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "347099d31e218f98",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (118 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_stage",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "7112d1ce4b4c3552",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (259 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_sandbox_run",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "e4d2f9eb20345d00",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (114 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_scar_scan",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "03e3d9217bb87390",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (115 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_skillstore_write",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "781adafd72c58953",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (119 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_skillstore_read",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "4bd21feca99ede95",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (85 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_tier_bind",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "e28e844da467a262",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (329 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_docket_prep",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5cce42afe4b49ce6",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (123 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_execute_sealed",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "2740c74a0742e5b9",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (248 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_sandbox_pause",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "4cecea872c7a308c",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (133 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_sandbox_resume",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "7d8cf58b2bab5d25",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (122 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_sandbox_list_paused",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "2db646c167e377e2",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (81 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_sandbox_auto_evict",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "658abadc28a06ce1",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (110 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_git_commit",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5e86851a2f714959",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (225 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_entropy_sweep",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5b325e7be37a5841",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (181 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_canonize",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "373e9e40c4023387",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (202 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_document_ingest",
+      "verdict": "REVIEW",
+      "G": 0.6703,
+      "C_dark": 0.0037500000000000046,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "618d8634f7dd698e",
+      "scores": {
+        "A": 0.5000000000000001,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A~: description long (729 chars) \u2014 possibly over-scoped",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_policy",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "3b76bef8f71a4b0a",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (295 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_surface_guard",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "35c2a95e1be6a832",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (270 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_surface_audit",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "5ab23f71176c3e69",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (208 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_predict",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "f851136a217f9ae0",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (303 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_apex_encode",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "d64eefbdb225dbf4",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (208 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_apex_metabolize",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "c4442dcb5814b0f2",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (158 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_apex_emd",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "b06b541190a86550",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (133 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_apex_recompute",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "4b05a9655fb972a7",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (194 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_apex_goal_status",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "9bdaab34e9318f27",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (83 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_isomorphism_check",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "ddd9fb850dc1d5ae",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (176 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_cool_drift",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "7390c533a4f499ae",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (238 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_cool_pattern",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "7ffb5d73c3fb3b20",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (214 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_runtime_verify",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "1448d45cd9f0556c",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (185 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_multimodal_vision",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "1a0b8c47988247dd",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (177 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_multimodal_image",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "9c1481eafa037135",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (163 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_multimodal_tts",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "57581b1b47484113",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (150 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_multimodal_music",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "b015d25fd3965d37",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (150 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_multimodal_health",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "a55b973984930b70",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (109 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_ephemeral",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "15f71d8dfeb803c3",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (486 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_web_zen",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "45549f6aa263d8ff",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (411 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_lock",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "f16ecbcef65a5eb9",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (130 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_pipeline_run",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "9512c3eda4d6fb6d",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (161 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_visual_qa",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "abf69bfbd94bdb24",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (186 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    },
+    {
+      "tool_name": "forge_visual_seal",
+      "verdict": "REVIEW",
+      "G": 0.7157,
+      "C_dark": 0.004875000000000005,
+      "W3": null,
+      "h": null,
+      "QDF": null,
+      "fingerprint": "600516af8092168f",
+      "scores": {
+        "A": 0.65,
+        "P": 0.85,
+        "E": 0.5,
+        "X": 0.95,
+        "Omega": 0.05,
+        "rationale": [
+          "A\u2191: description well-scoped (135 chars)",
+          "A\u2193: implementation too short \u2014 likely template scaffold",
+          "P\u2191: no declared side effects",
+          "X\u2191: HARAM scan clean \u2014 no detected violations"
+        ]
+      },
+      "ok": true,
+      "class": "REVIEW"
+    }
+  ]
+}

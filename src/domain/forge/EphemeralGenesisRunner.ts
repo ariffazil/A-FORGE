@@ -1,24 +1,28 @@
 /**
- * EphemeralGenesisRunner — Governed Ephemeral Tool Lifecycle
- * ===========================================================
+ * EphemeralGenesisRunner — Governed Ephemeral Tool Lifecycle (DOMAIN ADAPTER)
+ * ===========================================================================
  *
- * "Agent tidak perlukan 128 permanent tools. Ia perlukan kemampuan
- *  membina alat SEMENTARA apabila misi memerlukannya."
+ * ═══ P0.2 ARCHITECTURAL NOTE (2026-07-31) ═══════════════════════════════
+ * CANONICAL ENGINE: src/infrastructure/tools/EphemeralGenesis.ts
+ * This file is a DOMAIN ADAPTER providing CapabilityLease + GenesisReceipt
+ * governance wrappers around the canonical EphemeralGenesis engine.
+ * The MCP surface (src/interfaces/mcp/ephemeralTools.ts) routes through
+ * the canonical engine. This adapter exists for internal A-FORGE workflows
+ * that need lease-bound execution and richer state tracking.
  *
- * This is the INTERNAL A-FORGE implementation. It does NOT create new
- * public kernel modes. arif_forge remains the single constitutional
- * gateway. A-FORGE owns the genesis lifecycle internally.
+ * DUPLICATE WARNING: src/domain/containment/EphemeralGenesisRunner.ts
+ * is a containment-specific fork. Both must delegate to the canonical
+ * engine for core lifecycle operations. DO NOT add new state logic here
+ * without also updating the canonical engine.
+ * ═══════════════════════════════════════════════════════════════════════
  *
- * State machine:
+ * State machine (domain adapter — canonical engine has simpler states):
  *   GAP_DETECTED → REUSE_CHECKED → CAPABILITY_SPECIFIED → GENERATED
  *   → SANDBOX_TESTED → LEASE_GRANTED → INVOKED → OUTPUT_VERIFIED
  *   → RETIRED
  *
  * Optional branch:
  *   REPEATED_VALUE_PROVEN → PROMOTION_PROPOSED → Human/kernel review
- *   → Persistent capability or REJECT
- *
- * Agent TIDAK BOLEH terus menukar ephemeral code menjadi permanent MCP tool.
  *
  * DITEMPA BUKAN DIBERI — Forged, Not Given
  * @constitutional F1 AMANAH — all ephemeral tools are temporary and reversible

@@ -68,7 +68,6 @@ const IRREVERSIBLE_TOOLS = new Set([
   "hostinger_vps_restart",
   "hostinger_vps_stop",
   "forge_github_create_or_update_file",
-  "forge_github_create_pull_request",
   "forge_visual_seal",      // VAULT999 composite seal — IRREVERSIBLE
   "forge_seal",             // VAULT999 seal — IRREVERSIBLE
 ]);
@@ -85,8 +84,6 @@ const HIGH_IMPACT_TOOLS = new Set([
   "docker_container_restart",
   "git_push",
   "forge_git_commit",  // consistent with registered tool names
-  "forge_filesystem_write",
-  "forge_filesystem_delete",
   "forge_postgres_query",
   "forge_github_pr",
   "forge_vault_write",
@@ -127,15 +124,12 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_parallel",         // spawn N concurrent A2A tasks — EXECUTE_REVERSIBLE
   "forge_parallel_cancel",  // cancel running parallel agents — EXECUTE_REVERSIBLE
   "forge_kernel",           // constitutional kernel proxy to arifOS — EXECUTE_REVERSIBLE
-  "forge_filesystem_patch",  // surgical text replacement — EXECUTE_REVERSIBLE
-  "forge_filesystem_move",   // file/directory move — EXECUTE_REVERSIBLE
   // ── P0.2 FIX: newly-classified mutation tools ──
   "forge_execute_sealed",      // execute with VAULT999 seal — EXECUTE_HIGH_IMPACT (moved below)
   "forge_transfer_confirm",    // transfer with human confirmation — EXECUTE_HIGH_IMPACT
   "forge_send_confirm",        // send with human confirmation — EXECUTE_HIGH_IMPACT
   "forge_github_create_or_update_file", // GitHub file write — EXECUTE_REVERSIBLE
   "forge_github_create_issue", // GitHub issue create — EXECUTE_REVERSIBLE
-  "forge_github_create_pull_request", // GitHub PR create — EXECUTE_REVERSIBLE
   "forge_skill",               // dynamic tool generation — EXECUTE_REVERSIBLE
   "forge_skillstore_write",    // artifact store write — EXECUTE_REVERSIBLE
   "forge_register",            // APEX-gated tool registration — EXECUTE_REVERSIBLE
@@ -150,9 +144,6 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_parallel",            // spawn N concurrent tasks — EXECUTE_REVERSIBLE
   "forge_parallel_cancel",     // cancel parallel agents — EXECUTE_REVERSIBLE
   // ── MuleRouter Multimodal (2026-07-30) — EXECUTE_REVERSIBLE ──
-  "forge_multimodal_image",    // image generation — EXECUTE_REVERSIBLE (can regenerate)
-  "forge_multimodal_tts",      // TTS generation — EXECUTE_REVERSIBLE (can regenerate)
-  "forge_multimodal_music",    // music generation — EXECUTE_REVERSIBLE (can regenerate)
   "forge_ephemeral",           // ephemeral tool genesis — EXECUTE_REVERSIBLE (generate/invoke/retire are reversible)
 ]);
 
@@ -191,12 +182,8 @@ const OBSERVE_TOOLS = new Set([
   "forge_health_check",       // health check — read-only
   "forge_probe",              // federation organ liveness — read-only (hits /health endpoints)
   "forge_memory_recall",      // memory read — read-only
-  "forge_filesystem_read",    // file read — read-only (stateless HTTP OK)
-  "forge_filesystem_tree",    // dir tree — read-only
-  "forge_filesystem_search",  // content search alias — read-only
   "forge_filesystem_glob",    // file search — read-only
   "forge_filesystem_grep",    // content search — read-only
-  "forge_filesystem_stat",    // file metadata — read-only
   "forge_document_ingest",    // document intelligence — read-only
   "forge_security_drift_scan", // Machine Constitution security drift — read-only
   "forge_git_status",         // git status — read-only
@@ -207,7 +194,6 @@ const OBSERVE_TOOLS = new Set([
   "forge_docker_logs",        // docker logs — read-only
   "forge_postgres_schema",    // schema read — read-only
   "forge_search",             // web search — read-only
-  "forge_minimax_search",     // web search — read-only
   "forge_research",           // web research — read-only
   "forge_docs_lookup",        // docs lookup — read-only
   "forge_browser_navigate",   // browser nav — read-only (observe-class)
@@ -259,8 +245,6 @@ const OBSERVE_TOOLS = new Set([
   "forge_well",               // WELL organ relay — read-only, OBSERVE
   "forge_docsgpt",            // DocsGPT knowledge spine — read-only, OBSERVE (FORGE-1 membrane)
   "forge_github_get_file",    // GitHub file read — read-only, OBSERVE
-  "forge_github_search_code", // GitHub code search — read-only, OBSERVE
-  "forge_github_search_repos",// GitHub repo search — read-only, OBSERVE
   "forge_visual_seal",        // VAULT999 composite seal — IRREVERSIBLE (requires tri-witness)
   // ── P0.2 FIX (2026-07-19): 68 previously-unclassified tools now explicitly assigned ──
   "forge_session_init",        // session ignition — OBSERVE (creates context, no mutation)
@@ -269,14 +253,8 @@ const OBSERVE_TOOLS = new Set([
   "forge_chart",               // charting/visualization — OBSERVE
   "forge_scan",                // security scan — OBSERVE
   "forge_fetch",               // URL fetch — OBSERVE
-  "forge_fetch_url",           // URL fetch alias — OBSERVE
-  "forge_fetch_json",          // JSON fetch — OBSERVE
-  "forge_fetch_metadata",      // metadata fetch — OBSERVE
-  "forge_fetch_links",         // link extraction — OBSERVE
   "forge_fingerprint_check",   // tool fingerprint check — OBSERVE
   "forge_github",              // GitHub ops — mode-aware (search/get=OBSERVE)
-  "forge_github_search_code",  // code search — OBSERVE
-  "forge_github_search_repos", // repo search — OBSERVE
   "forge_github_get_file",     // file read — OBSERVE
   "forge_journalctl",          // journal log query — OBSERVE
   "forge_memory",              // memory recall/list — OBSERVE
@@ -306,8 +284,6 @@ const OBSERVE_TOOLS = new Set([
   "forge_predict",             // pre-action simulation — SIMULATE (moved to simulate set below)
   "forge_document_ingest",     // already above, kept for clarity
   // ── MuleRouter Multimodal (2026-07-30) ──
-  "forge_multimodal_vision",   // vision analysis — OBSERVE (read-only, no mutation)
-  "forge_multimodal_health",   // multimodal health check — OBSERVE
   "forge_ephemeral",           // ephemeral tool genesis — mode-aware (inspect_gap/list=list/list_active=OBSERVE)
 ]);
 

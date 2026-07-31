@@ -59,7 +59,7 @@ const STATELESS_TOOLS = new Set([
   "forge_probe",
   "forge_search",
   "forge_research",
-  "forge_minimax_search",
+  // forge_minimax_search — REMOVED 2026-07-31 (MiniMax backend deprecating, Brave covers same intent)
   "forge_docs_lookup",
   "forge_memory",
   // forge_systemctl — REMOVED 2026-07-09 (use forge_shell('systemctl ...'))
@@ -75,11 +75,13 @@ const STATELESS_TOOLS = new Set([
   "forge_registry",
   "forge_document_ingest",                                   // Phase 1 — read-only, no side effects
 
-  // ── OBSERVE FS aliases (2026-07-09) — stateless HTTP clients must read without session ──
-  "forge_filesystem_read",
-  "forge_filesystem_tree",
-  "forge_filesystem_search",
-  "forge_filesystem_stat",
+  // ── FS aliases collapsed into forge_filesystem(mode=...) — 2026-07-31 entropy sweep ──
+  // forge_filesystem_read/tree/search/stat were thin wrappers. STATELESS_TOOLS now
+  // references the canonical forge_filesystem OBSERVE modes directly.
+  // "forge_filesystem_read", — REMOVED
+  // "forge_filesystem_tree", — REMOVED
+  // "forge_filesystem_search", — REMOVED
+  // "forge_filesystem_stat", — REMOVED
   "forge_filesystem_grep",
 
   // ── Phase 5: MCP Policy Gate (2026-06-30) ──────────────────────────
@@ -124,16 +126,17 @@ const STATELESS_TOOLS = new Set([
 
   // ── Fetch — URL content extraction (OBSERVE-class, no mutations) ───
   "forge_fetch",
-  "forge_fetch_url",      // proxy → forge_fetch(mode=readable)
-  "forge_fetch_json",     // proxy → forge_fetch(mode=json)
-  "forge_fetch_metadata", // proxy → forge_fetch(mode=metadata)
+  // forge_fetch_url — REMOVED 2026-07-31 → forge_fetch(mode='readable')
+  // forge_fetch_json — REMOVED 2026-07-31 → forge_fetch(mode='json')
+  // forge_fetch_metadata — REMOVED 2026-07-31 → forge_fetch(mode='metadata')
+  // forge_fetch_links — REMOVED 2026-07-31 → forge_fetch(mode='links')
 
   // ── Web zen (2026-07-30) — OBSERVE site control surface ───────────
   // Thin wrapper around web_zen CLI. doctor/sense/verify/orphan(preview)/
   // ephemeral(sandbox)/caddy-reload-hint. No production rsync --delete apply.
   "forge_web_zen",
   "forge_probe_site",
-  "forge_fetch_links",    // proxy → forge_fetch(mode=links)
+  // forge_fetch_links — REMOVED 2026-07-31 → forge_fetch(mode='links')
 
   // ── Viz OBSERVE (2026-07-09) — pure render from payload, no host mutation ──
   // Multi-step GEOX workflows over Streamable HTTP were blocked with
@@ -146,8 +149,8 @@ const STATELESS_TOOLS = new Set([
   // MUTATE github (create_issue/pr/file) stays session-owned. R0 OBSERVE
   // search must not require transport session ownership — same class as forge_fetch.
   "forge_github",
-  "forge_github_search_code",
-  "forge_github_search_repos",
+  // forge_github_search_code — REMOVED 2026-07-31 → forge_github(mode='search',type='code')
+  // forge_github_search_repos — REMOVED 2026-07-31 → forge_github(mode='search',type='repositories')
   "forge_github_get_file",
 
   // ── DARWIN FIX 1c: stateless mutate primitives ────────────────────

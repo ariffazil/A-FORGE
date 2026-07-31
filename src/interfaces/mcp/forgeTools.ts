@@ -1303,10 +1303,10 @@ export function registerSkillTools(server: McpServer): void {
 
 export function registerGovernedTools(server: McpServer): void {
 
-  // ── forge_evaluate — standalone G = A·P·E·X·Φ gate ────────────────────────
+  // ── forge_evaluate — standalone G = (A·P·E·X)^(1/4) gate ──────────────────
   server.tool(
     "forge_evaluate",
-    "APEX v36Ω evaluation gate. Computes G = A·P·E·X·Φ (Nash bargaining product) and C_dark = A·(1-P)·(1-X) for a candidate tool spec. Returns SEAL/REVIEW/VOID verdict. Does NOT generate code — evaluates only. Falsifiable: thresholds must be calibrated on held-out data.",
+    "APEX v36Ω evaluation gate. Computes G = (A·P·E·X)^(1/4) (4-term Nash bargaining product, geometric mean) and C_dark = A·(1-P)·(1-X) for a candidate tool spec. Φ is consulted separately as scar pressure — it does NOT multiply into G. Returns SEAL/REVIEW/VOID verdict. Does NOT generate code — evaluates only. Falsifiable: thresholds must be calibrated on held-out data.",
     {
       tool_name: z.string().describe("Proposed tool name (forge_* convention)"),
       description: z.string().min(10).max(2000).describe("Natural-language description"),
@@ -1349,7 +1349,7 @@ export function registerGovernedTools(server: McpServer): void {
                 ...dryRun,
                 mode: "dry_run",
                 note: "Implementation empty — dry run only. Full evaluation requires implementation code for HARAM scan + scar consultation.",
-                doctrine: "G = A·P·E·X·Φ (Nash 1950 pattern). C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G.",
+                doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). Φ is separate scar gate. C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G.",
               }, null, 2),
             }],
           };
@@ -1373,7 +1373,7 @@ export function registerGovernedTools(server: McpServer): void {
             type: "text" as const,
             text: JSON.stringify({
               ...decision,
-              doctrine: "G = A·P·E·X·Φ (Nash 1950 pattern). C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G. Forged, Not Given.",
+              doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). Φ is separate scar gate. C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G. Forged, Not Given.",
               v36_status: "MEASUREMENT_INSTRUMENT — thresholds must be calibrated on held-out data via ROC analysis",
             }, null, 2),
           }],

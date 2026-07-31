@@ -623,89 +623,11 @@ export function registerFilesystemTools(server: McpServer): void {
     }),
   }, async (args) => executeFilesystem(args as any));
 
-  // ── External aliases — MCP-friendly tool surface ─────────────────────────────
-  // Call executeFilesystem directly (server._callTool does NOT exist on McpServer).
-  // OBSERVE aliases are in STATELESS_TOOLS + F12 AUTHORIZED_PROXY_TOOLS.
-
-  server.registerTool("forge_filesystem_read", {
-    description: "Read a file or list a directory.",
-    inputSchema: z.object({
-      path: z.string(),
-      offset: z.number().optional(),
-      limit: z.number().optional(),
-    }),
-  }, async ({ path, offset, limit }) => executeFilesystem({ mode: "read", path, offset, limit }));
-
-  server.registerTool("forge_filesystem_write", {
-    description: "Create or overwrite a file.",
-    inputSchema: z.object({
-      path: z.string(),
-      content: z.string(),
-      overwrite: z.boolean().default(false),
-      dry_run: z.boolean().default(false),
-    }),
-  }, async ({ path, content, overwrite, dry_run }) =>
-    executeFilesystem({ mode: "write", path, content, overwrite, dry_run }));
-
-  server.registerTool("forge_filesystem_patch", {
-    description: "Surgical text replacement in a file.",
-    inputSchema: z.object({
-      path: z.string(),
-      old_text: z.string(),
-      new_text: z.string(),
-      expected_occurrences: z.number().optional(),
-      dry_run: z.boolean().default(true),
-    }),
-  }, async ({ path, old_text, new_text, expected_occurrences, dry_run }) =>
-    executeFilesystem({ mode: "patch", path, old_text, new_text, expected_occurrences, dry_run }));
-
-  server.registerTool("forge_filesystem_tree", {
-    description: "List directory tree structure.",
-    inputSchema: z.object({
-      path: z.string().default("/root"),
-      max_depth: z.number().default(3),
-      max_entries: z.number().default(500),
-      include_hidden: z.boolean().default(false),
-    }),
-  }, async ({ path, max_depth, max_entries, include_hidden }) =>
-    executeFilesystem({ mode: "tree", path, max_depth, max_entries, include_hidden }));
-
-  server.registerTool("forge_filesystem_search", {
-    description: "Search file contents by regex pattern.",
-    inputSchema: z.object({
-      path: z.string(),
-      pattern: z.string(),
-      include: z.string().optional(),
-    }),
-  }, async ({ path, pattern, include }) =>
-    executeFilesystem({ mode: "grep", path, pattern, include }));
-
-  server.registerTool("forge_filesystem_stat", {
-    description: "Get file/directory metadata including sha256 hash.",
-    inputSchema: z.object({
-      path: z.string(),
-    }),
-  }, async ({ path }) => executeFilesystem({ mode: "stat", path }));
-
-  server.registerTool("forge_filesystem_move", {
-    description: "Move a file or directory.",
-    inputSchema: z.object({
-      path: z.string(),
-      destination: z.string(),
-      dry_run: z.boolean().default(false),
-    }),
-  }, async ({ path, destination, dry_run }) =>
-    executeFilesystem({ mode: "move", path, destination, dry_run }));
-
-  server.registerTool("forge_filesystem_delete", {
-    description: "Delete a file (quarantine by default).",
-    inputSchema: z.object({
-      path: z.string(),
-      delete_mode: z.enum(["quarantine", "hard"]).default("quarantine"),
-      dry_run: z.boolean().default(false),
-    }),
-  }, async ({ path, delete_mode, dry_run }) =>
-    executeFilesystem({ mode: "delete", path, delete_mode, dry_run }));
+  // ── Filesystem tools collapsed into forge_filesystem(mode=...) — 2026-07-31 entropy sweep ──
+  // The 8 filesystem aliases (forge_filesystem_read/write/patch/tree/search/stat/move/delete)
+  // were thin wrappers calling executeFilesystem with hardcoded mode params.
+  // Canonical: forge_filesystem(mode='read'|'write'|'patch'|'tree'|'grep'|'stat'|'move'|'delete')
+  // Reduction: 8 tools → 1 tool. ΔS = −7. F4 CLARITY.
 }
 
 export function registerPostgresTools(server: McpServer): void {
@@ -1416,47 +1338,9 @@ export function registerFetchTools(server: McpServer): void {
     return executeFetch(params);
   });
 
-  // ── External aliases — MCP-friendly fetch surface ────────────────────────────
-  // These call executeFetch directly (no server._callTool — doesn't exist on McpServer).
-
-  // ── DEPRECATED ALIASES — use forge_fetch(mode=...) instead ──────────────────
-  // Retained for backward compatibility. Will be removed 2026-08-30.
-
-  server.registerTool("forge_fetch_url", {
-    description: "[DEPRECATED — use forge_fetch(mode='readable')] ACTUATOR · research · OBSERVE. Fetch a URL and return content as markdown.",
-    inputSchema: z.object({
-      url: z.string().url(),
-      max_chars: z.number().default(50000),
-    }),
-  }, async ({ url, max_chars }) => {
-    return executeFetch({ url, mode: "readable", max_chars });
-  });
-
-  server.registerTool("forge_fetch_json", {
-    description: "[DEPRECATED — use forge_fetch(mode='json')] ACTUATOR · research · OBSERVE. Fetch a URL and parse as JSON.",
-    inputSchema: z.object({
-      url: z.string().url(),
-      max_chars: z.number().default(50000),
-    }),
-  }, async ({ url, max_chars }) => {
-    return executeFetch({ url, mode: "json", max_chars });
-  });
-
-  server.registerTool("forge_fetch_metadata", {
-    description: "[DEPRECATED — use forge_fetch(mode='metadata')] ACTUATOR · research · OBSERVE. Fetch URL metadata (title, author, description, dates, links).",
-    inputSchema: z.object({
-      url: z.string().url(),
-    }),
-  }, async ({ url }) => {
-    return executeFetch({ url, mode: "metadata" });
-  });
-
-  server.registerTool("forge_fetch_links", {
-    description: "[DEPRECATED — use forge_fetch(mode='links')] ACTUATOR · research · OBSERVE. Extract all links from a URL.",
-    inputSchema: z.object({
-      url: z.string().url(),
-    }),
-  }, async ({ url }) => {
-    return executeFetch({ url, mode: "links" });
-  });
+  // ── Fetch aliases collapsed into forge_fetch(mode=...) — 2026-07-31 entropy sweep ──
+  // The 4 fetch aliases (forge_fetch_url/json/metadata/links) were thin wrappers calling
+  // executeFetch with hardcoded mode params. Already marked [DEPRECATED] since 2026-07-29.
+  // Canonical: forge_fetch(mode='readable'|'json'|'metadata'|'links')
+  // Reduction: 4 tools → 0 (already covered by forge_fetch). ΔS = −4. F4 CLARITY.
 }

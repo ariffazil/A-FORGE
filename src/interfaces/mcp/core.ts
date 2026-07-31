@@ -87,7 +87,7 @@ import { registerVerifyTimelineTools } from "./verifyTimelineTools.js";
 import { registerParallelTools } from "./parallelTools.js";
 import { registerCoolingVerbs } from "./coolingVerbs.js";
 import { registerRuntimeVerifyTool } from "./runtimeVerify.js";
-import { registerMultimodalTools, registerMultimodalHealthCheck } from "./multimodalTools.js";
+// multimodalTools.ts DELETED 2026-07-31 — all 4 tools deprecated, replaced by forge_ephemeral templates
 import { registerEphemeralTools } from "./ephemeralTools.js";
 import { registerWebZenTools } from "./webZenTools.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
@@ -1841,7 +1841,8 @@ const judgeProxyHandler = async (args: Record<string, unknown>) => {
   });
 };
 
-server.tool("forge_approve", "Refuses approval — A-FORGE cannot self-authorize. Route to arifOS arif_judge_deliberate via forge_judge_proxy instead.", { holdId: z.string(), reason: z.string().optional() }, judgeHandler);
+// forge_approve DELETED 2026-07-31 — self-refusing tool that always returned SELF_AUTHORIZE_REFUSED.
+// Route to arif_judge via forge_judge_proxy instead. Reduction: 1 dead tool. ΔS = −1.
 
 server.tool(
   "forge_judge_proxy",
@@ -2775,13 +2776,13 @@ registerCoolingVerbs(server);
 // Returns MATCH | DRIFT | UNKNOWN. Fail-closed on DRIFT.
 registerRuntimeVerifyTool(server);
 
-// ── MuleRouter Multimodal Surface — forge_multimodal_* (Δ Perception) ──────────
-// Wolf Cabinet Layer: Δ Perception — governed multimodal generation.
-// 4 tools: vision (OBSERVE), image/tts/music (EXECUTE_REVERSIBLE).
-// F5 PEACE² content policy + F11 AUDIT receipts on every generation.
-// Forged 2026-07-30 by 333-AGI under F13 directive.
-registerMultimodalTools(server);
-registerMultimodalHealthCheck(server);
+// ── Multimodal surface DELETED 2026-07-31 — all 5 tools collapsed into forge_ephemeral templates ──
+// forge_multimodal_vision → forge_ephemeral(template='mulerouter_vision')
+// forge_multimodal_image → forge_ephemeral(template='mulerouter_image_gen')
+// forge_multimodal_tts → forge_ephemeral(template='mulerouter_tts')
+// forge_multimodal_music → forge_ephemeral(template='mulerouter_music')
+// forge_multimodal_health → DELETED (orphaned health check)
+// Reduction: 5 redundant tools → 0. ΔS = −5. F4 CLARITY.
 
 // ── Ephemeral Tool Genesis — Capability Metabolism (Ψ Survival) ─────────────
 // The phase transition: from accumulating permanent tools to metabolizing capability.
