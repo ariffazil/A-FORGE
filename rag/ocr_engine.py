@@ -6,12 +6,13 @@ Layer 1 (Perception) of the EMD Document Intelligence Stack.
 Routes documents to the correct OCR backend based on available infrastructure.
 
 Backends (auto-selected):
+  mulerouter_vlm  — MuleRouter VLM OCR (qwen3-omni-flash, $0.0001/1K) ★ PRIMARY
   baidu_cloud     — Baidu Cloud Unlimited-OCR API (async, no local GPU)
   qwen25_vl       — Qwen2.5-VL via Bailian API (bbox output, already billed)
   unlimited_local — Self-hosted Unlimited-OCR via Transformers (needs GPU)
   tesseract       — Tesseract (bundled with forge_document_ingest ocr=true)
 
-Status on af-forge: NO GPU → baidu_cloud (needs API keys) or qwen25_vl (existing)
+Status on af-forge: NO GPU → mulerouter_vlm (primary), baidu_cloud, qwen25_vl
 
 Usage:
   python ocr_engine.py --pdf doc.pdf --output /tmp/out  # auto-route
@@ -401,6 +402,175 @@ class UnlimitedOCRLocal:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+#  BACKEND 3: MuleRouter VLM OCR (qwen3-omni-flash)
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class MuleRouterVLMOCR:
+    """
+    VLM-based OCR via MuleRouter (qwen3-omni-flash).
+
+    EUREKA777::OCR_COMPRESSION — OCR is optical context compression,
+    not character extraction. The VLM understands document structure,
+    preserves tables, describes figures, and outputs structured markdown.
+
+    Cost: $0.0001/1K tokens. No GPU needed. Fixed-price MuleRouter gateway.
+    Requires: MULEROUTER_API_KEY environment variable.
+
+    Prompt templates adapted from DeepSeek-OCR (arXiv:2510.18234).
+    """
+
+    BASE_URL = "https://api.mulerouter.ai/vendors/openai/v1"
+    OCR_PROMPT_DOCUMENT = (
+        "<|grounding|>Convert this document to markdown. "
+        "Preserve all headings, tables, lists, and reading order. "
+        "For any figures or charts, describe them briefly. "
+        "Output ONLY the markdown — no preamble."
+    )
+    OCR_PROMPT_FREE = (
+        "Free OCR this image. Extract all visible text. Do not describe images."
+    )
+    OCR_PROMPT_FIGURE = (
+        "Parse this figure. Describe what it shows — axes, trends, data points. "
+        "Be specific about numbers."
+    )
+
+    def __init__(self):
+        self.api_key = os.environ.get("MULEROUTER_API_KEY", "")
+        self.available = bool(self.api_key)
+
+    def process(
+        self,
+        image_path: str,
+        mode: str = "document",  # document | free | figure
+        max_tokens: int = 4096,
+    ) -> dict:
+        """Process a single image through VLM OCR. Returns structured result."""
+        import base64
+
+        with open(image_path, "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode()
+
+        ext = os.path.splitext(image_path)[1].lower().lstrip(".")
+        mime = f"image/{'jpeg' if ext in ('jpg', 'jpeg') else ext}"
+
+        prompts = {
+            "document": self.OCR_PROMPT_DOCUMENT,
+            "free": self.OCR_PROMPT_FREE,
+            "figure": self.OCR_PROMPT_FIGURE,
+        }
+        prompt_text = prompts.get(mode, prompts["document"])
+
+        payload = {
+            "model": "mulerouter/qwen3-omni-flash",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:{mime};base64,{img_b64}"},
+                        },
+                        {"type": "text", "text": prompt_text},
+                    ],
+                }
+            ],
+            "max_tokens": max_tokens,
+            "temperature": 0.0,
+        }
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+
+        start = time.time()
+        try:
+            req = Request(
+                f"{self.BASE_URL}/chat/completions",
+                data=json.dumps(payload).encode(),
+                headers=headers,
+                method="POST",
+            )
+            with urlopen(req, timeout=120) as r:
+                resp = json.loads(r.read())
+
+            elapsed = time.time() - start
+            content = resp["choices"][0]["message"]["content"]
+            usage = resp.get("usage", {})
+
+            return {
+                "backend": "mulerouter_vlm",
+                "mode": mode,
+                "markdown_text": content,
+                "tokens": {
+                    "prompt": usage.get("prompt_tokens", 0),
+                    "completion": usage.get("completion_tokens", 0),
+                },
+                "elapsed_s": round(elapsed, 2),
+                "status": "ok",
+            }
+        except Exception as e:
+            return {
+                "backend": "mulerouter_vlm",
+                "mode": mode,
+                "status": "error",
+                "error": str(e),
+                "elapsed_s": round(time.time() - start, 2),
+            }
+
+    def process_pdf(
+        self, pdf_path: str, output_dir: str, dpi: int = DEFAULT_DPI
+    ) -> dict:
+        """Process PDF: rasterize → VLM OCR per page → concatenate markdown."""
+        import fitz
+        import shutil
+
+        os.makedirs(output_dir, exist_ok=True)
+        doc = fitz.open(pdf_path)
+        mat = fitz.Matrix(dpi / 72, dpi / 72)
+
+        pages_md = []
+        total_tokens = 0
+        errors = 0
+
+        for i, page in enumerate(doc):
+            tmp = os.path.join(output_dir, f"_page_{i:04d}.png")
+            page.get_pixmap(matrix=mat).save(tmp)
+
+            result = self.process(tmp, mode="document")
+            if result["status"] == "ok":
+                pages_md.append(result["markdown_text"])
+                total_tokens += (
+                    result["tokens"]["prompt"] + result["tokens"]["completion"]
+                )
+            else:
+                errors += 1
+                pages_md.append(
+                    f"[OCR ERROR page {i + 1}: {result.get('error', 'unknown')}]"
+                )
+
+            os.remove(tmp)
+
+        doc.close()
+
+        full_md = "\n\n---\n\n".join(pages_md)
+        md_path = os.path.join(output_dir, "ocr_output.md")
+        with open(md_path, "w") as f:
+            f.write(full_md)
+
+        return {
+            "backend": "mulerouter_vlm",
+            "markdown_path": md_path,
+            "pages": len(pages_md),
+            "errors": errors,
+            "total_tokens": total_tokens,
+            "dpi": dpi,
+            "status": "ok" if errors == 0 else "partial",
+        }
+
+
+# ═══════════════════════════════════════════════════════════════════════
 #  AUTO-ROUTER — picks best available backend
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -467,7 +637,7 @@ def _route_forced(req: OCRRequest) -> dict:
         return _route_qwen(req)
     else:
         raise ValueError(
-            f"Unknown backend: {backend}. Valid: baidu_cloud, unlimited_local, qwen25_vl"
+            f"Unknown backend: {backend}. Valid: mulerouter_vlm, baidu_cloud, unlimited_local, qwen25_vl"
         )
 
 
@@ -516,6 +686,28 @@ def _route_qwen(req: OCRRequest) -> dict:
     }
 
 
+def _route_mulerouter(req: OCRRequest, engine: MuleRouterVLMOCR) -> dict:
+    """
+    VLM OCR via MuleRouter (qwen3-omni-flash).
+    Handles both single images and PDFs. Outputs structured markdown.
+    """
+    os.makedirs(req.output_dir, exist_ok=True)
+
+    if req.file_path.lower().endswith(".pdf"):
+        return engine.process_pdf(req.file_path, req.output_dir, req.dpi)
+    else:
+        # Single image — determine mode
+        mode = "document"
+        result = engine.process(req.file_path, mode=mode)
+        if result["status"] == "ok":
+            md_path = os.path.join(req.output_dir, "ocr_output.md")
+            with open(md_path, "w") as f:
+                f.write(result["markdown_text"])
+            result["markdown_path"] = md_path
+        result["pages"] = 1
+        return result
+
+
 # ── Health Probe ──────────────────────────────────────────────────────
 
 
@@ -525,6 +717,16 @@ def health_check() -> dict:
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "host": os.uname().nodename,
         "backends": {},
+    }
+
+    # MuleRouter VLM OCR (PRIMARY — no GPU, $0.0001/1K)
+    mulerouter = MuleRouterVLMOCR()
+    result["backends"]["mulerouter_vlm"] = {
+        "available": mulerouter.available,
+        "requires": "MULEROUTER_API_KEY env var",
+        "status": "ready" if mulerouter.available else "missing_api_key",
+        "model": "mulerouter/qwen3-omni-flash",
+        "cost_per_1k": 0.0001,
     }
 
     # Unlimited-OCR local
@@ -597,6 +799,7 @@ def health_check() -> dict:
     result["any_ocr_available"] = any(
         b["available"]
         for b in [
+            result["backends"]["mulerouter_vlm"],
             result["backends"]["unlimited_local"],
             result["backends"]["baidu_cloud"],
             result["backends"]["qwen25_vl"],

@@ -17,11 +17,12 @@ const SEALED = {
 
 describe("CapabilityMarket — publishOffer (F13 gate)", () => {
   it("refuses offer without arifos_seal_id", () => {
+    const { arifos_seal_id: _omitted, ...withoutSeal } = SEALED;
     const r = market.publishOffer({
       capability_id: "cap.test",
       issuer: "aforge",
-      ...SEALED,
-    } as never);
+      ...withoutSeal,
+    });
     assert.equal(r.ok, false);
     assert.match(r.error, /arifos_seal_id/);
   });
@@ -68,10 +69,12 @@ describe("CapabilityMarket — match (best-fit)", () => {
 
 describe("CapabilityMarket — subscribe (translate to local lease)", () => {
   it("refuses when offer lacks arifos_seal_id", () => {
+    // Build an offer payload without arifos_seal_id (the F13 gate).
+    const { arifos_seal_id: _omitted, ...withoutSeal } = SEALED;
     const offer = market.publishOffer({
       capability_id: "cap.unsealed",
       issuer: "aforge",
-      ...SEALED,
+      ...withoutSeal,
     });
     assert.equal(offer.ok, false);
   });

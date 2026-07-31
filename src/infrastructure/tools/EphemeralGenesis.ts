@@ -538,15 +538,15 @@ export class EphemeralGenesis {
         });
         const ok = sandboxResult.exitCode === 0 && !sandboxResult.killed;
         tool.state = ok ? "tested" : "failed";
+        const stderrHash = createHash("sha256").update(sandboxResult.stderr).digest("hex").slice(0, 16);
+        const errStr = `exit=${sandboxResult.exitCode} killed=${sandboxResult.killed} stderr_hash=sha256:${stderrHash} stderr_bytes=${sandboxResult.stderr.length}`;
         tool.verification = {
           ok,
           output: { stdout: sandboxResult.stdout.slice(0, 500), stderr: sandboxResult.stderr.slice(0, 200), wallTimeMs: sandboxResult.wallTimeMs, backend: sandboxResult.backend, exitCode: sandboxResult.exitCode },
-          error: ok
-            ? undefined
-            : `exit=${sandboxResult.exitCode} killed=${sandboxResult.killed} stderr_hash=${createHash("sha256").update(sandboxResult.stderr).digest("hex").slice(0, 16)}`,
+          error: ok ? undefined : errStr,
           verifier_method: "schema_invariant",
         };
-        return { ok, tool };
+        return { ok, tool, error: ok ? undefined : errStr };
       } catch (err) {
         if (err instanceof ContainmentUnavailableError) {
           tool.state = "failed";
