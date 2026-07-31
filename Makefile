@@ -26,6 +26,27 @@ logs:
 
 test: security-audit
 	npm run build
+	# Capability ecology P0 + P1 + P2 (2026-07-31)
+	node dist/test/gAuthority.test.js
+	node dist/test/ephemeralSandboxProbe.test.js
+	node dist/test/ephemeralNoAmbientSecrets.test.js
+	node dist/test/ephemeralExitCodes.test.js
+	node dist/test/ephemeralRegistrationOrder.test.js
+	node dist/test/ephemeralForgeRunnerDelegation.test.js
+	node dist/test/ephemeralVerifier.test.js
+	node dist/test/evidencePromotion.test.js
+	node dist/test/ephemeralComputeFn.test.js
+	node dist/test/capabilityAbi.test.js
+	node dist/test/missionContract.test.js
+	node dist/test/secretBroker.test.js
+	node dist/test/trafficShadow.test.js
+	node dist/test/evaluator.test.js
+	node dist/test/capabilityMarket.test.js
+	node dist/test/a2aOfferBridge.test.js
+	node dist/test/wmPromotionGate.test.js
+	node dist/test/retirementGate.test.js
+	node dist/test/EphemeralGenesisRunner.test.js
+	# Existing governance / lifecycle / world-model coverage
 	npm test
 	node dist/test/PlanValidator.test.js
 	node dist/test/GovernanceCardGate.test.js
