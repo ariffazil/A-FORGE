@@ -26,6 +26,11 @@ import type {
   WitnessVerdict,
   GovernedDomain,
 } from "../../contracts/types.js";
+import {
+  scanToolDescription,
+  isShadowOf,
+  type PoisonScanResult,
+} from "../governance/toolDescriptionPoison.js";
 
 const REGISTRY_DIR = "/root/A-FORGE/.runtime/skills/";
 const REGISTRY_PATH = `${REGISTRY_DIR}registry.json`;
@@ -91,6 +96,8 @@ export interface RegisterPreconditions {
   /** Scar consultation result */
   scarPressure: number;
   scarsConsulted: number;
+  /** OWASP MCP03 tool description poison scan result (Gate 5, 2026-08-01) */
+  poisonScan?: PoisonScanResult;
 }
 
 interface GateCheckResult {
@@ -132,11 +139,21 @@ function checkRegistrationGates(pre: RegisterPreconditions): GateCheckResult {
     reasons.push(`Scar pressure ${pre.scarPressure.toFixed(2)} ≥ 0.7 — CRITICAL scar pattern detected, registration blocked`);
   }
 
+  // Gate 5: OWASP MCP03 — Tool description poison scan (added 2026-08-01)
+  // Per scar_scar_005 (phantom tool misclassification) — graph can be stale; code is truth.
+  // Per OWASP MCP03 control set: pattern-detect before registration.
+  if (pre.poisonScan && !pre.poisonScan.clean) {
+    blockedBy.push("POISON");
+    reasons.push(
+      `Tool description poison scan failed: ${pre.poisonScan.reason} (severity=${pre.poisonScan.severity}, fingerprint=${pre.poisonScan.fingerprint})`
+    );
+  }
+
   if (blockedBy.length === 0) {
     return {
       passed: true,
       blockedBy: [],
-      reason: "All registration gates passed — SEAL + WITNESS + HARAM + SCAR",
+      reason: "All registration gates passed — SEAL + WITNESS + HARAM + SCAR + POISON",
     };
   }
 
@@ -175,6 +192,19 @@ export async function registerTool(opts: RegisterOptions): Promise<{
   message: string;
 }> {
   const registry = await ensureLoaded();
+
+  // Gate 5 (auto-scan): If no poison scan was supplied, run one now.
+  // Per OWASP MCP03, the scan is mandatory before registration.
+  // F12 RESILIENCE — refuse poisoned input.
+  if (!opts.preconditions.poisonScan) {
+    const autoScan = scanToolDescription(
+      opts.tool_name,
+      opts.description,
+      undefined,
+      opts.implementation
+    );
+    opts.preconditions.poisonScan = autoScan;
+  }
 
   // Check all gates
   const gateCheck = checkRegistrationGates(opts.preconditions);
