@@ -203,7 +203,7 @@ export function registerIdentityTools(server: McpServer): void {
       if (mode === "list") {
         const agents = Array.from(registeredAgents.values()).map(a => ({
           agent_id: a.agent_id, role: a.role, agent_type: a.agent_type,
-          registered_at: a.registered_at, last_seen: a.last_seen, active_leases: a.lease_ids.length,
+          registered_at: a.registered_at, last_seen: a.last_seen, active_leases: Array.isArray(a.lease_ids) ? a.lease_ids.length : 0,
         }));
         return { content: [{ type: "text" as const, text: JSON.stringify({ count: agents.length, agents }, null, 2) }] };
       }
@@ -212,7 +212,7 @@ export function registerIdentityTools(server: McpServer): void {
         const agent = registeredAgents.get(agent_id);
         if (!agent) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Agent '${agent_id}' not registered` }, null, 2) }], isError: true };
         agent.last_seen = new Date().toISOString();
-        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", agent, active_leases: agent.lease_ids.map(id => activeLeases.get(id)).filter(Boolean) }, null, 2) }] };
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", agent, active_leases: Array.isArray(agent.lease_ids) ? agent.lease_ids.map(id => activeLeases.get(id)).filter(Boolean) : [] }, null, 2) }] };
       }
       // P2.4: forge_agent kill mode — terminate agent + revoke leases + recover resources
       // F1 AMANAH: requires actor_id + lease_id + reason (IRREVERSIBLE-level safety)
@@ -902,7 +902,7 @@ export function registerStatusTools(server: McpServer): void {
       }
       if (mode === "overview" || mode === "agents") {
         const agents = Array.from(registeredAgents.values());
-        result.agents = { count: agents.length, recent: agents.slice(-limit).map(a => ({ agent_id: a.agent_id, role: a.role, last_seen: a.last_seen, active_leases: a.lease_ids.length })) };
+        result.agents = { count: agents.length, recent: agents.slice(-limit).map(a => ({ agent_id: a.agent_id, role: a.role, last_seen: a.last_seen, active_leases: Array.isArray(a.lease_ids) ? a.lease_ids.length : 0 })) };
       }
       return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", ...result }, null, 2) }] };
     }
