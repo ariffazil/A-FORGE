@@ -1,12 +1,12 @@
 <!-- SOT-MANIFEST
-federation_release: v2026.07.31
-last_verified: 2026-07-31T03:28:00Z
-live_commit: d642568
+federation_release: v2026.08.01
+last_verified: 2026-08-01T00:45:00Z
+live_commit: b28d38df
 qqq_version: v1.1.1 (10/10 tests passing, verdict round-trip closed)
 seal_chain: append-only (chattr +a) + Merkle anchor every 100 receipts
 sense_port: 7071 (healthy)
 mcp_port: 7072 (healthy)
-tools_exposed_via_mcp: 110 (live-witnessed 2026-07-31 via MCP tools/list on :7072)
+tools_exposed_via_mcp: 110 (live-witnessed 2026-08-01 via MCP tools/list on :7072)
 authority_ceiling: 777_FORGE (execution only — never adjudicate)
 owner_summary: GREEN (identity_present, service_healthy, deployment_drift: false)
 truth_rule: MCP tools/list on :7072 beats any static count in prose
@@ -18,7 +18,7 @@ truth_rule: MCP tools/list on :7072 beats any static count in prose
 [![Boundary Guard](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions)
 [![Governance Gate](https://github.com/ariffazil/A-FORGE/actions/workflows/governance-gate.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions)
 [![🔥 FORGE](https://img.shields.io/badge/%F0%9F%94%A5%20FORGE-110%20Canonical%20Tools-orange)](https://forge.arif-fazil.com/mcp)
-[![Federation](https://img.shields.io/badge/Federation-v2026.07.31-0a7b83)](https://arifos.arif-fazil.com)
+[![Federation](https://img.shields.io/badge/Federation-v2026.08.01-0a7b83)](https://arifos.arif-fazil.com)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](./LICENSE)
 
 **A-FORGE** is the governed execution subprocessor and systems engineering engine for the arifOS Federation. Operating on ports **7071** (Sense REST API) and **7072** (FastMCP Gateway), A-FORGE exposes **110 governed tools** providing safe, audited access to filesystem mutations, Git operations, Docker container fleets, and CI/CD pipelines.
@@ -141,26 +141,3 @@ A-FORGE operates as the Governed Execution Engine for the **arifOS Federation**.
 
 *DITEMPA BUKAN DIBERI — Execution is forged, not given.*  
 *The hands never judge. The forge never self-authorizes. 999 SEAL ALIVE.*
-
-──────────┐
-    │                                          │
-    │   A-FORGE EXECUTES.                      │
-    │   arifOS JUDGES.                         │
-    │   AAA DISPLAYS.                          │
-    │   The domain organs WITNESS.             │
-    │   Arif HOLDS THE VETO.                   │
-    │                                          │
-    │   The hands never judge.                 │
-    │   The forge never self-authorizes.       │
-    │   The executor never seals its own work. │
-    │                                          │
-    │   Without lease → no action.             │
-    │   Without SEAL → no mutation.            │
-    │   Without witness → no seal.             │
-    │                                          │
-    │   DITEMPA BUKAN DIBERI                  │
-    │   Execution is forged, not given.        │
-    │   999 SEAL ALIVE.                        │
-    │                                          │
-    └──────────────────────────────────────────┘
-```
