@@ -145,10 +145,11 @@ export class SecretBrokerPolicy {
     }
 
     // Scope revocation
-    if (this.revokedScopes.has(ref.scope ?? "")) {
+    const refScope = ref.kind === "env" ? ref.scope : "";
+    if (this.revokedScopes.has(refScope)) {
       const audit = this.auditWithoutValue(ref, ctx, "POLICY_DENY_REVOKED");
       throw new SecretBrokerPolicyError(
-        `scope '${ref.scope}' has been revoked`,
+        `scope '${refScope}' has been revoked`,
         audit,
       );
     }
@@ -193,7 +194,7 @@ export class SecretBrokerPolicy {
    * After revoke, future resolve() calls fail with POLICY_DENY_REVOKED.
    */
   async revoke(refOrScope: SecretRef | string): Promise<void> {
-    const scope = typeof refOrScope === "string" ? refOrScope : (refOrScope.scope ?? "");
+    const scope = typeof refOrScope === "string" ? refOrScope : (refOrScope.kind === "env" ? refOrScope.scope : "");
     this.revokedScopes.add(scope);
     await this.broker.revoke(scope);
   }

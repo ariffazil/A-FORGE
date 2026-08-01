@@ -146,7 +146,7 @@ export class A2ACapabilityRegistry {
     return { lease };
   }
 
-  leases(): ReadonlyArray<LocalCapabilityLease> {
+  getLeases(): ReadonlyArray<LocalCapabilityLease> {
     return Array.from(this.leases.values());
   }
 

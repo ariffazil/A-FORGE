@@ -1028,6 +1028,7 @@ server.tool(
     ),
     session_token: z.string().optional().describe("arifOS SCT for session continuity"),
     sct: z.string().optional().describe("Alias for session_token"),
+    session_id: z.string().optional().describe("arifOS governance session ID (injected by middleware)"),
   },
   async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct, session_id: _govSessionId }) => {
     const effectiveSessionId = _govSessionId ?? parent_session_id;

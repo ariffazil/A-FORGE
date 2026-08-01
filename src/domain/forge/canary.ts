@@ -139,9 +139,9 @@ export class CanaryDeployer {
    * Step canary forward. Called after sustained windows_passed.
    * Doubles pct until 100% (full traffic), then marks "promoted".
    */
-  step(capability_id: string): CanaryState {
+  step(capability_id: string): CanaryState | undefined {
     const c = this.candidates.get(capability_id);
-    if (!c || c.status !== "monitoring") return c;
+    if (!c || c.status !== "monitoring") return c ?? undefined;
     c.pct = Math.min(100, c.pct * 2);
     if (c.pct >= 100) c.status = "promoted";
     return c;
