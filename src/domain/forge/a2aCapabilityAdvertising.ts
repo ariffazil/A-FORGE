@@ -16,7 +16,7 @@
  *      verifier, or is it self-certifying?
  *   3. ABI admission gate — does the offer declare a full CapabilityAbi
  *      that passes H_admit = H_A ∧ H_S ∧ H_E ∧ H_R ∧ H_V?
- *   4. Lease translation — only AFTER all three gates pass is the
+ *   4. Lease translation — only AFTER all four gates pass is the
  *      offer translated into a local CapabilityLease.
  *
  * The offering agent's word is never sufficient. Constitutional
