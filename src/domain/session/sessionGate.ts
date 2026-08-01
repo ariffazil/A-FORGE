@@ -10,17 +10,26 @@
  * localhost via Secure MCP Tunnel. Sessions must be explicitly registered
  * through arif_init/forge_session_init OR verified via kernel callback.
  *
+ * P1 STATELESS SIMPLIFICATION (2026-08-01): SCT-first validation for
+ * stateless MCP 2026-07-28. The sct_v1.* token is self-contained
+ * (HMAC-SHA256 signed). External callers skip the in-memory Map entirely —
+ * their SCT is verified directly against arifOS kernel. The Map remains
+ * only for locally-registered sessions (arif_init/forge_session_init
+ * in-process registration). This reduces session state entropy and
+ * eliminates the Map-as-single-point-of-truth for remote callers.
+ *
  * Authority sources:
- *   1. arif_init → returns session_id → registerSession()
- *   2. forge_session_init (proxy) → registers sessions via registerSession()
- *   3. External callers → must verify through setKernelVerifier() callback
+ *   1. arif_init → returns session_id → registerSession() [local only]
+ *   2. forge_session_init (proxy) → registers sessions via registerSession() [local only]
+ *   3. External callers → SCT verification via verifySessionTokenWithKernel() [primary]
  *
  * F11 AUTH: Session identity is verified before any sovereign tool access.
  * F1 AMANAH: Sessions auto-expire after TTL (default 1 hour).
  * F8 LAW: Remote callers must cryptographically verify sessions.
+ * F4 CLARITY: Stateless MCP 2026-07-28 eliminates transport session state.
  *
  * DITEMPA BUKAN DIBERI — Forged, Not Given
- * @constitutional F1, F8, F11
+ * @constitutional F1, F4, F8, F11
  */
 
 interface SessionRecord {
@@ -139,32 +148,39 @@ export function validateSession(
 }
 
 /**
- * P0.2: Async validation for external callers. Uses kernel verifier callback
- * if set. Falls through to synchronous validateSession if no verifier configured.
+ * P1 STATELESS SIMPLIFICATION (2026-08-01): Async validation for all callers.
+ *
+ * Priority order:
+ *   1. SCT token verification (self-contained, no state needed) — PRIMARY
+ *   2. Local Map lookup (in-process sessions only) — FALLBACK
+ *
+ * For stateless MCP 2026-07-28, SCT is the canonical path. The in-memory Map
+ * is retained only for locally-registered sessions from arif_init/forge_session_init.
  */
 export async function validateSessionAsync(
   session_id: string | undefined,
   actor_id?: string,
   session_token?: string,
 ): Promise<{ valid: true; actor_id: string } | { valid: false; reason: string }> {
-  // Try synchronous first
-  const syncResult = validateSession(session_id);
-  if (syncResult.valid) return syncResult;
-
-  // ── P0.6 BRIDGE FIX (2026-07-29): Verify SCT token with arifOS kernel ──
-  // Stateless HTTP callers carry a session_token (sct_v1.eyJ...)
-  // but the session isn't in the in-memory Map because it was minted
-  // by arifOS on a different transport. Verify the SCT cryptographically.
+  // ── PATH 1 (PRIMARY): SCT token verification — stateless, self-contained ──
+  // The sct_v1.* token carries its own authority (HMAC-SHA256 signed).
+  // No in-memory state needed. Verified directly against arifOS kernel.
   if (session_token && session_id) {
     const sctVerified = await verifySessionTokenWithKernel(session_token, session_id, actor_id);
     if (sctVerified.verified) {
-      registerSession(session_id, sctVerified.actor_id);
       return { valid: true, actor_id: sctVerified.actor_id };
     }
     return { valid: false, reason: `SCT_VERIFY_FAILED: ${sctVerified.reason}` };
   }
 
-  // If session unknown and kernel verifier is configured, try async verification
+  // ── PATH 2 (FALLBACK): Local Map for in-process sessions ──
+  // Only for sessions registered via arif_init/forge_session_init.
+  // External callers without SCT tokens cannot use this path.
+  const syncResult = validateSession(session_id);
+  if (syncResult.valid) return syncResult;
+
+  // ── PATH 3 (LEGACY): Kernel verifier callback ──
+  // Only used when explicitly configured. Superseded by SCT path.
   if (kernelVerifyFn && session_id) {
     const verified = await kernelVerifyFn(session_id, actor_id);
     if (verified.verified) {
