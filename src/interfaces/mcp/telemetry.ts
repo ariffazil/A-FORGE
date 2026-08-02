@@ -57,9 +57,9 @@ export interface TelemetrySummary {
   failures: Record<string, number>;
   providerUsage: Record<string, number>;
   totalEvents: number;
-  avgEntropyDelta: number;
-  avgPeace2: number;
-  avgOmega: number;
+  avgEntropyDelta: number | null;
+  avgPeace2: number | null;
+  avgOmega: number | null;
 }
 
 class McpTelemetry {
