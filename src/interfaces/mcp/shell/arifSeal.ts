@@ -94,7 +94,13 @@ function computeHash(content: string): string {
 }
 
 function canonicalSerialize(record: Omit<SealRecord, "hash">): string {
-  // Deterministic JSON serialization for hash computation
+  // Deterministic JSON serialization for hash computation.
+  // F11 fix 2026-08-02: do NOT pass `Object.keys(canonical).sort()` as the
+  // JSON.stringify replacer. That array is interpreted by the spec as a
+  // *property filter*, and the filter is applied to nested objects too,
+  // silently turning `args` into `{}` regardless of content. The proper
+  // way to canonicalize is to materialize a sorted-key copy of the
+  // top-level object and then stringify without a replacer.
   const canonical: Record<string, unknown> = {
     seq: record.seq,
     ts: record.ts,
@@ -108,7 +114,11 @@ function canonicalSerialize(record: Omit<SealRecord, "hash">): string {
   };
   if (record.approver) canonical.approver = record.approver;
   if (record.notes) canonical.notes = record.notes;
-  return JSON.stringify(canonical, Object.keys(canonical).sort());
+  const sorted: Record<string, unknown> = {};
+  for (const k of Object.keys(canonical).sort()) {
+    sorted[k] = canonical[k];
+  }
+  return JSON.stringify(sorted);
 }
 
 function computeHmac(data: string, secret: string): string {

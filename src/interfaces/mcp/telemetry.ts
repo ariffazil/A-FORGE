@@ -184,9 +184,12 @@ class McpTelemetry {
       failures: { ...this.failures },
       providerUsage: { ...this.providerUsage },
       totalEvents: this.totalEvents,
-      avgEntropyDelta: 0,
-      avgPeace2: 0.95,
-      avgOmega: 0.99,
+      // F7 HUMILITY: avgOmega=0.99 was hardcoded fake certainty — F7 violation.
+      // avgEntropyDelta/avgPeace2/avgOmega are now UNKNOWN (null) until real
+      // telemetry is wired (recordSuccess/DomainObservation → P2.0 follow-up).
+      avgEntropyDelta: null,
+      avgPeace2: null,
+      avgOmega: null,
     };
   }
 
