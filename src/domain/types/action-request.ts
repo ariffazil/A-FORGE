@@ -174,4 +174,15 @@ export interface FloorContext {
   f13_halt_active: boolean;
   /** Optional F13 halt scope if halt is active. */
   f13_halt_scope?: "action" | "tool" | "organ" | "federation";
+  /** F8: G-score from APEX G-math — G = (A×P×X×E²)×(1-h). Threshold: ≥ 0.80. */
+  g_score?: number;
+  /** F3: Quad-witness W₄ = (H×A×E×V)^(1/4). Threshold: ≥ 0.75. */
+  quad_witness?: number;
+  /** F3: Per-witness breakdown for diagnostics. */
+  witness_breakdown?: {
+    human: number;
+    ai: number;
+    earth: number;
+    verifier: number;
+  };
 }

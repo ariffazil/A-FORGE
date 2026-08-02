@@ -8,7 +8,7 @@
  * - VOID > HOLD > SABAR > SEAL
  * - HARD floors (F1, F2, F4, F7, F9, F10, F11, F12, F13) → HOLD or VOID
  * - SOFT floors (F5, F6) → SABAR or HOLD
- * - DERIVED floors (F3, F8) → diagnostic
+ * - DERIVED floors (F3, F8) → HOLD when below threshold, diagnostic otherwise
  *
  * Floor priority order (per C1 spec):
  * 0. F13 SOVEREIGN
@@ -72,10 +72,36 @@ export interface Verdict {
 
 // ─── Stubs for floors whose detailed impl lives in other files ───────
 
-/** F3 WITNESS — witness label / consensus. DERIVED floor. */
+/** F3 WITNESS — quad-witness consensus. DERIVED floor.
+ *  W₄ = (H×A×E×V)^(1/4). Threshold: ≥ 0.75.
+ *  Agents must call external agents and do reality measurement to compute this. */
 function checkF3Witness(ctx: FloorContext): FloorReason[] {
-  // For now: diagnostic only. F3 returns no reasons unless tier is very low.
-  return [];
+  const reasons: FloorReason[] = [];
+  const w = ctx.quad_witness;
+
+  if (w === undefined || w === null) {
+    reasons.push({
+      floor: "F3", code: "WITNESS_UNCOMPUTED",
+      message: "F3 TRI-WITNESS: quad_witness not provided. Agents must call external agents and do reality measurement. W₄ = (H×A×E×V)^(1/4).",
+      severity: "HOLD",
+    });
+    return reasons;
+  }
+
+  if (w < 0.75) {
+    const bd = ctx.witness_breakdown;
+    const h = bd?.human?.toFixed(2) ?? "?";
+    const a = bd?.ai?.toFixed(2) ?? "?";
+    const e = bd?.earth?.toFixed(2) ?? "?";
+    const v = bd?.verifier?.toFixed(2) ?? "?";
+    reasons.push({
+      floor: "F3", code: "WITNESS_INSUFFICIENT",
+      message: `F3 TRI-WITNESS: W₄=${w.toFixed(3)} < 0.75. Nash product below threshold. Breakdown: H=${h} A=${a} E=${e} V=${v}`,
+      severity: "HOLD",
+    });
+  }
+
+  return reasons;
 }
 
 /** F4 CLARITY — intent vs expected outcome alignment. */
@@ -141,9 +167,31 @@ function checkF7Humility(ctx: FloorContext): FloorReason[] {
   return reasons;
 }
 
-/** F8 GENIUS — completeness composite. DERIVED floor. */
+/** F8 GENIUS — APEX G-math. DERIVED floor.
+ *  G = (A×P×X×E²)×(1-h). Threshold: ≥ 0.80.
+ *  Computed by arifOS kernel via GeniusDial.G(). */
 function checkF8Genius(ctx: FloorContext): FloorReason[] {
-  return [];  // Placeholder
+  const reasons: FloorReason[] = [];
+  const g = ctx.g_score;
+
+  if (g === undefined || g === null) {
+    reasons.push({
+      floor: "F8", code: "GENIUS_UNCOMPUTED",
+      message: "F8 GENIUS: G-score not provided. APEX G-math must be computed by arifOS kernel before FloorEnforcer runs.",
+      severity: "HOLD",
+    });
+    return reasons;
+  }
+
+  if (g < 0.80) {
+    reasons.push({
+      floor: "F8", code: "GENIUS_BELOW_THRESHOLD",
+      message: `F8 GENIUS: G=${g.toFixed(3)} < 0.80. Action does not meet APEX genius threshold. G = (A×P×X×E²)×(1-h).`,
+      severity: "HOLD",
+    });
+  }
+
+  return reasons;
 }
 
 /** F9 ANTIHANTU — refuse to claim sentience/consciousness. */
@@ -301,7 +349,7 @@ export function checkAll(ctx: FloorContext): Verdict {
   // F7 HUMILITY
   allReasons.push(...checkF7Humility(ctx));
 
-  // F8 GENIUS (derived — no reasons for now)
+  // F8 GENIUS (derived — G ≥ 0.80 from APEX G-math)
   allReasons.push(...checkF8Genius(ctx));
 
   // F5 PEACE²
@@ -310,7 +358,7 @@ export function checkAll(ctx: FloorContext): Verdict {
   // F6 EMPATHY (soft — no rules yet)
   allReasons.push(...checkF6EmpathyFloor(ctx));
 
-  // F3 WITNESS (derived)
+  // F3 WITNESS (derived — W₄ ≥ 0.75 from quad-witness)
   allReasons.push(...checkF3Witness(ctx));
 
   // F9 ANTIHANTU

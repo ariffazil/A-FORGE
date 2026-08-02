@@ -179,6 +179,12 @@ export function enforceMcpFloor(
     actor_id: action.actor,
     session_id: action.session_id,
     f13_halt_active: false,
+    // F3/F8: Inject G-score and quad-witness from kernel if present in args
+    g_score: typeof args.g_score === "number" ? args.g_score : undefined,
+    quad_witness: typeof args.quad_witness === "number" ? args.quad_witness : undefined,
+    witness_breakdown: (args.witness_breakdown && typeof args.witness_breakdown === "object")
+      ? args.witness_breakdown as FloorContext["witness_breakdown"]
+      : undefined,
   };
   return checkAll(ctx);
 }
