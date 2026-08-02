@@ -127,6 +127,9 @@ class McpTelemetry {
     await appendFile(this.auditPath, line, "utf-8");
     // P1-6: Forward to arifFLOW telemetry (fire-and-forget, silent on failure)
     this._forwardToArifFlow(safeEvent).catch(() => {});
+    // P1-AB (2026-08-02): Forward to arifOS kernel (constitutional witness)
+    // Both forwarders fire — operational telemetry + constitutional record.
+    this._forwardToArifOSKernel(safeEvent).catch(() => {});
     this.writeJournald({
       level: event.action === "failure" ? "error" : "info",
       component: "mcp",
@@ -178,6 +181,81 @@ class McpTelemetry {
       });
     } catch {
       // arifFLOW unreachable — local JSONL + journald are primary sinks
+    }
+  }
+
+  /**
+   * P1-AB (2026-08-02): Forward telemetry event to arifOS kernel :8088/mcp.
+   * Constitutional witness path — the kernel OBSERVES every ephemeral
+   * capability lifecycle event via arif_observe. Closes the loop:
+   *   A-FORGE forge_ephemeral → McpTelemetry → arifOS kernel + arifFlow
+   *   + local JSONL + journald.
+   *
+   * Reads the arifOS SCT from the federation envelope (if available, not
+   * expired). Fire-and-forget; failure is silent — local JSONL remains
+   * the primary sink. Does NOT add latency to the ephemeral pipeline.
+   *
+   * Note: This is OBSERVE-class (not SEAL). The kernel records the
+   * event but does not commit to VAULT999. Promotion to VAULT999 is a
+   * separate arif_seal path used by promote_promotion.
+   */
+  private async _forwardToArifOSKernel(event: AuditEvent): Promise<void> {
+    try {
+      // Read the arifOS SCT from the federation envelope (best-effort).
+      // If the file is missing or the SCT is expired, the call goes
+      // through unauthenticated — arifOS will reject it for MUTATE-class
+      // verbs; for arif_observe (OBSERVE-class), it may still accept
+      // the call as an anonymous witness event.
+      let sct: string | undefined;
+      try {
+        const fs = await import("node:fs/promises");
+        const raw = await fs.readFile("/root/.arifos/federation-session.json", "utf-8");
+        const env = JSON.parse(raw) as { session_token?: string; expires_at?: string };
+        sct = env.session_token;
+        // Soft expiry check: if expires_at is parseable and in the past,
+        // do not send the SCT. The call will likely fail but it is
+        // recorded in the kernel's witness log as an anonymous attempt.
+        if (env.expires_at) {
+          const exp = Date.parse(env.expires_at);
+          if (Number.isFinite(exp) && exp < Date.now()) {
+            sct = undefined;
+          }
+        }
+      } catch {
+        // envelope missing or unreadable — proceed unauthenticated
+      }
+
+      const body: Record<string, unknown> = {
+        jsonrpc: "2.0",
+        id: 0,
+        method: "tools/call",
+        params: {
+          name: "arif_observe",
+          arguments: {
+            intent: `aforge_ephemeral_lifecycle:${event.action}`,
+            evidence: {
+              tool: event.tool,
+              action: event.action,
+              session_id: event.session_id,
+              pipeline_stage: event.pipeline_stage,
+              outcome: event.outcome,
+              verdict: event.verdict,
+              metadata: event.metadata,
+            },
+            mode: "observe",
+          },
+        },
+      };
+      if (sct) body.params = { ...(body.params as object), session_token: sct };
+
+      await fetch("http://127.0.0.1:8088/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json, text/event-stream" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(3000),
+      });
+    } catch {
+      // arifOS unreachable — local JSONL + journald remain primary sinks
     }
   }
 

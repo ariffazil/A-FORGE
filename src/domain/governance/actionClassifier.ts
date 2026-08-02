@@ -144,7 +144,7 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_parallel",            // spawn N concurrent tasks — EXECUTE_REVERSIBLE
   "forge_parallel_cancel",     // cancel parallel agents — EXECUTE_REVERSIBLE
   // ── MuleRouter Multimodal (2026-07-30) — EXECUTE_REVERSIBLE ──
-  "forge_ephemeral",           // ephemeral tool genesis — EXECUTE_REVERSIBLE (generate/invoke/retire are reversible)
+  // "forge_ephemeral" — REMOVED (now mode-aware in classifyTool, see line ~355)
 ]);
 
 // Tools that should always be simulated first
@@ -284,7 +284,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_predict",             // pre-action simulation — SIMULATE (moved to simulate set below)
   "forge_document_ingest",     // already above, kept for clarity
   // ── MuleRouter Multimodal (2026-07-30) ──
-  "forge_ephemeral",           // ephemeral tool genesis — mode-aware (inspect_gap/list=list/list_active=OBSERVE)
+  // "forge_ephemeral" — REMOVED (now mode-aware in classifyTool, see line ~355)
 ]);
 
 /**
@@ -357,6 +357,12 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (mode === "schema") return "OBSERVE";
     if (mode === "query") return "OBSERVE"; // base query is read; mutate flag raises to HIGH_IMPACT at execution gate
   }
+  // forge_ephemeral: inspect_gap/list_templates/list_active=OBSERVE, rest=EXECUTE_REVERSIBLE
+  if (toolName === "forge_ephemeral") {
+    if (!mode) return "OBSERVE"; // default: stateless list_templates probe
+    if (["inspect_gap", "list_templates", "list_active"].includes(mode)) return "OBSERVE";
+    if (["generate", "sandbox_test", "invoke", "verify", "retire", "propose_promotion"].includes(mode)) return "EXECUTE_REVERSIBLE";
+  }
 
   // ── Name-only classification (existing sets) ──
   if (IRREVERSIBLE_TOOLS.has(toolName)) return "IRREVERSIBLE";
@@ -389,7 +395,7 @@ export function isClassifiedTool(toolName: string): boolean {
   if (SUGGEST_TOOLS.has(toolName)) return true;
   if (QUEUE_TOOLS.has(toolName)) return true;
   // Check mode-aware base names
-  const modeAware = ["forge_agent", "forge_filesystem", "forge_vault", "forge_git", "forge_docker", "forge_lease", "forge_postgres"];
+  const modeAware = ["forge_agent", "forge_filesystem", "forge_vault", "forge_git", "forge_docker", "forge_lease", "forge_postgres", "forge_ephemeral"];
   if (modeAware.includes(toolName)) return true;
   return false;
 }

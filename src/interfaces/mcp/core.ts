@@ -619,7 +619,7 @@ const _originalTool = server.tool.bind(server);
           registerLocalLease({
             lease_id: localLeaseId,
             agent_id: actor,
-            scope: ["forge_filesystem", "forge_vault", "forge_shell", "forge_shell_dryrun", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check"],
+            scope: ["forge_filesystem", "forge_vault", "forge_shell", "forge_shell_dryrun", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral"],
             max_action_class: "IRREVERSIBLE",
             ttl_seconds: ttl,
             issued_at: now,
@@ -751,7 +751,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
           registerLocalLease({
             lease_id: localLeaseId,
             agent_id: actor,
-            scope: ["forge_filesystem", "forge_vault", "forge_shell", "forge_shell_dryrun", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check"],
+            scope: ["forge_filesystem", "forge_vault", "forge_shell", "forge_shell_dryrun", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral"],
             max_action_class: "IRREVERSIBLE",
             ttl_seconds: ttl,
             issued_at: now,
@@ -1168,6 +1168,7 @@ server.tool(
               "arif_seal",
               "forge_session_init",
               "forge_health_check",
+              "forge_ephemeral",
             ],
             max_action_class: "MUTATE",  // arifOS expects MUTATE for EXECUTE_REVERSIBLE
             ttl_seconds: 1800,
@@ -1200,7 +1201,7 @@ server.tool(
             const localLeaseId = `LCL-${actor_id}-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
             pre_minted_lease = {
               lease_id: localLeaseId,
-              scope: ["forge_filesystem", "forge_vault", "forge_shell", "forge_shell_dryrun", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check"],
+              scope: ["forge_filesystem", "forge_vault", "forge_shell", "forge_shell_dryrun", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral"],
               max_action_class: "IRREVERSIBLE",
               ttl_seconds: ttl,
               expires_at: now + ttl * 1000,

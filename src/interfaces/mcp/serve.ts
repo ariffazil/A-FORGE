@@ -168,6 +168,11 @@ const STATELESS_TOOLS = new Set([
     // forge_scar modes: list + consult are read-only OBSERVE-class.
     // mode=seal requires session ownership (guarded in handler).
     "forge_scar",
+
+    // ── forge_ephemeral (2026-08-02) — temporary capability metabolism ──
+    // inspect_gap, list_templates, list_active are OBSERVE. generate,
+    // sandbox_test, invoke, verify, retire are session-gated in handler.
+    "forge_ephemeral",
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────

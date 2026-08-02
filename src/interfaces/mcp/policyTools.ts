@@ -301,7 +301,7 @@ function isMutateOperation(toolName: string, args: any): boolean {
   // Tools that are always MUTATE
   if (toolName !== "forge_filesystem" && toolName !== "forge_postgres" &&
       toolName !== "forge_vault" && toolName !== "forge_docker" &&
-      toolName !== "forge_shell") {
+      toolName !== "forge_shell" && toolName !== "forge_ephemeral") {
     return true;
   }
 
@@ -322,6 +322,11 @@ function isMutateOperation(toolName: string, args: any): boolean {
     // ps, logs, images — read-only observation
     if (mode === "exec") return true;
     return false;
+  }
+  // forge_ephemeral: inspect_gap/list_templates/list_active = OBSERVE; generate/invoke/retire etc = MUTATE
+  if (toolName === "forge_ephemeral") {
+    if (mode && ["inspect_gap", "list_templates", "list_active"].includes(mode)) return false;
+    return true;
   }
 
   // forge_shell: check actual command via ArifJudge

@@ -1,86 +1,189 @@
-# LiteLLM Proxy Config — arifOS Federation Failover Gateway
-# 3 providers, 6 agent model groups, full fallback chains
-# Installed: 2026-07-02 by FORGE (000Ω)
-# DITEMPA BUKAN DIBERI
+# ═══════════════════════════════════════════════════════════════
+# LiteLLM Proxy — FED FLAME FRAME
+# arifOS Federation Model Routing Plane
+# ═══════════════════════════════════════════════════════════════
+# Architecture:
+#   Tier 0 (FREE):  FLAME :18901 — RM0, no key, 12 models
+#   Tier 1 (K1):    Qwen Token Plan — RM0 marginal, reasoning
+#   Tier 2 (MM):    MiniMax — RM0, multimodal
+#
+# Fallback doctrine: K1/MM → FLAME free → last-resort
+# Keys: kunci-mas.env → vault.flat.env → EnvironmentFile (systemd)
+# Lock: 127.0.0.1 only, master_key required, no DB
+#
+# DITEMPA BUKAN DIBERI — Forged, Not Given
+# ═══════════════════════════════════════════════════════════════
 
 model_list:
-  # ─── MAIN (MiMo V2.5 Pro — primary reasoning) ───
+  # ─── MAIN (deep reasoning) ───────────────────────────────────
   - model_name: main
     litellm_params:
-      model: openai/mimo-v2.5-pro
-      api_base: https://token-plan-sgp.xiaomimimo.com/v1
-      api_key: os.environ/MIMO_API_KEY
+      model: openai/deepseek-v4-pro
+      api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+      api_key: os.environ/QWEN_API_KEY
+      request_timeout: 30
+  - model_name: main
+    litellm_params:
+      model: openai/gemini-2.5-flash
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 30
+  - model_name: main
+    litellm_params:
+      model: openai/MiniMax-M3
+      api_base: https://api.minimax.io/v1
+      api_key: os.environ/MINIMAX_API_KEY
       request_timeout: 30
 
-  # ─── FORGE (GLM-5.2 — engineering execution) ───
+  # ─── FORGE (engineering execution) ──────────────────────────
   - model_name: forge
     litellm_params:
       model: openai/glm-5.2
       api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
       api_key: os.environ/QWEN_API_KEY
       request_timeout: 45
+  - model_name: forge
+    litellm_params:
+      model: openai/qwen/qwen3.6-27b
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 45
+  - model_name: forge
+    litellm_params:
+      model: openai/MiniMax-M3
+      api_base: https://api.minimax.io/v1
+      api_key: os.environ/MINIMAX_API_KEY
+      request_timeout: 30
 
-  # ─── AUDITOR (DeepSeek V4 Pro — deep reasoning) ───
+  # ─── AUDITOR (deep reasoning, cross-check) ──────────────────
   - model_name: auditor
     litellm_params:
       model: openai/deepseek-v4-pro
       api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
       api_key: os.environ/QWEN_API_KEY
       request_timeout: 45
+  - model_name: auditor
+    litellm_params:
+      model: openai/llama-3.3-70b-versatile
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 45
+  - model_name: auditor
+    litellm_params:
+      model: openai/MiniMax-M3
+      api_base: https://api.minimax.io/v1
+      api_key: os.environ/MINIMAX_API_KEY
+      request_timeout: 30
 
-  # ─── PLANNER (Kimi K2.7 Code — DAG planning) ───
+  # ─── PLANNER (DAG planning, code) ──────────────────────────
   - model_name: planner
     litellm_params:
       model: openai/kimi-k2.7-code
       api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
       api_key: os.environ/QWEN_API_KEY
       request_timeout: 45
+  - model_name: planner
+    litellm_params:
+      model: openai/qwen2.5-coder:3b
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 30
+  - model_name: planner
+    litellm_params:
+      model: openai/MiniMax-M3
+      api_base: https://api.minimax.io/v1
+      api_key: os.environ/MINIMAX_API_KEY
+      request_timeout: 30
 
-  # ─── OPS (MiniMax M2.5 Highspeed — fast monitoring) ───
+  # ─── OPS (fast monitoring) ─────────────────────────────────
   - model_name: ops
     litellm_params:
       model: openai/MiniMax-M2.5-highspeed
       api_base: https://api.minimax.io/v1
       api_key: os.environ/MINIMAX_API_KEY
       request_timeout: 15
+  - model_name: ops
+    litellm_params:
+      model: openai/gemini-flash-lite-latest
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 15
+  - model_name: ops
+    litellm_params:
+      model: openai/free-aggregator
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 15
 
-  # ─── SMALL (Qwen 3.6 Flash — lightweight tasks) ───
+  # ─── SMALL (lightweight tasks) ─────────────────────────────
   - model_name: small
     litellm_params:
       model: openai/qwen3.6-flash
       api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
       api_key: os.environ/QWEN_API_KEY
       request_timeout: 15
+  - model_name: small
+    litellm_params:
+      model: openai/gemini-flash-lite-latest
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 15
+  - model_name: small
+    litellm_params:
+      model: openai/qwen2.5-coder:3b
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 15
 
-  # ─── LAST RESORT (MiniMax M3 — never dies) ───
+  # ─── LAST-RESORT (never dies) ──────────────────────────────
   - model_name: last-resort
     litellm_params:
       model: openai/MiniMax-M3
       api_base: https://api.minimax.io/v1
       api_key: os.environ/MINIMAX_API_KEY
       request_timeout: 15
+  - model_name: last-resort
+    litellm_params:
+      model: openai/free-aggregator
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 15
+
+  # ─── FLAME DIRECT (free tier passthrough) ──────────────────
+  - model_name: flame-free
+    litellm_params:
+      model: openai/free-aggregator
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 30
+  - model_name: flame-sea-lion
+    litellm_params:
+      model: openai/aisingapore/Qwen-SEA-LION-v4-32B-IT
+      api_base: http://127.0.0.1:18901/v1
+      api_key: "sk-flame-local"
+      request_timeout: 30
 
 litellm_settings:
   # ─── Retries (Layer 1: transient failures) ───
-  num_retries: 3
+  num_retries: 2
   request_timeout: 30
-  
+
   # ─── Circuit Breaker (Layer 3: proactive health) ───
-  allowed_fails: 3              # Trip after 3 fails in 60s window
-  cooldown_time: 60             # Cooldown 60s before retrying failed provider
-  
+  allowed_fails: 3
+  cooldown_time: 60
+
   # ─── Fallback Chains (Layer 2: provider switch) ───
-  # Each chain crosses at least 2 different providers
+  # Doctrine: K1 → FLAME free → MiniMax → FLAME aggregator
   fallbacks:
-    - {main: [forge, last-resort]}       # MiMo → GLM-5.2 (Bailian) → MiniMax M3
-    - {forge: [main, last-resort]}       # GLM-5.2 (Bailian) → MiMo → MiniMax M3
-    - {auditor: [main, last-resort]}     # DeepSeek (Bailian) → MiMo → MiniMax M3
-    - {planner: [main, last-resort]}     # Kimi (Bailian) → MiMo → MiniMax M3
-    - {ops: [small, last-resort]}        # MiniMax HS → Qwen Flash (Bailian) → MiniMax M3
-    - {small: [ops, last-resort]}        # Qwen Flash (Bailian) → MiniMax HS → MiniMax M3
-  
+    - {main: [flame-free, last-resort]}
+    - {forge: [flame-free, last-resort]}
+    - {auditor: [flame-free, last-resort]}
+    - {planner: [flame-free, last-resort]}
+    - {ops: [flame-free, last-resort]}
+    - {small: [flame-free, last-resort]}
+
   # ─── Default fallback (catch-all) ───
-  default_fallbacks: [last-resort]
+  default_fallbacks: [flame-free, last-resort]
 
 router_settings:
   enable_pre_call_checks: true
@@ -89,3 +192,5 @@ router_settings:
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   drop_params: true
+  # LOCK: no telemetry, no phone-home
+  telemetry: false

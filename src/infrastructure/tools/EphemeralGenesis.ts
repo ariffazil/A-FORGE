@@ -596,8 +596,12 @@ export class EphemeralGenesis {
 
     if (isCodeString) {
       const safeCode = implementation.replace(/'/g, "'\\''");
+      // Gap 8 (2026-08-02): unwrap invoke args — if the input object has
+      // an 'input' key, pass its value to the function (invoke sends
+      // {input: ...} but code templates expect the raw value).
       const launcher = `const fn = ${implementation};
-const input = require('./input.json');
+const raw = require('./input.json');
+const input = (raw && typeof raw === 'object' && !Array.isArray(raw) && 'input' in raw) ? raw.input : raw;
 const result = fn(input);
 process.stdout.write(JSON.stringify(result));`;
       const safeLauncher = launcher.replace(/'/g, "'\\''");
