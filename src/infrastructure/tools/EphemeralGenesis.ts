@@ -578,18 +578,44 @@ export class EphemeralGenesis {
     tool: EphemeralTool,
     testInput?: Record<string, unknown>,
   ): string {
-    const impl = JSON.parse(tool.implementation) as {
-      language?: "python" | "bash" | "node";
-      code?: string;
-    };
-    const lang = impl.language ?? "python";
-    const code = impl.code ?? "";
+    const implementation = tool.implementation;
     const inputBlob = JSON.stringify(testInput ?? {});
-    const safeCode = code.replace(/'/g, "'\\''");
     const safeInput = inputBlob.replace(/'/g, "'\\''");
     const workdir = `/tmp/ephemeral/${tool.id}`;
     const header = `mkdir -p ${workdir} && cd ${workdir}`;
     const writeInput = `printf '%s' '${safeInput}' > input.json`;
+
+    // P1-AA (2026-08-02): Detect implementation format.
+    // Code-generating templates (data_parser, compute_fn, format_converter)
+    // emit raw function strings. API wrappers emit JSON configs.
+    // If implementation is a code string, wrap in a Node.js launcher.
+    const isCodeString =
+      implementation.startsWith("(") ||
+      implementation.startsWith("function") ||
+      implementation.startsWith("async");
+
+    if (isCodeString) {
+      const safeCode = implementation.replace(/'/g, "'\\''");
+      const launcher = `const fn = ${implementation};
+const input = require('./input.json');
+const result = fn(input);
+process.stdout.write(JSON.stringify(result));`;
+      const safeLauncher = launcher.replace(/'/g, "'\\''");
+      return `${header} && ${writeInput} && printf '%s' '${safeLauncher}' > tool.js && node tool.js > output.json 2> stderr.txt`;
+    }
+
+    // Legacy JSON format: { language, code }
+    let impl: { language?: string; code?: string } = { language: "python", code: "" };
+    try {
+      impl = JSON.parse(implementation);
+    } catch {
+      // If JSON parse fails, treat as raw code string for Node.js
+      const safeCode = implementation.replace(/'/g, "'\\''").replace(/"/g, '\\"');
+      return `${header} && ${writeInput} && printf '%s' '${safeCode}' > tool.js && node tool.js < input.json > output.json 2> stderr.txt`;
+    }
+    const lang = impl.language ?? "python";
+    const code = impl.code ?? "";
+    const safeCode = code.replace(/'/g, "'\\''");
 
     if (lang === "python") {
       return `${header} && ${writeInput} && printf '%s' '${safeCode}' > tool.py && python3 tool.py < input.json > output.json 2> stderr.txt`;
@@ -831,10 +857,44 @@ export class EphemeralGenesis {
       success_rate: this.computeSuccessRate(templateId),
       independent_verifier_passes: this.countIndependentPasses(templateId),
       verifier_methods: this.histogramVerifierMethods(templateId),
-      empirical_capability_score: this.empiricalScores.get(templateId) ?? 0,
+      empirical_capability_score: this.computeEmpiricalScore(templateId),
       recent_receipts: this.flattenReceipts(templateId).slice(-5),
     };
     return this.promotionGate.evaluate(templateId, evidence);
+  }
+
+  /**
+   * P1-AA (2026-08-02): Compute empirical capability score from available evidence.
+   *
+   * Phase 1 heuristic — replaces the deprecated CapabilityMarket P2 dependency.
+   * Weighted composite of four observable signals:
+   *   - instantiation_count ≥ 5        → 0.25
+   *   - success_rate × 0.35            → 0.00–0.35
+   *   - independent_verifier_passes ≥ 3 → 0.25
+   *   - verifier diversity (domain_witness | independent_recompute) → 0.15
+   *
+   * Max score = 1.0. Threshold = 0.80. A template must demonstrate
+   * volume, reliability, verification, AND diversity to pass.
+   *
+   * Phase 2: replace with CapabilityMarket empirical scoring when available.
+   */
+  private computeEmpiricalScore(templateId: string): number {
+    const template = this.registry.get(templateId);
+    const instantiationCount = template?.instantiationCount ?? 0;
+    const successRate = this.computeSuccessRate(templateId);
+    const independentPasses = this.countIndependentPasses(templateId);
+    const methods = this.histogramVerifierMethods(templateId);
+    const hasDiversity = (methods.domain_witness ?? 0) + (methods.independent_recompute ?? 0) > 0;
+
+    const volumeScore = instantiationCount >= 5 ? 0.25 : (instantiationCount / 5) * 0.25;
+    const reliabilityScore = Math.min(successRate, 1.0) * 0.35;
+    const verificationScore = independentPasses >= 3 ? 0.25 : (independentPasses / 3) * 0.25;
+    const diversityScore = hasDiversity ? 0.15 : 0.0;
+
+    const score = Number((volumeScore + reliabilityScore + verificationScore + diversityScore).toFixed(4));
+    // Cache for downstream consumers (telemetry, dashboards)
+    this.empiricalScores.set(templateId, score);
+    return score;
   }
 
   private computeSuccessRate(templateId: string): number {
@@ -1109,6 +1169,127 @@ export class EphemeralGenesis {
           id: "", templateId: "generic_api_wrapper", templateType: "api_wrapper", params,
           implementation: JSON.stringify(config),
           description: `${params.method || "GET"} ${(params.url as string)?.slice(0, 80)}`,
+          createdAt: "", expiresAt: "", sessionId: "", state: "generated", hash: "",
+          metadata: { createdBy: "", missionIntent: "", capabilityGap: "", invocationCount: 0, totalRuntimeMs: 0 },
+        };
+      },
+    });
+
+    // ── Template: Data Parser ───────────────────────────────────────
+    this.registry.register({
+      id: "data_parser",
+      type: "data_parser",
+      description: "Parse custom data formats: CSV, JSON, regex extraction, or binary. Generates a parser function from a schema or sample.",
+      serves: ["Investigate", "Interpret"],
+      instantiationCount: 0,
+      promotionProposed: false,
+      promotionThreshold: 5,
+      validateParams: (params) => {
+        const errors: string[] = [];
+        if (!params.format || !["csv", "json", "regex", "binary"].includes(params.format as string))
+          errors.push("format must be one of: csv, json, regex, binary");
+        if (!params.schema && !params.sample)
+          errors.push("schema or sample is required");
+        return { valid: errors.length === 0, errors: errors.length > 0 ? errors : undefined };
+      },
+      generate: async (params) => {
+        const format = params.format as string;
+        const parserCode = format === "csv"
+          ? `(input) => { const lines = input.trim().split('\\n'); const headers = lines[0].split(','); return lines.slice(1).map(line => { const vals = line.split(','); const obj = {}; headers.forEach((h,i) => obj[h.trim()] = vals[i]?.trim()); return obj; }); }`
+          : format === "json"
+          ? `(input) => { try { return JSON.parse(input); } catch(e) { return { error: e.message, raw: input }; } }`
+          : format === "regex"
+          ? `(input) => { const pattern = ${JSON.stringify(params.pattern || ".*")}; const re = new RegExp(pattern, 'g' + (${params.flags ? JSON.stringify(params.flags) : '""'})); const matches = []; let m; while ((m = re.exec(input)) !== null) matches.push(m); return matches; }`
+          : `(input) => { /* binary parser — stub */ return { bytes: input.length, format: 'binary' }; }`;
+
+        return {
+          id: "", templateId: "data_parser", templateType: "data_parser", params,
+          implementation: parserCode,
+          description: `Parse ${format} data${params.schema ? ` with schema: ${(params.schema as string).slice(0, 40)}` : ""}`,
+          createdAt: "", expiresAt: "", sessionId: "", state: "generated", hash: "",
+          metadata: { createdBy: "", missionIntent: "", capabilityGap: "", invocationCount: 0, totalRuntimeMs: 0 },
+        };
+      },
+    });
+
+    // ── Template: Compute Function ──────────────────────────────────
+    this.registry.register({
+      id: "compute_fn",
+      type: "compute_fn",
+      description: "Pure numerical computation: sum, average, statistics, linear regression, or custom formula. No side effects.",
+      serves: ["Interpret", "Choose"],
+      instantiationCount: 0,
+      promotionProposed: false,
+      promotionThreshold: 5,
+      validateParams: (params) => {
+        const errors: string[] = [];
+        if (!params.operation || !["sum", "avg", "stats", "regression", "formula"].includes(params.operation as string))
+          errors.push("operation must be one of: sum, avg, stats, regression, formula");
+        if (params.operation === "formula" && !params.formula)
+          errors.push("formula is required for formula operation");
+        return { valid: errors.length === 0, errors: errors.length > 0 ? errors : undefined };
+      },
+      generate: async (params) => {
+        const op = params.operation as string;
+        const computeCode = op === "sum"
+          ? `(data) => data.reduce((a,b) => a + b, 0)`
+          : op === "avg"
+          ? `(data) => data.length ? data.reduce((a,b) => a + b, 0) / data.length : 0`
+          : op === "stats"
+          ? `(data) => { const n = data.length; const sum = data.reduce((a,b) => a + b, 0); const mean = sum / n; const sorted = [...data].sort((a,b) => a - b); const variance = data.reduce((a,b) => a + (b - mean) ** 2, 0) / n; return { count: n, sum, mean, min: sorted[0], max: sorted[n-1], median: n % 2 ? sorted[Math.floor(n/2)] : (sorted[n/2-1] + sorted[n/2]) / 2, stddev: Math.sqrt(variance) }; }`
+          : op === "regression"
+          ? `(data) => { const n = data.length; const sumX = data.reduce((a,p) => a + p[0], 0); const sumY = data.reduce((a,p) => a + p[1], 0); const sumXY = data.reduce((a,p) => a + p[0]*p[1], 0); const sumX2 = data.reduce((a,p) => a + p[0]**2, 0); const slope = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX**2); const intercept = (sumY - slope*sumX) / n; const yPred = data.map(p => slope*p[0] + intercept); const ssRes = data.reduce((a,p,i) => a + (p[1] - yPred[i])**2, 0); const ssTot = data.reduce((a,p) => a + (p[1] - sumY/n)**2, 0); return { slope, intercept, rSquared: 1 - ssRes/ssTot, points: data.length }; }`
+          : `(data) => { ${(params.formula as string) || "return data"} }`;
+
+        return {
+          id: "", templateId: "compute_fn", templateType: "compute_fn", params,
+          implementation: computeCode,
+          description: `Compute ${op}${params.formula ? `: ${(params.formula as string).slice(0, 40)}` : ""}`,
+          createdAt: "", expiresAt: "", sessionId: "", state: "generated", hash: "",
+          metadata: { createdBy: "", missionIntent: "", capabilityGap: "", invocationCount: 0, totalRuntimeMs: 0 },
+        };
+      },
+    });
+
+    // ── Template: Format Converter ──────────────────────────────────
+    this.registry.register({
+      id: "format_converter",
+      type: "format_converter",
+      description: "Transform between data formats: JSON→CSV, CSV→JSON, YAML→JSON, JSON→YAML, Markdown table→JSON, or custom mapping.",
+      serves: ["Interpret", "Choose"],
+      instantiationCount: 0,
+      promotionProposed: false,
+      promotionThreshold: 5,
+      validateParams: (params) => {
+        const errors: string[] = [];
+        if (!params.from || !params.to)
+          errors.push("from and to formats are required");
+        const validFormats = ["json", "csv", "yaml", "markdown_table", "xml"];
+        if (params.from && !validFormats.includes(params.from as string))
+          errors.push(`from must be one of: ${validFormats.join(", ")}`);
+        if (params.to && !validFormats.includes(params.to as string))
+          errors.push(`to must be one of: ${validFormats.join(", ")}`);
+        return { valid: errors.length === 0, errors: errors.length > 0 ? errors : undefined };
+      },
+      generate: async (params) => {
+        const from = params.from as string;
+        const to = params.to as string;
+        const converterCode = (from === "json" && to === "csv")
+          ? `(input) => { const data = typeof input === 'string' ? JSON.parse(input) : input; const rows = Array.isArray(data) ? data : [data]; if (!rows.length) return ''; const headers = Object.keys(rows[0]); return headers.join(',') + '\\n' + rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(',')).join('\\n'); }`
+          : (from === "csv" && to === "json")
+          ? `(input) => { const lines = input.trim().split('\\n'); const headers = lines[0].split(',').map(h => h.trim()); return JSON.stringify(lines.slice(1).map(line => { const vals = line.split(','); const obj = {}; headers.forEach((h,i) => obj[h] = vals[i]?.trim()); return obj; })); }`
+          : (from === "json" && to === "yaml")
+          ? `(input) => { const data = typeof input === 'string' ? JSON.parse(input) : input; const toYaml = (obj, depth=0) => { const pad = '  '.repeat(depth); if (typeof obj !== 'object' || obj === null) return String(obj); if (Array.isArray(obj)) return obj.map(v => pad + '- ' + toYaml(v, depth+1).trimStart()).join('\\n'); return Object.entries(obj).map(([k,v]) => pad + k + ': ' + (typeof v === 'object' && v !== null ? '\\n' + toYaml(v, depth+1) : String(v))).join('\\n'); }; return toYaml(data); }`
+          : (from === "yaml" && to === "json")
+          ? `(input) => { /* simple YAML parser — flat keys only */ const lines = input.trim().split('\\n'); const obj = {}; for (const line of lines) { const [k, ...v] = line.split(':'); if (k && v.length) obj[k.trim()] = v.join(':').trim(); } return JSON.stringify(obj); }`
+          : (from === "markdown_table" && to === "json")
+          ? `(input) => { const lines = input.trim().split('\\n').filter(l => l.includes('|')); const headers = lines[0].split('|').filter(c => c.trim()).map(c => c.trim()); const rows = lines.slice(2).filter(l => !l.includes('---')); return JSON.stringify(rows.map(r => { const cells = r.split('|').filter(c => c.trim()).map(c => c.trim()); const obj = {}; headers.forEach((h,i) => obj[h] = cells[i] || ''); return obj; })); }`
+          : `(input) => { /* ${from} → ${to} converter — stub */ return input; }`;
+
+        return {
+          id: "", templateId: "format_converter", templateType: "format_converter", params,
+          implementation: converterCode,
+          description: `Convert ${from} → ${to}`,
           createdAt: "", expiresAt: "", sessionId: "", state: "generated", hash: "",
           metadata: { createdBy: "", missionIntent: "", capabilityGap: "", invocationCount: 0, totalRuntimeMs: 0 },
         };

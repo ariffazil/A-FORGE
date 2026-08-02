@@ -24,7 +24,12 @@ export type AuditEventAction =
   | "route_rejected"
   | "route_waiting"
   | "patches_applied"
-  | "patches_partial";
+  | "patches_partial"
+  // P1-AA (2026-08-02): ephemeral capability metabolism lifecycle.
+  // Distinct from `success`/`failure` because lifecycle events can be
+  // success-calls (200) with a fail_closed / retired / promotion_proposed
+  // sub-state that operators must surface in dashboards.
+  | "ephemeral_lifecycle";
 
 export interface AuditEvent {
   epoch: string;
