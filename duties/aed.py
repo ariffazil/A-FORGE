@@ -679,6 +679,11 @@ def run_aed_cycle() -> dict:
 
     cf = load_json(CARRY_FORWARD)
     open_loops = cf.get("open_loops", []) or cf.get("open_loops_888_HOLD", [])
+    # Normalize: bare strings → {gap: str, severity: "MEDIUM"}
+    open_loops = [
+        {"gap": l, "severity": "MEDIUM"} if isinstance(l, str) else l
+        for l in open_loops
+    ]
     high_loops = [l for l in open_loops if l.get("severity") == "HIGH"]
     medium_loops = [l for l in open_loops if l.get("severity") == "MEDIUM"]
 
