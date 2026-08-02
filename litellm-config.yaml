@@ -20,7 +20,7 @@ model_list:
     litellm_params:
       model: openai/deepseek-v4-pro
       api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/QWEN_API_KEY
+      api_key: os.environ/QWEN_HERMES_API_KEY
       request_timeout: 30
   - model_name: main
     litellm_params:
@@ -40,7 +40,7 @@ model_list:
     litellm_params:
       model: openai/glm-5.2
       api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/QWEN_API_KEY
+      api_key: os.environ/QWEN_HERMES_API_KEY
       request_timeout: 45
   - model_name: forge
     litellm_params:
@@ -60,7 +60,7 @@ model_list:
     litellm_params:
       model: openai/deepseek-v4-pro
       api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/QWEN_API_KEY
+      api_key: os.environ/QWEN_HERMES_API_KEY
       request_timeout: 45
   - model_name: auditor
     litellm_params:
@@ -80,7 +80,7 @@ model_list:
     litellm_params:
       model: openai/kimi-k2.7-code
       api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/QWEN_API_KEY
+      api_key: os.environ/QWEN_HERMES_API_KEY
       request_timeout: 45
   - model_name: planner
     litellm_params:
@@ -120,7 +120,7 @@ model_list:
     litellm_params:
       model: openai/qwen3.6-flash
       api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/QWEN_API_KEY
+      api_key: os.environ/QWEN_HERMES_API_KEY
       request_timeout: 15
   - model_name: small
     litellm_params:
