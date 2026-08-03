@@ -191,6 +191,8 @@ router_settings:
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: null  # Explicit no-DB
+  otel_export: false  # No telemetry
   drop_params: true
   # LOCK: no telemetry, no phone-home
   telemetry: false
