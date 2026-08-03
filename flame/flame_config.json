@@ -1,14 +1,15 @@
 {
   "_meta": {
-    "name": "FLAME \u2014 Free Loop AI Model Engine",
-    "version": "2.1.0-p1",
+    "name": "FLAME — Free Loop AI Model Engine",
+    "version": "2.2.0-zen",
     "forged": "2026-07-20",
-    "updated": "2026-07-28T17:30:00Z",
+    "updated": "2026-08-03T16:44:00Z",
+    "zenned": "2026-08-03T16:44:00Z — removed 6 stale provider profiles (mistral, sambanova, cerebras). Task_map aligned to live providers only (groq, gemini, sea-lion, openrouter, ollama).",
     "doctrine": "DITEMPA BUKAN DIBERI",
-    "cost": "RM0 \u2014 all tiers on free provider plans. Hard RM0 gate enforced in code (P0.5).",
-    "purpose": "Sequential fallback inference mesh for tools, workers, and advisory throughput. Zero governance authority \u2014 pure throughput. FLAME produces proposals; consuming tools determine admissibility.",
+    "cost": "RM0 — all tiers on free provider plans. Hard RM0 gate enforced in code (P0.5).",
+    "purpose": "Sequential fallback inference mesh for tools, workers, and advisory throughput. Zero governance authority — pure throughput. FLAME produces proposals; consuming tools determine admissibility.",
     "constitutional_note": "TOOL LANE only. Agents use the governed constitutional cascade. FLAME never judges, seals, promotes memory, or touches sovereign data. P0 hardened 2026-07-20: false SEAL removed, RM0 hard gate, safety refusal no-shop, sensitivity gate, provenance fingerprints.",
-    "fleet": "12 core verified models across 6 providers. Primary: Groq Qwen3.6-27b (292ms). Fallbacks: Groq, Cerebras, Gemini, SEA-LION, OpenRouter, Cloudflare. Dropped: Ollama (18ms connection refused). Restructured 2026-07-25 per FLAME upgrade P1. Cloudflare added 2026-07-25: Llama 3.3 70B FP8, Qwen3 30B A3B, Mistral Small 3.1 24B.",
+    "fleet": "12 core verified models across 5 live providers. Primary: Groq Qwen3.6-27b (292ms). Fallbacks: Groq, Gemini, SEA-LION, OpenRouter, Ollama. 6 providers removed (sambanova, cloudflare, cerebras, mistral, huggingface, fireworks).",
     "tiers_ref": "/root/AAA/registries/models/MODEL_TIERS.json",
     "tiers_aligned": "T3_recovery + T4_local",
     "stale_providers_removed": [
@@ -23,7 +24,7 @@
   },
   "chains": {
     "GOVERNED-ONLY": {
-      "description": "Constitutional lane \u2014 Go/TokenRouter. For governed agents only (NOT FLAME tools). HOLD on failure. NEVER use free models here.",
+      "description": "Constitutional lane — Go/TokenRouter. For governed agents only (NOT FLAME tools). HOLD on failure. NEVER use free models here.",
       "strategy": "least_latency",
       "fallback": "none",
       "max_retries": 1,
@@ -53,7 +54,7 @@
       ]
     },
     "RM0-TOOLS-FREELOOP": {
-      "description": "RM0 FREE tool lane \u2014 sequential fallback. ONLY truly free providers. Aligned with MODEL_TIERS.json T3/T4. TOOLS ONLY \u2014 never agents, never constitutional.",
+      "description": "RM0 FREE tool lane — sequential fallback. ONLY truly free providers. Aligned with MODEL_TIERS.json T3/T4. TOOLS ONLY — never agents, never constitutional.",
       "doctrine": "MODEL > PROVIDER > BILLING (FREE only). No paid models. No governed inference.",
       "strategy": "least_latency",
       "fallback": "sequential",
@@ -186,7 +187,7 @@
       ]
     },
     "RM0-EMBED-FREELOOP": {
-      "description": "Embedding lane \u2014 SEA-LION + Ollama for vector work",
+      "description": "Embedding lane — SEA-LION + Ollama for vector work",
       "strategy": "least_latency",
       "fallback": "sequential",
       "max_retries": 2,
@@ -238,7 +239,7 @@
       "api_key_env": "TOKENROUTER_API_KEY",
       "cost_band": "paid",
       "timeout_ms": 20000,
-      "note": "Primary paid provider \u2014 DeepSeek V4 Pro (1M context, tool_call + reasoning)"
+      "note": "Primary paid provider — DeepSeek V4 Pro (1M context, tool_call + reasoning)"
     },
     "groq": {
       "base_url": "https://api.groq.com/openai/v1",
@@ -268,7 +269,7 @@
         "X-Title": "arifOS FLAME Free Loop",
         "X-OpenRouter-Experimental-Metadata": "enabled"
       },
-      "note": "OpenRouter :free model aggregator. RATE-LIMITED: 20rpm/50rpd shared across all free models. Tier-3 fallback only \u2014 relegated 2026-07-25.",
+      "note": "OpenRouter :free model aggregator. RATE-LIMITED: 20rpm/50rpd shared across all free models. Tier-3 fallback only — relegated 2026-07-25.",
       "rate_limits": {
         "rpm": 20,
         "rpd": 50,
@@ -281,15 +282,16 @@
     "task_map": {
       "_meta": {
         "forged": "2026-07-25",
-        "doctrine": "L1\u2192L3: Task-Adaptive Routing. FLAME routes by task type, not just speed. Callers tag their intent; FLAME picks the best model chain for that task. Falls through sequentially if the preferred model fails.",
-        "zen": "\"Know thy model, know thy task\" \u2014 Every model has a strength profile. Route accordingly."
+        "zenned": "2026-08-03 — removed stale provider refs (mistral, sambanova, cerebras). All preferred chains now live providers only.",
+        "doctrine": "L1→L3: Task-Adaptive Routing. FLAME routes by task type, not just speed. Callers tag their intent; FLAME picks the best model chain for that task. Falls through sequentially if the preferred model fails.",
+        "zen": "\"Know thy model, know thy task\" — Every model has a strength profile. Route accordingly."
       },
       "classification": {
         "description": "Text classification, categorization, labeling",
         "preferred": [
           "groq/llama-3.1-8b-instant",
-          "mistral/ministral-8b-2512",
-          "sambanova/DeepSeek-V3.1"
+          "groq/qwen/qwen3.6-27b",
+          "gemini/gemini-flash-lite-latest"
         ],
         "prefer_fast": true,
         "max_tokens_default": 256
@@ -299,7 +301,7 @@
         "preferred": [
           "gemini/gemini-flash-lite-latest",
           "groq/llama-3.3-70b-versatile",
-          "mistral/open-mistral-nemo"
+          "gemini/gemini-2.5-flash"
         ],
         "prefer_fast": false,
         "max_tokens_default": 1024
@@ -307,15 +309,15 @@
       "extraction": {
         "description": "Entity/keyword extraction, structured data pull",
         "preferred": [
-          "mistral/ministral-8b-2512",
+          "groq/llama-3.1-8b-instant",
           "groq/qwen/qwen3.6-27b",
-          "sambanova/Meta-Llama-3.3-70B-Instruct"
+          "gemini/gemini-flash-lite-latest"
         ],
         "prefer_fast": true,
         "max_tokens_default": 512
       },
       "bm_malay": {
-        "description": "Bahasa Malaysia \u2014 native fluency required",
+        "description": "Bahasa Malaysia — native fluency required",
         "preferred": [
           "sea-lion/aisingapore/Qwen-SEA-LION-v4-32B-IT",
           "sea-lion/aisingapore/Llama-SEA-LION-v3-70B-IT"
@@ -327,8 +329,8 @@
         "description": "Multi-hypothesis contradiction detection, deep reasoning",
         "preferred": [
           "groq/llama-3.3-70b-versatile",
-          "sambanova/DeepSeek-V3.1",
-          "cerebras/gpt-oss-120b"
+          "groq/qwen/qwen3.6-27b",
+          "gemini/gemini-2.5-flash"
         ],
         "prefer_fast": false,
         "max_tokens_default": 1024
@@ -337,8 +339,8 @@
         "description": "Code generation, analysis, debugging",
         "preferred": [
           "groq/qwen/qwen3.6-27b",
-          "mistral/codestral-2508",
-          "sambanova/DeepSeek-V3.1"
+          "groq/openai/gpt-oss-120b",
+          "gemini/gemini-2.5-flash"
         ],
         "prefer_fast": false,
         "max_tokens_default": 2048
@@ -347,17 +349,17 @@
         "description": "Multi-source evidence synthesis for GEOX/WEALTH",
         "preferred": [
           "groq/llama-3.3-70b-versatile",
-          "mistral/open-mistral-nemo",
+          "gemini/gemini-2.5-flash",
           "gemini/gemini-flash-lite-latest"
         ],
         "prefer_fast": false,
         "max_tokens_default": 2048
       },
       "general": {
-        "description": "General-purpose fallback \u2014 any task",
+        "description": "General-purpose fallback — any task",
         "preferred": [
           "groq/qwen/qwen3.6-27b",
-          "sambanova/Meta-Llama-3.3-70B-Instruct",
+          "groq/llama-3.3-70b-versatile",
           "groq/llama-3.1-8b-instant"
         ],
         "prefer_fast": true,
@@ -367,7 +369,8 @@
     "model_profiles": {
       "_meta": {
         "forged": "2026-07-25",
-        "doctrine": "\"Know thy model, know thy task\" \u2014 Every model has a documented strength profile. Task-adaptive routing uses these to reorder the chain."
+        "zenned": "2026-08-03 — 6 stale profiles removed (mistral/*, sambanova/*, cerebras/*). 6 live profiles remain.",
+        "doctrine": "\"Know thy model, know thy task\" — Every model has a documented strength profile. Task-adaptive routing uses these to reorder the chain."
       },
       "groq/qwen/qwen3.6-27b": {
         "strengths": [
@@ -406,66 +409,6 @@
         ],
         "max_context": 32768
       },
-      "mistral/ministral-8b-2512": {
-        "strengths": [
-          "json_native",
-          "extraction",
-          "classification",
-          "schema_output"
-        ],
-        "weaknesses": [
-          "deep_reasoning",
-          "bm_malay"
-        ],
-        "max_context": 32768
-      },
-      "mistral/open-mistral-nemo": {
-        "strengths": [
-          "general",
-          "summarization",
-          "evidence_synthesis"
-        ],
-        "weaknesses": [
-          "code",
-          "bm_malay"
-        ],
-        "max_context": 32768
-      },
-      "mistral/codestral-2508": {
-        "strengths": [
-          "code",
-          "fill_in_middle",
-          "json_native"
-        ],
-        "weaknesses": [
-          "bm_malay",
-          "summarization"
-        ],
-        "max_context": 32768
-      },
-      "sambanova/Meta-Llama-3.3-70B-Instruct": {
-        "strengths": [
-          "deep_reasoning",
-          "extraction",
-          "general"
-        ],
-        "weaknesses": [
-          "bm_malay"
-        ],
-        "max_context": 32768
-      },
-      "sambanova/DeepSeek-V3.1": {
-        "strengths": [
-          "code",
-          "deep_reasoning",
-          "classification",
-          "contradiction"
-        ],
-        "weaknesses": [
-          "bm_malay"
-        ],
-        "max_context": 65536
-      },
       "gemini/gemini-flash-lite-latest": {
         "strengths": [
           "summarization",
@@ -498,19 +441,6 @@
         "weaknesses": [
           "code",
           "fast_general"
-        ],
-        "max_context": 32768
-      },
-      "cerebras/gpt-oss-120b": {
-        "strengths": [
-          "deep_reasoning",
-          "code",
-          "contradiction"
-        ],
-        "weaknesses": [
-          "fast_general",
-          "bm_malay",
-          "json_native"
         ],
         "max_context": 32768
       }
