@@ -90,6 +90,7 @@ import { registerRuntimeVerifyTool } from "./runtimeVerify.js";
 // multimodalTools.ts DELETED 2026-07-31 — all 4 tools deprecated, replaced by forge_ephemeral templates
 import { registerEphemeralTools } from "./ephemeralTools.js";
 import { registerWebZenTools } from "./webZenTools.js";
+import { registerGoogleWorkspaceTools } from "../../capabilities/google-workspace/forgeGoogleWorkspace.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { elicitUser, tradeConfirmationSchema, isGenuineAuthorization } from "./elicitation.js";
 import {
@@ -2746,6 +2747,9 @@ registerPolicyTools(server);
 // Schema delta = 888_HOLD. Forged 2026-07-03 per eureka margin.
 registerSurfaceGuardTools(server);
 registerSurfaceAuditTools(server);
+
+  // ── Google Workspace (ZEN-MIGRATED 2026-08-03 from arifOS kernel) ──
+  registerGoogleWorkspaceTools(server);
 
 // ── Prediction Bridge (pre-action simulation for GEOX/WEALTH) ──────────────
 // forge_predict: called BEFORE forge_execute for domain actions.

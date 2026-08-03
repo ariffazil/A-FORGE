@@ -9,8 +9,8 @@ connector:
   provider: google
   auth:
     method: oauth_refresh
-    token_file: /root/HERMES/google_token.json
-    client_secret_file: /root/HERMES/google_client_secret.json
+    token_file: /root/HERMES/google_token.json       # ⚠️ MUST BE PROVISIONED — run Google OAuth flow
+    client_secret_file: /root/HERMES/google_client_secret.json  # ⚠️ MUST BE PROVISIONED
   scopes:
     - https://www.googleapis.com/auth/gmail.modify
     - https://www.googleapis.com/auth/gmail.send

@@ -31,8 +31,10 @@ logger = logging.getLogger(__name__)
 _TOKEN_PATHS = [
     Path("/run/secrets/google_workspace/token.json"),
     Path("/app/google_workspace/token.json"),
+    Path("/root/HERMES/google_token.json"),  # ZEN-MIGRATED: primary token for A-FORGE
     Path(__file__).parents[3] / "AAA" / ".apex" / "token.json",
     Path.home() / ".openclaw" / "gog" / "token.json",
+    Path.home() / "HERMES" / "google_token.json",
 ]
 
 
@@ -64,7 +66,9 @@ def _service(name: str, version: str) -> Any:
     return build(name, version, credentials=creds, cache_discovery=False)
 
 
-def _result(status: str, data: dict[str, Any], error: str | None = None) -> dict[str, Any]:
+def _result(
+    status: str, data: dict[str, Any], error: str | None = None
+) -> dict[str, Any]:
     out = {"status": status, "result": data}
     if error:
         out["error"] = error
@@ -120,7 +124,9 @@ def google_gmail_read_unread(
                     "date": headers.get("Date", "?"),
                 }
             )
-        return _result("SEAL", {"count": len(items), "emails": items, "actor_id": actor_id})
+        return _result(
+            "SEAL", {"count": len(items), "emails": items, "actor_id": actor_id}
+        )
     except Exception as e:
         logger.warning(f"google_gmail_read_unread failed: {e}")
         return _result("HOLD", {}, error=str(e))
@@ -147,7 +153,9 @@ def google_gmail_send(
             "Rich context for understanding. Narrow capability for action."
     """
     if not actor_id:
-        return _result("HOLD", {}, error="actor_id is required for send operations (L11 AUTH)")
+        return _result(
+            "HOLD", {}, error="actor_id is required for send operations (L11 AUTH)"
+        )
 
     # ── CAPABILITY MEMBRANE: Exact scope enforcement ─────────────────────────────
     # Phase 1: If a permitted_scope is provided, validate exact recipient,
@@ -161,7 +169,12 @@ def google_gmail_send(
         body_hash = hashlib.sha256(body.encode()).hexdigest()[:16]
         _membrane_passed = enforce_capability_membrane(
             "email.send",
-            {"to": to, "subject": subject, "subject_hash": subject_hash, "body_hash": body_hash},
+            {
+                "to": to,
+                "subject": subject,
+                "subject_hash": subject_hash,
+                "body_hash": body_hash,
+            },
             permitted_scope,
         )
         if not _membrane_passed:
@@ -243,7 +256,9 @@ def google_calendar_list_events(
                     "html_link": e.get("htmlLink"),
                 }
             )
-        return _result("SEAL", {"count": len(items), "events": items, "actor_id": actor_id})
+        return _result(
+            "SEAL", {"count": len(items), "events": items, "actor_id": actor_id}
+        )
     except Exception as e:
         logger.warning(f"google_calendar_list_events failed: {e}")
         return _result("HOLD", {}, error=str(e))
@@ -271,7 +286,9 @@ def google_calendar_create_event(
         actor_id: Sovereign actor identifier (required for audit).
     """
     if not actor_id:
-        return _result("HOLD", {}, error="actor_id is required for create operations (L11 AUTH)")
+        return _result(
+            "HOLD", {}, error="actor_id is required for create operations (L11 AUTH)"
+        )
     try:
         svc = _service("calendar", "v3")
         event = {
@@ -330,11 +347,15 @@ def google_drive_list_files(
                     "id": f["id"],
                     "name": f["name"],
                     "type": f["mimeType"].split(".")[-1],
-                    "modified": f["modifiedTime"][:10] if f.get("modifiedTime") else None,
+                    "modified": f["modifiedTime"][:10]
+                    if f.get("modifiedTime")
+                    else None,
                     "link": f.get("webViewLink"),
                 }
             )
-        return _result("SEAL", {"count": len(items), "files": items, "actor_id": actor_id})
+        return _result(
+            "SEAL", {"count": len(items), "files": items, "actor_id": actor_id}
+        )
     except Exception as e:
         logger.warning(f"google_drive_list_files failed: {e}")
         return _result("HOLD", {}, error=str(e))
@@ -368,7 +389,8 @@ def google_drive_search(
             {
                 "count": len(files),
                 "files": [
-                    {"id": f["id"], "name": f["name"], "link": f.get("webViewLink")} for f in files
+                    {"id": f["id"], "name": f["name"], "link": f.get("webViewLink")}
+                    for f in files
                 ],
                 "actor_id": actor_id,
             },
@@ -436,7 +458,9 @@ def google_sheets_append(
         actor_id: Sovereign actor identifier (required for audit).
     """
     if not actor_id:
-        return _result("HOLD", {}, error="actor_id is required for append operations (L11 AUTH)")
+        return _result(
+            "HOLD", {}, error="actor_id is required for append operations (L11 AUTH)"
+        )
     try:
         svc = _service("sheets", "v4")
         body = {"values": values}
