@@ -1,0 +1,144 @@
+#!/bin/bash
+# cc-opencode — Context-Compiled OpenCode Launcher (CANARY)
+# DITEMPA BUKAN DIBERI
+#
+# Wraps opencode session with context-compiled boot for ONE test task.
+# If compiled context misses dependencies, agent falls back to arif_route.
+# If that fails, revert to full context. F1 AMANAH: fully reversible.
+#
+# Usage:
+#   cc-opencode --task "fix arifOS kernel session bug"
+#   cc-opencode --task "interpret seismic section" --canary-id test-001
+
+set -euo pipefail
+
+BOOT_COMPILER="/root/A-FORGE/scripts/context_boot.sh"
+CANARY_LOG="/root/forge_work/context_canary/canary_log.jsonl"
+CANARY_DIR="/root/forge_work/context_canary"
+TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
+
+# ─── CANARY CONFIG ──────────────────────────────────────────────────
+
+CANARY_ID=""
+TASK=""
+FULL_CONTEXT=false  # escape hatch
+
+usage() {
+    cat <<'EOF'
+cc-opencode — Context-Compiled OpenCode Launcher (CANARY)
+
+Usage:
+  cc-opencode --task "your task description" [--canary-id ID] [--full]
+
+  --task "..."      Task description (required)
+  --canary-id ID    Canary test identifier (default: auto-generated)
+  --full            Bypass compiler, use full context (escape hatch)
+  --dry             Dry-run: show what WOULD happen, don't launch
+
+The canary runs ONE task with compiled context. If dependencies are missed,
+the agent uses arif_route to reach excluded organs. If that fails, revert
+with --full flag.
+EOF
+    exit 0
+}
+
+MODE="launch"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --task) TASK="$2"; shift 2 ;;
+        --canary-id) CANARY_ID="$2"; shift 2 ;;
+        --full) FULL_CONTEXT=true; shift ;;
+        --dry) MODE="dry"; shift ;;
+        --help) usage ;;
+        *) echo "Unknown: $1"; usage ;;
+    esac
+done
+
+if [ -z "$TASK" ]; then
+    echo "ERROR: --task is required." >&2
+    usage
+fi
+
+CANARY_ID="${CANARY_ID:-CC-${TIMESTAMP}}"
+mkdir -p "$CANARY_DIR"
+
+# ─── COMPILE ────────────────────────────────────────────────────────
+
+BOOT_FILE="/tmp/cc_boot_${CANARY_ID}.md"
+
+if [ "$FULL_CONTEXT" = true ]; then
+    echo "[cc-opencode] ESCAPE HATCH: using full context."
+    BOOT_FILE="/root/AGENTS.md"
+    COMPILE_RESULT="full_context_escape_hatch"
+    PRIMARY="full"
+    REDUCTION=0
+    NAIVE=34000
+    COMPILED=34000
+else
+    echo "[cc-opencode] Compiling context for: $TASK"
+    COMPILE_OUTPUT=$(bash "$BOOT_COMPILER" --write "$BOOT_FILE" "$TASK" 2>&1)
+    
+    PRIMARY=$(echo "$COMPILE_OUTPUT" | grep -oP 'Primary: \K\S+')
+    REDUCTION=$(echo "$COMPILE_OUTPUT" | grep -oP '\d+\.\d+%' | head -1 | tr -d '%')
+    COMPILE_RESULT="$COMPILE_OUTPUT"
+    
+    echo "[cc-opencode] Primary: $PRIMARY | Reduction: ${REDUCTION}%"
+    echo "[cc-opencode] Boot doc: $BOOT_FILE ($(wc -c < "$BOOT_FILE") bytes)"
+fi
+
+# ─── CANARY LOG ─────────────────────────────────────────────────────
+
+CANARY_ENTRY=$(cat <<JSON
+{"canary_id":"$CANARY_ID","timestamp":"$TIMESTAMP","task":"$TASK","primary_organ":"$PRIMARY","reduction_pct":$REDUCTION,"boot_file":"$BOOT_FILE","full_context":$FULL_CONTEXT,"status":"LAUNCHED"}
+JSON
+)
+
+echo "$CANARY_ENTRY" >> "$CANARY_LOG"
+
+# ─── ENVIRONMENT ────────────────────────────────────────────────────
+
+export CC_CANARY_ID="$CANARY_ID"
+export CC_PRIMARY_ORGAN="$PRIMARY"
+export CC_BOOT_FILE="$BOOT_FILE"
+export CC_REDUCTION_PCT="$REDUCTION"
+export CC_CANARY_MODE="true"
+
+# ─── DRY RUN / LAUNCH ───────────────────────────────────────────────
+
+if [ "$MODE" = "dry" ]; then
+    echo ""
+    echo "=== CANARY DRY RUN ==="
+    echo "  Canary ID:   $CANARY_ID"
+    echo "  Task:        $TASK"
+    echo "  Primary:     $PRIMARY"
+    echo "  Reduction:   ${REDUCTION}%"
+    echo "  Boot file:   $BOOT_FILE ($(wc -c < "$BOOT_FILE") bytes)"
+    echo "  Full context: $FULL_CONTEXT"
+    echo ""
+    echo "=== COMPILED BOOT PREVIEW (first 40 lines) ==="
+    head -40 "$BOOT_FILE"
+    echo ""
+    echo "=== ESCAPE HATCH ==="
+    echo "  If agent misses dependencies: re-run with --full"
+    echo "  Excluded organs reachable via: arif_route"
+    echo "  Canary log: $CANARY_LOG"
+    exit 0
+fi
+
+# ─── LAUNCH ─────────────────────────────────────────────────────────
+
+echo "[cc-opencode] CANARY ACTIVE — $CANARY_ID"
+echo "[cc-opencode] Agent should load: $BOOT_FILE"
+echo "[cc-opencode] Escape hatch: cc-opencode --task \"$TASK\" --full"
+echo ""
+echo "=== READY ==="
+echo "CC_PRIMARY_ORGAN=$PRIMARY"
+echo "CC_BOOT_FILE=$BOOT_FILE"
+echo "CC_CANARY_ID=$CANARY_ID"
+echo ""
+echo "The compiled boot document is ready. To use it in a session:"
+echo "  cat $BOOT_FILE"
+echo ""
+echo "To end canary and record result:"
+echo "  cc-opencode --close $CANARY_ID --result [PASS|MISS|FAIL]"
