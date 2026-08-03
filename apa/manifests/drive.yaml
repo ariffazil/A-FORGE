@@ -1,0 +1,55 @@
+# APA Manifest: Google Drive (OAuth Google API)
+# ZEN-FORGED 2026-08-03 — extracted from arifOS kernel google_workspace.py
+connector:
+  name: drive
+  mcp_tool: forge_drive
+  version: "1.0.0"
+  domain: productivity.drive
+  protocol: google-api
+  provider: google
+  auth:
+    method: oauth_refresh
+    token_file: /root/HERMES/google_token.json
+    client_secret_file: /root/HERMES/google_client_secret.json
+  scopes:
+    - https://www.googleapis.com/auth/drive
+
+verbs:
+  - name: list_files
+    class: OBSERVE
+    blast_radius: LOW
+    description: List recent Google Drive files sorted by modified time
+    requires_lease: false
+  - name: search
+    class: OBSERVE
+    blast_radius: LOW
+    description: Search Google Drive by file name
+    requires_lease: false
+  - name: read
+    class: OBSERVE
+    blast_radius: LOW
+    description: Read file content (text files + Google Docs export)
+    requires_lease: false
+  - name: download
+    class: OBSERVE
+    blast_radius: LOW
+    description: Download file to local path
+    requires_lease: false
+  - name: get_metadata
+    class: OBSERVE
+    blast_radius: LOW
+    description: Get file metadata (name, type, modified, link)
+    requires_lease: false
+
+leases:
+  - scope: drive.read
+    verbs: [list_files, search, read, download, get_metadata]
+    note: "OBSERVE — no lease required"
+
+gates:
+  pre_execute: [F1_AMANAH, F2_TRUTH]
+  pre_mutate: []  # Read-only connector
+  post_execute: [F11_AUDIT, F4_CLARITY]
+
+envelope:
+  required_fields: [ok, connector, verb, verdict, evidence_tag, confidence, receipt.timestamp]

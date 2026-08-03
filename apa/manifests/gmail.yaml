@@ -1,36 +1,62 @@
-# APA Manifest: Gmail (Sovereign IMAP/SMTP)
+# APA Manifest: Gmail (OAuth Google API)
+# ZEN-MIGRATED 2026-08-03 — extracted from arifOS kernel google_workspace.py
 connector:
   name: gmail
-  mcp_tool: forge_email
-  version: "1.0.0"
+  mcp_tool: forge_gmail
+  version: "2.0.0"
   domain: communication.email
-  protocol: imap+smtp
+  protocol: google-api
   provider: google
   auth:
-    method: app_password
-    credential_file: /root/.secrets/email/gmail.json
+    method: oauth_refresh
+    token_file: /root/HERMES/google_token.json
+    client_secret_file: /root/HERMES/google_client_secret.json
+  scopes:
+    - https://www.googleapis.com/auth/gmail.modify
+    - https://www.googleapis.com/auth/gmail.send
 
 verbs:
   - name: search
     class: OBSERVE
     blast_radius: LOW
-    description: Search inbox with Gmail query syntax
+    description: Search inbox with Gmail query syntax (e.g. 'is:unread', 'from:boss@example.com')
     requires_lease: false
   - name: read
     class: OBSERVE
     blast_radius: LOW
-    description: Read a specific email by ID
+    description: Read a specific email by ID. Supports compact mode for token efficiency.
     requires_lease: false
-  - name: list_labels
+  - name: read_unread
     class: OBSERVE
     blast_radius: LOW
-    description: List Gmail labels
+    description: Read unread emails with optional Gmail query filter. Returns flattened headers (subject, from, date).
     requires_lease: false
-  - name: draft
+  - name: draft_create
     class: MUTATE
     blast_radius: LOW
     reversible: true
-    description: Create a draft email
+    description: Create a draft email (does not send)
+    requires_lease: true
+    lease_scope: email.mutate
+  - name: draft_update
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    description: Update an existing draft
+    requires_lease: true
+    lease_scope: email.mutate
+  - name: draft_send
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    description: Send an existing draft
+    requires_lease: true
+    lease_scope: email.send
+  - name: draft_delete
+    class: MUTATE
+    blast_radius: LOW
+    reversible: false
+    description: Delete a draft
     requires_lease: true
     lease_scope: email.mutate
   - name: modify_labels
@@ -44,7 +70,7 @@ verbs:
     class: IRREVERSIBLE
     blast_radius: HIGH
     reversible: false
-    description: Send an email
+    description: Send an email. Requires full gate stack — signed session, scoped lease, sovereign ACK per payload, independent witness, post-action receipt.
     requires_lease: true
     requires_ack: true
     requires_witness: true
@@ -53,21 +79,27 @@ verbs:
 
 leases:
   - scope: email.read
-    verbs: [search, read, list_labels]
+    verbs: [search, read, read_unread]
     note: "OBSERVE — no lease required"
   - scope: email.mutate
-    verbs: [draft, modify_labels]
+    verbs: [draft_create, draft_update, draft_delete, modify_labels]
     ttl_default: 3600
   - scope: email.send
-    verbs: [send]
+    verbs: [draft_send, send]
     ttl_default: 300
-    note: "IRREVERSIBLE — short TTL + ACK"
+    note: "IRREVERSIBLE — short TTL + ACK + WITNESS + capability membrane"
 
 gates:
   pre_execute: [F1_AMANAH, F2_TRUTH, F8_GENIUS]
   pre_mutate: [F1_AMANAH, F13_SOVEREIGN]
-  pre_irreversible: [F1_AMANAH, F3_WITNESS, F13_SOVEREIGN]
+  pre_irreversible: [F1_AMANAH, F3_TRI_WITNESS, F11_AUDIT, F13_SOVEREIGN]
   post_execute: [F11_AUDIT, F4_CLARITY]
+
+# Capability membrane for send: exact recipient, subject hash, body hash, expiry, one-time use
+capability_membrane:
+  enforce: true
+  fields: [to, subject_hash, body_hash, expiry_epoch, one_time_use]
+  description: "Rich context for understanding. Narrow capability for action."
 
 envelope:
   required_fields: [ok, connector, verb, verdict, evidence_tag, confidence, receipt.timestamp]

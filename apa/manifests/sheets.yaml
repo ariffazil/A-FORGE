@@ -1,0 +1,52 @@
+# APA Manifest: Google Sheets (OAuth Google API)
+# ZEN-FORGED 2026-08-03 — extracted from arifOS kernel google_workspace.py
+connector:
+  name: sheets
+  mcp_tool: forge_sheets
+  version: "1.0.0"
+  domain: productivity.sheets
+  protocol: google-api
+  provider: google
+  auth:
+    method: oauth_refresh
+    token_file: /root/HERMES/google_token.json
+    client_secret_file: /root/HERMES/google_client_secret.json
+  scopes:
+    - https://www.googleapis.com/auth/spreadsheets
+
+verbs:
+  - name: read
+    class: OBSERVE
+    blast_radius: LOW
+    description: Read values from a Google Sheet using A1 notation (cell-level, not rendering). Returns structured {row_count, rows, range}.
+    requires_lease: false
+  - name: append
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    description: Append rows to a Google Sheet. Requires resolved spreadsheet_id + scoped lease.
+    requires_lease: true
+    lease_scope: sheets.mutate
+  - name: update
+    class: MUTATE
+    blast_radius: LOW
+    reversible: true
+    description: Update cells in a Google Sheet by range. Requires lease + dry-run preview.
+    requires_lease: true
+    lease_scope: sheets.mutate
+
+leases:
+  - scope: sheets.read
+    verbs: [read]
+    note: "OBSERVE — no lease required"
+  - scope: sheets.mutate
+    verbs: [append, update]
+    ttl_default: 3600
+
+gates:
+  pre_execute: [F1_AMANAH, F2_TRUTH, F8_GENIUS]
+  pre_mutate: [F1_AMANAH, F13_SOVEREIGN]
+  post_execute: [F11_AUDIT, F4_CLARITY]
+
+envelope:
+  required_fields: [ok, connector, verb, verdict, evidence_tag, confidence, receipt.timestamp]

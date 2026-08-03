@@ -1,46 +1,57 @@
-# APA Manifest: Calendar (Sovereign CalDAV)
+# APA Manifest: Google Calendar (OAuth Google API)
+# ZEN-MIGRATED 2026-08-03 — switched from CalDAV to Google API OAuth
 connector:
   name: calendar
   mcp_tool: forge_calendar
-  version: "1.0.0"
+  version: "2.0.0"
   domain: productivity.calendar
-  protocol: caldav
+  protocol: google-api
   provider: google
   auth:
-    method: app_password
-    credential_file: /root/.secrets/calendar/google.json
+    method: oauth_refresh
+    token_file: /root/HERMES/google_token.json
+    client_secret_file: /root/HERMES/google_client_secret.json
+  scopes:
+    - https://www.googleapis.com/auth/calendar
 
 verbs:
   - name: list_events
     class: OBSERVE
     blast_radius: LOW
+    description: List upcoming calendar events from primary calendar
     requires_lease: false
   - name: get_event
     class: OBSERVE
     blast_radius: LOW
+    description: Get a specific event by ID
     requires_lease: false
   - name: find_free_slots
     class: OBSERVE
     blast_radius: LOW
+    description: Find free time slots
     requires_lease: false
   - name: create_event
     class: MUTATE
     blast_radius: MEDIUM
     reversible: true
+    description: Create a calendar event. Requires actor_id + scoped lease.
     requires_lease: true
     lease_scope: calendar.mutate
   - name: update_event
     class: MUTATE
     blast_radius: LOW
     reversible: true
+    description: Update an existing calendar event
     requires_lease: true
     lease_scope: calendar.mutate
   - name: delete_event
     class: IRREVERSIBLE
     blast_radius: MEDIUM
     reversible: false
+    description: Delete a calendar event. Requires ACK + witness.
     requires_lease: true
     requires_ack: true
+    requires_witness: true
     lease_scope: calendar.delete
     lease_ttl: 300
 
@@ -53,12 +64,12 @@ leases:
   - scope: calendar.delete
     verbs: [delete_event]
     ttl_default: 300
-    note: "IRREVERSIBLE — short TTL + ACK"
+    note: "IRREVERSIBLE — short TTL + ACK + WITNESS"
 
 gates:
   pre_execute: [F1_AMANAH, F2_TRUTH, F8_GENIUS]
   pre_mutate: [F1_AMANAH, F13_SOVEREIGN]
-  pre_irreversible: [F1_AMANAH, F3_WITNESS, F13_SOVEREIGN]
+  pre_irreversible: [F1_AMANAH, F3_TRI_WITNESS, F13_SOVEREIGN]
   post_execute: [F11_AUDIT, F4_CLARITY]
 
 envelope:
