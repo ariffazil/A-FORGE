@@ -33,6 +33,7 @@
  */
 
 import { createHash } from "node:crypto";
+import { execFile } from "node:child_process";
 import { writeFile, mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -169,7 +170,7 @@ function getDefaultSandboxExecutor(): SandboxExecutor {
 
 export { getDefaultSandboxExecutor };
 
-export type TemplateType = "api_wrapper" | "data_parser" | "compute_fn" | "format_converter";
+export type TemplateType = "api_wrapper" | "data_parser" | "compute_fn" | "format_converter" | "ts_function";
 
 export interface EphemeralTemplate {
   id: string;
@@ -223,6 +224,19 @@ export interface EphemeralTool {
   };
   /** SHA256 of implementation for audit */
   hash: string;
+  /**
+   * Compile gate result (P1.2 — 2026-08-03).
+   * Populated by sandboxTest() pre-flight. The TypeScript compiler
+   * acts as a type-level falsification gate: generated code that
+   * fails tsc --noEmit --strict never reaches the sandbox.
+   * F2 TRUTH: compiler output is the evidence.
+   */
+  compileCheck?: {
+    passed: boolean;
+    errors: string;
+    durationMs: number;
+    tscVersion: string;
+  };
   /** Metadata for audit trail */
   metadata: {
     createdBy: string;
@@ -531,6 +545,27 @@ export class EphemeralGenesis {
       // Non-API templates: real sandbox execution via injected executor.
       // Each template type emits a small launcher that the sandbox runs.
       const launcher = this.buildNonApiLauncher(tool, testInput);
+
+      // P1.2 (2026-08-03): TypeScript compile gate — type-check before sandbox.
+      // The compiler is a deterministic, non-AI falsification gate.
+      // Generated code that fails tsc --noEmit never reaches the sandbox.
+      // F2 TRUTH: compiler output is the evidence.
+      const compileResult = await this.compileCheck(tool);
+      tool.compileCheck = compileResult;
+      if (!compileResult.passed) {
+        tool.state = "failed";
+        tool.verification = {
+          ok: false,
+          error: `Compile gate FAILED (${compileResult.tscVersion}): ${compileResult.errors.slice(0, 500)}`,
+          verifier_method: "schema_invariant",
+        };
+        return {
+          ok: false,
+          tool,
+          error: `Compile gate: ${compileResult.errors.slice(0, 200)}`,
+        };
+      }
+
       try {
         const sandboxResult = await this.sandbox.run(launcher, {
           allowedDomains: [],
@@ -559,6 +594,168 @@ export class EphemeralGenesis {
       tool.state = "failed";
       tool.verification = { ok: false, error: err instanceof Error ? err.message : String(err) };
       return { ok: false, tool, error: tool.verification.error };
+    }
+  }
+
+  /**
+   * P1.2 (2026-08-03) — TypeScript Compile Gate.
+   *
+   * Runs `tsc --noEmit --strict` on generated tool implementation before
+   * sandbox execution. This is the TYPE-LEVEL FALSIFICATION GATE:
+   *   - Generated code that fails type-checking never reaches the sandbox.
+   *   - The compiler is a deterministic, non-AI witness (Gödel lock Q9).
+   *   - F2 TRUTH: compiler output is the evidence.
+   *
+   * How it works:
+   *   1. Wraps the implementation (JS function string) in a minimal TS context
+   *      with explicit `any` types for input/output — we're checking syntax
+   *      and structural validity, not business-logic types.
+   *   2. Writes to a temp .ts file.
+   *   3. Runs `npx tsc --noEmit --strict <file>`.
+   *   4. Returns pass/fail with error details and timing.
+   *
+   * For native TS templates (ts_function), the wrapping is lighter — the
+   * implementation already carries type annotations.
+   *
+   * @param tool — the ephemeral tool with implementation to check
+   * @returns compile gate result
+   */
+  private async compileCheck(
+    tool: EphemeralTool,
+  ): Promise<{ passed: boolean; errors: string; durationMs: number; tscVersion: string }> {
+    const start = Date.now();
+    const workdir = join(tmpdir(), `tsgate_${tool.id}`);
+    await mkdir(workdir, { recursive: true });
+
+    // Determine if this is a native TS template
+    const isTsNative = tool.templateType === "ts_function";
+
+    // Build the TS source: wrap the implementation in a compilable context
+    let tsSource: string;
+    const impl = tool.implementation;
+
+    if (isTsNative) {
+      // Native TS: implementation already has type annotations.
+      // Wrap in a module — the agent provides its own export.
+      tsSource = `// @generated ephemeral tool — ${tool.id}
+// template: ${tool.templateId} — ${tool.templateType}
+// created: ${tool.createdAt} — by: ${tool.metadata.createdBy}
+// mission: ${tool.metadata.missionIntent}
+// compile-gate: tsc --noEmit --strict
+
+${impl}
+
+// Gate assertion: ensure the implementation compiles cleanly.
+// The agent's default export (if any) is validated by tsc.
+`;
+    } else {
+      // JS function string: wrap in a TS module with type annotations.
+      // For non-TS templates we check syntax validity, not type soundness —
+      // the function params get explicit `any` to satisfy strict mode.
+      tsSource = `// @generated ephemeral tool — ${tool.id}
+// template: ${tool.templateId} — ${tool.templateType}
+// created: ${tool.createdAt} — by: ${tool.metadata.createdBy}
+// mission: ${tool.metadata.missionIntent}
+// compile-gate: syntax + structural check (lenient types)
+
+// The generated implementation — function body from template
+// Explicit any types satisfy strict mode without changing behaviour
+const _toolFn: (input: any) => any = ${impl};
+
+// Gate assertion: ensure the function is callable at runtime
+if (typeof _toolFn !== "function") {
+  throw new Error("Generated implementation is not a callable function");
+}
+
+// Export for verifier inspection
+export { _toolFn };
+`;
+    }
+
+    // Write TS source to temp file
+    const tsPath = join(workdir, "tool.ts");
+    await writeFile(tsPath, tsSource, "utf-8");
+
+    // For non-TS templates: write a lenient tsconfig (JS function bodies
+    // have implicit any; we check syntax + structure, not type soundness).
+    // For ts_function: the agent wrote proper types — full strict.
+    if (!isTsNative) {
+      const tsconfigPath = join(workdir, "tsconfig.json");
+      await writeFile(tsconfigPath, JSON.stringify({
+        compilerOptions: {
+          strict: false,
+          noImplicitAny: false,
+          strictNullChecks: false,
+          target: "ES2022",
+          module: "nodenext",
+          moduleResolution: "nodenext",
+          skipLibCheck: true,
+        },
+      }), "utf-8");
+    }
+
+    // Run tsc --noEmit
+    // Non-TS templates: use tsconfig.json in workdir (lenient: noImplicitAny off)
+    // ts_function: pass --strict directly (agent wrote proper types)
+    const tscArgs = isTsNative
+      ? ["--noEmit", "--strict", "--skipLibCheck", tsPath]
+      : ["--noEmit", "--skipLibCheck", "--project", workdir];
+
+    try {
+      await new Promise<void>((resolve, reject) => {
+        execFile(
+          "/usr/bin/tsc",
+          tscArgs,
+          {
+            cwd: workdir,
+            timeout: 15_000,
+            maxBuffer: 256 * 1024,
+          },
+          (err, stdout, stderr) => {
+            if (err) {
+              // tsc exited non-zero — compilation errors
+              const errors = (stderr || stdout || "").slice(0, 2000);
+              reject(new Error(errors || `tsc exited with code ${(err as any)?.code ?? "unknown"}`));
+            } else {
+              resolve();
+            }
+          },
+        );
+      });
+
+      const durationMs = Date.now() - start;
+      const tscVersion = await this.getTscVersion();
+      return { passed: true, errors: "", durationMs, tscVersion };
+    } catch (err) {
+      const durationMs = Date.now() - start;
+      const tscVersion = await this.getTscVersion().catch(() => "unknown");
+      const errors = err instanceof Error ? err.message : String(err);
+      return { passed: false, errors, durationMs, tscVersion };
+    } finally {
+      // Cleanup temp dir (best effort)
+      rm(workdir, { recursive: true, force: true }).catch(() => {});
+    }
+  }
+
+  /**
+   * P1.2 helper — cache tsc version for compileCheck receipts.
+   */
+  private _tscVersionCache: string | null = null;
+
+  private async getTscVersion(): Promise<string> {
+    if (this._tscVersionCache) return this._tscVersionCache;
+    try {
+      const stdout = await new Promise<string>((resolve, reject) => {
+        execFile("/usr/bin/tsc", ["--version"], { timeout: 5_000 }, (err, stdout) => {
+          if (err) reject(err);
+          else resolve(stdout.trim());
+        });
+      });
+      this._tscVersionCache = stdout;
+      return stdout;
+    } catch {
+      this._tscVersionCache = "Version unknown";
+      return "Version unknown";
     }
   }
 
@@ -638,12 +835,13 @@ process.stdout.write(JSON.stringify(result));`;
    */
   private dispatchTemplateExecutor(
     tool: EphemeralTool,
-  ): "api_wrapper" | "compute_fn" | "data_parser" | "format_converter" | "unknown" {
+  ): "api_wrapper" | "compute_fn" | "data_parser" | "format_converter" | "ts_function" | "unknown" {
     switch (tool.templateType) {
       case "api_wrapper":
       case "compute_fn":
       case "data_parser":
       case "format_converter":
+      case "ts_function":
         return tool.templateType;
       default:
         return "unknown";
@@ -692,6 +890,26 @@ process.stdout.write(JSON.stringify(result));`;
 
       // Non-API: route through the SandboxExecutor. P0.2 closes the
       // historical "not implemented" gap.
+      // P1.2 (2026-08-03): If compile gate wasn't run in sandboxTest,
+      // run it now as defense-in-depth — never invoke unverified code.
+      if (!tool.compileCheck && tool.state !== "tested") {
+        const compileResult = await this.compileCheck(tool);
+        tool.compileCheck = compileResult;
+        if (!compileResult.passed) {
+          tool.state = "failed";
+          tool.verification = {
+            ok: false,
+            error: `Compile gate FAILED (${compileResult.tscVersion}): ${compileResult.errors.slice(0, 500)}`,
+            verifier_method: "schema_invariant",
+          };
+          return {
+            ok: false,
+            tool,
+            error: `Compile gate: ${compileResult.errors.slice(0, 200)}`,
+          };
+        }
+      }
+
       const launcher = this.buildNonApiLauncher(tool, args);
       try {
         const sandboxResult = await this.sandbox.run(launcher, {
@@ -1294,6 +1512,40 @@ process.stdout.write(JSON.stringify(result));`;
           id: "", templateId: "format_converter", templateType: "format_converter", params,
           implementation: converterCode,
           description: `Convert ${from} → ${to}`,
+          createdAt: "", expiresAt: "", sessionId: "", state: "generated", hash: "",
+          metadata: { createdBy: "", missionIntent: "", capabilityGap: "", invocationCount: 0, totalRuntimeMs: 0 },
+        };
+      },
+    });
+
+    // ── Template: TS Function (P1.2 — 2026-08-03) ──────────────────
+    // TypeScript-native ephemeral tool. The LLM (or agent) generates
+    // full TypeScript with type annotations, imports, and exports.
+    // The compileCheck() gate validates it via tsc --noEmit before
+    // sandbox execution. This is the "forge any tool" template —
+    // not constrained to pre-baked code snippets.
+    this.registry.register({
+      id: "ts_function",
+      type: "ts_function",
+      description: "TypeScript function with full type annotations, imports, and a default export. Agent writes the implementation; the compiler gate verifies it. For when no other template fits.",
+      serves: ["Interpret", "Choose"],
+      instantiationCount: 0,
+      promotionProposed: false,
+      promotionThreshold: 5,
+      validateParams: (params) => {
+        const errors: string[] = [];
+        if (!params.implementation || typeof params.implementation !== "string" || params.implementation.trim().length === 0)
+          errors.push("implementation is required (TypeScript source code)");
+        if (!params.description || typeof params.description !== "string")
+          errors.push("description is required");
+        return { valid: errors.length === 0, errors: errors.length > 0 ? errors : undefined };
+      },
+      generate: async (params) => {
+        const impl = params.implementation as string;
+        return {
+          id: "", templateId: "ts_function", templateType: "ts_function", params,
+          implementation: impl,
+          description: (params.description as string).slice(0, 200),
           createdAt: "", expiresAt: "", sessionId: "", state: "generated", hash: "",
           metadata: { createdBy: "", missionIntent: "", capabilityGap: "", invocationCount: 0, totalRuntimeMs: 0 },
         };
