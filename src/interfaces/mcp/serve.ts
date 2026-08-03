@@ -30,6 +30,7 @@ import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThink
 import { assertSctMutationGateOrExit } from "../../infrastructure/governance/sctIngress.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { validateSession, validateSessionAsync } from "../../domain/session/sessionGate.js";
+import { runP0GateMiddleware, formatGateRejection } from "./p0GateMiddleware.js";
 
 const AFORGE_ROOT = process.cwd();
 
@@ -885,6 +886,35 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                   action_class: actionClass,
                   tool: toolName,
                   gate: "SESSION_REQUIRED",
+                }));
+                return;
+              }
+
+              // ── P0 Deterministic Pre-Execution Gates (2026-08-03) ────────
+              // Runs AFTER session gate, BEFORE tool dispatch + BIJAKSANA.
+              // Pure deterministic functions — no LLM calls, no network, no writes.
+              // Based on Reddy et al. (2026) arXiv:2607.07405.
+              const p0Result = runP0GateMiddleware({
+                toolName,
+                args: toolArgs,
+                sessionId: callerSession ?? "",
+                actorId: callerActor ?? "",
+                sct: callerSct,
+              });
+              if (!p0Result.passed) {
+                const rejection = formatGateRejection(p0Result);
+                process.stderr.write(`[A-FORGE-MCP] P0_GATE blocked ${toolName}: ${rejection.gate} — ${rejection.reason}\n`);
+                res.writeHead(200, {
+                  "Content-Type": "application/json",
+                  "X-AForge-Gate": `P0_${rejection.gate}`,
+                });
+                res.end(toolIsErrorResult(msgId, `P0_GATE: ${rejection.reason}`, {
+                  error_class: "P0_GATE_BLOCKED",
+                  recoverability: rejection.recoverability,
+                  action_class: actionClass,
+                  tool: toolName,
+                  gate: rejection.gate,
+                  p0_evaluations: p0Result.evaluations.length,
                 }));
                 return;
               }

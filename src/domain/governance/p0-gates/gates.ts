@@ -1,11 +1,12 @@
 /**
  * P0 Deterministic Pre-Execution Gates — Gate implementations.
  *
- * Four-gate suite mapped from arXiv:2607.07405 to arifOS federation:
- *   1. lease_validity      — actor must hold valid lease (cancellation_eligibility)
- *   2. reversibility_check  — action must be reversible or ack_irreversible (baggage_allowance)
- *   3. observe_before_mutate — must read before write (must_read_before_write)
- *   4. blast_radius_bound   — blast radius must be within lease limits (passenger_count)
+ * Five-gate suite mapped from arXiv:2607.07405 to arifOS federation:
+ *   1. lease_validity        — actor must hold valid lease (cancellation_eligibility)
+ *   2. reversibility_check   — action must be reversible or ack_irreversible (baggage_allowance)
+ *   3. identity_immutable    — actor identity cannot change mid-session (passenger_count)
+ *   4. observe_before_mutate — must read before write (must_read_before_write)
+ *   5. blast_radius_bound    — blast radius must be within lease limits (arifOS extension)
  *
  * All gates are PURE FUNCTIONS: no LLM calls, no network, no writes.
  *
@@ -108,7 +109,55 @@ const reversibilityGate: GatePredicate = (
   return { allow: true, gateId: "reversibility_check" };
 };
 
-// ── Gate 3: observe_before_mutate ─────────────────────────────────────
+// ── Gate 3: identity_immutable ────────────────────────────────────────
+
+/**
+ * Block mutation when actor identity has changed or session token is
+ * unverifiable. Prevents session hijack and mid-session actor swap.
+ *
+ * Maps to: passenger_count (arXiv gate 3)
+ * Floor: F11 AUDIT — identity must be attributable
+ */
+const identityImmutableGate: GatePredicate = (
+  _toolName: string,
+  args: Record<string, unknown>,
+  dbState: DBSnapshot,
+  lease: LeaseState,
+): GateResult => {
+  // Check SCT token is present for mutate-class tools
+  const sct = String(args.session_token || args.sct || "");
+  if (!sct || sct.length < 8) {
+    return {
+      allow: false,
+      gateId: "identity_immutable",
+      reason: "No valid session token (session_token/sct) provided. Identity cannot be verified. Call arif_init to obtain an SCT.",
+    };
+  }
+
+  // Verify actor_id matches lease
+  const callerActor = String(args.actor_id || args.actorId || "");
+  if (callerActor && lease.actorId && callerActor !== lease.actorId) {
+    return {
+      allow: false,
+      gateId: "identity_immutable",
+      reason: `Actor identity mismatch: caller claims '${callerActor}' but lease is for '${lease.actorId}'. Session hijack detected.`,
+    };
+  }
+
+  // Verify session_id matches lease
+  const callerSession = String(args.session_id || args.sessionId || "");
+  if (callerSession && lease.sessionId && callerSession !== lease.sessionId) {
+    return {
+      allow: false,
+      gateId: "identity_immutable",
+      reason: `Session mismatch: caller claims '${callerSession}' but lease is for '${lease.sessionId}'.`,
+    };
+  }
+
+  return { allow: true, gateId: "identity_immutable" };
+};
+
+// ── Gate 4: observe_before_mutate ─────────────────────────────────────
 
 /**
  * Block writes to resources the agent has not read.
@@ -223,9 +272,16 @@ export const P0_GATES: GateRegistration[] = [
     floor: "F1",
   },
   {
+    id: "identity_immutable",
+    predicate: identityImmutableGate,
+    priority: 3,
+    targeting: { tools: [], actionClasses: [] },
+    floor: "F11",
+  },
+  {
     id: "observe_before_mutate",
     predicate: observeBeforeMutateGate,
-    priority: 3,
+    priority: 4,
     targeting: {
       tools: ["forge_filesystem", "forge_shell", "forge_git", "forge_execute"],
     },
@@ -234,10 +290,10 @@ export const P0_GATES: GateRegistration[] = [
   {
     id: "blast_radius_bound",
     predicate: blastRadiusGate,
-    priority: 4,
+    priority: 5,
     targeting: { tools: [], actionClasses: [] },
     floor: "F1",
   },
 ];
 
-export { leaseValidityGate, reversibilityGate, observeBeforeMutateGate, blastRadiusGate };
+export { leaseValidityGate, reversibilityGate, identityImmutableGate, observeBeforeMutateGate, blastRadiusGate };

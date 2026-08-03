@@ -31,6 +31,7 @@ export type {
 export {
   leaseValidityGate,
   reversibilityGate,
+  identityImmutableGate,
   observeBeforeMutateGate,
   blastRadiusGate,
   P0_GATES,
