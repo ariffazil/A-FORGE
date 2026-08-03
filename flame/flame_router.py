@@ -852,13 +852,14 @@ class OpenRouterProvider:
 
                 data = resp.json()
                 message = data["choices"][0]["message"]
-                content = message.get("content", "").strip()
+                content = (message.get("content") or "").strip()
 
                 # Check reasoning_content (same P0.2 fix as _call_model)
-                reasoning = message.get("reasoning_content", "") or message.get(
+                reasoning = message.get("reasoning_content") or message.get(
                     "reasoning", ""
                 )
-                if not content and reasoning and reasoning.strip():
+                reasoning = (reasoning or "").strip()
+                if not content and reasoning:
                     logger.info(f"FLAME OR {model_id} reasoning-without-final — skip")
                     self.call_count_today += 1
                     continue
@@ -1122,16 +1123,15 @@ class FlameEngine:
 
             data = resp.json()
             message = data["choices"][0]["message"]
-            content = message.get("content", "").strip()
+            content = (message.get("content") or "").strip()
 
             # P0.2: reasoning_content without final content = FAILURE, not success.
             # The model consumed token budget reasoning but did not produce the
             # requested answer. This is task_ok=false, failure_class=reasoning_without_final.
-            reasoning = message.get("reasoning_content", "") or message.get(
-                "reasoning", ""
-            )
+            reasoning = message.get("reasoning_content") or message.get("reasoning", "")
+            reasoning = (reasoning or "").strip()
             reasoning_no_final = False
-            if not content and reasoning and reasoning.strip():
+            if not content and reasoning:
                 reasoning_no_final = True
                 logger.info(
                     f"FLAME {provider}/{model} reasoning-without-final "
