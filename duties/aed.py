@@ -202,6 +202,7 @@ def ingest_flow(
     payload: Optional[dict] = None,
 ) -> bool:
     """Call arifFlow POST /ingest to log a step in the metabolic ledger."""
+    import urllib.error
     import urllib.request
     import uuid
 
@@ -210,27 +211,40 @@ def ingest_flow(
         "session_id": session_id,
         "step_type": step_type,
         "step_number": step_number,
-        "cost_ns": cost_ns,
+        "cost_ns": int(cost_ns),
         "epistemic_label": epistemic_label,
         "floor_verdict": floor_verdict,
         "receipt_id": str(uuid.uuid4()),
-        "created_at": ts_now(),
+        # arifFlow serde prefers RFC3339 Z; strip +00:00
+        "created_at": ts_now().replace("+00:00", "Z"),
         "cooling_decision": "None",
     }
     if payload:
         body["payload"] = payload
 
+    raw = json.dumps(body, default=str).encode()
     try:
         req = urllib.request.Request(
             f"{ARIFLOW_URL}/ingest",
-            data=json.dumps(body).encode(),
-            headers={"Content-Type": "application/json"},
+            data=raw,
+            headers={
+                "Content-Type": "application/json",
+                "Content-Length": str(len(raw)),
+            },
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=5) as resp:
             result = json.loads(resp.read())
-            return result.get("status") == "ingested"
-    except Exception:
+            ok = result.get("status") == "ingested"
+            if not ok:
+                print(f"[AED:ingest] unexpected: {result}")
+            return ok
+    except urllib.error.HTTPError as e:
+        err = e.read().decode(errors="replace")[:300]
+        print(f"[AED:ingest] HTTP {e.code}: {err}")
+        return False
+    except Exception as e:
+        print(f"[AED:ingest] fail: {type(e).__name__}: {e}")
         return False
 
 
@@ -721,21 +735,24 @@ def run_aed_cycle() -> dict:
         "allow_heavy_execute": allow_heavy,
         "fq_recovery_mode": fq_recovery_mode,
     }
-    # Organ probe is SENSE/OBSERVE — reclassified as Execute per F13 directive
-    # (2026-07-30). Probing organ health is sensing, not verification of prior
-    # work. This prevents a structural FQ ceiling for monitoring daemons.
+    # Organ probe accounting (stabilization 2026-08-04):
+    # Metabolism rule (always): probe/audit → Verify; mutation → Execute.
+    # Charging probes as Execute made AED the primary OVERHEAT source
+    # (cycle_fq ~200–260 with verify clamped to 1ms). Reversed permanently.
     organ_state = t1_organ_probe()
     results["steps"]["organ_probe"] = organ_state
     alive = organ_state["alive"]
     total = organ_state["total"]
 
-    execute_ns += time.time_ns() - t0
+    sense_ns = time.time_ns() - t0
+    verify_ns += sense_ns  # SENSE + organ probe = Verify always
+    results["steps"]["sense_cost_class"] = "Verify"
 
     print(
         f"  carry_forward: {len(open_loops)} loops | goals: {len(in_progress_goals)} in_progress, "
         f"{len(pending_goals)} pending ({len(auto_resume_goals)} auto-resume) | "
         f"FQ gate: global={fq_info.get('quotient', '?')} actor={fq_info.get('actor_fq', '?')} "
-        f"heavy={'ON' if allow_heavy else 'THROTTLED'}"
+        f"heavy={'ON' if allow_heavy else 'THROTTLED'} sense→Verify"
     )
 
     # ── VERIFY work: audits, gates (post-sense validation) ────────
@@ -1002,9 +1019,22 @@ def run_aed_cycle() -> dict:
     # ── SEAL: honest cost ingest ─────────────────────────────────
     cycle_end = time.time_ns()
     cycle_cost_ns = cycle_end - cycle_start
-    exec_cost = clamp_cost_ns(execute_ns)
-    ver_cost = clamp_cost_ns(verify_ns)
-    cycle_fq = exec_cost / max(ver_cost, 1)
+    # Observe-only / throttled cycles: do not emit a bare Execute placeholder
+    # when wall-clock was verification (probe/audit). Min-clamp would otherwise
+    # invent 1ms Verify + 1ms Execute and still skew the global window.
+    # Never invent Execute from sub-threshold noise (min-clamp → false STUCK/OVERHEAT).
+    # Only real mutation wall-clock ≥ COST_MIN_NS counts as Execute.
+    if execute_ns >= COST_MIN_NS:
+        exec_cost = clamp_cost_ns(execute_ns)
+    else:
+        exec_cost = 0
+    ver_cost = clamp_cost_ns(verify_ns) if verify_ns > 0 else COST_MIN_NS
+    # Safety: throttled cycles must not report Execute ≫ Verify
+    if not allow_heavy and exec_cost > 0 and ver_cost > 0 and exec_cost > ver_cost * 3:
+        overflow = exec_cost - ver_cost
+        ver_cost = clamp_cost_ns(ver_cost + overflow)
+        exec_cost = 0
+    cycle_fq = (exec_cost / max(ver_cost, 1)) if exec_cost > 0 else 0.0
     results["cycle_cost_ns"] = cycle_cost_ns
     results["metabolism"] = {
         "execute_ns": execute_ns,
@@ -1013,17 +1043,19 @@ def run_aed_cycle() -> dict:
         "verify_cost_clamped": ver_cost,
         "cycle_fq": cycle_fq,
         "allow_heavy": allow_heavy,
+        "sense_cost_class": results["steps"].get("sense_cost_class"),
     }
 
-    ingest_flow(
-        "aed-v1",
-        f"aed-cycle-{cycle_id}",
-        "Execute",
-        exec_cost,
-        "Observation",
-        "Pass",
-        payload={"phase": "sense+mutate", "allow_heavy": allow_heavy},
-    )
+    if exec_cost > 0:
+        ingest_flow(
+            "aed-v1",
+            f"aed-cycle-{cycle_id}",
+            "Execute",
+            exec_cost,
+            "Observation",
+            "Pass",
+            payload={"phase": "sense+mutate", "allow_heavy": allow_heavy},
+        )
     ingest_flow(
         "aed-v1",
         f"aed-cycle-{cycle_id}",
@@ -1035,6 +1067,8 @@ def run_aed_cycle() -> dict:
             "post_alive": post_alive,
             "post_total": total,
             "cycle_fq": cycle_fq,
+            "allow_heavy": allow_heavy,
+            "stabilize": "verify_dominant_on_throttle",
         },
     )
 
