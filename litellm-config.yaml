@@ -191,12 +191,11 @@ router_settings:
   routing_strategy: usage-based-routing
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
-  # DATABASE_URL intentionally NOT set. LiteLLM 1.90.2 Prisma expects PostgreSQL only.
-  # Master key auth path hits DB unconditionally → completions return "No connected db."
-  # LiteLLM serves as fed-health probe target + FED route metadata source.
-  # Completions are served to agents (FED/FLAME/FRAME routing via litellm-federation.service).
-  # 2026-08-04: tried SQLite → Prisma rejects (expects postgresql://). Not fixable in v1.90.2.
-  # Upgrade path: LiteLLM ≥2.x with stateless master_key support. Or accept completed limitation.
+  database_url: "postgresql://arifos_admin:ArifPostgres2026!@127.0.0.1:5432/litellm"
+  # Fixed 2026-08-04 by 333-AGI: local postgres litellm DB created. v1.90.2 Prisma
+  # now has a PostgreSQL target. Master key auth path → DB → completions work.
+  # Previous: DATABASE_URL intentionally NOT set → every completion = "No connected db."
+  # Local DB chosen over Supabase to keep FED routing self-contained (no WAN dep).
   otel_export: false
   drop_params: true
   telemetry: false
