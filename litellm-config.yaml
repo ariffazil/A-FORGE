@@ -11,6 +11,34 @@ model_list:
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
     request_timeout: 30
+# Codex 0.146 uses OpenAI Responses API. deepseek-v4-pro rejects Codex
+# Responses until early-Aug 2026; use flash first for Responses clients.
+- model_name: codex
+  litellm_params:
+    model: openai/deepseek-v4-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    request_timeout: 60
+- model_name: codex
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 45
+- model_name: codex
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    request_timeout: 30
+# opencode: keep pro for chat agents, but put flash first so Responses clients
+# (Codex) that pick this alias do not hard-fail on deepseek-v4-pro.
+- model_name: opencode
+  litellm_params:
+    model: openai/deepseek-v4-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    request_timeout: 60
 - model_name: opencode
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -116,6 +144,7 @@ litellm_settings:
   rpm_per_model:
     hermes-asi: 60
     opencode: 60
+    codex: 60
     openclaw: 60
     agi-333: 60
     asi-555: 40
@@ -130,7 +159,9 @@ router_settings:
   routing_strategy: usage-based-routing
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
-  database_url: os.environ/LITELLM_DATABASE_URL
+  # Re-enabled 2026-08-04 by 333-AGI (P1 gap fix — defence in depth).
+  # Tailscale mesh remains trust layer; master_key is LOCALHOST_DEFENCE.
+  # database_url removed — no DB needed for master_key-only auth.
   otel_export: false
   drop_params: true
   telemetry: false
