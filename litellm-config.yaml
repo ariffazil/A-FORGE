@@ -1,184 +1,118 @@
-# ═══════════════════════════════════════════════════════════════
-# LiteLLM Proxy — FED FLAME FRAME v2
-# arifOS Federation Model Routing Plane
-# ═══════════════════════════════════════════════════════════════
-# Architecture:
-#   F0 (FREE):   FLAME :18901 — RM0, always available, local
-#   F1 (MIMO):   MiMo Token Plan — 1M ctx, deep reasoning
-#   F2 (QWEN):   Qwen Token Plan — multimodal, Harness tools
-#   F3 (MM):     MiniMax — 1M ctx flagship, stable
-#   F4 (DS):     DeepSeek direct — prepaid $10.41, fastest
-#   F5 (KIMI):   Kimi K3 — 2.8T MoE, last paid fallback
-#   F6 (OLLAMA): Ollama local — blind survival, free
-#
-# Agent → Model assignments (Arif 2026-08-04):
-#   hermes-asi  → MiMo V2.5 Pro (F1) → MiniMax M3 (F3) → FLAME (F0)
-#   opencode    → DeepSeek V4 Pro (F4) → MiMo V2.5 (F1) → MiniMax (F3)
-#   openclaw    → MiniMax M3 (F3)
-#   agi-333     → DeepSeek V4 Pro (F4) → MiMo V2.5 (F1) → MiniMax (F3)
-#   asi-555     → Qwen Flash (F2) → MiMo V2.5 (F1) → MiniMax (F3)
-#   apex-888    → MiniMax M3 (F3) → DeepSeek V4 (F4)
-#
-# Rate limiting: 60 req/min per agent, 300 req/min total
-# No DB. No telemetry. 127.0.0.1 only.
-# DITEMPA BUKAN DIBERI — Forged, Not Given
-# ═══════════════════════════════════════════════════════════════
-
 model_list:
-
-  # ─── HERMES-ASI — Human-facing, multimodal, MiMo primary ─────
-  - model_name: hermes-asi
-    litellm_params:
-      model: openai/mimo-v2.5-pro
-      api_base: https://token-plan-sgp.xiaomimimo.com/v1
-      api_key: os.environ/MIMO_API_KEY
-      request_timeout: 60
-  - model_name: hermes-asi
-    litellm_params:
-      model: openai/MiniMax-M3
-      api_base: https://api.minimax.io/v1
-      api_key: os.environ/MINIMAX_API_KEY
-      request_timeout: 30
-  - model_name: hermes-asi
-    litellm_params:
-      model: openai/free-aggregator
-      api_base: http://127.0.0.1:18901/v1
-      api_key: "sk-flame-local"
-      request_timeout: 30
-
-  # ─── OPENCODE — Coder/compiler, DeepSeek primary ─────────────
-  - model_name: opencode
-    litellm_params:
-      model: openai/deepseek-v4-pro
-      api_base: https://api.deepseek.com/v1
-      api_key: os.environ/DEEPSEEK_API_KEY
-      request_timeout: 60
-  - model_name: opencode
-    litellm_params:
-      model: openai/mimo-v2.5-pro
-      api_base: https://token-plan-sgp.xiaomimimo.com/v1
-      api_key: os.environ/MIMO_API_KEY
-      request_timeout: 45
-  - model_name: opencode
-    litellm_params:
-      model: openai/MiniMax-M3
-      api_base: https://api.minimax.io/v1
-      api_key: os.environ/MINIMAX_API_KEY
-      request_timeout: 30
-
-  # ─── OPENCLAW — Bridge flow, MiniMax primary ─────────────────
-  - model_name: openclaw
-    litellm_params:
-      model: openai/MiniMax-M3
-      api_base: https://api.minimax.io/v1
-      api_key: os.environ/MINIMAX_API_KEY
-      request_timeout: 60
-  - model_name: openclaw
-    litellm_params:
-      model: openai/mimo-v2.5-pro
-      api_base: https://token-plan-sgp.xiaomimimo.com/v1
-      api_key: os.environ/MIMO_API_KEY
-      request_timeout: 30
-
-  # ─── AGI-333 — Delta Mind, DeepSeek primary ──────────────────
-  - model_name: agi-333
-    litellm_params:
-      model: openai/deepseek-v4-pro
-      api_base: https://api.deepseek.com/v1
-      api_key: os.environ/DEEPSEEK_API_KEY
-      request_timeout: 60
-  - model_name: agi-333
-    litellm_params:
-      model: openai/mimo-v2.5-pro
-      api_base: https://token-plan-sgp.xiaomimimo.com/v1
-      api_key: os.environ/MIMO_API_KEY
-      request_timeout: 45
-  - model_name: agi-333
-    litellm_params:
-      model: openai/MiniMax-M3
-      api_base: https://api.minimax.io/v1
-      api_key: os.environ/MINIMAX_API_KEY
-      request_timeout: 30
-
-  # ─── ASI-555 — Sensory gatekeeper, Qwen Flash primary ────────
-  - model_name: asi-555
-    litellm_params:
-      model: openai/qwen3.6-flash
-      api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/QWEN_BAILIAN_KEY
-      request_timeout: 30
-  - model_name: asi-555
-    litellm_params:
-      model: openai/mimo-v2.5-pro
-      api_base: https://token-plan-sgp.xiaomimimo.com/v1
-      api_key: os.environ/MIMO_API_KEY
-      request_timeout: 30
-  - model_name: asi-555
-    litellm_params:
-      model: openai/MiniMax-M3
-      api_base: https://api.minimax.io/v1
-      api_key: os.environ/MINIMAX_API_KEY
-      request_timeout: 30
-
-  # ─── APEX-888 — Constitutional judge, MiniMax primary ────────
-  - model_name: apex-888
-    litellm_params:
-      model: openai/MiniMax-M3
-      api_base: https://api.minimax.io/v1
-      api_key: os.environ/MINIMAX_API_KEY
-      request_timeout: 45
-  - model_name: apex-888
-    litellm_params:
-      model: openai/deepseek-v4-pro
-      api_base: https://api.deepseek.com/v1
-      api_key: os.environ/DEEPSEEK_API_KEY
-      request_timeout: 45
-
-  # ─── ASI-555-VISION — Multimodal sensory gatekeeper ──────────
-  - model_name: asi-555-vision
-    litellm_params:
-      model: openai/mimo-v2.5
-      api_base: https://token-plan-sgp.xiaomimimo.com/v1
-      api_key: os.environ/MIMO_API_KEY
-      request_timeout: 45
-  - model_name: asi-555-vision
-    litellm_params:
-      model: openai/qwen3.7-plus
-      api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/BAILIAN_PAYG_API_KEY
-      request_timeout: 30
-
-  # ─── DISPATCH — Fast routing, cheapest first ─────────────────
-  - model_name: dispatch
-    litellm_params:
-      model: openai/qwen3.6-flash
-      api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-      api_key: os.environ/QWEN_BAILIAN_KEY
-      request_timeout: 15
-  - model_name: dispatch
-    litellm_params:
-      model: openai/free-aggregator
-      api_base: http://127.0.0.1:18901/v1
-      api_key: "sk-flame-local"
-      request_timeout: 15
-
-  # ─── FLAME FREE — Always available, RM0 ──────────────────────
-  - model_name: flame-free
-    litellm_params:
-      model: openai/free-aggregator
-      api_base: http://127.0.0.1:18901/v1
-      api_key: "sk-flame-local"
-      request_timeout: 30
-
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 60
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    request_timeout: 30
+- model_name: opencode
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    request_timeout: 60
+- model_name: opencode
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 45
+- model_name: opencode
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    request_timeout: 30
+- model_name: openclaw
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    request_timeout: 60
+- model_name: openclaw
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 30
+- model_name: agi-333
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    request_timeout: 60
+- model_name: agi-333
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 45
+- model_name: agi-333
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    request_timeout: 30
+- model_name: asi-555
+  litellm_params:
+    model: openai/qwen3.6-flash
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_BAILIAN_KEY
+    request_timeout: 30
+- model_name: asi-555
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 30
+- model_name: asi-555
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    request_timeout: 30
+- model_name: apex-888
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    request_timeout: 45
+- model_name: apex-888
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    request_timeout: 45
+- model_name: asi-555-vision
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 45
+- model_name: dispatch
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 15
+- model_name: asi-555-vision
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/BAILIAN_PAYG_API_KEY
+    request_timeout: 30
 litellm_settings:
   num_retries: 2
   request_timeout: 60
-
-  # Circuit breaker: 3 fails → cooldown 60s
-  allowed_fails: 3
-  cooldown_time: 60
-
-  # Rate limiting: 60 req/min per model, 300 req/min global
+  allowed_fails: 1
+  cooldown_time: 259200
+  drop_params: true
   rpm_per_model:
     hermes-asi: 60
     opencode: 60
@@ -188,19 +122,15 @@ litellm_settings:
     apex-888: 20
     asi-555-vision: 30
     dispatch: 20
-    flame-free: 30
   global_rpm_limit: 300
-
-  # No fallbacks inside LiteLLM — agents choose models explicitly
-  # Each model_name has its own provider list above (load-balanced)
-
+  _72h_note: 'Circuit breaker: 72h cooldown. Quota-exhausted providers auto-disable. Auto-re-enable when cooldown expires.
+    Persisted via Supabase DB. Arif 2026-08-04.'
 router_settings:
   enable_pre_call_checks: true
-  routing_strategy: usage-based-routing  # Least-busy provider first
-
+  routing_strategy: usage-based-routing
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
-  database_url: null
+  database_url: os.environ/LITELLM_DATABASE_URL
   otel_export: false
   drop_params: true
   telemetry: false
