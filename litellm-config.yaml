@@ -159,9 +159,11 @@ router_settings:
   routing_strategy: usage-based-routing
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
-  # Re-enabled 2026-08-04 by 333-AGI (P1 gap fix — defence in depth).
-  # Tailscale mesh remains trust layer; master_key is LOCALHOST_DEFENCE.
-  # database_url removed — no DB needed for master_key-only auth.
+  # Database: SQLite local file. LiteLLM 1.90.2 master_key auth path unconditionally
+  # hits the DB; without this, completions and /v1/models return 400 "No connected db."
+  # SQLite is zero-config, local-only, no Postgres dependency. FED routing layer remains
+  # stateless — this DB serves ONLY LiteLLM's internal auth validation.
+  database_url: "sqlite:////root/.local/share/arifos/litellm.db"
   otel_export: false
   drop_params: true
   telemetry: false
