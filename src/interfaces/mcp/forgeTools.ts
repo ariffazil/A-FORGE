@@ -1306,7 +1306,7 @@ export function registerGovernedTools(server: McpServer): void {
   // ── forge_evaluate — standalone G = (A·P·E·X)^(1/4) gate ──────────────────
   server.tool(
     "forge_evaluate",
-    "APEX v36Ω evaluation gate. Computes G = (A·P·E·X)^(1/4) (4-term Nash bargaining product, geometric mean) and C_dark = A·(1-P)·(1-X) for a candidate tool spec. Φ is consulted separately as scar pressure — it does NOT multiply into G. Returns SEAL/REVIEW/VOID verdict. Does NOT generate code — evaluates only. Falsifiable: thresholds must be calibrated on held-out data.",
+    "APEX v36Ω evaluation gate (G-SPACE CANONICAL). Computes G = (A·P·E·X)^(1/4) with is_canonical_g=true. P=Physics (not Purpose). Φ is scar pressure, not a 5th dial. Returns SEAL/REVIEW/VOID. Does NOT generate code. HARAM: do not confuse with forge_apex_encode Jacobian G_local (is_canonical_g=false).",
     {
       tool_name: z.string().describe("Proposed tool name (forge_* convention)"),
       description: z.string().min(10).max(2000).describe("Natural-language description"),
@@ -1347,9 +1347,11 @@ export function registerGovernedTools(server: McpServer): void {
               type: "text" as const,
               text: JSON.stringify({
                 ...dryRun,
+                is_canonical_g: true,
+                space: "G-space",
                 mode: "dry_run",
                 note: "Implementation empty — dry run only. Full evaluation requires implementation code for HARAM scan + scar consultation.",
-                doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). Φ is separate scar gate. C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G.",
+                doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). P=Physics. Φ is separate scar gate. C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G. taskJacobian G_local is NOT this G.",
               }, null, 2),
             }],
           };
@@ -1373,7 +1375,9 @@ export function registerGovernedTools(server: McpServer): void {
             type: "text" as const,
             text: JSON.stringify({
               ...decision,
-              doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). Φ is separate scar gate. C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G. Forged, Not Given.",
+              is_canonical_g: true,
+              space: "G-space",
+              doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). P=Physics. Φ is separate scar gate. C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G. Forged, Not Given. HARAM: using taskJacobian G_local as this G → VOID.",
               v36_status: "MEASUREMENT_INSTRUMENT — thresholds must be calibrated on held-out data via ROC analysis",
             }, null, 2),
           }],
@@ -2218,7 +2222,7 @@ export function registerCognitionTools(server: McpServer): void {
   // ── forge_apex_encode — goal → task vector with Jacobian ──────────────
   server.tool(
     "forge_apex_encode",
-    "Encode a natural language goal into structured task vector T=[t1..tm] with Jacobian sensitivity J=∂T/∂G. Returns G scalar, per-task sensitivity, provenance. This is the ENCODE phase of the metabolic pipeline.",
+    "J-SPACE (NOT G-space). Encode goal → task vector T=[t1..tm] with Jacobian J=∂T/∂G. Returns G_local (is_canonical_g=false) — local actuator estimate only. HARAM: treating G_local as forge_evaluate constitutional G → VOID. Use forge_evaluate for F8 GENIUS gate. High |J|>0.6 tasks recompute on field change (forge_apex_recompute).",
     {
       goal: z.string().min(3).describe("Natural language goal to decompose into tasks"),
       actor_id: z.string().optional().describe("Calling agent identity"),
@@ -2236,7 +2240,13 @@ export function registerCognitionTools(server: McpServer): void {
           text: JSON.stringify({
             status: "SEAL",
             goal_id: result.goal_id,
+            // Dual keys: G_local is honest; G retained for backward compat but flagged
+            G_local: result.G,
             G: result.G,
+            is_canonical_g: false,
+            space: "J-space",
+            g_authority: "jacobian_actuator_estimate",
+            haram: "Do not use G/G_local as constitutional APEX G. Call forge_evaluate for is_canonical_g=true.",
             C_dark: result.C_dark,
             W3: result.W3,
             task_count: result.tasks.length,
@@ -2247,6 +2257,7 @@ export function registerCognitionTools(server: McpServer): void {
               domain: t.domain,
               risk_tier: t.risk_tier,
               sensitivity: t.sensitivity,
+              high_sensitivity: Object.values(t.sensitivity).some((v) => typeof v === "number" && v > 0.6),
               provenance: {
                 metabolism_count: t.provenance.metabolism_count,
                 risk_weight: t.provenance.risk_weight_multiplier,
@@ -2254,11 +2265,13 @@ export function registerCognitionTools(server: McpServer): void {
               },
             })),
             jacobian: {
+              formula: "J = ∂T/∂G (task sensitivity to governance fields)",
+              recompute_threshold: 0.6,
               high_sensitivity_count: result.jacobian.high_sensitivity_count,
               stable_task_count: result.jacobian.stable_task_count,
               continuity_hash: result.jacobian.continuity_hash,
             },
-            note: "G is now COMPUTED — not UNMEASURED. This is the Jacobian-enabled task decomposition.",
+            note: "J-space encode only. G_local is NOT canonical G (is_canonical_g=false). F8 gate requires forge_evaluate.",
           }, null, 2),
         }],
       };
@@ -2291,7 +2304,10 @@ export function registerCognitionTools(server: McpServer): void {
           text: JSON.stringify({
             status: "SEAL",
             goal_id,
+            G_local: summary.G,
             G: summary.G,
+            is_canonical_g: false,
+            space: "J-space",
             C_dark: summary.C_dark,
             successes: summary.successes,
             failures: summary.failures,
@@ -2304,7 +2320,7 @@ export function registerCognitionTools(server: McpServer): void {
               adjusted_fields: r.adjusted_fields,
               warning: r.warning,
             })),
-            note: "Metabolic adjustments applied. Risk weights for failed tasks increased. G recomputed from adjusted Jacobian.",
+            note: "Metabolic adjustments applied. G_local recomputed from Jacobian (is_canonical_g=false). Not constitutional G.",
           }, null, 2),
         }],
       };
