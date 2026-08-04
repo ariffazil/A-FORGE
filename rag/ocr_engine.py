@@ -891,3 +891,152 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  SMART CHUNKER — Paragraph-first with sentence fallback, overlap, context
+#  EUREKA-2 from OCR ZEN MAP (2026-08-04): absorbed from llm_aided_ocr
+# ═══════════════════════════════════════════════════════════════════════
+
+import re as _re
+
+class SmartChunker:
+    """
+    Paragraph-first smart chunking with configurable overlap and context bridging.
+    
+    Strategy (from llm_aided_ocr pattern):
+      1. Split on paragraphs (double-newlines) — keep paragraphs intact
+      2. If paragraph exceeds chunk_size, fall back to sentence splitting
+      3. Add word_overlap between consecutive chunks
+      4. Inject last N characters of previous chunk as context header
+    
+    This prevents:
+      - Orphaned sentences at chunk boundaries
+      - Lost context when a paragraph spans a chunk boundary
+      - Duplicate content from overlapping headers/footers (handled separately by dedup)
+    
+    Usage:
+      chunker = SmartChunker(chunk_size=8000, word_overlap=50, context_chars=500)
+      chunks = chunker.smart_chunk(full_text)
+    """
+    
+    SENTENCE_SPLIT = _re.compile(r'(?<=[.!?])\s+')
+    PARAGRAPH_SPLIT = _re.compile(r'\n\s*\n')
+    
+    def __init__(
+        self,
+        chunk_size: int = 8000,
+        word_overlap: int = 50,
+        context_chars: int = 500,
+    ):
+        self.chunk_size = chunk_size
+        self.word_overlap = word_overlap
+        self.context_chars = context_chars
+    
+    def smart_chunk(self, text: str) -> list[str]:
+        """
+        Main entry point. Returns list of chunk strings with overlap and context bridging.
+        """
+        if not text or not text.strip():
+            return [text]
+        
+        # Stage 1: Paragraph-first chunking
+        raw_chunks = self._chunk_paragraphs(text)
+        
+        # Stage 2: Add word overlap between chunks
+        overlapped = self._add_overlap(raw_chunks)
+        
+        return overlapped
+    
+    def chunk_with_context(self, text: str) -> list[dict]:
+        """
+        Returns list of dicts: {chunk_text, prev_context, index, total}
+        Each chunk includes the last context_chars of the previous chunk as prev_context.
+        This is the format needed for LLM correction passes.
+        """
+        raw_chunks = self._chunk_paragraphs(text)
+        overlapped = self._add_overlap(raw_chunks)
+        total = len(overlapped)
+        
+        result = []
+        for i, chunk in enumerate(overlapped):
+            prev_context = ""
+            if i > 0:
+                prev = overlapped[i - 1]
+                # Strip the overlap portion to get the actual previous content
+                overlap_words = " ".join(prev.split()[-self.word_overlap:]) if self.word_overlap > 0 else prev
+                prev_context = prev[-self.context_chars:] if len(prev) > self.context_chars else prev
+            
+            result.append({
+                "chunk_text": chunk,
+                "prev_context": prev_context,
+                "index": i,
+                "total": total,
+            })
+        
+        return result
+    
+    def _chunk_paragraphs(self, text: str) -> list[str]:
+        """Split text into chunks, keeping paragraphs intact. Falls back to sentence split."""
+        paragraphs = self.PARAGRAPH_SPLIT.split(text)
+        chunks = []
+        current_chunk = []
+        current_length = 0
+        
+        for para in paragraphs:
+            para = para.strip()
+            if not para:
+                continue
+            para_len = len(para)
+            
+            # If adding this paragraph would exceed chunk_size
+            if current_length + para_len > self.chunk_size and current_chunk:
+                # Save current chunk
+                chunks.append("\n\n".join(current_chunk))
+                
+                # If paragraph itself is bigger than chunk_size, split into sentences
+                if para_len > self.chunk_size:
+                    current_chunk = []
+                    current_length = 0
+                    sentences = self.SENTENCE_SPLIT.split(para)
+                    for sent in sentences:
+                        sent = sent.strip()
+                        if not sent:
+                            continue
+                        sent_len = len(sent)
+                        if current_length + sent_len > self.chunk_size and current_chunk:
+                            chunks.append(" ".join(current_chunk))
+                            current_chunk = [sent]
+                            current_length = sent_len
+                        else:
+                            current_chunk.append(sent)
+                            current_length += sent_len
+                else:
+                    current_chunk = [para]
+                    current_length = para_len
+            else:
+                current_chunk.append(para)
+                current_length += para_len
+        
+        # Don't forget the last chunk
+        if current_chunk:
+            if len(current_chunk) == 1:
+                chunks.append(current_chunk[0])
+            else:
+                chunks.append("\n\n".join(current_chunk))
+        
+        return chunks
+    
+    def _add_overlap(self, chunks: list[str]) -> list[str]:
+        """Add word_overlap from previous chunk to the start of each chunk."""
+        if self.word_overlap <= 0 or len(chunks) <= 1:
+            return chunks
+        
+        result = [chunks[0]]
+        for i in range(1, len(chunks)):
+            prev_words = chunks[i - 1].split()
+            overlap = " ".join(prev_words[-self.word_overlap:]) if len(prev_words) > self.word_overlap else chunks[i - 1]
+            result.append(overlap + " " + chunks[i])
+        
+        return result
+

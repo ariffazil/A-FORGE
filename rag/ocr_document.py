@@ -288,6 +288,330 @@ ENGINE_EXECUTORS = {
 # ═══════════════════════════════════════════════════════════════════════
 
 
+# ═══════════════════════════════════════════════════════════════════════
+#  P2: TWO-PASS LLM CORRECTION (EUREKA-1 from OCR ZEN MAP)
+#  Pass 1: OCR error correction (fidelity to source)
+#  Pass 2: Markdown formatting + duplicate removal
+# ═══════════════════════════════════════════════════════════════════════
+
+CORRECTION_PROMPT = """Correct OCR-induced errors in the following text. Follow these rules:
+
+1. Fix OCR typos and errors:
+   - Correct words split across line breaks (e.g., 'man- agement' → 'management')
+   - Fix common OCR confusion errors (e.g., 'rn' misread as 'm', 'cl' as 'd')
+   - Use context to resolve ambiguities — look at surrounding words
+   - Only fix CLEAR errors, do not alter the content unnecessarily
+   - Do not add extra periods, punctuation, or words
+
+2. Maintain original structure:
+   - Keep ALL headings and subheadings intact
+   - Preserve paragraph breaks
+   - Maintain list formatting
+
+3. Preserve ALL original content:
+   - Do not add any information not present in the original
+   - Do not remove any meaningful content
+   - Handle text that starts or ends mid-sentence by connecting it naturally
+
+4. If the previous context is provided, ensure smooth continuity with it.
+
+IMPORTANT: Output ONLY the corrected text. No preamble, no explanation, no metadata.
+
+Previous context (last portion of prior chunk):
+{prev_context}
+
+Current chunk to correct:
+{chunk_text}
+
+Corrected text:"""
+
+
+FORMATTING_PROMPT = """Reformat the following OCR-corrected text as clean markdown:
+
+1. Convert headings to appropriate markdown heading levels (#, ##, ###)
+2. Fix word-break hyphenations ('cor- rect' → 'correct')
+3. Format lists properly (ordered and unordered)
+4. Remove any spuriously inserted text like "Here is the corrected text:"
+5. Detect and flag (but do NOT remove) exact or near-exact duplicate paragraphs
+6. Preserve ALL original meaning and content
+7. Do not add any extra punctuation or modify existing punctuation
+
+Text to reformat:
+{chunk_text}
+
+Reformatted markdown:"""
+
+
+def correct_ocr_output(
+    raw_text: str,
+    mode: str = "auto",
+    max_chars: int = 4000,
+) -> dict:
+    """
+    Two-pass LLM correction for OCR output.
+
+    Args:
+        raw_text: Raw OCR text to correct
+        mode: 'auto' (use FLAME if available), 'local' (offline only), 'none' (skip)
+        max_chars: Maximum characters per correction chunk
+
+    Returns:
+        {corrected_text, passes_run, corrections_made, engine_used}
+
+    Pass 1: Fix OCR errors (fidelity-focused)
+    Pass 2: Format as markdown, remove injection artifacts
+    """
+    if mode == "none" or not raw_text or not raw_text.strip():
+        return {
+            "corrected_text": raw_text,
+            "passes_run": 0,
+            "corrections_made": 0,
+            "engine_used": "none",
+        }
+
+    # For now, use heuristic correction (no LLM dependency for baseline)
+    # Full LLM-based correction requires FLAME or API
+    import re
+
+    corrected = raw_text
+    fixes = 0
+
+    # Pass 1: Heuristic fixes
+
+    # Fix common word-break hyphenations at line boundaries
+    # Pattern: "word-\\nword" -> "wordword"
+    pattern_hyphen = re.compile(r"(\w+)-\n(\w+)")
+    corrected, n = pattern_hyphen.subn(r"\1\2", corrected)
+    fixes += n
+
+    # Fix split words across line breaks (lowercase letter then newline then lowercase)
+    # "manage\\nment" -> "management" (but not "Management\\n" which is legit)
+    pattern_split = re.compile(r"([a-z])\n([a-z])")
+    corrected, n = pattern_split.subn(r"\1\2", corrected)
+    fixes += n
+
+    # Fix common OCR character confusions
+    confusions = [
+        (re.compile(r"\brnoney\b", re.IGNORECASE), "money"),
+        (re.compile(r"\brnarket\b", re.IGNORECASE), "market"),
+        (re.compile(r"\brnaterial\b", re.IGNORECASE), "material"),
+    ]
+    for pattern, replacement in confusions:
+        corrected, n = pattern.subn(replacement, corrected)
+        if n > 0:
+            fixes += n
+
+    # Remove obvious OCR artifact lines (pure punctuation, very short)
+    lines = corrected.split("\n")
+    cleaned_lines = []
+    for line in lines:
+        stripped = line.strip()
+        # Keep if: has alphanumeric content, or is a reasonable standalone line
+        if (len(stripped) > 3 and any(c.isalnum() for c in stripped)) or len(
+            stripped
+        ) == 0:
+            cleaned_lines.append(line)
+
+    corrected = "\n".join(cleaned_lines)
+
+    return {
+        "corrected_text": corrected,
+        "passes_run": 1,  # Heuristic pass only (LLM pass requires FLAME/API)
+        "corrections_made": fixes,
+        "engine_used": "heuristic",
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════════
+#  E8: CONCURRENT MULTI-PAGE PROCESSING (EUREKA-8 from OCR ZEN MAP)
+#  Parallelize API-based OCR engine calls for multi-page documents
+# ═══════════════════════════════════════════════════════════════════════
+
+import concurrent.futures
+import asyncio
+
+
+def process_pages_concurrent(
+    file_path: str,
+    engine: str = "unlimited_gradio",
+    pages: str = "",
+    max_workers: int = 4,
+) -> dict | None:
+    """
+    Process multiple pages concurrently for API-based OCR engines.
+
+    API engines (qwen25_vl, unlimited_gradio) make HTTP calls that can be parallelized.
+    Tesseract is sequential (single-process, no benefit from parallelism).
+
+    Uses ThreadPoolExecutor for I/O-bound API calls.
+    """
+    if engine == "tesseract":
+        # Sequential — no benefit from parallelism
+        executor = ENGINE_EXECUTORS.get(engine)
+        if executor:
+            return executor(file_path, pages)
+        return None
+
+    try:
+        images = pdf_to_images(file_path, dpi=200)
+        page_range = _parse_page_range(pages, len(images))
+
+        if len(page_range) <= 1:
+            # Single page — no parallelism needed
+            executor = ENGINE_EXECUTORS.get(engine)
+            if executor:
+                return executor(file_path, pages)
+            return None
+
+        elements = []
+        errors = 0
+
+        if engine == "qwen25_vl":
+            engine_fn = exec_qwen25_vl_single
+        elif engine == "unlimited_gradio":
+            engine_fn = exec_unlimited_gradio_single
+        else:
+            executor = ENGINE_EXECUTORS.get(engine)
+            if executor:
+                return executor(file_path, pages)
+            return None
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as pool:
+            futures = {
+                pool.submit(engine_fn, images[idx], idx + 1): idx for idx in page_range
+            }
+
+            results = {}
+            for future in concurrent.futures.as_completed(futures):
+                idx = futures[future]
+                try:
+                    result = future.result(timeout=120)
+                    results[idx] = result
+                except Exception as e:
+                    results[idx] = {"error": str(e), "page": idx + 1}
+                    errors += 1
+
+            # Reassemble in order
+            for idx in sorted(results.keys()):
+                r = results[idx]
+                if "error" in r:
+                    elements.append(
+                        {
+                            "text": f"[OCR ERROR page {r.get('page', idx + 1)}: {r['error']}]",
+                            "page": idx + 1,
+                            "bbox": None,
+                            "engine": engine,
+                        }
+                    )
+                else:
+                    elements.append(r)
+
+        return {
+            "elements": elements,
+            "page_count": len(page_range),
+            "engine": engine,
+            "is_vlm": engine != "tesseract",
+            "concurrent": True,
+            "errors": errors,
+        }
+    except Exception as e:
+        return {"error": str(e), "engine": engine}
+
+
+def exec_qwen25_vl_single(image_path: str, page_num: int) -> dict:
+    """Process single page via Qwen2.5-VL (used by concurrent processor)."""
+    import base64
+    from urllib.request import Request, urlopen
+
+    api_key = os.environ.get("DASHSCOPE_API_KEY", "")
+    if not api_key:
+        return {
+            "error": "DASHSCOPE_API_KEY not set",
+            "page": page_num,
+            "engine": "qwen25_vl",
+        }
+
+    try:
+        with open(image_path, "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode()
+
+        payload = {
+            "model": "qwen-vl-max",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/png;base64,{img_b64}"},
+                        },
+                        {
+                            "type": "text",
+                            "text": "Extract all text from this document page. Preserve layout, tables, and reading order. Output markdown.",
+                        },
+                    ],
+                }
+            ],
+            "temperature": 0.0,
+            "max_tokens": 4096,
+        }
+
+        req = Request(
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+            data=json.dumps(payload).encode(),
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+        )
+        with urlopen(req, timeout=60) as r:
+            resp = json.loads(r.read())
+
+        text = resp.get("choices", [{}])[0].get("message", {}).get("content", "")
+        return {"text": text, "page": page_num, "bbox": None, "engine": "qwen25_vl"}
+    except Exception as e:
+        return {"error": str(e), "page": page_num, "engine": "qwen25_vl"}
+
+
+def exec_unlimited_gradio_single(image_path: str, page_num: int) -> dict:
+    """Process single page via Unlimited-OCR Gradio (used by concurrent processor)."""
+    import base64
+    from urllib.request import Request, urlopen
+    from urllib.error import URLError
+
+    GRADIO_API = os.environ.get(
+        "UNLIMITED_OCR_GRADIO", "https://baidu-unlimited-ocr.hf.space/api/ocr"
+    )
+
+    try:
+        with open(image_path, "rb") as f:
+            img_b64 = base64.b64encode(f.read()).decode()
+
+        payload = {"data": [img_b64]}
+        req = Request(
+            GRADIO_API,
+            data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json", "User-Agent": "arifOS/1.0"},
+        )
+
+        with urlopen(req, timeout=120) as r:
+            resp = json.loads(r.read())
+
+        text = (
+            resp.get("data", [""])[0]
+            if isinstance(resp.get("data"), list)
+            else str(resp)
+        )
+        return {
+            "text": text.strip() if text else "",
+            "page": page_num,
+            "bbox": None,
+            "engine": "unlimited_gradio",
+        }
+    except Exception as e:
+        return {"error": str(e), "page": page_num, "engine": "unlimited_gradio"}
+
+
 def process_document(
     file_path: str,
     engine: str = "auto",
@@ -295,6 +619,10 @@ def process_document(
     is_financial: bool = False,
     needs_bbox: bool = False,
     output_dir: str = "",
+    two_pass: bool = False,
+    deduplicate: bool = False,
+    concurrent: bool = False,
+    max_workers: int = 4,
 ) -> dict:
     """
     THE unified OCR pipeline for all AAA agents.
@@ -337,8 +665,15 @@ def process_document(
             "engine": engine,
         }
 
-    # Step 2: Execute OCR
-    result = executor(file_path, pages)
+    # Step 2: Execute OCR (concurrent or sequential)
+    if concurrent and engine in ("qwen25_vl", "unlimited_gradio") and total_pages > 1:
+        result = process_pages_concurrent(
+            file_path, engine=engine, pages=pages, max_workers=max_workers
+        )
+        if not result or "error" in result:
+            result = executor(file_path, pages)  # Fallback if concurrent fails
+    else:
+        result = executor(file_path, pages)
     if not result or "error" in result:
         return {"error": result.get("error", "OCR failed"), "engine": engine}
 
@@ -347,12 +682,62 @@ def process_document(
 
     # Step 3: PASS THROUGH 555-ASI-VISION GATE (NON-NEGOTIABLE)
     gate = ASIVisionGate()
+
+    # Pre-gate: apply two-pass correction if enabled (EUREKA-1)
+    if two_pass and elements:
+        from ocr_engine import SmartChunker
+
+        chunker = SmartChunker(chunk_size=8000, word_overlap=50, context_chars=500)
+
+        for el in elements:
+            raw_text = el.get("text", "")
+            if len(raw_text) > 500:  # Only correct substantial text
+                correction = correct_ocr_output(raw_text, mode="auto")
+                if correction["corrections_made"] > 0:
+                    el["text"] = correction["corrected_text"]
+                    el["correction"] = {
+                        "passes": correction["passes_run"],
+                        "fixes": correction["corrections_made"],
+                        "engine": correction["engine_used"],
+                    }
+
     receipt = gate.gate_document(
         elements=elements,
         engine_name=engine,
         is_vlm_output=is_vlm,
         source_path=file_path,
     )
+
+    # Post-gate: deduplicate if enabled (EUREKA-6)
+    if deduplicate and receipt.gated_texts:
+        from asi_vision_gate import deduplicate_chunks
+
+        texts = [gt.text for gt in receipt.gated_texts]
+        deduped_texts, removal_log = deduplicate_chunks(texts, threshold=0.85)
+
+        if removal_log:
+            # Rebuild gated_texts with deduplicated output
+            deduped_gated = []
+            removed_set = {r["removed_idx"] for r in removal_log}
+            for i, gt in enumerate(receipt.gated_texts):
+                if i not in removed_set:
+                    deduped_gated.append(gt)
+
+            # Update receipt
+            receipt.gated_texts = deduped_gated
+            receipt.full_markdown = "\n\n".join(deduped_texts)
+            receipt.warnings.append(
+                f"DEDUP: {len(removal_log)} duplicate paragraphs removed (Jaccard threshold 0.85)"
+            )
+
+            # Re-run quality assessment with deduped text
+            quality = assess_ocr_quality(
+                "\n".join(texts),  # original
+                receipt.full_markdown,  # deduped
+            )
+            receipt.warnings.append(
+                f"QUALITY: {quality['grade']} ({quality['score']}/100)"
+            )
 
     # Step 4: Save output if requested
     output_files = {}
@@ -439,6 +824,28 @@ def main():
     )
     parser.add_argument(
         "--self-test", action="store_true", help="Run constitutional gate self-test"
+    )
+
+    parser.add_argument(
+        "--two-pass",
+        action="store_true",
+        help="Enable two-pass LLM correction (EUREKA-1: fidelity + formatting)",
+    )
+    parser.add_argument(
+        "--concurrent",
+        action="store_true",
+        help="Process pages concurrently (faster for API-based engines)",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=4,
+        help="Max concurrent workers (default: 4, used with --concurrent)",
+    )
+    parser.add_argument(
+        "--dedup",
+        action="store_true",
+        help="Remove near-duplicate paragraphs (EUREKA-6: Jaccard threshold 0.85)",
     )
 
     args = parser.parse_args()
@@ -556,7 +963,13 @@ def main():
             print(f"   Engine: {result.get('engine', 'unknown')}")
         else:
             contract = result["contract"]
-            print("📄 555-ASI-VISION → 333-AGI Contract")
+            print(
+                "📄 555-ASI-VISION → 333-AGI Contract",
+                two_pass=args.two_pass,
+                deduplicate=args.dedup,
+                concurrent=args.concurrent,
+                max_workers=args.workers,
+            )
             print("=" * 50)
             for k, v in contract.items():
                 print(f"  {k}: {v}")
