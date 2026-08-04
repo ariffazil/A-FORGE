@@ -159,11 +159,12 @@ router_settings:
   routing_strategy: usage-based-routing
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
-  # Database: SQLite local file. LiteLLM 1.90.2 master_key auth path unconditionally
-  # hits the DB; without this, completions and /v1/models return 400 "No connected db."
-  # SQLite is zero-config, local-only, no Postgres dependency. FED routing layer remains
-  # stateless — this DB serves ONLY LiteLLM's internal auth validation.
-  database_url: "sqlite:////root/.local/share/arifos/litellm.db"
+  # DATABASE_URL intentionally NOT set. LiteLLM 1.90.2 Prisma expects PostgreSQL only.
+  # Master key auth path hits DB unconditionally → completions return "No connected db."
+  # This is ACCEPTED: no agent uses LiteLLM for completions. Agents use direct provider APIs.
+  # LiteLLM serves as fed-health probe target + FED route metadata source. Liveliness works.
+  # 2026-08-04: tried SQLite → Prisma rejects (expects postgresql://). Not fixable in v1.90.2.
+  # Upgrade path: LiteLLM ≥2.x with stateless master_key support. Or accept completed limitation.
   otel_export: false
   drop_params: true
   telemetry: false
