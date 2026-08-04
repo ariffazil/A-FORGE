@@ -1,4 +1,15 @@
 model_list:
+# hermes-asi (multimodal chain — mimo-v2.5 PRIMARY for image/audio/video per MiMo docs)
+# model_info.supports_image_input gates LiteLLM's image/audio/video capability routing.
+# mimo-v2.5-pro deliberately EXCLUDED (text-only per Xiaomi docs).
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 45
+  model_info:
+    supports_image_input: true
 - model_name: hermes-asi
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -11,6 +22,8 @@ model_list:
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
     request_timeout: 30
+  model_info:
+    supports_image_input: true
 # Codex 0.146 uses OpenAI Responses API. deepseek-v4-pro rejects Codex
 # Responses until early-Aug 2026; use flash first for Responses clients.
 - model_name: codex
