@@ -135,6 +135,38 @@ model_list:
     api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/BAILIAN_PAYG_API_KEY
     request_timeout: 30
+# hermes-asi-vision (multimodal chain — mimo-v2.5 PRIMARY + qwen3.7-plus FALLBACK)
+# 2026-08-04 audit: explicit vision lane for Hermes agents. Both backends
+# recognized as image-capable by LiteLLM 1.90.2 (cf. asi-555-vision pattern).
+# qwen3.7-plus is the documented vision model per /root/HERMES/profiles/hermes_asi/config.yaml.
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 45
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/BAILIAN_PAYG_API_KEY
+    request_timeout: 30
+# asi-555-audio (multimodal audio lane — mimo-v2.5 only)
+# 2026-08-04: explicit audio lane per Fix C. mimo-v2.5 supports input_audio per Xiaomi docs.
+- model_name: asi-555-audio
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 45
+# asi-555-video (multimodal video lane — mimo-v2.5 only)
+# 2026-08-04: explicit video lane per Fix C. mimo-v2.5 supports video_url per Xiaomi docs.
+- model_name: asi-555-video
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    request_timeout: 45
 litellm_settings:
   num_retries: 2
   request_timeout: 60
@@ -161,8 +193,8 @@ general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   # DATABASE_URL intentionally NOT set. LiteLLM 1.90.2 Prisma expects PostgreSQL only.
   # Master key auth path hits DB unconditionally → completions return "No connected db."
-  # This is ACCEPTED: no agent uses LiteLLM for completions. Agents use direct provider APIs.
-  # LiteLLM serves as fed-health probe target + FED route metadata source. Liveliness works.
+  # LiteLLM serves as fed-health probe target + FED route metadata source.
+  # Completions are served to agents (FED/FLAME/FRAME routing via litellm-federation.service).
   # 2026-08-04: tried SQLite → Prisma rejects (expects postgresql://). Not fixable in v1.90.2.
   # Upgrade path: LiteLLM ≥2.x with stateless master_key support. Or accept completed limitation.
   otel_export: false

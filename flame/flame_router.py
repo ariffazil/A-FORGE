@@ -655,7 +655,12 @@ class HitRate:
         elif reasoning_no_final:
             self.reasoning_no_final += 1
             self.fail += 1
-            self.consecutive_fails += 1
+            # S5 fix (2026-08-04): reasoning_no_final now ONLY triggers for genuine
+            # model-fault (short reasoning, no <think> markers). Caller-fault (short
+            # max_tokens on reasoning-capable model) is filtered upstream in
+            # _call_model(). Don't cascade caller-fault into tier demotion — the
+            # provider is healthy, the caller starved the budget.
+            # consecutive_fails NOT incremented.
         elif censor:
             self.censor += 1
             self.consecutive_fails += 1
@@ -1128,18 +1133,39 @@ class FlameEngine:
             # P0.2: reasoning_content without final content = FAILURE, not success.
             # The model consumed token budget reasoning but did not produce the
             # requested answer. This is task_ok=false, failure_class=reasoning_without_final.
+            #
+            # S5 fix (2026-08-04): distinguish caller-fault from model-fault.
+            # When reasoning_content is substantial OR uses <think> markers, the model
+            # demonstrated reasoning capability — caller starved the budget. Don't
+            # cascade to demotion; mark as partial-success so FLAME moves on.
             reasoning = message.get("reasoning_content") or message.get("reasoning", "")
             reasoning = (reasoning or "").strip()
             reasoning_no_final = False
             if not content and reasoning:
-                reasoning_no_final = True
-                logger.info(
-                    f"FLAME {provider}/{model} reasoning-without-final "
-                    f"({len(reasoning)} chars reasoning, 0 chars content) — "
-                    f"counting as FAIL (P0.2 fix)"
+                # Heuristic: caller-fault if reasoning is substantial OR uses standard markers
+                is_caller_fault = (
+                    reasoning.lower().startswith("<think>")
+                    or reasoning.lower().startswith("<thinking>")
+                    or len(reasoning) > 100
                 )
-                # Return empty — _call_model signals failure to caller
-                return "", latency, False, False, False, True
+                if is_caller_fault:
+                    # Partial success — model reasoned, caller starved budget. Do NOT
+                    # set reasoning_no_final; let function continue past this block.
+                    logger.info(
+                        f"FLAME {provider}/{model} reasoning-without-final "
+                        f"({len(reasoning)} chars reasoning, 0 chars content) — "
+                        f"treating as PARTIAL SUCCESS (S5 fix, caller-fault)"
+                    )
+                    reasoning_no_final = False
+                else:
+                    reasoning_no_final = True
+                    logger.info(
+                        f"FLAME {provider}/{model} reasoning-without-final "
+                        f"({len(reasoning)} chars reasoning, 0 chars content) — "
+                        f"counting as FAIL (P0.2 fix)"
+                    )
+                    # Return empty — _call_model signals failure to caller
+                    return "", latency, False, False, False, True
 
             # P0.6: Check safety refusal FIRST — before other classifications
             safety_refused = self._check_safety_refusal(content)
@@ -1806,6 +1832,125 @@ class FlameEngine:
             logger.info(f"FLAME probe {'✅' if ok else '❌'} {key} → {latency:.0f}ms")
         return results
 
+    # ── S5 Part 2: Auto-Recovery Loop ──────────────────────────────────────
+
+    def recover_demoted_tiers(
+        self, probe_timeout_s: float = 5.0, cooldown_minutes: int = 30
+    ) -> dict:
+        """Attempt to recover auto-demoted tiers after cooldown period.
+
+        S5 part 2 (2026-08-04): manual recovery should not be the norm.
+        Demotions are sticky by default; this method attempts re-promotion
+        after the cooldown window expires.
+
+        For each inactive tier:
+          1. Check if demoted_at + cooldown > now → skip (still cooling)
+          2. Probe the model with a sanity check (max_tokens=80)
+          3. If probe succeeds → promote (active=True, reset fails, log)
+          4. If probe fails → update demoted_at to now (extend cooldown)
+
+        Returns:
+          dict with recovered, attempted, still_cooling, failed counts + per-tier detail.
+        """
+        now = time.time()
+        cooldown_s = cooldown_minutes * 60
+        recovered = []
+        attempted = []
+        still_cooling = []
+        failed = []
+
+        for key, hr in self.hitrates.items():
+            if hr.active:
+                continue  # Already live, nothing to recover
+
+            # Parse provider/model from key (format: "provider/model")
+            if "/" not in key:
+                continue
+            provider, model = key.split("/", 1)
+
+            # Check cooldown
+            if hr.demoted_at > 0:
+                elapsed = now - hr.demoted_at
+                if elapsed < cooldown_s:
+                    remaining_m = int((cooldown_s - elapsed) / 60)
+                    still_cooling.append({"key": key, "remaining_minutes": remaining_m})
+                    continue
+
+            # Attempt recovery probe
+            attempted.append(key)
+            try:
+                (
+                    content,
+                    latency,
+                    refused,
+                    censored,
+                    safety_refused,
+                    reasoning_no_final,
+                ) = self._call_model(
+                    provider,
+                    model,
+                    [{"role": "user", "content": "Say OK"}],
+                    max_tokens=80,
+                    temperature=0.0,
+                    timeout_override=probe_timeout_s,
+                )
+                ok = (
+                    bool(content)
+                    and not self._check_malformed(content)
+                    and not refused
+                    and not censored
+                    and not safety_refused
+                    and not reasoning_no_final
+                )
+                if ok:
+                    hr.active = True
+                    hr.promoted_at = now
+                    hr.consecutive_fails = 0
+                    recovered.append(
+                        {"key": key, "latency_ms": latency, "content": content[:50]}
+                    )
+                    logger.info(
+                        f"FLAME 🔄 S5 recovery: {key} PROMOTED "
+                        f"(was demoted at {time.strftime('%H:%M:%S', time.localtime(hr.demoted_at))})"
+                    )
+                else:
+                    hr.demoted_at = now  # Extend cooldown
+                    failed.append(
+                        {
+                            "key": key,
+                            "latency_ms": latency,
+                            "reason": "probe_failed"
+                            if not content
+                            else "content_invalid",
+                        }
+                    )
+                    logger.info(
+                        f"FLAME 🔄 S5 recovery: {key} STILL DOWN "
+                        f"(probe returned {'empty' if not content else 'invalid'}, cooldown extended)"
+                    )
+            except Exception as e:
+                hr.demoted_at = now  # Extend cooldown
+                failed.append({"key": key, "reason": str(e)[:100]})
+                logger.warning(f"FLAME 🔄 S5 recovery: {key} ERROR: {e}")
+
+        result = {
+            "recovered": len(recovered),
+            "attempted": len(attempted),
+            "still_cooling": len(still_cooling),
+            "failed": len(failed),
+            "detail": {
+                "recovered": recovered,
+                "failed": failed,
+                "still_cooling": still_cooling,
+            },
+        }
+        if recovered:
+            logger.info(
+                f"FLAME 🔄 S5 recovery complete: {len(recovered)} promoted, "
+                f"{len(failed)} still down, {len(still_cooling)} in cooldown"
+            )
+        return result
+
     # ── Snapshot Checksum (P0.1: was false "seal") ────────────────────────
 
     def snapshot_checksum(self) -> str:
@@ -1959,6 +2104,7 @@ def main():
             "probe",
             "stats",
             "snapshot-checksum",
+            "recover",  # S5 part 2: auto-recovery of demoted tiers
         ],  # P0.1: was "seal"
         default="infer",
         help="Operation mode",
@@ -2025,6 +2171,24 @@ def main():
     if args.mode == "snapshot-checksum":  # P0.1: was "seal"
         snapshot = engine.snapshot_checksum()
         print(snapshot)
+        return
+
+    if args.mode == "recover":  # S5 part 2: auto-recovery
+        result = engine.recover_demoted_tiers()
+        if args.json:
+            print(json.dumps(result))
+        else:
+            print(
+                f"Recovered: {result['recovered']} | Still down: {result['failed']} "
+                f"| Cooling: {result['still_cooling']} | Attempted: {result['attempted']}"
+            )
+            for r in result["detail"]["recovered"]:
+                print(f"  ✅ {r['key']} — {r['latency_ms']:.0f}ms")
+            for f in result["detail"]["failed"]:
+                print(f"  ❌ {f['key']} — {f.get('reason', 'unknown')}")
+            for c in result["detail"]["still_cooling"]:
+                print(f"  ⏳ {c['key']} — {c['remaining_minutes']}m remaining")
+        engine._save_state()
         return
 
     # Get prompt (positional arg → --input file → stdin → error)
