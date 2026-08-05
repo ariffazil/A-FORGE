@@ -3,7 +3,7 @@
  *
  * A-FORGE never receives raw "write whatever" instructions from a PlannerAgent.
  * It only receives pre-signed ForgeExecutionManifest objects containing unified_diff
- * patches, issued by arifOS after PolicyEnforcer approval and VAULT999 seal.
+ * patches, issued by arifOS after plugin_engine pipeline approval and VAULT999 seal.
  */
 
 export interface ForgeFilePatch {

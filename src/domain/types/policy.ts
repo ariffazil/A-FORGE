@@ -2,7 +2,7 @@
  * Policy configuration and enforcement verdict types.
  *
  * PolicyConfig is loaded at startup (or from env/JSON) and passed to
- * PolicyEnforcer.enforcePolicy() — a pure function with no LLM dependency.
+ * plugin_engine TenantPluginManager.execute_pipeline() — a pure function with no LLM dependency.
  */
 
 import type { ChangeOperation } from "./planner.js";

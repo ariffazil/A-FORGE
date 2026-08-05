@@ -1,7 +1,7 @@
 /**
  * Planner output types for the arifOS → A-FORGE governance pipeline.
  *
- * PlannerAgent (read-only LLM) emits ProposedChange[] which PolicyEnforcer
+ * PlannerAgent (read-only LLM) emits ProposedChange[] which plugin_engine pipeline
  * validates before ApprovalRouter decides AUTO_APPROVED / HUMAN_APPROVAL_REQUIRED / REJECTED.
  * Only then does ForgeExecutionManifest reach A-FORGE for diff-only application.
  */
