@@ -30,7 +30,7 @@ import { getPostgresVaultClient, type FloorRule } from "../infrastructure/vault/
 import { SealService } from "../domain/governance/SealService.js";
 import { getCoolingGate } from "../domain/governance/CoolingGate.js";
 import { PlanValidator } from "../domain/planner/PlanValidator.js";
-import { createOperatorAuthMiddleware } from "./middleware/operatorAuth.js";
+// operatorAuth middleware superseded by middleware/stack.ts — using inline auth below
 import { AAAgent } from "../domain/agents/AAAgent.js";
 import { WorkerAgent } from "../domain/agents/WorkerAgent.js";
 import { buildAAAProfile } from "../domain/agents/profiles.js";
@@ -312,7 +312,17 @@ export function createApp(): express.Express {
   // Rest of Express app (existing routes)
   // A2A router removed — AAA is sole A2A gateway (E2 entropy fix)
 
-  const requireOperatorAuth = createOperatorAuthMiddleware(ensureOperatorTokenPolicy());
+  // Inline operator auth (supersedes removed operatorAuth.ts)
+  const operatorToken = ensureOperatorTokenPolicy();
+  const requireOperatorAuth = (req: Request, res: Response, next: NextFunction) => {
+    if (!operatorToken) return next(); // dev mode: no auth
+    const auth = req.headers.authorization || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+    if (token !== operatorToken) {
+      return res.status(401).json({ error: "Unauthorized", code: -32001 });
+    }
+    next();
+  };
   app.use("/operator", requireOperatorAuth);
   app.use("/human-expert", requireOperatorAuth);
   app.use("/peer", requireOperatorAuth, createPeerContractRouter());
