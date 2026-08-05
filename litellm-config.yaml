@@ -1,172 +1,256 @@
 model_list:
-# hermes-asi (multimodal chain — mimo-v2.5 ONLY)
-# 2026-08-04 audit: mimo-v2.5-pro is text-only per Xiaomi docs; including it caused
-# usage-based-routing to intermittently rotate image/audio/video requests to it,
-# producing silent data loss (no img_tokens) or NotFoundError. MiniMax-M3 fallback
-# excluded for now — LiteLLM 1.90.2 doesn't recognize its multimodal capability.
-# For deep-thinking text-only without multimodal, use a separate alias.
 - model_name: hermes-asi
   litellm_params:
     model: openai/mimo-v2.5
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 45
-# Codex 0.146 uses OpenAI Responses API. deepseek-v4-pro rejects Codex
-# Responses until early-Aug 2026; use flash first for Responses clients.
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    request_timeout: 30
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/deepseek-v4-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    request_timeout: 30
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.6-flash
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_BAILIAN_KEY
+    request_timeout: 30
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
 - model_name: codex
   litellm_params:
     model: openai/deepseek-v4-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     request_timeout: 60
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: codex
   litellm_params:
     model: openai/mimo-v2.5-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 45
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: codex
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
     request_timeout: 30
-# opencode: keep pro for chat agents, but put flash first so Responses clients
-# (Codex) that pick this alias do not hard-fail on deepseek-v4-pro.
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: opencode
   litellm_params:
     model: openai/deepseek-v4-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     request_timeout: 60
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: opencode
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     request_timeout: 60
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 384000
 - model_name: opencode
   litellm_params:
     model: openai/mimo-v2.5-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 45
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: opencode
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
     request_timeout: 30
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: openclaw
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
     request_timeout: 60
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: openclaw
   litellm_params:
     model: openai/mimo-v2.5-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 30
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: agi-333
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     request_timeout: 60
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 384000
 - model_name: agi-333
   litellm_params:
     model: openai/mimo-v2.5-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 45
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: agi-333
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
     request_timeout: 30
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.6-flash
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_BAILIAN_KEY
     request_timeout: 30
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
 - model_name: asi-555
   litellm_params:
     model: openai/mimo-v2.5-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 30
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: asi-555
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
     request_timeout: 30
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: apex-888
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
     request_timeout: 45
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     request_timeout: 45
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 384000
 - model_name: asi-555-vision
   litellm_params:
     model: openai/mimo-v2.5
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 45
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: dispatch
   litellm_params:
     model: openai/mimo-v2.5-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 15
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: asi-555-vision
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/BAILIAN_PAYG_API_KEY
     request_timeout: 30
-# hermes-asi-vision (multimodal chain — mimo-v2.5 PRIMARY + qwen3.7-plus FALLBACK)
-# 2026-08-04 audit: explicit vision lane for Hermes agents. Both backends
-# recognized as image-capable by LiteLLM 1.90.2 (cf. asi-555-vision pattern).
-# qwen3.7-plus is the documented vision model per /root/HERMES/profiles/hermes_asi/config.yaml.
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
 - model_name: hermes-asi-vision
   litellm_params:
     model: openai/mimo-v2.5
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 45
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: hermes-asi-vision
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/BAILIAN_PAYG_API_KEY
     request_timeout: 30
-# asi-555-audio (multimodal audio lane — mimo-v2.5 only)
-# 2026-08-04: explicit audio lane per Fix C. mimo-v2.5 supports input_audio per Xiaomi docs.
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
 - model_name: asi-555-audio
   litellm_params:
     model: openai/mimo-v2.5
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 45
-# asi-555-video (multimodal video lane — mimo-v2.5 only)
-# 2026-08-04: explicit video lane per Fix C. mimo-v2.5 supports video_url per Xiaomi docs.
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 - model_name: asi-555-video
   litellm_params:
     model: openai/mimo-v2.5
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
     request_timeout: 45
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
 litellm_settings:
   num_retries: 2
   request_timeout: 60
@@ -191,11 +275,7 @@ router_settings:
   routing_strategy: usage-based-routing
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
-  database_url: "postgresql://arifos_admin:ArifPostgres2026!@127.0.0.1:5432/litellm"
-  # Fixed 2026-08-04 by 333-AGI: local postgres litellm DB created. v1.90.2 Prisma
-  # now has a PostgreSQL target. Master key auth path → DB → completions work.
-  # Previous: DATABASE_URL intentionally NOT set → every completion = "No connected db."
-  # Local DB chosen over Supabase to keep FED routing self-contained (no WAN dep).
+  database_url: postgresql://arifos_admin:ArifPostgres2026!@127.0.0.1:5432/litellm
   otel_export: false
   drop_params: true
   telemetry: false
