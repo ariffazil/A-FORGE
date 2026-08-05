@@ -8,6 +8,8 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    mode: chat
+    supports_image_input: true
 - model_name: hermes-asi
   litellm_params:
     model: openai/MiniMax-M3
@@ -17,6 +19,8 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    mode: chat
+    supports_image_input: true
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek-v4-flash
@@ -224,6 +228,8 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    mode: chat
+    supports_image_input: true
 - model_name: hermes-asi-vision
   litellm_params:
     model: openai/qwen3.7-plus
@@ -233,6 +239,8 @@ model_list:
   model_info:
     max_input_tokens: 1000000
     max_output_tokens: 131072
+    mode: chat
+    supports_image_input: true
 - model_name: asi-555-audio
   litellm_params:
     model: openai/mimo-v2.5
@@ -242,6 +250,9 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    mode: chat
+    supports_image_input: true
+    supports_audio_input: true
 - model_name: asi-555-video
   litellm_params:
     model: openai/mimo-v2.5
@@ -251,6 +262,9 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    mode: chat
+    supports_image_input: true
+    supports_audio_input: true
 litellm_settings:
   num_retries: 2
   request_timeout: 60
