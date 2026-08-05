@@ -1,0 +1,259 @@
+# MCP Server Catalog — Forged 2026-08-05
+# 333-AGI Δ MIND | EUREKA #3 from ContextForge absorption
+#
+# Curated catalog of public MCP servers for discovery and federation.
+# Each entry includes URL, auth type, category, and tags.
+# Pattern: IBM/mcp-context-forge mcp-catalog.yml
+#
+# Use with:
+#   from aforge_mcp_catalog import CatalogLoader
+#   catalog = CatalogLoader.from_yaml("/root/A-FORGE/catalogs/mcp_catalog.yml")
+
+catalog_servers:
+  # ── Project Management ──
+  - id: github
+    name: "GitHub"
+    category: "Software Development"
+    url: "https://api.githubcopilot.com/mcp"
+    auth_type: "OAuth2.1"
+    provider: "GitHub"
+    description: "GitHub repository, issues, PRs, and code management"
+    requires_api_key: false
+    tags: ["git", "code", "ci-cd", "issues"]
+
+  - id: gitlab
+    name: "GitLab"
+    category: "Software Development"
+    url: "https://gitlab.com/api/mcp"
+    auth_type: "OAuth2.1"
+    provider: "GitLab"
+    description: "GitLab CI/CD, issues, merge requests, and repository management"
+    requires_api_key: false
+    tags: ["git", "ci-cd", "devops"]
+
+  - id: jira
+    name: "Jira"
+    category: "Project Management"
+    url: "https://api.atlassian.com/mcp/jira"
+    auth_type: "OAuth2.1"
+    provider: "Atlassian"
+    description: "Issue tracking and project management"
+    requires_api_key: false
+    tags: ["project-management", "agile", "issues"]
+
+  - id: linear
+    name: "Linear"
+    category: "Project Management"
+    url: "https://mcp.linear.app/sse"
+    auth_type: "OAuth2.1"
+    provider: "Linear"
+    description: "Modern project management for software teams"
+    requires_api_key: false
+    tags: ["project-management", "issue-tracking"]
+
+  - id: notion
+    name: "Notion"
+    category: "Productivity"
+    url: "https://mcp.notion.com/sse"
+    auth_type: "OAuth2.1"
+    provider: "Notion"
+    description: "All-in-one workspace for notes, tasks, and collaboration"
+    requires_api_key: false
+    tags: ["documentation", "wiki", "notes"]
+
+  # ── Communication ──
+  - id: slack
+    name: "Slack"
+    category: "Communication"
+    url: "https://mcp.slack.com/sse"
+    auth_type: "OAuth2.1"
+    provider: "Slack"
+    description: "Team messaging and collaboration platform"
+    requires_api_key: false
+    tags: ["messaging", "collaboration", "chat"]
+
+  - id: discord
+    name: "Discord"
+    category: "Communication"
+    url: "https://mcp.discord.com/sse"
+    auth_type: "Bot Token"
+    provider: "Discord"
+    description: "Voice, video, and text communication platform"
+    requires_api_key: true
+    tags: ["messaging", "voice", "community"]
+
+  # ── AI / ML ──
+  - id: openai
+    name: "OpenAI"
+    category: "AI / Machine Learning"
+    url: "https://mcp.openai.com/sse"
+    auth_type: "API Key"
+    provider: "OpenAI"
+    description: "GPT models, embeddings, and AI capabilities"
+    requires_api_key: true
+    tags: ["llm", "embeddings", "chat", "completion"]
+
+  - id: anthropic
+    name: "Anthropic"
+    category: "AI / Machine Learning"
+    url: "https://mcp.anthropic.com/sse"
+    auth_type: "API Key"
+    provider: "Anthropic"
+    description: "Claude models and constitutional AI"
+    requires_api_key: true
+    tags: ["llm", "chat", "reasoning"]
+
+  - id: huggingface
+    name: "Hugging Face"
+    category: "AI / Machine Learning"
+    url: "https://mcp.huggingface.co/sse"
+    auth_type: "API Key"
+    provider: "Hugging Face"
+    description: "Model hub, datasets, inference endpoints"
+    requires_api_key: true
+    tags: ["models", "datasets", "inference"]
+
+  # ── Database ──
+  - id: postgres
+    name: "PostgreSQL"
+    category: "Database"
+    url: "http://localhost:5432"  # local binding
+    auth_type: "LOCALHOST_IS_PASSWORD"
+    provider: "Self-hosted"
+    description: "Relational database — LOCALHOST only, UFW-gated"
+    requires_api_key: false
+    tags: ["sql", "relational", "data"]
+
+  - id: qdrant
+    name: "Qdrant"
+    category: "Database"
+    url: "http://localhost:6333"
+    auth_type: "LOCALHOST_IS_PASSWORD"
+    provider: "Self-hosted"
+    description: "Vector similarity search engine"
+    requires_api_key: false
+    tags: ["vector", "embeddings", "semantic-search"]
+
+  - id: redis
+    name: "Redis"
+    category: "Database"
+    url: "redis://localhost:6379"
+    auth_type: "LOCALHOST_IS_PASSWORD"
+    provider: "Self-hosted"
+    description: "In-memory data store, cache, and message broker"
+    requires_api_key: false
+    tags: ["cache", "pub-sub", "session"]
+
+  # ── Observability ──
+  - id: jaeger
+    name: "Jaeger"
+    category: "Observability"
+    url: "http://localhost:16686"
+    auth_type: "LOCALHOST_IS_PASSWORD"
+    provider: "Self-hosted"
+    description: "Distributed tracing backend"
+    requires_api_key: false
+    tags: ["tracing", "otel", "distributed"]
+
+  - id: grafana
+    name: "Grafana"
+    category: "Observability"
+    url: "http://localhost:3000"
+    auth_type: "Basic"
+    provider: "Self-hosted"
+    description: "Dashboards, alerts, and visualization"
+    requires_api_key: false
+    tags: ["dashboards", "metrics", "alerting"]
+
+  # ── Security ──
+  - id: trivy
+    name: "Trivy"
+    category: "Security"
+    url: "local://trivy"
+    auth_type: "LOCALHOST_IS_PASSWORD"
+    provider: "Aqua Security"
+    description: "Vulnerability scanner for containers and dependencies"
+    requires_api_key: false
+    tags: ["security", "scanning", "vulnerabilities"]
+
+  - id: semgrep
+    name: "Semgrep"
+    category: "Security"
+    url: "local://semgrep"
+    auth_type: "LOCALHOST_IS_PASSWORD"
+    provider: "Semgrep"
+    description: "Static analysis and code scanning"
+    requires_api_key: false
+    tags: ["security", "static-analysis", "sast"]
+
+  # ── Cloud ──
+  - id: aws
+    name: "AWS"
+    category: "Cloud Infrastructure"
+    url: "https://mcp.aws.amazon.com/sse"
+    auth_type: "IAM"
+    provider: "Amazon Web Services"
+    description: "Cloud infrastructure, compute, storage, and AI services"
+    requires_api_key: false
+    tags: ["cloud", "compute", "storage", "serverless"]
+
+  - id: cloudflare
+    name: "Cloudflare"
+    category: "Cloud Infrastructure"
+    url: "https://mcp.cloudflare.com/sse"
+    auth_type: "API Token"
+    provider: "Cloudflare"
+    description: "CDN, DNS, Workers, Tunnels, and edge computing"
+    requires_api_key: true
+    tags: ["cdn", "dns", "edge", "tunnels"]
+
+  # ── arifOS Federation Organs ──
+  - id: arifos
+    name: "arifOS Kernel"
+    category: "Federation"
+    url: "https://arifos.arif-fazil.com/mcp"
+    auth_type: "SCT"
+    provider: "arifOS Federation"
+    description: "Constitutional kernel — F1-F13 governance, session binding, VAULT999"
+    requires_api_key: false
+    tags: ["kernel", "constitution", "governance", "judge"]
+
+  - id: aforge
+    name: "A-FORGE"
+    category: "Federation"
+    url: "https://mcp.arif-fazil.com/mcp"
+    auth_type: "SCT"
+    provider: "arifOS Federation"
+    description: "Governed execution shell — build, deploy, test, forge"
+    requires_api_key: false
+    tags: ["execution", "forge", "deploy", "build"]
+
+  - id: geox
+    name: "GEOX"
+    category: "Federation"
+    url: "https://geox.arif-fazil.com/mcp"
+    auth_type: "SCT"
+    provider: "arifOS Federation"
+    description: "Earth intelligence — seismic, basin, petrophysics, prospect"
+    requires_api_key: false
+    tags: ["geoscience", "seismic", "basin", "petrophysics"]
+
+  - id: wealth
+    name: "WEALTH"
+    category: "Federation"
+    url: "https://wealth.arif-fazil.com/mcp"
+    auth_type: "SCT"
+    provider: "arifOS Federation"
+    description: "Capital intelligence — NPV, risk, market, portfolio"
+    requires_api_key: false
+    tags: ["finance", "capital", "risk", "market"]
+
+  - id: well
+    name: "WELL"
+    category: "Federation"
+    url: "https://well.arif-fazil.com/mcp"
+    auth_type: "SCT"
+    provider: "arifOS Federation"
+    description: "Human readiness — vitality, fatigue, dignity, homeostasis"
+    requires_api_key: false
+    tags: ["health", "vitality", "readiness", "dignity"]
