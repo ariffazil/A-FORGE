@@ -2480,6 +2480,107 @@ server.tool(
   },
 );
 
+// ── HF Import Gate — constitutional model/dataset import from Hugging Face ────
+// forge_hf_import — governed gate for HF resources entering arifOS.
+// Delegates to arifOS hf_bridge Python script for constitutional validation.
+// Returns verdict (SEAL/HOLD/VOID) with thermodynamic scores and floor results.
+// Classification: EXECUTE_REVERSIBLE (pulling metadata is reversible).
+
+server.tool(
+  "forge_hf_import",
+  "Governed Hugging Face import gate. Validate and import models/datasets through constitutional floors F1-F13. "
+  + "Returns verdict (SEAL/HOLD/VOID) with G-score, kappa-r, entropy pathway, and floor-by-floor results. "
+  + "The gate validates — the kernel seals. Uses arifOS hf_import_gate under constitutional governance.",
+  {
+    repo_id: z.string().describe("HF repo ID (e.g., 'microsoft/phi-2', 'ariffazil/FFF')"),
+    intended_use: z.string().default("general").describe("How the model will be used in arifOS (e.g., 'reasoning', 'evidence', 'training')"),
+    mode: z.enum(["import_model", "import_dataset", "preflight", "batch_screen"]).default("import_model").describe("Import mode: import_model (full gate), import_dataset (relaxed F8), preflight (quick check), batch_screen (multiple repos)"),
+    repo_ids: z.string().optional().describe("Comma-separated repo IDs for batch_screen mode"),
+    min_gain: z.number().optional().describe("Override F8 minimum G threshold (default 0.80)"),
+  },
+  async ({ repo_id, intended_use, mode, repo_ids, min_gain }) => {
+    const startedAt = Date.now();
+    await telemetryInvoke("forge_hf_import");
+
+    const { exec } = await import("node:child_process");
+    const { promisify } = await import("node:util");
+    const execAsync = promisify(exec);
+
+    const scriptPath = "/root/A-FORGE/scripts/hf_import.py";
+    const scriptArgs: string[] = [`--actor-id`, `A-FORGE`];
+
+    if (mode === "batch_screen" && repo_ids) {
+      scriptArgs.push(`--batch`, repo_ids);
+    } else if (mode === "preflight") {
+      scriptArgs.push(`--preflight`, JSON.stringify(repo_id)); // shell-safe via JSON
+    } else if (mode === "import_dataset") {
+      scriptArgs.push(`--repo-id`, repo_id, `--intended-use`, intended_use, `--dataset`);
+    } else {
+      scriptArgs.push(`--repo-id`, repo_id, `--intended-use`, intended_use);
+      if (min_gain !== undefined && min_gain !== null) {
+        scriptArgs.push(`--min-gain`, String(min_gain));
+      }
+    }
+
+    // Build safe shell command
+    const safeArgs = scriptArgs.map(a => `'${a.replace(/'/g, "'\\''")}'`).join(" ");
+    const cmd = `ARIFOS_ROOT=/root/arifOS python3 ${scriptPath} ${safeArgs}`;
+
+    try {
+      const { stdout, stderr } = await execAsync(cmd, {
+        cwd: "/root/A-FORGE",
+        timeout: 30000,
+        env: { ...process.env, ARIFOS_ROOT: "/root/arifOS" },
+        maxBuffer: 1024 * 1024,
+      });
+
+      await telemetrySuccess("forge_hf_import", startedAt);
+
+      // Parse output — gate always emits JSON
+      let parsed;
+      try {
+        parsed = JSON.parse(stdout.trim());
+      } catch {
+        parsed = { verdict: "ERROR", raw_output: stdout, stderr };
+      }
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify(parsed, null, 2),
+        }],
+      };
+    } catch (err: any) {
+      await telemetryFailure("forge_hf_import", startedAt, err);
+      const msg = err instanceof Error ? err.message : String(err);
+      const stderrOut = (err as any)?.stderr || "";
+
+      // Try to extract JSON from error output
+      let parsed;
+      try {
+        parsed = JSON.parse((err as any)?.stdout?.trim() || "");
+      } catch {
+        parsed = null;
+      }
+
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify(parsed || {
+            verdict: "ERROR",
+            error_code: "HF_IMPORT_GATE_FAILED",
+            message: `Import gate error: ${msg}`,
+            stderr: typeof stderrOut === "string" ? stderrOut.slice(0, 500) : "",
+            mode,
+            repo_id,
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+  },
+);
+
 // ── Visualization: forge_chart — cross-organ agentic data viz + eureka margins ──
 // All domain organs use via A-FORGE (forge_wealth data -> chart, GEOX logs -> scatter, WELL trends).
 // Returns SVG (text-embeddable) + stats + eureka_candidates (turning points / deviation margins).
