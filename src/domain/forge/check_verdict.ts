@@ -325,3 +325,33 @@ export async function checkVerdictPrecondition(
 export function requiresVerdictCheck(simulationIndex: number): boolean {
   return simulationIndex > 0.5;
 }
+
+// ── P0.1 A-FORGE FQ Gate (2026-08-05) ──
+// Inbound FQ metabolic gate: reusable by core.ts + server.ts.
+// Only true mutations consume metabolic budget. OBSERVE/SUGGEST/SIMULATE/DRAFT always pass.
+
+export async function gateToolByFq(
+  actionClass: string,
+  toolName?: string
+): Promise<{
+  allowed: boolean;
+  fq?: Awaited<ReturnType<typeof checkFqGate>>;
+}> {
+  // FQ-gated action classes: only mutations need metabolic budget
+  const gated = new Set([
+    "EXECUTE_REVERSIBLE",
+    "EXECUTE_HIGH_IMPACT",
+    "IRREVERSIBLE",
+    "MUTATE",       // legacy
+    "ATOMIC",       // legacy
+  ]);
+
+  if (!gated.has(actionClass)) return { allowed: true };
+
+  const legacyClass = (actionClass === "IRREVERSIBLE" || actionClass === "EXECUTE_HIGH_IMPACT")
+    ? "ATOMIC" : "MUTATE";
+
+  const fq = await checkFqGate(legacyClass as "MUTATE" | "ATOMIC");
+
+  return { allowed: fq.permitted, fq };
+}

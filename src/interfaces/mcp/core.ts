@@ -105,6 +105,7 @@ import { validateSession, registerSession, setKernelVerifier } from "../../domai
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
+import { gateToolByFq } from "../../domain/forge/check_verdict.js";
 import {
   ForgeVaultInputSchema,
   vaultRecordMetadata,
@@ -550,6 +551,28 @@ const _originalTool = server.tool.bind(server);
     const toolMode = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
     const actionClass = classifyTool(name, toolMode); // runtime classification with mode
 
+    // ── FQ Metabolic Gate (P0.1, 2026-08-05) ──
+    // Constitutional HOLD at FQ < 0.50 — FAILS CLOSED on unreachable arifFlow
+    const fqGate = await gateToolByFq(actionClass, name);
+    if (!fqGate.allowed && fqGate.fq) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            error: "FQ_GATE",
+            verdict: "HOLD",
+            message: fqGate.fq.reason || "FQ below threshold — verify pending receipts before executing",
+            fq: { quotient: fqGate.fq.fq, verdict: fqGate.fq.verdict },
+            action_class: actionClass,
+            gate: "FQ",
+            threshold: 0.50,
+            next_action: "Verify pending receipts, reduce execute cadence, or request F13 override via arif_judge.",
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
+
     // ── SCT federation gate (2026-07-17) ────────────────────────────────
     // Present token → verify fail-closed. MUTATE/ATOMIC may require SCT
     // when FORGE_SCT_REQUIRE_MUTATE=1 (default on).
@@ -685,6 +708,28 @@ const _originalRegisterTool = server.registerTool.bind(server);
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     const actionClass = classifyTool(name);
+
+    // ── FQ Metabolic Gate (P0.1, 2026-08-05) ──
+    // Constitutional HOLD at FQ < 0.50 — FAILS CLOSED on unreachable arifFlow
+    const fqGateReg = await gateToolByFq(actionClass, name);
+    if (!fqGateReg.allowed && fqGateReg.fq) {
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            error: "FQ_GATE",
+            verdict: "HOLD",
+            message: fqGateReg.fq.reason || "FQ below threshold — verify pending receipts before executing",
+            fq: { quotient: fqGateReg.fq.fq, verdict: fqGateReg.fq.verdict },
+            action_class: actionClass,
+            gate: "FQ",
+            threshold: 0.50,
+            next_action: "Verify pending receipts, reduce execute cadence, or request F13 override via arif_judge.",
+          }, null, 2),
+        }],
+        isError: true,
+      };
+    }
 
     // ── SCT federation gate (registerTool path) ─────────────────────────
     const requireSctReg =

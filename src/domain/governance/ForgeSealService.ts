@@ -30,10 +30,11 @@ import { randomUUID } from "node:crypto";
 import type { SkillRecord, TrustTier } from "../../infrastructure/skills/SkillStore.js";
 import type { TriWitnessResult } from "./TriWitnessValidator.js";
 import { getSkillStore } from "../../infrastructure/skills/SkillStore.js";
+import { callMCP } from "../../interfaces/mcp/client.js";
 
 // ── Types ───────────────────────────────────────────────────────────
 
-export type SealStatus = "SEALED" | "REJECTED" | "ALREADY_SEALED" | "NOT_FOUND" | "NOT_REVIEWED" | "TRI_WITNESS_FAILED";
+export type SealStatus = "SEALED" | "REJECTED" | "ALREADY_SEALED" | "NOT_FOUND" | "NOT_REVIEWED" | "TRI_WITNESS_FAILED" | "SELF_SEAL_REJECTED" | "SELF_SEAL_VALIDATION_FAILED";
 
 export type SealReceipt = {
   seal_id: string;               // VAULT999 seal ID
@@ -54,6 +55,8 @@ export type SealResult = {
   status: SealStatus;
   receipt?: SealReceipt;
   reason: string;
+  q9?: { judge_actor: string; seal_actor: string };
+  required?: string;
 };
 
 // ── Service ─────────────────────────────────────────────────────────
@@ -73,8 +76,48 @@ export class ForgeSealService {
     triWitness: TriWitnessResult,
     sealedBy: string,
     humanApprovalToken: string,
+    constitutional_chain_id?: string,
   ): Promise<SealResult> {
     const store = getSkillStore();
+
+    // ── GATE 0: Q9 Self-Seal Rejection (P0.2, 2026-08-05) ──
+    // Constitutional requirement: an agent that issued a judge verdict
+    // cannot seal its own work without external witness.
+    // Reference: F13 SOVEREIGN closure map, N9 Self-Judge+Self-Seal.
+    if (constitutional_chain_id) {
+      try {
+        const validateRes = await callMCP("arifos.arif_judge", {
+          mode: "validate",
+          constitutional_chain_id,
+        }) as any;
+
+        if (validateRes?.judge_actor_id && validateRes.judge_actor_id === sealedBy) {
+          const witness = triWitness as unknown as Record<string, unknown>;
+          const hSource = typeof witness?.h_source === "string" ? witness.h_source : undefined;
+          const aiSource = typeof witness?.ai_source === "string" ? witness.ai_source : undefined;
+          const extSource = typeof witness?.ext_source === "string" ? witness.ext_source : undefined;
+          const hasExternalWitness = (
+            (hSource && hSource !== sealedBy) ||
+            (aiSource && aiSource !== sealedBy) ||
+            (extSource && extSource !== sealedBy)
+          );
+
+          if (!hasExternalWitness) {
+            return {
+              status: "SELF_SEAL_REJECTED",
+              reason: "Q9 GÖDEL LOCK: Same actor (judge + seal) without external witness. An independent witness is required before sealing.",
+              required: "tri_witness_evidence with at least one source != seal_actor_id",
+              q9: { judge_actor: validateRes.judge_actor_id, seal_actor: sealedBy },
+            };
+          }
+        }
+      } catch (e) {
+        return {
+          status: "SELF_SEAL_VALIDATION_FAILED",
+          reason: `Unable to validate constitutional_chain_id: ${(e as Error).message}`,
+        };
+      }
+    }
 
     // ── Gate 1: Skill must exist ──
     const skill = await store.get(skillName);

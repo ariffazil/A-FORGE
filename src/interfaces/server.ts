@@ -60,6 +60,7 @@ import {
 } from "../infrastructure/governance/sctIngress.js";
 import { validateSession } from "../domain/session/sessionGate.js";
 import { classifyTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
+import { gateToolByFq } from "../domain/forge/check_verdict.js";
 import { preForgeCheck, PreForgeGateBlockedError, registerEarthMeasurement } from "../domain/governance/PreForgeGateClient.js";
 import { actCheck, ActGateBlockedError } from "../domain/governance/ActGateClient.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
@@ -503,6 +504,17 @@ app.post("/execute", async (req: Request, res: Response) => {
 
     // ── ADAT AGENTIC: Classify action before execution ──
     const actionClass = classifyTool(tool);
+
+    // FQ Metabolic Gate (P0.1)
+    const fqBlock = await gateToolByFq(actionClass, tool);
+    if (!fqBlock.allowed && fqBlock.fq) {
+      return res.status(423).json({
+        error: 'FQ_GATE', type: 'governance_hold',
+        verdict: 'HOLD', message: fqBlock.fq.reason,
+        fq: { quotient: fqBlock.fq.fq, verdict: fqBlock.fq.verdict },
+        gate: 'FQ', threshold: 0.50, adat_gate: 'FQ_HOLD',
+      });
+    }
 
     // ── FORGE 2-B: Kernel Session Gate (MUTATE + ATOMIC require session + lease) ──
     if (requiresGovernance(actionClass)) {

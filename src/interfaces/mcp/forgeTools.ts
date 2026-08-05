@@ -1075,8 +1075,10 @@ export function registerSkillTools(server: McpServer): void {
     {
       skill_name: z.string().describe("Tool name to seal (forge_*)"),
       human_approval_token: z.string().describe("F13 sovereign approval token (stg_<16+>)"),
-      tri_witness_evidence: z.string().optional()
-        .describe("JSON-serialized TriWitnessResult from prior validation"),
+      tri_witness_evidence: z.string()
+        .describe("JSON-serialized TriWitnessResult from prior validation (REQUIRED for Q9 self-seal rejection)"),
+      constitutional_chain_id: z.string()
+        .describe("Constitutional chain ID from arif_judge SEAL (REQUIRED for Q9 self-seal rejection)"),
       actor_id: z.string().default("forge_seal").describe("Calling actor"),
     },
     async (args) => {
@@ -1096,7 +1098,8 @@ export function registerSkillTools(server: McpServer): void {
         if (args.tri_witness_evidence) {
           triWitness = JSON.parse(args.tri_witness_evidence);
         } else if (skill) {
-          // Re-validate if no evidence provided
+          // Self-validating fallback — only allowed when no tri_witness_evidence is provided.
+          // P0.2 Q9: this path is now gated by ForgeSealService Gate 0 (constitutional_chain_id required).
           const validator = getTriWitnessValidator();
           triWitness = await validator.validate({
             skillName: skill.tool_name,
@@ -1122,6 +1125,7 @@ export function registerSkillTools(server: McpServer): void {
           triWitness,
           args.actor_id,
           args.human_approval_token,
+          args.constitutional_chain_id,
         );
 
         const isError = result.status !== "SEALED" && result.status !== "ALREADY_SEALED";

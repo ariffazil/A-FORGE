@@ -219,12 +219,24 @@ export class ArifSeal {
     args: Record<string, unknown>;
     judge_decision: string;
     approver?: string;
+    judge_actor?: string;
     stdout: string;
     stderr: string;
     exit_code: number | null;
     notes?: string;
     wm_metadata?: Record<string, unknown>;
   }): Promise<SealRecord> {
+    // ── Q9 Self-Seal Rejection (P0.2, 2026-08-05) ──
+    // An agent that issued a judge verdict cannot seal its own work
+    // without external witness. Shell-level enforcement.
+    if (params.approver && params.judge_actor && params.approver === params.judge_actor) {
+      throw new Error(
+        "Q9 GÖDEL LOCK: Shell seal rejected — same actor (judge + seal) without external witness. " +
+        `judge_actor=${params.judge_actor} approver=${params.approver}. ` +
+        "An independent witness is required before sealing."
+      );
+    }
+
     const lockDir = this.config.ledgerPath + ".lock";
     const holder = `forge_shell-${randomUUID().slice(0, 8)}`;
 
