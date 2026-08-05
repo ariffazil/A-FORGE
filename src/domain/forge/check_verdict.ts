@@ -91,7 +91,11 @@ async function probeFq(): Promise<FqState> {
     const data = await resp.json();
     const fq = data.fq || {};
     _fqCache = {
-      quotient: typeof fq.quotient === 'number' ? fq.quotient : 0.5,
+      // FAIL-CLOSED: if arifFlow returns null/non-numeric quotient (post-restart window,
+      // unknown schema, or partial response), default to 0.0 so the gate HOLDs MUTATE/ATOMIC.
+      // Previously defaulted to 0.5 which made null FQ pass the gate — constitutional gap.
+      // The arifFlow-unreachable case (catch block below) already fails closed.
+      quotient: typeof fq.quotient === 'number' ? fq.quotient : 0.0,
       verdict: fq.verdict || 'UNKNOWN',
       executeCount: fq.execute_count || 0,
       verifyCount: fq.verify_count || 0,
