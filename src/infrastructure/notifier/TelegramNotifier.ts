@@ -5,7 +5,7 @@
  * Integrated into AgentManager for F13 Sovereign human ratification.
  *
  * Environment:
- *   TELEGRAM_BOT_TOKEN  — Bot token from @BotFather
+ *   FORGE_BOT_TOKEN  — A-FORGE's own bot token (@arifOS_bot, from @BotFather)
  *   TELEGRAM_CHAT_ID   — Your Telegram chat ID
  *   TELEGRAM_ALERT_WEBHOOK_URL — Optional: external webhook for Matrix/Slack/etc.
  */
@@ -26,7 +26,9 @@ export class TelegramNotifier implements NotifierService {
   private readonly baseUrl: string;
 
   constructor(token?: string, chatId?: string, webhookUrl?: string) {
-    this.token = token ?? process.env.TELEGRAM_BOT_TOKEN ?? "";
+    // F2 token hygiene (2026-08-05): A-FORGE speaks as @arifOS_bot.
+    // TELEGRAM_BOT_TOKEN belongs to OpenClaw — never ride another agent's bot.
+    this.token = token ?? process.env.FORGE_BOT_TOKEN ?? "";
     this.chatId = chatId ?? process.env.TELEGRAM_CHAT_ID ?? "";
     this.webhookUrl = webhookUrl ?? process.env.TELEGRAM_ALERT_WEBHOOK_URL;
     this.baseUrl = `https://api.telegram.org/bot${this.token}`;

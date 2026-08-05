@@ -46,7 +46,7 @@ services:
       - arifos_core_network
     environment:
       <<: *common-env
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      FORGE_BOT_TOKEN: ${FORGE_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
     volumes:
       - ./dist:/app/dist:ro        # compiled TypeScript from host
@@ -83,7 +83,7 @@ services:
 
   # ── A-FORGE NOTIFIER ────────────────────────────────────────────
   # Telegram notifier for 888_HOLD events.
-  # Reads TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID from env.
+  # Reads FORGE_BOT_TOKEN + TELEGRAM_CHAT_ID from env.
   # Falls back to webhook if TELEGRAM_ALERT_WEBHOOK_URL is set.
   A-FORGE-notifier:
     image: node:22-alpine
@@ -93,7 +93,7 @@ services:
       - arifos_core_network
     environment:
       <<: *common-env
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      FORGE_BOT_TOKEN: ${FORGE_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
       TELEGRAM_ALERT_WEBHOOK_URL: ${TELEGRAM_ALERT_WEBHOOK_URL:-}
     volumes:
@@ -105,7 +105,7 @@ services:
           .then(({ createTelegramNotifier }) => {
             const notifier = createTelegramNotifier();
             if (!notifier.isConfigured) {
-              console.log('[A-FORGE-notifier] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not set — alerts disabled');
+              console.log('[A-FORGE-notifier] FORGE_BOT_TOKEN or TELEGRAM_CHAT_ID not set — alerts disabled');
             } else {
               console.log('[A-FORGE-notifier] Telegram notifier active');
             }

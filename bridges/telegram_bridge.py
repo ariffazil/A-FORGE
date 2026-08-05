@@ -15,7 +15,9 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 logging.basicConfig(level=logging.INFO, format='[telegram_bridge] %(message)s')
 log = logging.getLogger(__name__)
 
-TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+# F2 token hygiene: A-FORGE = HANDS → speak as @arifOS_bot (FORGE_BOT_TOKEN).
+# TELEGRAM_BOT_TOKEN belongs to OpenClaw; never ride another agent's identity.
+TOKEN = os.environ.get("FORGE_BOT_TOKEN", os.environ.get("TELEGRAM_BOT_TOKEN", ""))
 API = f"https://api.telegram.org/bot{TOKEN}"
 
 def api_call(method: str, params: dict) -> dict:
