@@ -1,7 +1,7 @@
 <!-- SOT-MANIFEST
 federation_release: v2026.08.04
 last_verified: 2026-08-04T20:23:33Z
-live_commit: pending
+live_commit: 5687d5b7 (P0 hardening — FQ metabolic gate + Gödel lock Q9)
 qqq_version: v1.1.1 (10/10 tests passing, verdict round-trip closed)
 seal_chain: append-only (chattr +a) + Merkle anchor every 100 receipts
 sense_port: 7071 (healthy)
@@ -100,6 +100,21 @@ Public MCP:    https://forge.arif-fazil.com/mcp
 | **🫀 WELL** | Vitality Guard — human readiness | 18083 | [repo](https://github.com/ariffazil/WELL) | [mcp](https://well.arif-fazil.com/mcp) | [health](https://well.arif-fazil.com/health) | [llms.txt](https://well.arif-fazil.com/llms.txt) |
 | **🔮 HERMES** | Multi-Modal Bridge — Telegram relay | 8644 | [repo](https://github.com/ariffazil/HERMES) | — | — | — |
 | **🌐 arif-fazil.com** | Public Web Surface — one domain | 443 | [repo](https://github.com/ariffazil/arif-fazil.com) | — | [verify](https://arif-fazil.com/999/verify) | — |
+
+---
+
+## 📡 MCP Registries
+
+A-FORGE is registered as an MCP server on the federation registries. Discovery metadata is exposed at each endpoint.
+
+| Registry | Server | Manifest |
+|----------|--------|----------|
+| **Glama** | [glama.ai/mcp/servers/ariffazil/a-forge](https://glama.ai/mcp/servers/ariffazil/a-forge) | `https://forge.arif-fazil.com/.well-known/glama.json` |
+| **Smithery** | [smithery.ai/server/a-forge](https://smithery.ai/server/a-forge) | `https://forge.arif-fazil.com/.well-known/smithery.yaml` |
+| **mcp.so** | [mcp.so/server/ariffazil/a-forge](https://mcp.so/server/ariffazil/a-forge) | `https://forge.arif-fazil.com/.well-known/mcp-so.json` |
+| **PulseMCP** | [pulsemcp.com/servers/ariffazil/a-forge](https://www.pulsemcp.com/servers/ariffazil/a-forge) | `https://forge.arif-fazil.com/.well-known/pulsemcp.json` |
+
+Discovery endpoint: `GET https://forge.arif-fazil.com/.well-known/mcp/server.json`
 
 ---
 
