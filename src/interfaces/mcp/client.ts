@@ -298,7 +298,7 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
         timestamp: Date.now(),
       };
 
-      const precondition = checkVerdictPrecondition(actionClass, sessionState);
+      const precondition = await checkVerdictPrecondition(actionClass, sessionState);
       if (!precondition.permitted) {
         const err = new Error(
           `MCP Bridge: Verdict precondition failed for "${canonicalTool}". ` +
