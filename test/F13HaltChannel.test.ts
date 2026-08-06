@@ -15,6 +15,9 @@ import {
   type F13Source,
   type F13Scope,
 } from "../src/domain/governance/F13HaltChannel.js";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import * as os from "node:os";
 
 // ─── 1. Valid halt message accepted ─────────────────────────────────
 
@@ -184,3 +187,147 @@ test("F13Halt: scope=action target=all matches any action", async () => {
   assert.equal(channel.isActive("action", "another"), true);
   assert.equal(channel.isActive("tool", "any"), false);
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// FileBackedHaltChannel tests — cross-process halt persistence
+// ═══════════════════════════════════════════════════════════════════
+
+const TEST_HALT_FILE = path.join(os.tmpdir(), `f13_halts_test_${Date.now()}.jsonl`);
+
+// Dynamically import to access the class (exported via module)
+// We test the file persistence behavior by writing halts to the file
+// and verifying the FileBackedHaltChannel loads them correctly.
+
+import { FileBackedHaltChannel } from "../src/domain/governance/F13HaltChannel.js";
+
+test("F13Halt: file-backed channel loads halt from file on startup", async () => {
+  // Clean state
+  try { fs.unlinkSync(TEST_HALT_FILE); } catch {}
+
+  const haltMsg: F13HaltMessage = {
+    type: "F13_HALT",
+    issued_by: "arif",
+    source: "telegram",
+    scope: "federation",
+    target: "all",
+    reason: "emergency federation halt",
+    issued_at: new Date().toISOString(),
+    nonce: "test-nonce-1",
+    signature_or_token: "sig-xyz",
+  };
+
+  // Write halt to file (simulating external agent writing)
+  fs.writeFileSync(TEST_HALT_FILE, JSON.stringify(haltMsg) + "\n", "utf-8");
+
+  // Create channel — should load from file
+  const channel = new FileBackedHaltChannel(TEST_HALT_FILE);
+  assert.equal(channel.isActive("federation", "all"), true);
+  assert.equal(channel.isActive("tool", "any"), true); // federation:all blocks everything
+
+  channel.reset();
+});
+
+test("F13Halt: file-backed channel survives process restart (persistence)", async () => {
+  try { fs.unlinkSync(TEST_HALT_FILE); } catch {}
+
+  // First "process" — create channel and publish halt
+  const channel1 = new FileBackedHaltChannel(TEST_HALT_FILE);
+  await channel1.publish({
+    type: "F13_HALT",
+    issued_by: "arif",
+    source: "telegram" as F13Source,
+    scope: "tool" as F13Scope,
+    target: "aforge_browser_navigate",
+    reason: "security audit",
+    issued_at: new Date().toISOString(),
+    nonce: "test-nonce-2",
+    signature_or_token: "sig-abc",
+  });
+  assert.equal(channel1.isActive("tool", "aforge_browser_navigate"), true);
+
+  // Verify file has the halt BEFORE reset
+  const fileContent = fs.readFileSync(TEST_HALT_FILE, "utf-8");
+  assert.ok(fileContent.includes("aforge_browser_navigate"), "halt persisted in file");
+
+  // Simulate process death: stop watching + let channel1 go
+  channel1.reset();
+
+  // Verify file is empty after reset (cleanup works)
+  const afterReset = fs.readFileSync(TEST_HALT_FILE, "utf-8");
+  assert.equal(afterReset.trim(), "", "file cleared after reset");
+
+  // Write halt back (simulating that the file survived a process crash where reset was NOT called)
+  fs.writeFileSync(TEST_HALT_FILE, JSON.stringify({
+    type: "F13_HALT",
+    issued_by: "arif",
+    source: "telegram",
+    scope: "tool",
+    target: "aforge_browser_navigate",
+    reason: "security audit",
+    issued_at: new Date().toISOString(),
+    nonce: "test-nonce-2b",
+    signature_or_token: "sig-abc",
+  }) + "\n", "utf-8");
+
+  // Second "process" — new channel loads from surviving file
+  const channel2 = new FileBackedHaltChannel(TEST_HALT_FILE);
+  assert.equal(channel2.isActive("tool", "aforge_browser_navigate"), true, "halt survives process restart");
+  channel2.reset();
+});
+
+test("F13Halt: file-backed channel ignores malformed lines", async () => {
+  try { fs.unlinkSync(TEST_HALT_FILE); } catch {}
+
+  // Write a mix of valid and invalid lines
+  fs.writeFileSync(TEST_HALT_FILE, [
+    "not json at all",
+    JSON.stringify({ type: "WRONG", foo: "bar" }),
+    "", // empty line
+    JSON.stringify({
+      type: "F13_HALT",
+      issued_by: "arif",
+      source: "local",
+      scope: "organ",
+      target: "WEALTH",
+      reason: "valid halt",
+      issued_at: new Date().toISOString(),
+      nonce: "test-nonce-3",
+      signature_or_token: "sig-3",
+    }),
+  ].join("\n"), "utf-8");
+
+  const channel = new FileBackedHaltChannel(TEST_HALT_FILE);
+  // Only the valid halt should be loaded
+  assert.equal(channel.isActive("organ", "WEALTH"), true);
+  assert.equal(channel.isActive("organ", "GEOX"), false);
+  channel.reset();
+});
+
+test("F13Halt: file-backed channel detects externally added halts via reload", async () => {
+  try { fs.unlinkSync(TEST_HALT_FILE); } catch {}
+
+  const channel = new FileBackedHaltChannel(TEST_HALT_FILE);
+
+  // Simulate external agent writing a halt to the file
+  const haltMsg: F13HaltMessage = {
+    type: "F13_HALT",
+    issued_by: "arif",
+    source: "aaa_a2a",
+    scope: "action",
+    target: "deploy-prod",
+    reason: "external override",
+    issued_at: new Date().toISOString(),
+    nonce: "ext-nonce-1",
+    signature_or_token: "ext-sig",
+  };
+  fs.appendFileSync(TEST_HALT_FILE, JSON.stringify(haltMsg) + "\n", "utf-8");
+
+  // Trigger reload manually (simulating watchFile callback)
+  // The watchFile polls every 2s — we simulate by calling the private method
+  // @ts-expect-error accessing private method for test
+  channel.reloadFromFile();
+
+  assert.equal(channel.isActive("action", "deploy-prod"), true);
+  channel.reset();
+});
+

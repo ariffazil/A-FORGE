@@ -174,6 +174,15 @@ const STATELESS_TOOLS = new Set([
     // inspect_gap, list_templates, list_active are OBSERVE. generate,
     // sandbox_test, invoke, verify, retire are session-gated in handler.
     "forge_ephemeral",
+
+    // ── EMD / APEX pipeline (2026-08-06) — OBSERVE validation lane ────
+    // encode, emd, goal_status, evaluate are read-only OBSERVE-class.
+    // They validate goals and compute G/C_dark without mutating host state.
+    // metabolize + recompute remain session-gated (they modify goalStore).
+    "forge_apex_encode",
+    "forge_apex_goal_status",
+    "forge_apex_emd",
+    "forge_evaluate",
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────

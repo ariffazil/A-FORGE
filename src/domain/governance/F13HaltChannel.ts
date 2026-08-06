@@ -11,6 +11,12 @@
  */
 
 import { EventEmitter } from "node:events";
+import * as fs from "node:fs";
+import * as path from "node:path";
+
+// ─── Default file path for cross-process halt channel ─────────────────
+
+const DEFAULT_HALT_FILE = "/var/lib/aforge/f13_halts.jsonl";
 
 // ─── Halt message shape ───────────────────────────────────────────────
 
@@ -83,6 +89,161 @@ class InProcessHaltChannel implements F13HaltChannel {
   }
 }
 
+// ─── File-backed cross-process implementation ────────────────────────
+
+export class FileBackedHaltChannel implements F13HaltChannel {
+  private readonly emitter = new EventEmitter();
+  private readonly activeHalts = new Map<string, F13HaltMessage>();
+  private readonly haltFile: string;
+  private watching: boolean = false;
+
+  constructor(haltFile?: string) {
+    this.haltFile = haltFile ?? process.env.ARIFOS_F13_HALT_FILE ?? DEFAULT_HALT_FILE;
+    this.emitter.setMaxListeners(100);
+    this.loadFromFile();
+    this.startWatching();
+  }
+
+  private ensureDir(): void {
+    const dir = path.dirname(this.haltFile);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  }
+
+  private loadFromFile(): void {
+    try {
+      if (!fs.existsSync(this.haltFile)) return;
+      const lines = fs.readFileSync(this.haltFile, "utf-8").trim().split("\n");
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const msg = JSON.parse(line) as F13HaltMessage;
+          if (isValidHaltMessage(msg)) {
+            const key = `${msg.scope}:${msg.target}`;
+            this.activeHalts.set(key, msg);
+          }
+        } catch {
+          // Skip malformed lines — don't block startup on corrupt halt file
+        }
+      }
+    } catch (err) {
+      // File may not exist or be unreadable — proceed with empty state
+      // eslint-disable-next-line no-console
+      console.warn(`[F13_HALT] Could not load halt file ${this.haltFile}: ${err}`);
+    }
+  }
+
+  private startWatching(): void {
+    try {
+      this.ensureDir();
+      if (!fs.existsSync(this.haltFile)) {
+        fs.writeFileSync(this.haltFile, "", "utf-8");
+      }
+      fs.watchFile(this.haltFile, { interval: 2000 }, () => {
+        this.reloadFromFile();
+      });
+      this.watching = true;
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(`[F13_HALT] Could not watch halt file ${this.haltFile}: ${err}`);
+    }
+  }
+
+  private reloadFromFile(): void {
+    try {
+      if (!fs.existsSync(this.haltFile)) return;
+      const content = fs.readFileSync(this.haltFile, "utf-8").trim();
+      const lines = content.split("\n");
+      const loaded = new Map<string, F13HaltMessage>();
+
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const msg = JSON.parse(line) as F13HaltMessage;
+          if (isValidHaltMessage(msg)) {
+            const key = `${msg.scope}:${msg.target}`;
+            loaded.set(key, msg);
+          }
+        } catch {
+          // Skip
+        }
+      }
+
+      // Detect new halts (in file but not in memory) and fire them
+      for (const [key, msg] of loaded) {
+        if (!this.activeHalts.has(key)) {
+          this.activeHalts.set(key, msg);
+          this.emitter.emit("halt", msg);
+        }
+      }
+
+      // Detect removed halts (in memory but not in file) and clear them
+      for (const key of this.activeHalts.keys()) {
+        if (!loaded.has(key)) {
+          this.activeHalts.delete(key);
+        }
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(`[F13_HALT] Error reloading halt file: ${err}`);
+    }
+  }
+
+  async publish(msg: F13HaltMessage): Promise<void> {
+    if (!isValidHaltMessage(msg)) {
+      // eslint-disable-next-line no-console
+      console.warn(`[F13_HALT] invalid message ignored: ${JSON.stringify(msg)}`);
+      return;
+    }
+    const key = `${msg.scope}:${msg.target}`;
+    this.activeHalts.set(key, msg);
+
+    // Append to file for cross-process visibility
+    try {
+      this.ensureDir();
+      fs.appendFileSync(this.haltFile, JSON.stringify(msg) + "\n", "utf-8");
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error(`[F13_HALT] Could not write halt to file ${this.haltFile}: ${err}`);
+      // Still fire in-process — partial degradation
+    }
+
+    this.emitter.emit("halt", msg);
+  }
+
+  subscribe(handler: (msg: F13HaltMessage) => void): () => void {
+    this.emitter.on("halt", handler);
+    return () => this.emitter.off("halt", handler);
+  }
+
+  isActive(scope: F13Scope, target: string): boolean {
+    if (this.activeHalts.has(`federation:all`)) return true;
+    if (this.activeHalts.has(`${scope}:${target}`)) return true;
+    if (this.activeHalts.has(`${scope}:all`)) return true;
+    return false;
+  }
+
+  reset(): void {
+    this.activeHalts.clear();
+    if (this.watching) {
+      try {
+        fs.unwatchFile(this.haltFile);
+      } catch {
+        // Best effort
+      }
+      this.watching = false;
+    }
+    try {
+      if (fs.existsSync(this.haltFile)) {
+        fs.writeFileSync(this.haltFile, "", "utf-8");
+      }
+    } catch {
+      // Best effort
+    }
+  }
+}
+
 // ─── Message validation ──────────────────────────────────────────────
 
 export function isValidHaltMessage(msg: unknown): msg is F13HaltMessage {
@@ -100,19 +261,35 @@ export function isValidHaltMessage(msg: unknown): msg is F13HaltMessage {
   return true;
 }
 
-// ─── Singleton (default) ──────────────────────────────────────────────
+// ─── Singleton (channel selection by env) ────────────────────────────
 
 let _channel: F13HaltChannel | null = null;
 
 /**
- * Get the default F13 halt channel (in-process by default).
- * For production swap to a Redis-backed implementation by setting
- * process.env.ARIFOS_F13_CHANNEL = "redis" (then provide a Redis-backed
- * implementation here).
+ * Get the F13 halt channel.
+ *
+ * Channel selection (via ARIFOS_F13_CHANNEL env var):
+ *   "file"  — FileBackedHaltChannel (production cross-process, default path /var/lib/aforge/f13_halts.jsonl)
+ *   "redis" — (reserved for future Redis implementation, falls back to file)
+ *   unset   — InProcessHaltChannel (development/testing, dies with process)
+ *
+ * File path override: ARIFOS_F13_HALT_FILE
  */
 export function getF13HaltChannel(): F13HaltChannel {
   if (_channel) return _channel;
-  _channel = new InProcessHaltChannel();
+
+  const channelType = process.env.ARIFOS_F13_CHANNEL?.toLowerCase();
+
+  switch (channelType) {
+    case "file":
+    case "redis":  // Redis not yet implemented — fall through to file
+      _channel = new FileBackedHaltChannel();
+      break;
+    default:
+      _channel = new InProcessHaltChannel();
+      break;
+  }
+
   return _channel;
 }
 
