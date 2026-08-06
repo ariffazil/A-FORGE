@@ -1431,7 +1431,7 @@ server.registerTool(
 // ── Tier 05 Execution ────────────────────────────────────────────────────────
 
 const forgeHandler = async (args: any, toolName: string) => {
-  const { task, mode, session_id, actor_id, lease_id, evidence_receipt, peer_contract_id, prediction_context, auto_predict = true, constitutional_chain_id, judge_state_hash } = args;
+  const { task, mode, session_id, actor_id, lease_id, evidence_receipt, peer_contract_id, prediction_context, auto_predict = true, constitutional_chain_id, judge_state_hash, c_dark, goal_id } = args;
   const startedAt = Date.now();
   await telemetryInvoke("forge_execute");
   return runStage("777_FORGE" as MetabolicStage, async () => {
@@ -1526,12 +1526,18 @@ const forgeHandler = async (args: any, toolName: string) => {
     }
 
     // ── FORGE 2-B: arifOS judge SEAL required before any execution ──
+    // E2 fix: include C_dark + goal_id as evidence for the judge. With E3 fix,
+    // emdPass produces meaningful C_dark (drift detection actually compares
+    // against previous pass). Wiring it into the candidate lets arif_judge
+    // see the EMD signal and HOLD on C_dark >= 0.30.
     const candidate = JSON.stringify({
       tool: toolName,
       task,
       mode: mode ?? "external_safe_mode",
       lease_id,
       actor_id: actor_id ?? "mcp-anonymous",
+      ...(goal_id ? { goal_id } : {}),
+      ...(typeof c_dark === "number" ? { c_dark } : {}),
     });
 
     // ── ELICITATION GATE: Human confirmation before forge execution ──
