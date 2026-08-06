@@ -2222,6 +2222,81 @@ import {
 /** In-memory goal store (per-session, per-process). Session restart = reset. */
 const goalStore = new Map<string, GoalVector>();
 
+// ── Postgres persistence (B5 follow-up, 2026-08-06) ─────────────────────────
+// Wires in-memory goalStore → aforge.goal_store table for session survival.
+
+function getPgUrl(): string | null {
+  return process.env.PG_URL || process.env.DATABASE_URL || null;
+}
+
+function persistGoal(goal: GoalVector): void {
+  const pg = getPgUrl();
+  if (!pg) return;
+  try {
+    const safe = JSON.stringify(goal)
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "''");
+    const sql = `
+      INSERT INTO aforge.goal_store (goal_id, goal_text, goal_hash, G, C_dark, W3, tasks, jacobian, computed_at, session_id, version, sealed, seal_ref)
+      VALUES ('${goal.goal_id}', '${goal.goal_text.replace(/'/g, "''")}', '${goal.goal_hash}', ${goal.G}, ${goal.C_dark}, ${goal.W3 ?? "NULL"},
+              '${JSON.stringify(goal.tasks).replace(/'/g, "''")}',
+              ${goal.jacobian ? `'${JSON.stringify(goal.jacobian).replace(/'/g, "''")}'` : "NULL"},
+              ${goal.computed_at ? `'${goal.computed_at}'` : "NULL"},
+              '${goal.session_id}', ${goal.version}, ${goal.sealed}, ${goal.seal_ref ? `'${goal.seal_ref}'` : "NULL"})
+      ON CONFLICT (goal_id) DO UPDATE SET
+        G = EXCLUDED.G, C_dark = EXCLUDED.C_dark, W3 = EXCLUDED.W3,
+        tasks = EXCLUDED.tasks, jacobian = EXCLUDED.jacobian,
+        computed_at = EXCLUDED.computed_at, session_id = EXCLUDED.session_id,
+        version = EXCLUDED.version, sealed = EXCLUDED.sealed, seal_ref = EXCLUDED.seal_ref,
+        updated_at = now();
+    `.trim();
+    execSync(`psql "${pg}" -c "${sql.replace(/"/g, '\\"')}"`, { timeout: 5000, stdio: "pipe" });
+  } catch {
+    // Silently degrade — in-memory store is canonical for current session
+  }
+}
+
+function loadGoal(goalId: string): GoalVector | null {
+  const pg = getPgUrl();
+  if (!pg) return null;
+  try {
+    const raw = execSync(
+      `psql "${pg}" -t -c "SELECT row_to_json(t) FROM (SELECT * FROM aforge.goal_store WHERE goal_id = '${goalId.replace(/'/g, "''")}') t"`,
+      { timeout: 5000, encoding: "utf-8", stdio: "pipe" }
+    ).trim();
+    if (!raw) return null;
+    const row = JSON.parse(raw);
+    return {
+      goal_id: row.goal_id,
+      goal_text: row.goal_text,
+      goal_hash: row.goal_hash,
+      G: row.G,
+      C_dark: row.C_dark,
+      W3: row.W3,
+      tasks: row.tasks,
+      jacobian: row.jacobian,
+      computed_at: row.computed_at,
+      session_id: row.session_id,
+      version: row.version,
+      sealed: row.sealed,
+      seal_ref: row.seal_ref,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getGoal(goalId: string): GoalVector | undefined {
+  const cached = goalStore.get(goalId);
+  if (cached) return cached;
+  const fromDb = loadGoal(goalId);
+  if (fromDb) {
+    goalStore.set(goalId, fromDb);
+    return fromDb;
+  }
+  return undefined;
+}
+
 export function registerCognitionTools(server: McpServer): void {
   // ── forge_apex_encode — goal → task vector with Jacobian ──────────────
   server.tool(
@@ -2238,6 +2313,7 @@ export function registerCognitionTools(server: McpServer): void {
         sessionId: session_id ?? "none",
       });
       goalStore.set(result.goal_id, result);
+      persistGoal(result);
       return {
         content: [{
           type: "text" as const,
@@ -2292,7 +2368,7 @@ export function registerCognitionTools(server: McpServer): void {
       session_id: z.string().optional(),
     },
     async ({ goal_id, outcomes }) => {
-      const goal = goalStore.get(goal_id);
+      const goal = getGoal(goal_id);
       if (!goal) {
         return {
           content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `Goal ${goal_id} not found in session store`, hint: "Run forge_apex_encode first" }, null, 2) }],
@@ -2301,6 +2377,7 @@ export function registerCognitionTools(server: McpServer): void {
 
       const { goal: updated, summary } = metabolicCycle({ goal, outcomes });
       goalStore.set(goal_id, updated);
+      persistGoal(updated);
 
       return {
         content: [{
@@ -2340,7 +2417,7 @@ export function registerCognitionTools(server: McpServer): void {
       session_id: z.string().optional(),
     },
     async ({ goal_id }) => {
-      const goal = goalStore.get(goal_id);
+      const goal = getGoal(goal_id);
       if (!goal) {
         return {
           content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `Goal ${goal_id} not found in session store` }, null, 2) }],
@@ -2360,6 +2437,7 @@ export function registerCognitionTools(server: McpServer): void {
         goal.tasks.map((t: any) => [t.task_id, t.state]),
       );
       goalStore.set(goal_id, goal);
+      persistGoal(goal);
 
       return {
         content: [{
@@ -2398,7 +2476,7 @@ export function registerCognitionTools(server: McpServer): void {
       session_id: z.string().optional(),
     },
     async ({ goal_id, field, from, to }) => {
-      const goal = goalStore.get(goal_id);
+      const goal = getGoal(goal_id);
       if (!goal) {
         return {
           content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", error: `Goal ${goal_id} not found` }, null, 2) }],
@@ -2408,6 +2486,7 @@ export function registerCognitionTools(server: McpServer): void {
       const change: FieldChange = { field, from, to };
       const result = recomputeOnFieldChange(goal, change);
       goalStore.set(goal_id, goal);
+      persistGoal(goal);
 
       return {
         content: [{
@@ -2436,7 +2515,7 @@ export function registerCognitionTools(server: McpServer): void {
       goal_id: z.string().min(3).describe("Goal ID from forge_apex_encode"),
     },
     async ({ goal_id }) => {
-      const goal = goalStore.get(goal_id);
+      const goal = getGoal(goal_id);
       if (!goal) {
         // List all known goals
         const known = Array.from(goalStore.keys());
