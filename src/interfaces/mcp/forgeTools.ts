@@ -2347,8 +2347,18 @@ export function registerCognitionTools(server: McpServer): void {
         };
       }
 
-      const emd = emdPass(goal);
+      // E3 fix: pass previousState + previousTaskStates so drift detection
+      // compares against the prior EMD pass, not the current goal itself.
+      // Without this, emdPass(goal) re-encodes from scratch → zero anomalies.
+      const previousState = (goal as any)._emd_previous_encode ?? null;
+      const previousTaskStates = (goal as any)._emd_previous_task_states ?? null;
+      const emd = emdPass(goal, previousState, previousTaskStates);
       goal.C_dark = emd.C_dark;
+      // Stash encode state + task states for next EMD pass baseline.
+      (goal as any)._emd_previous_encode = emd.encode;
+      (goal as any)._emd_previous_task_states = Object.fromEntries(
+        goal.tasks.map((t: any) => [t.task_id, t.state]),
+      );
       goalStore.set(goal_id, goal);
 
       return {
