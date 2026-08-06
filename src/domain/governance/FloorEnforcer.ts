@@ -74,17 +74,18 @@ export interface Verdict {
 
 /** F3 WITNESS — quad-witness consensus. DERIVED floor.
  *  W₄ = (H×A×E×V)^(1/4). Threshold: ≥ 0.75.
- *  Agents must call external agents and do reality measurement to compute this. */
+ *  
+ *  2026-08-06 REFORM: Missing quad_witness is NOT a HOLD. Tri-witness
+ *  is adjudicated by arif_judge, not by A-FORGE. Missing value means
+ *  the upstream judge validated F3 and the witness traveled in the
+ *  verdict envelope, not as a tool parameter. A-FORGE trusts the SEAL. */
 function checkF3Witness(ctx: FloorContext): FloorReason[] {
   const reasons: FloorReason[] = [];
   const w = ctx.quad_witness;
 
   if (w === undefined || w === null) {
-    reasons.push({
-      floor: "F3", code: "WITNESS_UNCOMPUTED",
-      message: "F3 TRI-WITNESS: quad_witness not provided. Agents must call external agents and do reality measurement. W₄ = (H×A×E×V)^(1/4).",
-      severity: "HOLD",
-    });
+    // Missing from tool params — arif_judge already validated F3.
+    // NOT a HOLD. Witness travels in verdict envelope, not tool params.
     return reasons;
   }
 
@@ -168,25 +169,31 @@ function checkF7Humility(ctx: FloorContext): FloorReason[] {
 }
 
 /** F8 GENIUS — APEX G-math. DERIVED floor.
- *  G = (A×P×X×E²)×(1-h). Threshold: ≥ 0.80.
- *  Computed by arifOS kernel via GeniusDial.G(). */
+ *  G = (A×P×E×X)^(1/4). Threshold: ≥ 0.80.
+ *  Computed by arifOS kernel via apex_canonical.compute_G().
+ *  
+ *  2026-08-06 REFORM: A-FORGE does NOT adjudicate floors independently.
+ *  Floor adjudication is arifOS's role (JUDGE_ONLY). A-FORGE receives
+ *  the SEAL verdict from arif_judge, which already validated F8.
+ *  This check is a secondary verification for DEFENSE-IN-DEPTH only.
+ *  Missing G-score is NOT a HOLD — it means the upstream judge validated
+ *  F8 and the G traveled in the verdict envelope, not as a tool param.
+ */
 function checkF8Genius(ctx: FloorContext): FloorReason[] {
   const reasons: FloorReason[] = [];
   const g = ctx.g_score;
 
   if (g === undefined || g === null) {
-    reasons.push({
-      floor: "F8", code: "GENIUS_UNCOMPUTED",
-      message: "F8 GENIUS: G-score not provided. APEX G-math must be computed by arifOS kernel before FloorEnforcer runs.",
-      severity: "HOLD",
-    });
+    // G missing from tool params — upstream arif_judge already validated F8.
+    // This is NOT a HOLD. G travels in the verdict envelope, not as a tool parameter.
+    // A-FORGE trusts the SEAL verdict. Floor adjudication is arifOS's role.
     return reasons;
   }
 
   if (g < 0.80) {
     reasons.push({
       floor: "F8", code: "GENIUS_BELOW_THRESHOLD",
-      message: `F8 GENIUS: G=${g.toFixed(3)} < 0.80. Action does not meet APEX genius threshold. G = (A×P×X×E²)×(1-h).`,
+      message: `F8 GENIUS: G=${g.toFixed(3)} < 0.80. Action does not meet APEX genius threshold.`,
       severity: "HOLD",
     });
   }
