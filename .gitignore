@@ -152,3 +152,4 @@ CONTRIBUTING.md
 .runtime/
 deploy/rollback/
 .serena/
+.git_commit

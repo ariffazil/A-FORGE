@@ -504,7 +504,8 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             note: "No API key, no OAuth, no token. Open MCP endpoint.",
             endpoints: {
               initialize: "POST /mcp",
-              tools_list: "POST /mcp → tools/list",
+              tools_list: "POST /mcp → tools/list (?compact=1|2 or X-Compact header)",
+              tools_get: "POST /mcp → tools/get {name} (live schema mode)",
               tools_call: "POST /mcp → tools/call",
               resources_list: "POST /mcp → resources/list",
               resources_read: "POST /mcp → resources/read"
@@ -609,37 +610,71 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             return;
           }
 
-          // Case 2: tools/list
+          // Case 2: tools/list — compact surface meta (2026-08-06)
+          // ?compact=1  → first-sentence desc + required-only schema (no property descs)
+          // ?compact=2  → name + annotations only, no inputSchema at all
+          // default     → full (MCP spec compliant, but 178KB for 115 tools)
           if (method === "tools/list") {
+            const url = new URL(req.url ?? "/mcp", `http://${req.headers.host || "localhost"}`);
+            const compactParam = url.searchParams.get("compact");
+            const compactHeader = req.headers["x-compact"];
+            const compactLevel = compactParam !== null ? parseInt(compactParam, 10) || 0
+              : compactHeader === "true" ? 1 : 0;
+
             const { classifyTool } = await import("../../domain/governance/actionClassifier.js");
             const tools = getServerTools().map(t => {
               const name = t.name;
-              // Determine readOnlyHint/destructiveHint from action classifier
               const actionClass = classifyTool(name);
               const isObserve = actionClass === "OBSERVE";
               const isDestructive = ["EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"].includes(actionClass);
+
+              // COMPACT: first sentence only
+              const compactDesc = compactLevel >= 1
+                ? (t.description || "").split(/\.\s+|\.\n|\.$/)[0].replace(/\.$/, "").trim() || t.description
+                : t.description;
+
+              // COMPACT LEVEL 2: no inputSchema at all — just wire desc
+              if (compactLevel >= 2) {
+                return {
+                  name,
+                  description: compactDesc,
+                  annotations: {
+                    readOnlyHint: isObserve,
+                    destructiveHint: isDestructive,
+                    idempotentHint: false,
+                    openWorldHint: false,
+                  },
+                };
+              }
+
+              // COMPACT LEVEL 1: minimal schema (required fields only, no property descriptions)
+              // FULL (level 0): complete schema with descriptions
+              const schemaShape = t.inputSchema?.shape;
+              const properties: Record<string, any> = {};
+              const required: string[] = [];
+              if (schemaShape) {
+                for (const [k, v] of Object.entries(schemaShape) as [string, any][]) {
+                  const isOptional = v._def?.typeName?.includes("optional");
+                  if (!isOptional) required.push(k);
+                  if (compactLevel >= 1) {
+                    // Compact: just type hint, no description
+                    properties[k] = { type: "string" };
+                  } else {
+                    // Full: type + description + optional flag
+                    properties[k] = {
+                      type: "string",
+                      description: v.description || "",
+                    };
+                  }
+                }
+              }
+
               return {
                 name,
-                description: t.description,
-                inputSchema: {
-                  type: "object" as const,
-                  properties: t.inputSchema?.shape
-                    ? Object.entries(t.inputSchema.shape).reduce((acc: any, [k, v]: [string, any]) => {
-                        const isOptional = v._def?.typeName?.includes("optional");
-                        acc[k] = {
-                          type: "string",
-                          description: v.description || "",
-                          optional: isOptional,
-                        };
-                        return acc;
-                      }, {})
-                    : {},
-                  required: t.inputSchema?.shape
-                    ? Object.entries(t.inputSchema.shape)
-                        .filter(([_, v]: [string, any]) => !v._def?.typeName?.includes("optional"))
-                        .map(([k]) => k)
-                    : [],
-                },
+                description: compactDesc,
+                inputSchema: compactLevel >= 1
+                  ? { type: "object" as const, properties: {}, required }
+                  : { type: "object" as const, properties, required },
                 annotations: {
                   readOnlyHint: isObserve,
                   destructiveHint: isDestructive,
@@ -648,8 +683,67 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 },
               };
             });
-            res.writeHead(200, { "Content-Type": "application/json" });
+
+            const responseHeaders: Record<string, string> = {
+              "Content-Type": "application/json",
+            };
+            if (compactLevel >= 1) {
+              responseHeaders["X-Compact"] = `${compactLevel}`;
+              responseHeaders["X-Compact-Size"] = `${JSON.stringify({ tools }).length}`;
+            }
+            res.writeHead(200, responseHeaders);
             res.end(jsonRpcResult(msgId, { tools }));
+            return;
+          }
+
+          // Case 2a: tools/get — live schema mode (single tool full schema on demand)
+          if (method === "tools/get") {
+            const toolName = parsed.params?.name as string;
+            if (!toolName) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, "Missing required param: name"));
+              return;
+            }
+            const allTools = getServerTools();
+            const t = allTools.find(t => t.name === toolName);
+            if (!t) {
+              res.writeHead(404, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, `Tool not found: ${toolName}`));
+              return;
+            }
+            const { classifyTool } = await import("../../domain/governance/actionClassifier.js");
+            const actionClass = classifyTool(t.name);
+            const isObserve = actionClass === "OBSERVE";
+            const isDestructive = ["EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"].includes(actionClass);
+
+            const schemaShape = t.inputSchema?.shape;
+            const properties: Record<string, any> = {};
+            const required: string[] = [];
+            if (schemaShape) {
+              for (const [k, v] of Object.entries(schemaShape) as [string, any][]) {
+                const isOptional = v._def?.typeName?.includes("optional");
+                if (!isOptional) required.push(k);
+                properties[k] = {
+                  type: "string",
+                  description: v.description || "",
+                };
+              }
+            }
+
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(jsonRpcResult(msgId, {
+              tool: {
+                name: t.name,
+                description: t.description,
+                inputSchema: { type: "object", properties, required },
+                annotations: {
+                  readOnlyHint: isObserve,
+                  destructiveHint: isDestructive,
+                  idempotentHint: false,
+                  openWorldHint: false,
+                },
+              },
+            }));
             return;
           }
 
