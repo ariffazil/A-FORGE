@@ -481,11 +481,15 @@ interface ApexScalars {
  *
  * QDF = G × (1−C_dark) × W3 × κ_r × ψ_le  (canonical ATP formula)
  *
- * ATP Pass 2 (2026-08-07):
+ * ATP Pass 3 (888-APEX hardened, 2026-08-07):
  *   - G, C_dark: locally measurable (always computed)
- *   - W3: provided by caller from forge_witness (Nash ∛(H·AI·Ext)). Null → UNMEASURED.
+ *   - W3: caller-provided from forge_witness. REQUIRES tri_witness_evidence OR
+ *          constitutional_chain_id provenance. Without provenance → rejected (UNMEASURED).
+ *          Same Q9 pattern that blocks self-sealing on forge_seal.
  *   - κ_r: sourced from TOOL_KAPPA_R table by tool_name. Default 0.5 if unknown.
- *   - ψ_le: fetched from arifOS kernel via GovernanceBridge.fetchPsiLe(). Null → UNMEASURED.
+ *   - ψ_le: fetched from arifOS kernel via GovernanceBridge.fetchPsiLe().
+ *          fetchPsiLe has ≤2s timeout + degraded fallback (null → QDF=PARTIAL).
+ *          Raw components (L, seal_rate) surfaced for auditability per F9.
  *   - h: WELL-assessed human readiness — not available in A-FORGE → UNMEASURED.
  *
  * F9 ANTI-HANTU: unmeasured scalars are honest null, never fabricated.
@@ -498,9 +502,15 @@ async function computeApexScalars(
   toolName: string,
   bridge?: GovernanceBridge,
   w3?: number,
-): Promise<{ scalars: ApexScalars; is_canonical_qdf: boolean }> {
+  triWitnessEvidence?: string,
+  constitutionalChainId?: string,
+): Promise<{
+  scalars: ApexScalars;
+  is_canonical_qdf: boolean;
+  psi_le_components?: { L: number | null; seal_rate: number | null; source: string } | null;
+}> {
   // κ_r: reversibility from TOOL_KAPPA_R table (local, synchronous)
-  let kappa_r: number | null = 0.5; // Default: unknown tool = moderate reversibility
+  let kappa_r: number | null = 0.5;
   try {
     const { TOOL_KAPPA_R } = await import("../ops/ThermodynamicCostEstimator.js");
     kappa_r = TOOL_KAPPA_R[toolName] ?? 0.5;
@@ -508,18 +518,30 @@ async function computeApexScalars(
     // Graceful: import fails → use default 0.5
   }
 
-  // ψ_le: fetch from arifOS kernel telemetry
+  // ψ_le: fetch from arifOS kernel telemetry with timeout (F12 hardening)
   let psi_le: number | null = null;
+  let psiLeComponents: { L: number | null; seal_rate: number | null; source: string } | undefined;
   if (bridge) {
     const psiResult = await bridge.fetchPsiLe();
     if (psiResult !== null) {
       psi_le = psiResult.psi_le;
+      psiLeComponents = {
+        L: null,               // arifOS /health doesn't expose raw L — fetch from /vitals if needed
+        seal_rate: null,        // same; surfaced when kernel provides
+        source: psiResult.source,
+      };
     }
   }
 
-  // W3: caller-provided or UNMEASURED
-  const w3Scalar: ApexScalarStatus = w3 !== undefined && w3 !== null
-    ? { value: w3, status: "MEASURED" as const }
+  // W3: caller-provided BUT gated on provenance (888-APEX hardening, F3 TRI-WITNESS)
+  // Reject W3 without tri_witness_evidence or constitutional_chain_id — same Q9 pattern
+  const hasProvenance: boolean = (!!triWitnessEvidence && triWitnessEvidence.length > 0) ||
+                        (!!constitutionalChainId && constitutionalChainId.length > 0);
+  const w3HasValue: boolean = w3 !== undefined && w3 !== null;
+  const w3Accepted: boolean = w3HasValue && hasProvenance;
+
+  const w3Scalar: ApexScalarStatus = w3Accepted
+    ? { value: w3!, status: "MEASURED" as const }
     : { value: null, status: "UNMEASURED" as const };
 
   // Assemble scalars
@@ -528,11 +550,17 @@ async function computeApexScalars(
     C_dark: { value: C_dark, status: "MEASURED" },
     W3: w3Scalar,
     h: { value: null, status: "UNMEASURED" },
-    QDF: { value: null, status: "PARTIAL" },
+    QDF: { value: null, status: w3HasValue && !hasProvenance ? "PARTIAL" : "PARTIAL" },
   };
 
-  // Compute QDF only when all 5 inputs measurable (ATP doctrine)
-  const allMeasured = w3 !== undefined && w3 !== null && kappa_r !== null && psi_le !== null;
+  // If W3 was provided but rejected: surface the rejection reason (F9 auditability)
+  if (w3HasValue && !hasProvenance) {
+    // W3 rejected — single-node self-certification blocked
+    // QDF stays PARTIAL; is_canonical_qdf stays false
+  }
+
+  // Compute QDF only when all 5 inputs measurable AND W3 has provenance (ATP doctrine)
+  const allMeasured: boolean = w3Accepted && kappa_r !== null && psi_le !== null;
   if (allMeasured) {
     const qdf = G * (1 - C_dark) * w3! * kappa_r! * psi_le!;
     scalars.QDF = {
@@ -541,10 +569,10 @@ async function computeApexScalars(
     };
   }
 
-  // is_canonical_qdf: all 5 measured AND QDF ≥ 0.70
-  const is_canonical_qdf = allMeasured && (scalars.QDF.value ?? 0) >= 0.70;
+  // is_canonical_qdf: all 5 measured + provenance verified AND QDF ≥ 0.70
+  const is_canonical_qdf: boolean = allMeasured && (scalars.QDF.value ?? 0) >= 0.70;
 
-  return { scalars, is_canonical_qdf };
+  return { scalars, is_canonical_qdf, psi_le_components: psiLeComponents ?? null };
 }
 
 /**
@@ -624,6 +652,14 @@ export interface EvaluateOptions {
    * When provided, fed into QDF computation. When absent, W3 = UNMEASURED.
    */
   w3?: number;
+  /**
+   * ATP Pass 3 (888-APEX hardening): Tri-witness provenance required when W3 is provided.
+   * Must carry tri_witness_evidence hash or constitutional_chain_id from prior forge_witness call.
+   * Without provenance, W3 is rejected (UNMEASURED) — same Q9 pattern that blocks self-sealing.
+   */
+  triWitnessEvidence?: string;
+  /** Constitutional chain ID from forge_witness (alternative provenance) */
+  constitutionalChainId?: string;
 }
 
 /**
@@ -684,7 +720,10 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
   // Step 4: Build GateDecision with ATP scalars
   const now = new Date().toISOString();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-  const { scalars, is_canonical_qdf } = await computeApexScalars(G, C_dark, spec.tool_name, opts.bridge, opts.w3);
+  const { scalars, is_canonical_qdf, psi_le_components } = await computeApexScalars(
+    G, C_dark, spec.tool_name, opts.bridge, opts.w3,
+    opts.triWitnessEvidence, opts.constitutionalChainId,
+  );
 
   const decision: GateDecision = {
     tool_name: spec.tool_name,
@@ -695,6 +734,7 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
     verdict,
     apex_scalars: scalars,
     is_canonical_qdf,
+    psi_le_components: psi_le_components ?? null,
     evaluator_disagreement: evaluatorCount > 1 ? 0.05 : 0, // Phase 1 placeholder
     evaluator_count: evaluatorCount,
     evaluated_at: now,

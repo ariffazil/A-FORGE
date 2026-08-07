@@ -141,9 +141,20 @@ export interface GateDecision {
   /**
    * ATP SEAL gate — true when QDF is computed from all 5 canonical scalars
    * (G, C_dark, W3, κ_r, ψ_le) and QDF ≥ 0.70.
-   * Pass 2: wired from forge_witness + arifOS kernel telemetry.
+   * Pass 3 (888-APEX hardened): W3 requires tri_witness_evidence provenance.
    */
   is_canonical_qdf?: boolean;
+
+  /**
+   * ATP Pass 3: psi_le decomposition for F9 auditability.
+   * Surfaces raw ledger metrics (L, seal_rate) so the 1.0 value is earned, not default-inflated.
+   * Null when ψ_le is UNMEASURED or kernel unreachable.
+   */
+  psi_le_components?: {
+    L: number | null;
+    seal_rate: number | null;
+    source: string;
+  } | null;
 
   /** Evaluator ensemble disagreement (inter-rater) */
   evaluator_disagreement: number;
