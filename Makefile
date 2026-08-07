@@ -7,6 +7,13 @@ build: security-audit
 
 # Deploy to /opt and sync commit markers (prevents deployment_drift)
 deploy: build
+	@echo "═══ F1 PRE-FLIGHT: dist/ source-of-truth check ═══"
+	@if git status --porcelain dist/ | grep -q .; then \
+		echo "888_HOLD: dist/ has untracked or modified build artifacts."; \
+		echo "F1 AMANAH — hot-patching dist/ is BLACKLISTED. Clean build required."; \
+		echo "Run: make clean && make build"; \
+		exit 1; \
+	fi; \
 	@GIT_SHA=$$(git rev-parse --short HEAD); \
 	echo "$$GIT_SHA" > /root/A-FORGE/.git_commit; \
 	rsync -av --delete dist/ /opt/a-forge/app/dist/; \
