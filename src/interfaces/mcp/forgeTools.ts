@@ -42,6 +42,7 @@ import { evaluateCandidate, evaluateDryRun } from "../../domain/forge/evaluate.j
 import { evaluateWitness, witnessDryRun } from "../../domain/forge/witness.js";
 import { sealFailure, listFailures, consultFailurePressure } from "../../domain/forge/scar.js";
 import { registerTool, queryRegistry, registryFingerprint } from "../../domain/forge/register.js";
+import { GovernanceBridge } from "../../domain/governance/GovernanceBridge.js";
 import {
   createLoop,
   getLoop,
@@ -1325,6 +1326,8 @@ export function registerGovernedTools(server: McpServer): void {
       max_recursion_depth: z.number().int().min(1).max(10).default(1).describe("Maximum recursion depth"),
       session_id: z.string().optional(),
       seal_verdict_id: z.string().optional().describe("Prior arifOS seal verdict (required for arifos domain)"),
+      // ATP Pass 2: Tri-Witness W3 scalar from forge_witness
+      w3: z.number().min(0).max(1).optional().describe("W3 tri-witness consensus ∛(Human×AI×Earth) from forge_witness. When provided, enables full QDF computation."),
     },
     async (args) => {
       try {
@@ -1361,29 +1364,39 @@ export function registerGovernedTools(server: McpServer): void {
           };
         }
 
-        // Full evaluation with scar consultation
+        // Full evaluation with scar consultation + ATP cross-organ bridge
         const consScars = async (fp: string, dom: GovernedDomain) => {
           const { scarPressure, count } = await consultFailurePressure(fp, dom);
           return { scarPressure, count };
         };
 
+        // ATP Pass 2: construct GovernanceBridge for psi_le fetch from arifOS
+        const bridge = new GovernanceBridge({
+          baseUrl: "http://localhost:8088",
+          timeoutMs: 2000,
+          fallbackOnFailure: true,
+        });
+
         const decision = await evaluateCandidate({
           spec,
           evaluatorCount: args.evaluator_count,
           consultScars: consScars,
+          bridge,
+          w3: args.w3,  // ATP Pass 2: tri-witness from caller
         });
 
         const isError = decision.verdict === "VOID";
         return {
           content: [{
             type: "text" as const,
-            text: JSON.stringify({
-              ...decision,
-              is_canonical_g: true,
-              space: "G-space",
-              doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). P=Physics. Φ is separate scar gate. C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G. Forged, Not Given. HARAM: using taskJacobian G_local as this G → VOID.",
-              v36_status: "MEASUREMENT_INSTRUMENT — thresholds must be calibrated on held-out data via ROC analysis",
-            }, null, 2),
+              text: JSON.stringify({
+                ...decision,
+                is_canonical_g: true,
+                is_canonical_qdf: decision.is_canonical_qdf ?? false,
+                space: "G-space + QDF (ATP Pass 2)",
+                doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). P=Physics. Φ is separate scar gate. C_dark = A·(1-P)·(1-X). QDF = G×(1−C_dark)×W3×κ_r×ψ_le (ATP Pass 2). Multiplicative veto: zero in any factor collapses G. Forged, Not Given. HARAM: using taskJacobian G_local as this G → VOID.",
+                v36_status: "MEASUREMENT_INSTRUMENT — thresholds must be calibrated on held-out data via ROC analysis. ATP Pass 2: QDF wired from forge_witness + arifOS kernel.",
+              }, null, 2),
           }],
           isError,
         };
@@ -1601,6 +1614,14 @@ export function registerGovernedTools(server: McpServer): void {
             rationale: ["Scores reconstructed from registration call — see prior forge_evaluate output for full detail"],
           },
           verdict: args.gate_verdict,
+          apex_scalars: {
+            G: { value: args.gate_G, status: "MEASURED" },
+            C_dark: { value: args.gate_C_dark, status: "MEASURED" },
+            W3: { value: null, status: "UNMEASURED" },
+            h: { value: null, status: "UNMEASURED" },
+            QDF: { value: null, status: "PARTIAL" },
+          },
+          is_canonical_qdf: false,
           evaluator_disagreement: 0,
           evaluator_count: 1,
           evaluated_at: new Date().toISOString(),

@@ -124,6 +124,27 @@ export interface GateDecision {
   /** If VOID, the scar record that was sealed */
   scar_record?: ScarRecord;
 
+  /**
+   * APEX thermodynamic scalars — cross-plane compression metrics.
+   * QDF = G × (1−C_dark) × W3 × κ_r × ψ_le (canonical ATP formula).
+   * Computed only when all 5 inputs are measurable; UNMEASURED otherwise.
+   * F9 ANTI-HANTU: never fabricate — null means genuinely unmeasured.
+   */
+  apex_scalars: {
+    G: { value: number; status: "MEASURED" };
+    C_dark: { value: number; status: "MEASURED" };
+    W3: { value: number | null; status: "MEASURED" | "UNMEASURED" };
+    h: { value: number | null; status: "MEASURED" | "UNMEASURED" };
+    QDF: { value: number | null; status: "MEASURED" | "PARTIAL" | "UNMEASURED" };
+  };
+
+  /**
+   * ATP SEAL gate — true when QDF is computed from all 5 canonical scalars
+   * (G, C_dark, W3, κ_r, ψ_le) and QDF ≥ 0.70.
+   * Pass 2: wired from forge_witness + arifOS kernel telemetry.
+   */
+  is_canonical_qdf?: boolean;
+
   /** Evaluator ensemble disagreement (inter-rater) */
   evaluator_disagreement: number;
   /** Number of evaluators in the ensemble */

@@ -453,6 +453,101 @@ async function computeGateWithKernelG(
 }
 
 /**
+ * APEX thermodynamic scalar — per-scalar measurement status.
+ * ATP doctrine: HOLD if unmeasured; never fabricate (F9).
+ */
+interface MeasuredScalar {
+  value: number;
+  status: "MEASURED";
+}
+
+interface UnmeasuredScalar {
+  value: null;
+  status: "UNMEASURED";
+}
+
+type ApexScalarStatus = MeasuredScalar | UnmeasuredScalar;
+
+interface ApexScalars {
+  G: MeasuredScalar;
+  C_dark: MeasuredScalar;
+  W3: ApexScalarStatus;
+  h: ApexScalarStatus;
+  QDF: { value: number | null; status: "MEASURED" | "PARTIAL" | "UNMEASURED" };
+}
+
+/**
+ * computeApexScalars — assemble APEX thermodynamic compression block.
+ *
+ * QDF = G × (1−C_dark) × W3 × κ_r × ψ_le  (canonical ATP formula)
+ *
+ * ATP Pass 2 (2026-08-07):
+ *   - G, C_dark: locally measurable (always computed)
+ *   - W3: provided by caller from forge_witness (Nash ∛(H·AI·Ext)). Null → UNMEASURED.
+ *   - κ_r: sourced from TOOL_KAPPA_R table by tool_name. Default 0.5 if unknown.
+ *   - ψ_le: fetched from arifOS kernel via GovernanceBridge.fetchPsiLe(). Null → UNMEASURED.
+ *   - h: WELL-assessed human readiness — not available in A-FORGE → UNMEASURED.
+ *
+ * F9 ANTI-HANTU: unmeasured scalars are honest null, never fabricated.
+ * ATP doctrine: all 5 measured → QDF = full product. Partial → HOLD.
+ * is_canonical_qdf = true only when all 5 inputs measured AND QDF ≥ 0.70.
+ */
+async function computeApexScalars(
+  G: number,
+  C_dark: number,
+  toolName: string,
+  bridge?: GovernanceBridge,
+  w3?: number,
+): Promise<{ scalars: ApexScalars; is_canonical_qdf: boolean }> {
+  // κ_r: reversibility from TOOL_KAPPA_R table (local, synchronous)
+  let kappa_r: number | null = 0.5; // Default: unknown tool = moderate reversibility
+  try {
+    const { TOOL_KAPPA_R } = await import("../ops/ThermodynamicCostEstimator.js");
+    kappa_r = TOOL_KAPPA_R[toolName] ?? 0.5;
+  } catch {
+    // Graceful: import fails → use default 0.5
+  }
+
+  // ψ_le: fetch from arifOS kernel telemetry
+  let psi_le: number | null = null;
+  if (bridge) {
+    const psiResult = await bridge.fetchPsiLe();
+    if (psiResult !== null) {
+      psi_le = psiResult.psi_le;
+    }
+  }
+
+  // W3: caller-provided or UNMEASURED
+  const w3Scalar: ApexScalarStatus = w3 !== undefined && w3 !== null
+    ? { value: w3, status: "MEASURED" as const }
+    : { value: null, status: "UNMEASURED" as const };
+
+  // Assemble scalars
+  const scalars: ApexScalars = {
+    G: { value: G, status: "MEASURED" },
+    C_dark: { value: C_dark, status: "MEASURED" },
+    W3: w3Scalar,
+    h: { value: null, status: "UNMEASURED" },
+    QDF: { value: null, status: "PARTIAL" },
+  };
+
+  // Compute QDF only when all 5 inputs measurable (ATP doctrine)
+  const allMeasured = w3 !== undefined && w3 !== null && kappa_r !== null && psi_le !== null;
+  if (allMeasured) {
+    const qdf = G * (1 - C_dark) * w3! * kappa_r! * psi_le!;
+    scalars.QDF = {
+      value: Math.round(qdf * 10000) / 10000,
+      status: "MEASURED",
+    };
+  }
+
+  // is_canonical_qdf: all 5 measured AND QDF ≥ 0.70
+  const is_canonical_qdf = allMeasured && (scalars.QDF.value ?? 0) >= 0.70;
+
+  return { scalars, is_canonical_qdf };
+}
+
+/**
  * Render verdict from G, C_dark, and Ω₀.
  *
  * Thresholds (Phase 1 — asserted, recalibrate on held-out data):
@@ -517,6 +612,18 @@ export interface EvaluateOptions {
     scarPressure: number;
     count: number;
   }>;
+  /**
+   * ATP Pass 2: GovernanceBridge for cross-organ scalar fetch (psi_le from arifOS).
+   * When provided, computeApexScalars fetches psi_le and computes full QDF.
+   * When absent, QDF stays PARTIAL (G + C_dark only).
+   */
+  bridge?: GovernanceBridge;
+  /**
+   * ATP Pass 2: Tri-Witness W3 scalar from forge_witness.
+   * ∛(Human × AI × Earth) — Nash product across three independent witnesses.
+   * When provided, fed into QDF computation. When absent, W3 = UNMEASURED.
+   */
+  w3?: number;
 }
 
 /**
@@ -574,9 +681,10 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
   // Step 3: Render verdict
   const { verdict, reason } = renderVerdict(G, C_dark, omega);
 
-  // Step 4: Build GateDecision
+  // Step 4: Build GateDecision with ATP scalars
   const now = new Date().toISOString();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const { scalars, is_canonical_qdf } = await computeApexScalars(G, C_dark, spec.tool_name, opts.bridge, opts.w3);
 
   const decision: GateDecision = {
     tool_name: spec.tool_name,
@@ -585,6 +693,8 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
     C_dark,
     scores,
     verdict,
+    apex_scalars: scalars,
+    is_canonical_qdf,
     evaluator_disagreement: evaluatorCount > 1 ? 0.05 : 0, // Phase 1 placeholder
     evaluator_count: evaluatorCount,
     evaluated_at: now,
@@ -642,6 +752,15 @@ export function evaluateDryRun(spec: CandidateSpec, evaluatorCount = 1): Omit<Ga
   const { verdict, reason } = renderVerdict(G, C_dark, omega);
   const now = new Date().toISOString();
 
+  // Dry-run: no bridge, no W3 → QDF stays PARTIAL (static compute)
+  const dryScalars: ApexScalars = {
+    G: { value: G, status: "MEASURED" },
+    C_dark: { value: C_dark, status: "MEASURED" },
+    W3: { value: null, status: "UNMEASURED" },
+    h: { value: null, status: "UNMEASURED" },
+    QDF: { value: null, status: "PARTIAL" },
+  };
+
   return {
     tool_name: spec.tool_name,
     fingerprint,
@@ -649,6 +768,8 @@ export function evaluateDryRun(spec: CandidateSpec, evaluatorCount = 1): Omit<Ga
     C_dark,
     scores,
     verdict: scores.X === 0 ? "VOID" : verdict, // HARAM CRITICAL → VOID even in dry run
+    apex_scalars: dryScalars,
+    is_canonical_qdf: false,
     evaluator_disagreement: 0,
     evaluator_count: evaluatorCount,
     evaluated_at: now,

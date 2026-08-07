@@ -239,6 +239,41 @@ export class GovernanceBridge {
     };
   }
 
+  /**
+   * Fetch psi_le (Life/Entropy Index) from arifOS kernel telemetry.
+   *
+   * Calls GET {baseUrl}/health and extracts governance.psi_vitality.
+   * Timeout 2s. Returns null on failure (graceful degradation).
+   *
+   * ATP Pass 2: psi_le is the thermodynamic vitality scalar — it measures
+   * the time-integration of honest memory (chain_length × seal_rate).
+   * When unreachable, QDF stays PARTIAL (ATP HOLD, not VOID).
+   */
+  async fetchPsiLe(): Promise<{ psi_le: number; source: string } | null> {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2000);
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!response.ok) return null;
+      const body = (await response.json()) as Record<string, unknown>;
+
+      // Navigate: body.governance.psi_vitality
+      const governance = body.governance as Record<string, unknown> | undefined;
+      if (!governance) return null;
+      const psiVitality = governance.psi_vitality;
+      if (typeof psiVitality !== "number") return null;
+
+      return { psi_le: psiVitality, source: `${this.baseUrl}/health#governance.psi_vitality` };
+    } catch {
+      return null;
+    }
+  }
+
   private _deriveToolName(script: string): string {
     const lowered = script.toLowerCase();
     if (lowered.includes("writefile") || lowered.includes("fs.write")) return "arif_forge_execute";

@@ -61,7 +61,7 @@ const TOOL_LANDAUER_COST: Record<string, number> = {
   run_command: 0.85,
 };
 
-const TOOL_KAPPA_R: Record<string, number> = {
+export const TOOL_KAPPA_R: Record<string, number> = {
   read_file: 1.0,
   list_files: 1.0,
   grep_text: 1.0,
