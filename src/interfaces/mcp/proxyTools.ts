@@ -1084,6 +1084,7 @@ async function executeFetch(params: {
   max_response_bytes?: number;
   cache_ttl_seconds?: number;
   egress_profile?: string;
+  _mcp_session_id?: string;
 }) {
   // ── Egress profile resolution (F1/F9: honest, never silent fallback) ────
   const egressResult = validateAndResolve(params.egress_profile);
@@ -1099,6 +1100,7 @@ async function executeFetch(params: {
     profile: egressResult.profile,
     provider: egressResolution.type,
     proxy_id: egressResolution.type === "proxy" ? (egressResolution as any).proxy_id ?? null : null,
+    mcp_session: params._mcp_session_id ?? null,
   };
 
   const cacheTTL = params.cache_ttl_seconds ?? 300; // default 5 min cache
@@ -1365,8 +1367,11 @@ export function registerFetchTools(server: McpServer): void {
             "The socket is forged; actuators attach when needed.",
         ),
     }),
-  }, async (params) => {
-    return executeFetch(params);
+  }, async (params, extra) => {
+    // Thread MCP session context for F11 audit traceability.
+    // extra.sessionId is the MCP transport session — connects back to
+    // arifOS session through the SCT ingress middleware.
+    return executeFetch({ ...params, _mcp_session_id: extra?.sessionId });
   });
 
   // ── Fetch aliases collapsed into forge_fetch(mode=...) — 2026-07-31 entropy sweep ──

@@ -76,10 +76,16 @@ Every non-error response from `forge_fetch` now carries a compact `egress` block
   "egress": {
     "profile": "default",
     "provider": "direct",
-    "proxy_id": null
+    "proxy_id": null,
+    "mcp_session": "sess_abc123..."
   }
 }
 ```
+
+The broader `provenance` envelope carries destination (`url_requested`, `url_final`, `domain`)
+and result_hash (`sha256`). The egress block is the compact audit marker; full provenance
+is the witness record. `mcp_session` is the MCP transport session ID — connects back to the
+arifOS session through the SCT ingress middleware chain.
 
 ### 3.3 Cache-Key Isolation
 
