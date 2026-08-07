@@ -12,6 +12,7 @@ import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
 import { registerLatentTrigger } from "../../infrastructure/causality/latentTriggerRegistry.js";
+import { validateAndResolve, type EgressProfileName } from "../../infrastructure/egress/EgressPolicy.js";
 
 const ALLOWED_ROOTS = ["/root", "/tmp", "/data", "/var/log"];
 
@@ -1056,8 +1057,10 @@ async function checkRobotsTxt(url: string): Promise<{ allowed: boolean; reason?:
 // After successful fetch, write to cache.
 const fetchCache = new Map<string, { data: ReturnType<typeof text>; cachedAt: number; ttlMs: number }>();
 
-function fetchCacheKey(params: { url?: string; query?: string; mode: string }): string {
-  const key = `${params.url ?? ""}|${params.query ?? ""}|${params.mode}`;
+function fetchCacheKey(params: { url?: string; query?: string; mode: string; egress_profile?: string }): string {
+  // F1/F2: cache key MUST include egress_profile to prevent cross-profile cache leak.
+  // A direct fetch cached under a proxy profile would leak IP attribution.
+  const key = `${params.url ?? ""}|${params.query ?? ""}|${params.mode}|${params.egress_profile ?? "default"}`;
   return createHash("sha256").update(key).digest("hex").slice(0, 16);
 }
 
@@ -1080,19 +1083,37 @@ async function executeFetch(params: {
   disable_readability?: boolean;
   max_response_bytes?: number;
   cache_ttl_seconds?: number;
+  egress_profile?: string;
 }) {
+  // ── Egress profile resolution (F1/F9: honest, never silent fallback) ────
+  const egressResult = validateAndResolve(params.egress_profile);
+  if (!egressResult.ok) {
+    return text({ status: "BLOCKED", reason: egressResult.error, trust_status: "UNTRUSTED_EXTERNAL_CONTENT" }, true);
+  }
+  const egressResolution = egressResult.resolution;
+  if (egressResolution.type === "unavailable") {
+    return text({ status: "BLOCKED", reason: egressResolution.reason, trust_status: "UNTRUSTED_EXTERNAL_CONTENT" }, true);
+  }
+  // Build compact egress audit block (F11)
+  const egressBlock = {
+    profile: egressResult.profile,
+    provider: egressResolution.type,
+    proxy_id: egressResolution.type === "proxy" ? (egressResolution as any).proxy_id ?? null : null,
+  };
+
   const cacheTTL = params.cache_ttl_seconds ?? 300; // default 5 min cache
-  const ck = cacheTTL > 0 ? fetchCacheKey(params as any) : null;
+  const ck = cacheTTL > 0 ? fetchCacheKey({ ...params, egress_profile: egressResult.profile } as any) : null;
 
   // ── Cache hit check ──────────────────────────────────────────────────────
   if (ck) {
     const cached = fetchCache.get(ck);
     if (cached && (Date.now() - cached.cachedAt) < cached.ttlMs) {
       const age = Math.round((Date.now() - cached.cachedAt) / 1000);
-      // shallow clone + inject cache metadata
+      // shallow clone + inject cache metadata + egress block (F11)
       const payload: any = typeof cached.data === "object" && cached.data !== null
         ? { ...cached.data } : { content: cached.data };
       payload._cache = { hit: true, age_seconds: age, ttl_seconds: cacheTTL, key: ck };
+      payload.egress = egressBlock;
       return payload;
     }
   }
@@ -1134,6 +1155,7 @@ async function executeFetch(params: {
         result_count: results.length,
         total_available: data.results?.length || 0,
         results,
+        egress: egressBlock,
       });
       if (ck) fetchCache.set(ck, { data: result, cachedAt: Date.now(), ttlMs: cacheTTL * 1000 });
       return result;
@@ -1225,6 +1247,7 @@ async function executeFetch(params: {
       next_start_index: effectiveStart + effectiveMax < totalChars ? effectiveStart + effectiveMax : null,
       trust_status: "UNTRUSTED_EXTERNAL_CONTENT",
       injection_scan: injectionScan,
+      egress: egressBlock,
       ...metadata,
     };
 
@@ -1332,7 +1355,15 @@ export function registerFetchTools(server: McpServer): void {
       scan_injection: z.boolean().default(true).describe("Scan for prompt-injection patterns"),
       disable_readability: z.boolean().default(false).describe("Skip Readability extraction, use basic stripping"),
       max_response_bytes: z.number().default(5_000_000).describe("Max response body size in bytes (SSRF protection)"),
-      cache_ttl_seconds: z.number().min(0).max(3600).default(300).describe("Cache TTL in seconds (0 = no cache, default 300, max 3600). Cached by sha256(url|query|mode). L1/L2 ephemeral (process memory)."),
+      cache_ttl_seconds: z.number().min(0).max(3600).default(300).describe("Cache TTL in seconds (0 = no cache, default 300, max 3600). Cached by sha256(url|query|mode|egress_profile). L1/L2 ephemeral (process memory)."),
+      egress_profile: z
+        .enum(["default", "direct", "mubeng", "corp-proxy", "tor"])
+        .default("default")
+        .describe(
+          "Egress profile for outbound HTTP. 'default'/'direct' = direct connect. " +
+            "'mubeng'/'corp-proxy'/'tor' = future proxy actuators (currently return BLOCKED with reason). " +
+            "The socket is forged; actuators attach when needed.",
+        ),
     }),
   }, async (params) => {
     return executeFetch(params);
