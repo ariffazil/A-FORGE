@@ -282,7 +282,10 @@ export function actMutationGateHealth(
 }
 
 /**
- * Verify ACT locally (no arifOS roundtrip).
+ * Verify ACT locally (no arifOS roundtrip) — CANONICAL cross-domain verifier.
+ *
+ * Handles the arifOS kernel wire format (act_v1.<b64url(json)>.<hmac_hex16>)
+ * exactly. Exported as the bridge entry point for A-FORGE (see actBridge.ts).
  *
  * Canonical wire format (arifOS session.py _sign_session_payload):
  *   <base64url(payload_json)>.<hmac_hex_trunc16>
@@ -300,7 +303,7 @@ export function actMutationGateHealth(
  * Verification order: format → prefix → HMAC signature → expiry → actor → authority.
  * Any failure returns {ok:false} BEFORE claims are parsed.
  */
-function verifyLocalAct(
+export function verifyLocalAct(
   sct: string,
   opts: { expectedActor?: string | null; requiredAuthority?: string },
 ): SctGateResult | null {
@@ -435,7 +438,7 @@ export async function verifyFederationAct(
     return {
       ok: false,
       error: "ACT_MALFORMED",
-      message: `ACT does not match sct_v1 shape: ${sct.slice(0, 24)}...`,
+      message: `ACT does not match sct_v1|act_v1 shape: ${sct.slice(0, 24)}...`,
     };
   }
 
