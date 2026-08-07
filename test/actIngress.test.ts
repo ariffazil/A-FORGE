@@ -1,5 +1,5 @@
 /**
- * SCT ingress — multi-source conflict + production lockout.
+ * ACT ingress — multi-source conflict + production lockout.
  * Seal-A conditions 2 & 3.
  * P0 FIX (2026-07-29): HMAC signature verification tests added.
  */
@@ -8,15 +8,15 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import * as crypto from "crypto";
 import {
-  extractSctFromCall,
+  extractActFromCall,
   extractSctFromArgs,
   gateToolIngress,
-  sctMutationGateHealth,
-  assertSctMutationGateOrExit,
+  actMutationGateHealth,
+  assertActMutationGateOrExit,
   canonicalizeActor,
-} from "../src/infrastructure/governance/sctIngress.js";
+} from "../src/infrastructure/governance/actIngress.js";
 
-// Real SCT tokens for HMAC verification tests — minted with the same
+// Real ACT tokens for HMAC verification tests — minted with the same
 // algorithm as arifOS session.py _sign_session_payload():
 //   json.dumps(payload, sort_keys=True, separators=(",", ":"))
 //   → url-safe base64 (strip padding) → HMAC-SHA256 → hex[:16]
@@ -64,20 +64,20 @@ const VALID_TOKEN = mintTestSct(VALID_CLAIMS);
 const TOK_A = "sct_v1.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const TOK_B = "sct_v1.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
-describe("extractSctFromCall — multi-source", () => {
+describe("extractActFromCall — multi-source", () => {
   it("ABSENT when no token", () => {
-    const e = extractSctFromCall({});
+    const e = extractActFromCall({});
     assert.equal(e.status, "ABSENT");
   });
 
   it("PRESENT when single source", () => {
-    const e = extractSctFromCall({ session_token: TOK_A });
+    const e = extractActFromCall({ session_token: TOK_A });
     assert.equal(e.status, "PRESENT");
     if (e.status === "PRESENT") assert.equal(e.token, TOK_A);
   });
 
   it("PRESENT when identical tokens across sources", () => {
-    const e = extractSctFromCall(
+    const e = extractActFromCall(
       { session_token: TOK_A, sct: TOK_A, _meta: { sct: TOK_A } },
       { headers: { "X-ArifOS-SCT": TOK_A, Authorization: `Bearer ${TOK_A}` } },
     );
@@ -87,7 +87,7 @@ describe("extractSctFromCall — multi-source", () => {
   });
 
   it("AMBIGUOUS when distinct tokens conflict", () => {
-    const e = extractSctFromCall(
+    const e = extractActFromCall(
       { session_token: TOK_A },
       { headers: { "X-ArifOS-SCT": TOK_B } },
     );
@@ -99,7 +99,7 @@ describe("extractSctFromCall — multi-source", () => {
   });
 
   it("AMBIGUOUS when args.sct != args.session_token", () => {
-    const e = extractSctFromCall({ session_token: TOK_A, sct: TOK_B });
+    const e = extractActFromCall({ session_token: TOK_A, sct: TOK_B });
     assert.equal(e.status, "AMBIGUOUS");
   });
 
@@ -118,15 +118,15 @@ describe("gateToolIngress — AMBIGUOUS reject", () => {
     );
     assert.equal(r.ok, false);
     if (!r.ok) {
-      assert.equal(r.error, "SCT_AMBIGUOUS");
+      assert.equal(r.error, "ACT_AMBIGUOUS");
       assert.ok(r.extraction);
     }
   });
 });
 
-describe("sctMutationGateHealth + production lockout", () => {
+describe("actMutationGateHealth + production lockout", () => {
   it("enforced=true bypass_profile=none when unset", () => {
-    const h = sctMutationGateHealth({
+    const h = actMutationGateHealth({
       NODE_ENV: "production",
       AF_FORGE_ENV: "production",
     } as NodeJS.ProcessEnv);
@@ -136,16 +136,16 @@ describe("sctMutationGateHealth + production lockout", () => {
   });
 
   it("dev bypass allowed only non-production", () => {
-    const h = sctMutationGateHealth({
+    const h = actMutationGateHealth({
       NODE_ENV: "development",
-      FORGE_SCT_REQUIRE_MUTATE: "0",
+      FORGE_ACT_REQUIRE_MUTATE: "0",
     } as NodeJS.ProcessEnv);
     assert.equal(h.enforced, false);
     assert.equal(h.bypass_profile, "dev");
   });
 
-  it("assertSctMutationGateOrExit does not throw when enforced", () => {
-    const r = assertSctMutationGateOrExit({
+  it("assertActMutationGateOrExit does not throw when enforced", () => {
+    const r = assertActMutationGateOrExit({
       NODE_ENV: "production",
       AF_FORGE_ENV: "production",
     } as NodeJS.ProcessEnv);
@@ -200,7 +200,7 @@ describe("canonicalizeActor — identity normalisation", () => {
 });
 
 // ── HMAC Signature Verification Tests ── (P0 FIX 2026-07-29)
-describe("SCT HMAC signature verification", () => {
+describe("ACT HMAC signature verification", () => {
   it("valid HMAC-signed token is accepted", () => {
     // Token minted with the same secret should pass all checks
     assert.ok(VALID_TOKEN.startsWith("sct_v1."));
@@ -235,7 +235,7 @@ describe("SCT HMAC signature verification", () => {
     );
     assert.equal(r.ok, false);
     if (!r.ok) {
-      const validErrors = ["ERR_SCT_MALFORMED", "SCT_MALFORMED", "ERR_SCT_SIGNATURE_INVALID", "SCT_INVALID", "ARIFOS_UNREACHABLE"];
+      const validErrors = ["ERR_ACT_MALFORMED", "ACT_MALFORMED", "ERR_ACT_SIGNATURE_INVALID", "ACT_INVALID", "ARIFOS_UNREACHABLE"];
       assert.ok(
         validErrors.includes(r.error),
         `Expected one of ${validErrors.join("/")}, got ${r.error}: ${r.message}`,
@@ -356,7 +356,7 @@ describe("SCT HMAC signature verification", () => {
     assert.equal(canonicalizeActor("Arif-Fazil"), "ariffazil");
   });
 
-  it("duplicate conflicting SCTs are rejected", async () => {
+  it("duplicate conflicting ACTs are rejected", async () => {
     const r = await gateToolIngress(
       "forge_execute",
       {
@@ -368,7 +368,7 @@ describe("SCT HMAC signature verification", () => {
     );
     // AMBIGUOUS: two different tokens received
     assert.equal(r.ok, false);
-    if (!r.ok) assert.equal(r.error, "SCT_AMBIGUOUS");
+    if (!r.ok) assert.equal(r.error, "ACT_AMBIGUOUS");
   });
 
   it("insufficient authority is rejected", async () => {
@@ -459,7 +459,7 @@ describe("SCT HMAC signature verification", () => {
       { requireSct: true },
     );
     assert.equal(r.ok, false);
-    if (!r.ok) assert.equal(r.error, "ERR_SCT_MALFORMED");
+    if (!r.ok) assert.equal(r.error, "ERR_ACT_MALFORMED");
   });
 
   it("wrong prefix (arifos.v2) returns malformed", async () => {
@@ -471,14 +471,14 @@ describe("SCT HMAC signature verification", () => {
       { requireSct: true },
     );
     assert.equal(r.ok, false);
-    // formatOk rejects non-sct_v1 prefix; error from verifyFederationSct
-    if (!r.ok) assert.ok(r.error === "SCT_MALFORMED" || r.error === "ERR_SCT_MALFORMED");
+    // formatOk rejects non-sct_v1 prefix; error from verifyFederationAct
+    if (!r.ok) assert.ok(r.error === "ACT_MALFORMED" || r.error === "ERR_ACT_MALFORMED");
   });
 
   it("missing ARIFOS_SESSION_SECRET env returns structured HOLD", async () => {
     // Test that fail-closed behavior works when secret is absent.
     // We can't unset the env var in this process, but we verify that
-    // the code path exists by checking verifyLocalSct returns null
+    // the code path exists by checking verifyLocalAct returns null
     // and gates accordingly. The gateToolIngress will then fall through
     // to arifOS roundtrip, which is a valid degradation path.
     // This test verifies the gate itself doesn't crash.
@@ -500,14 +500,14 @@ describe("SCT HMAC signature verification", () => {
     );
     assert.equal(r.ok, false);
     // formatOk rejects wrong segment count; accepts either error code variant
-    if (!r.ok) assert.ok(r.error === "SCT_MALFORMED" || r.error === "ERR_SCT_MALFORMED");
+    if (!r.ok) assert.ok(r.error === "ACT_MALFORMED" || r.error === "ERR_ACT_MALFORMED");
   });
 
   it("rejects when session_token present but requireSct=false and token is valid — skipped path", async () => {
     const r = await gateToolIngress(
       "forge_search", // OBSERVE-class tool
       { session_token: VALID_TOKEN, actor_id: "arif" },
-      { requireSct: false }, // SCT optional
+      { requireSct: false }, // ACT optional
     );
     // Should still verify, but succeed even with valid token
     assert.equal(r.ok, true);

@@ -14,11 +14,11 @@ import { server } from "./core.js";
 import { getConstitutionGate } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
-import { assertSctMutationGateOrExit } from "../../infrastructure/governance/sctIngress.js";
+import { assertActMutationGateOrExit } from "../../infrastructure/governance/actIngress.js";
 
 async function main(): Promise<void> {
-  // Production lockout: FORGE_SCT_REQUIRE_MUTATE=0 is FATAL in production.
-  assertSctMutationGateOrExit(process.env);
+  // Production lockout: FORGE_ACT_REQUIRE_MUTATE=0 is FATAL in production.
+  assertActMutationGateOrExit(process.env);
 
   const memoryContract = getMemoryContract();
 

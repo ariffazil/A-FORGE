@@ -187,7 +187,7 @@ describe("Flow Receipt — Chain Integrity", () => {
     assert.notEqual(r1.signature, r2.signature);
   });
 
-  it("receipt with all optional fields (sct_hash, span_id, parent_span_id) mints correctly", () => {
+  it("receipt with all optional fields (act_hash, span_id, parent_span_id) mints correctly", () => {
     const r = mintReceipt(null, {
       actor_id: "opencode",
       session_id: "SEAL-full",
@@ -196,12 +196,12 @@ describe("Flow Receipt — Chain Integrity", () => {
       step_type: "Seal",
       epistemic_label: "Seal",
       cost_ns: 5_000_000,
-      sct_hash: "sha256:abc123",
+      act_hash: "sha256:abc123",
       span_id: "span-001",
       parent_span_id: "span-root",
     });
 
-    assert.equal(r.sct_hash, "sha256:abc123");
+    assert.equal(r.act_hash, "sha256:abc123");
     assert.equal(r.span_id, "span-001");
     assert.equal(r.parent_span_id, "span-root");
     assert.ok(r.signature.length > 0);

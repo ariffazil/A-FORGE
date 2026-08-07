@@ -44,7 +44,7 @@ import { visionAnalyze } from "../../infrastructure/tools/visionAnalyze.js";
 import { domLinter } from "../../infrastructure/tools/domLinter.js";
 import { getMcpPolicyGate } from "../../domain/governance/McpPolicyGate.js";
 import { enforceMcpFloor, floorErrorResponse } from "../../domain/governance/mcpFloorEnforcer.js";
-import { gateToolIngress } from "../../infrastructure/governance/sctIngress.js";
+import { gateToolIngress } from "../../infrastructure/governance/actIngress.js";
 import {
   registerFilesystemTools,
   registerPostgresTools,
@@ -101,7 +101,7 @@ import {
   type SimulationRequest,
   type PredictionResult,
 } from "../../domain/governance/preActionSimulation.js";
-import { validateSession, registerSession, setKernelVerifier } from "../../domain/session/sessionGate.js";
+import { validateSession, registerSession, setKernelVerifier, storeSessionAct, getSessionAct } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
@@ -481,8 +481,9 @@ const GOVERNANCE_FIELDS = {
   session_token: z
     .string()
     .optional()
-    .describe("arifOS Session Capability Token sct_v1.* (federation SCT gate)"),
-  sct: z.string().optional().describe("Alias for session_token"),
+    .describe("arifOS Arif's Capability Token sct_v1.* (federation ACT gate)"),
+  sct: z.string().optional().describe("Alias for session_token (legacy, use 'act')"),
+  act: z.string().optional().describe("Arif's Capability Token (ACT) — preferred alias for session_token"),
 };
 
 function extendZodSchema(schema: any): any {
@@ -528,9 +529,10 @@ function extendInputSchema(schema: any): any {
         lease_id: { type: "string", description: "Governed lease ID (FORGE 2-B)" },
         session_token: {
           type: "string",
-          description: "arifOS SCT sct_v1.* (federation gate)",
+          description: "arifOS ACT sct_v1.* (federation gate)",
         },
-        sct: { type: "string", description: "Alias for session_token" },
+        sct: { type: "string", description: "Alias for session_token (legacy, use 'act')" },
+        act: { type: "string", description: "Arif's Capability Token (ACT) — preferred alias" },
       },
     };
   }
@@ -573,26 +575,30 @@ const _originalTool = server.tool.bind(server);
       };
     }
 
-    // ── SCT federation gate (2026-07-17) ────────────────────────────────
+    // ── ACT federation gate (2026-07-17) ────────────────────────────────
     // Present token → verify fail-closed. MUTATE/ATOMIC may require SCT
-    // when FORGE_SCT_REQUIRE_MUTATE=1 (default on).
+    // when FORGE_ACT_REQUIRE_MUTATE=1 (default on). P2.1: fallback to legacy FORGE_SCT_REQUIRE_MUTATE.
     const requireSct =
       requiresGovernance(actionClass) &&
-      process.env.FORGE_SCT_REQUIRE_MUTATE !== "0";
-    const sctGate = await gateToolIngress(name, argsObj, {
+      (process.env.FORGE_ACT_REQUIRE_MUTATE ?? process.env.FORGE_SCT_REQUIRE_MUTATE ?? "1") !== "0";
+    // P2.1 ACT Handoff: derive sessionFallbackToken from stored SCT
+    const sessId = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+    const fallbackSct = sessId ? getSessionAct(sessId) : null;
+    const actGate = await gateToolIngress(name, argsObj, {
       requireSct,
       requiredAuthority: requiresGovernance(actionClass) ? "OBSERVE_ONLY" : "OBSERVE_ONLY",
+      sessionFallbackToken: fallbackSct,
     });
-    if (!sctGate.ok) {
+    if (!actGate.ok) {
       return {
         content: [
           {
             type: "text" as const,
             text: JSON.stringify(
               {
-                error: `SCT_GATE: ${sctGate.error}: ${sctGate.message}`,
+                error: `ACT_GATE: ${actGate.error}: ${actGate.message}`,
                 action_class: actionClass,
-                adat_gate: "SCT_REQUIRED",
+                adat_gate: "ACT_REQUIRED",
                 organ: "a-forge",
               },
               null,
@@ -631,7 +637,7 @@ const _originalTool = server.tool.bind(server);
       }
       let lease_id: string | undefined = (typeof argsObj.lease_id === "string") ? argsObj.lease_id : undefined;
       // P2.1 FIX (2026-07-27): Auto-provision local lease when session is valid
-      // but no lease_id provided — fixes SCT_GATE regression where OBSERVE_ONLY
+      // but no lease_id provided — fixes ACT_GATE regression where OBSERVE_ONLY
       // sessions couldn't reach forge_vault because the lease was never minted.
       if (!lease_id && sessionCheck.valid) {
         try {
@@ -731,23 +737,27 @@ const _originalRegisterTool = server.registerTool.bind(server);
       };
     }
 
-    // ── SCT federation gate (registerTool path) ─────────────────────────
+    // ── ACT federation gate (registerTool path) ─────────────────────────
     const requireSctReg =
       requiresGovernance(actionClass) &&
-      process.env.FORGE_SCT_REQUIRE_MUTATE !== "0";
-    const sctGateReg = await gateToolIngress(name, argsObj, {
+      (process.env.FORGE_ACT_REQUIRE_MUTATE ?? process.env.FORGE_SCT_REQUIRE_MUTATE ?? "1") !== "0";
+    // P2.1 ACT Handoff: derive sessionFallbackToken from stored SCT
+    const regSessionId = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+    const regFallbackSct = regSessionId ? getSessionAct(regSessionId) : null;
+    const actGateReg = await gateToolIngress(name, argsObj, {
       requireSct: requireSctReg,
+      sessionFallbackToken: regFallbackSct,
     });
-    if (!sctGateReg.ok) {
+    if (!actGateReg.ok) {
       return {
         content: [
           {
             type: "text" as const,
             text: JSON.stringify(
               {
-                error: `SCT_GATE: ${sctGateReg.error}: ${sctGateReg.message}`,
+                error: `ACT_GATE: ${actGateReg.error}: ${actGateReg.message}`,
                 action_class: actionClass,
-                adat_gate: "SCT_REQUIRED",
+                adat_gate: "ACT_REQUIRED",
                 organ: "a-forge",
               },
               null,
@@ -786,7 +796,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
       }
       let lease_id: string | undefined = (typeof argsObj.lease_id === "string") ? argsObj.lease_id : undefined;
       // P2.1 FIX (2026-07-27): Auto-provision local lease when session is valid
-      // but no lease_id provided — fixes SCT_GATE regression for registerTool path.
+      // but no lease_id provided — fixes ACT_GATE regression for registerTool path.
       if (!lease_id && sessionCheck.valid) {
         try {
           const ttl = 1800;
@@ -1072,7 +1082,7 @@ server.tool(
       + "Returned unchanged as parent_session_id in the response so cross-organ session chains reconstruct. "
       + "B1 fix 2026-07-17 (T7 deliverable #4 propagation)."
     ),
-    session_token: z.string().optional().describe("arifOS SCT for session continuity"),
+    session_token: z.string().optional().describe("arifOS ACT for session continuity"),
     sct: z.string().optional().describe("Alias for session_token"),
     session_id: z.string().optional().describe("arifOS governance session ID (injected by middleware)"),
   },
@@ -1128,6 +1138,12 @@ server.tool(
         }
 	// Register the kernel-born session locally
         const session = registerSession(session_id, actor_id);
+        // P2.1 ACT Handoff: store the ACT alongside the session so downstream
+        // tool calls can inherit it via sessionFallbackToken. Fixes ACT_GATE
+        // regression where autonomous seal paths broke.
+        if (session_token) {
+          storeSessionAct(session_id, session_token);
+        }
         // P0.9: Store arifOS session for Mcp-Session-Id propagation on
         // subsequent callMCP calls. Fixes ::anonymous delegation hole.
         try {
@@ -1181,9 +1197,9 @@ server.tool(
         // P0.1: Bind verified session (per-request map, not global actor).
         // P0.1: Bind verified session (replaces global activeActor).
         // Each request carries session_id → verified session lookup.
-        // P0.5 FIX (2026-07-20): registerVerifiedSession requires SCT for
+        // P0.5 FIX (2026-07-20): registerVerifiedSession requires ACT for
         // cryptographic verification, but forge_session_init is an internal
-        // kernel-bridged path that doesn't carry an SCT. Fall back to legacy
+        // kernel-bridged path that doesn't carry an ACT. Fall back to legacy
         // setActor so downstream MUTATE tools (forge_vault seal, etc.) get
         // FULL authority instead of OBSERVE_ONLY. Without this, the
         // L1_IDENTITY:unverified_client_id gate blocks all session seals.

@@ -108,7 +108,7 @@ export class AmanahLockManager {
     ttlMs = DEFAULT_TTL_MS
   ): Promise<AcquireResult> {
     // HITV v0.2 (2026-07-29): BANGANG #3 FIXED — FORGE_SKIP_AMANAH_LOCK removed.
-    // Only ARIFOS_GATE_TOKEN (SCT-signed capability token) can bypass.
+    // Only ARIFOS_GATE_TOKEN (ACT-signed capability token) can bypass.
     // Plain env string bypass: REMOVED. CI must use ARIFOS_GATE_TOKEN.
     if (process.env.ARIFOS_GATE_TOKEN) {
       const lockId = `amanah-gate-${randomBytes(8).toString("hex")}`;
@@ -215,7 +215,7 @@ export class AmanahLockManager {
 
   async getActiveLock(resourceId: string): Promise<AmanahLockRecord | null> {
     // HITV v0.2 (2026-07-29): BANGANG #4 FIXED — FORGE_SKIP_AMANAH_LOCK removed.
-    // Only ARIFOS_GATE_TOKEN (SCT-signed capability token) can bypass.
+    // Only ARIFOS_GATE_TOKEN (ACT-signed capability token) can bypass.
     if (process.env.ARIFOS_GATE_TOKEN) {
       const now = new Date().toISOString();
       return {

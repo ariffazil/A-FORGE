@@ -27,7 +27,7 @@ import { telemetry } from "./telemetry.js";
 import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpPolicyGate.js";
 import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
-import { assertSctMutationGateOrExit } from "../../infrastructure/governance/sctIngress.js";
+import { assertActMutationGateOrExit } from "../../infrastructure/governance/actIngress.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { validateSession, validateSessionAsync } from "../../domain/session/sessionGate.js";
 import { runP0GateMiddleware, formatGateRejection } from "./p0GateMiddleware.js";
@@ -383,8 +383,8 @@ function toolIsErrorResult(
 
 // ── Session ID generation ──────────────────────────────────────────────
 export async function startMcpServer(transportType: "stdio" | "sse" | "streamable-http" | "http", port?: number): Promise<void> {
-  // Seal-A condition 3: production + FORGE_SCT_REQUIRE_MUTATE=0 → FATAL before bind.
-  assertSctMutationGateOrExit(process.env);
+  // Seal-A condition 3: production + FORGE_ACT_REQUIRE_MUTATE=0 → FATAL before bind.
+  assertActMutationGateOrExit(process.env);
 
   const memoryContract = getMemoryContract();
 
@@ -973,7 +973,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 ? toolArgs.actor_id
                 : (typeof toolArgs?.actorId === "string") ? toolArgs.actorId : undefined;
               // P0.6 BRIDGE FIX (2026-07-29): Use async validation that verifies
-              // SCT tokens with arifOS kernel when session is not in local Map.
+              // ACT tokens with arifOS kernel when session is not in local Map.
               const sessionCheck = callerSession
                 ? await validateSessionAsync(callerSession, callerActor, callerSct)
                 : { valid: false, reason: "SESSION_REQUIRED: No session_id provided for MUTATE-class tool" } as const;

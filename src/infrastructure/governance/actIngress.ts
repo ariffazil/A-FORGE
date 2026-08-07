@@ -1,10 +1,10 @@
 /**
- * Federation SCT ingress gate for A-FORGE.
+ * Federation ACT ingress gate for A-FORGE.
  *
  * Mirrors AAA governance/federation_sct.py:
- *   - Collect ALL SCT candidates from every source
+ *   - Collect ALL ACT candidates from every source
  *   - Identical values → normalize to one token
- *   - Distinct values → SCT_AMBIGUOUS (reject, execute nothing)
+ *   - Distinct values → ACT_AMBIGUOUS (reject, execute nothing)
  *   - Present token → verify via arifOS fail-closed
  *
  * DITEMPA BUKAN DIBERI — Tokens are forged, not assumed.
@@ -15,11 +15,14 @@ import * as fs from "fs";
 import * as path from "path";
 
 const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
-const SCT_DECISION_EVENT_DIR =
-  process.env.SCT_DECISION_EVENT_DIR ||
-  "/root/A-FORGE/forge_work/2026-07-17/sct_decision_events";
-const SCT_TIMEOUT_MS = Number(process.env.ARIFOS_SCT_TIMEOUT_MS || "2500");
-const SCT_RE = /^sct_v1\.[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?$/;
+const ACT_DECISION_EVENT_DIR =
+  process.env.ACT_DECISION_EVENT_DIR ||
+  "/root/A-FORGE/forge_work/2026-07-17/act_decision_events";
+const ACT_TIMEOUT_MS = Number(process.env.ARIFOS_ACT_TIMEOUT_MS || "2500");
+// P2.1 DUAL-ACCEPT (2026-08-07): Transition from SCT to ACT.
+// Accepts both sct_v1.* (legacy) and act_v1.* (new) for one TTL cycle (~8h).
+// After the grace period, drop sct_v1 acceptance.
+const ACT_RE = /^(sct_v1|act_v1)\.[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?$/;
 
 // ── Actor Identity Canonicalization ──────────────────────────────────────
 // Mirrors arifOS _resolve_canonical_actor (session.py:1506).
@@ -103,10 +106,10 @@ function pushCandidate(
 }
 
 /**
- * Collect ALL SCT candidates from args, nested _meta, explicit meta, and headers.
+ * Collect ALL ACT candidates from args, nested _meta, explicit meta, and headers.
  * First-token-wins is FORBIDDEN — conflicts return AMBIGUOUS.
  */
-export function extractSctFromCall(
+export function extractActFromCall(
   args: Record<string, unknown> | null | undefined,
   opts: {
     headers?: Record<string, string> | null;
@@ -118,8 +121,8 @@ export function extractSctFromCall(
 
   const a = args && typeof args === "object" ? args : {};
 
-  // 1. Direct argument keys
-  for (const key of ["session_token", "sct", "arifos_sct"] as const) {
+  // 1. Direct argument keys (P2.1: dual-accept sct + act)
+  for (const key of ["session_token", "sct", "act", "arifos_sct"] as const) {
     const v = a[key];
     if (typeof v === "string" && v.trim()) {
       pushCandidate(sources, unique, v, `arguments.${key}`);
@@ -130,7 +133,7 @@ export function extractSctFromCall(
   const nested = a._meta;
   if (nested && typeof nested === "object") {
     const m = nested as Record<string, unknown>;
-    for (const key of ["sct", "session_token", "arifos_sct"] as const) {
+    for (const key of ["sct", "act", "session_token", "arifos_sct"] as const) {
       const v = m[key];
       if (typeof v === "string" && v.trim()) {
         pushCandidate(sources, unique, v, `arguments._meta.${key}`);
@@ -140,7 +143,7 @@ export function extractSctFromCall(
 
   // 3. Explicit meta
   if (opts.meta && typeof opts.meta === "object") {
-    for (const key of ["sct", "session_token", "arifos_sct"] as const) {
+    for (const key of ["sct", "act", "session_token", "arifos_sct"] as const) {
       const v = opts.meta[key];
       if (typeof v === "string" && v.trim()) {
         pushCandidate(sources, unique, v, `_meta.${key}`);
@@ -163,7 +166,7 @@ export function extractSctFromCall(
     const auth = lower["authorization"] || "";
     if (auth.toLowerCase().startsWith("bearer ")) {
       const token = auth.slice(7).trim();
-      if (token.startsWith("sct_v1.") || token.startsWith("arifos.v1.")) {
+      if (token.startsWith("sct_v1.") || token.startsWith("act_v1.") || token.startsWith("arifos.v1.")) {
         pushCandidate(sources, unique, token, "header.authorization");
       }
     }
@@ -196,41 +199,42 @@ export function extractSctFromCall(
 
 /**
  * Legacy helper — returns single token or null.
- * Prefer extractSctFromCall for conflict detection.
+ * Prefer extractActFromCall for conflict detection.
  * Returns null on ABSENT or AMBIGUOUS (never silently picks first).
  */
 export function extractSctFromArgs(
   args: Record<string, unknown> | null | undefined,
 ): string | null {
-  const ext = extractSctFromCall(args);
+  const ext = extractActFromCall(args);
   if (ext.status === "PRESENT") return ext.token;
   return null;
 }
 
 function formatOk(sct: string): boolean {
-  return sct.length >= 16 && SCT_RE.test(sct);
+  return sct.length >= 16 && ACT_RE.test(sct);
 }
 
 /**
  * Production startup invariant.
- * production + FORGE_SCT_REQUIRE_MUTATE=0 → FATAL (exit before bind).
+ * production + FORGE_ACT_REQUIRE_MUTATE=0 → FATAL (exit before bind).
  */
-export function assertSctMutationGateOrExit(
+export function assertActMutationGateOrExit(
   env: NodeJS.ProcessEnv = process.env,
 ): { required: boolean; enforced: boolean; bypass_profile: "none" | "dev" } {
   const isProduction =
     env.NODE_ENV === "production" ||
     env.AF_FORGE_ENV === "production" ||
     env.AF_PROFILE === "production";
-  const raw = env.FORGE_SCT_REQUIRE_MUTATE;
+  // P2.1 DUAL-ACCEPT: honor both old (FORGE_SCT_REQUIRE_MUTATE) and new (FORGE_ACT_REQUIRE_MUTATE)
+  const raw = env.FORGE_ACT_REQUIRE_MUTATE ?? env.FORGE_SCT_REQUIRE_MUTATE;
   const bypass =
     raw === "0" || String(raw || "").toLowerCase() === "false";
   const enforced = !bypass;
 
   if (isProduction && bypass) {
     console.error(
-      "[FATAL] FORGE_SCT_REQUIRE_MUTATE=0 is forbidden in production. " +
-        "SCT mutation gate must be enforced (set FORGE_SCT_REQUIRE_MUTATE=1 or unset). " +
+      "[FATAL] FORGE_ACT_REQUIRE_MUTATE=0 is forbidden in production. " +
+        "ACT mutation gate must be enforced (set FORGE_ACT_REQUIRE_MUTATE=1 or unset). " +
         `NODE_ENV=${env.NODE_ENV} AF_FORGE_ENV=${env.AF_FORGE_ENV}`,
     );
     process.exit(1);
@@ -243,8 +247,8 @@ export function assertSctMutationGateOrExit(
   };
 }
 
-/** Health payload fragment for sct_mutation_gate (never exits). */
-export function sctMutationGateHealth(
+/** Health payload fragment for act_mutation_gate (never exits). */
+export function actMutationGateHealth(
   env: NodeJS.ProcessEnv = process.env,
 ): {
   required: boolean;
@@ -256,11 +260,12 @@ export function sctMutationGateHealth(
     env.NODE_ENV === "production" ||
     env.AF_FORGE_ENV === "production" ||
     env.AF_PROFILE === "production";
-  const raw = env.FORGE_SCT_REQUIRE_MUTATE;
+  // P2.1 DUAL-ACCEPT
+  const raw = env.FORGE_ACT_REQUIRE_MUTATE ?? env.FORGE_SCT_REQUIRE_MUTATE;
   const bypass = raw === "0" || String(raw || "").toLowerCase() === "false";
   if (isProduction && bypass) {
     // Health path must not exit mid-request if misconfigured at runtime —
-    // report the violation instead. Startup uses assertSctMutationGateOrExit.
+    // report the violation instead. Startup uses assertActMutationGateOrExit.
     return {
       required: true,
       enforced: false,
@@ -277,7 +282,7 @@ export function sctMutationGateHealth(
 }
 
 /**
- * Verify SCT locally (no arifOS roundtrip).
+ * Verify ACT locally (no arifOS roundtrip).
  *
  * Canonical wire format (arifOS session.py _sign_session_payload):
  *   <base64url(payload_json)>.<hmac_hex_trunc16>
@@ -295,18 +300,18 @@ export function sctMutationGateHealth(
  * Verification order: format → prefix → HMAC signature → expiry → actor → authority.
  * Any failure returns {ok:false} BEFORE claims are parsed.
  */
-function verifyLocalSct(
+function verifyLocalAct(
   sct: string,
   opts: { expectedActor?: string | null; requiredAuthority?: string },
 ): SctGateResult | null {
   try {
     // ── 1. Format check: exactly 3 segments ────────────────────────────
     const parts = sct.split(".");
-    if (parts.length !== 3 || parts[0] !== "sct_v1") {
+    if (parts.length !== 3 || (parts[0] !== "sct_v1" && parts[0] !== "act_v1")) {
       // Malformed token — no legacy fallthrough. A token with wrong segment
       // count can never be valid. Return hard error rather than null to
       // prevent arifOS roundtrip on clearly-invalid tokens.
-      return { ok: false, error: "ERR_SCT_MALFORMED", message: `Expected sct_v1.<payload>.<sig> (3 segments), got ${parts.length}` };
+      return { ok: false, error: "ERR_ACT_MALFORMED", message: `Expected sct_v1|act_v1.<payload>.<sig> (3 segments), got ${parts.length}` };
     }
 
     const [_prefix, payloadB64, sigHex] = parts;
@@ -314,7 +319,7 @@ function verifyLocalSct(
     // ── 2. HMAC-SHA256 signature verification (P0 FIX) ─────────────────
     // Reject signatures shorter than 16 hex chars (truncation floor).
     if (!sigHex || sigHex.length < 16) {
-      return { ok: false, error: "ERR_SCT_SIGNATURE_SHORT", message: "HMAC signature too short" };
+      return { ok: false, error: "ERR_ACT_SIGNATURE_SHORT", message: "HMAC signature too short" };
     }
 
     // Canonical wire format: arifOS session.py _sign_session_payload() uses
@@ -324,7 +329,7 @@ function verifyLocalSct(
     // P0.2 (TODO): Upgrade both sides to full 64-char HMAC for 256-bit security.
     const secret = process.env.ARIFOS_SESSION_SECRET;
     if (!secret) {
-      return { ok: false, error: "ERR_SCT_NO_SECRET", message: "ARIFOS_SESSION_SECRET not configured" };
+      return { ok: false, error: "ERR_ACT_NO_SECRET", message: "ARIFOS_SESSION_SECRET not configured" };
     }
     const expectedSig = crypto
       .createHmac("sha256", secret)
@@ -333,7 +338,7 @@ function verifyLocalSct(
       .slice(0, 16); // Match arifOS session.py[:16] — canonical issuer determines truncation
     const receivedSig = sigHex.slice(0, 16); // Accept longer sigs, compare first 16 chars
     if (!crypto.timingSafeEqual(Buffer.from(expectedSig, "ascii"), Buffer.from(receivedSig, "ascii"))) {
-      return { ok: false, error: "ERR_SCT_SIGNATURE_INVALID", message: "HMAC-SHA256 signature mismatch" };
+      return { ok: false, error: "ERR_ACT_SIGNATURE_INVALID", message: "HMAC-SHA256 signature mismatch" };
     }
 
     // ── 3. Decode payload ──────────────────────────────────────────────
@@ -341,22 +346,29 @@ function verifyLocalSct(
     const payloadJson = Buffer.from(payloadB64Std, "base64").toString("utf-8");
     const claims = JSON.parse(payloadJson) as Record<string, unknown>;
 
-    // ── 4. Version check ───────────────────────────────────────────────
-    if (claims.sct_v !== 1) {
-      return { ok: false, error: "SCT_VERSION", message: `Unsupported SCT version: ${claims.sct_v}` };
+    // ── 4. Version check (P2.1: dual-accept sct_v and act_v) ──────────
+    const tokenVersion = (claims.sct_v ?? claims.act_v) as number | undefined;
+    if (tokenVersion !== 1) {
+      return { ok: false, error: "ACT_VERSION", message: `Unsupported ACT version: ${tokenVersion}` };
     }
 
     // ── 5. Expiry check ────────────────────────────────────────────────
     const exp = claims.exp as number | undefined;
     if (exp && Date.now() / 1000 > exp) {
-      return { ok: false, error: "SCT_EXPIRED", message: `Token expired at ${new Date(exp * 1000).toISOString()}` };
+      return { ok: false, error: "ACT_EXPIRED", message: `Token expired at ${new Date(exp * 1000).toISOString()}` };
     }
     const nbf = claims.nbf as number | undefined;
     if (nbf && Date.now() / 1000 < nbf) {
-      return { ok: false, error: "SCT_NOT_YET_VALID", message: `Token not valid before ${new Date(nbf * 1000).toISOString()}` };
+      return { ok: false, error: "ACT_NOT_YET_VALID", message: `Token not valid before ${new Date(nbf * 1000).toISOString()}` };
     }
 
-    // ── 6. Actor canonicalization ──────────────────────────────────────
+    // ── 6. Actor + Delegation binding (P2.1 TOKEN HANDOFF) ─────────────
+    // Decoupled from crypto: signature passed, now we check governance claims.
+    // Three acceptance paths:
+    //   (a) Direct: ACT actor matches the expected caller
+    //   (b) Delegated: ACT was delegated FROM the expected caller (Token Handoff)
+    //   (c) Audience: ACT audience matches the tool domain
+    // Any other mismatch → ERR_ACT_BINDING_INVALID (governance rejection, NOT crypto)
     const rawActor = String(claims.canonical_actor_id || claims.actor || claims.act || "");
     const actor = canonicalizeActor(rawActor);
     const authority = String(claims.auth || claims.authority || "OBSERVE_ONLY");
@@ -364,11 +376,25 @@ function verifyLocalSct(
 
     if (opts.expectedActor) {
       const expected = canonicalizeActor(opts.expectedActor);
-      if (actor !== expected) {
+      const delegatedFrom = claims.delegated_from
+        ? canonicalizeActor(String(claims.delegated_from))
+        : null;
+
+      // Path (a): Direct actor match
+      const directMatch = actor === expected;
+      // Path (b): Delegation — the ACT's delegator matches the caller
+      const delegationMatch = delegatedFrom !== null && delegatedFrom === expected;
+      // Path (c): Audience — ACT was minted for a specific domain
+      const audienceMatch = false; // Reserved for aud claim check (Phase 2)
+
+      if (!directMatch && !delegationMatch && !audienceMatch) {
+        const reason = delegatedFrom !== null
+          ? `ACT actor "${actor}" delegated from "${delegatedFrom}" but caller is "${expected}" — delegation chain broken`
+          : `ACT actor "${actor}" (raw: "${rawActor}") vs caller "${expected}" (raw: "${opts.expectedActor}")`;
         return {
           ok: false,
-          error: "ACTOR_MISMATCH",
-          message: `SCT actor "${actor}" (raw: "${rawActor}") vs caller "${expected}" (raw: "${opts.expectedActor}")`,
+          error: "ERR_ACT_BINDING_INVALID",
+          message: reason,
         };
       }
     }
@@ -379,7 +405,7 @@ function verifyLocalSct(
       return { ok: false, error: "UNKNOWN_AUTHORITY", message: `${authority} / required ${requiredAuthority}` };
     }
     if (RANK.indexOf(authority) < RANK.indexOf(requiredAuthority)) {
-      return { ok: false, error: "INSUFFICIENT_AUTHORITY", message: `SCT ${authority} < required ${requiredAuthority}` };
+      return { ok: false, error: "INSUFFICIENT_AUTHORITY", message: `ACT ${authority} < required ${requiredAuthority}` };
     }
 
     return { ok: true, actor, authority, claims };
@@ -389,12 +415,12 @@ function verifyLocalSct(
 }
 
 /**
- * Verify SCT — local decode first, arifOS roundtrip as fallback.
+ * Verify ACT — local decode first, arifOS roundtrip as fallback.
  * P2.1 fix (2026-07-28): primary path is local. arifOS has no "validate"
  * init mode; calling arif_init(mode="validate") falls through to mode="init"
  * which tries to create a new session — failing on every valid token.
  */
-export async function verifyFederationSct(
+export async function verifyFederationAct(
   sct: string | null | undefined,
   opts: {
     expectedActor?: string | null;
@@ -403,24 +429,24 @@ export async function verifyFederationSct(
 ): Promise<SctGateResult> {
   const requiredAuthority = opts.requiredAuthority || "OBSERVE_ONLY";
   if (!sct) {
-    return { ok: false, error: "SCT_MISSING", message: "No SCT provided" };
+    return { ok: false, error: "ACT_MISSING", message: "No ACT provided" };
   }
   if (!formatOk(sct)) {
     return {
       ok: false,
-      error: "SCT_MALFORMED",
-      message: `SCT does not match sct_v1 shape: ${sct.slice(0, 24)}...`,
+      error: "ACT_MALFORMED",
+      message: `ACT does not match sct_v1 shape: ${sct.slice(0, 24)}...`,
     };
   }
 
   // P2.1: Local decode is the primary path (no arifOS roundtrip needed)
-  const local = verifyLocalSct(sct, opts);
+  const local = verifyLocalAct(sct, opts);
   if (local) return local;
 
   // ── arifOS fallback (for legacy tokens or format drift) ────────────
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), SCT_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), ACT_TIMEOUT_MS);
     const res = await fetch(`${ARIFOS_BASE}/mcp`, {
       method: "POST",
       headers: {
@@ -478,7 +504,7 @@ export async function verifyFederationSct(
     if (!result.valid) {
       return {
         ok: false,
-        error: "SCT_INVALID",
+        error: "ACT_INVALID",
         message: String(result.error || "arifOS rejected SCT"),
       };
     }
@@ -486,8 +512,8 @@ export async function verifyFederationSct(
     if (!claims || typeof claims !== "object") {
       return {
         ok: false,
-        error: "SCT_CLAIMS_MISSING",
-        message: "valid=true without claims — not an SCT receipt",
+        error: "ACT_CLAIMS_MISSING",
+        message: "valid=true without claims — not an ACT receipt",
       };
     }
     const actor = String(claims.actor || claims.actor_id || "");
@@ -497,7 +523,7 @@ export async function verifyFederationSct(
       return {
         ok: false,
         error: "ACTOR_MISMATCH",
-        message: `SCT actor ${actor} does not match caller ${opts.expectedActor}`,
+        message: `ACT actor ${actor} does not match caller ${opts.expectedActor}`,
       };
     }
 
@@ -513,7 +539,7 @@ export async function verifyFederationSct(
       return {
         ok: false,
         error: "INSUFFICIENT_AUTHORITY",
-        message: `SCT authority ${authority} < required ${requiredAuthority}`,
+        message: `ACT authority ${authority} < required ${requiredAuthority}`,
       };
     }
 
@@ -522,7 +548,7 @@ export async function verifyFederationSct(
     return {
       ok: false,
       error: "ARIFOS_UNREACHABLE",
-      message: `arifOS unreachable (${err instanceof Error ? err.message : String(err)}); SCT rejected (fail-closed)`,
+      message: `arifOS unreachable (${err instanceof Error ? err.message : String(err)}); ACT rejected (fail-closed)`,
     };
   }
 }
@@ -530,9 +556,9 @@ export async function verifyFederationSct(
 /**
  * Ingress gate for A-FORGE tool handlers.
  *
- * - Conflicting token sources → SCT_AMBIGUOUS (reject)
- * - SCT present → must verify (fail closed)
- * - requireSct=true and missing → SCT_REQUIRED
+ * - Conflicting token sources → ACT_AMBIGUOUS (reject)
+ * - ACT present → must verify (fail closed)
+ * - requireSct=true and missing → ACT_REQUIRED
  * - otherwise allow (backward-compatible OBSERVE)
  */
 export async function gateToolIngress(
@@ -543,11 +569,11 @@ export async function gateToolIngress(
     requiredAuthority?: string;
     headers?: Record<string, string> | null;
     meta?: Record<string, unknown> | null;
-    /** Fallback SCT token derived from a validated session (P2.1 fix for SCT_GATE regression) */
+    /** Fallback ACT token derived from a validated session (P2.1 fix for ACT_GATE regression) */
     sessionFallbackToken?: string | null;
   } = {},
 ): Promise<SctGateResult | { ok: true; skipped: true }> {
-  const extraction = extractSctFromCall(args, {
+  const extraction = extractActFromCall(args, {
     headers: opts.headers,
     meta: opts.meta,
   });
@@ -558,7 +584,7 @@ export async function gateToolIngress(
 
   if (extraction.status === "AMBIGUOUS") {
     emitDecisionEvent({
-      tool: toolName, decision: "REJECT", reason_code: "SCT_AMBIGUOUS",
+      tool: toolName, decision: "REJECT", reason_code: "ACT_AMBIGUOUS",
       actor_id: actor || undefined, require_sct: true,
       sct_source_count: extraction.source_count,
       sct_unique_tokens: extraction.unique_fingerprints,
@@ -566,10 +592,10 @@ export async function gateToolIngress(
     });
     return {
       ok: false,
-      error: "SCT_AMBIGUOUS",
+      error: "ACT_AMBIGUOUS",
       message:
         `Tool "${toolName}" received ${extraction.unique_fingerprints} distinct ` +
-        `SCT tokens from ${extraction.source_count} sources. ` +
+        `ACT tokens from ${extraction.source_count} sources. ` +
         `All sources must carry the same token. Execution refused.`,
       actor: actor || undefined,
       extraction,
@@ -577,12 +603,12 @@ export async function gateToolIngress(
   }
 
   if (extraction.status === "ABSENT") {
-    // P2.1 FIX (2026-07-27): SCT_GATE regression — when session_token isn't
+    // P2.1 FIX (2026-07-27): ACT_GATE regression — when session_token isn't
     // explicitly passed but a validated session exists, use the session's
-    // SCT as fallback. This restores the autonomous seal path broken when
+    // ACT as fallback. This restores the autonomous seal path broken when
     // arif_init OBSERVE_ONLY tokens stopped being forwarded to forge_vault.
     if (opts.sessionFallbackToken) {
-      const verified = await verifyFederationSct(opts.sessionFallbackToken, {
+      const verified = await verifyFederationAct(opts.sessionFallbackToken, {
         expectedActor: actor,
         requiredAuthority: opts.requiredAuthority || "OBSERVE_ONLY",
       });
@@ -597,35 +623,35 @@ export async function gateToolIngress(
         });
         return verified;
       }
-      // Fallback failed — continue to normal SCT_REQUIRED path
+      // Fallback failed — continue to normal ACT_REQUIRED path
     }
     if (opts.requireSct) {
       emitDecisionEvent({
-        tool: toolName, decision: "REJECT", reason_code: "SCT_REQUIRED",
+        tool: toolName, decision: "REJECT", reason_code: "ACT_REQUIRED",
         actor_id: actor || undefined, require_sct: true,
       });
       return {
         ok: false,
-        error: "SCT_REQUIRED",
+        error: "ACT_REQUIRED",
         message: `Tool "${toolName}" requires session_token (mint via arif_init)`,
         actor: actor || undefined,
         extraction,
       };
     }
     emitDecisionEvent({
-      tool: toolName, decision: "ALLOW", reason_code: "OK_NO_SCT_OBSERVE",
+      tool: toolName, decision: "ALLOW", reason_code: "OK_NO_ACT_OBSERVE",
       actor_id: actor || undefined, require_sct: false,
     });
     return { ok: true, skipped: true };
   }
 
-  const verified = await verifyFederationSct(extraction.token, {
+  const verified = await verifyFederationAct(extraction.token, {
     expectedActor: actor,
     requiredAuthority: opts.requiredAuthority || "OBSERVE_ONLY",
   });
   if (!verified.ok) {
     emitDecisionEvent({
-      tool: toolName, decision: "REJECT", reason_code: verified.error || "SCT_INVALID",
+      tool: toolName, decision: "REJECT", reason_code: verified.error || "ACT_INVALID",
       actor_id: actor || undefined, require_sct: true,
       sct_fingerprint: extraction.sources.length > 0
         ? `sha256:${crypto.createHash("sha256").update(extraction.token).digest("hex").slice(0, 16)}`
@@ -649,12 +675,12 @@ export async function gateToolIngress(
 }
 
 // ── PR4 Decision Event Emitter ────────────────────────────────────────────
-// Writes structured SCT decision events to the same JSONL directory used by
+// Writes structured ACT decision events to the same JSONL directory used by
 // Python organs (GEOX, WELL, WEALTH, arifOS). Format matches
-// AAA/governance/sct_decision_event.py SctDecisionEvent schema v1.
+// AAA/governance/act_decision_event.py SctDecisionEvent schema v1.
 
 interface DecisionEvent {
-  schema: "sct_decision_event.v1";
+  schema: "act_decision_event.v1";
   schema_id: string;
   event_id: string;
   trace_id: string;
@@ -701,12 +727,12 @@ function emitDecisionEvent(opts: {
 }): void {
   try {
     const day = new Date().toISOString().slice(0, 10);
-    const filePath = path.join(SCT_DECISION_EVENT_DIR, `sct_decisions_${day}.jsonl`);
-    fs.mkdirSync(SCT_DECISION_EVENT_DIR, { recursive: true });
+    const filePath = path.join(ACT_DECISION_EVENT_DIR, `act_decisions_${day}.jsonl`);
+    fs.mkdirSync(ACT_DECISION_EVENT_DIR, { recursive: true });
 
     const event: DecisionEvent = {
-      schema: "sct_decision_event.v1",
-      schema_id: "https://arif-fazil.com/schema/sct_decision_event/v1",
+      schema: "act_decision_event.v1",
+      schema_id: "https://arif-fazil.com/schema/act_decision_event/v1",
       event_id: newEventId(),
       trace_id: opts.trace_id || newTraceId(),
       ts: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
@@ -721,7 +747,7 @@ function emitDecisionEvent(opts: {
       sct_fingerprint: opts.sct_fingerprint || "",
       sct_source_count: opts.sct_source_count ?? 0,
       sct_unique_tokens: opts.sct_unique_tokens ?? 0,
-      registry_source: "sctIngress.ts",
+      registry_source: "actIngress.ts",
       registry_known: true,
       extraction_locations: opts.extraction_locations || [],
       meta: {},

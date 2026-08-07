@@ -148,55 +148,57 @@ export function authorityPermits(authority: Authority, actionClass: ActionClass)
   }
 }
 
-// ── SCT (Session Capability Token) — P0.5 (2026-07-19) ──────────────────
+// ── ACT (Arif's Capability Token) — P0.5 (2026-07-19) ──────────────────
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 
 /**
- * SCT wire format: `sct_v1.<base64url(payload)>.<base64url(signature)>`
+ * ACT wire format: `act_v1.<base64url(payload)>.<base64url(signature)>`
+ * (Legacy: `sct_v1.*` accepted during dual-accept transition window)
  * Payload: { actor_id, session_id, issued_at, expiry }
  * Signature: HMAC-SHA256(payload, organSecret) base64url
  *
  * Only arifOS holds the sovereign organ_secret (anchored to
- * did:web:arif-fazil.com#arif-fazil continuity key). Any forged SCT
+ * did:web:arif-fazil.com#arif-fazil continuity key). Any forged ACT
  * without a valid HMAC is rejected — that's the "not format-only" part.
  */
-export interface SCTPayload {
+export interface ACTPayload {
   actor_id: string;
   session_id: string;
   issued_at: number; // Unix ms
   expiry: number;    // Unix ms
 }
 
-/** Mint a fresh SCT for an actor + session. arifOS uses this. */
-export function buildSCT(actorId: string, sessionId: string, organSecret: string, ttlMs = 60 * 60 * 1000): string {
+/** Mint a fresh ACT for an actor + session. arifOS uses this. */
+export function buildACT(actorId: string, sessionId: string, organSecret: string, ttlMs = 60 * 60 * 1000): string {
   const now = Date.now();
-  const payload: SCTPayload = { actor_id: actorId, session_id: sessionId, issued_at: now, expiry: now + ttlMs };
+  const payload: ACTPayload = { actor_id: actorId, session_id: sessionId, issued_at: now, expiry: now + ttlMs };
   const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const sig = createHmac("sha256", organSecret).update(payloadB64).digest("base64url");
-  return `sct_v1.${payloadB64}.${sig}`;
+  return `act_v1.${payloadB64}.${sig}`;
 }
 
-export interface SCTVerifyResult {
+export interface ACTVerifyResult {
   valid: boolean;
   reason?: string;
   expired?: boolean;
-  payload?: SCTPayload;
+  payload?: ACTPayload;
 }
 
 /**
- * Verify an SCT against expected actor_id, session_id, and organ_secret.
+ * Verify an ACT against expected actor_id, session_id, and organ_secret.
  * Returns { valid: false } for any failure (format, signature, expiry, mismatch).
  *
  * SECURITY: signature comparison uses timingSafeEqual to prevent timing attacks.
  */
-export function verifySCT(sct: string, expectedActorId: string, expectedSessionId: string, organSecret: string): SCTVerifyResult {
-  if (!sct.startsWith("sct_v1.")) {
-    return { valid: false, reason: "missing sct_v1 prefix" };
+export function verifyACT(sct: string, expectedActorId: string, expectedSessionId: string, organSecret: string): ACTVerifyResult {
+  // P2.1 DUAL-ACCEPT: accept both sct_v1.* (legacy) and act_v1.* (new)
+  if (!sct.startsWith("sct_v1.") && !sct.startsWith("act_v1.")) {
+    return { valid: false, reason: "missing sct_v1|act_v1 prefix" };
   }
   const parts = sct.split(".");
   if (parts.length !== 3) {
-    return { valid: false, reason: "malformed SCT — expected 3 dot-separated parts" };
+    return { valid: false, reason: "malformed ACT — expected 3 dot-separated parts" };
   }
   const [, payloadB64, sigB64] = parts;
   // Verify signature
@@ -211,26 +213,26 @@ export function verifySCT(sct: string, expectedActorId: string, expectedSessionI
     return { valid: false, reason: "HMAC signature mismatch" };
   }
   // Decode + verify payload
-  let payload: SCTPayload;
+  let payload: ACTPayload;
   try {
     payload = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
   } catch {
     return { valid: false, reason: "payload JSON parse failed" };
   }
   // P0 BOUNDARY FIX (2026-07-29): case-insensitive actor canonicalization.
-  // arifOS kernel mints SCTs with claim key "actor" (lowercase).
+  // arifOS kernel mints ACTs with claim key "actor" (lowercase).
   // A-FORGE historically used "actor_id". Normalize both key and case.
   const sctActorRaw = (payload as any).actor ?? payload.actor_id ?? "";
   const sctActor = String(sctActorRaw).trim().toLowerCase();
   const expectedActor = String(expectedActorId).trim().toLowerCase();
   if (sctActor !== expectedActor) {
-    return { valid: false, reason: `actor mismatch: SCT says "${sctActor}" expected "${expectedActor}" (case-insensitive)` };
+    return { valid: false, reason: `actor mismatch: ACT says "${sctActor}" expected "${expectedActor}" (case-insensitive)` };
   }
   if (payload.session_id !== expectedSessionId) {
-    return { valid: false, reason: `session_id mismatch: SCT says "${payload.session_id}" expected "${expectedSessionId}"` };
+    return { valid: false, reason: `session_id mismatch: ACT says "${payload.session_id}" expected "${expectedSessionId}"` };
   }
   if (Date.now() > payload.expiry) {
-    return { valid: false, expired: true, reason: `SCT expired at ${new Date(payload.expiry).toISOString()}` };
+    return { valid: false, expired: true, reason: `ACT expired at ${new Date(payload.expiry).toISOString()}` };
   }
   return { valid: true, payload };
 }
@@ -253,20 +255,20 @@ export class McpPolicyGate {
 
   /**
    * P0.1 + P0.5 (2026-07-19): Register a verified session with cryptographic
-   * verification via SCT (Session Capability Token).
+   * verification via ACT (Arif's Capability Token).
    *
-   * The SCT is required and is verified against the expected actor_id,
+   * The ACT is required and is verified against the expected actor_id,
    * session_id, and a sovereign organ_secret (HMAC-SHA256). Only arifOS
-   * can mint SCTs (it holds the sovereign continuity key); any forged
+   * can mint ACTs (it holds the sovereign continuity key); any forged
    * token without a valid signature is rejected.
    *
-   * Without an SCT, the session is NOT registered as verified — the
+   * Without an ACT, the session is NOT registered as verified — the
    * caller is treated as client_supplied OBSERVE_ONLY.
    */
   registerVerifiedSession(sessionId: string, actorId: string, sct?: string, organSecret?: string): boolean {
-    // P0.5: SCT is MANDATORY for cryptographic verification.
+    // P0.5: ACT is MANDATORY for cryptographic verification.
     if (!sct) {
-      // Backward compat: setActor() callers don't have SCT yet.
+      // Backward compat: setActor() callers don't have ACT yet.
       // They land in the legacy "__legacy_active" key via setActor().
       return false;
     }
@@ -274,7 +276,7 @@ export class McpPolicyGate {
     if (!secret) {
       return false;
     }
-    const verification = verifySCT(sct, actorId, sessionId, secret);
+    const verification = verifyACT(sct, actorId, sessionId, secret);
     if (!verification.valid) {
       return false;
     }

@@ -191,7 +191,7 @@ class McpTelemetry {
    *   A-FORGE forge_ephemeral → McpTelemetry → arifOS kernel + arifFlow
    *   + local JSONL + journald.
    *
-   * Reads the arifOS SCT from the federation envelope (if available, not
+   * Reads the arifOS ACT from the federation envelope (if available, not
    * expired). Fire-and-forget; failure is silent — local JSONL remains
    * the primary sink. Does NOT add latency to the ephemeral pipeline.
    *
@@ -201,8 +201,8 @@ class McpTelemetry {
    */
   private async _forwardToArifOSKernel(event: AuditEvent): Promise<void> {
     try {
-      // Read the arifOS SCT from the federation envelope (best-effort).
-      // If the file is missing or the SCT is expired, the call goes
+      // Read the arifOS ACT from the federation envelope (best-effort).
+      // If the file is missing or the ACT is expired, the call goes
       // through unauthenticated — arifOS will reject it for MUTATE-class
       // verbs; for arif_observe (OBSERVE-class), it may still accept
       // the call as an anonymous witness event.
@@ -213,7 +213,7 @@ class McpTelemetry {
         const env = JSON.parse(raw) as { session_token?: string; expires_at?: string };
         sct = env.session_token;
         // Soft expiry check: if expires_at is parseable and in the past,
-        // do not send the SCT. The call will likely fail but it is
+        // do not send the ACT. The call will likely fail but it is
         // recorded in the kernel's witness log as an anonymous attempt.
         if (env.expires_at) {
           const exp = Date.parse(env.expires_at);

@@ -132,7 +132,7 @@ function computeConfigHash(deployDir: string): string {
     const envVars = [
       "NODE_ENV", "AF_FORGE_ENV", "AF_FORGE_PORT",
       "AF_FORGE_DEPLOY_ROOT", "AF_FORGE_SOURCE_ROOT",
-      "FORGE_SCT_REQUIRE_MUTATE", "AFORGE_DPOP_MODE",
+      "FORGE_ACT_REQUIRE_MUTATE", "AFORGE_DPOP_MODE",
     ];
     const parts = envVars
       .map((v) => `${v}=${process.env[v] || "unset"}`)

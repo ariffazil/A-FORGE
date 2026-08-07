@@ -10,10 +10,10 @@
  * localhost via Secure MCP Tunnel. Sessions must be explicitly registered
  * through arif_init/forge_session_init OR verified via kernel callback.
  *
- * P1 STATELESS SIMPLIFICATION (2026-08-01): SCT-first validation for
+ * P1 STATELESS SIMPLIFICATION (2026-08-01): ACT-first validation for
  * stateless MCP 2026-07-28. The sct_v1.* token is self-contained
  * (HMAC-SHA256 signed). External callers skip the in-memory Map entirely —
- * their SCT is verified directly against arifOS kernel. The Map remains
+ * their ACT is verified directly against arifOS kernel. The Map remains
  * only for locally-registered sessions (arif_init/forge_session_init
  * in-process registration). This reduces session state entropy and
  * eliminates the Map-as-single-point-of-truth for remote callers.
@@ -21,7 +21,7 @@
  * Authority sources:
  *   1. arif_init → returns session_id → registerSession() [local only]
  *   2. forge_session_init (proxy) → registers sessions via registerSession() [local only]
- *   3. External callers → SCT verification via verifySessionTokenWithKernel() [primary]
+ *   3. External callers → ACT verification via verifySessionTokenWithKernel() [primary]
  *
  * F11 AUTH: Session identity is verified before any sovereign tool access.
  * F1 AMANAH: Sessions auto-expire after TTL (default 1 hour).
@@ -35,6 +35,7 @@
 interface SessionRecord {
   session_id: string;
   actor_id: string;
+  act_token?: string;        // P2.1: ACT stored for sessionFallbackToken handoff
   issued_at: number;
   expires_at: number;
   kernel_verified: boolean;
@@ -151,10 +152,10 @@ export function validateSession(
  * P1 STATELESS SIMPLIFICATION (2026-08-01): Async validation for all callers.
  *
  * Priority order:
- *   1. SCT token verification (self-contained, no state needed) — PRIMARY
+ *   1. ACT token verification (self-contained, no state needed) — PRIMARY
  *   2. Local Map lookup (in-process sessions only) — FALLBACK
  *
- * For stateless MCP 2026-07-28, SCT is the canonical path. The in-memory Map
+ * For stateless MCP 2026-07-28, ACT is the canonical path. The in-memory Map
  * is retained only for locally-registered sessions from arif_init/forge_session_init.
  */
 export async function validateSessionAsync(
@@ -162,25 +163,25 @@ export async function validateSessionAsync(
   actor_id?: string,
   session_token?: string,
 ): Promise<{ valid: true; actor_id: string } | { valid: false; reason: string }> {
-  // ── PATH 1 (PRIMARY): SCT token verification — stateless, self-contained ──
+  // ── PATH 1 (PRIMARY): ACT token verification — stateless, self-contained ──
   // The sct_v1.* token carries its own authority (HMAC-SHA256 signed).
   // No in-memory state needed. Verified directly against arifOS kernel.
   if (session_token && session_id) {
-    const sctVerified = await verifySessionTokenWithKernel(session_token, session_id, actor_id);
-    if (sctVerified.verified) {
-      return { valid: true, actor_id: sctVerified.actor_id };
+    const actVerified = await verifySessionTokenWithKernel(session_token, session_id, actor_id);
+    if (actVerified.verified) {
+      return { valid: true, actor_id: actVerified.actor_id };
     }
-    return { valid: false, reason: `SCT_VERIFY_FAILED: ${sctVerified.reason}` };
+    return { valid: false, reason: `ACT_VERIFY_FAILED: ${actVerified.reason}` };
   }
 
   // ── PATH 2 (FALLBACK): Local Map for in-process sessions ──
   // Only for sessions registered via arif_init/forge_session_init.
-  // External callers without SCT tokens cannot use this path.
+  // External callers without ACT tokens cannot use this path.
   const syncResult = validateSession(session_id);
   if (syncResult.valid) return syncResult;
 
   // ── PATH 3 (LEGACY): Kernel verifier callback ──
-  // Only used when explicitly configured. Superseded by SCT path.
+  // Only used when explicitly configured. Superseded by ACT path.
   if (kernelVerifyFn && session_id) {
     const verified = await kernelVerifyFn(session_id, actor_id);
     if (verified.verified) {
@@ -194,7 +195,7 @@ export async function validateSessionAsync(
 }
 
 /**
- * P0.6 BRIDGE FIX (2026-07-29): Verify an SCT session token with arifOS kernel.
+ * P0.6 BRIDGE FIX (2026-07-29): Verify an ACT session token with arifOS kernel.
  * 
  * The bridge gap: OpenCode binds via arif_init → gets session_token (sct_v1.eyJ...).
  * A-FORGE receives this token in tool calls but has no local session registry entry.
@@ -269,4 +270,31 @@ export function cleanExpiredSessions(): number {
 
 export function getSessionStats(): { active: number } {
   return { active: sessions.size };
+}
+
+/**
+ * P2.1 ACT Handoff (2026-08-07): Store the ACT token alongside the session
+ * so downstream tools can inherit it via sessionFallbackToken.
+ *
+ * When forge_session_init receives an ACT from the kernel, it is stored here.
+ * Later tool calls without an explicit session_token can look up the session's
+ * ACT and use it as a fallback. This closes the ACT_GATE regression where
+ * autonomous seal paths broke when ACTs stopped being forwarded explicitly.
+ *
+ * F1 AMANAH: The ACT is bound to its session. Session expiry auto-invalidates.
+ */
+export function storeSessionAct(session_id: string, act_token: string): void {
+  const record = sessions.get(session_id);
+  if (record) {
+    record.act_token = act_token;
+  }
+}
+
+/**
+ * P2.1 ACT Handoff: Retrieve the stored ACT for a session.
+ * Returns null if no ACT was stored or the session is unknown.
+ */
+export function getSessionAct(session_id: string): string | null {
+  const record = sessions.get(session_id);
+  return record?.act_token ?? null;
 }

@@ -51,8 +51,8 @@ export interface FlowReceipt {
   timestamp: string;
   /** HMAC signature proving authenticated origin */
   signature: string;
-  /** Optional: arifOS SCT used to authenticate this step */
-  sct_hash?: string;
+  /** Optional: arifOS ACT used to authenticate this step */
+  act_hash?: string;
   /** Optional: parent span ID for trace continuity */
   parent_span_id?: string;
   /** Optional: span ID for this step */
@@ -123,7 +123,7 @@ export function mintReceipt(
     cost_ns: number;
     parent_span_id?: string;
     span_id?: string;
-    sct_hash?: string;
+    act_hash?: string;
   },
 ): FlowReceipt {
   const receipt_id = randomUUID();
@@ -140,7 +140,7 @@ export function mintReceipt(
     epistemic_label: params.epistemic_label,
     cost_ns: params.cost_ns,
     timestamp: new Date().toISOString(),
-    sct_hash: params.sct_hash,
+    act_hash: params.act_hash,
     parent_span_id: params.parent_span_id,
     span_id: params.span_id,
   };
@@ -178,7 +178,7 @@ export async function persistReceipt(receipt: FlowReceipt): Promise<FlowReceiptS
       `INSERT INTO flow_receipts (
          receipt_id, previous_receipt_hash, actor_id, session_id,
          trace_id, step_number, step_type, epistemic_label,
-         cost_ns, timestamp, signature, sct_hash,
+         cost_ns, timestamp, signature, act_hash,
          parent_span_id, span_id
        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        ON CONFLICT (receipt_id) DO NOTHING`,
@@ -194,7 +194,7 @@ export async function persistReceipt(receipt: FlowReceipt): Promise<FlowReceiptS
         receipt.cost_ns,
         receipt.timestamp,
         receipt.signature,
-        receipt.sct_hash || null,
+        receipt.act_hash || null,
         receipt.parent_span_id || null,
         receipt.span_id || null,
       ],
@@ -322,7 +322,7 @@ CREATE TABLE IF NOT EXISTS flow_receipts (
   cost_ns               BIGINT DEFAULT 0,
   timestamp             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   signature             TEXT,
-  sct_hash              TEXT,
+  act_hash              TEXT,
   parent_span_id        TEXT,
   span_id               TEXT,
   created_at             TIMESTAMPTZ NOT NULL DEFAULT NOW()

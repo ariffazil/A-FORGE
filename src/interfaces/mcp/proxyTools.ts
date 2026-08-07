@@ -1370,7 +1370,7 @@ export function registerFetchTools(server: McpServer): void {
   }, async (params, extra) => {
     // Thread MCP session context for F11 audit traceability.
     // extra.sessionId is the MCP transport session — connects back to
-    // arifOS session through the SCT ingress middleware.
+    // arifOS session through the ACT ingress middleware.
     return executeFetch({ ...params, _mcp_session_id: extra?.sessionId });
   });
 

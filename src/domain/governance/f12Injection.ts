@@ -67,7 +67,7 @@ const CODE_ACCEPTING_TOOLS = new Set([
   "forge_vault",
   // Governance bridge tools: forge_session_init and forge_kernel proxy
   // session tokens and kernel arguments through arifOS — they have their
-  // own governance layers (SCT gate, kernel auth, lease enforcement).
+  // own governance layers (ACT gate, kernel auth, lease enforcement).
   // F12 SHELL_METACHARS is a false positive on their structured payloads.
   "forge_session_init",
   "forge_kernel",

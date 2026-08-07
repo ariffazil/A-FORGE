@@ -14,7 +14,7 @@
 
 import { describe, it, beforeEach } from "node:test";
 import { strict as assert } from "node:assert";
-import { getMcpPolicyGate, type McpPolicyGate, buildSCT } from "../src/domain/governance/McpPolicyGate.js";
+import { getMcpPolicyGate, type McpPolicyGate, buildACT } from "../src/domain/governance/McpPolicyGate.js";
 import { buildAAE } from "../src/domain/governance/amanahEnvelope.js";
 
 let gate: McpPolicyGate;
@@ -24,8 +24,8 @@ const SESSION_ID = "sess-arif-1";
 
 beforeEach(() => {
   gate = getMcpPolicyGate();
-  // P0.5: SCT-gated registration with cryptographic verification
-  const sct = buildSCT(ACTOR, SESSION_ID, ORGAN_SECRET);
+  // P0.5: ACT-gated registration with cryptographic verification
+  const sct = buildACT(ACTOR, SESSION_ID, ORGAN_SECRET);
   gate.registerVerifiedSession(SESSION_ID, ACTOR, sct, ORGAN_SECRET);
 });
 

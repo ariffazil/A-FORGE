@@ -306,7 +306,7 @@ export class AgentEngine {
     // Constitutional enforcement (primary) happens in arifOS MCP / 888_JUDGE.
     //
     // ── HITV v0.2 (2026-07-29): BANGANG #1,#4 FIXED — env-var bypass removed ──
-    // Only ARIFOS_GATE_TOKEN (SCT-signed capability token) can bypass.
+    // Only ARIFOS_GATE_TOKEN (ACT-signed capability token) can bypass.
     // CI/FORGE_TEST_MODE/FORGE_SKIP_MODEL_GATE string bypasses: REMOVED.
     // CI must use ARIFOS_GATE_TOKEN via GitHub Secrets — no plain env bypass.
     const hasToken = !!process.env.ARIFOS_GATE_TOKEN;
@@ -364,7 +364,7 @@ export class AgentEngine {
     // action-level. Executes BEFORE any plan step touches tools.
     //
     // ── HITV v0.2 (2026-07-29): BANGANG #2 FIXED — env-var bypass removed ──
-    // Only ARIFOS_GATE_TOKEN (SCT-signed capability token) can bypass.
+    // Only ARIFOS_GATE_TOKEN (ACT-signed capability token) can bypass.
     // FORGE_SKIP_PLAN_GOVERNANCE string bypass: REMOVED.
     const tokenSkip = !!process.env.ARIFOS_GATE_TOKEN;
     const skipPlanGovernance = tokenSkip;

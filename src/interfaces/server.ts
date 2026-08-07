@@ -55,9 +55,9 @@ import { callMCP } from "./mcp/client.js";
 import { server as mcpServer } from "./mcp/core.js";
 import { validateLeaseForTool } from "./mcp/forgeTools.js";
 import {
-  assertSctMutationGateOrExit,
-  sctMutationGateHealth,
-} from "../infrastructure/governance/sctIngress.js";
+  assertActMutationGateOrExit,
+  actMutationGateHealth,
+} from "../infrastructure/governance/actIngress.js";
 import { validateSession } from "../domain/session/sessionGate.js";
 import { classifyTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
 import { gateToolByFq } from "../domain/forge/check_verdict.js";
@@ -115,9 +115,9 @@ function ensureOperatorTokenPolicy(): string | undefined {
   return operatorApiToken;
 }
 
-/** Seal-A condition 3: production + FORGE_SCT_REQUIRE_MUTATE=0 → FATAL before bind. */
+/** Seal-A condition 3: production + FORGE_ACT_REQUIRE_MUTATE=0 → FATAL before bind. */
 function ensureSctMutationGatePolicy(): void {
-  assertSctMutationGateOrExit(process.env);
+  assertActMutationGateOrExit(process.env);
 }
 
 export function createApp(): express.Express {
@@ -1052,8 +1052,8 @@ app.get("/health", (_req: Request, res: Response) => {
     // Canonical 7-field health schema (federation convention).
     // A-FORGE does not adjudicate; final authority is always ARIF.
     final_authority: "ARIF",
-    // Seal-A condition 3 — SCT mutation gate status (never exit from /health)
-    sct_mutation_gate: sctMutationGateHealth(process.env),
+    // Seal-A condition 3 — ACT mutation gate status (never exit from /health)
+    act_mutation_gate: actMutationGateHealth(process.env),
   });
 });
 
@@ -1268,7 +1268,7 @@ async function initMcpTransport(): Promise<StreamableHTTPServerTransport | null>
 }
 
 export async function startServer(): Promise<void> {
-  // Production lockout BEFORE bind — SCT mutation bypass is FATAL in production.
+  // Production lockout BEFORE bind — ACT mutation bypass is FATAL in production.
   ensureSctMutationGatePolicy();
   await loadConstitution();
   mcpTransport = await initMcpTransport();
