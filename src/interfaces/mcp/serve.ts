@@ -486,6 +486,10 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           version: "0.1.0",
           commit: BUILD_COMMIT,
           transport: "streamable-http",
+          // F2-fidelity fix (MCP-PROBE-2026-08-08): bridge shares organ identity
+          // with the canonical server. authority_ceiling prevents downstream
+          // agents from misidentifying the bridge's authority tier.
+          authority_ceiling: "777_FORGE",
           sessions: connected ? "active" : "pending",
           stateless_tools: STATELESS_TOOLS.size,
           session: connected ? {
