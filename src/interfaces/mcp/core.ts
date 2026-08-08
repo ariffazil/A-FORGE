@@ -75,6 +75,7 @@ import {
 import { registerGatewayTools } from "./gatewayTools.js";
 import { startupIsomorphismCheck } from "../../domain/isomorphism/isomorphism-check.js";
 import { registerForge8Verbs } from "./forge8Verbs.js";
+import { registerAuthPipeline } from "../../domain/auth_protocol/pipeline.js";
 import { registerShellTools as registerCanonicalShellTools } from "./shell/forgeShell.js";
 import { registerWMTools } from "./wmQueryTools.js";
 import { registerDocumentIngestTool } from "./documentIngest.js";
@@ -2888,6 +2889,11 @@ registerGatewayTools(server);
 // skillstore_sync → tier_bind → docket_prep → execute
 // Each verb has enforced boundaries. forge_execute requires VAULT999 SEAL.
 registerForge8Verbs(server);
+
+// ── AUTH Institutional Protocol: The non-bypassable pipeline ──────────────
+// Contract → Lease → Lock → Sandbox → Evidence → Verify → Judge → Merge → Seal → Ingest
+// AUTH governs transitions, not agents. OBSERVE=free, MUTATE=governed, DEPLOY=sealed.
+registerAuthPipeline(server);
 
 // P2.6 canonical gap fill — forge_git_commit, forge_entropy_sweep, forge_canonize
 import {

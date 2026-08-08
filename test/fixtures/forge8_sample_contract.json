@@ -1,0 +1,18 @@
+{
+  "task_id": "TEST_001",
+  "objective": "Verify FORGE8 pipeline executes correctly with a MUTATE-class contract",
+  "action_class": "MUTATE",
+  "worker_role": "builder",
+  "acceptance_criteria": [
+    "Pipeline reaches INGESTED stage",
+    "All 10 stages complete without error",
+    "Receipt ID is generated"
+  ],
+  "evidence_required": ["diff", "test_output", "receipt"],
+  "merge_policy": "auto",
+  "seal_required": false,
+  "reversible": true,
+  "risk_tier": "low",
+  "target": "/root/A-FORGE/src/domain/forge8/DOCTRINE.md",
+  "requested_by": "ARIF"
+}
