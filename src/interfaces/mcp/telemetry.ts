@@ -90,10 +90,18 @@ class McpTelemetry {
   }
 
   recordInvocation(tool: string): void {
-    this.invocations[tool] = (this.invocations[tool] ?? 0) + 1;
+    // INVARIANT (audit-fix 2026-08-08): invocations only increments at
+    // success/failure paths so the snapshot reads
+    //   invocations == successes + failures
+    // atomically. Previously recordInvocation incremented at call-START
+    // while recordSuccess/recordFailure incremented at call-END, allowing
+    // mid-flight torn reads (e.g. invocations=2 + successes=1 + failures={}).
+    // Now the START increment is a no-op and the END paths carry the count.
+    void tool; // explicit no-op; counter moved to recordSuccess/recordFailure
   }
 
   recordSuccess(tool: string, provider?: string): void {
+    this.invocations[tool] = (this.invocations[tool] ?? 0) + 1;
     this.successes[tool] = (this.successes[tool] ?? 0) + 1;
     if (provider) {
       this.providerUsage[provider] = (this.providerUsage[provider] ?? 0) + 1;
@@ -101,6 +109,7 @@ class McpTelemetry {
   }
 
   recordFailure(tool: string): void {
+    this.invocations[tool] = (this.invocations[tool] ?? 0) + 1;
     this.failures[tool] = (this.failures[tool] ?? 0) + 1;
   }
 

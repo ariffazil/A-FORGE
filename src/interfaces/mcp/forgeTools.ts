@@ -803,7 +803,11 @@ export function registerIsomorphismTools(server: McpServer): void {
         content: [{
           type: "text" as const,
           text: JSON.stringify({
-            status: result.verdict,
+            // W-A1-FIX (2026-08-08): renamed `status` → `verdict` to avoid
+            // collision with the MCP envelope's outer `status` field.
+            // Previously: outer.status="SEAL" + inner.status="MANIFOLD_DRIFT"
+            // — two contradictory verdict-shaped fields in one response (P6 fail).
+            verdict: result.verdict,
             checked_at: result.checkedAt,
             total_pairs: result.total,
             passed: result.passed,
