@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# FORGE DUTY 2: Constitutional Sync — runs 15:00 MYT (07:00 UTC)
+# FORGE DUTY 2: Constitutional Sync — runs 15:00 MYT (07:00 UTC, crontab: 0 7 * * *)
 # Always delivers a compliance brief.
 # Evaluates agents/tools/schemas for Δ, floors, verdict classes, uncertainty tags.
 # F2 TRUTH: every finding labeled OBS/DER.

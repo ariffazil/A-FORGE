@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # FORGE Telegram Notifier — sends messages via 777 FORGE bot (@arifOS_bot)
 # Usage: forge-notify.sh "message text" [parse_mode]
-# F13 SOVEREIGN: sends to Arif's personal chat only.
+# F13 SOVEREIGN: sends to AAA group for Arif's visibility.
 
 set -euo pipefail
 
 TOKEN_FILE="/root/.secrets/tokens/telegram-opencode-bot"
-CHAT_ID="267378578"
+CHAT_ID="-1003753855708"
 
 if [ ! -f "$TOKEN_FILE" ]; then
   echo "[NOTIFY] ERROR: Token file missing: $TOKEN_FILE"
@@ -33,7 +33,7 @@ RESPONSE=$(curl -sf -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
 OK=$(echo "$RESPONSE" | python3 -c "import json,sys; print(json.load(sys.stdin).get('ok', False))" 2>/dev/null || echo "False")
 
 if [ "$OK" = "True" ]; then
-  echo "[NOTIFY] Sent to Arif (${CHAT_ID})"
+  echo "[NOTIFY] Sent to AAA group (${CHAT_ID})"
 else
   echo "[NOTIFY] FAILED to send"
 fi

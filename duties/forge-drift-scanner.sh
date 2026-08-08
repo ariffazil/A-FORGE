@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# FORGE DUTY 1: Drift Scanner — runs 10:00 MYT (02:00 UTC)
+# FORGE DUTY 1: Drift Scanner — runs 10:00 MYT (02:00 UTC, crontab: 0 2 * * *)
 # Silent when clean. Reports only when drift > threshold.
 # F2 TRUTH: every signal labeled OBS (observed from live probe).
 # F4 CLARITY: ΔS ≤ 0 — this report reduces entropy.

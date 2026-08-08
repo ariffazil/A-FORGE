@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# FORGE DUTY 3: Vitality Pulse — runs 23:00 MYT (15:00 UTC)
+# FORGE DUTY 3: Vitality Pulse — runs 23:00 MYT (15:00 UTC, crontab: 0 15 * * *)
 # Nightly forge intelligence summary.
 # Always delivers. Includes: vitality, entropy, contradictions, drift, scars, recommendations.
 # F2 TRUTH: every metric labeled OBS/DER.
