@@ -52,14 +52,42 @@ check_drift "GEOX"    "/root/GEOX"    "/opt/geox/app/.git_commit"    2>/dev/null
 check_drift "AAA"     "/root/AAA"     "/opt/aaa/app/.git_commit"     2>/dev/null || true
 
 # ── 3. PORT DRIFT (unexpected public ports) ─────────────────────────────
-# Known legitimate ports — updated 2026-07-28
-# Federation organs: 8088 7071 7072 7073 8081 18082 18083 18084 3001
-# Telegram: 18086 18090 18093 18094 18095 18096 18789 8787 4096
-# Docker (localhost): 5432 6333 6334 6379 6380 8000 8080 9000 9001 6274 6277
-# Monitoring: 3000 9090 9100 8125 8222 19999 4222
-# Infra: 22 80 443 22888 20241 11434 5001 8100 8001 8082 8083 8090 8094 50443
-# Internal: 3050 3100 3456 4317 51001 18000 18081 18990 9222
+# Known legitimate ports — hardcoded baseline (historical coverage).
+# Augmented at runtime from the federation's port SOT — see section 3.5.
+#   Federation organs: 8088 7071 7072 7073 8081 18082 18083 18084 3001
+#   Telegram: 18086 18090 18093 18094 18095 18096 18789 8787 4096
+#   Docker (localhost): 5432 6333 6334 6379 6380 8000 8080 9000 9001 6274 6277
+#   Monitoring: 3000 9090 9100 8125 8222 19999 4222
+#   Infra: 22 80 443 22888 20241 11434 5001 8100 8001 8082 8083 8090 8094 50443
+#   Internal: 3050 3100 3456 4317 51001 18000 18081 18990 9222
 KNOWN_PORTS="22 53 80 443 3000 3001 3050 3100 3456 4096 4222 4317 5001 51001 5432 6274 6277 6333 6334 6379 6380 7071 7072 7073 8000 8001 8080 8081 8082 8083 8088 8090 8094 8100 8125 8222 8787 8931 9000 9001 9090 9100 9222 11434 18000 18081 18082 18083 18084 18086 18090 18093 18094 18095 18096 18789 18990 19999 20241 22888 50443"
+
+# ── 3.5 FEDERATION PORT SOT (zen-2026-08-06 AUDIT-M2) ───────────────────
+# Augment KNOWN_PORTS from the federation machine-port SOT at
+# /root/AAA/federation/organs.yaml : port_observability block.
+# This prevents false positives on documented dev/edge ports
+# (e.g. Hermes 8444, litellm 4000) that bind publicly by design but
+# do not claim federation authority.
+# Silent fallback if YAML is unavailable — hardcoded list still works.
+SOT_PORTS=$(python3 -c "
+import yaml, sys
+try:
+    with open('/root/AAA/federation/organs.yaml') as f:
+        d = yaml.safe_load(f)
+    obs = d.get('port_observability', {})
+    ports = []
+    for key in ('substrate_ports', 'organ_ports_localhost', 'organ_ports_tailscale', 'infra_ports'):
+        for entry in obs.get(key, []):
+            if isinstance(entry, dict) and 'port' in entry:
+                ports.append(str(entry['port']))
+    for ex in obs.get('sub_process_out_of_scope', {}).get('examples', []):
+        ports.append(str(ex))
+    print(' '.join(ports))
+except Exception:
+    sys.exit(0)
+" 2>/dev/null || true)
+[ -n "$SOT_PORTS" ] && KNOWN_PORTS="$KNOWN_PORTS $SOT_PORTS"
+
 UNKNOWN_PORTS=""
 while IFS= read -r line; do
   addr=$(echo "$line" | awk '{print $4}')
