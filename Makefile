@@ -16,7 +16,23 @@ deploy: build
 	fi; \
 	@GIT_SHA=$$(git rev-parse --short HEAD); \
 	echo "$$GIT_SHA" > /root/A-FORGE/.git_commit; \
+	echo "$$GIT_SHA" > /root/A-FORGE/dist/build-commit.txt; \
 	rsync -av --delete dist/ /opt/a-forge/app/dist/; \
+
+deploy-local: verify
+	@echo "═══ A-FORGE deploy-local (no rsync to /opt/) ═══"
+	@GIT_SHA=$$(git rev-parse --short HEAD); \
+	echo "$$GIT_SHA" > /root/A-FORGE/.git_commit; \
+	echo "$$GIT_SHA" > /root/A-FORGE/dist/build-commit.txt; \
+	systemctl restart a-forge-mcp.service; \
+	sleep 3; \
+	curl -sf http://127.0.0.1:7071/health >/dev/null && echo "✅ A-FORGE :7071 healthy" || echo "❌ A-FORGE :7071 down"; \
+	curl -sf http://127.0.0.1:7072/health >/dev/null && echo "✅ A-FORGE :7072 healthy" || echo "❌ A-FORGE :7072 down"
+
+verify:
+	@echo "verifying authority_ceiling on A-FORGE..."
+	@curl -sf http://127.0.0.1:7071/health | python3 -c "import json,sys;h=json.load(sys.stdin);assert h.get('authority_ceiling'),'authority_ceiling ABSENT';assert h.get('apex_scalars_policy'),'apex_scalars_policy ABSENT';print(f'✅ :7071 authority_ceiling={h[\"authority_ceiling\"]} apex_policy=present')" || echo "❌ :7071 verify failed"
+	@curl -sf http://127.0.0.1:7072/health | python3 -c "import json,sys;h=json.load(sys.stdin);assert h.get('authority_ceiling'),'authority_ceiling ABSENT';print(f'✅ :7072 authority_ceiling={h[\"authority_ceiling\"]}')" || echo "❌ :7072 verify failed"
 	rsync -av package.json /opt/a-forge/app/; \
 	echo "$$GIT_SHA" > /opt/a-forge/app/.git_commit; \
 	systemctl restart a-forge.service a-forge-mcp.service; \
