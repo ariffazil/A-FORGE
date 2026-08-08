@@ -1,0 +1,79 @@
+
+# ┌─ AGENTIC WEB (added 2026-08-01 by 333-AGI / kimi-code/FI-008) ──────────┐
+# │  */5 dynamic-gate   — cheap health check every 5 min                    │
+# │  0 *  agentic-web   — full dry-run cycle every hour (validation only)   │
+# │  LIVE sync runs from deploy-vps.sh (already wired for canon-sync)        │
+# └────────────────────────────────────────────────────────────────────────┘
+*/5 * * * * /root/web-canon/scripts/dynamic-gate.sh > /root/forge_work/site-audit/dynamic-gate.log 2>&1
+0 * * * *   /root/web-canon/scripts/agentic-web.sh   > /root/forge_work/site-audit/agentic-web.log 2>&1
+
+# ┌─ ANTI-BEHAVIORAL-SINK REMEDIATION (2026-08-02 by 333-AGI) ────────┐
+# │  Restored: F11 vault backup, F1 federation backup, F3 witness probe  │
+# └──────────────────────────────────────────────────────────────────────┘
+0 3 * * * /root/arifOS/scripts/cron/vault999-daily-backup.sh >> /var/log/arifos/cron.log 2>&1
+30 3 * * * /root/arifOS/scripts/cron/backup-federation.sh >> /var/log/arifos/cron.log 2>&1
+*/30 * * * * /root/arifOS/scripts/cron/external_witness_probe.py >> /var/log/arifos/cron.log 2>&1
+
+# ┌─ REMAINING CRITICAL CRONS RESTORED (2026-08-02 by 333-AGI) ──────┐
+# │  F12 fomc-tripwire, substrate well/google_fit, F11 sync, F4 pulse   │
+# └──────────────────────────────────────────────────────────────────────┘
+0 8 * * 1-5 /root/arifOS/scripts/cron/fomc-tripwire-trigger.sh >> /var/log/arifos/cron.log 2>&1
+0 */6 * * * /root/WELL/scripts/well_auto_keepalive.py >> /var/log/arifos/cron.log 2>&1
+30 */6 * * * /root/WELL/scripts/google_fit_bridge.py >> /var/log/arifos/cron.log 2>&1
+0 7 * * * /root/A-FORGE/duties/forge-constitutional-sync.sh >> /root/A-FORGE/duties/logs/cron.log 2>&1
+0 15 * * * /root/A-FORGE/duties/forge-vitality-pulse.sh >> /root/A-FORGE/duties/logs/cron.log 2>&1
+
+# ┌─ DRIFT-SCANNER RESTORED (2026-08-02 by 333-AGI / kimi-code/FI-008) ─────┐
+# │  F2 TRUTH: daily 0200 UTC (10:00 MYT) organ-port health probe           │
+# │  F4 CLARITY: silent on clean, reports on drift > threshold             │
+# └────────────────────────────────────────────────────────────────────────┘
+0 2 * * * /root/A-FORGE/duties/forge-drift-scanner.sh >> /root/A-FORGE/duties/logs/cron.log 2>&1
+
+# ┌─ MONTHLY RSI — AGENTIC ZERO-DAY DOCTRINE v1.0.0 ──────────────────────┐
+# │  Cron ID: d26dd96f                                                       │
+# │  Schedule: 1st of each month, 03:07 local                                │
+# │  Action: Re-run zero_day_sentinel against 7×10 matrix + 8 fixtures       │
+# │          + 6-condition gate. Verifies doctrine integrity.                │
+# │  Failure: HOLD + notify F13 (Arif) via Hermes                            │
+# │  Created: 2026-08-02 by 333-AGI (under F13 sovereign directive)          │
+# │  Doctrine: /root/forge_work/2026-08-02/doctrine/AGENTIC_ZERO_DAY_DOCTRINE.md │
+# └──────────────────────────────────────────────────────────────────────────┘
+7 3 1 * * /root/forge_work/2026-08-02/doctrine/zero_day_sentinel.sh >> /var/log/arifos/cron.log 2>&1
+0 7 * * * /root/WEALTH/.venv/bin/python3 /root/WEALTH/internal/ingest/refresh_briefing.py >> /var/log/arifos/briefing-cron.log 2>&1
+
+# WELL machine telemetry collector — restored 2026-08-04 by hermes (was scheduled Jul31-Aug3, lost in crontab edit)
+*/5 * * * * /usr/bin/python3 /root/WELL/scripts/machine_telemetry.py >> /var/log/arifos/cron.log 2>&1
+
+# ┌─ AUTOPILOT AUTO-HEAL TRIGGER (2026-08-04 by kimi-code/FI-008) ──────┐
+# │  Wired per AUTONOMOUS_GOVERNANCE.md §3 (auto-heal table)             │
+# │  Doctrines: F1 reversible (symlinks, restart), F11 audit via logs   │
+# └──────────────────────────────────────────────────────────────────────┘
+*/5 * * * * /root/AAA/skills/scripts/skill-mesh-sync.sh --check >> /root/A-FORGE/logs/autopilot-skill-mesh.log 2>&1
+*/30 * * * * /bin/bash /root/.opencode-worktrees/forge-forge-e992be6b/scripts/federation-auto-remediation.sh >> /root/A-FORGE/logs/autopilot-federation-remediation.log 2>&1
+*/5 * * * * /root/scripts/m6-collect.sh
+*/15 * * * * /root/scripts/fq-probe.sh 2>&1 | logger -t fq-probe
+# SCT autonomous renewal (2026-08-05 by HERMES) — SCT TTL=1h, buffer 30min; renew every 30min
+*/30 * * * * python3 /root/scripts/sct_renew.py >> /root/forge_work/site-audit/sct-renew.log 2>&1
+*/15 * * * * /bin/bash /root/scripts/qwen-free-quota-probe.sh
+*/30 * * * * /root/HERMES/scripts/agentic-intelligence-pulse.sh >> /var/log/arifos/cron.log 2>&1
+
+# ┌─ FORGE_WORK UNSEALED COUNTER (2026-08-05 by 333-AGI / kimi-code/FI-008) ──┐
+# │  T2 build per F13 sovereign directive. Counts unsealed forge_work files.  │
+# │  Alerts when delta > 5 (configurable via UNSEALED_ALERT_THRESHOLD env).    │
+# │  Logs: /root/.local/share/arifos/unsealed-counter.jsonl (always)          │
+# │         /root/.local/share/arifos/unsealed-counter-alerts.log (delta>5)   │
+# │         /var/log/arifos/forge-unsealed-counter.log (cron stdout/stderr)   │
+# └────────────────────────────────────────────────────────────────────────────┘
+*/30 * * * * /root/.arifos/agents/kimi/scripts/forge_unsealed_counter.py >> /var/log/arifos/forge-unsealed-counter.log 2>&1
+*/30 * * * * /root/scripts/unsealed-counter.sh
+*/15 * * * * cd /root/arif-fazil.com/sites/arif-fazil.com && python3 scripts/live-market.py > /dev/null && cp dist/propa/live_prices.json /var/www/html/arif/propa/live_prices.json && cp dist/vitals/live_prices.json /var/www/html/arif/vitals/live_prices.json 2>/dev/null
+
+# ┌─ COMPLETION_PROMISE_VERIFIER (2026-08-06 by 333-AGI) ─────────┐
+# │  Every 5 min: evaluates all active COMPLETION_CONTRACTs          │
+# │  against verification criteria (ΔS≤0, FQ≥0.5, git anchor, LSP) │
+# │  Gates autonomous loop termination — agents do NOT self-certify │
+# └──────────────────────────────────────────────────────────────────┘
+*/5 * * * * /root/scripts/completion-promise-verifier.sh >> /var/log/arifos/cron.log 2>&1
+*/30 * * * * /root/arif-fazil.com/sites/arif-fazil.com/scripts/refresh-institutional.sh >> /var/log/arifos/cron.log 2>&1
+# Commodity JSON-LD reseal — hourly F2 TRUTH freshness (2026-08-07 by 333-AGI)
+15 * * * * /usr/bin/python3 /root/arif-fazil.com/sites/arif-fazil.com/scripts/reseal-commodity-packets.py >> /var/log/arifos/cron.log 2>&1

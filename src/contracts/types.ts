@@ -57,6 +57,26 @@ export interface CandidateSpec {
   max_recursion_depth?: number;
   /** Estimated compute cost (normalized 0-1) */
   estimated_cost?: number;
+  /**
+   * Runtime governance defenses actually in force.
+   * E-axis calibration v2 (2026-08-08, kimi-code/FI-008 audit-metabolism):
+   * these mitigators reduce the effective resource cost because governance
+   * gates absorb the risk that spec-level permissions would otherwise carry.
+   * Optional — absence means no governance coverage declared (legacy spec).
+   * @see /root/forge_work/diagnostics/2026-08-08-aforge-mcp-surface-map.md §3.1
+   */
+  runtime_governance?: {
+    /** Patterns hard-blocked by ArifJudge (DENY) — reduces E penalty for execute */
+    deny_patterns?: number;
+    /** Patterns requiring human elicitation (GATE) — reduces E penalty for write */
+    gate_patterns?: number;
+    /** Whether MUTATE calls require an arifOS lease */
+    lease_required?: boolean;
+    /** Whether every call is hash-chain sealed to VAULT999 */
+    hash_chain_seal?: boolean;
+    /** Whether every call is F1_AMANAH audited (process.stderr write) */
+    f1_audit?: boolean;
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

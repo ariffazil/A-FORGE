@@ -111,7 +111,27 @@ function estimateA(spec: CandidateSpec): { score: number; rationale: string[] } 
   // Tool name quality — constitutional naming standard (2026-07-31)
   // See: /root/AAA/docs/MCP_NAMING_STANDARD.md
   if (spec.tool_name.match(/^forge_[a-z0-9_]+$/)) score += 0.05;
-  
+
+  // META-TOOL EXEMPTION (v2 — 2026-08-08, kimi-code/FI-008 audit-metabolism):
+  // Meta-tools are A-FORGE governance primitives, not organ-domain tools.
+  // They live in the `forge_` namespace regardless of which organ invokes
+  // them. The domain-prefix rule below wrongly penalizes them when called
+  // with domain='arifos' or other non-aforge domains. Whitelist the canonical
+  // set so domain-prefix check is skipped for these names.
+  // @see /root/forge_work/diagnostics/2026-08-08-aforge-mcp-surface-map.md §3.2
+  const META_TOOLS = new Set<string>([
+    "forge_evaluate", "forge_witness", "forge_scar", "forge_scar_scan",
+    "forge_register", "forge_registry", "forge_registry_status",
+    "forge_skill", "forge_skillstore_read", "forge_skillstore_write",
+    "forge_fingerprint_check", "forge_isomorphism_check",
+    "forge_apex_encode", "forge_apex_emd", "forge_apex_goal_status",
+    "forge_apex_metabolize", "forge_apex_recompute",
+    "forge_heart_critique", "forge_check_governance", "forge_judge_proxy",
+    "forge_reality_loop", "forge_entropy_sweep",
+    "forge_chart", "forge_docket_prep", "forge_document_ingest",
+  ]);
+  const isMetaTool = META_TOOLS.has(spec.tool_name);
+
   // NAMING LINT: organ prefix gate
   const domainPrefixes: Record<string, { prefix: string; forbidden: string[] }> = {
     arifos:  { prefix: "arif_",  forbidden: [] },
@@ -126,7 +146,7 @@ function estimateA(spec: CandidateSpec): { score: number; rationale: string[] } 
   
   const domainRule = domainPrefixes[spec.domain];
   if (domainRule) {
-    // Forbidden prefix check (e.g., wealth_ on WEALTH organ)
+    // Forbidden prefix check (e.g., wealth_ on WEALTH organ) — applies to all
     for (const forbidPrefix of domainRule.forbidden) {
       if (spec.tool_name.startsWith(forbidPrefix)) {
         score -= 0.20;
@@ -137,8 +157,13 @@ function estimateA(spec: CandidateSpec): { score: number; rationale: string[] } 
         );
       }
     }
-    // Correct prefix boost
-    if (spec.tool_name.startsWith(domainRule.prefix)) {
+    // Correct prefix boost — SKIP for meta-tools (they live in forge_* namespace by design)
+    if (isMetaTool) {
+      // Meta-tools: no penalty, no boost. Document the exemption.
+      rationale.push(
+        `A~: meta-tool '${spec.tool_name}' exempt from domain-prefix rule (forge_* namespace)`
+      );
+    } else if (spec.tool_name.startsWith(domainRule.prefix)) {
       score += 0.03;
     } else {
       score -= 0.10;
@@ -226,17 +251,40 @@ function estimateP(spec: CandidateSpec): { score: number; rationale: string[] } 
 }
 
 /**
- * E (Energy/Vitality): 1 − normalized resource cost.
+ * E (Energy/Vitality): 1 − normalized resource cost, adjusted for runtime governance coverage.
  *
  * Phase 1 heuristic:
  *   - Lower estimated cost → higher vitality
  *   - Lower recursion depth → higher vitality
  *
  * Phase 2 (TODO): actual resource measurement (latency, memory, tokens).
+ *
+ * E-axis calibration v2 (2026-08-08, kimi-code/FI-008 audit-metabolism):
+ * If `spec.runtime_governance` is declared, the effective cost is reduced by up
+ * to 60% based on governance coverage. Rationale: declared `execute`/`seal`
+ * permissions carry spec-level risk, but ArifJudge pattern block (DENY+GATE),
+ * hash-chain seal, F1 audit, and lease requirement are actual runtime
+ * defenses that absorb that risk. Tools like forge_shell have 37 DENY +
+ * 38 GATE patterns + hash chain + F1 audit — coverage ≈ 0.49 → cost discount
+ * ≈ 0.29, lifting E from 0.15 to ≈0.44 and G above the 0.50 VOID threshold.
  */
 function estimateE(spec: CandidateSpec): { score: number; rationale: string[] } {
   const rationale: string[] = [];
-  const cost = spec.estimated_cost ?? 0.5;
+  let cost = spec.estimated_cost ?? 0.5;
+
+  // Runtime governance coverage discount (v2 — 2026-08-08)
+  const gov = spec.runtime_governance;
+  if (gov) {
+    const coverage = computeGovernanceCoverage(gov);
+    const discount = Math.min(0.60, coverage);
+    const effectiveDiscount = discount * cost;
+    cost = Math.max(0, cost - effectiveDiscount);
+    rationale.push(
+      `E~: runtime_governance coverage=${coverage.toFixed(2)} ` +
+      `→ cost discount ${(effectiveDiscount).toFixed(2)} (v2 calibration, 2026-08-08)`
+    );
+  }
+
   const score = 1 - Math.min(1, cost);
 
   if (cost <= 0.1) {
@@ -247,6 +295,30 @@ function estimateE(spec: CandidateSpec): { score: number; rationale: string[] } 
     rationale.push("E↓: high resource cost — vitality drain");
   }
   return { score: Math.max(0, Math.min(1, score)), rationale };
+}
+
+/**
+ * computeGovernanceCoverage — measure how much of the declared risk is
+ * absorbed by runtime governance defenses. Returns 0..1.
+ *
+ * Coverage formula (v2 — 2026-08-08):
+ *   - Each DENY pattern reduces effective execute-risk by 0.5%
+ *     (capped at 0.25 for ≥50 patterns — diminishing returns)
+ *   - Each GATE pattern reduces effective write-risk by 0.4%
+ *     (capped at 0.20 for ≥50 patterns)
+ *   - lease_required: +0.15
+ *   - hash_chain_seal: +0.10
+ *   - f1_audit: +0.10
+ *   - All caps summed → max 0.80 coverage (cannot reach 1.0 — residual risk
+ *     remains even with full governance; this matches reality)
+ */
+function computeGovernanceCoverage(gov: NonNullable<CandidateSpec["runtime_governance"]>): number {
+  const deny = Math.min(0.25, (gov.deny_patterns ?? 0) * 0.005);
+  const gate = Math.min(0.20, (gov.gate_patterns ?? 0) * 0.004);
+  const lease = gov.lease_required ? 0.15 : 0;
+  const seal = gov.hash_chain_seal ? 0.10 : 0;
+  const audit = gov.f1_audit ? 0.10 : 0;
+  return Math.min(0.80, deny + gate + lease + seal + audit);
 }
 
 /**

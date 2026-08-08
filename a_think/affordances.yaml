@@ -36,6 +36,8 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
+# DEPRECATED 2026-08-08 — audit-metabolism — not present in live MCP registry (T4 verified)
+# Removal candidate; original card preserved for git history. See /root/forge_work/diagnostics/2026-08-08-aforge-patches/06-escalation-report.md
 - name: forge_approve
   purpose: ACTUATOR [governance/MUTATE] supervised by kernel 888_JUDGE. Refuses approval — A-FORGE cannot self-authorize.
     Route to arifOS arif_judge_deliberate via forge_ju
@@ -1211,6 +1213,8 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
+# DEPRECATED 2026-08-08 — audit-metabolism — superseded by forge_filesystem(mode=read) — not in live MCP registry (T4 verified)
+# Removal candidate; original card preserved for git history.
 - name: forge_filesystem_read
   purpose: ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. Read a file or list a directory. Stateless HTTP — no lease, no session required.
   affordance_class: fs
@@ -1281,6 +1285,742 @@ tools:
   mutation_class: OBSERVE
   reads:
   - world_model
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PATCH 2026-08-08 — audit-metabolism — 42 new affordance entries
+# T4 verified: independent MCP tools/list probe at :7072 confirmed 115 live tools
+# Pre-patch: 78 entries; live had 115 → 42 missing + 5 stale
+# Author: kimi-code/FI-008 — F2 evidence in /root/forge_work/diagnostics/2026-08-08-aforge-mcp-surface-map.md
+# Reversibility: additive only — pre-existing 78 unchanged
+# ═══════════════════════════════════════════════════════════════════════════════
+- name: forge_apex_emd
+  purpose: "Run EMD (Encode→Metabolize→Decode) validation gate on a goal. Detects drift, scope creep, anomalies. Returns C_dark and ToAC verdict."
+  affordance_class: governance
+  capability_surface: aforge.governance.apex_emd
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_apex_encode
+  purpose: "J-SPACE (NOT G-space). Encode goal → task vector T=[t1..tm] with Jacobian J=∂T/∂G. Returns G_local (is_canonical_g=false) — local actuator estimate only. HARAM: treating G_local as forge_evaluate constitutional G → VOID. Use forge_evaluate for F8 GENIUS gate. High |J|>0.6 tasks recompute on field change (forge_apex_recompute)."
+  affordance_class: governance
+  capability_surface: aforge.governance.apex_encode
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_apex_goal_status
+  purpose: "Inspect current state of a goal: tasks, G, C_dark, Jacobian, and metabolic history."
+  affordance_class: governance
+  capability_surface: aforge.governance.apex_goal_status
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_apex_metabolize
+  purpose: "Run metabolic cycle on a goal: adjust risk/constraint weights based on task outcomes. Failed tasks → risk ×1.2, constraint ×1.2. Returns updated G and C_dark."
+  affordance_class: governance
+  capability_surface: aforge.governance.apex_metabolize
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_apex_recompute
+  purpose: "Recompute task plan when a governance field changes (risk, scope, authority, etc.). Only high-sensitivity tasks (>0.6) are recalculated — stable tasks retain. Returns which tasks need recompute."
+  affordance_class: governance
+  capability_surface: aforge.governance.apex_recompute
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_calendar
+  purpose: "Google Calendar — list upcoming events, create events. Mutations gated by arif_judge. Timezone: Asia/Kuala_Lumpur."
+  affordance_class: google_workspace
+  capability_surface: aforge.google_workspace.calendar
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_canonize
+  purpose: "Promote a draft artifact to canonical state. Copies from source to forge_work/CANON/, computes SHA256, records provenance receipt. Does NOT delete source (F1 AMANAH). Classification: EXECUTE_REVERSIBLE."
+  affordance_class: vault
+  capability_surface: aforge.vault.canonize
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_cool_drift
+  purpose: "Emit a COOLING_RECEIPT with convergence signal (CONVERGING/DIVERGING/STABLE). Routes through seal_chain.js validateCooling() → VAULT999 append. INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK. INV-C4: explicit governance."
+  affordance_class: vault
+  capability_surface: aforge.vault.cool_drift
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_cool_pattern
+  purpose: "Emit a COOLING_RECEIPT from observed failure recurrence. Same pipeline as cool_drift with additional recurrence_count, first_seen, last_seen fields. Routes through seal_chain.js validateCooling() → VAULT999 append."
+  affordance_class: vault
+  capability_surface: aforge.vault.cool_pattern
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_docsgpt
+  purpose: "Governed DocsGPT knowledge query. Routes through constitutional membrane: F2 epistemic tags, F7 confidence cap, receipt-wrapped. Modes: query (OpenAI-compatible), native (DocsGPT /api/answer)."
+  affordance_class: research
+  capability_surface: aforge.research.docsgpt
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_drive
+  purpose: "Google Drive — list recent files, search by name. OBSERVE-class. Read-only connector."
+  affordance_class: google_workspace
+  capability_surface: aforge.google_workspace.drive
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_entropy_sweep
+  purpose: "Measure workspace entropy (ΔS) across the federation. Reports file count, uncommitted changes, temp files, dead processes, and entropy hotspots. Classification: OBSERVE (read-only)."
+  affordance_class: meta
+  capability_surface: aforge.meta.entropy_sweep
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_ephemeral
+  purpose: "Ephemeral Tool Genesis — the capability metabolism engine. Generates TEMPORARY tools from templates for one mission, then dissolves.  9 MODES (default lifecycle: inspect_gap → generate → sandbox_test → invoke → verify → retire):   • inspect_gap        — Detect what capability is missing (use first).   • generate           — Create ephemeral tool from a template.   • sandbox_test       — Verify in bwrap-backed sandbox (fail-closed if no backend).   • invoke             — Execute the ephemeral tool (sandboxed).   • verify             — Independent verification. SELF_CERTIFIED is INADMISSIBLE.                          Accepted methods: known_answer | schema_invariant |                          independent_recompute | domain_witness.   • retire             — Cleanup. Temporary capability is REMOVED unless promoted.   • list_templates     — Browse the template registry.   • list_active        — List currently-active ephemeral tools + cleanup expired.   • propose_promotion  — Mark a template as recommended (after threshold + F13).  EVIDENCE & PROMOTION (P0.3 + F13):   • A tool becomes permanent ONLY if: it survives sandbox_test, invoke, AND     an independent verify, AND the template reaches promotionThreshold, AND     F13 SOVEREIGN ratifies the proposal.   • SELF_CERTIFIED verification is REJECTED as inadmissible for promotion.  CONTAINMENT (P0.4 — fail-closed):   • sandbox_test / invoke use the bwrap-backed ExecutionSandbox.   • No backend → tool state becomes 'failed' (NOT a green skip).  USE WHEN: 'I need to do X but no tool exists' — the federation synthesizes capability on demand. After the mission, retire it. Capability was metabolized, not accumulated."
+  affordance_class: skill
+  capability_surface: aforge.skill.ephemeral
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_fetch
+  purpose: "ACTUATOR · research · OBSERVE. Governed URL evidence intake and self-hosted web search — fetch URLs as markdown, text, JSON, or article extraction, or search via SearxNG. Use when: Governed URL evidence intake + self-hosted web search. Modes: html, markdown, text, json, readable,. Use when: Governed URL evidence intake + self-hosted web search. Modes: html, markdown, text, json, readable,."
+  affordance_class: research
+  capability_surface: aforge.research.fetch
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_git_commit
+  purpose: "Governed git commit with optional pre-commit checks. Delegates to forge_git(mode=commit) under a constitutional gate. F1 AMANAH: verifies working tree before commit. Classification: EXECUTE_HIGH_IMPACT in actionClassifier.ts."
+  affordance_class: git
+  capability_surface: aforge.git.git_commit
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_github_create_or_update_file
+  purpose: "ACTUATOR · git · MUTATE. Create or update a file on GitHub."
+  affordance_class: git
+  capability_surface: aforge.git.github_create_or_update_file
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - tools
+  - system_state
+  - plans
+  writes:
+  - filesystem
+  - external_state
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R3
+
+- name: forge_gmail
+  purpose: "Google Gmail — search, read, draft, send emails through constitutional gate. ACTUATOR · gmail · MUTATE. OBSERVE-class for reads. Every write gated by arif_judge + F1/F3/F13."
+  affordance_class: google_workspace
+  capability_surface: aforge.google_workspace.gmail
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - tools
+  - system_state
+  - plans
+  writes:
+  - filesystem
+  - external_state
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R3
+
+- name: forge_hf_import
+  purpose: "Governed Hugging Face import gate. Validate and import models/datasets through constitutional floors F1-F13. Returns verdict (SEAL/HOLD/VOID) with G-score, kappa-r, entropy pathway, and floor-by-floor results. The gate validates — the kernel seals. Uses arifOS hf_import_gate under constitutional governance."
+  affordance_class: meta
+  capability_surface: aforge.meta.hf_import
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_kernel
+  purpose: "Constitutional kernel proxy. Routes to arifOS at :8088/mcp. Modes: init | observe | think | route | memory | judge | forge | seal. This is the LEGAL constitutional path — not a governance bypass. Requires session ownership for seal/judge/forge modes."
+  affordance_class: governance
+  capability_surface: aforge.governance.kernel
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_parallel
+  purpose: "Spawn N concurrent A2A tasks and collect results. Thin orchestration over existing A2A verbs (message/send, tasks/get, tasks/cancel). Supports fan-out with bounded concurrency, failure policies (collect_all, fail_fast, majority_wins), timeout, and cancellation propagation. Each agent runs isolated. Root agent synthesizes."
+  affordance_class: execute
+  capability_surface: aforge.execute.parallel
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_parallel_cancel
+  purpose: "Cancel all running agents in a parallel task group. Propagates tasks/cancel to each non-terminal member."
+  affordance_class: execute
+  capability_surface: aforge.execute.parallel_cancel
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_parallel_list
+  purpose: "List all task groups with their status. For monitoring and debugging."
+  affordance_class: execute
+  capability_surface: aforge.execute.parallel_list
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_parallel_status
+  purpose: "Query the status of a parallel task group by group_id. Returns member states, outputs, and Δ anchors."
+  affordance_class: execute
+  capability_surface: aforge.execute.parallel_status
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_predict
+  purpose: "ACTUATOR · governance · OBSERVE. Pre-action simulation layer (prediction bridge). GEOX/WEALTH forward models run BEFORE forge_execute. Result attached as evidence to arif_judge via forge_judge_proxy. Build prediction bridge first, then formalize. Domain auto-detects geox vs wealth from proposed_action."
+  affordance_class: governance
+  capability_surface: aforge.governance.predict
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_probe_site
+  purpose: "ACTUATOR · probe · OBSERVE. Probe a web site or cockpit surface for federation resilience and compliance checks. Returns status, static fallbacks, and metadata."
+  affordance_class: probe
+  capability_surface: aforge.probe.probe_site
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_receipt_draft
+  purpose: "ACTUATOR · vault · OBSERVE. Draft a structured compliance receipt for a deployment or change. Output is standard markdown formatted for arifOS VAULT999 verification."
+  affordance_class: vault
+  capability_surface: aforge.vault.receipt_draft
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_runtime_verify
+  purpose: "Verify runtime consistency: compares git source commit vs installed wheel vs import path. Returns MATCH|DRIFT|UNKNOWN. Fail-closed: blocks execution on DRIFT. Read-only (OBSERVE class)."
+  affordance_class: probe
+  capability_surface: aforge.probe.runtime_verify
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_sandbox_auto_evict
+  purpose: "Auto-evict sandbox snapshots older than 24h (MAX_PAUSE_AGE_HOURS). Purges expired snapshots from cold storage."
+  affordance_class: execute
+  capability_surface: aforge.execute.sandbox_auto_evict
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_sandbox_list_paused
+  purpose: "List all paused sandboxes. Filter by actorId. Returns snapshot metadata with age."
+  affordance_class: execute
+  capability_surface: aforge.execute.sandbox_list_paused
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_sandbox_pause
+  purpose: "PAUSE a persistent sandbox — tar upperdir, SHA256 integrity, unmount overlay, cold storage. F1 reversible. F13 lease-gated on resume."
+  affordance_class: execute
+  capability_surface: aforge.execute.sandbox_pause
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_sandbox_resume
+  purpose: "RESUME a paused sandbox — extract tarball, re-mount overlay, lease re-verify gate. F13 HOLD if lease mismatch or >24h age."
+  affordance_class: execute
+  capability_surface: aforge.execute.sandbox_resume
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_scan
+  purpose: "ACTUATOR · probe · OBSERVE. Security scan a file or directory before code execution. Detects dangerous patterns. OBSERVE-class. P2.5 canonical gap fill."
+  affordance_class: meta
+  capability_surface: aforge.meta.scan
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_send_confirm
+  purpose: "ACTUATOR · confirm · MUTATE. Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensitive credentials). F13 consent gate."
+  affordance_class: confirm
+  capability_surface: aforge.confirm.send_confirm
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - tools
+  - system_state
+  - plans
+  writes:
+  - filesystem
+  - external_state
+  external_side_effect: true
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+
+- name: forge_sheets
+  purpose: "Google Sheets — read cell values (A1 notation, not rendering), append rows. Mutations gated by arif_judge. CELL-LEVEL reads with structured rowCount + range echo."
+  affordance_class: google_workspace
+  capability_surface: aforge.google_workspace.sheets
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_skillstore_write
+  purpose: "ACTUATOR · skill · MUTATE. Store artifact with provenance. WRITE mode only. Two-layer retention with SCAR immunization."
+  affordance_class: skill
+  capability_surface: aforge.skill.skillstore_write
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - tools
+  - system_state
+  - plans
+  writes:
+  - filesystem
+  - external_state
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R3
+
+- name: forge_transfer_confirm
+  purpose: "ACTUATOR · confirm · MUTATE. Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until user accept/decline/cancel."
+  affordance_class: confirm
+  capability_surface: aforge.confirm.transfer_confirm
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - tools
+  - system_state
+  - plans
+  writes:
+  - filesystem
+  - external_state
+  external_side_effect: true
+  destructive: true
+  reversible: false
+  requires_human_approval: true
+  min_mode: GOVERN
+  risk_label: R5
+
+- name: forge_verify_timeline
+  purpose: "ACTUATOR · probe · OBSERVE. Verify timeline claims require minimum 2 independent sources. TIMELINE_MIN_SOURCES invariant: No timeline claim with fewer than 2 sources passes. Returns verification verdict, source count, source quality assessment, and gaps."
+  affordance_class: probe
+  capability_surface: aforge.probe.verify_timeline
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_visual_qa
+  purpose: "Constitutional visual QA: W³ tri-witness (vision+linter+sovereign), scar consultation, entropy gate. PASS does not exist — only PASS_CANDIDATE + 888_HOLD → SEALED_DEPLOY. F1/F2/F3/F4/F7."
+  affordance_class: governance
+  capability_surface: aforge.governance.visual_qa
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_visual_seal
+  purpose: "VAULT999 composite seal: validates W³ tri-witness hash and seals. I1-I5 invariants. Routing guard blocks premature seals. F1/F2/F3/F11."
+  affordance_class: governance
+  capability_surface: aforge.governance.visual_seal
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_web_zen
+  purpose: "Thin wrapper around web_zen CLI — agentic site sense/verify/orphan/ephemeral/doctor. Humans use six missions at /missions; agents call this instead of inventing deploy paths. Modes: sense, verify, orphan (dry-run only), ephemeral, doctor, caddy-reload-hint. No production rsync --delete. No Caddy authority self-grant. USE WHEN: site audit, missions 404, vitals proxies, SPA deploy check, ephemeral site parser."
+  affordance_class: meta
+  capability_surface: aforge.meta.web_zen
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_wm_gaps
+  purpose: "World Model gap alerts. Returns high-confidence wrong predictions where the agent was confident but the output diverged significantly. Severity: CRITICAL/HIGH/MEDIUM. Read-only."
+  affordance_class: meta
+  capability_surface: aforge.meta.wm_gaps
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_wm_stats
+  purpose: "World Model statistics dashboard. Returns record counts, per-tool surprise scores, WM eligibility rates, and prediction trending. Read-only."
+  affordance_class: meta
+  capability_surface: aforge.meta.wm_stats
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
   writes: []
   external_side_effect: false
   destructive: false

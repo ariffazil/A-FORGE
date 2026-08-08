@@ -1017,11 +1017,18 @@ app.get("/health", (_req: Request, res: Response) => {
     deployment_drift: deploymentDrift,
     status: isDegradedMode || deploymentDrift ? "degraded" : "healthy",
     apex_scalars: {
-      G: { value: null, status: "UNMEASURED" },
-      C_dark: { value: null, status: "UNMEASURED" },
-      W3: { value: null, status: "UNMEASURED" },
-      h: { value: null, status: "UNMEASURED" },
-      QDF: { value: null, status: "UNMEASURED" },
+      G: { value: null, status: "UNMEASURED", source_required: "arif_think.mode=apex (LLM-bound; A-FORGE has no reasoning backend)", measurement_policy: "executable_only_via_kernel_authority", derivation: "G = (A*P*E*X)^(1/4) — requires kernel-evaluated reasoning" },
+      C_dark: { value: null, status: "UNMEASURED", source_required: "arif_judge verdict stream (deception aggregate)", measurement_policy: "executable_only_via_kernel_authority", derivation: "C_dark counts manipulation signals from judge pipeline" },
+      W3: { value: null, status: "UNMEASURED", source_required: "tri_witness_evidence + constitutional_chain_id from arif_seal", measurement_policy: "executable_only_via_kernel_authority", derivation: "W3 = Nash product of Human × AI × Earth × Verifier ≥ 0.75" },
+      h: { value: null, status: "UNMEASURED", source_required: "well_assess_homeostasis (WELL organ call)", measurement_policy: "delegated_to_domain_organ", derivation: "h = WELL-measured human readiness" },
+      QDF: { value: null, status: "UNMEASURED", source_required: "W3 + constitutional_chain_id", measurement_policy: "derived_from_W3+provenance", derivation: "QDF is canonical only when provenance is sealed" },
+    },
+    // F2-fidelity fix (MCP-PROBE-2026-08-08): UNMEASURED is by-design delegation
+    // to the kernel, not decorative threshold. See R2-CONTRADICTION-REGISTER C11.
+    apex_scalars_policy: {
+      measured_here: [],
+      delegated_to: { G: "arifOS:arif_think", C_dark: "arifOS:arif_judge", W3: "arifOS:arif_seal", h: "WELL:well_assess_homeostasis", QDF: "arifOS:arif_seal+provenance" },
+      replication_strategy: "A-FORGE reads apex_scalars from arifOS /health (per GEOX pattern: source='arifos.health')",
     },
     federation_geometry: {
       status: "enabled",
