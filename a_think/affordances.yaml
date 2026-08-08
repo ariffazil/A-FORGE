@@ -407,6 +407,8 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
+# DEPRECATED 2026-08-08 — audit-metabolism — superseded by forge_github_search_repos — not in live MCP registry (T4 verified)
+# Removal candidate; original card preserved for git history.
 - name: forge_github_search_code
   purpose: ACTUATOR [git/OBSERVE] supervised by kernel 111_OBSERVE. Search GitHub code. OBSERVE-class.
   affordance_class: git
@@ -422,6 +424,8 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
+# DEPRECATED 2026-08-08 — audit-metabolism — superseded by forge_github (mode=search) — not in live MCP registry (T4 verified)
+# Removal candidate; original card preserved for git history.
 - name: forge_github_search_repos
   purpose: ACTUATOR [git/OBSERVE] supervised by kernel 111_OBSERVE. Search GitHub repositories. OBSERVE-class.
   affordance_class: git
@@ -1153,6 +1157,8 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
+# DEPRECATED 2026-08-08 — audit-metabolism — superseded by forge_github_create_or_update_file — not in live MCP registry (T4 verified)
+# Removal candidate; original card preserved for git history.
 - name: forge_github_create_pr
   purpose: ACTUATOR [git/MUTATE] Create GitHub pull request with title, body, head, base, draft flag. Requires lease.
   category: git
