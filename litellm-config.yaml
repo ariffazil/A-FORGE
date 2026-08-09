@@ -246,7 +246,7 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 99
+    order: 1
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 384000
