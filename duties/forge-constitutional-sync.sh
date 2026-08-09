@@ -98,10 +98,19 @@ done < <(find /root/.agents/skills -type l 2>/dev/null)
 DEPR_FILE="/root/AAA/docs/deprecation-registry.json"
 DEPR_COUNT=0
 if [ -f "$DEPR_FILE" ]; then
-  DEPR_COUNT=$(python3 -c "import json; d=json.load(open('$DEPR_FILE')); print(len(d) if isinstance(d, list) else len(d.get('deprecated', d)))" 2>/dev/null || echo "0")
+  # Count UNREVIEWED entries only — reviewed tombstones are healthy history, not warnings.
+  DEPR_COUNT=$(python3 -c "
+import json
+try:
+    d = json.load(open('$DEPR_FILE'))
+    items = d if isinstance(d, list) else d.get('deprecated', d)
+    n = sum(1 for it in items if not it.get('reviewed'))
+    print(n)
+except Exception:
+    print('0')
+" 2>/dev/null || echo "0")
   if [ "$DEPR_COUNT" -gt 0 ]; then
-    FINDINGS="${FINDINGS}  📋 Deprecation registry: ${DEPR_COUNT} entries (review needed)
-"
+    FINDINGS="${FINDINGS}  📋 Deprecation registry: ${DEPR_COUNT} unreviewed entries (review needed)\n"
     WARNINGS=$((WARNINGS + 1))
   fi
 fi
