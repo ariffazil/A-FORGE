@@ -382,7 +382,9 @@ def t1_seal_chain_check() -> dict:
                     lines += 1
                     try:
                         d = json.loads(line)
-                        last_seq = d.get("seq", "?")
+                        if isinstance(d, dict):
+                            last_seq = d.get("seq", last_seq)
+                        # else: bare JSON string/number — skip (chain noise)
                     except json.JSONDecodeError:
                         pass
     except OSError:
