@@ -92,20 +92,6 @@ model_list:
   model_info:
     max_input_tokens: 1000000
     max_output_tokens: 131072
-- model_name: agi-333
-  litellm_params:
-    model: openai/gemini-3.6-flash
-    api_base: https://generativelanguage.googleapis.com/v1beta/openai
-    api_key: os.environ/GEMINI_API_KEY
-    order: 1
-    input_cost_per_token: 3.0e-07
-    output_cost_per_token: 2.5e-06
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 65536
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
 - model_name: asi-555
   litellm_params:
     model: openai/deepseek-v4-flash
@@ -199,20 +185,6 @@ model_list:
     max_input_tokens: 1000000
     max_output_tokens: 131072
     mode: chat
-- model_name: opencode
-  litellm_params:
-    model: openai/gemini-3.6-flash
-    api_base: https://generativelanguage.googleapis.com/v1beta/openai
-    api_key: os.environ/GEMINI_API_KEY
-    order: 1
-    input_cost_per_token: 3.0e-07
-    output_cost_per_token: 2.5e-06
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 65536
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
 - model_name: codex
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -233,20 +205,6 @@ model_list:
     max_input_tokens: 1000000
     max_output_tokens: 131072
     mode: chat
-- model_name: codex
-  litellm_params:
-    model: openai/gemini-3.6-flash
-    api_base: https://generativelanguage.googleapis.com/v1beta/openai
-    api_key: os.environ/GEMINI_API_KEY
-    order: 1
-    input_cost_per_token: 3.0e-07
-    output_cost_per_token: 2.5e-06
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 65536
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
 - model_name: openclaw
   litellm_params:
     model: openai/MiniMax-M3
@@ -420,6 +378,48 @@ model_list:
     max_input_tokens: 0
     max_output_tokens: 0
     mode: image
+- model_name: gemini-flash
+  litellm_params:
+    model: gemini/gemini-3.6-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    supports_vision: true
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    notes: AI Studio native. Single-turn / vision OK. NOT for Hermes multi-tool loops
+      (thought signatures).
+- model_name: gemini-flash
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 2
+  model_info:
+    mode: chat
+    supports_vision: true
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+- model_name: gemini-pro
+  litellm_params:
+    model: gemini/gemini-3.1-pro-preview
+    api_key: os.environ/GEMINI_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    supports_vision: true
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    notes: Deep reasoning / multimodal. Prefer Interactions API for multi-turn tools.
+- model_name: fed/vision
+  litellm_params:
+    model: gemini/gemini-3.6-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 50
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: Gemini vision secondary; prefer for image Q&A not agent tool loops
 litellm_settings:
   callbacks: []
   num_retries: 2
