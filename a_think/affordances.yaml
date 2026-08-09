@@ -1,3 +1,9 @@
+# AFFORDANCE SURFACE NOTE (2026-08-09)
+# Live MCP :7072 reports ~48 stateless tools; this file is broader design surface.
+# External APA bridges (not always in MCP tool list): forge_calendar, forge_drive,
+# forge_gmail, forge_sheets — systemd apa-*-bridge.service when present.
+# Phantom audit: compare to live tools/list before claiming tool exists.
+# DITEMPA BUKAN DIBERI — no fake alignment with unregistered tools.
 _comment: A-FORGE Affordance Cards — federation align v2. Actuators not plugins. Deny via gate/lease/SEAL only.
 tools:
 - name: forge_abort
