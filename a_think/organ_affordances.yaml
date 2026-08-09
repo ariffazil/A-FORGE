@@ -37,14 +37,20 @@ organs:
           - commit_candidate
           - build_artifact
           - deploy_candidate
-        requires_human_ack: true
+        # HITL_REMOVAL (F13 2026-08-09): Reversible actions (modify_code, write_files,
+        # commit_candidate, build_artifact) are autonomous under kernel lease + receipt.
+        # Per-tool destructive protection remains in mcp_guard.py GOVERN mode +
+        # affordance.py HARAM 3 — those gates are NOT removed by this flip.
+        requires_human_ack: false
         requires_receipt: true
 
     hard_laws:
       - A-FORGE may not bypass Kernel.
       - A-FORGE may not execute UNKNOWN affordance.
       - A-FORGE may not mutate without lease.
-      - A-FORGE may not publish, deploy, delete, or commit without explicit approval.
+      - A-FORGE may not publish (external) or delete without apex-judge isolate + kernel verdict.
+      - A-FORGE may not deploy without green tests; deploy = T2 announce-proceed (10s window), not permission ask.
+      - A-FORGE commits = T1 auto (reversible, git-tracked).
       - A-FORGE output is implementation evidence, not constitutional verdict.
 
   - name: arifOS
@@ -141,6 +147,11 @@ organs:
         allowed: true
         actions:
           - vault_write
+        # HITL_REMOVAL (F13 2026-08-09) — KEPT: vault_write is Lane A seal-mode
+        # (VAULT999 immutable append via _vault_append, requires ack_irreversible=True,
+        # classified as c2/irreversible in organ_governance.py). Not Lane B receipt-mode.
+        # Lane A constitutional seals remain F13-bound. Lane B receipts use
+        # forge_vault(mode="receipt") via A-FORGE, which is autonomous.
         requires_human_ack: true
         requires_receipt: true
 
