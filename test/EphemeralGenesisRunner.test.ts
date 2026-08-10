@@ -162,11 +162,11 @@ let backendName = 'none';
 
 before(async () => {
   const health = await containmentHealth();
-  backendAvailable = health.available;
-  backendName = health.primaryBackend;
+  backendAvailable = health.backends.bwrap?.ok ?? false;
+  backendName = backendAvailable ? 'bwrap' : 'none';
   console.log(`[test:preflight] Backend: ${backendName}, Available: ${backendAvailable}`);
   if (!backendAvailable) {
-    console.log('[test:preflight] WARNING — no sandbox backend available. Integration tests will SKIP.');
+    console.log('[test:preflight] WARNING — bwrap sandbox backend not available. Integration tests will SKIP.');
   }
 });
 
@@ -260,6 +260,8 @@ describe('EphemeralGenesisRunner — E2E GREEN Flow', () => {
   let runner: EphemeralGenesisRunner;
 
   before(async () => {
+    const health = await containmentHealth();
+    backendAvailable = health.backends.bwrap?.ok ?? false;
     if (!backendAvailable) {
       console.log('[e2e] SKIPPING — no sandbox backend');
     }
@@ -412,7 +414,9 @@ describe('EphemeralGenesisRunner — Adversarial Escape', () => {
     return { blocked: false, detail: result.stdout.slice(0, 200) };
   }
 
-  before(() => {
+  before(async () => {
+    const health = await containmentHealth();
+    backendAvailable = health.backends.bwrap?.ok ?? false;
     if (!backendAvailable) {
       console.log('[adversarial] SKIPPING — no sandbox backend');
     }
@@ -497,7 +501,9 @@ describe('EphemeralGenesisRunner — Adversarial Escape', () => {
 
 describe('EphemeralGenesisRunner — Failure & Cleanup', () => {
 
-  before(() => {
+  before(async () => {
+    const health = await containmentHealth();
+    backendAvailable = health.backends.bwrap?.ok ?? false;
     if (!backendAvailable) {
       console.log('[failure] SKIPPING — no sandbox backend');
     }

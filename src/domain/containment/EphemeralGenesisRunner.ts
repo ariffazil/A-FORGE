@@ -323,9 +323,11 @@ export class EphemeralGenesisRunner {
     
     // Search for existing tool matching the purpose
     const purpose = this.lease.purpose.toLowerCase();
-    const match = existingTools.find(t => 
-      t.toLowerCase().includes(purpose.split(' ').slice(0, 3).join(' '))
-    );
+    const purposeWords = purpose.split(/\s+/).filter(w => w.length > 2);
+    const match = existingTools.find(t => {
+      const tLower = t.toLowerCase();
+      return purposeWords.some(w => tLower.includes(w)) || tLower.includes(purpose);
+    });
     
     if (match) {
       this.transition('REUSE_CHECKED', `Existing capability found: ${match} — REUSE, do not generate`);
@@ -446,12 +448,16 @@ export class EphemeralGenesisRunner {
       fs.writeFileSync(path.join(inputDir, 'input.json'), testInput, 'utf-8');
 
       // Update policy filesystem to use temp workspace
+      const rwPathsTest: string[] = [...(policy.filesystem.readWrite ?? [])];
+      if (this.workDir) rwPathsTest.push(this.workDir);
+      rwPathsTest.push(inputDir, outputDir);
+
       policy.filesystem = {
         ...policy.filesystem,
-        readOnly: [...policy.filesystem.readOnly, inputDir],
-        readWrite: [...policy.filesystem.readWrite, outputDir],
+        readOnly: [...(policy.filesystem.readOnly ?? [])],
+        readWrite: rwPathsTest,
+        workingDir: inputDir,
       };
-      policy.filesystem.workingDir = inputDir;
 
       // Build command: execute the tool with test input
       const command = this.language === 'python'
@@ -554,12 +560,16 @@ export class EphemeralGenesisRunner {
       }
 
       // Scope sandbox to invocation workspace
+      const rwPathsInvoke: string[] = [...(policy.filesystem.readWrite ?? [])];
+      if (this.workDir) rwPathsInvoke.push(this.workDir);
+      rwPathsInvoke.push(inputDir, outputDir);
+
       policy.filesystem = {
         ...policy.filesystem,
-        readOnly: [...policy.filesystem.readOnly, inputDir],
-        readWrite: [...policy.filesystem.readWrite, outputDir],
+        readOnly: [...(policy.filesystem.readOnly ?? [])],
+        readWrite: rwPathsInvoke,
+        workingDir: inputDir,
       };
-      policy.filesystem.workingDir = inputDir;
 
       const command = this.language === 'python'
         ? `python3 tool${ext} < input.json 2>&1; echo "EXIT:$?"`

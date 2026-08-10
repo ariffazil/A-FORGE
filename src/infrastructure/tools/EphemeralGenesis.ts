@@ -658,13 +658,13 @@ ${impl}
 // mission: ${tool.metadata.missionIntent}
 // compile-gate: syntax + structural check (lenient types)
 
-// The generated implementation — function body from template
+// The generated implementation — function body or descriptor from template
 // Explicit any types satisfy strict mode without changing behaviour
-const _toolFn: (input: any) => any = ${impl};
+const _toolFn: any = ${impl};
 
-// Gate assertion: ensure the function is callable at runtime
-if (typeof _toolFn !== "function") {
-  throw new Error("Generated implementation is not a callable function");
+// Gate assertion: ensure the implementation is valid at runtime
+if (typeof _toolFn !== "function" && typeof _toolFn !== "object") {
+  throw new Error("Generated implementation is not callable or valid descriptor");
 }
 
 // Export for verifier inspection

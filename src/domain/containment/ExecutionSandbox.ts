@@ -90,7 +90,14 @@ export async function createSandbox(
 
   // Verify backend is available
   const sandboxId = `aforge-sandbox-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  const backend = policy.backend === 'auto' ? 'bwrap' : policy.backend;
+  let backend: SandboxBackend = policy.backend === 'auto' ? 'bwrap' : policy.backend;
+
+  if (policy.backend === 'auto') {
+    const health = await containmentHealth();
+    if (health.available) {
+      backend = health.primaryBackend;
+    }
+  }
 
   const backendTest = await testBackend(backend);
   if (!backendTest.ok) {
@@ -108,7 +115,7 @@ export async function createSandbox(
 
   const session: SandboxSession = {
     sandboxId,
-    policy: { ...policy, audit: { ...policy.audit, sessionId: opts?.sessionId, verdictHash: opts?.verdictHash } },
+    policy: { ...policy, backend, audit: { ...policy.audit, sessionId: opts?.sessionId, verdictHash: opts?.verdictHash } },
     backend,
     state: 'READY',
     createdAt: new Date().toISOString(),

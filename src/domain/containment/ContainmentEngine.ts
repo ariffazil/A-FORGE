@@ -35,8 +35,16 @@ export interface ContainmentResult {
 
 // ── Backend Detection ─────────────────────────────────────────
 function detectBackend(): SandboxBackend {
-  try { execSync('bwrap --version', { stdio: 'pipe' }); return 'bwrap'; } catch {}
-  try { execSync('firejail --version', { stdio: 'pipe' }); return 'firejail'; } catch {}
+  try {
+    execSync('bwrap --version', { stdio: 'pipe' });
+    execSync('bwrap --ro-bind / / true', { stdio: 'pipe' });
+    return 'bwrap';
+  } catch {}
+  try {
+    execSync('firejail --version', { stdio: 'pipe' });
+    execSync('firejail --quiet true', { stdio: 'pipe' });
+    return 'firejail';
+  } catch {}
   return 'docker';
 }
 
@@ -189,7 +197,7 @@ function buildFirejailArgs(policy: SandboxPolicy): string[] {
 }
 
 // ── Docker Args Builder ───────────────────────────────────────
-function buildDockerArgs(policy: SandboxPolicy): string[] {
+function buildDockerArgs(policy: SandboxPolicy, command?: string): string[] {
   const args: string[] = ['run', '--rm', '-i'];
 
   if (policy.network?.denyAll) {
@@ -220,7 +228,10 @@ function buildDockerArgs(policy: SandboxPolicy): string[] {
     }
   }
 
-  args.push('node:22-alpine', '/bin/sh', '-c');
+  const image = (command && (command.includes('python3') || command.includes('python')))
+    ? 'python:3.12-alpine'
+    : 'node:22-alpine';
+  args.push(image, '/bin/sh', '-c');
   return args;
 }
 
@@ -260,7 +271,7 @@ export async function executeInSandbox(
         break;
       }
       case 'docker': {
-        const dockerArgs = buildDockerArgs(policy);
+        const dockerArgs = buildDockerArgs(policy, command);
         console.error(`[containment:docker] ${sandboxId} policy=${policy.name} backend=docker`);
         childProcess = spawn('docker', [...dockerArgs, command], {
           stdio: ['pipe', 'pipe', 'pipe'],
@@ -485,14 +496,17 @@ export async function testBackend(backend: SandboxBackend): Promise<{ ok: boolea
     switch (backend) {
       case 'bwrap': {
         const result = execSync('bwrap --version', { encoding: 'utf-8' }).trim();
+        execSync('bwrap --ro-bind / / true', { stdio: 'pipe' });
         return { ok: true, version: result };
       }
       case 'firejail': {
         const result = execSync('firejail --version', { encoding: 'utf-8' }).trim();
+        execSync('firejail --quiet true', { stdio: 'pipe' });
         return { ok: true, version: result };
       }
       case 'docker': {
         const result = execSync('docker --version', { encoding: 'utf-8' }).trim();
+        execSync('docker ps', { stdio: 'pipe' });
         return { ok: true, version: result };
       }
       default:

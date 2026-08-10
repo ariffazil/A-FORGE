@@ -275,6 +275,13 @@
         "rpd": 50,
         "note": "1000rpd after $10 lifetime credit purchase"
       }
+    },
+    "ollama": {
+      "base_url": "http://127.0.0.1:11434/v1",
+      "api_key_env": "OLLAMA_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 30000,
+      "note": "Local inference engine — zero network latency, zero billing"
     }
   },
   "routing": {
