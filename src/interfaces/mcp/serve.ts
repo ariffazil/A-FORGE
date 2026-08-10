@@ -705,7 +705,18 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               responseHeaders["X-Compact-Size"] = `${JSON.stringify({ tools }).length}`;
             }
             res.writeHead(200, responseHeaders);
-            res.end(jsonRpcResult(msgId, { tools }));
+            res.end(jsonRpcResult(msgId, {
+              resultType: "complete",
+              tools,
+              ttlMs: compactLevel >= 1 ? 300_000 : 60_000,  // 5min compact, 1min full
+              cacheScope: "private" as const,
+              _meta: {
+                "io.modelcontextprotocol/serverInfo": {
+                  name: "A-FORGE-MCP",
+                  version: "0.1.0",
+                },
+              },
+            }));
             return;
           }
 
