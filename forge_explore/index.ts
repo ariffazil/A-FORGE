@@ -66,3 +66,17 @@ export type {
   EpistemicLabel,
   TerminationReason,
 } from './state.ts';
+export {
+  setAdapters,
+  getAdapters,
+  MOCK_SEARCH_ADAPTER,
+  MOCK_FETCH_ADAPTER,
+  SIMPLE_EXTRACT_ADAPTER,
+} from './adapters.ts';
+export type {
+  SearchAdapter,
+  FetchAdapter,
+  ExtractAdapter,
+  SearchResult,
+  FetchedPage,
+} from './adapters.ts';

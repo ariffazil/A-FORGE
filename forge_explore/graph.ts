@@ -41,6 +41,8 @@ import type {
   EpistemicLabel,
 } from './state.ts';
 import { DEFAULT_TELEMETRY } from './state.ts';
+import { getAdapters, type SearchResult, type FetchedPage } from './adapters.ts';
+import { evaluateGuardrails } from './guardrails.ts';
 
 // ===========================================================================
 // Type: Node Function
@@ -91,8 +93,24 @@ export async function seedNode(state: ExplorationState): Promise<StateDelta> {
  * F9: Every frontier URL MUST originate from search results — never fabricate.
  */
 export async function searchNode(state: ExplorationState): Promise<StateDelta> {
-  // Phase 1 stub — returns empty frontier with TODO marker
-  const frontier: FrontierEntry[] = [];
+  const adapters = getAdapters();
+  const searchAdapter = adapters.search;
+
+  if (!searchAdapter) {
+    console.warn('[forge_explore:SEARCH] No search adapter configured. Returning empty frontier.');
+    return { frontier: [] };
+  }
+
+  console.log(`[forge_explore:SEARCH] Dispatching query via ${searchAdapter.name}: "${state.seedQuery}"`);
+  const results: SearchResult[] = await searchAdapter.search(state.seedQuery, 10);
+
+  const frontier: FrontierEntry[] = results.map((r) => ({
+    url: r.url,
+    priorityScore: r.priorityScore,
+    sourceNodeId: undefined, // source node created in FETCH
+  }));
+
+  console.log(`[forge_explore:SEARCH] ${frontier.length} results on frontier.`);
   return { frontier };
 }
 
@@ -108,8 +126,76 @@ export async function searchNode(state: ExplorationState): Promise<StateDelta> {
  * F13: Any FETCH beyond depth 3 triggers a fresh 888 prompt.
  */
 export async function fetchNode(state: ExplorationState): Promise<StateDelta> {
-  // Phase 1 stub — mock fetch
-  return {};
+  const adapters = getAdapters();
+  const fetchAdapter = adapters.fetch;
+  const extractAdapter = adapters.extract;
+
+  // Pick highest-priority unvisited URL from frontier
+  const nextUrl = state.frontier
+    .filter((f) => !state.visited.has(f.url))
+    .sort((a, b) => b.priorityScore - a.priorityScore)[0];
+
+  if (!nextUrl) {
+    console.log('[forge_explore:FETCH] No unvisited URLs in frontier.');
+    return {};
+  }
+
+  // Guardrails: check before fetching
+  const guardResult = evaluateGuardrails('forge_fetch', { url: nextUrl.url }, state);
+  if (!guardResult.passed) {
+    console.warn(`[forge_explore:FETCH] GUARDRAIL BLOCKED: ${guardResult.failures.map((f) => f.reason).join('; ')}`);
+    // Remove blocked URL from frontier
+    return {
+      frontier: state.frontier.filter((f) => f.url !== nextUrl.url),
+    };
+  }
+
+  if (!fetchAdapter) {
+    console.warn('[forge_explore:FETCH] No fetch adapter configured. Skipping.');
+    return {};
+  }
+
+  console.log(`[forge_explore:FETCH] Fetching via ${fetchAdapter.name}: ${nextUrl.url}`);
+  let page: FetchedPage;
+  try {
+    page = await fetchAdapter.fetch(nextUrl.url, 50000);
+  } catch (err) {
+    console.error(`[forge_explore:FETCH] Fetch failed for ${nextUrl.url}: ${err}`);
+    // Remove failed URL from frontier, mark visited so we don't retry
+    const newVisited = new Set(state.visited);
+    newVisited.add(nextUrl.url);
+    return {
+      frontier: state.frontier.filter((f) => f.url !== nextUrl.url),
+      visited: newVisited,
+    };
+  }
+
+  // Extract links from fetched content
+  let links: string[] = page.links ?? [];
+  if (links.length === 0 && extractAdapter) {
+    links = extractAdapter.extractLinks(page.content, page.url);
+  }
+
+  // Create new frontier entries from extracted links
+  const newFrontierEntries: FrontierEntry[] = links
+    .filter((link) => !state.visited.has(link))
+    .map((link) => ({
+      url: link,
+      priorityScore: 0.5, // initial score; SCORE node will re-rank
+      sourceNodeId: nextUrl.url,
+    }));
+
+  // Add fetched URL to visited
+  const newVisited = new Set(state.visited);
+  newVisited.add(nextUrl.url);
+
+  // Remove fetched URL from frontier
+  const remainingFrontier = state.frontier.filter((f) => f.url !== nextUrl.url);
+
+  return {
+    frontier: [...remainingFrontier, ...newFrontierEntries],
+    visited: newVisited,
+  };
 }
 
 // ===========================================================================
@@ -190,11 +276,37 @@ export async function selectNode(state: ExplorationState): Promise<StateDelta> {
  * Adds URL to visited set.
  */
 export async function followNode(state: ExplorationState): Promise<StateDelta> {
-  // Phase 1 stub
+  const adapters = getAdapters();
+
+  // Pick the highest-priority unvisited URL from frontier
+  const nextUrl = state.frontier
+    .filter((f) => !state.visited.has(f.url))
+    .sort((a, b) => b.priorityScore - a.priorityScore)[0];
+
+  if (!nextUrl) {
+    console.log('[forge_explore:FOLLOW] No unvisited URLs to follow.');
+    return {};
+  }
+
+  // Guardrails
+  const guardResult = evaluateGuardrails('forge_browser_navigate', { url: nextUrl.url }, state);
+  if (!guardResult.passed) {
+    console.warn(`[forge_explore:FOLLOW] GUARDRAIL BLOCKED: ${guardResult.failures.map((f) => f.reason).join('; ')}`);
+    return {
+      frontier: state.frontier.filter((f) => f.url !== nextUrl.url),
+    };
+  }
+
   const nextDepth = state.depth.current + 1;
+  const newVisited = new Set(state.visited);
+  newVisited.add(nextUrl.url);
+
+  console.log(`[forge_explore:FOLLOW] Following ${nextUrl.url} at depth ${nextDepth}`);
+
   return {
     depth: { ...state.depth, current: nextDepth },
-    // visited.add(url) — handled by caller
+    visited: newVisited,
+    frontier: state.frontier.filter((f) => f.url !== nextUrl.url),
   };
 }
 
