@@ -969,15 +969,14 @@ class QwenProvider:
         "QWEN_BASE_URL",
         "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
     )
-    # P1.5.1 fix 2026-08-10: BASE_URL is now env-driven. There are at least
-    # three Qwen endpoints in the wild:
+    # P1.5.1 fix 2026-08-10: BASE_URL is env-overridable.
+    # P1.5.2 fix 2026-08-10: but the engine sets self.base_url from the
+    # config in __init__ — the class attr is a fallback default only.
+    # There are at least three Qwen endpoints in the wild:
     #   - Standard DashScope international (free tier): dashscope-intl.aliyuncs.com
     #   - Standard DashScope China domestic: dashscope.aliyuncs.com
     #   - Alibaba Model Studio Token Plan: token-plan.ap-southeast-1.maas.aliyuncs.com
-    #   - Anthropic-compatible: token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic
-    # The default is the Token Plan endpoint because the user's QWEN_API_KEY
-    # in vault.env is scoped to that endpoint. Free-tier keys (from the
-    # QwenCloud "Free Tier" page) will need QWEN_BASE_URL overridden.
+    #   - Bailian PAYG: ws-wlab8klalfojzq7i.ap-southeast-1.maas.aliyuncs.com
 
     # Per-model EXHAUSTED cooldown. 24h is heuristic: the bucket does not
     # refill in 90d, but the operator might toggle Free-quota-only OFF
@@ -985,16 +984,29 @@ class QwenProvider:
     # daily — falsifiable by a single 200 response.
     EXHAUSTED_COOLDOWN_S = 24 * 3600
 
-    def __init__(self, api_key: str = "", expiration_epochs: dict | None = None):
+    def __init__(
+        self,
+        api_key: str = "",
+        expiration_epochs: dict | None = None,
+        base_url: str = "",
+    ):
         """Initialize QwenProvider.
 
         Args:
-            api_key: QWEN_API_KEY (DashScope international). If empty,
-                all calls return immediately (no HTTP).
+            api_key: API key. Caller should pass explicitly from config's
+                api_key_env (e.g. DASHSCOPE_API_KEY). Falls back to
+                QWEN_API_KEY env var for backward compat.
             expiration_epochs: model_id → unix epoch when the 90d window
                 closes. Read from flame_config.json at engine init.
+            base_url: API base URL. Caller should pass from config.
+                Falls back to QWEN_BASE_URL env var, then to class default.
         """
         self.api_key = api_key or os.environ.get("QWEN_API_KEY", "")
+        self.base_url = (
+            base_url
+            or os.environ.get("QWEN_BASE_URL")
+            or self.BASE_URL
+        )
         self.expiration_epochs: dict[str, float] = expiration_epochs or {}
         # model_id → (unix_epoch, body_code) when we last saw a quota
         # exhaustion body. The body code is recorded so EXHAUSTED_OBSERVED
@@ -1066,7 +1078,7 @@ class QwenProvider:
         try:
             with httpx.Client(timeout=timeout) as client:
                 resp = client.post(
-                    f"{self.BASE_URL}/chat/completions",
+                    f"{self.base_url}/chat/completions",
                     headers=headers,
                     json=payload,
                 )
@@ -1502,7 +1514,14 @@ class FlameEngine:
     _qwen_provider: QwenProvider | None = None  # P1.5 fix 2026-08-10
 
     def _get_qwen_provider(self) -> QwenProvider:
-        """Lazy-init QwenProvider with expiration_epochs from config."""
+        """Lazy-init QwenProvider with expiration_epochs + api_key from config.
+
+        P1.5.2 fix: read api_key_env from the config (e.g. DASHSCOPE_API_KEY
+        or QWEN_API_KEY) instead of hardcoding QWEN_API_KEY. The hardcoded
+        fallback path was a wiring bug — the config's api_key_env field
+        was being ignored. The env-var override `QWEN_API_KEY` still
+        works for callers that pass it directly.
+        """
         if self._qwen_provider is None:
             # Read per-model expiration epochs from provider config
             qwen_cfg = self.providers.get("qwen", {})
@@ -1526,7 +1545,18 @@ class FlameEngine:
                             f"FLAME qwen.expiration_epochs[{model_id}]={val} "
                             f"could not be parsed; treating as no expiration"
                         )
-            self._qwen_provider = QwenProvider(expiration_epochs=exp_epochs)
+            # Read the API key from the config-specified env var.
+            # Fall back to QWEN_API_KEY env var for backward compat.
+            api_key_env = qwen_cfg.get("api_key_env", "QWEN_API_KEY")
+            api_key = os.environ.get(api_key_env, "")
+            # Read base_url from config; QwenProvider falls back to
+            # QWEN_BASE_URL env, then to the Token Plan class default.
+            base_url = qwen_cfg.get("base_url", "")
+            self._qwen_provider = QwenProvider(
+                api_key=api_key,
+                expiration_epochs=exp_epochs,
+                base_url=base_url,
+            )
         return self._qwen_provider
 
     def call(

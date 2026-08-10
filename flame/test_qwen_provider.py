@@ -46,12 +46,12 @@ def test_config_parses() -> bool:
 
 
 def test_qwen_tiers_present() -> bool:
-    """RM0-TOOLS-FREELOOP must have 3 Qwen chat tiers, RM0-EMBED-FREELOOP 0 (P1.5.1).
+    """RM0-TOOLS-FREELOOP must have 3 Qwen chat tiers, RM0-EMBED-FREELOOP 1.
 
-    P1.5.1: Token Plan endpoint has no embedding models. Embed chain stays
-    SEA-LION + Ollama only. To restore Qwen embed tiers, override
-    QWEN_BASE_URL to the standard DashScope endpoint and use a key
-    generated from the Free Tier dashboard.
+    P1.5.2: flipped to standard DashScope free tier endpoint. 3 chat
+    + 1 embed tier (text-embedding-v4). qwen3.7-text-embedding was
+    dropped because the user's DASHSCOPE_API_KEY gets AccessDenied
+    on it.
     """
     cfg_path = Path(__file__).parent / "flame_config.json"
     data = json.loads(cfg_path.read_text())
@@ -68,13 +68,13 @@ def test_qwen_tiers_present() -> bool:
     if len(chat_tiers) != 3:
         print(f"❌ test_qwen_tiers_present: chat tiers = {len(chat_tiers)} (expected 3)")
         return False
-    if embed_tiers:
+    if len(embed_tiers) != 1:
         print(
-            f"❌ test_qwen_tiers_present: embed tiers should be 0 (P1.5.1, "
-            f"token-plan has no embed), got {len(embed_tiers)}"
+            f"❌ test_qwen_tiers_present: embed tiers = {len(embed_tiers)} "
+            f"(expected 1 — text-embedding-v4 only)"
         )
         return False
-    print(f"✅ test_qwen_tiers_present: 3 chat Qwen tiers, 0 embed (token-plan)")
+    print(f"✅ test_qwen_tiers_present: 3 chat + 1 embed Qwen tiers (free tier)")
     return True
 
 
@@ -202,11 +202,11 @@ def test_snapshot_cap_validator() -> bool:
 
 
 def test_routing_table_includes_qwen() -> bool:
-    """RoutingTable built from config must include Qwen chat routes.
+    """RoutingTable built from config must include Qwen routes.
 
-    P1.5.1: token-plan endpoint has 3 chat routes and 0 embed routes.
-    To restore embed routes, override QWEN_BASE_URL to the standard
-    DashScope endpoint and use a Free Tier key.
+    P1.5.2: 3 chat + 1 embed on the free tier (text-embedding-v4).
+    qwen3.7-text-embedding dropped because DASHSCOPE_API_KEY gets
+    AccessDenied on it.
     """
     from flame_router import FlameEngine
 
@@ -230,27 +230,34 @@ def test_routing_table_includes_qwen() -> bool:
             f"{len(chat_routes)} Qwen routes (expected 3): {chat_routes}"
         )
         return False
-    if embed_routes:
+    if len(embed_routes) != 1:
         print(
             f"❌ test_routing_table_includes_qwen: embed chain has "
-            f"{len(embed_routes)} Qwen routes (expected 0 — P1.5.1): "
+            f"{len(embed_routes)} Qwen routes (expected 1 — P1.5.2): "
             f"{embed_routes}"
         )
         return False
     expected_chat = {
-        "qwen/qwen3.7-plus",
-        "qwen/qwen3.6-plus",
-        "qwen/deepseek-v3.2",
+        "qwen/qwen3.7-flash",
+        "qwen/qwen3.7-flash-2026-07-15",
+        "qwen/qwen3.6-plus-2026-04-02",
     }
+    expected_embed = {"qwen/text-embedding-v4"}
     if chat_routes != expected_chat:
         print(
             f"❌ test_routing_table_includes_qwen: chat routes mismatch.\n"
             f"   got:      {chat_routes}\n   expected: {expected_chat}"
         )
         return False
+    if embed_routes != expected_embed:
+        print(
+            f"❌ test_routing_table_includes_qwen: embed routes mismatch.\n"
+            f"   got:      {embed_routes}\n   expected: {expected_embed}"
+        )
+        return False
     print(
-        f"✅ test_routing_table_includes_qwen: 3 chat Qwen routes "
-        f"(token-plan catalog), 0 embed"
+        f"✅ test_routing_table_includes_qwen: 3 chat + 1 embed Qwen routes "
+        f"(free tier)"
     )
     return True
 
