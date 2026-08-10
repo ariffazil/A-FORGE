@@ -153,3 +153,6 @@ CONTRIBUTING.md
 deploy/rollback/
 .serena/
 .git_commit
+
+# F1 AMANAH: operational snapshot backups (not source)
+*.snap-*
