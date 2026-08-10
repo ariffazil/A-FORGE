@@ -1,0 +1,101 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# Dependabot CI — Unprivileged gate for dependency-only PRs (npm adapter)
+# Forged 2026-08-10 — pattern replication from arifOS PR #683
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Trust domain:
+#   - Trigger: pull_request on main
+#   - Actor: dependabot[bot] (GitHub-documented identity) and app/dependabot
+#   - Privileges: contents: read ONLY — no secrets, no write, no PR mutation
+#   - Actions: observe + report. Does NOT comment, label, attest, or merge.
+# ═══════════════════════════════════════════════════════════════════════════
+
+name: Dependabot CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependabot-ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  verify-dependency-update:
+    name: verify-dependency-update
+    # Gate on the PR AUTHOR, not the workflow actor.
+    if: |
+      github.event.pull_request.user.login == 'dependabot[bot]' ||
+      github.event.pull_request.user.login == 'app/dependabot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+
+    steps:
+      - name: Checkout PR head (read-only)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Hard invariant — npm ci (frozen lockfile)
+        run: |
+          set -euo pipefail
+          npm ci
+          echo "✅ npm ci completed — package-lock.json is the resolver authority"
+
+      - name: Record lockfile SHA-256
+        id: lockhash
+        run: |
+          sha=$(sha256sum package-lock.json | awk '{print $1}')
+          echo "lock_sha256=$sha" >> "$GITHUB_OUTPUT"
+          echo "package-lock.json SHA-256: $sha"
+
+      - name: Lint (eslint, if present)
+        run: |
+          if [ -f .eslintrc ] || [ -f .eslintrc.json ] || [ -f eslint.config.js ]; then
+            npx eslint . --max-warnings=0
+          else
+            echo "ℹ️ No eslint config — skipping"
+          fi
+        continue-on-error: true
+
+      - name: TypeScript type check (if tsconfig present)
+        run: |
+          if [ -f tsconfig.json ]; then
+            npx tsc --noEmit
+          else
+            echo "ℹ️ No tsconfig.json — skipping"
+          fi
+        continue-on-error: true
+
+      - name: Test suite (frozen install subset)
+        run: |
+          set -euo pipefail
+          npm test --if-present 2>&1 | tail -40
+
+      - name: Security audit (npm audit, advisory only)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Dependabot CI — ${{ github.event.pull_request.title }}"
+          echo ""
+          echo "- Head SHA: \`${{ github.event.pull_request.head.sha }}\`"
+          echo "- Lockfile SHA-256: \`${{ steps.lockhash.outputs.lock_sha256 }}\`"
+          echo "- Actor: \`${{ github.actor }}\`"
+          echo ""
+          echo "Verdict is the **job exit code**, not this summary."

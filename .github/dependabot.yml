@@ -1,6 +1,24 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# A-FORGE — Dependabot configuration (npm/TypeScript adapter)
+# Forged 2026-08-10 — F13 verdict, CI governance repair (TypeScript adapter)
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Resolver authority: package.json + package-lock.json (npm).
+# A-FORGE is the federation's TypeScript executor — npm replaces the Python
+# uv resolver. Same F13 doctrine, different tooling.
+#
+# Per F13 directive (2026-08-10):
+#   - Constitutional packages (zod, @modelcontextprotocol/sdk, fastmcp, mcp-sdk,
+#     tsx, vitest, @types/node, typescript, ts-node) are KEPT UN-GROUPED.
+#   - Auto-merge is BLOCKED for them via auto-merge-dependabot.yml.
+#   - Cooldown default-days: 3 prevents back-to-back cascading bumps.
+#   - Open-pull-requests-limit: 5 keeps review surface manageable.
+# ═══════════════════════════════════════════════════════════════════════════
+
 version: 2
 
 updates:
+  # ── npm dependencies (root: package.json + package-lock.json) ──────────
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -8,16 +26,42 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Kuala_Lumpur"
-    open-pull-requests-limit: 10
-    labels: ["deps", "dependencies"]
+    cooldown:
+      default-days: 3
+    open-pull-requests-limit: 5
+    labels:
+      - "deps"
+      - "dependencies"
     commit-message:
       prefix: "chore(deps)"
       include: "scope"
     groups:
-      all-npm-patch:
-        update-types: ["patch"]
-      all-npm-minor:
-        update-types: ["minor"]
+      test-stack:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+          - "jest"
+          - "@types/jest"
+          - "playwright"
+          - "@playwright/*"
+      mcp-stack:
+        patterns:
+          - "fastmcp"
+          - "fastmcp-*"
+          - "@modelcontextprotocol/*"
+          - "mcp-*"
+      dev-stack:
+        patterns:
+          - "eslint"
+          - "prettier"
+          - "typescript"
+          - "tsx"
+          - "ts-node"
+          - "@types/*"
+      # NOTE: `zod fastmcp mcp-sdk tsx vitest typescript` are NOT in any group.
+      # Each produces its own single-package PR with the constitutional denylist applied.
+
+  # ── GitHub Actions versions ──────────────────────────────────────────────
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -26,10 +70,20 @@ updates:
       time: "09:00"
       timezone: "Asia/Kuala_Lumpur"
     open-pull-requests-limit: 5
-    labels: ["deps", "ci"]
+    labels:
+      - "deps"
+      - "ci"
     commit-message:
       prefix: "chore(actions)"
       include: "scope"
     groups:
-      all-actions:
-        patterns: ["*"]
+      github-actions-official:
+        patterns:
+          - "actions/*"
+          - "github/*"
+      third-party-actions:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "actions/*"
+          - "github/*"

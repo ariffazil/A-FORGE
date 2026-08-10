@@ -32,6 +32,7 @@ concurrency:
 jobs:
 
   secrets:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot'
     name: 🔐 Secrets Scan
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -44,6 +45,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   federation-check:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot'
     name: 🗺️ Federation Check
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -58,6 +60,7 @@ jobs:
           echo "✅ A-FORGE FEDERATION.md valid — L2 EXECUTIVE"
 
   protocol-alignment:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot'
     name: 📋 Protocol Alignment
     runs-on: ubuntu-latest
     needs: [federation-check]
@@ -84,6 +87,7 @@ jobs:
           echo "✅ Self-auth check complete"
 
   standard:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot'
     name: "Lane 1 — Standard CI"
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -101,6 +105,7 @@ jobs:
         run: npm test
 
   bijaksana:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot'
     name: "Lane 2 — BIJAKSANA ΔS Φ Ψ Ω"
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -158,10 +163,11 @@ jobs:
           fi
 
   report:
+    if: (always()) && (github.actor != 'dependabot[bot]' && github.actor != 
+      'app/dependabot')
     name: "📊 Agentic CI Report"
     runs-on: ubuntu-latest
     needs: [standard, bijaksana]
-    if: always()
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7

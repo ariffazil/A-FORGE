@@ -1,0 +1,72 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# npm lockfile invariant — TypeScript-adapted F13 CI governance pattern
+# Forged 2026-08-10 — pattern replication from arifOS PR #683
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Per F13 directive (2026-08-10):
+#   - package.json + package-lock.json are the SOLE resolver authority for npm deps.
+#   - `npm ci` asserts the lockfile installs cleanly (frozen lockfile).
+#   - Both invariants run on every PR + push to main + manual dispatch.
+#
+# This is a HARD invariant — failure blocks.
+#
+# Equivalent of arifOS ci-uv-lock-invariant.yml but for TypeScript/npm.
+# ═══════════════════════════════════════════════════════════════════════════
+
+name: npm lockfile invariant
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-invariant-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lockfile-invariant:
+    name: npm ci (frozen lockfile)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Hard invariant — npm ci
+        run: |
+          set -euo pipefail
+          echo "═══ F13 invariant: package-lock.json consistent with package.json ═══"
+          npm ci
+          echo "✅ npm ci succeeded — package-lock.json is the resolver authority"
+
+      - name: Record lockfile SHA-256
+        id: lockhash
+        run: |
+          sha=$(sha256sum package-lock.json | awk '{print $1}')
+          echo "lock_sha256=$sha" >> "$GITHUB_OUTPUT"
+          echo "package-lock.json SHA-256: $sha"
+
+      - name: Report
+        if: always()
+        run: |
+          echo "## npm lockfile invariant"
+          echo ""
+          echo "- ref: \`${{ github.ref }}\`"
+          echo "- head_sha: \`${{ github.sha }}\`"
+          echo "- lock_sha256: \`${{ steps.lockhash.outputs.lock_sha256 }}\`"
+          echo ""
+          echo "Verdict: this job's exit code (0 = invariant holds)."
