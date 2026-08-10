@@ -116,7 +116,7 @@ export type VerdictResult = {
 // ── Gate ──────────────────────────────────────────────────────────────
 
 /**
- * P0.2 (2026-07-19): authorityPermits(authority, actionClass) — pure function
+ * P0.2 (2026-07-19): authorityPermits(authority, actionClass, toolName?) — pure function
  * extracted from inline Layer 1.5 check so it's testable + reusable.
  *
  * Invariant: authority ≠ actor_id string. Authority is derived from
@@ -124,13 +124,24 @@ export type VerdictResult = {
  * never from the actor_id alone.
  *
  *   OBSERVE_ONLY    → OBSERVE, SUGGEST, SIMULATE only
+ *                    + forge_* EXECUTE_REVERSIBLE (adat agentic F13 2026-08-10)
  *   LIMITED_MUTATE  → + DRAFT, QUEUE, EXECUTE_REVERSIBLE
  *   FULL            → all 7 action classes
  *
- * IRREVERSIBLE and EXECUTE_HIGH_IMPACT are NEVER permitted without FULL authority.
- * This is the fail-closed default for any authority < FULL.
+ * ADAT AGENTIC (F13 directive 2026-08-10):
+ * FORGE is not a lane. FORGE is not permission. FORGE is adat agentic —
+ * the inherited capability substrate of every AAA warga. forge_* tools
+ * classified as EXECUTE_REVERSIBLE are permitted even with OBSERVE_ONLY
+ * authority, because the gate has shifted from "who can access" to
+ * "is this action constitutional." IRREVERSIBLE + EXECUTE_HIGH_IMPACT
+ * still require FULL authority (F1 AMANAH + F13 SOVEREIGN).
  */
-export function authorityPermits(authority: Authority, actionClass: ActionClass): boolean {
+export function authorityPermits(authority: Authority, actionClass: ActionClass, toolName?: string): boolean {
+  // ADAT AGENTIC: forge_* EXECUTE_REVERSIBLE always permitted.
+  // "Forging is breathing. The constitution governs the swing — not the grip."
+  if (actionClass === "EXECUTE_REVERSIBLE" && toolName?.startsWith("forge_")) {
+    return true; // adat agentic — inherited capability, not gated access
+  }
   switch (authority) {
     case "OBSERVE_ONLY":
       return actionClass === "OBSERVE"
@@ -417,7 +428,7 @@ export class McpPolicyGate {
     // OBSERVE_ONLY can do read-only / suggest / simulate.
     // LIMITED_MUTATE can additionally do draft / queue / execute_reversible (NOT high-impact or irreversible).
     // FULL can do everything.
-    if (!authorityPermits(principal.authority, toolClass)) {
+    if (!authorityPermits(principal.authority, toolClass, req.tool_name)) {
       result.reasons.push(
         `L1_AUTHORITY:actor="${principal.displayLabel}" authority=${principal.authority} ` +
         `but tool "${req.tool_name}" classified as ${toolClass}. ` +
