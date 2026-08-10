@@ -134,6 +134,43 @@
           ]
         },
         {
+          "provider": "qwen",
+          "model": "qwen3.7-flash",
+          "weight": 65,
+          "tags": [
+            "fast",
+            "general",
+            "long-context",
+            "qwen-cloud",
+            "free-quota-2026-10-23"
+          ]
+        },
+        {
+          "provider": "qwen",
+          "model": "qwen3.7-flash-2026-07-15",
+          "weight": 63,
+          "tags": [
+            "fast",
+            "general",
+            "long-context",
+            "qwen-cloud",
+            "free-quota-2026-10-23",
+            "dated-snapshot"
+          ]
+        },
+        {
+          "provider": "qwen",
+          "model": "qwen3.6-plus-2026-04-02",
+          "weight": 60,
+          "tags": [
+            "deep-reasoning",
+            "long-context",
+            "qwen-cloud",
+            "free-quota-2026-09-29",
+            "dated-snapshot"
+          ]
+        },
+        {
           "provider": "sea-lion",
           "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
           "weight": 60,
@@ -200,6 +237,28 @@
           "tags": [
             "embed",
             "bm-native"
+          ]
+        },
+        {
+          "provider": "qwen",
+          "model": "text-embedding-v4",
+          "weight": 9,
+          "tags": [
+            "embed",
+            "multilingual",
+            "qwen-cloud",
+            "free-quota-2026-09-29"
+          ]
+        },
+        {
+          "provider": "qwen",
+          "model": "qwen3.7-text-embedding",
+          "weight": 8,
+          "tags": [
+            "embed",
+            "multilingual",
+            "qwen-cloud",
+            "free-quota-2026-11-09"
           ]
         },
         {
@@ -282,6 +341,22 @@
       "cost_band": "free",
       "timeout_ms": 30000,
       "note": "Local inference engine — zero network latency, zero billing"
+    },
+    "qwen": {
+      "base_url": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "api_key_env": "QWEN_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 20000,
+      "strict_free_tier": true,
+      "note": "P1.5 fix 2026-08-10 — Qwen Cloud international endpoint (Singapore). OpenAI-compatible. Free tier only — QwenProvider enforces EXHAUSTED_OBSERVED state on 403 AllocationQuota.FreeTierOnly, EXPIRED_TERMINAL when validity window closes. Dated/undated variants are SEPARATE routes. Snapshot cap MAX_ACTIVE_QWEN_SNAPSHOTS=2 enforced in code.",
+      "expiration_epochs": {
+        "qwen3.7-flash": "2026-10-23T00:00:00Z",
+        "qwen3.7-flash-2026-07-15": "2026-10-23T00:00:00Z",
+        "qwen3.6-flash-2026-04-16": "2026-09-29T00:00:00Z",
+        "qwen3.6-plus-2026-04-02": "2026-09-29T00:00:00Z",
+        "text-embedding-v4": "2026-09-29T00:00:00Z",
+        "qwen3.7-text-embedding": "2026-11-09T00:00:00Z"
+      }
     }
   },
   "routing": {
