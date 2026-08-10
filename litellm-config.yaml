@@ -4,7 +4,7 @@ model_list:
     model: openai/mimo-v2.5
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
-    order: 1
+    order: 2
     input_cost_per_token: 1.4e-07
     output_cost_per_token: 2.8e-07
   model_info:
@@ -12,6 +12,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_image_input: true
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek-v4-flash
@@ -74,6 +75,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: agi-333
   litellm_params:
     model: openai/MiniMax-M3
@@ -114,6 +116,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_image_input: true
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: asi-555
   litellm_params:
     model: openai/MiniMax-M3
@@ -166,6 +169,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: opencode
   litellm_params:
     model: openai/MiniMax-M3
@@ -195,6 +199,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: codex
   litellm_params:
     model: openai/qwen3.7-max
@@ -223,6 +228,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.8-max
@@ -259,6 +265,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: dispatch
   litellm_params:
     model: openai/qwen3.8-max
@@ -273,22 +280,24 @@ model_list:
     model: openai/mimo-v2.5
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
-    order: 1
+    order: 2
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_audio_input: true
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: asi-555-video
   litellm_params:
     model: openai/mimo-v2.5
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
-    order: 1
+    order: 2
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: fed/vision
   litellm_params:
     model: openai/qwen3.8-max
@@ -312,6 +321,7 @@ model_list:
     mode: chat
     supports_vision: true
     supports_audio_input: true
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: fed/vision
   litellm_params:
     model: openai/MiniMax-M3
@@ -334,18 +344,20 @@ model_list:
     mode: chat
     supports_audio_input: true
     supports_vision: true
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: fed/audio
   litellm_params:
     model: openai/mimo-v2.5
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
-    order: 1
+    order: 2
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_audio_input: true
     supports_vision: true
+    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
 - model_name: fed/image-gen
   litellm_params:
     model: openai/gemini-3-flash-preview
@@ -378,9 +390,21 @@ model_list:
     max_input_tokens: 0
     max_output_tokens: 0
     mode: image
+- model_name: gemini-flash-lite
+  litellm_params:
+    model: openai/gemini-3.5-flash-lite
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    notes: High-throughput sub-agent model. Budget tier.
 - model_name: gemini-flash
   litellm_params:
-    model: gemini/gemini-3.6-flash
+    model: openai/gemini-3.6-flash
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
     api_key: os.environ/GEMINI_API_KEY
     order: 1
   model_info:
@@ -388,11 +412,11 @@ model_list:
     supports_vision: true
     max_input_tokens: 1048576
     max_output_tokens: 65536
-    notes: AI Studio native. Single-turn / vision OK. NOT for Hermes multi-tool loops
-      (thought signatures).
+    notes: "OpenAI gateway \u2014 supports thinking_config"
 - model_name: gemini-flash
   litellm_params:
-    model: gemini/gemini-2.5-flash
+    model: openai/gemini-2.5-flash
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
     api_key: os.environ/GEMINI_API_KEY
     order: 2
   model_info:
@@ -402,7 +426,8 @@ model_list:
     max_output_tokens: 65536
 - model_name: gemini-pro
   litellm_params:
-    model: gemini/gemini-3.1-pro-preview
+    model: openai/gemini-3.1-pro
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
     api_key: os.environ/GEMINI_API_KEY
     order: 1
   model_info:
@@ -410,7 +435,7 @@ model_list:
     supports_vision: true
     max_input_tokens: 1048576
     max_output_tokens: 65536
-    notes: Deep reasoning / multimodal. Prefer Interactions API for multi-turn tools.
+    notes: "Deep reasoning \u2014 OpenAI gateway, thinking_config supported"
 - model_name: fed/vision
   litellm_params:
     model: gemini/gemini-3.6-flash
@@ -420,9 +445,148 @@ model_list:
     mode: chat
     supports_vision: true
     notes: Gemini vision secondary; prefer for image Q&A not agent tool loops
+- model_name: kimi-code
+  litellm_params:
+    model: openai/kimi-k3
+    api_base: https://api.kimi.com/coding
+    api_key: os.environ/KIMI_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    notes: "Kimi Code (Moonshot) \u2014 coding plan. Model: kimi-code/k3. Agent swarm capable."
+- model_name: opencode-go
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/api/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    notes: "OpenCode Go \u2014 \\$10/mo flat aggregator. 18 models. Background/repetitive tasks."
+- model_name: fed-reasoning-heavy
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    notes: "P(truth)\u22650.99, deep reasoning, complex refactoring, proof"
+- model_name: fed-reasoning-heavy
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 2
+  model_info:
+    mode: chat
+    notes: "P(truth)\u22650.99, deep reasoning, complex refactoring, proof"
+- model_name: fed-reasoning-heavy
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 3
+  model_info:
+    mode: chat
+    notes: "P(truth)\u22650.99, deep reasoning, complex refactoring, proof"
+- model_name: fed-multimodal-vision
+  litellm_params:
+    model: openai/qwen-vl-max
+    api_base: https://ws-wlab8klalfojzq7i.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    notes: UI/UX scanning, diagram parsing, visual debugging
+- model_name: fed-multimodal-vision
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    order: 2
+  model_info:
+    mode: chat
+    notes: UI/UX scanning, diagram parsing, visual debugging
+- model_name: fed-multimodal-vision
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 3
+  model_info:
+    mode: chat
+    notes: UI/UX scanning, diagram parsing, visual debugging
+- model_name: fed-long-context
+  litellm_params:
+    model: openai/gemini-3.1-pro
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    notes: 1M+ context, repo scanning, PDF/document analysis
+- model_name: fed-long-context
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    mode: chat
+    notes: 1M+ context, repo scanning, PDF/document analysis
+- model_name: fed-long-context
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    order: 3
+  model_info:
+    mode: chat
+    notes: 1M+ context, repo scanning, PDF/document analysis
+- model_name: fed-agent-subagent
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    notes: High-throughput subagents, linting, tool parsing, low cost
+- model_name: fed-agent-subagent
+  litellm_params:
+    model: openai/gemini-3.5-flash-lite
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 2
+  model_info:
+    mode: chat
+    notes: High-throughput subagents, linting, tool parsing, low cost
+- model_name: fed-agent-subagent
+  litellm_params:
+    model: openai/qwen3.6-flash
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 3
+  model_info:
+    mode: chat
+    notes: High-throughput subagents, linting, tool parsing, low cost
+- model_name: fed-realtime-voice
+  litellm_params:
+    model: openai/mimo-v2.5-asr
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    notes: ASR, TTS, voice clone/design. MiMo V2.5 audio models.
 litellm_settings:
   callbacks: []
-  num_retries: 2
+  num_retries: 3
   request_timeout: 60
   allowed_fails: 2
   cooldown_time: 300
@@ -430,7 +594,7 @@ litellm_settings:
 router_settings:
   routing_strategy: usage-based-routing
   enable_pre_call_checks: true
-  num_retries: 2
+  num_retries: 3
   allowed_fails: 2
   cooldown_time: 300
   fallbacks:
