@@ -46,7 +46,13 @@ def test_config_parses() -> bool:
 
 
 def test_qwen_tiers_present() -> bool:
-    """RM0-TOOLS-FREELOOP must have 3 Qwen chat tiers, RM0-EMBED-FREELOOP 2."""
+    """RM0-TOOLS-FREELOOP must have 3 Qwen chat tiers, RM0-EMBED-FREELOOP 0 (P1.5.1).
+
+    P1.5.1: Token Plan endpoint has no embedding models. Embed chain stays
+    SEA-LION + Ollama only. To restore Qwen embed tiers, override
+    QWEN_BASE_URL to the standard DashScope endpoint and use a key
+    generated from the Free Tier dashboard.
+    """
     cfg_path = Path(__file__).parent / "flame_config.json"
     data = json.loads(cfg_path.read_text())
 
@@ -62,10 +68,13 @@ def test_qwen_tiers_present() -> bool:
     if len(chat_tiers) != 3:
         print(f"❌ test_qwen_tiers_present: chat tiers = {len(chat_tiers)} (expected 3)")
         return False
-    if len(embed_tiers) != 2:
-        print(f"❌ test_qwen_tiers_present: embed tiers = {len(embed_tiers)} (expected 2)")
+    if embed_tiers:
+        print(
+            f"❌ test_qwen_tiers_present: embed tiers should be 0 (P1.5.1, "
+            f"token-plan has no embed), got {len(embed_tiers)}"
+        )
         return False
-    print(f"✅ test_qwen_tiers_present: 3 chat + 2 embed Qwen tiers")
+    print(f"✅ test_qwen_tiers_present: 3 chat Qwen tiers, 0 embed (token-plan)")
     return True
 
 
@@ -124,10 +133,22 @@ def test_qwen_provider_state_machine() -> bool:
 
     # EXHAUSTED_OBSERVED — within cooldown
     p_exh = QwenProvider(api_key="dummy", expiration_epochs={"qwen3.7-flash": future})
-    p_exh.exhausted_observed_at["qwen3.7-flash"] = time.time() - 60  # 1 min ago
+    # P1.5.1 fix: store (timestamp, body_code) tuple so the state reason
+    # reports the actual body code observed, not a hardcoded one.
+    p_exh.exhausted_observed_at["qwen3.7-flash"] = (
+        time.time() - 60,
+        "insufficient_quota",
+    )
     ok, reason = p_exh._check_state("qwen3.7-flash")
     if ok or "QWEN_EXHAUSTED_OBSERVED" not in reason:
         print(f"❌ test_qwen_provider_state_machine: exhausted route returned ok={ok}, reason={reason!r}")
+        return False
+    # P1.5.1: the reason must include the actual body code, not a hardcoded one
+    if "insufficient_quota" not in reason:
+        print(
+            f"❌ test_qwen_provider_state_machine: EXHAUSTED_OBSERVED reason "
+            f"should include the actual body code 'insufficient_quota', got: {reason!r}"
+        )
         return False
 
     # No key — must fail with QWEN_NO_KEY. Temporarily pop QWEN_API_KEY from
@@ -181,11 +202,11 @@ def test_snapshot_cap_validator() -> bool:
 
 
 def test_routing_table_includes_qwen() -> bool:
-    """RoutingTable built from config must include Qwen routes from both chains.
+    """RoutingTable built from config must include Qwen chat routes.
 
-    The default FlameEngine loads RM0-TOOLS-FREELOOP (3 Qwen chat tiers).
-    A second engine for RM0-EMBED-FREELOOP loads the 2 Qwen embed tiers.
-    Together: 5 Qwen routes total.
+    P1.5.1: token-plan endpoint has 3 chat routes and 0 embed routes.
+    To restore embed routes, override QWEN_BASE_URL to the standard
+    DashScope endpoint and use a Free Tier key.
     """
     from flame_router import FlameEngine
 
@@ -209,20 +230,17 @@ def test_routing_table_includes_qwen() -> bool:
             f"{len(chat_routes)} Qwen routes (expected 3): {chat_routes}"
         )
         return False
-    if len(embed_routes) != 2:
+    if embed_routes:
         print(
             f"❌ test_routing_table_includes_qwen: embed chain has "
-            f"{len(embed_routes)} Qwen routes (expected 2): {embed_routes}"
+            f"{len(embed_routes)} Qwen routes (expected 0 — P1.5.1): "
+            f"{embed_routes}"
         )
         return False
     expected_chat = {
-        "qwen/qwen3.7-flash",
-        "qwen/qwen3.7-flash-2026-07-15",
-        "qwen/qwen3.6-plus-2026-04-02",
-    }
-    expected_embed = {
-        "qwen/text-embedding-v4",
-        "qwen/qwen3.7-text-embedding",
+        "qwen/qwen3.7-plus",
+        "qwen/qwen3.6-plus",
+        "qwen/deepseek-v3.2",
     }
     if chat_routes != expected_chat:
         print(
@@ -230,15 +248,9 @@ def test_routing_table_includes_qwen() -> bool:
             f"   got:      {chat_routes}\n   expected: {expected_chat}"
         )
         return False
-    if embed_routes != expected_embed:
-        print(
-            f"❌ test_routing_table_includes_qwen: embed routes mismatch.\n"
-            f"   got:      {embed_routes}\n   expected: {expected_embed}"
-        )
-        return False
     print(
-        f"✅ test_routing_table_includes_qwen: 3 chat + 2 embed Qwen routes "
-        f"registered across both chains"
+        f"✅ test_routing_table_includes_qwen: 3 chat Qwen routes "
+        f"(token-plan catalog), 0 embed"
     )
     return True
 

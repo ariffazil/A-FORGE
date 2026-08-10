@@ -135,39 +135,35 @@
         },
         {
           "provider": "qwen",
-          "model": "qwen3.7-flash",
+          "model": "qwen3.7-plus",
           "weight": 65,
-          "tags": [
-            "fast",
-            "general",
-            "long-context",
-            "qwen-cloud",
-            "free-quota-2026-10-23"
-          ]
-        },
-        {
-          "provider": "qwen",
-          "model": "qwen3.7-flash-2026-07-15",
-          "weight": 63,
-          "tags": [
-            "fast",
-            "general",
-            "long-context",
-            "qwen-cloud",
-            "free-quota-2026-10-23",
-            "dated-snapshot"
-          ]
-        },
-        {
-          "provider": "qwen",
-          "model": "qwen3.6-plus-2026-04-02",
-          "weight": 60,
           "tags": [
             "deep-reasoning",
             "long-context",
             "qwen-cloud",
-            "free-quota-2026-09-29",
-            "dated-snapshot"
+            "token-plan"
+          ]
+        },
+        {
+          "provider": "qwen",
+          "model": "qwen3.6-plus",
+          "weight": 63,
+          "tags": [
+            "deep-reasoning",
+            "long-context",
+            "qwen-cloud",
+            "token-plan"
+          ]
+        },
+        {
+          "provider": "qwen",
+          "model": "deepseek-v3.2",
+          "weight": 60,
+          "tags": [
+            "deep-reasoning",
+            "qwen-cloud",
+            "token-plan",
+            "third-party-via-qwen"
           ]
         },
         {
@@ -237,28 +233,6 @@
           "tags": [
             "embed",
             "bm-native"
-          ]
-        },
-        {
-          "provider": "qwen",
-          "model": "text-embedding-v4",
-          "weight": 9,
-          "tags": [
-            "embed",
-            "multilingual",
-            "qwen-cloud",
-            "free-quota-2026-09-29"
-          ]
-        },
-        {
-          "provider": "qwen",
-          "model": "qwen3.7-text-embedding",
-          "weight": 8,
-          "tags": [
-            "embed",
-            "multilingual",
-            "qwen-cloud",
-            "free-quota-2026-11-09"
           ]
         },
         {
@@ -343,19 +317,18 @@
       "note": "Local inference engine — zero network latency, zero billing"
     },
     "qwen": {
-      "base_url": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "base_url": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
       "api_key_env": "QWEN_API_KEY",
       "cost_band": "free",
       "timeout_ms": 20000,
       "strict_free_tier": true,
-      "note": "P1.5 fix 2026-08-10 — Qwen Cloud international endpoint (Singapore). OpenAI-compatible. Free tier only — QwenProvider enforces EXHAUSTED_OBSERVED state on 403 AllocationQuota.FreeTierOnly, EXPIRED_TERMINAL when validity window closes. Dated/undated variants are SEPARATE routes. Snapshot cap MAX_ACTIVE_QWEN_SNAPSHOTS=2 enforced in code.",
+      "note": "P1.5.1 fix 2026-08-10 — BASE_URL is configurable via QWEN_BASE_URL env. Default is the Alibaba Model Studio Token Plan endpoint (ap-southeast-1) because the user's QWEN_API_KEY is scoped to it. To use the standard DashScope free tier (dashscope-intl.aliyuncs.com), set QWEN_BASE_URL and replace QWEN_API_KEY with a key generated from the QwenCloud Free Tier dashboard. OpenAI-compatible. State machine: EXHAUSTED_OBSERVED on body code 'insufficient_quota' (token-plan) OR 'AllocationQuota.FreeTierOnly' (free tier); EXPIRED_TERMINAL when validity window closes. Dated/undated variants are SEPARATE routes. Snapshot cap MAX_ACTIVE_QWEN_SNAPSHOTS=2 enforced in code.",
       "expiration_epochs": {
-        "qwen3.7-flash": "2026-10-23T00:00:00Z",
-        "qwen3.7-flash-2026-07-15": "2026-10-23T00:00:00Z",
-        "qwen3.6-flash-2026-04-16": "2026-09-29T00:00:00Z",
-        "qwen3.6-plus-2026-04-02": "2026-09-29T00:00:00Z",
-        "text-embedding-v4": "2026-09-29T00:00:00Z",
-        "qwen3.7-text-embedding": "2026-11-09T00:00:00Z"
+        "qwen3.7-plus": "2027-08-10T00:00:00Z",
+        "qwen3.6-flash": "2027-08-10T00:00:00Z",
+        "qwen3.6-plus": "2027-08-10T00:00:00Z",
+        "deepseek-v3.2": "2027-08-10T00:00:00Z",
+        "glm-5.1": "2027-08-10T00:00:00Z"
       }
     }
   },

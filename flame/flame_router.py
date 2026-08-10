@@ -249,17 +249,26 @@ PROVIDER_ERROR_VOCABULARY = {
         # P1.5 fix 2026-08-10: Qwen Cloud international endpoint.
         # Returns STRING body codes (not integer), so _detect_rate_limit
         # must handle int | str membership. AllocationQuota.FreeTierOnly
-        # is the canonical "free quota exhausted" error — it does NOT
-        # refire within the 90-day window, so the route is parked in
-        # EXHAUSTED_OBSERVED state until expiration_epoch (handled in
-        # QwenProvider._check_state, not here).
+        # is the canonical "free quota exhausted" error on the standard
+        # DashScope endpoint — it does NOT refire within the 90-day
+        # window, so the route is parked in EXHAUSTED_OBSERVED state
+        # until expiration_epoch (handled in QwenProvider._check_state,
+        # not here).
+        #
+        # P1.5.1 fix 2026-08-10: Token Plan endpoint uses a different
+        # body code: `insufficient_quota`. Same state machine response
+        # (park in EXHAUSTED_OBSERVED), but the body code is different.
+        # Both endpoints share the OPENAI-compatible contract, so the
+        # error vocabulary must cover both.
         "rate_limit_body_codes": [],
         "quota_exhausted_codes": [
-            "AllocationQuota.FreeTierOnly",  # Qwen: free quota exhausted
+            "AllocationQuota.FreeTierOnly",  # DashScope free tier
+            "insufficient_quota",  # Model Studio Token Plan
             "quota_exceeded",  # defensive — some Qwen proxies return this
         ],
         "auth_failure_codes": [
             "InvalidApiKey",
+            "invalid_api_key",  # model returned lowercase variant
             "AuthenticationFailed",
         ],
     },
@@ -286,20 +295,25 @@ def _detect_rate_limit(
     """
     vocab = PROVIDER_ERROR_VOCABULARY.get(provider, {})
 
-    # Standard detection: HTTP 429
-    if status_code == 429:
-        return True, f"HTTP 429 (standard rate-limit from {provider})"
-
-    # Provider-specific body code detection
-    # P1.5 fix 2026-08-10: accept int | str body codes. Qwen returns
-    # string codes like "AllocationQuota.FreeTierOnly"; Cloudflare/MiniMax
-    # return integers. The membership check `body_code in vocab_list`
-    # works for both, as long as vocab lists are not mixed types.
+    # P1.5.1 fix 2026-08-10: check body codes BEFORE generic 429.
+    # Qwen Token Plan endpoint returns HTTP 429 + body code
+    # "insufficient_quota" — semantically this is quota exhaustion
+    # (fall through to next tier, park in EXHAUSTED_OBSERVED), NOT
+    # a transient rate limit (which would backoff and retry the
+    # same model). Order matters: body codes are more specific.
     if response_body and isinstance(response_body, dict):
         body_code = response_body.get("code") or response_body.get("error", {}).get(
             "code"
         )
         if body_code is not None:
+            # Quota exhaustion FIRST — most specific, no retry possible
+            quota_codes = vocab.get("quota_exhausted_codes", [])
+            if body_code in quota_codes:
+                return True, (
+                    f"Body code {body_code} from {provider} (quota exhausted)"
+                )
+
+            # Provider-specific rate-limit body codes
             rate_codes = vocab.get("rate_limit_body_codes", [])
             if body_code in rate_codes:
                 return True, (
@@ -307,18 +321,17 @@ def _detect_rate_limit(
                     f"(provider-specific rate-limit)"
                 )
 
-            quota_codes = vocab.get("quota_exhausted_codes", [])
-            if body_code in quota_codes:
-                return True, (
-                    f"Body code {body_code} from {provider} (quota exhausted)"
-                )
-
+            # Auth failure
             auth_codes = vocab.get("auth_failure_codes", [])
             if body_code in auth_codes:
                 return True, (
                     f"Body code {body_code} from {provider} "
                     f"(auth failure — key may be expired)"
                 )
+
+    # Standard detection: HTTP 429 (only if no specific body code matched)
+    if status_code == 429:
+        return True, f"HTTP 429 (standard rate-limit from {provider})"
 
     return False, ""
 
@@ -952,7 +965,19 @@ class QwenProvider:
     DITEMPA BUKAN DIBERI — Forged, not given.
     """
 
-    BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    BASE_URL = os.getenv(
+        "QWEN_BASE_URL",
+        "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+    )
+    # P1.5.1 fix 2026-08-10: BASE_URL is now env-driven. There are at least
+    # three Qwen endpoints in the wild:
+    #   - Standard DashScope international (free tier): dashscope-intl.aliyuncs.com
+    #   - Standard DashScope China domestic: dashscope.aliyuncs.com
+    #   - Alibaba Model Studio Token Plan: token-plan.ap-southeast-1.maas.aliyuncs.com
+    #   - Anthropic-compatible: token-plan.ap-southeast-1.maas.aliyuncs.com/apps/anthropic
+    # The default is the Token Plan endpoint because the user's QWEN_API_KEY
+    # in vault.env is scoped to that endpoint. Free-tier keys (from the
+    # QwenCloud "Free Tier" page) will need QWEN_BASE_URL overridden.
 
     # Per-model EXHAUSTED cooldown. 24h is heuristic: the bucket does not
     # refill in 90d, but the operator might toggle Free-quota-only OFF
@@ -971,8 +996,10 @@ class QwenProvider:
         """
         self.api_key = api_key or os.environ.get("QWEN_API_KEY", "")
         self.expiration_epochs: dict[str, float] = expiration_epochs or {}
-        # model_id → unix epoch when we last saw AllocationQuota.FreeTierOnly
-        self.exhausted_observed_at: dict[str, float] = {}
+        # model_id → (unix_epoch, body_code) when we last saw a quota
+        # exhaustion body. The body code is recorded so EXHAUSTED_OBSERVED
+        # state reports the actual reason, not a hardcoded one.
+        self.exhausted_observed_at: dict[str, tuple[float, str]] = {}
 
     def _check_state(self, model_id: str) -> tuple[bool, str]:
         """Return (ok, reason) for this model's current state.
@@ -991,14 +1018,16 @@ class QwenProvider:
             )
 
         obs = self.exhausted_observed_at.get(model_id)
-        if obs and (time.time() - obs) < self.EXHAUSTED_COOLDOWN_S:
-            remaining = int(self.EXHAUSTED_COOLDOWN_S - (time.time() - obs))
-            return False, (
-                f"QWEN_EXHAUSTED_OBSERVED: {model_id} returned "
-                f"AllocationQuota.FreeTierOnly at "
-                f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(obs))} "
-                f"— re-probe in {remaining}s"
-            )
+        if obs:
+            obs_ts, obs_code = obs
+            if (time.time() - obs_ts) < self.EXHAUSTED_COOLDOWN_S:
+                remaining = int(self.EXHAUSTED_COOLDOWN_S - (time.time() - obs_ts))
+                return False, (
+                    f"QWEN_EXHAUSTED_OBSERVED: {model_id} returned "
+                    f"{obs_code} at "
+                    f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(obs_ts))} "
+                    f"— re-probe in {remaining}s"
+                )
 
         return True, ""
 
@@ -1062,8 +1091,16 @@ class QwenProvider:
                 "qwen", resp.status_code, err_body
             )
             if is_rl and "quota exhausted" in rl_reason:
-                # Mark EXHAUSTED_OBSERVED — do not retry within cooldown
-                self.exhausted_observed_at[model] = time.time()
+                # Mark EXHAUSTED_OBSERVED — do not retry within cooldown.
+                # Record the actual body code so state reports the truth.
+                body_code = ""
+                if isinstance(err_body, dict):
+                    body_code = (
+                        err_body.get("code")
+                        or err_body.get("error", {}).get("code")
+                        or ""
+                    )
+                self.exhausted_observed_at[model] = (time.time(), body_code or "unknown")
                 logger.warning(
                     f"FLAME QWEN {model} → EXHAUSTED_OBSERVED "
                     f"({rl_reason}). Cooldown {self.EXHAUSTED_COOLDOWN_S}s."
