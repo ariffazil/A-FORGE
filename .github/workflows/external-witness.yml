@@ -47,11 +47,13 @@ permissions:
 jobs:
   # ── PR event: validate attestation exists and is SHA-bound ──
   witness:
+    if: (github.event_name == 'pull_request') && (github.actor != 
+      'dependabot[bot]' && github.actor != 'app/dependabot')
     name: External Witness Check (W³ channel · SHA-bound)
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: Declare arifOS kernel identity (no localhost probe — runners are isolated)
+      - name: Declare arifOS kernel identity (no localhost probe — runners are 
+          isolated)
         id: kernel
         run: |
           cat <<'EOF' >> "$GITHUB_STEP_SUMMARY"

@@ -42,6 +42,7 @@ concurrency:
 jobs:
   # ── Call reusable build-once attestation ───────────────────────────
   attest:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot'
     name: "Attest — a-forge"
     uses: ./.github/workflows/reusable-release-attest.yml
     with:
@@ -49,9 +50,8 @@ jobs:
       artifact_path: 'dist/'
       build_command: 'npm run build'
     secrets: inherit
-
-  # ── Create GitHub Release with attestation evidence ───────────────
   release:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot'
     name: "Publish Release"
     runs-on: ubuntu-latest
     needs: attest

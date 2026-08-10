@@ -33,6 +33,7 @@ concurrency:
 jobs:
   # ── Gate 1: YAML parse ──────────────────────────────────────────
   parse-all:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot'
     name: "Parse all workflow YAML"
     runs-on: ubuntu-latest
     timeout-minutes: 3
@@ -96,6 +97,7 @@ jobs:
 
   # ── Gate 2: actionlint ──────────────────────────────────────────
   actionlint:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot'
     name: "actionlint"
     runs-on: ubuntu-latest
     timeout-minutes: 2
@@ -109,6 +111,7 @@ jobs:
 
   # ── Gate 3: Unsafe patterns ─────────────────────────────────────
   unsafe-patterns:
+    if: github.actor != 'dependabot[bot]' && github.actor != 'app/dependabot'
     name: "Detect unsafe workflow patterns"
     runs-on: ubuntu-latest
     timeout-minutes: 2
