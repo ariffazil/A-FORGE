@@ -61,6 +61,20 @@ model_list:
     mode: chat
     supports_image_input: true
     notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
+- model_name: i-arif
+  litellm_params:
+  model: openai/mimo-v2.5
+  api_base: https://token-plan-sgp.xiaomimimo.com/v1
+  api_key: os.environ/MIMO_API_KEY
+  order: 2
+  input_cost_per_token: 1.4e-07
+  output_cost_per_token: 2.8e-07
+  model_info:
+  max_input_tokens: 1048576
+  max_output_tokens: 131072
+  mode: chat
+  supports_image_input: true
+  notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek-v4-flash
@@ -74,6 +88,19 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     notes: ' [DEAD — balance -$0.13, order→99] [REASONING_MODEL: requires max_tokens>=200, min content budget]'
+- model_name: i-arif
+  litellm_params:
+  model: openai/deepseek-v4-flash
+  api_base: https://api.deepseek.com/v1
+  api_key: os.environ/DEEPSEEK_API_KEY
+  order: 99
+  input_cost_per_token: 1.4e-07
+  output_cost_per_token: 2.8e-07
+  min_tokens: 200
+  model_info:
+  max_input_tokens: 131072
+  max_output_tokens: 131072
+  notes: ' [DEAD — balance -$0.13, order→99] [REASONING_MODEL: requires max_tokens>=200, min content budget]'
 - model_name: hermes-asi
   litellm_params:
     model: openai/MiniMax-M3
@@ -85,6 +112,17 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
+- model_name: i-arif
+  litellm_params:
+  model: openai/MiniMax-M3
+  api_base: https://api.minimax.io/v1
+  api_key: os.environ/MINIMAX_API_KEY
+  order: 99
+  model_info:
+  max_input_tokens: 1048576
+  max_output_tokens: 131072
+  mode: chat
+  notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: hermes-asi
   litellm_params:
     model: openai/qwen3.8-max
@@ -97,6 +135,18 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
+- model_name: i-arif
+  litellm_params:
+  model: openai/qwen3.8-max
+  api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+  api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+  order: 1
+  model_info:
+  max_input_tokens: 131072
+  max_output_tokens: 131072
+  mode: chat
+  supports_vision: true
+  supports_function_calling: true
 - model_name: hermes-asi
   litellm_params:
     model: openai/qwen3.6-flash
@@ -106,6 +156,15 @@ model_list:
   model_info:
     max_input_tokens: 262144
     max_output_tokens: 131072
+- model_name: i-arif
+  litellm_params:
+  model: openai/qwen3.6-flash
+  api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+  api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+  order: 1
+  model_info:
+  max_input_tokens: 262144
+  max_output_tokens: 131072
 - model_name: agi-333
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -508,6 +567,17 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     notes: MiniMax-M3 DIRECT for hermes-asi. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
+- model_name: i-arif
+  litellm_params:
+  model: openai/MiniMax-M3
+  api_base: https://api.minimax.io/v1
+  api_key: os.environ/MINIMAX_API_KEY
+  order: 2
+  model_info:
+  max_input_tokens: 1048576
+  max_output_tokens: 131072
+  mode: chat
+  notes: MiniMax-M3 DIRECT for i-arif. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: hermes-asi
   litellm_params:
     model: openai/MiniMax-M2.7
@@ -519,6 +589,17 @@ model_list:
     max_output_tokens: 65536
     mode: chat
     notes: MiniMax-M2.7 DIRECT — 200K ctx, vision. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
+- model_name: i-arif
+  litellm_params:
+  model: openai/MiniMax-M2.7
+  api_base: https://api.minimax.io/v1
+  api_key: os.environ/MINIMAX_API_KEY
+  order: 3
+  model_info:
+  max_input_tokens: 204800
+  max_output_tokens: 65536
+  mode: chat
+  notes: MiniMax-M2.7 DIRECT — 200K ctx, vision. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: asi-555
   litellm_params:
     model: openai/MiniMax-M3
@@ -621,6 +702,18 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     notes: 'deepseek-v4-flash via QWEN Token Plan Individual — PRIMARY for hermes-asi. Burst queue: 30s. [REASONING_MODEL: requires max_tokens>=200, min content budget]'
+- model_name: i-arif
+  litellm_params:
+  model: openai/deepseek-v4-flash-0731
+  api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+  api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+  order: 1
+  min_tokens: 200
+  model_info:
+  max_input_tokens: 131072
+  max_output_tokens: 131072
+  mode: chat
+  notes: 'deepseek-v4-flash via QWEN Token Plan Individual — PRIMARY for i-arif. Burst queue: 30s. [REASONING_MODEL: requires max_tokens>=200, min content budget]'
 - model_name: agi-333
   litellm_params:
     model: openai/glm-5.2
@@ -844,6 +937,17 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
+- model_name: i-arif
+  litellm_params:
+  model: openai/deepseek-v4-pro
+  api_base: https://opencode.ai/zen/go/v1
+  api_key: os.environ/OPENCODE_GO_API_KEY
+  order: 2
+  model_info:
+  mode: chat
+  max_input_tokens: 131072
+  max_output_tokens: 131072
+  notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
 - model_name: agi-333
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -945,6 +1049,18 @@ model_list:
     mode: chat
     supports_vision: true
     notes: hermes-asi → Gemini 2.5 Flash — UNIVERSAL FLOOR. Edge bridge must never go dark.
+- model_name: i-arif
+  litellm_params:
+  model: openai/gemini-2.5-flash
+  api_base: https://generativelanguage.googleapis.com/v1beta/openai
+  api_key: os.environ/GEMINI_API_KEY
+  order: 5
+  model_info:
+  max_input_tokens: 1048576
+  max_output_tokens: 65536
+  mode: chat
+  supports_vision: true
+  notes: i-arif → Gemini 2.5 Flash — UNIVERSAL FLOOR. Edge bridge must never go dark.
 - model_name: opencode
   litellm_params:
     model: openai/gemini-2.5-flash
@@ -1000,6 +1116,17 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     notes: hermes-asi → Zen deepseek-v4-pro — RESTORED 2026-08-11. New key $19.55 balance.
+- model_name: i-arif
+  litellm_params:
+  model: openai/deepseek-v4-pro
+  api_base: https://opencode.ai/zen/v1
+  api_key: os.environ/OPENCODE_ZEN_API_KEY
+  order: 3
+  model_info:
+  max_input_tokens: 131072
+  max_output_tokens: 131072
+  mode: chat
+  notes: i-arif → Zen deepseek-v4-pro — RESTORED 2026-08-11. New key $19.55 balance.
 - model_name: asi-555
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -1059,6 +1186,10 @@ router_settings:
   cooldown_time: 60
   fallbacks:
   - hermes-asi:
+    - opencode
+    - agi-333
+  - i-arif:
+    - hermes-asi
     - opencode
     - agi-333
   - opencode:

@@ -183,45 +183,6 @@ const STATELESS_TOOLS = new Set([
     "forge_apex_goal_status",
     "forge_apex_emd",
     "forge_evaluate",
-
-    // ── Wave A (2026-08-11) — Pure OBSERVE, audit-only write via recordReceipt ────
-    // Handlers verified stateless: no state mutation, no session reads.
-    // recordReceipt() is audit-only vault append (F11), not session state.
-    // forge_whoami: truly stateless identity echo.
-    // forge_netdata_alarms/metrics: read-only Netdata API.
-    // forge_minimax_search: external MCP call (stateless).
-    // forge_worktree: idempotent git sensor (runGit reads only).
-    "forge_whoami",
-    "forge_netdata_alarms",
-    "forge_netdata_metrics",
-    "forge_minimax_search",
-    "forge_audit",
-    "forge_minimax_audit",  // BACKCOMPAT alias — kept until external callers migrate
-    "forge_worktree",
-
-    // ── Wave B (2026-08-11) — Mutation tools with task_context auth ──────────────
-    // These tools accept task_context (CONTEXT B — trusted agent authority)
-    // and/or lease_id for authorization. Session continuity is NOT required.
-    // Browser tools: each calls a playwright/puppeteer session owned by A-FORGE,
-    //   not by the MCP caller. Mutation is on the browser page, not on the caller's session.
-    // GitHub tools: accept lease_id for kernel-level authorization (already designed).
-    // Postgres/Docker/Git: proxy to local services, task_context provides authority.
-    // Bridge tools (forge_wealth/well/proxy_call): route to target organ which enforces its own gates.
-    "forge_browser_navigate",
-    "forge_browser_click",
-    "forge_browser_type",
-    "forge_browser_screenshot",
-    "forge_browser_extract_text",
-    "forge_browser_evaluate_js",
-    "forge_github_create_or_update_file",
-    "forge_github_create_issue",
-    "forge_postgres",
-    "forge_docker",
-    "forge_git",
-    "forge_docsgpt",
-    "forge_wealth",
-    "forge_well",
-    "forge_proxy_call",
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────
