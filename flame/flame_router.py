@@ -126,8 +126,17 @@ _FLAME_ALLOWLIST_KEYS = {
     "MISTRAL_API_KEY",
     "HF_TOKEN",
     "FIREWORKS_API_KEY",
+    "QWEN_API_KEY",  # P1.5 fix 2026-08-10: Qwen Cloud international endpoint
     # Ollama: local, no key needed
 }
+
+# Hard cap on active Qwen snapshot variants per model family.
+# Empirical lesson 2026-08-10: Qwen exposes 3-5 dated snapshots per model,
+# each with its own 1M-token bucket. A naive "add all" policy bloats the
+# routing table with 0%-consumed dated snapshots that share quota pressure.
+# Two per family (latest undated + latest dated) is sufficient for
+# provider-diversity (Gödel E3) without snapshot explosion (Risk #4).
+MAX_ACTIVE_QWEN_SNAPSHOTS = 2
 
 _SECRETS_FILE = Path("/root/.secrets/vault.env")
 if _SECRETS_FILE.exists():
@@ -236,6 +245,33 @@ PROVIDER_ERROR_VOCABULARY = {
     "sea-lion": {
         "rate_limit_body_codes": [],  # SEA-LION uses standard 429
     },
+    "qwen": {
+        # P1.5 fix 2026-08-10: Qwen Cloud international endpoint.
+        # Returns STRING body codes (not integer), so _detect_rate_limit
+        # must handle int | str membership. AllocationQuota.FreeTierOnly
+        # is the canonical "free quota exhausted" error on the standard
+        # DashScope endpoint — it does NOT refire within the 90-day
+        # window, so the route is parked in EXHAUSTED_OBSERVED state
+        # until expiration_epoch (handled in QwenProvider._check_state,
+        # not here).
+        #
+        # P1.5.1 fix 2026-08-10: Token Plan endpoint uses a different
+        # body code: `insufficient_quota`. Same state machine response
+        # (park in EXHAUSTED_OBSERVED), but the body code is different.
+        # Both endpoints share the OPENAI-compatible contract, so the
+        # error vocabulary must cover both.
+        "rate_limit_body_codes": [],
+        "quota_exhausted_codes": [
+            "AllocationQuota.FreeTierOnly",  # DashScope free tier
+            "insufficient_quota",  # Model Studio Token Plan
+            "quota_exceeded",  # defensive — some Qwen proxies return this
+        ],
+        "auth_failure_codes": [
+            "InvalidApiKey",
+            "invalid_api_key",  # model returned lowercase variant
+            "AuthenticationFailed",
+        ],
+    },
 }
 
 
@@ -259,16 +295,25 @@ def _detect_rate_limit(
     """
     vocab = PROVIDER_ERROR_VOCABULARY.get(provider, {})
 
-    # Standard detection: HTTP 429
-    if status_code == 429:
-        return True, f"HTTP 429 (standard rate-limit from {provider})"
-
-    # Provider-specific body code detection
+    # P1.5.1 fix 2026-08-10: check body codes BEFORE generic 429.
+    # Qwen Token Plan endpoint returns HTTP 429 + body code
+    # "insufficient_quota" — semantically this is quota exhaustion
+    # (fall through to next tier, park in EXHAUSTED_OBSERVED), NOT
+    # a transient rate limit (which would backoff and retry the
+    # same model). Order matters: body codes are more specific.
     if response_body and isinstance(response_body, dict):
         body_code = response_body.get("code") or response_body.get("error", {}).get(
             "code"
         )
         if body_code is not None:
+            # Quota exhaustion FIRST — most specific, no retry possible
+            quota_codes = vocab.get("quota_exhausted_codes", [])
+            if body_code in quota_codes:
+                return True, (
+                    f"Body code {body_code} from {provider} (quota exhausted)"
+                )
+
+            # Provider-specific rate-limit body codes
             rate_codes = vocab.get("rate_limit_body_codes", [])
             if body_code in rate_codes:
                 return True, (
@@ -276,18 +321,17 @@ def _detect_rate_limit(
                     f"(provider-specific rate-limit)"
                 )
 
-            quota_codes = vocab.get("quota_exhausted_codes", [])
-            if body_code in quota_codes:
-                return True, (
-                    f"Body code {body_code} from {provider} (quota exhausted)"
-                )
-
+            # Auth failure
             auth_codes = vocab.get("auth_failure_codes", [])
             if body_code in auth_codes:
                 return True, (
                     f"Body code {body_code} from {provider} "
                     f"(auth failure — key may be expired)"
                 )
+
+    # Standard detection: HTTP 429 (only if no specific body code matched)
+    if status_code == 429:
+        return True, f"HTTP 429 (standard rate-limit from {provider})"
 
     return False, ""
 
@@ -889,6 +933,201 @@ class OpenRouterProvider:
         return "", latency, False
 
 
+class QwenProvider:
+    """Qwen Cloud free-tier provider. ADVISORY. RM0.
+
+    P1.5 fix 2026-08-10: 6th provider in the FLAME mesh.
+    International endpoint (Singapore) — OpenAI-compatible.
+
+    STATE MACHINE (F1 Truth: only know what was observed):
+
+        healthy
+            ↓  [403 AllocationQuota.FreeTierOnly observed]
+        exhausted_observed
+            ↓  [cooldown 24h elapsed AND call succeeds]
+        healthy
+            ↓  [expiration_epoch < now]
+        expired_terminal      ← permadown, no probes, no retries
+
+    Design lessons (carried from OpenRouterProvider + qwen-plus EXPIRED case):
+      - Qwen exposes no realtime quota API; the only honest signal is
+        the response body code. Don't pre-count.
+      - Dated and undated model variants are SEPARATE routes with SEPARATE
+        expiration_epoch. `qwen3.7-flash` and `qwen3.7-flash-2026-07-15`
+        are NOT the same model.
+      - Free quota is per-account-per-model-per-90d-window. No daily reset
+        within the window. The only "refill" is a new dated snapshot
+        (which gets its own 90d window from release).
+      - Unverified accounts default to "Free quota only" ON — operator
+        cannot disable. Verified accounts default OFF — operator MUST
+        set qwen.strict_free_tier=true in config to prevent charges.
+
+    DITEMPA BUKAN DIBERI — Forged, not given.
+    """
+
+    BASE_URL = os.getenv(
+        "QWEN_BASE_URL",
+        "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+    )
+    # P1.5.1 fix 2026-08-10: BASE_URL is env-overridable.
+    # P1.5.2 fix 2026-08-10: but the engine sets self.base_url from the
+    # config in __init__ — the class attr is a fallback default only.
+    # There are at least three Qwen endpoints in the wild:
+    #   - Standard DashScope international (free tier): dashscope-intl.aliyuncs.com
+    #   - Standard DashScope China domestic: dashscope.aliyuncs.com
+    #   - Alibaba Model Studio Token Plan: token-plan.ap-southeast-1.maas.aliyuncs.com
+    #   - Bailian PAYG: ws-wlab8klalfojzq7i.ap-southeast-1.maas.aliyuncs.com
+
+    # Per-model EXHAUSTED cooldown. 24h is heuristic: the bucket does not
+    # refill in 90d, but the operator might toggle Free-quota-only OFF
+    # (verified account path), or Qwen might issue a quota grant. Re-probe
+    # daily — falsifiable by a single 200 response.
+    EXHAUSTED_COOLDOWN_S = 24 * 3600
+
+    def __init__(
+        self,
+        api_key: str = "",
+        expiration_epochs: dict | None = None,
+        base_url: str = "",
+    ):
+        """Initialize QwenProvider.
+
+        Args:
+            api_key: API key. Caller should pass explicitly from config's
+                api_key_env (e.g. DASHSCOPE_API_KEY). Falls back to
+                QWEN_API_KEY env var for backward compat.
+            expiration_epochs: model_id → unix epoch when the 90d window
+                closes. Read from flame_config.json at engine init.
+            base_url: API base URL. Caller should pass from config.
+                Falls back to QWEN_BASE_URL env var, then to class default.
+        """
+        self.api_key = api_key or os.environ.get("QWEN_API_KEY", "")
+        self.base_url = (
+            base_url
+            or os.environ.get("QWEN_BASE_URL")
+            or self.BASE_URL
+        )
+        self.expiration_epochs: dict[str, float] = expiration_epochs or {}
+        # model_id → (unix_epoch, body_code) when we last saw a quota
+        # exhaustion body. The body code is recorded so EXHAUSTED_OBSERVED
+        # state reports the actual reason, not a hardcoded one.
+        self.exhausted_observed_at: dict[str, tuple[float, str]] = {}
+
+    def _check_state(self, model_id: str) -> tuple[bool, str]:
+        """Return (ok, reason) for this model's current state.
+
+        Three terminal states:
+          - EXPIRED: expiration_epoch < now → permadown, do not probe
+          - EXHAUSTED_OBSERVED: 403 seen within EXHAUSTED_COOLDOWN_S
+          - healthy: clear to call
+        """
+        exp = self.expiration_epochs.get(model_id)
+        if exp and exp > 0 and time.time() > exp:
+            return False, (
+                f"QWEN_EXPIRED: {model_id} validity window closed at "
+                f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(exp))} "
+                f"(terminal, no probes)"
+            )
+
+        obs = self.exhausted_observed_at.get(model_id)
+        if obs:
+            obs_ts, obs_code = obs
+            if (time.time() - obs_ts) < self.EXHAUSTED_COOLDOWN_S:
+                remaining = int(self.EXHAUSTED_COOLDOWN_S - (time.time() - obs_ts))
+                return False, (
+                    f"QWEN_EXHAUSTED_OBSERVED: {model_id} returned "
+                    f"{obs_code} at "
+                    f"{time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime(obs_ts))} "
+                    f"— re-probe in {remaining}s"
+                )
+
+        return True, ""
+
+    def call(
+        self,
+        model: str,
+        messages: list[dict],
+        max_tokens: int = 1024,
+        temperature: float = 0.3,
+        timeout: float = 15.0,
+    ) -> tuple[str, float, bool, str]:
+        """Call Qwen Cloud with a single model.
+
+        Returns (content, latency_ms, ok, error).
+        Updates self.exhausted_observed_at on 403 AllocationQuota.FreeTierOnly.
+        """
+        if not self.api_key:
+            return "", 0.0, False, "QWEN_NO_KEY: QWEN_API_KEY not set"
+
+        ok, reason = self._check_state(model)
+        if not ok:
+            return "", 0.0, False, reason
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {self.api_key}",
+        }
+        payload = {
+            "model": model,
+            "messages": messages,
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+        }
+
+        t0 = time.monotonic()
+        try:
+            with httpx.Client(timeout=timeout) as client:
+                resp = client.post(
+                    f"{self.base_url}/chat/completions",
+                    headers=headers,
+                    json=payload,
+                )
+            latency = (time.monotonic() - t0) * 1000
+
+            if resp.status_code == 200:
+                data = resp.json()
+                message = data.get("choices", [{}])[0].get("message", {})
+                content = (message.get("content") or "").strip()
+                if content:
+                    return content, latency, True, ""
+                return "", latency, False, "QWEN_EMPTY: response had no content"
+
+            # Non-200 — inspect body for AllocationQuota.FreeTierOnly
+            try:
+                err_body = resp.json()
+            except Exception:
+                err_body = {}
+
+            # P1.5 fix: use _detect_rate_limit with string body codes
+            is_rl, rl_reason = _detect_rate_limit(
+                "qwen", resp.status_code, err_body
+            )
+            if is_rl and "quota exhausted" in rl_reason:
+                # Mark EXHAUSTED_OBSERVED — do not retry within cooldown.
+                # Record the actual body code so state reports the truth.
+                body_code = ""
+                if isinstance(err_body, dict):
+                    body_code = (
+                        err_body.get("code")
+                        or err_body.get("error", {}).get("code")
+                        or ""
+                    )
+                self.exhausted_observed_at[model] = (time.time(), body_code or "unknown")
+                logger.warning(
+                    f"FLAME QWEN {model} → EXHAUSTED_OBSERVED "
+                    f"({rl_reason}). Cooldown {self.EXHAUSTED_COOLDOWN_S}s."
+                )
+                return "", latency, False, f"QWEN_QUOTA_EXHAUSTED: {rl_reason}"
+
+            return "", latency, False, (
+                f"QWEN_HTTP_{resp.status_code}: {rl_reason or 'no body'}"
+            )
+        except Exception as e:
+            latency = (time.monotonic() - t0) * 1000
+            logger.warning(f"FLAME QWEN {model} error: {e}")
+            return "", latency, False, f"QWEN_ERROR: {str(e)[:200]}"
+
+
 def _is_safety_refusal(text: str) -> bool:
     """P0.6: Safety refusal check — shared by both OR and direct providers."""
     patterns = [
@@ -937,6 +1176,55 @@ class FlameEngine:
 
         self.routing_table = RoutingTable.from_config(self.config, chain_id)
         self._table_populated = False
+
+        # P1.5 fix 2026-08-10: validate Qwen snapshot cap on engine init.
+        # Fails loudly if operator has stacked too many dated variants.
+        # This is Risk #4 (snapshot explosion) — enforced at config load.
+        self._validate_qwen_snapshot_cap()
+
+    # ── Config Validation ─────────────────────────────────────────────────
+
+    def _validate_qwen_snapshot_cap(self) -> None:
+        """Enforce MAX_ACTIVE_QWEN_SNAPSHOTS per model family.
+
+        P1.5 fix 2026-08-10 — Risk #4 from the Qwen integration design:
+        Qwen exposes 3-5 dated snapshots per model, each with its own
+        1M-token bucket. A naive "add all" policy bloats the routing table
+        with 0%-consumed dated snapshots that share quota pressure.
+
+        The cap is per model family. A family is identified by stripping
+        the trailing date suffix (e.g. `qwen3.7-plus-2026-05-26` →
+        family `qwen3.7-plus`).
+
+        Behavior: log a WARNING per offending family, but DO NOT raise.
+        FLAME has 6 other providers; refusing to start because of one
+        snapshot-too-many would be a worse failure mode than the
+        snapshot itself.
+        """
+        if "qwen" not in self.providers:
+            return
+
+        family_counts: dict[str, list[str]] = {}
+        for chain_id, chain in self.config.get("chains", {}).items():
+            for tier in chain.get("tiers", []):
+                if tier.get("provider") != "qwen":
+                    continue
+                model = tier.get("model", "")
+                # Strip trailing date suffix `-YYYY-MM-DD`
+                family = model
+                if len(model) >= 11 and model[-11] == "-" and model[-8:].isdigit():
+                    family = model[:-11]
+                family_counts.setdefault(family, []).append(f"{chain_id}:{model}")
+
+        for family, entries in family_counts.items():
+            if len(entries) > MAX_ACTIVE_QWEN_SNAPSHOTS:
+                logger.warning(
+                    f"FLAME QWEN snapshot cap exceeded: family '{family}' "
+                    f"has {len(entries)} active variants "
+                    f"(cap={MAX_ACTIVE_QWEN_SNAPSHOTS}). "
+                    f"Entries: {entries}. "
+                    f"Consider pruning to latest undated + latest dated."
+                )
 
     # ── Routing Table Bootstrap ──────────────────────────────────────────
 
@@ -1223,6 +1511,53 @@ class FlameEngine:
     # ── Main Call ──────────────────────────────────────────────────────────
 
     _or_provider: OpenRouterProvider | None = None  # P0.8 — lazy init
+    _qwen_provider: QwenProvider | None = None  # P1.5 fix 2026-08-10
+
+    def _get_qwen_provider(self) -> QwenProvider:
+        """Lazy-init QwenProvider with expiration_epochs + api_key from config.
+
+        P1.5.2 fix: read api_key_env from the config (e.g. DASHSCOPE_API_KEY
+        or QWEN_API_KEY) instead of hardcoding QWEN_API_KEY. The hardcoded
+        fallback path was a wiring bug — the config's api_key_env field
+        was being ignored. The env-var override `QWEN_API_KEY` still
+        works for callers that pass it directly.
+        """
+        if self._qwen_provider is None:
+            # Read per-model expiration epochs from provider config
+            qwen_cfg = self.providers.get("qwen", {})
+            exp_raw = qwen_cfg.get("expiration_epochs", {})
+            # Accept ISO-8601 strings or unix epochs
+            exp_epochs: dict[str, float] = {}
+            for model_id, val in exp_raw.items():
+                if isinstance(val, (int, float)):
+                    exp_epochs[model_id] = float(val)
+                elif isinstance(val, str):
+                    # ISO 8601 — parse and convert to epoch
+                    try:
+                        import datetime as _dt
+                        if val.endswith("Z"):
+                            val = val[:-1] + "+00:00"
+                        exp_epochs[model_id] = _dt.datetime.fromisoformat(
+                            val
+                        ).timestamp()
+                    except Exception:
+                        logger.warning(
+                            f"FLAME qwen.expiration_epochs[{model_id}]={val} "
+                            f"could not be parsed; treating as no expiration"
+                        )
+            # Read the API key from the config-specified env var.
+            # Fall back to QWEN_API_KEY env var for backward compat.
+            api_key_env = qwen_cfg.get("api_key_env", "QWEN_API_KEY")
+            api_key = os.environ.get(api_key_env, "")
+            # Read base_url from config; QwenProvider falls back to
+            # QWEN_BASE_URL env, then to the Token Plan class default.
+            base_url = qwen_cfg.get("base_url", "")
+            self._qwen_provider = QwenProvider(
+                api_key=api_key,
+                expiration_epochs=exp_epochs,
+                base_url=base_url,
+            )
+        return self._qwen_provider
 
     def call(
         self,
@@ -1420,6 +1755,85 @@ class FlameEngine:
                     hr = self.hitrates[key]
                     hr.record(False, latency, refuse=False, censor=False)
                     continue  # OR failed — fall through to next tier
+
+            # P1.5 fix 2026-08-10: Qwen Cloud provider — special handling.
+            # Same shape as OpenRouter: state-machine check before HTTP,
+            # EXHAUSTED_OBSERVED gate enforced in QwenProvider._check_state,
+            # sensitivity gate (Qwen is Singapore jurisdiction → PUBLIC only).
+            if provider == "qwen":
+                # P0.5: Hard RM0 gate — reject before HTTP
+                rm0_ok, rm0_reason = self._check_rm0(provider, tier)
+                if not rm0_ok:
+                    logger.warning(f"FLAME ⛔ {key} → {rm0_reason}")
+                    self._save_event(
+                        {
+                            "event": "rm0_reject",
+                            "provider": provider,
+                            "model": model,
+                            "reason": rm0_reason,
+                            "caller": caller_id,
+                            "sensitivity": sensitivity,
+                        }
+                    )
+                    continue
+
+                # Sensitivity gate — Qwen is Singapore jurisdiction, PUBLIC only
+                if sensitivity != Sensitivity.PUBLIC:
+                    self._save_event(
+                        {
+                            "event": "qwen_sensitivity_reject",
+                            "provider": provider,
+                            "model": model,
+                            "sensitivity": sensitivity,
+                            "caller": caller_id,
+                        }
+                    )
+                    logger.warning(
+                        f"FLAME ⛔ {key} → SENSITIVITY_REJECT ({sensitivity})"
+                    )
+                    continue
+
+                qwen = self._get_qwen_provider()
+                content, latency, qwen_ok, qwen_err = qwen.call(
+                    model, messages, max_tokens, temperature
+                )
+
+                if qwen_ok and content:
+                    # Mirror OpenRouter pattern: use [] (subscript) so
+                    # defaultdict creates a HitRate if missing. .get()
+                    # returns None for missing keys, which is a real bug.
+                    self.hitrates[key].record(
+                        True, latency, refuse=False, censor=False
+                    )
+                    prov = self._make_provenance(
+                        prompt, content, model, provider, used_chain_id, True
+                    )
+                    self._save_state()
+                    return FlameResult(
+                        content=content,
+                        model=model,
+                        provider=provider,
+                        latency_ms=latency,
+                        tier_index=i,
+                        tried=tried,
+                        ok=True,
+                        sensitivity=sensitivity,
+                        **prov,
+                    )
+                else:
+                    self.hitrates[key].record(
+                        False, latency, refuse=False, censor=False
+                    )
+                    self._save_event(
+                        {
+                            "event": "qwen_call_fail",
+                            "provider": provider,
+                            "model": model,
+                            "reason": qwen_err,
+                            "caller": caller_id,
+                        }
+                    )
+                    continue  # fall through to next tier
 
             # P0.5: Hard RM0 gate — reject before HTTP
             rm0_ok, rm0_reason = self._check_rm0(provider, tier)
@@ -1799,6 +2213,38 @@ class FlameEngine:
                     else f"OR_PROBE_FAIL ({latency:.0f}ms)",
                 }
                 if bool(content):
+                    hr = self.hitrates[key]
+                    hr.record(True, latency, refuse=False, censor=False)
+                continue
+
+            # P1.5 fix 2026-08-10: Qwen tier — probe via QwenProvider.
+            # Respects EXHAUSTED_OBSERVED + EXPIRED_TERMINAL state machine.
+            if provider == "qwen":
+                qwen = self._get_qwen_provider()
+                # Pre-check: skip probes on EXPIRED_TERMINAL routes
+                state_ok, state_reason = qwen._check_state(model)
+                if not state_ok:
+                    results[key] = {
+                        "ok": False,
+                        "latency_ms": 0,
+                        "content": f"QWEN_STATE: {state_reason}",
+                    }
+                    continue
+                content, latency, qwen_ok, qwen_err = qwen.call(
+                    model,
+                    [{"role": "user", "content": "Say OK"}],
+                    max_tokens=80,
+                    temperature=0.0,
+                    timeout=probe_timeout_s,
+                )
+                results[key] = {
+                    "ok": qwen_ok and bool(content),
+                    "latency_ms": latency,
+                    "content": content
+                    if content
+                    else f"QWEN_PROBE_FAIL: {qwen_err}",
+                }
+                if qwen_ok and content:
                     hr = self.hitrates[key]
                     hr.record(True, latency, refuse=False, censor=False)
                 continue

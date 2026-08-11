@@ -72,10 +72,13 @@ _FLAME_ALLOWLIST_KEYS = {
     "SEA_LION_API_KEY",
     "GEMINI_API_KEY",
     "CEREBRAS_API_KEY",
+    "OPENROUTER_API_KEY",  # P0.7 original (was already there) — added back after P0.7 cleanup
     "SAMBANOVA_API_KEY",
     "MISTRAL_API_KEY",
     "HF_TOKEN",
     "FIREWORKS_API_KEY",
+    "QWEN_API_KEY",       # P1.5 fix 2026-08-10: Token Plan key (optional)
+    "DASHSCOPE_API_KEY",  # P1.5.2 fix 2026-08-10: Qwen free tier key (the docs default)
 }
 
 _secrets = Path("/root/.secrets/vault.env")

@@ -134,6 +134,46 @@
           ]
         },
         {
+          "provider": "qwen",
+          "model": "qwen3.7-flash",
+          "weight": 65,
+          "tags": [
+            "fast",
+            "general",
+            "long-context",
+            "qwen-cloud",
+            "free-tier",
+            "free-quota-2026-10-23"
+          ]
+        },
+        {
+          "provider": "qwen",
+          "model": "qwen3.7-flash-2026-07-15",
+          "weight": 63,
+          "tags": [
+            "fast",
+            "general",
+            "long-context",
+            "qwen-cloud",
+            "free-tier",
+            "dated-snapshot",
+            "free-quota-2026-10-23"
+          ]
+        },
+        {
+          "provider": "qwen",
+          "model": "qwen3.6-plus-2026-04-02",
+          "weight": 60,
+          "tags": [
+            "deep-reasoning",
+            "long-context",
+            "qwen-cloud",
+            "free-tier",
+            "dated-snapshot",
+            "free-quota-2026-09-29"
+          ]
+        },
+        {
           "provider": "sea-lion",
           "model": "aisingapore/Llama-SEA-LION-v3-70B-IT",
           "weight": 60,
@@ -187,7 +227,7 @@
       ]
     },
     "RM0-EMBED-FREELOOP": {
-      "description": "Embedding lane — SEA-LION + Ollama for vector work",
+      "description": "Embedding lane — SEA-LION + Qwen + Ollama for vector work",
       "strategy": "least_latency",
       "fallback": "sequential",
       "max_retries": 2,
@@ -200,6 +240,18 @@
           "tags": [
             "embed",
             "bm-native"
+          ]
+        },
+        {
+          "provider": "qwen",
+          "model": "text-embedding-v4",
+          "weight": 9,
+          "tags": [
+            "embed",
+            "multilingual",
+            "qwen-cloud",
+            "free-tier",
+            "free-quota-2026-09-29"
           ]
         },
         {
@@ -282,6 +334,20 @@
       "cost_band": "free",
       "timeout_ms": 30000,
       "note": "Local inference engine — zero network latency, zero billing"
+    },
+    "qwen": {
+      "base_url": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
+      "api_key_env": "DASHSCOPE_API_KEY",
+      "cost_band": "free",
+      "timeout_ms": 20000,
+      "strict_free_tier": true,
+      "note": "P1.5.2 fix 2026-08-10 — flipped to the standard DashScope international free tier (per the official first API call docs). The user's DASHSCOPE_API_KEY (sk-ws-H.YLXYLM...) is the free tier key and works on dashscope-intl.aliyuncs.com with 1M tokens / 90 days per model. BASE_URL is still env-overridable via QWEN_BASE_URL for anyone who wants Token Plan or Bailian PAYG instead. State machine: EXHAUSTED_OBSERVED on 'AllocationQuota.FreeTierOnly' (free tier) OR 'insufficient_quota' (token-plan); EXPIRED_TERMINAL when validity window closes. Dated/undated variants are SEPARATE routes. Snapshot cap MAX_ACTIVE_QWEN_SNAPSHOTS=2 enforced in code.",
+      "expiration_epochs": {
+        "qwen3.7-flash": "2026-10-23T00:00:00Z",
+        "qwen3.7-flash-2026-07-15": "2026-10-23T00:00:00Z",
+        "qwen3.6-plus-2026-04-02": "2026-09-29T00:00:00Z",
+        "text-embedding-v4": "2026-09-29T00:00:00Z"
+      }
     }
   },
   "routing": {
