@@ -134,15 +134,54 @@ export function createApp(): express.Express {
   // req.body already parsed by app.use(express.json()) above.
   const mcpRouter = express.Router();
 
+  // ── CORS (2026-08-11) ───────────────────────────────────────────────
+  // BUGFIX: /mcp carried zero Access-Control-* headers and OPTIONS /mcp
+  // 405'd (Express's default router response, not a real preflight
+  // handler). Any browser-based MCP client (MCPJam, a web-hosted
+  // inspector, etc.) fails at preflight before it ever reaches the DNS
+  // rebinding or auth checks below. Mirrors the CORS config arifOS's
+  // kernel already uses in arifosmcp/transport/http.py.
+  mcpRouter.use((req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-API-Key, X-MCP-Protocol, MCP-Protocol-Version, Mcp-Session-Id, Mcp-Method, Mcp-Name, Accept, Last-Event-ID"
+    );
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "Mcp-Session-Id, MCP-Protocol-Version, Mcp-Method, Mcp-Name"
+    );
+    if (req.method === "OPTIONS") {
+      res.status(204).end();
+      return;
+    }
+    next();
+  });
+
   // ── DNS Rebinding Protection (2026-07-08) ──────────────────────────
   // MCPJam conformance: localhost servers must reject requests with
   // non-localhost Host/Origin headers to prevent DNS rebinding attacks.
+  //
+  // BUGFIX (2026-08-11): this defense only makes sense for a LOOPBACK-bound
+  // dev instance (a malicious webpage tricking a browser into hitting
+  // 127.0.0.1). Applied unconditionally, it also rejected every initialize
+  // call against the public production deployment (forge.arif-fazil.com),
+  // whose Host/Origin are never "localhost" by definition — breaking every
+  // external client (MCPJam Inspector, Claude Desktop, etc.) against the
+  // real endpoint. Gate it to non-production the same way
+  // ensureOperatorTokenPolicy() above gates its own prod check.
+  const isProductionMcp = process.env.NODE_ENV === "production" || process.env.AF_FORGE_ENV === "production";
   const LOCALHOST_HOSTS = new Set([
     "localhost", "127.0.0.1", "[::1]", "::1",
     "localhost:7071", "127.0.0.1:7071", "[::1]:7071",
     "localhost:7072", "127.0.0.1:7072", "[::1]:7072",
   ]);
   mcpRouter.use((req: Request, res: Response, next: NextFunction) => {
+    if (isProductionMcp) {
+      next();
+      return;
+    }
     const host = (req.headers["host"] || "").toString().toLowerCase();
     const origin = (req.headers["origin"] || "").toString().toLowerCase();
     // Only check on initialize requests (POST /mcp with method=initialize)
