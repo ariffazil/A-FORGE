@@ -12,7 +12,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_image_input: true
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek-v4-flash
@@ -71,17 +71,17 @@ model_list:
     model: openai/mimo-v2.5-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
-    order: 1
+    order: 4
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: agi-333
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 99
+    order: 1
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -90,7 +90,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 1
+    order: 2
   model_info:
     max_input_tokens: 1000000
     max_output_tokens: 131072
@@ -99,7 +99,7 @@ model_list:
     model: openai/deepseek-v4-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 99
+    order: 1
     input_cost_per_token: 1.4e-07
     output_cost_per_token: 2.8e-07
   model_info:
@@ -110,19 +110,19 @@ model_list:
     model: openai/mimo-v2.5-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
-    order: 1
+    order: 4
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_image_input: true
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: asi-555
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 99
+    order: 2
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -140,28 +140,6 @@ model_list:
     supports_function_calling: true
 - model_name: opencode
   litellm_params:
-    model: openai/deepseek-v4-pro
-    api_base: https://api.deepseek.com/v1
-    api_key: os.environ/DEEPSEEK_API_KEY
-    order: 99
-    input_cost_per_token: 4.35e-07
-    output_cost_per_token: 8.7e-07
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 384000
-- model_name: opencode
-  litellm_params:
-    model: openai/deepseek-v4-flash
-    api_base: https://api.deepseek.com/v1
-    api_key: os.environ/DEEPSEEK_API_KEY
-    order: 99
-    input_cost_per_token: 1.4e-07
-    output_cost_per_token: 2.8e-07
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-- model_name: opencode
-  litellm_params:
     model: openai/mimo-v2.5-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
@@ -169,16 +147,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
-- model_name: opencode
-  litellm_params:
-    model: openai/MiniMax-M3
-    api_base: https://api.minimax.io/v1
-    api_key: os.environ/MINIMAX_API_KEY
-    order: 99
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
+    notes: 'MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount. KEPT 2026-08-10 post-cleanup: balance=$10 verified.'
 - model_name: opencode
   litellm_params:
     model: openai/qwen3.7-max
@@ -188,6 +157,7 @@ model_list:
   model_info:
     max_input_tokens: 1000000
     max_output_tokens: 131072
+    notes: Qwen Individual FRESH credits per FED probe 2026-08-08T08:52Z. KEPT 2026-08-10 post-cleanup. CASCADE TERMINUS.
     mode: chat
 - model_name: codex
   litellm_params:
@@ -199,7 +169,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: codex
   litellm_params:
     model: openai/qwen3.7-max
@@ -228,7 +198,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.8-max
@@ -265,7 +235,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: dispatch
   litellm_params:
     model: openai/qwen3.8-max
@@ -286,7 +256,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_audio_input: true
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: asi-555-video
   litellm_params:
     model: openai/mimo-v2.5
@@ -297,7 +267,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: fed/vision
   litellm_params:
     model: openai/qwen3.8-max
@@ -321,7 +291,7 @@ model_list:
     mode: chat
     supports_vision: true
     supports_audio_input: true
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: fed/vision
   litellm_params:
     model: openai/MiniMax-M3
@@ -344,7 +314,7 @@ model_list:
     mode: chat
     supports_audio_input: true
     supports_vision: true
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: fed/audio
   litellm_params:
     model: openai/mimo-v2.5
@@ -357,7 +327,7 @@ model_list:
     mode: chat
     supports_audio_input: true
     supports_vision: true
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: fed/image-gen
   litellm_params:
     model: openai/gemini-3-flash-preview
@@ -412,7 +382,7 @@ model_list:
     supports_vision: true
     max_input_tokens: 1048576
     max_output_tokens: 65536
-    notes: "OpenAI gateway \u2014 supports thinking_config"
+    notes: OpenAI gateway — supports thinking_config
 - model_name: gemini-flash
   litellm_params:
     model: openai/gemini-2.5-flash
@@ -435,7 +405,7 @@ model_list:
     supports_vision: true
     max_input_tokens: 1048576
     max_output_tokens: 65536
-    notes: "Deep reasoning \u2014 OpenAI gateway, thinking_config supported"
+    notes: Deep reasoning — OpenAI gateway, thinking_config supported
 - model_name: fed/vision
   litellm_params:
     model: gemini/gemini-3.6-flash
@@ -455,18 +425,136 @@ model_list:
     mode: chat
     max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: "Kimi Code (Moonshot) \u2014 coding plan. Model: kimi-code/k3. Agent swarm capable."
+    notes: 'Kimi Code (Moonshot) — coding plan. Model: kimi-code/k3. Agent swarm capable.'
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MiniMax DIRECT — 2026-08-11 F13 directive: bypass-FED path for every AAA agent
+# All entries point to https://api.minimax.io/v1 with ${MINIMAX_API_KEY}.
+# Order semantics: order=2 means "after primary, before other secondaries".
+# ══════════════════════════════════════════════════════════════════════════════
+- model_name: agi-333
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'MiniMax-M3 DIRECT (api.minimax.io/v1) — bypass FED. For agi-333.'
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'MiniMax-M3 DIRECT for hermes-asi.'
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/MiniMax-M2.7
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 204800
+    max_output_tokens: 65536
+    mode: chat
+    notes: 'MiniMax-M2.7 DIRECT — 200K ctx, vision.'
+- model_name: asi-555
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'MiniMax-M3 DIRECT for asi-555 — coder lane direct.'
+- model_name: asi-555
+  litellm_params:
+    model: openai/MiniMax-M2.5
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 204800
+    max_output_tokens: 65536
+    mode: chat
+    notes: 'MiniMax-M2.5 DIRECT — fast text, vision.'
+- model_name: opencode
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'MiniMax-M3 DIRECT for opencode alias.'
+- model_name: codex
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'MiniMax-M3 DIRECT for codex alias.'
+- model_name: dispatch
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'MiniMax-M3 DIRECT for dispatch.'
+- model_name: kimi-code
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'MiniMax-M3 DIRECT for kimi-code alias — sovereign fall-back.'
+- model_name: apex-888
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'MiniMax-M3 DIRECT for apex-888 — JUDGE/SEAL lane PRIMARY.'
 - model_name: opencode-go
   litellm_params:
     model: openai/deepseek-v4-pro
-    api_base: https://opencode.ai/api/v1
+    api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 1
   model_info:
     mode: chat
-    max_input_tokens: 131072
+    max_input_tokens: 1048576
     max_output_tokens: 131072
-    notes: "OpenCode Go \u2014 \\$10/mo flat aggregator. 18 models. Background/repetitive tasks."
+    notes: 'OpenCode Go (Anomaly) — $10/mo subscription, 25+ curated open models. API: https://opencode.ai/zen/go/v1 (verified HTTP 200, 0.58s). Key: OPENCODE_GO_API_KEY. Catalog includes: deepseek-v4-pro/flash,
+      kimi-k3/k2.7-code, glm-5.2/5.1/5, deepseek-v4-pro/flash, qwen3.8-max/3.7-max/3.7-plus/3.6-plus/3.5-plus, mimo-v2.5-pro/v2.5, hy3/hy3-preview, gpt-5.6-luna, grok-4.5. NOTE: litellm alias exposes deepseek-v4-pro
+      as primary; opencode CLI SDK exposes full catalog directly.'
 - model_name: fed-reasoning-heavy
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -475,7 +563,7 @@ model_list:
     order: 1
   model_info:
     mode: chat
-    notes: "P(truth)\u22650.99, deep reasoning, complex refactoring, proof"
+    notes: P(truth)≥0.99, deep reasoning, complex refactoring, proof
 - model_name: fed-reasoning-heavy
   litellm_params:
     model: openai/qwen3.8-max
@@ -484,7 +572,7 @@ model_list:
     order: 2
   model_info:
     mode: chat
-    notes: "P(truth)\u22650.99, deep reasoning, complex refactoring, proof"
+    notes: P(truth)≥0.99, deep reasoning, complex refactoring, proof
 - model_name: fed-reasoning-heavy
   litellm_params:
     model: openai/MiniMax-M3
@@ -493,7 +581,7 @@ model_list:
     order: 3
   model_info:
     mode: chat
-    notes: "P(truth)\u22650.99, deep reasoning, complex refactoring, proof"
+    notes: P(truth)≥0.99, deep reasoning, complex refactoring, proof
 - model_name: fed-multimodal-vision
   litellm_params:
     model: openai/qwen-vl-max
@@ -584,6 +672,135 @@ model_list:
   model_info:
     mode: chat
     notes: ASR, TTS, voice clone/design. MiMo V2.5 audio models.
+- model_name: opencode
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: codex
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: kimi-code
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: opencode
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 99
+  model_info:
+    mode: chat
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 99
+  model_info:
+    mode: chat
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+- model_name: agi-333
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 99
+  model_info:
+    mode: chat
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+- model_name: asi-555
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 99
+  model_info:
+    mode: chat
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+- model_name: apex-888
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 99
+  model_info:
+    mode: chat
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+- model_name: openclaw
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 99
+  model_info:
+    mode: chat
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+- model_name: dispatch
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 99
+  model_info:
+    mode: chat
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+- model_name: codex
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 99
+  model_info:
+    mode: chat
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+- model_name: kimi-code
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 99
+  model_info:
+    mode: chat
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
 litellm_settings:
   callbacks: []
   num_retries: 3

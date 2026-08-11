@@ -977,4 +977,108 @@ export function registerGatewayTools(server: McpServer): void {
     max_results: z.number().min(1).max(20).default(10).describe("Max results"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeMinimaxSearch);
+
+  // ── Wave D (2026-08-11) — F1-F13 external APEX audit via MiniMax-M3 ──────────
+  // Independent constitutional review by MiniMax-M3, delegated to arifOS :8088.
+  // Mechanism: HTTP forward to arif_judge(mode="audit") — A-FORGE never
+  // renders verdicts itself. Pattern precedent: forge_judge_proxy.
+  // forge_audit is OBSERVE-class — only mints an audit_hash receipt,
+  // no state mutation. CIV-21 E3 independence: kernel delegates to
+  // MiniMax-M3 (different provider), preserving cross-model witness.
+  //
+  // BACKCOMPAT: forge_minimax_audit is kept as an alias pointing at the
+  // same handler. The audit is constitutional, not vendor-specific —
+  // but external callers may still reference the old name.
+  const forgeAuditSchema = {
+    action_hash: z.string().describe("sha256 hash of the action being audited"),
+    evidence: z.object({
+      actor: z.string().describe("Who is performing the action"),
+      intent: z.string().describe("Plain-language description of the action"),
+      reversibility: z.enum(["REVERSIBLE", "IRREVERSIBLE"]).describe("Is the action reversible?"),
+      blast_radius: z.enum(["low", "medium", "high"]).describe("Blast radius of the action"),
+      label_OBS: z.array(z.string()).default([]).describe("Directly observed facts (F2)"),
+      label_DER: z.array(z.string()).default([]).describe("Derived from observed facts (F2)"),
+      label_INT: z.array(z.string()).default([]).describe("Interpreted from evidence (F2)"),
+      label_SPEC: z.array(z.string()).default([]).describe("Speculative hypotheses (F2)"),
+    }).describe("Evidence bundle for F1-F13 review"),
+    request_id: z.string().describe("Caller request ID"),
+    session_id: z.string().optional().describe("A-FORGE session id (passed to kernel for chain binding)"),
+    actor_id: z.string().optional().describe("Caller actor id (defaults to A-FORGE worker)"),
+    lease_id: z.string().optional().describe("Lease id from arif_judge SEAL — required for SEAL-grade chains"),
+  };
+  const forgeAuditDescription =
+    "Cross-model F1-F13 constitutional audit (delegates to arif_judge mode=audit at arifOS:8088). " +
+    "Independence via MiniMax-M3 external witness (CIV-21 E3 + E14).";
+
+  server.tool("forge_audit", forgeAuditDescription, forgeAuditSchema, handleForgeAudit);
+  server.tool("forge_minimax_audit", "DEPRECATED alias for forge_audit. Use forge_audit instead.", forgeAuditSchema, handleForgeAudit);
+}
+
+// ── forge_audit handler — HTTP forwarder to arif_judge(mode="audit") ──────────
+async function handleForgeAudit(args: {
+  action_hash: string;
+  evidence: Record<string, unknown>;
+  request_id: string;
+  session_id?: string;
+  actor_id?: string;
+  lease_id?: string;
+}) {
+  const { action_hash, evidence, request_id, session_id, actor_id, lease_id } = args;
+  const ARIFOS_MCP_URL = "http://127.0.0.1:8088/mcp";
+
+  // Forward to arif_judge(mode="audit"). A-FORGE never renders the verdict —
+  // it only carries the request and surfaces the result. Pattern precedent:
+  // forge_judge_proxy (forward to arif_judge).
+  try {
+    const verdict = (await callHttpMcp(
+      ARIFOS_MCP_URL,
+      "arif_judge",
+      {
+        mode: "audit",
+        candidate: JSON.stringify({
+          action_hash,
+          actor: (evidence as Record<string, unknown>)?.actor ?? "unknown",
+          intent: (evidence as Record<string, unknown>)?.intent ?? "",
+        }),
+        evidence: {
+          ...evidence,
+          evidence_hash: action_hash,  // kernel computes canonical hash from evidence; supplier == action_hash is the contract
+        },
+        actor_id: actor_id ?? "a-forge-worker",
+        session_id: session_id ?? "a-forge-session",
+        lease_id,
+        reversibility_level: (evidence as Record<string, unknown>)?.reversibility ?? "REVERSIBLE",
+        blast_radius: (evidence as Record<string, unknown>)?.blast_radius ?? "low",
+      }
+    )) as Record<string, unknown>;
+
+    // Receipt for F11 auditability (A-FORGE local ledger)
+    const receipt_id = await recordReceipt({
+      tool: "forge_audit",
+      action_hash,
+      verdict: (verdict as Record<string, unknown>)?.verdict ?? (verdict as Record<string, unknown>)?.effective_verdict,
+      audit_hash: ((verdict as Record<string, unknown>)?.result as Record<string, unknown>)?.audit_hash,
+      proxy_target: "arif_judge:mode=audit",
+    });
+
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          request_id,
+          receipt_id,
+          proxy_target: "arif_judge:mode=audit",
+          arifos_url: ARIFOS_MCP_URL,
+          ...verdict,
+        }, null, 2)
+      }]
+    };
+  } catch (err: any) {
+    return gatewayError(request_id, `forge_audit proxy failed: ${err?.message ?? String(err)}`, {
+      tool: "forge_audit",
+      action_hash,
+      proxy_target: "arif_judge:mode=audit",
+      hint: "Verify arifOS :8088 is alive (curl :8088/health) and MINIMAX_API_KEY is set in kernel env",
+    });
+  }
 }

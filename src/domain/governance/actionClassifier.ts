@@ -195,6 +195,9 @@ const OBSERVE_TOOLS = new Set([
   "forge_postgres_schema",    // schema read — read-only
   "forge_search",             // web search — read-only
   "forge_research",           // web research — read-only
+  "forge_minimax_search",     // MiniMax search — read-only
+  "forge_audit",            // Cross-model F1-F13 audit — OBSERVE (delegates to arif_judge mode=audit at :8088; no state mutation, audit_hash stamped)
+  "forge_minimax_audit",    // BACKCOMPAT alias for forge_audit — OBSERVE
   "forge_docs_lookup",        // docs lookup — read-only
   "forge_browser_navigate",   // browser nav — read-only (observe-class)
   "forge_browser_click",      // browser click — read-only (observe-class)
