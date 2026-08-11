@@ -134,28 +134,77 @@ export function createApp(): express.Express {
   // req.body already parsed by app.use(express.json()) above.
   const mcpRouter = express.Router();
 
-  // ── DNS Rebinding Protection (2026-07-08) ──────────────────────────
-  // MCPJam conformance: localhost servers must reject requests with
-  // non-localhost Host/Origin headers to prevent DNS rebinding attacks.
+  // ── MCP browser transport policy ────────────────────────────────────
+  // The MCP endpoint is public behind Caddy. Keep DNS-rebinding protection,
+  // but distinguish the public service host from browser Origin allowlisting.
   const LOCALHOST_HOSTS = new Set([
     "localhost", "127.0.0.1", "[::1]", "::1",
     "localhost:7071", "127.0.0.1:7071", "[::1]:7071",
     "localhost:7072", "127.0.0.1:7072", "[::1]:7072",
   ]);
+  const PUBLIC_MCP_HOSTS = new Set(["forge.arif-fazil.com"]);
+  const DEFAULT_MCP_ALLOWED_ORIGINS = new Set([
+    "http://localhost",
+    "http://localhost:6274",
+    "http://localhost:6275",
+    "http://127.0.0.1",
+    "http://127.0.0.1:6274",
+    "http://127.0.0.1:6275",
+    "https://app.mcpjam.com",
+    "https://claude.ai",
+    "https://www.claude.ai",
+    "https://forge.arif-fazil.com",
+  ]);
+  const configuredOrigins = process.env.AF_FORGE_MCP_ALLOWED_ORIGINS
+    ?.split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  const allowedMcpOrigins = new Set(configuredOrigins ?? DEFAULT_MCP_ALLOWED_ORIGINS);
+
+  const hostName = (host: string): string => {
+    if (host.startsWith("[")) return host.slice(1, host.indexOf("]"));
+    return host.split(":", 1)[0];
+  };
+  const isAllowedMcpHost = (host: string): boolean => {
+    if (!host) return false;
+    if (LOCALHOST_HOSTS.has(host) || host.startsWith("localhost:") || host.startsWith("127.0.0.1:")) {
+      return true;
+    }
+    return PUBLIC_MCP_HOSTS.has(hostName(host));
+  };
+
+  // CORS must be applied before OPTIONS reaches the MCP router.
+  mcpRouter.use((req: Request, res: Response, next: NextFunction) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS, DELETE");
+    res.setHeader(
+      "Access-Control-Allow-Headers",
+      "Accept, Authorization, Content-Type, DPoP, Last-Event-ID, Mcp-Method, Mcp-Name, Mcp-Session-Id, MCP-Protocol-Version, Origin, X-Requested-With",
+    );
+    res.setHeader(
+      "Access-Control-Expose-Headers",
+      "Mcp-Session-Id, MCP-Protocol-Version, Mcp-Method, Mcp-Name, X-DPoP-Status",
+    );
+    if (req.method === "OPTIONS") {
+      res.status(204).end();
+      return;
+    }
+    next();
+  });
+
   mcpRouter.use((req: Request, res: Response, next: NextFunction) => {
     const host = (req.headers["host"] || "").toString().toLowerCase();
     const origin = (req.headers["origin"] || "").toString().toLowerCase();
-    // Only check on initialize requests (POST /mcp with method=initialize)
+    // Only check on initialize requests (POST /mcp with method=initialize).
+    // Empty Origin is normal for server-to-server clients and must pass.
     if (req.method === "POST" && req.url === "/mcp") {
       const body = req.body as any;
       if (body?.method === "initialize") {
-        // Check Host header — must be localhost if present
-        if (host && !LOCALHOST_HOSTS.has(host) && !host.startsWith("localhost:") && !host.startsWith("127.0.0.1:") && !host.startsWith("[::1]:")) {
-          res.status(403).json({ error: "Invalid Origin", detail: "DNS rebinding protection" });
+        if (!isAllowedMcpHost(host)) {
+          res.status(403).json({ error: "Invalid Host", detail: "DNS rebinding protection" });
           return;
         }
-        // Check Origin header — must be localhost if present
-        if (origin && !origin.includes("localhost") && !origin.includes("127.0.0.1") && !origin.includes("[::1]")) {
+        if (origin && !allowedMcpOrigins.has(origin)) {
           res.status(403).json({ error: "Invalid Origin", detail: "DNS rebinding protection" });
           return;
         }
