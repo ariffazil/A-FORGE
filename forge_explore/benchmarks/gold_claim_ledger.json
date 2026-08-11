@@ -1,0 +1,262 @@
+{
+  "ledger_id": "GCL-v1.0-2026-08-10",
+  "version": "1.0.0",
+  "description": "Gold Claim Ledger for forge_explore benchmark evaluation. Each claim has verifiable ground truth, expected source class, permitted wording constraints, and a difficulty level. Used to score any exploration tool against a common standard.",
+  "total_claims": 15,
+  "domains": ["mathematics", "history", "science", "current_events", "adversarial"],
+  "claims": [
+    {
+      "id": "GCL-001",
+      "domain": "mathematics",
+      "proposition": "Kurt Gödel published his incompleteness theorems in 1931",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "academic_reference",
+      "expected_sources": ["Stanford Encyclopedia of Philosophy", "Wikipedia: Gödel's incompleteness theorems", "Gödel's 1931 paper"],
+      "permitted_wording": "published in 1931 / appeared in 1931 / 1931 paper",
+      "forbidden_wording": "discovered / invented / proved",
+      "difficulty": "easy",
+      "tool_tests": ["citation_precision", "provenance_completeness"]
+    },
+    {
+      "id": "GCL-002",
+      "domain": "mathematics",
+      "proposition": "The first incompleteness theorem states: any consistent formal system capable of expressing basic arithmetic is incomplete — there exist true statements within it that cannot be proved",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "academic_reference",
+      "expected_sources": ["Stanford Encyclopedia of Philosophy", "Wikipedia"],
+      "permitted_wording": "consistent formal system / cannot be proved / undecidable / incomplete",
+      "forbidden_wording": "all systems are incomplete / mathematics is broken / proves nothing",
+      "difficulty": "medium",
+      "tool_tests": ["attribution_integrity", "independent_corroboration"]
+    },
+    {
+      "id": "GCL-003",
+      "domain": "mathematics",
+      "proposition": "π (pi) is an irrational number — it cannot be expressed as a fraction of two integers",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "academic_reference",
+      "expected_sources": ["Wikipedia: Pi", "Proof by Johann Heinrich Lambert (1768)"],
+      "permitted_wording": "irrational / cannot be expressed as a fraction / Lambert proved",
+      "forbidden_wording": "transcendental (different claim) / random",
+      "difficulty": "easy",
+      "tool_tests": ["citation_precision"]
+    },
+    {
+      "id": "GCL-004",
+      "domain": "history",
+      "proposition": "The Berlin Wall fell on November 9, 1989, leading to German reunification",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "major_news",
+      "expected_sources": ["BBC: Fall of Berlin Wall", "Wikipedia: Berlin Wall", "Associated Press archives"],
+      "permitted_wording": "fell on November 9, 1989 / opened on November 9, 1989 / border opened",
+      "forbidden_wording": "destroyed / torn down completely that day (gradual demolition followed)",
+      "difficulty": "easy",
+      "tool_tests": ["citation_precision", "provenance_completeness"]
+    },
+    {
+      "id": "GCL-005",
+      "domain": "history",
+      "proposition": "The Apollo 11 mission landed humans on the Moon on July 20, 1969; Neil Armstrong was the first person to walk on the lunar surface",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "official_record",
+      "expected_sources": ["NASA archives", "Wikipedia: Apollo 11", "Smithsonian National Air and Space Museum"],
+      "permitted_wording": "landed July 20, 1969 / Armstrong first on surface / Apollo 11",
+      "forbidden_wording": "hoax / faked / studio",
+      "difficulty": "easy",
+      "tool_tests": ["citation_precision", "independent_corroboration"]
+    },
+    {
+      "id": "GCL-006",
+      "domain": "history",
+      "proposition": "World War II in Europe ended with Germany's unconditional surrender on May 8, 1945 (VE Day)",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "official_record",
+      "expected_sources": ["Imperial War Museum", "US National Archives", "Wikipedia: VE Day"],
+      "permitted_wording": "May 8, 1945 / unconditional surrender / VE Day / Germany surrendered",
+      "forbidden_wording": "May 7 (different time zone / different signing) — unless qualified",
+      "difficulty": "medium",
+      "tool_tests": ["attribution_integrity", "provenance_completeness"]
+    },
+    {
+      "id": "GCL-007",
+      "domain": "science",
+      "proposition": "At standard atmospheric pressure (1 atm), pure water boils at 100°C (212°F)",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "academic_reference",
+      "expected_sources": ["IUPAC standard", "Wikipedia: Boiling point", "any physics/chemistry textbook"],
+      "permitted_wording": "at standard pressure / at sea level / 100°C / 212°F",
+      "forbidden_wording": "always boils at 100°C (pressure-dependent) / all liquids",
+      "difficulty": "easy",
+      "tool_tests": ["citation_precision"]
+    },
+    {
+      "id": "GCL-008",
+      "domain": "science",
+      "proposition": "The Earth orbits the Sun (heliocentrism); this was proposed by Copernicus (1543) and supported by Galileo's observations",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "academic_reference",
+      "expected_sources": ["Wikipedia: Heliocentrism", "Stanford Encyclopedia: Copernicus", "NASA"],
+      "permitted_wording": "Earth orbits Sun / Copernicus 1543 / Galileo observed / heliocentric model",
+      "forbidden_wording": "discovered by Galileo / first proposed by Galileo",
+      "difficulty": "medium",
+      "tool_tests": ["attribution_integrity", "independent_corroboration"]
+    },
+    {
+      "id": "GCL-009",
+      "domain": "science",
+      "proposition": "The structure of DNA is a double helix, first described by Watson and Crick in 1953, building on Rosalind Franklin's X-ray crystallography",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "academic_reference",
+      "expected_sources": ["Nature 1953 paper", "Wikipedia: DNA", "Nobel Prize records"],
+      "permitted_wording": "Watson and Crick 1953 / double helix / Franklin contributed crystallography",
+      "forbidden_wording": "Watson and Crick alone discovered / Franklin irrelevant",
+      "difficulty": "medium",
+      "tool_tests": ["attribution_integrity", "contradiction_retention"]
+    },
+    {
+      "id": "GCL-010",
+      "domain": "current_events",
+      "proposition": "The World Health Organization declared COVID-19 a global pandemic on March 11, 2020",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "official_record",
+      "expected_sources": ["WHO official statement March 11, 2020", "Reuters", "BBC"],
+      "permitted_wording": "March 11, 2020 / WHO declared pandemic / global pandemic",
+      "forbidden_wording": "March 2020 (without specific date) / epidemic / WHO created",
+      "difficulty": "easy",
+      "tool_tests": ["citation_precision", "provenance_completeness"]
+    },
+    {
+      "id": "GCL-011",
+      "domain": "current_events",
+      "proposition": "The James Webb Space Telescope was launched on December 25, 2021, on an Ariane 5 rocket from French Guiana",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "official_record",
+      "expected_sources": ["NASA official announcement", "ESA press release", "Space.com"],
+      "permitted_wording": "December 25, 2021 / Ariane 5 / French Guiana / JWST launched",
+      "forbidden_wording": "Hubble replacement (different mission class) / December 2021 (without date)",
+      "difficulty": "easy",
+      "tool_tests": ["citation_precision", "independent_corroboration"]
+    },
+    {
+      "id": "GCL-012",
+      "domain": "adversarial",
+      "proposition": "The Great Wall of China is visible from space with the naked eye",
+      "ground_truth": false,
+      "epistemic_label": "PLAUSIBLE",
+      "expected_source_class": "multiple_sources",
+      "expected_sources": ["NASA: 'not visible' statement by astronauts", "Scientific American debunking"],
+      "permitted_wording": "popular myth / not visible to naked eye / requires magnification / astronauts report not visible",
+      "forbidden_wording": "visible / can be seen / confirmed",
+      "difficulty": "hard",
+      "tool_tests": ["falsification_quality", "unsupported_assertion_rate", "contradiction_retention"],
+      "adversarial_note": "This is a widely-repeated FALSE claim. A good tool must find sources that DEBUNK it, not just sources that repeat it."
+    },
+    {
+      "id": "GCL-013",
+      "domain": "adversarial",
+      "proposition": "Vitamin C supplementation prevents the common cold",
+      "ground_truth": "DISPUTED",
+      "epistemic_label": "PLAUSIBLE",
+      "expected_source_class": "academic_reference",
+      "expected_sources": ["Cochrane Review (2013): 'Vitamin C does not reduce incidence but may reduce duration'", "NIH fact sheet", "Linus Pauling's original claims (1970)"],
+      "permitted_wording": "does not prevent / may reduce duration / evidence mixed / Pauling claimed but evidence limited",
+      "forbidden_wording": "proven to prevent / definitely prevents / proven ineffective",
+      "difficulty": "hard",
+      "tool_tests": ["contradiction_retention", "epistemic_hygiene", "quantum_meaning"],
+      "adversarial_note": "DISPUTED claim. Correct answer: prevention NOT proven; may reduce symptom duration. Tool must show BOTH sides and label uncertainty correctly."
+    },
+    {
+      "id": "GCL-014",
+      "domain": "adversarial",
+      "proposition": "The philosopher René Descartes wrote 'Cogito, ergo sum' (I think, therefore I am) in his 1637 work 'Discourse on the Method'",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "academic_reference",
+      "expected_sources": ["Discourse on the Method (1637), Part IV", "Stanford Encyclopedia: Descartes", "Wikipedia: Cogito, ergo sum"],
+      "permitted_wording": "Discourse on the Method 1637 / Part IV / Latin formulation / French: 'Je pense, donc je suis'",
+      "forbidden_wording": "Meditations (1641 — also contains similar idea but 'Cogito' first appears in Discourse)",
+      "difficulty": "medium",
+      "tool_tests": ["attribution_integrity", "provenance_completeness"],
+      "adversarial_note": "Common confusion: 'Cogito' appears in Discourse (1637) in French, later in Meditations (1641) in Latin. Tool must get the primary source right."
+    },
+    {
+      "id": "GCL-015",
+      "domain": "adversarial",
+      "proposition": "The US Supreme Court case Brown v. Board of Education (1954) unanimously declared racial segregation in public schools unconstitutional, overturning Plessy v. Ferguson (1896)",
+      "ground_truth": true,
+      "epistemic_label": "CLAIM",
+      "expected_source_class": "court_record",
+      "expected_sources": ["Brown v. Board of Education, 347 U.S. 483 (1954)", "US Supreme Court official records", "Library of Congress"],
+      "permitted_wording": "347 U.S. 483 / unanimous 9-0 / overturned Plessy / 'separate but equal' unconstitutional",
+      "forbidden_wording": "ended all segregation immediately (implementation followed later) / 1955",
+      "difficulty": "medium",
+      "tool_tests": ["attribution_integrity", "primary_source_coverage", "provenance_completeness"]
+    }
+  ],
+  "scoring_rubric": {
+    "citation_precision": {
+      "formula": "claims_with_correct_source / total_claims_evaluated",
+      "target": ">= 0.95",
+      "weight": 0.20
+    },
+    "attribution_integrity": {
+      "formula": "claims_with_correct_attribution_and_no_forbidden_wording / total_material_claims",
+      "target": ">= 0.95",
+      "weight": 0.15
+    },
+    "provenance_completeness": {
+      "formula": "claims_with_url_publisher_date_locator / total_claims",
+      "target": ">= 0.98",
+      "weight": 0.10
+    },
+    "independent_corroboration": {
+      "formula": "claims_with_2_independent_sources / total_claims",
+      "target": ">= 0.80",
+      "weight": 0.15
+    },
+    "contradiction_retention": {
+      "formula": "surfaced_contradictions / identified_contradictions",
+      "target": ">= 0.90",
+      "weight": 0.15
+    },
+    "falsification_quality": {
+      "formula": "correctly_falsified_claims / false_or_disputed_claims",
+      "target": ">= 0.75",
+      "weight": 0.10
+    },
+    "unsupported_assertion_rate": {
+      "formula": "unsupported_claims / total_claims",
+      "target": "<= 0.02",
+      "weight": 0.15
+    }
+  },
+  "difficulty_breakdown": {
+    "easy": ["GCL-001", "GCL-003", "GCL-004", "GCL-005", "GCL-007", "GCL-010", "GCL-011"],
+    "medium": ["GCL-002", "GCL-006", "GCL-008", "GCL-009", "GCL-014", "GCL-015"],
+    "hard": ["GCL-012", "GCL-013"]
+  },
+  "tool_tests_summary": {
+    "citation_precision": ["GCL-001", "GCL-003", "GCL-004", "GCL-005", "GCL-007", "GCL-010", "GCL-011"],
+    "attribution_integrity": ["GCL-002", "GCL-006", "GCL-008", "GCL-009", "GCL-014", "GCL-015"],
+    "provenance_completeness": ["GCL-001", "GCL-004", "GCL-006", "GCL-010", "GCL-014", "GCL-015"],
+    "independent_corroboration": ["GCL-002", "GCL-005", "GCL-008", "GCL-011"],
+    "contradiction_retention": ["GCL-009", "GCL-012", "GCL-013"],
+    "falsification_quality": ["GCL-012", "GCL-013"],
+    "unsupported_assertion_rate": ["GCL-012", "GCL-013"]
+  },
+  "usage": "Score each track (A/B/C/D) against this ledger. For each claim, evaluate: (1) Did the tool find the claim? (2) Did it cite the right source class? (3) Did it use permitted wording and avoid forbidden wording? (4) Did it correctly label epistemic status? Record raw results per claim. Compute aggregate metrics only after all tracks have been scored independently.",
+  "forged_by": "333-AGI Δ MIND",
+  "forged_at": "2026-08-10T10:36:00+08:00",
+  "status": "DRAFT — not yet validated against live retrieval"
+}
