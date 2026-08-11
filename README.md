@@ -28,7 +28,7 @@ truth_rule: MCP tools/list on :7072 beats any static count in prose
 
 ---
 
-## 🔒 The 4-Layer Forge Gate
+## 🔒 The 4-Layer Forge Gate — Inner Loop
 
 ```mermaid
 graph TB
@@ -45,10 +45,51 @@ graph TB
     L4 -->|APPROVED| EXEC[⚡ Execute]
     EXEC -->|Receipt| VAULT[(VAULT999)]
     HOLD -->|Approve| EXEC
+    VAULT -.->|next intent| AGENT
 ```
 
 ### The Gödel Lock
 A-FORGE **cannot seal its own execution outcomes**. Every `forge_execute` receipt must be cryptographically witnessed and sealed by the **arifOS Kernel** or ratified by **Arif (F13 Sovereign)**. The executor never certifies its own work.
+
+---
+
+## 🌐 Federation — Outer Loop
+
+The 4-layer gate above is A-FORGE's inner loop. It only ever fires after the federation's
+outer loop hands it a SEAL — the whole linked state, one diagram:
+
+```mermaid
+flowchart TB
+    ARIF["👑 ARIF — F13 SOVEREIGN<br/>purpose, irreversible consent, final veto"]
+    ARIFOS["⚖️ arifOS :8088<br/>judges — never executes"]
+    AAA["🏛️ AAA :3001<br/>routes & displays — never adjudicates"]
+    GEOX["🌍 GEOX :8081<br/>earth evidence"]
+    WEALTH["💰 WEALTH :18082<br/>capital evidence"]
+    WELL["🫀 WELL :18083<br/>vitality mirror"]
+    FORGE["⚒️ A-FORGE :7071/72<br/>executes — only after SEAL"]
+    VAULT["💀 VAULT999<br/>immutable seal chain"]
+
+    ARIF -->|purpose, veto| ARIFOS
+    ARIFOS -->|444 route| AAA
+    AAA --> GEOX
+    AAA --> WEALTH
+    AAA --> WELL
+    GEOX -->|evidence| ARIFOS
+    WEALTH -->|evidence| ARIFOS
+    WELL -->|readiness mirror| ARIFOS
+    ARIFOS -->|888 SEAL/HOLD/VOID → 777 forge| FORGE
+    FORGE -->|999 receipt| VAULT
+    VAULT -->|immutable record| ARIF
+
+    classDef here fill:#0a7b83,color:#fff,stroke:#063f43,stroke-width:2px
+    class FORGE here
+```
+
+**Linked state:** [arifOS](https://github.com/ariffazil/arifos#-federation--outer-loop) ·
+[GEOX](https://github.com/ariffazil/GEOX#-federation--outer-loop) ·
+[WEALTH](https://github.com/ariffazil/WEALTH#-federation--outer-loop) ·
+[WELL](https://github.com/ariffazil/WELL#-federation--outer-loop) ·
+full contract: [`FEDERATION_CONTRACT.md`](./FEDERATION_CONTRACT.md)
 
 ---
 
