@@ -52,11 +52,44 @@ FEDERATION_REPOS = {
 AGENT_REGISTRY = Path("/root/AAA/registries/models/AGENT_MODEL_MAP.json")
 GOAL_REGISTRY = Path("/root/AAA/state/goal_registry.json")
 LEDGER = Path("/root/A-FORGE/duties/logs/orchestrator-ledger.jsonl")
+ANNOUNCE_STATE = Path("/root/A-FORGE/duties/logs/announce-dedupe.json")
+ANNOUNCE_COOLDOWN_S = 24 * 3600  # re-announce identical flag at most once per 24h
 LOOP_ID = "orchestrator-v1"
 
 
 def ts() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _load_announce_state() -> dict:
+    """Load announce-dedupe state. F1: missing/corrupt file = empty state (safe)."""
+    try:
+        return json.loads(ANNOUNCE_STATE.read_text())
+    except Exception:
+        return {}
+
+
+def announce_dedupe(desc: str) -> bool:
+    """Return True if this announcement is new (not a repeat within cooldown).
+
+    Zen rule (2026-08-11, F4 CLARITY): identical flags announce once per 24h,
+    not once per 5-min cycle. State persists flag-hash -> last-announce epoch.
+    """
+    now = time.time()
+    state = _load_announce_state()
+    key = hashlib.sha256(desc.encode()).hexdigest()[:16]
+    last = float(state.get(key, {}).get("ts", 0))
+    if now - last < ANNOUNCE_COOLDOWN_S:
+        state.setdefault(key, {})["suppressed"] = (
+            int(state.get(key, {}).get("suppressed", 0)) + 1
+        )
+    else:
+        state[key] = {"ts": now, "desc": desc[:120], "suppressed": 0}
+    try:
+        ANNOUNCE_STATE.write_text(json.dumps(state, indent=1))
+    except Exception:
+        pass  # best-effort; never let dedupe bookkeeping break the loop
+    return now - last >= ANNOUNCE_COOLDOWN_S
 
 
 def sh(cmd: str, timeout: int = 30) -> tuple[str, str, int]:
@@ -362,13 +395,16 @@ def ratify_and_apply(plan: dict) -> dict:
         elif tier == "T2":
             for action in stage.get("actions", []):
                 desc = action.get("description", "")
-                # Announce via forge-notify if available
-                sh(
-                    f'/root/A-FORGE/duties/forge-notify.sh "🔔 ORCH: {desc}"',
-                    timeout=10,
-                )
-                results["announced"] += 1
-                print(f"  ANNOUNCE: {desc}")
+                # Zen dedupe: announce identical flags at most once per 24h.
+                if announce_dedupe(desc):
+                    sh(
+                        f'/root/A-FORGE/duties/forge-notify.sh "🔔 ORCH: {desc}"',
+                        timeout=10,
+                    )
+                    results["announced"] += 1
+                    print(f"  ANNOUNCE: {desc}")
+                else:
+                    print(f"  ANNOUNCE-SUPPRESSED (repeat < 24h): {desc}")
 
         elif tier == "T3":
             results["held"] += len(stage.get("actions", []))

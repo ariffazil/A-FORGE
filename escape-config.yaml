@@ -1,70 +1,35 @@
-# ESCAPE HATCH — Survival LiteLLM (2026-08-09)
-# Arif directive: transparent failover without agent reconfiguration.
-# When FED (:4001) dies, HAProxy routes here (:4002) automatically.
-# No Tailscale. Localhost only. Minimal providers for maximum reliability.
-
 model_list:
-  # HERMES — Telegram chat
-  - model_name: hermes-asi
-    litellm_params:
-      model: openai/deepseek-v4-flash
-      api_base: https://api.deepseek.com/v1
-      api_key: os.environ/DEEPSEEK_API_KEY
-      order: 1
-  - model_name: hermes-asi
-    litellm_params:
-      model: openai/mimo-v2.5
-      api_base: https://token-plan-sgp.xiaomimimo.com/v1
-      api_key: os.environ/MIMO_API_KEY
-      order: 2
-
-  # 333-AGI — reasoning
-  - model_name: agi-333
-    litellm_params:
-      model: openai/deepseek-v4-pro
-      api_base: https://api.deepseek.com/v1
-      api_key: os.environ/DEEPSEEK_API_KEY
-
-  # OpenCode — coding
-  - model_name: opencode
-    litellm_params:
-      model: openai/deepseek-v4-pro
-      api_base: https://api.deepseek.com/v1
-      api_key: os.environ/DEEPSEEK_API_KEY
-
-  # 555-ASI — research
-  - model_name: asi-555
-    litellm_params:
-      model: openai/deepseek-v4-flash
-      api_base: https://api.deepseek.com/v1
-      api_key: os.environ/DEEPSEEK_API_KEY
-
-  # 888-APEX — constitutional judge
-  - model_name: apex-888
-    litellm_params:
-      model: openai/deepseek-v4-pro
-      api_base: https://api.deepseek.com/v1
-      api_key: os.environ/DEEPSEEK_API_KEY
-
-  # Dispatch + OpenClaw
-  - model_name: dispatch
-    litellm_params:
-      model: openai/deepseek-v4-flash
-      api_base: https://api.deepseek.com/v1
-      api_key: os.environ/DEEPSEEK_API_KEY
-
-  - model_name: openclaw
-    litellm_params:
-      model: openai/deepseek-v4-flash
-      api_base: https://api.deepseek.com/v1
-      api_key: os.environ/DEEPSEEK_API_KEY
-
+- model_name: escape-gemini
+  litellm_params:
+    model: openai/gemini-2.5-flash
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    notes: ESCAPE HATCH — Gemini 2.5 Flash. Always free. Survives when everything else dies.
+- model_name: escape-gemini
+  litellm_params:
+    model: openai/gemini-3.6-flash
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    notes: ESCAPE HATCH — Gemini 3.6 Flash fallback. Latest, fast.
 litellm_settings:
-  master_key: os.environ/LITELLM_MASTER_KEY
-  telemetry: false
+  num_retries: 2
+  cooldown_time: 60
   drop_params: true
-  num_retries: 1
-  request_timeout: 60
-
+router_settings:
+  routing_strategy: usage-based-routing
 general_settings:
-  disable_master_key_return: true
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: postgresql://arifos_admin:ArifPostgres2026!@127.0.0.1:5432/litellm
+  drop_params: true

@@ -1,4 +1,52 @@
 model_list:
+- model_name: apex-888
+  litellm_params:
+    model: openai/gemini-2.5-pro
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    notes: 'apex-888 → Gemini 2.5 Pro — PRIMARY constitutional judge. Deep reasoning, multimodal, free tier. Gödel E3: different provider from Qwen/DeepSeek judge models.'
+- model_name: apex-888
+  litellm_params:
+    model: openai/gemini-3.6-flash
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    notes: apex-888 → Gemini 3.6 Flash — fast multimodal fallback judge. Latest Gemini flash.
+- model_name: apex-888
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: apex-888 → QWEN deepseek-v4-pro — PRIMARY constitutional judge lane. MiniMax exhausted 2026-08-11.
+- model_name: apex-888
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 4
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: apex-888 → QWEN qwen3.8-max — fallback judge lane. Vision + function calling.
 - model_name: hermes-asi
   litellm_params:
     model: openai/mimo-v2.5
@@ -21,9 +69,11 @@ model_list:
     order: 99
     input_cost_per_token: 1.4e-07
     output_cost_per_token: 2.8e-07
+    min_tokens: 200
   model_info:
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
+    notes: ' [DEAD — balance -$0.13, order→99] [REASONING_MODEL: requires max_tokens>=200, min content budget]'
 - model_name: hermes-asi
   litellm_params:
     model: openai/MiniMax-M3
@@ -34,6 +84,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: hermes-asi
   litellm_params:
     model: openai/qwen3.8-max
@@ -41,7 +92,7 @@ model_list:
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 1
   model_info:
-    max_input_tokens: 1000000
+    max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
@@ -53,7 +104,7 @@ model_list:
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 1
   model_info:
-    max_input_tokens: 1000000
+    max_input_tokens: 262144
     max_output_tokens: 131072
 - model_name: agi-333
   litellm_params:
@@ -64,8 +115,9 @@ model_list:
     input_cost_per_token: 4.35e-07
     output_cost_per_token: 8.7e-07
   model_info:
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 384000
+    notes: ' [DEAD — balance -$0.13, order→99]'
 - model_name: agi-333
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -85,6 +137,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: agi-333
   litellm_params:
     model: openai/qwen3.8-max
@@ -92,19 +145,21 @@ model_list:
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 2
   model_info:
-    max_input_tokens: 1000000
+    max_input_tokens: 131072
     max_output_tokens: 131072
 - model_name: asi-555
   litellm_params:
     model: openai/deepseek-v4-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 99
     input_cost_per_token: 1.4e-07
     output_cost_per_token: 2.8e-07
+    min_tokens: 200
   model_info:
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
+    notes: ' [DEAD — balance -$0.13, order→99] [REASONING_MODEL: requires max_tokens>=200, min content budget]'
 - model_name: asi-555
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -126,6 +181,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -133,7 +189,7 @@ model_list:
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 1
   model_info:
-    max_input_tokens: 1000000
+    max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
     supports_image_input: true
@@ -155,7 +211,7 @@ model_list:
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 1
   model_info:
-    max_input_tokens: 1000000
+    max_input_tokens: 131072
     max_output_tokens: 131072
     notes: Qwen Individual FRESH credits per FED probe 2026-08-08T08:52Z. KEPT 2026-08-10 post-cleanup. CASCADE TERMINUS.
     mode: chat
@@ -164,7 +220,7 @@ model_list:
     model: openai/mimo-v2.5-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
-    order: 1
+    order: 99
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -175,9 +231,9 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 1
+    order: 99
   model_info:
-    max_input_tokens: 1000000
+    max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
 - model_name: openclaw
@@ -189,6 +245,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: openclaw
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -206,7 +263,7 @@ model_list:
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 1
   model_info:
-    max_input_tokens: 1000000
+    max_input_tokens: 131072
     max_output_tokens: 131072
 - model_name: apex-888
   litellm_params:
@@ -217,15 +274,17 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 99
   model_info:
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 384000
+    notes: ' [DEAD — balance -$0.13, order→99]'
 - model_name: dispatch
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -243,7 +302,7 @@ model_list:
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 1
   model_info:
-    max_input_tokens: 1000000
+    max_input_tokens: 131072
     max_output_tokens: 131072
 - model_name: asi-555-audio
   litellm_params:
@@ -275,7 +334,7 @@ model_list:
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 1
   model_info:
-    max_input_tokens: 1000000
+    max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
@@ -302,6 +361,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: fed/audio
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -396,7 +456,7 @@ model_list:
     max_output_tokens: 65536
 - model_name: gemini-pro
   litellm_params:
-    model: openai/gemini-3.1-pro
+    model: openai/gemini-2.5-pro
     api_base: https://generativelanguage.googleapis.com/v1beta/openai
     api_key: os.environ/GEMINI_API_KEY
     order: 1
@@ -426,12 +486,6 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     notes: 'Kimi Code (Moonshot) — coding plan. Model: kimi-code/k3. Agent swarm capable.'
-
-# ══════════════════════════════════════════════════════════════════════════════
-# MiniMax DIRECT — 2026-08-11 F13 directive: bypass-FED path for every AAA agent
-# All entries point to https://api.minimax.io/v1 with ${MINIMAX_API_KEY}.
-# Order semantics: order=2 means "after primary, before other secondaries".
-# ══════════════════════════════════════════════════════════════════════════════
 - model_name: agi-333
   litellm_params:
     model: openai/MiniMax-M3
@@ -442,7 +496,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'MiniMax-M3 DIRECT (api.minimax.io/v1) — bypass FED. For agi-333.'
+    notes: MiniMax-M3 DIRECT (api.minimax.io/v1) — bypass FED. For agi-333. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: hermes-asi
   litellm_params:
     model: openai/MiniMax-M3
@@ -453,7 +507,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'MiniMax-M3 DIRECT for hermes-asi.'
+    notes: MiniMax-M3 DIRECT for hermes-asi. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: hermes-asi
   litellm_params:
     model: openai/MiniMax-M2.7
@@ -464,7 +518,7 @@ model_list:
     max_input_tokens: 204800
     max_output_tokens: 65536
     mode: chat
-    notes: 'MiniMax-M2.7 DIRECT — 200K ctx, vision.'
+    notes: MiniMax-M2.7 DIRECT — 200K ctx, vision. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: asi-555
   litellm_params:
     model: openai/MiniMax-M3
@@ -475,7 +529,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'MiniMax-M3 DIRECT for asi-555 — coder lane direct.'
+    notes: MiniMax-M3 DIRECT for asi-555 — coder lane direct. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: asi-555
   litellm_params:
     model: openai/MiniMax-M2.5
@@ -486,7 +540,7 @@ model_list:
     max_input_tokens: 204800
     max_output_tokens: 65536
     mode: chat
-    notes: 'MiniMax-M2.5 DIRECT — fast text, vision.'
+    notes: MiniMax-M2.5 DIRECT — fast text, vision. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: opencode
   litellm_params:
     model: openai/MiniMax-M3
@@ -497,18 +551,18 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'MiniMax-M3 DIRECT for opencode alias.'
+    notes: MiniMax-M3 DIRECT for opencode alias. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: codex
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 2
+    order: 99
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'MiniMax-M3 DIRECT for codex alias.'
+    notes: MiniMax-M3 DIRECT for codex alias. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: dispatch
   litellm_params:
     model: openai/MiniMax-M3
@@ -519,7 +573,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'MiniMax-M3 DIRECT for dispatch.'
+    notes: MiniMax-M3 DIRECT for dispatch. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: kimi-code
   litellm_params:
     model: openai/MiniMax-M3
@@ -530,40 +584,101 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'MiniMax-M3 DIRECT for kimi-code alias — sovereign fall-back.'
-- model_name: apex-888
+    notes: MiniMax-M3 DIRECT for kimi-code alias — sovereign fall-back. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
+- model_name: agi-333
   litellm_params:
-    model: openai/MiniMax-M3
-    api_base: https://api.minimax.io/v1
-    api_key: os.environ/MINIMAX_API_KEY
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 1
   model_info:
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-    notes: 'MiniMax-M3 DIRECT for apex-888 — JUDGE/SEAL lane PRIMARY.'
+    notes: 'deepseek-v4-pro via QWEN Token Plan Individual — PRIMARY (replaces dead DeepSeek direct). Burst queue: 30s.'
+- model_name: asi-555
+  litellm_params:
+    model: openai/deepseek-v4-flash-0731
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 1
+    min_tokens: 200
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'deepseek-v4-flash via QWEN Token Plan Individual — PRIMARY for asi-555. Burst queue: 30s. NOTE: reasoning model, requires max_tokens>=200. [REASONING_MODEL: requires max_tokens>=200, min content
+      budget]'
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/deepseek-v4-flash-0731
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 1
+    min_tokens: 200
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'deepseek-v4-flash via QWEN Token Plan Individual — PRIMARY for hermes-asi. Burst queue: 30s. [REASONING_MODEL: requires max_tokens>=200, min content budget]'
+- model_name: agi-333
+  litellm_params:
+    model: openai/glm-5.2
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'glm-5.2 via QWEN Token Plan Individual — provider diversity (Gödel E3). Burst queue: 30s.'
+- model_name: fed-agent-subagent
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'qwen3.7-plus via QWEN Token Plan Individual — vision + function calling. Burst queue: 30s.'
+- model_name: fed-reasoning-heavy
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'deepseek-v4-pro via QWEN Token Plan Individual — PRIMARY for fed-reasoning-heavy. Burst queue: 30s.'
 - model_name: opencode-go
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 1
+    order: 2
   model_info:
     mode: chat
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
     notes: 'OpenCode Go (Anomaly) — $10/mo subscription, 25+ curated open models. API: https://opencode.ai/zen/go/v1 (verified HTTP 200, 0.58s). Key: OPENCODE_GO_API_KEY. Catalog includes: deepseek-v4-pro/flash,
       kimi-k3/k2.7-code, glm-5.2/5.1/5, deepseek-v4-pro/flash, qwen3.8-max/3.7-max/3.7-plus/3.6-plus/3.5-plus, mimo-v2.5-pro/v2.5, hy3/hy3-preview, gpt-5.6-luna, grok-4.5. NOTE: litellm alias exposes deepseek-v4-pro
-      as primary; opencode CLI SDK exposes full catalog directly.'
+      as primary; opencode CLI SDK exposes full catalog directly. [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]'
 - model_name: fed-reasoning-heavy
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 99
   model_info:
     mode: chat
-    notes: P(truth)≥0.99, deep reasoning, complex refactoring, proof
+    notes: P(truth)≥0.99, deep reasoning, complex refactoring, proof [DEAD — balance -$0.13, order→99]
+    max_input_tokens: 131072
 - model_name: fed-reasoning-heavy
   litellm_params:
     model: openai/qwen3.8-max
@@ -573,6 +688,7 @@ model_list:
   model_info:
     mode: chat
     notes: P(truth)≥0.99, deep reasoning, complex refactoring, proof
+    max_input_tokens: 131072
 - model_name: fed-reasoning-heavy
   litellm_params:
     model: openai/MiniMax-M3
@@ -581,7 +697,7 @@ model_list:
     order: 3
   model_info:
     mode: chat
-    notes: P(truth)≥0.99, deep reasoning, complex refactoring, proof
+    notes: P(truth)≥0.99, deep reasoning, complex refactoring, proof [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: fed-multimodal-vision
   litellm_params:
     model: openai/qwen-vl-max
@@ -608,10 +724,10 @@ model_list:
     order: 3
   model_info:
     mode: chat
-    notes: UI/UX scanning, diagram parsing, visual debugging
+    notes: UI/UX scanning, diagram parsing, visual debugging [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: fed-long-context
   litellm_params:
-    model: openai/gemini-3.1-pro
+    model: openai/gemini-2.5-pro
     api_base: https://generativelanguage.googleapis.com/v1beta/openai
     api_key: os.environ/GEMINI_API_KEY
     order: 1
@@ -626,7 +742,7 @@ model_list:
     order: 2
   model_info:
     mode: chat
-    notes: 1M+ context, repo scanning, PDF/document analysis
+    notes: 1M+ context, repo scanning, PDF/document analysis [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: fed-long-context
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -663,6 +779,7 @@ model_list:
   model_info:
     mode: chat
     notes: High-throughput subagents, linting, tool parsing, low cost
+    max_input_tokens: 262144
 - model_name: fed-realtime-voice
   litellm_params:
     model: openai/mimo-v2.5-asr
@@ -682,6 +799,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: codex
   litellm_params:
     model: openai/MiniMax-M3
@@ -692,6 +810,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: kimi-code
   litellm_params:
     model: openai/MiniMax-M3
@@ -702,118 +821,242 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: opencode
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 99
+    order: 2
   model_info:
     mode: chat
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 99
+    order: 2
   model_info:
     mode: chat
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
 - model_name: agi-333
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 99
+    order: 2
   model_info:
     mode: chat
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
 - model_name: asi-555
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 99
+    order: 2
   model_info:
     mode: chat
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 99
+    order: 2
   model_info:
     mode: chat
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
 - model_name: openclaw
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 99
+    order: 2
   model_info:
     mode: chat
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
 - model_name: dispatch
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 99
+    order: 2
   model_info:
     mode: chat
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
 - model_name: codex
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 99
+    order: 2
   model_info:
     mode: chat
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
 - model_name: kimi-code
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 99
+    order: 2
   model_info:
     mode: chat
-    max_input_tokens: 1048576
+    max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier
+    notes: opencode-go order=99 fallback — Anomaly subscription, $10/mo Go tier [RESTORED 2026-08-11 — new key $19.55, rolling 55%. order→99]
+- model_name: apex-888
+  litellm_params:
+    model: openai/gemini-2.5-flash
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 5
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    notes: apex-888 → Gemini 2.5 Flash — UNIVERSAL FLOOR. Free, always available. Last resort before dead providers.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/gemini-2.5-flash
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 5
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    notes: hermes-asi → Gemini 2.5 Flash — UNIVERSAL FLOOR. Edge bridge must never go dark.
+- model_name: opencode
+  litellm_params:
+    model: openai/gemini-2.5-flash
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 5
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    notes: opencode → Gemini 2.5 Flash — UNIVERSAL FLOOR.
+- model_name: agi-333
+  litellm_params:
+    model: openai/gemini-2.5-flash
+    api_base: https://generativelanguage.googleapis.com/v1beta/openai
+    api_key: os.environ/GEMINI_API_KEY
+    order: 5
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    notes: agi-333 → Gemini 2.5 Flash — UNIVERSAL FLOOR.
+- model_name: opencode
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: opencode → Zen deepseek-v4-pro — RESTORED 2026-08-11. New key $19.55 balance.
+- model_name: agi-333
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: agi-333 → Zen deepseek-v4-pro — RESTORED 2026-08-11. New key $19.55 balance.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: hermes-asi → Zen deepseek-v4-pro — RESTORED 2026-08-11. New key $19.55 balance.
+- model_name: asi-555
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: asi-555 → Zen deepseek-v4-pro — RESTORED 2026-08-11. New key $19.55 balance.
+- model_name: dispatch
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: dispatch → Zen deepseek-v4-pro — RESTORED 2026-08-11. New key $19.55 balance.
+- model_name: codex
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: codex → Zen deepseek-v4-pro — RESTORED 2026-08-11. New key $19.55 balance.
+- model_name: openclaw
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: openclaw → Zen deepseek-v4-pro — RESTORED 2026-08-11. New key $19.55 balance.
 litellm_settings:
   callbacks: []
-  num_retries: 3
+  num_retries: 2
   request_timeout: 60
   allowed_fails: 2
-  cooldown_time: 300
+  cooldown_time: 60
   drop_params: true
 router_settings:
-  routing_strategy: usage-based-routing
+  routing_strategy: simple-shuffle
   enable_pre_call_checks: true
-  num_retries: 3
+  num_retries: 2
   allowed_fails: 2
-  cooldown_time: 300
+  cooldown_time: 60
   fallbacks:
   - hermes-asi:
     - opencode
@@ -831,9 +1074,8 @@ router_settings:
     - hermes-asi
   - openclaw:
     - hermes-asi
-  - apex-888:
-    - agi-333
-    - hermes-asi
+  allowed_fails_policy:
+    cooldown_time: 60
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: postgresql://arifos_admin:ArifPostgres2026!@127.0.0.1:5432/litellm
