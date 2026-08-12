@@ -519,17 +519,14 @@ export type ForgeTierBindResponse = z.infer<typeof ForgeTierBindResponseSchema>;
 export const ForgeDocketPrepRequestSchema = z.object({
   artifact_id: z.string().uuid(),
   stage_id: z.string().uuid(),
-  
-  /** All evidence from previous verbs */
-  evidence_package: z.object({
-    synthesize_response: ForgeSynthesizeResponseSchema,
-    stage_response: ForgeStageResponseSchema,
-    sandbox_run_response: ForgeSandboxRunResponseSchema,
-    scar_scan_response: ForgeScarScanResponseSchema,
-    skillstore_sync_response: ForgeSkillstoreWriteResponseSchema,
-    tier_bind_response: ForgeTierBindResponseSchema
-  }),
-  
+
+  // P0 FIX (2026-08-13): Flattened from 6 nested response objects (40+ fields)
+  // to a simple list of evidence IDs. The full response objects are not
+  // required to construct a docket — the handler can resolve references
+  // by ID from the underlying stores. This makes the tool usable by
+  // agents without requiring them to manually assemble nested UUIDs.
+  evidence_ids: z.array(z.string().uuid()).min(1).max(20),
+
   /** Optional: human-readable justification */
   justification: z.string()
     .max(10_000, "Justification cannot exceed 10,000 characters")

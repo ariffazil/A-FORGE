@@ -111,6 +111,16 @@ export type VerdictResult = {
   reasons: string[];
   violated_regex?: { path: string; pattern: string; value: string }[];
   timestamp: string;
+  // P0 FIX (2026-08-13): Capture arguments for forensic. Prior to this,
+  // the audit log could not determine whether a call hit the fail-open
+  // window (arguments: undefined). F2 TRUTH: we cannot claim a forensic
+  // unless the log captures what was actually received. Two fields:
+  // 1. args_hash — SHA-256 of the original arguments (for tamper detection)
+  // 2. args_snapshot — truncated JSON (max 2KB) for forensics; values
+  // ARE redacted for paths that match sensitive patterns (see redact path).
+  args_hash?: string;
+  args_snapshot?: string;
+  args_present?: boolean;
 };
 
 // ── Gate ──────────────────────────────────────────────────────────────
@@ -161,7 +171,47 @@ export function authorityPermits(authority: Authority, actionClass: ActionClass,
 
 // ── ACT (Arif's Capability Token) — P0.5 (2026-07-19) ──────────────────
 
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual, createHash } from "node:crypto";
+
+// ── P0 FIX (2026-08-13): Argument capture for forensic ───────────────────
+const REDACT_PATTERNS = [
+  /secret/i, /token/i, /password/i, /api[_-]?key/i, /credential/i,
+  /auth/i, /private[_-]?key/i, /session[_-]?token/i, /act[_-]?v[123]/i,
+];
+
+const MAX_SNAPSHOT_BYTES = 2048;
+
+function hashArguments(req: ToolCallRequest): string | undefined {
+  if (req.arguments === undefined || req.arguments === null) return undefined;
+  try {
+    const json = JSON.stringify(req.arguments, Object.keys(req.arguments).sort());
+    return createHash("sha256").update(json, "utf-8").digest("hex").slice(0, 16);
+  } catch {
+    return undefined;
+  }
+}
+
+function snapshotArguments(req: ToolCallRequest): string | undefined {
+  if (req.arguments === undefined || req.arguments === null) return undefined;
+  try {
+    const args = req.arguments;
+    if (typeof args !== "object" || args === null) return undefined;
+    const redacted: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(args as Record<string, unknown>)) {
+      if (REDACT_PATTERNS.some(re => re.test(key))) {
+        redacted[key] = "[REDACTED]";
+      } else if (typeof value === "string" && value.length > 200) {
+        redacted[key] = value.slice(0, 200) + "...";
+      } else {
+        redacted[key] = value;
+      }
+    }
+    const json = JSON.stringify(redacted, Object.keys(redacted).sort());
+    return json.length > MAX_SNAPSHOT_BYTES ? json.slice(0, MAX_SNAPSHOT_BYTES) + "..." : json;
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * ACT wire format: `act_v1.<base64url(payload)>.<base64url(signature)>`
@@ -352,6 +402,14 @@ export class McpPolicyGate {
       reasons: [],
       violated_regex: [],
       timestamp: new Date().toISOString(),
+      // P0 FIX (2026-08-13): Capture arguments for forensic. The audit log
+      // previously omitted the request body, so fail-open windows could not
+      // be reconstructed. Two fields: hash (for tamper detection) and
+      // truncated snapshot (for forensics). This is a HARDENING: it adds
+      // observability without changing who is allowed in.
+      args_hash: hashArguments(req),
+      args_snapshot: snapshotArguments(req),
+      args_present: req.arguments !== undefined && req.arguments !== null,
     };
 
     // Layer 1: Identity — provenance-aware

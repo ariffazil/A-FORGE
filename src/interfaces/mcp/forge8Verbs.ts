@@ -532,11 +532,16 @@ async function forgeDocketPrepHandler(args: z.infer<typeof ForgeDocketPrepReques
   await ensureDirectories();
 
   const docket_id = generateUUID();
+  // P0 FIX (2026-08-13): Flattened from nested evidence_package to evidence_ids.
+  // The handler now stores a list of references instead of full nested response
+  // objects. Underlying artifacts can be resolved by ID from the relevant stores.
   const docket = {
     docket_id,
     artifact_id: args.artifact_id,
     stage_id: args.stage_id,
-    evidence_package: args.evidence_package,
+    evidence_ids: args.evidence_ids,
+    evidence_count: args.evidence_ids.length,
+    justification: args.justification,
     prepared_at: new Date().toISOString(),
     status: "PENDING_ARIFOS_REVIEW",
     read_only: true,
@@ -554,6 +559,7 @@ async function forgeDocketPrepHandler(args: z.infer<typeof ForgeDocketPrepReques
         status: "PENDING_ARIFOS_REVIEW",
         sealed: true,
         read_only: true,
+        evidence_count: args.evidence_ids.length,
         submitted_at: docket.prepared_at,
         constitutional_note: "A-FORGE relinquishes control. Docket read-only. arifOS must evaluate.",
         awaiting_arifos_evaluation: true,

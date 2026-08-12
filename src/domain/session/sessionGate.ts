@@ -32,6 +32,8 @@
  * @constitutional F1, F4, F8, F11
  */
 
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 interface SessionRecord {
   session_id: string;
   actor_id: string;
@@ -183,11 +185,14 @@ function verifyActLocally(
     if (parts.length !== 3 || parts[0] !== "act_v1") return { valid: false };
     const [, payloadB64, sigHex] = parts;
     if (!payloadB64 || !sigHex || sigHex.length < 16) return { valid: false };
-    const crypto = require("node:crypto") as typeof import("node:crypto");
-    const expected = crypto.createHmac("sha256", secret).update(payloadB64, "ascii").digest("hex").slice(0, 16);
+    // P0 FIX (2026-08-13): Use top-level imports for ESM compatibility.
+    // Previous require() failed silently in ESM scope (A-FORGE package.json
+    // declares "type": "module"). The try/catch hides the ReferenceError,
+    // so the function returned { valid: false } without explanation.
+    const expected = createHmac("sha256", secret).update(payloadB64, "ascii").digest("hex").slice(0, 16);
     const a = Buffer.from(expected, "ascii");
     const b = Buffer.from(sigHex.slice(0, 16), "ascii");
-    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    if (a.length !== b.length || !timingSafeEqual(a, b)) {
       return { valid: false };
     }
     const payloadJson = Buffer.from(payloadB64, "base64url").toString("utf-8");
