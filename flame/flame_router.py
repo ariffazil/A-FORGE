@@ -570,27 +570,24 @@ class ZeroFlyZone:
 # ── Task-Class Chains (P0.8 — per-task-class fallback overrides) ─────────
 
 TASK_CLASS_CHAINS = {
-    # L3 Task-Routing (Arif-ratified 2026-07-25) · Updated 2026-07-25
-    # Each task class has preferred models in priority order.
-    # Falls through to general RM0-TOOLS-FREELOOP pool if all fail.
-    # "Know thy model, know thy task" — Zen Rule 2.
+    # L3 Task-Routing (Arif-ratified 2026-07-25) · Cleaned 2026-08-12
+    # Dead providers removed: mistral, sambanova, cerebras (all retired 2026-08-03).
+    # Only live RM0 providers remain: groq, gemini, sea-lion, qwen, openrouter, ollama.
     "classification": [
-        "groq/llama-3.1-8b-instant",  # Fastest deterministic, 340ms
-        "mistral/ministral-8b-2512",  # JSON-native, schema-optimized
-        "sambanova/DeepSeek-V3.1",  # Deep reasoning, fast
-        "groq/llama-3.3-70b-versatile",  # Deep fallback
+        "groq/llama-3.1-8b-instant",      # Fastest deterministic, 340ms
+        "groq/qwen/qwen3.6-27b",          # Code-native, precise
+        "gemini/gemini-flash-lite-latest", # Schema-optimized
+        "groq/llama-3.3-70b-versatile",   # Deep fallback
     ],
     "summarization": [
-        "gemini/gemini-flash-lite-latest",  # 1M context, conciseness
-        "groq/llama-3.3-70b-versatile",  # Deep reasoning
-        "mistral/open-mistral-nemo",  # Fluent generalist
-        "groq/qwen/qwen3.6-27b",  # General fallback
+        "gemini/gemini-flash-lite-latest", # 1M context, conciseness
+        "groq/llama-3.3-70b-versatile",   # Deep reasoning
+        "groq/qwen/qwen3.6-27b",          # General fallback
     ],
     "extraction": [
-        "mistral/ministral-8b-2512",  # JSON-native, precise
-        "groq/qwen/qwen3.6-27b",  # Code-native, precise
-        "sambanova/Meta-Llama-3.3-70B-Instruct",  # Ultra-fast extraction
-        "groq/llama-3.3-70b-versatile",  # Deep fallback
+        "groq/qwen/qwen3.6-27b",          # Code-native, precise
+        "groq/llama-3.1-8b-instant",      # Fast extraction
+        "groq/llama-3.3-70b-versatile",   # Deep fallback
     ],
     "bm_malay": [
         "sea-lion/aisingapore/Qwen-SEA-LION-v4-32B-IT",
@@ -598,49 +595,121 @@ TASK_CLASS_CHAINS = {
         "sea-lion/aisingapore/Gemma-SEA-LION-v4-27B-IT",
     ],
     "contradiction": [
-        "groq/llama-3.3-70b-versatile",  # Deep reasoning
-        "sambanova/DeepSeek-V3.1",  # Fast deep reasoning
-        "cerebras/gpt-oss-120b",  # Deep fallback (reasoning model)
+        "groq/llama-3.3-70b-versatile",   # Deep reasoning
+        "groq/openai/gpt-oss-120b",       # Deep fallback (reasoning model)
     ],
     "code": [
-        "groq/qwen/qwen3.6-27b",  # Code-native primary
-        "mistral/codestral-2508",  # Code specialist, fill-in-middle
-        "sambanova/DeepSeek-V3.1",  # Fast code reasoning
+        "groq/qwen/qwen3.6-27b",          # Code-native primary
+        "groq/openai/gpt-oss-120b",       # Coding-capable
+        "groq/openai/gpt-oss-20b",        # Lightweight coding
     ],
     "evidence_synthesis": [
-        "groq/llama-3.3-70b-versatile",  # Deep reasoning primary
-        "mistral/open-mistral-nemo",  # Fluent synthesis
-        "gemini/gemini-flash-lite-latest",  # 1M context for large evidence
+        "groq/llama-3.3-70b-versatile",   # Deep reasoning primary
+        "gemini/gemini-flash-lite-latest", # 1M context for large evidence
+        "groq/qwen/qwen3.6-27b",          # General fallback
     ],
     "general": [
-        "groq/qwen/qwen3.6-27b",  # Best all-rounder, 292ms
-        "sambanova/Meta-Llama-3.3-70B-Instruct",  # Ultra-fast generalist
-        "groq/llama-3.1-8b-instant",  # Fastest general
+        "groq/qwen/qwen3.6-27b",          # Best all-rounder, 292ms
+        "groq/llama-3.1-8b-instant",      # Fastest general
+        "groq/llama-3.3-70b-versatile",   # Deep fallback
     ],
     # Legacy task class aliases (backward compat)
-    "classify": ["groq/llama-3.1-8b-instant", "mistral/ministral-8b-2512"],
+    "classify": ["groq/llama-3.1-8b-instant", "groq/qwen/qwen3.6-27b"],
     "summarize": ["gemini/gemini-flash-lite-latest", "groq/llama-3.3-70b-versatile"],
-    "extract": ["mistral/ministral-8b-2512", "groq/qwen/qwen3.6-27b"],
+    "extract": ["groq/qwen/qwen3.6-27b", "groq/llama-3.1-8b-instant"],
     "bm_native": ["sea-lion/aisingapore/Qwen-SEA-LION-v4-32B-IT"],
-    "coding": ["mistral/codestral-2508", "sambanova/Meta-Llama-3.3-70B-Instruct"],
+    "coding": ["groq/qwen/qwen3.6-27b", "groq/openai/gpt-oss-120b"],
     "observe": [
         "groq/llama-3.1-8b-instant",
-        "mistral/open-mistral-nemo",
         "groq/qwen/qwen3.6-27b",
     ],
     "epistemic": [
         "groq/llama-3.3-70b-versatile",
-        "sambanova/Meta-Llama-3.3-70B-Instruct",
     ],
-    "json_mode": ["mistral/ministral-8b-2512", "groq/qwen/qwen3.6-27b"],
+    "json_mode": ["groq/qwen/qwen3.6-27b", "groq/llama-3.1-8b-instant"],
     "draft_plan": [
         "groq/llama-3.3-70b-versatile",
-        "cerebras/gemma-4-31b",
         "groq/qwen/qwen3.6-27b",
     ],
     "gap_fill": ["openrouter/free-aggregator"],
     "destructive": [],
+    # ── Stage routing: payload-content classifiers (2026-08-12) ──
+    # SOVEREIGN directive: simple tool payloads → Ollama (T0/local), complex → cloud.
+    # "tool_local" puts Ollama first — zero-cost for grep/read_file/curl/git.
+    # "architect" and "domain_petronas" route to deep cloud models.
+    "tool_local": [
+        "ollama/qwen2.5-coder:3b",       # T0 — LOCAL survival knife, zero latency
+        "groq/llama-3.1-8b-instant",     # T1 — fastest cloud fallback
+    ],
+    "architect": [
+        "groq/llama-3.3-70b-versatile",  # Deep reasoning for system design
+        "groq/qwen/qwen3.6-27b",         # Code-aware architecture
+        "gemini/gemini-flash-lite-latest",# 1M context for large codebase
+    ],
+    "domain_petronas": [
+        "sea-lion/aisingapore/Qwen-SEA-LION-v4-32B-IT",  # BM-native, sovereign
+        "sea-lion/aisingapore/Llama-SEA-LION-v3-70B-IT",
+        "groq/llama-3.3-70b-versatile",                   # English fallback
+    ],
 }
+
+# ── Payload Content Classifier ───────────────────────────────────────────
+# SOVEREIGN directive 2026-08-12: local-first for simple tools, cloud for complex.
+# Auto-detects task_class from prompt content when caller doesn't specify one.
+
+import re as _re
+
+_TOOL_LOCAL_PATTERNS = [
+    r"\bgrep\b",
+    r"\bread_file\b",
+    r"\bcat\s",
+    r"\bcurl\b",
+    r"\bgit\s+(log|diff|status|show|branch|diff)",
+    r"\bfind\s+/",
+    r"\bls\s+/",
+    r"\bwc\s+-",
+]
+
+_ARCHITECT_PATTERNS = [
+    r"\barchitect(ure|ural)?\b",
+    r"\brefactor(ing)?\b",
+    r"\bschema\s+(design|migrate|migration)",
+    r"\bsystem\s+design\b",
+    r"\bmodule\s+structure\b",
+    r"\bDRY\b",
+]
+
+_DOMAIN_PETRONAS_PATTERNS = [
+    r"\[DOMAIN:?PETRONAS\]",
+    r"\bpetronas\b",
+    r"\bPETRONAS\b",
+    r"\bupstream\s+oil\b",
+]
+
+
+def classify_payload(prompt: str) -> str:
+    """Auto-detect task_class from prompt content.
+
+    Called by FlameEngine.call() when task_class is not explicitly provided.
+    Order: domain > tool_local > architect (specificity wins).
+    Returns task_class key or empty string (use default chain).
+    """
+    text = prompt[:2000]  # inspect first 2K chars only (perf)
+
+    for pat in _DOMAIN_PETRONAS_PATTERNS:
+        if _re.search(pat, text, _re.IGNORECASE):
+            return "domain_petronas"
+
+    for pat in _TOOL_LOCAL_PATTERNS:
+        if _re.search(pat, text, _re.IGNORECASE):
+            return "tool_local"
+
+    for pat in _ARCHITECT_PATTERNS:
+        if _re.search(pat, text, _re.IGNORECASE):
+            return "architect"
+
+    return ""
+
 
 # ── Data Structures ────────────────────────────────────────────────────────
 
@@ -1644,6 +1713,14 @@ class FlameEngine:
         )
         chain = self.config["chains"][used_chain_id]
         tiers = list(chain["tiers"])  # shallow copy — may reorder
+
+        # P0.8 payload classifier — auto-detect if not explicitly provided
+        if not task_class:
+            task_class = classify_payload(prompt)
+            if task_class:
+                logger.info(
+                    f"FLAME payload_auto_classify={task_class} (first 80 chars: {prompt[:80].strip()!r}...)"
+                )
 
         if task_class and task_class in TASK_CLASS_CHAINS:
             preferred = TASK_CLASS_CHAINS[task_class]

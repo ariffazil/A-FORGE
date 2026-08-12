@@ -1,13 +1,13 @@
 {
   "_meta": {
-    "name": "FLAME — Free Loop AI Model Engine",
+    "name": "FLAME \u2014 Free Loop AI Model Engine",
     "version": "2.2.0-zen",
     "forged": "2026-07-20",
     "updated": "2026-08-03T16:44:00Z",
-    "zenned": "2026-08-03T16:44:00Z — removed 6 stale provider profiles (mistral, sambanova, cerebras). Task_map aligned to live providers only (groq, gemini, sea-lion, openrouter, ollama).",
+    "zenned": "2026-08-03T16:44:00Z \u2014 removed 6 stale provider profiles (mistral, sambanova, cerebras). Task_map aligned to live providers only (groq, gemini, sea-lion, openrouter, ollama).",
     "doctrine": "DITEMPA BUKAN DIBERI",
-    "cost": "RM0 — all tiers on free provider plans. Hard RM0 gate enforced in code (P0.5).",
-    "purpose": "Sequential fallback inference mesh for tools, workers, and advisory throughput. Zero governance authority — pure throughput. FLAME produces proposals; consuming tools determine admissibility.",
+    "cost": "RM0 \u2014 all tiers on free provider plans. Hard RM0 gate enforced in code (P0.5).",
+    "purpose": "Sequential fallback inference mesh for tools, workers, and advisory throughput. Zero governance authority \u2014 pure throughput. FLAME produces proposals; consuming tools determine admissibility.",
     "constitutional_note": "TOOL LANE only. Agents use the governed constitutional cascade. FLAME never judges, seals, promotes memory, or touches sovereign data. P0 hardened 2026-07-20: false SEAL removed, RM0 hard gate, safety refusal no-shop, sensitivity gate, provenance fingerprints.",
     "fleet": "12 core verified models across 5 live providers. Primary: Groq Qwen3.6-27b (292ms). Fallbacks: Groq, Gemini, SEA-LION, OpenRouter, Ollama. 6 providers removed (sambanova, cloudflare, cerebras, mistral, huggingface, fireworks).",
     "tiers_ref": "/root/AAA/registries/models/MODEL_TIERS.json",
@@ -20,11 +20,22 @@
       "huggingface",
       "fireworks"
     ],
-    "total_free_models": 12
+    "total_free_models": 12,
+    "stage_router": {
+      "forged": "2026-08-12",
+      "by": "SOVEREIGN directive",
+      "doctrine": "Local-first for simple tool payloads (grep/read_file/curl/git). Deep cloud for architect/refactor/schema. SEA-LION for [DOMAIN:PETRONAS].",
+      "tiers": {
+        "T0": "ollama/qwen2.5-coder:3b \u2014 LOCAL, zero-cost, always-available",
+        "T1": "groq/llama-3.1-8b-instant \u2014 fastest cloud fallback",
+        "T2-T_n": "groq/gemini/sea-lion/qwen \u2014 RM0 providers, RM0-EMBED chain"
+      },
+      "classifier": "flame_router.classify_payload(prompt) \u2014 auto-detects task_class from prompt content"
+    }
   },
   "chains": {
     "GOVERNED-ONLY": {
-      "description": "Constitutional lane — Go/TokenRouter. For governed agents only (NOT FLAME tools). HOLD on failure. NEVER use free models here.",
+      "description": "Constitutional lane \u2014 Go/TokenRouter. For governed agents only (NOT FLAME tools). HOLD on failure. NEVER use free models here.",
       "strategy": "least_latency",
       "fallback": "none",
       "max_retries": 1,
@@ -54,13 +65,25 @@
       ]
     },
     "RM0-TOOLS-FREELOOP": {
-      "description": "RM0 FREE tool lane — sequential fallback. ONLY truly free providers. Aligned with MODEL_TIERS.json T3/T4. TOOLS ONLY — never agents, never constitutional.",
+      "description": "RM0 FREE tool lane \u2014 sequential fallback. ONLY truly free providers. Aligned with MODEL_TIERS.json T3/T4. TOOLS ONLY \u2014 never agents, never constitutional. STAGE ROUTER (2026-08-12): T0 Ollama for tool_local payloads, deep cloud for architect/domain_petronas.",
       "doctrine": "MODEL > PROVIDER > BILLING (FREE only). No paid models. No governed inference.",
       "strategy": "least_latency",
       "fallback": "sequential",
       "max_retries": 2,
       "timeout_ms": 20000,
       "tiers": [
+        {
+          "provider": "ollama",
+          "model": "qwen2.5-coder:3b",
+          "weight": 110,
+          "tags": [
+            "tier-0",
+            "local",
+            "always-available",
+            "zero-cost",
+            "promoted-2026-08-12"
+          ]
+        },
         {
           "provider": "groq",
           "model": "qwen/qwen3.6-27b",
@@ -213,21 +236,11 @@
             "20rpm",
             "tier-3-fallback"
           ]
-        },
-        {
-          "provider": "ollama",
-          "model": "qwen2.5-coder:3b",
-          "weight": 20,
-          "tags": [
-            "local",
-            "always-available",
-            "zero-cost"
-          ]
         }
       ]
     },
     "RM0-EMBED-FREELOOP": {
-      "description": "Embedding lane — SEA-LION + Qwen + Ollama for vector work",
+      "description": "Embedding lane \u2014 SEA-LION + Qwen + Ollama for vector work",
       "strategy": "least_latency",
       "fallback": "sequential",
       "max_retries": 2,
@@ -291,7 +304,7 @@
       "api_key_env": "TOKENROUTER_API_KEY",
       "cost_band": "paid",
       "timeout_ms": 20000,
-      "note": "Primary paid provider — DeepSeek V4 Pro (1M context, tool_call + reasoning)"
+      "note": "Primary paid provider \u2014 DeepSeek V4 Pro (1M context, tool_call + reasoning)"
     },
     "groq": {
       "base_url": "https://api.groq.com/openai/v1",
@@ -321,7 +334,7 @@
         "X-Title": "arifOS FLAME Free Loop",
         "X-OpenRouter-Experimental-Metadata": "enabled"
       },
-      "note": "OpenRouter :free model aggregator. RATE-LIMITED: 20rpm/50rpd shared across all free models. Tier-3 fallback only — relegated 2026-07-25.",
+      "note": "OpenRouter :free model aggregator. RATE-LIMITED: 20rpm/50rpd shared across all free models. Tier-3 fallback only \u2014 relegated 2026-07-25.",
       "rate_limits": {
         "rpm": 20,
         "rpd": 50,
@@ -333,7 +346,7 @@
       "api_key_env": "OLLAMA_API_KEY",
       "cost_band": "free",
       "timeout_ms": 30000,
-      "note": "Local inference engine — zero network latency, zero billing"
+      "note": "Local inference engine \u2014 zero network latency, zero billing"
     },
     "qwen": {
       "base_url": "https://dashscope-intl.aliyuncs.com/compatible-mode/v1",
@@ -341,7 +354,7 @@
       "cost_band": "free",
       "timeout_ms": 20000,
       "strict_free_tier": true,
-      "note": "P1.5.2 fix 2026-08-10 — flipped to the standard DashScope international free tier (per the official first API call docs). The user's DASHSCOPE_API_KEY (sk-ws-H.YLXYLM...) is the free tier key and works on dashscope-intl.aliyuncs.com with 1M tokens / 90 days per model. BASE_URL is still env-overridable via QWEN_BASE_URL for anyone who wants Token Plan or Bailian PAYG instead. State machine: EXHAUSTED_OBSERVED on 'AllocationQuota.FreeTierOnly' (free tier) OR 'insufficient_quota' (token-plan); EXPIRED_TERMINAL when validity window closes. Dated/undated variants are SEPARATE routes. Snapshot cap MAX_ACTIVE_QWEN_SNAPSHOTS=2 enforced in code.",
+      "note": "P1.5.2 fix 2026-08-10 \u2014 flipped to the standard DashScope international free tier (per the official first API call docs). The user's DASHSCOPE_API_KEY (sk-ws-H.YLXYLM...) is the free tier key and works on dashscope-intl.aliyuncs.com with 1M tokens / 90 days per model. BASE_URL is still env-overridable via QWEN_BASE_URL for anyone who wants Token Plan or Bailian PAYG instead. State machine: EXHAUSTED_OBSERVED on 'AllocationQuota.FreeTierOnly' (free tier) OR 'insufficient_quota' (token-plan); EXPIRED_TERMINAL when validity window closes. Dated/undated variants are SEPARATE routes. Snapshot cap MAX_ACTIVE_QWEN_SNAPSHOTS=2 enforced in code.",
       "expiration_epochs": {
         "qwen3.7-flash": "2026-10-23T00:00:00Z",
         "qwen3.7-flash-2026-07-15": "2026-10-23T00:00:00Z",
@@ -355,9 +368,9 @@
     "task_map": {
       "_meta": {
         "forged": "2026-07-25",
-        "zenned": "2026-08-03 — removed stale provider refs (mistral, sambanova, cerebras). All preferred chains now live providers only.",
-        "doctrine": "L1→L3: Task-Adaptive Routing. FLAME routes by task type, not just speed. Callers tag their intent; FLAME picks the best model chain for that task. Falls through sequentially if the preferred model fails.",
-        "zen": "\"Know thy model, know thy task\" — Every model has a strength profile. Route accordingly."
+        "zenned": "2026-08-03 \u2014 removed stale provider refs (mistral, sambanova, cerebras). All preferred chains now live providers only.",
+        "doctrine": "L1\u2192L3: Task-Adaptive Routing. FLAME routes by task type, not just speed. Callers tag their intent; FLAME picks the best model chain for that task. Falls through sequentially if the preferred model fails.",
+        "zen": "\"Know thy model, know thy task\" \u2014 Every model has a strength profile. Route accordingly."
       },
       "classification": {
         "description": "Text classification, categorization, labeling",
@@ -390,7 +403,7 @@
         "max_tokens_default": 512
       },
       "bm_malay": {
-        "description": "Bahasa Malaysia — native fluency required",
+        "description": "Bahasa Malaysia \u2014 native fluency required",
         "preferred": [
           "sea-lion/aisingapore/Qwen-SEA-LION-v4-32B-IT",
           "sea-lion/aisingapore/Llama-SEA-LION-v3-70B-IT"
@@ -429,7 +442,7 @@
         "max_tokens_default": 2048
       },
       "general": {
-        "description": "General-purpose fallback — any task",
+        "description": "General-purpose fallback \u2014 any task",
         "preferred": [
           "groq/qwen/qwen3.6-27b",
           "groq/llama-3.3-70b-versatile",
@@ -442,8 +455,8 @@
     "model_profiles": {
       "_meta": {
         "forged": "2026-07-25",
-        "zenned": "2026-08-03 — 6 stale profiles removed (mistral/*, sambanova/*, cerebras/*). 6 live profiles remain.",
-        "doctrine": "\"Know thy model, know thy task\" — Every model has a documented strength profile. Task-adaptive routing uses these to reorder the chain."
+        "zenned": "2026-08-03 \u2014 6 stale profiles removed (mistral/*, sambanova/*, cerebras/*). 6 live profiles remain.",
+        "doctrine": "\"Know thy model, know thy task\" \u2014 Every model has a documented strength profile. Task-adaptive routing uses these to reorder the chain."
       },
       "groq/qwen/qwen3.6-27b": {
         "strengths": [
@@ -517,6 +530,125 @@
         ],
         "max_context": 32768
       }
+    },
+    "stage_routing": {
+      "_meta": {
+        "forged": "2026-08-12 by qwen-code/FI-003 \u2014 APEX QUANTUM P2\u2295P3",
+        "doctrine": "Tool-signal heuristic \u2192 tier. Zero judge model. Zero latency overhead. Pattern-match on tool name, not on model output. F2 TRUTH: the tool being called IS the signal.",
+        "godel_note": "Stage router reads metadata (tool name), not model output. No judge = no self-certification. G\u00f6del Lock Rule 2 preserved.",
+        "petronas_exception": "Any payload tagged [DOMAIN:PETRONAS] or [CLASS:LEGAL_PROSE] bypasses all tiers \u2192 always frontier. F2 TRUTH: creative/legal prose cannot degrade silently."
+      },
+      "tiers": {
+        "T0_SOVEREIGN": {
+          "description": "Local Ollama \u2014 owned layer, zero cost, zero network",
+          "provider": "ollama",
+          "model": "qwen2.5:3b",
+          "fallback_chain": "RM0-TOOLS-FREELOOP",
+          "est_traffic_share": 0.75
+        },
+        "T1_EXECUTION": {
+          "description": "Free cloud \u2014 Groq/SEA-LION/Gemini for medium tasks",
+          "chain": "RM0-TOOLS-FREELOOP",
+          "est_traffic_share": 0.18
+        },
+        "T2_FRONTIER": {
+          "description": "Governed/paid \u2014 DeepSeek V4 Pro for complex reasoning",
+          "chain": "GOVERNED-ONLY",
+          "est_traffic_share": 0.07
+        }
+      },
+      "rules": [
+        {
+          "tier": "T0_SOVEREIGN",
+          "match_type": "tool_name",
+          "patterns": [
+            "grep",
+            "grep_search",
+            "glob",
+            "read_file",
+            "list_directory",
+            "run_shell_command:curl",
+            "run_shell_command:git status",
+            "run_shell_command:git log",
+            "run_shell_command:git diff",
+            "run_shell_command:cat",
+            "run_shell_command:head",
+            "run_shell_command:tail",
+            "run_shell_command:wc",
+            "run_shell_command:echo",
+            "run_shell_command:ls",
+            "monitor",
+            "health_probe",
+            "fed_health",
+            "fed_status",
+            "fed_probe",
+            "drift_check",
+            "symlink_check"
+          ],
+          "description": "Read/grep/probe operations \u2014 trivial compute, send to Ollama"
+        },
+        {
+          "tier": "T1_EXECUTION",
+          "match_type": "tool_name",
+          "patterns": [
+            "edit",
+            "write_file",
+            "notebook_edit",
+            "replace",
+            "run_shell_command:pytest",
+            "run_shell_command:npm run",
+            "run_shell_command:python3 -m",
+            "run_shell_command:make",
+            "run_shell_command:systemctl restart",
+            "run_shell_command:docker",
+            "run_shell_command:pip install"
+          ],
+          "description": "File mutations, tests, builds \u2014 medium complexity, free cloud"
+        },
+        {
+          "tier": "T2_FRONTIER",
+          "match_type": "tool_name",
+          "patterns": [
+            "agent",
+            "create_sub_session",
+            "exit_plan_mode",
+            "enter_plan_mode",
+            "artifact"
+          ],
+          "description": "Multi-step reasoning, architecture, subagents \u2014 needs frontier"
+        },
+        {
+          "tier": "T2_FRONTIER",
+          "match_type": "domain_tag",
+          "patterns": [
+            "[DOMAIN:PETRONAS]",
+            "[CLASS:LEGAL_PROSE]",
+            "[DOMAIN:PARLIAMENT]",
+            "[CLASS:CREATIVE_PROSE]"
+          ],
+          "description": "PETRONAS/legal/parliamentary \u2014 F2 exception, always frontier"
+        },
+        {
+          "tier": "T2_FRONTIER",
+          "match_type": "context_keyword",
+          "patterns": [
+            "surat",
+            "tuntutan",
+            "audit",
+            "PAC",
+            "parlimen",
+            "constitutional",
+            "floor_check",
+            "APEX SWOT",
+            "QQQ",
+            "musyawarah",
+            "VAULT999",
+            "SEAL"
+          ],
+          "description": "Constitutional/governance keywords \u2014 must not degrade"
+        }
+      ],
+      "fallback_tier": "T1_EXECUTION"
     },
     "health_probe_interval_s": 300,
     "hit_rate_window": 50,
