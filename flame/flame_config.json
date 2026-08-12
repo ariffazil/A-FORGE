@@ -26,7 +26,7 @@
       "by": "SOVEREIGN directive",
       "doctrine": "Local-first for simple tool payloads (grep/read_file/curl/git). Deep cloud for architect/refactor/schema. SEA-LION for [DOMAIN:PETRONAS].",
       "tiers": {
-        "T0": "ollama/qwen2.5-coder:3b \u2014 LOCAL, zero-cost, always-available",
+        "T0": "ollama/qwen2.5:3b \u2014 LOCAL, zero-cost, always-available",
         "T1": "groq/llama-3.1-8b-instant \u2014 fastest cloud fallback",
         "T2-T_n": "groq/gemini/sea-lion/qwen \u2014 RM0 providers, RM0-EMBED chain"
       },
@@ -74,7 +74,7 @@
       "tiers": [
         {
           "provider": "ollama",
-          "model": "qwen2.5-coder:3b",
+          "model": "qwen2.5:3b",
           "weight": 110,
           "tags": [
             "tier-0",
