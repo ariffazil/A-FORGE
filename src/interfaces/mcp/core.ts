@@ -633,6 +633,14 @@ const _originalTool = server.tool.bind(server);
     // ── FORGE 2-B: Kernel session + lease gating for MUTATE/ATOMIC tools ──
     if (requiresGovernance(actionClass)) {
       const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+      // P0 FIX (2026-08-13): Pass session_token through to validateSession.
+      // stdio MCP spawns fresh processes per call; session_gate Map is empty
+      // across processes. The token (HMAC-signed by arifOS) is the canonical
+      // proof of session ownership. Mirrors the kernel claim-to-identity bridge.
+      const callerToken = (typeof argsObj.session_token === "string") ? argsObj.session_token
+        : (typeof argsObj.sct === "string") ? argsObj.sct
+        : (typeof argsObj.act === "string") ? argsObj.act
+        : undefined;
       const sessionCheck = callerSession ? validateSession(callerSession, callerToken) : { valid: false, reason: "SESSION_REQUIRED: No session_id provided" } as const;
       if (!sessionCheck.valid) {
         return {
@@ -792,6 +800,14 @@ const _originalRegisterTool = server.registerTool.bind(server);
     // ── FORGE 2-B: Kernel session + lease gating for MUTATE/ATOMIC tools ──
     if (requiresGovernance(actionClass)) {
       const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
+      // P0 FIX (2026-08-13): Pass session_token through to validateSession.
+      // stdio MCP spawns fresh processes per call; session_gate Map is empty
+      // across processes. The token (HMAC-signed by arifOS) is the canonical
+      // proof of session ownership. Mirrors the kernel claim-to-identity bridge.
+      const callerToken = (typeof argsObj.session_token === "string") ? argsObj.session_token
+        : (typeof argsObj.sct === "string") ? argsObj.sct
+        : (typeof argsObj.act === "string") ? argsObj.act
+        : undefined;
       const sessionCheck = callerSession ? validateSession(callerSession, callerToken) : { valid: false, reason: "SESSION_REQUIRED: No session_id provided" } as const;
       if (!sessionCheck.valid) {
         return {
