@@ -106,10 +106,18 @@ export function registerSession(
  *
  * SEAL-* format tokens are NO LONGER auto-registered. They must be:
  *   - Previously registered via arif_init/forge_session_init, OR
- *   - Verified through the kernelVerifier callback (external callers)
+ *   - Verified through the kernelVerifier callback (external callers), OR
+ *   - HMAC-verified via session_token (stateless, P0 FIX 2026-08-13)
+ *
+ * P0 FIX (2026-08-13): Added session_token parameter. When the session_id
+ * is not in the local Map (stdio MCP spawns fresh processes per call),
+ * the caller can provide the session_token (HMAC-SHA256 signed by arifOS).
+ * Token's sid claim must match the session_id. STATELESS verification —
+ * no kernel roundtrip, no Map persistence.
  */
 export function validateSession(
   session_id: string | undefined,
+  session_token?: string,
 ): { valid: true; actor_id: string } | { valid: false; reason: string } {
   if (!session_id) {
     return { valid: false, reason: "SESSION_REQUIRED: No session_id provided" };
@@ -130,6 +138,16 @@ export function validateSession(
   // SEAL tokens MUST be explicitly registered or kernel-verified.
 
   if (!record) {
+    // P0 FIX (2026-08-13): Stateless ACT validation. If session_token is
+    // provided, HMAC-verify it against the shared secret. The token's
+    // sid claim must match the session_id. Closes the stdio MCP session
+    // propagation gap (each spawn is a fresh process with empty Map).
+    if (session_token && session_token.startsWith("act_v1.")) {
+      const actResult = verifyActLocally(session_token, session_id);
+      if (actResult.valid) {
+        return { valid: true, actor_id: actResult.actor };
+      }
+    }
     return {
       valid: false,
       reason:
@@ -146,6 +164,43 @@ export function validateSession(
     return { valid: false, reason: "SESSION_EXPIRED: Session TTL has expired." };
   }
   return { valid: true, actor_id: record.actor_id };
+}
+
+/**
+ * P0 FIX (2026-08-13): Stateless ACT verification — HMAC-SHA256 only.
+ * Mirrors arifOS act_token.py _sign: hexdigest()[:16]. Used to recover
+ * session from ACT when the local in-memory Map is empty (stdio MCP
+ * spawns fresh processes per call).
+ */
+function verifyActLocally(
+  token: string,
+  expected_session_id: string,
+): { valid: true; actor: string } | { valid: false } {
+  try {
+    const secret = process.env.ARIFOS_SESSION_SECRET;
+    if (!secret) return { valid: false };
+    const parts = token.split(".");
+    if (parts.length !== 3 || parts[0] !== "act_v1") return { valid: false };
+    const [, payloadB64, sigHex] = parts;
+    if (!payloadB64 || !sigHex || sigHex.length < 16) return { valid: false };
+    const crypto = require("node:crypto") as typeof import("node:crypto");
+    const expected = crypto.createHmac("sha256", secret).update(payloadB64, "ascii").digest("hex").slice(0, 16);
+    const a = Buffer.from(expected, "ascii");
+    const b = Buffer.from(sigHex.slice(0, 16), "ascii");
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return { valid: false };
+    }
+    const payloadJson = Buffer.from(payloadB64, "base64url").toString("utf-8");
+    const claims = JSON.parse(payloadJson) as Record<string, unknown>;
+    const sid = String(claims.sid ?? claims.session_id ?? "");
+    if (sid !== expected_session_id) return { valid: false };
+    const exp = typeof claims.exp === "number" ? claims.exp : 0;
+    if (exp && Date.now() / 1000 > exp) return { valid: false };
+    const actor = String(claims.actor ?? claims.actor_id ?? "opencode");
+    return { valid: true, actor };
+  } catch {
+    return { valid: false };
+  }
 }
 
 /**

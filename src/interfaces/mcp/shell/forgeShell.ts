@@ -159,6 +159,96 @@ function areAllPathsInSafeZone(command: string): boolean {
   return paths.every(p => isPathInSafeZone(p));
 }
 
+// ── Minimal Shell Parser (P0 dry-run fix, 2026-08-13) ──────────────────────
+// Parses a shell command into structured segments WITHOUT executing it.
+// Handles operators (|, &&, ||, ;, &), redirects (>, >>, <, 2>, 2>&1),
+// and quoted strings. NOT a full POSIX shell parser — variable expansion,
+// glob expansion, and command substitution are returned as raw tokens.
+type ParsedSegment = {
+  program: string;
+  args: string[];
+  redirects: Array<{ op: string; target: string; fd: string }>;
+};
+
+type ParsedCommand = {
+  operators: string[];        // between segments: |, &&, ||, ;, &
+  segments: ParsedSegment[];
+};
+
+function tokenizeShell(input: string): string[] {
+  // Tokenize respecting single+double quotes and escapes
+  const tokens: string[] = [];
+  let current = "";
+  let inSingle = false;
+  let inDouble = false;
+  let escape = false;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (escape) {
+      current += ch;
+      escape = false;
+      continue;
+    }
+    if (ch === "\\" && !inSingle) {
+      escape = true;
+      continue;
+    }
+    if (ch === "'" && !inDouble) {
+      inSingle = !inSingle;
+      continue;
+    }
+    if (ch === '"' && !inSingle) {
+      inDouble = !inDouble;
+      continue;
+    }
+    if (!inSingle && !inDouble && /\s/.test(ch)) {
+      if (current) {
+        tokens.push(current);
+        current = "";
+      }
+      continue;
+    }
+    current += ch;
+  }
+  if (current) tokens.push(current);
+  return tokens;
+}
+
+function parseShellCommand(command: string): ParsedCommand {
+  const tokens = tokenizeShell(command);
+  const OPERATORS = new Set(["|", "&&", "||", ";", "&"]);
+  const REDIRECT_OPS = new Set([">", ">>", "<", "2>", "2>>", "2>&1"]);
+  const segments: ParsedSegment[] = [];
+  const operators: string[] = [];
+  let current: ParsedSegment = { program: "", args: [], redirects: [] };
+  let i = 0;
+  while (i < tokens.length) {
+    const tok = tokens[i];
+    if (OPERATORS.has(tok)) {
+      if (current.program || current.args.length) {
+        segments.push(current);
+      }
+      operators.push(tok);
+      current = { program: "", args: [], redirects: [] };
+      i++;
+      continue;
+    }
+    if (REDIRECT_OPS.has(tok) && i + 1 < tokens.length) {
+      current.redirects.push({ op: tok, target: tokens[i + 1], fd: tok.startsWith("2") ? "2" : "1" });
+      i += 2;
+      continue;
+    }
+    if (!current.program) {
+      current.program = tok;
+    } else {
+      current.args.push(tok);
+    }
+    i++;
+  }
+  if (current.program || current.args.length) segments.push(current);
+  return { operators, segments };
+}
+
 // ── 4-Tier Risk Classifier ───────────────────────────────────────────────────
 type RiskLevel = "SAFE" | "MUTATION" | "MUTATION_SAFE_ZONE" | "MUTATION_GOVERN" | "IRREVERSIBLE" | "GODEL_LOCKED";
 
@@ -1065,60 +1155,46 @@ export function registerShellTools(server: McpServer): void {
         };
       }
 
-      // Run sandboxed via timeout (same as before but with governance note)
-      const effective_timeout = Math.min(safeTimeout, 60000);
-      try {
-        const env = buildMinimalEnv("/root");
-        const output = execSync(command, {
-          encoding: "utf-8",
-          timeout: effective_timeout,
-          maxBuffer: 1024 * 1024,
-          env,
-        });
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              status: "SEAL",
-              dry_run: true,
-              command,
-              exit_code: 0,
-              output: (output ?? "").slice(0, 100000),
-              truncated: (output?.length ?? 0) > 100000,
-              governance: {
-                judge: judge.decision,
-                action_class: judge.actionClass,
-              },
-              note: "DRY-RUN: Shows actual output but does not mutate state. " +
-                     "Use forge_shell for governed execution.",
-              _epistemic: {
-                output_class: "DETERMINISTIC",
-                ai_involvement: "NONE",
-                authority_claim: "ADVISORY",
-                evidence_source: "COMPUTED",
-                tagged_by: "aforge-mcp",
-                tagged_at: new Date().toISOString(),
-              },
-            }, null, 2),
-          }],
-        };
-      } catch (err: any) {
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              status: "SEAL",
-              dry_run: true,
-              command,
-              exit_code: err.status ?? -1,
-              output: (err.stdout ?? "").slice(0, 5000),
-              error: (err.stderr ?? err.message ?? "").slice(0, 5000),
-              note: "DRY-RUN: Command failed but no state was mutated.",
-            }, null, 2),
-          }],
-          isError: true,
-        };
-      }
+      // P0 FIX (2026-08-13): TRUE dry-run — parse the command, do NOT execute.
+      // Previous behavior used execSync which made this a "lie" (executed
+      // commands despite the dry_run=true label). Now: AST parse → show
+      // what WOULD execute (program, args, redirects, pipes) without running.
+      // For actual execution, use forge_shell.
+      const parsed = parseShellCommand(command);
+      const risk = classifyShellCommandRisk(command);
+      const previewText = parsed.segments.map(s => {
+        const redirects = s.redirects.map(r => `  ${r.fd}${r.op}${r.target}`).join("\n");
+        return `  ${s.program} ${s.args.join(" ")}${redirects ? "\n" + redirects : ""}`;
+      }).join("\n");
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            status: "SEAL",
+            dry_run: true,
+            command,
+            parsed,
+            risk,
+            exit_code: 0,
+            output: "[DRY-RUN: NOT EXECUTED] Command would proceed as follows:\n" + previewText,
+            governance: {
+              judge: judge.decision,
+              action_class: judge.actionClass,
+            },
+            note: "TRUE DRY-RUN: command parsed but NOT executed. " +
+                   "No side effects, no network calls, no file mutations. " +
+                   "Use forge_shell for governed execution.",
+            _epistemic: {
+              output_class: "DETERMINISTIC",
+              ai_involvement: "NONE",
+              authority_claim: "ADVISORY",
+              evidence_source: "PARSED",
+              tagged_by: "aforge-mcp",
+              tagged_at: new Date().toISOString(),
+            },
+          }, null, 2),
+        }],
+      };
     }
   );
 

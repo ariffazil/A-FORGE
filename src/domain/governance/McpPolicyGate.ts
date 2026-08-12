@@ -488,6 +488,28 @@ export class McpPolicyGate {
     // return DENY for L4-specific violations, not for accumulated L1 reasons
     // (e.g. "unverified_client_id" — which is a caveat, not a violation).
     const reasonsBeforeL4 = result.reasons.length;
+
+    // P0 FIX (2026-08-13): Fail-closed on malformed arguments. Previously
+    // arguments: undefined or null would silently skip the constraint loop
+    // (`if (value === undefined) continue`), allowing the call to proceed
+    // ungoverned. Zod catches most malformed input BEFORE the gate, but
+    // undefined/null bypassed Layer 4 entirely. Find: P0-A / ARIF-AUDIT.
+    if (req.arguments === undefined || req.arguments === null) {
+      result.reasons.push(
+        "L4_ARG:ARGUMENTS_MISSING — arguments object is required for tool call. " +
+        "Refusing to proceed without an arguments object (fail-closed).",
+      );
+      this.appendAudit(result);
+      return result;
+    }
+    if (typeof req.arguments !== "object" || Array.isArray(req.arguments)) {
+      result.reasons.push(
+        `L4_ARG:ARGUMENTS_MALFORMED — arguments must be a plain object, got ${Array.isArray(req.arguments) ? "array" : typeof req.arguments}.`,
+      );
+      this.appendAudit(result);
+      return result;
+    }
+
     if (toolPolicy?.argument_constraints?.length) {
       for (const constraint of toolPolicy.argument_constraints) {
         const value = this.getValueAtPath(req.arguments, constraint.path);

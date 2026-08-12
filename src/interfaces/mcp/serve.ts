@@ -1093,13 +1093,16 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 return;
               }
 
-              // Inject actor_id for PolicyInterceptor (L1_IDENTITY gate)
-              // Stateless path already passed evaluatePolicyGate above.
-              // Use "http-stateless" not "stateless-client" — the latter triggers
-              // L1_IDENTITY:spoofing_rejected in the policy gate.
-              if (!toolArgs.actor_id && !toolArgs.actorId && !toolArgs.actor) {
-                toolArgs.actor_id = "http-stateless";
-              }
+              // P0 FIX (2026-08-13): Remove actor_id overwrite.
+              // The previous behavior set actor_id='http-stateless' when the client
+              // didn't supply one. This caused ACT actor binding to fail because the
+              // ACT claims say "kimi-code" but the request is attributed to "http-stateless".
+              // The PolicyGate's derivePrincipal() handles the case where actor_id is
+              // undefined (transport_fallback OBSERVE_ONLY). The ACT path validates
+              // authority via the token's claims, not the request's actor_id.
+              // Forward the args as-is; let the ACT path + PolicyGate derive principal.
+              // Reference: VAULT999/process_violations/2026-08-13_F2-TRUTH_correction.json
+              void toolArgs; // explicit: no mutation, no overwrite
               const result = await handler(toolArgs);
               // Ensure schema/policy denies from handlers always surface isError
               const normalized =
