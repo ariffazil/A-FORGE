@@ -412,7 +412,6 @@ class H(BaseHTTPRequestHandler):
                     sensitivity=sensitivity,
                     caller_id=caller_id,
                     task_class=task_class or "summarize",
-                    tool_name=tool_name,
                 )
         elif action == "classify":
             text = query.get("text", "")
@@ -427,7 +426,6 @@ class H(BaseHTTPRequestHandler):
                     sensitivity=sensitivity,
                     caller_id=caller_id,
                     task_class=task_class or "classify",
-                    tool_name=tool_name,
                 )
         elif action == "verify":
             # GAP-2: Cryptographic provenance verification

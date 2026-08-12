@@ -1711,9 +1711,6 @@ class FlameEngine:
         # Config: routing.stage_routing.rules + routing.stage_routing.tiers
         # This runs BEFORE task_class classifier — stage routing takes precedence.
         # Matches SOVEREIGN directive: tool_name → tier override → chain override.
-        _stage_routed = False  # BUGFIX 2026-08-12: prevent default chain from clobbering
-        _stage_tiers_resolved = None
-
         if tool_name:
             _stage_rules = self.config.get("routing", {}).get("stage_routing", {}).get("rules", [])
             _stage_tiers = self.config.get("routing", {}).get("stage_routing", {}).get("tiers", {})
@@ -1749,7 +1746,6 @@ class FlameEngine:
                     used_chain_id = override_chain
                     chain = self.config["chains"][used_chain_id]
                     tiers = list(chain["tiers"])
-                    _stage_tiers_resolved = tiers
                     task_class = ""  # suppress classifier — stage routing wins
 
                 # Hard-lock to specific model if tier specifies provider/model
@@ -1766,29 +1762,17 @@ class FlameEngine:
                         tiers = force_tier + fallback_tiers
                     else:
                         tiers = force_tier + tiers
-                    _stage_tiers_resolved = tiers
                     task_class = ""  # suppress classifier — stage routing wins
-
-                _stage_routed = True
         # ── END STAGE ROUTING ──
 
         # P0.8: Per-task-class chain override — reorder tiers for task-specific optimization
-        # BUGFIX 2026-08-12: Only resolve default chain if stage routing didn't set tiers
-        if _stage_routed and _stage_tiers_resolved is not None:
-            used_chain_id = (
-                chain_id
-                if (chain_id and chain_id in self.config["chains"])
-                else self.chain_id
-            )
-            tiers = _stage_tiers_resolved  # preserve stage routing result
-        else:
-            used_chain_id = (
-                chain_id
-                if (chain_id and chain_id in self.config["chains"])
-                else self.chain_id
-            )
-            chain = self.config["chains"][used_chain_id]
-            tiers = list(chain["tiers"])  # shallow copy — may reorder
+        used_chain_id = (
+            chain_id
+            if (chain_id and chain_id in self.config["chains"])
+            else self.chain_id
+        )
+        chain = self.config["chains"][used_chain_id]
+        tiers = list(chain["tiers"])  # shallow copy — may reorder
 
         # P0.8 payload classifier — auto-detect if not explicitly provided
         if not task_class:
@@ -2741,11 +2725,6 @@ def main():
         default="cli",
         help="Caller identifier for audit (P0.7)",
     )
-    parser.add_argument(
-        "--tool-name",
-        default="",
-        help="Tool name for stage routing (2026-08-12 — tool_name → tier override)",
-    )
     args = parser.parse_args()
 
     engine = FlameEngine(chain_id=args.chain)
@@ -2839,7 +2818,6 @@ def main():
                 temperature=args.temperature,
                 sensitivity=args.sensitivity,
                 caller_id=args.caller,
-                tool_name=args.tool_name,
             )
             results.append(result)
             if args.json:
@@ -2870,7 +2848,6 @@ def main():
         sensitivity=args.sensitivity,
         caller_id=args.caller,
         task_class=args.task_class,
-        tool_name=args.tool_name,
     )
 
     if args.json:
