@@ -104,7 +104,7 @@ import {
 } from "../../domain/governance/preActionSimulation.js";
 import { validateSession, registerSession, setKernelVerifier, storeSessionAct, getSessionAct } from "../../domain/session/sessionGate.js";
 import { validateLeaseForTool } from "./forgeTools.js";
-import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
+import { classifyTool, requiresGovernance, requires888Hold } from "../../domain/governance/actionClassifier.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
 import { gateToolByFq } from "../../domain/forge/check_verdict.js";
 import {
@@ -579,7 +579,20 @@ const _originalTool = server.tool.bind(server);
     // ── ACT federation gate (2026-07-17) ────────────────────────────────
     // Present token → verify fail-closed. MUTATE/ATOMIC may require SCT
     // when FORGE_ACT_REQUIRE_MUTATE=1 (default on). P2.1: fallback to legacy FORGE_SCT_REQUIRE_MUTATE.
+    //
+    // ADAT AGENTIC BYPASS (2026-08-12): forge_* EXECUTE_REVERSIBLE tools are
+    // inherited capability substrate (F13 directive 2026-08-10). The PolicyGate's
+    // authorityPermits() already permits these without ACT. Skip ACT gate here
+    // to align ingress with governance. PolicyGate still runs full 5-layer
+    // evaluation (server, tool, argument, classification). IRREVERSIBLE and
+    // EXECUTE_HIGH_IMPACT still require ACT (888_HOLD path).
+    const isAdatAgentic =
+      name.startsWith("forge_") &&
+      actionClass === "EXECUTE_REVERSIBLE" &&
+      !requires888Hold(actionClass);
+
     const requireSct =
+      !isAdatAgentic &&
       requiresGovernance(actionClass) &&
       (process.env.FORGE_ACT_REQUIRE_MUTATE ?? process.env.FORGE_SCT_REQUIRE_MUTATE ?? "1") !== "0";
     // P2.1 ACT Handoff: derive sessionFallbackToken from stored SCT

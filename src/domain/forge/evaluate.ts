@@ -755,7 +755,7 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
   // Compute fingerprint
   const fingerprint = crypto
     .createHash("sha256")
-    .update(`${spec.domain}::${spec.tool_name}::${spec.description.slice(0, 200)}`)
+    .update(`${spec.domain}::${spec.tool_name}::${(spec.description ?? "").slice(0, 200)}`)
     .digest("hex")
     .slice(0, 16);
 
@@ -841,7 +841,7 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
 export function evaluateDryRun(spec: CandidateSpec, evaluatorCount = 1): Omit<GateDecision, "scar_record"> {
   const fingerprint = crypto
     .createHash("sha256")
-    .update(`${spec.domain}::${spec.tool_name}::${spec.description.slice(0, 200)}`)
+    .update(`${spec.domain}::${spec.tool_name}::${(spec.description ?? "").slice(0, 200)}`)
     .digest("hex")
     .slice(0, 16);
 

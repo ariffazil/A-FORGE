@@ -1028,6 +1028,23 @@ export function registerShellTools(server: McpServer): void {
       timeout: z.number().default(10000).describe("Timeout in ms (default 10s, max 60s)"),
     },
     async ({ command, timeout }) => {
+      // P0.3 FIX (2026-08-12): stateless HTTP path bypasses Zod validation —
+      // command can be undefined. Guard before any downstream .trim() calls.
+      if (typeof command !== "string" || command.length === 0) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "HOLD",
+              error_class: "MISSING_INPUT",
+              field: "command",
+              message: "Required parameter 'command' is missing or empty",
+              recoverability: "AGENT_CAN_RETRY",
+            }, null, 2),
+          }],
+          isError: true,
+        };
+      }
       // Apply default (stateless HTTP path bypasses Zod schema defaults)
       const safeTimeout = (typeof timeout === 'number' && timeout > 0) ? Math.min(timeout, 60000) : 10000;
       // Step 1: ArifJudge (still gate even dry-run — safety)
