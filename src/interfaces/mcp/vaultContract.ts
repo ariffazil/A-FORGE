@@ -6,8 +6,8 @@ import { z } from "zod";
  * they are deliberately excluded from persisted metadata.
  */
 export const ForgeVaultInputSchema = z.object({
-  mode: z.enum(["read", "list", "write", "receipt", "seal"]).describe(
-    "Vault operation (read|list|write|receipt; seal DEPRECATED — auto-routes to receipt)",
+  mode: z.enum(["read", "list", "write", "receipt"]).describe(
+    "Vault operation (read|list|write|receipt). For VAULT999 sealing, use arifOS arif_seal (port 8088).",
   ),
   name: z.string().optional().describe("Record name (read/write/receipt)"),
   category: z.string().optional().describe(

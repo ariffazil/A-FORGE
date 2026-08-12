@@ -2133,14 +2133,10 @@ server.registerTool("forge_vault", {
 }, async (input) => {
   const { mode, name, category, limit } = input;
   const startedAt = Date.now();
-  // ── DEPRECATION: mode=seal → auto-route to receipt ──
-  let normalizedMode = mode;
-  let deprecationWarning: string | undefined;
-  if (mode === "seal") {
-    normalizedMode = "receipt";
-    deprecationWarning = "forge_vault mode=seal is DEPRECATED (2026-07-29). Auto-routing to mode=receipt. For full VAULT999 sealing, use arifOS arif_seal (port 8088).";
-    console.warn(deprecationWarning);
-  }
+  // P0.6 FIX (2026-08-13): seal mode removed from schema enum — no longer reachable.
+  // For VAULT999 sealing, agents must use arifOS arif_seal (port 8088).
+  const normalizedMode = mode;
+  const deprecationWarning: string | undefined = undefined;
   await telemetryInvoke(`forge_vault:${normalizedMode}${mode !== normalizedMode ? `:deprecated:${mode}` : ""}`);
   return runStage("999_VAULT" as MetabolicStage, async () => {
     try {

@@ -2350,9 +2350,9 @@ export function registerCognitionTools(server: McpServer): void {
           text: JSON.stringify({
             status: "SEAL",
             goal_id: result.goal_id,
-            // Dual keys: G_local is honest; G retained for backward compat but flagged
+            // P0.4 FIX (2026-08-13): removed backward-compat G key — it was the confusion vector.
+            // Only G_local emitted. Constitutional G lives in forge_evaluate (is_canonical_g=true).
             G_local: result.G,
-            G: result.G,
             is_canonical_g: false,
             space: "J-space",
             g_authority: "jacobian_actuator_estimate",
@@ -2416,7 +2416,6 @@ export function registerCognitionTools(server: McpServer): void {
             status: "SEAL",
             goal_id,
             G_local: summary.G,
-            G: summary.G,
             is_canonical_g: false,
             space: "J-space",
             C_dark: summary.C_dark,
@@ -2527,7 +2526,7 @@ export function registerCognitionTools(server: McpServer): void {
             change: { field, from, to },
             recompute: result.recompute,
             stable: result.stable,
-            G: result.G,
+            G_local: result.G,
             recompute_count: result.recompute.length,
             stable_count: result.stable.length,
             note: `Only ${result.recompute.length} of ${goal.tasks.length} tasks need recompute — ${result.stable.length} tasks retain. Before Jacobian: ALL tasks would need re-plan.`,
