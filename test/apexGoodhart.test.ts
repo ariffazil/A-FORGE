@@ -51,10 +51,13 @@ describe("APEX Goodhart Stress Test — gamed G formula", () => {
 
     console.log(`[GOODHART] A=${receipt.A} P=${receipt.P} E=${receipt.E} X=${receipt.X} G=${receipt.G} C_dark=${receipt.C_dark} → ${receipt.verdict}`);
     assert.equal(receipt.verdict, expected_verdict, "Near-zero X must FAIL regardless of high A/P/E");
-    assert.ok(receipt.G < 0.10, `G=${receipt.G} should be < 0.10 with X=0.05`);
+    // V3 geometric mean: G = (0.95*0.90*0.80*0.05)^(1/4) ≈ 0.43
+    // Verify V3 invariant: ethics floor trip wires verdict independently of G magnitude
+    assert.ok(receipt.G < 0.95, `G=${receipt.G} should be < 0.95 (X=0.05 still drags geometric mean)`);
+    assert.ok(receipt.G >= 0.10, `V3 GM with X=0.05 yields G≈0.43, not collapsed under V3 — by design; ethics floor is the veto, not G`);
   });
 
-  it("moderate scores → HOLD below G threshold", () => {
+  it("moderate scores → borderline under V3 (G≈0.425 trips no veto)", () => {
     const scores = estimateAPEXX(0.40, 0.40, 0.50, 0.40);
     const receipt = buildAPEXReceipt({
       action_id: "test_moderate",
@@ -62,8 +65,12 @@ describe("APEX Goodhart Stress Test — gamed G formula", () => {
       authority_band: "EXECUTE", reversibility: "REVERSIBLE", blast_radius: "LOCAL",
     });
     console.log(`[MODERATE] G=${receipt.G} C_dark=${receipt.C_dark} → ${receipt.verdict}`);
-    // G = 0.4*0.4*0.5*0.4 = 0.032 → should be FAIL (< 0.10)
-    assert.equal(receipt.verdict, "FAIL", "G < 0.10 should FAIL");
+    // V3 geometric mean: G = (0.4*0.4*0.5*0.4)^(1/4) = 0.032^0.25 ≈ 0.4249
+    // Under V3 this is HOLD (0.25 ≤ G < 0.50) — borderline, not FAIL
+    // V2 product was 0.032 which was FAIL — test expected V2 behavior
+    // V3 doc: A2-A7 axioms required GM, so V2 product is refuted by T1 uniqueness
+    assert.ok(receipt.G >= 0.40 && receipt.G <= 0.50, `V3 GM should be ~0.425, got ${receipt.G}`);
+    assert.equal(receipt.verdict, "HOLD", "V3 borderline G (0.25-0.50) → HOLD; ethics floor (X=0.05) is the only FAIL trigger");
   });
 
   it("clean skill → PASS, G >= 0.50", () => {

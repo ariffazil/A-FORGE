@@ -113,21 +113,7 @@ describe("APEX G Standardization — Test 2: Equivalence", () => {
       c_dark_contribution: 1 - 0.8, // so (1 - c_dark) = 0.8
       provenance: { ...makeZeroScore().provenance, goal_intent: "active" },
     });
-    // taskJacobian uses A * P * E * X * (1 - humilityCap) — documented local estimate
-    // NOT canonical G = (A·P·E·X)^(1/4)
-    const entry = makeEntry(0.2);
-    entry.sensitivity = {
-      risk: 0.2, scope: 0.2, authority: 0.2, time: 0.2,
-      cost: 0.2, organ: 0.2, domain: 0.2,
-    };
-    const G = computeGFromJacobian([entry]);
-    // A = anomaly resistance = avg(1 - c_dark) = 0.8
-    // P = provenance integrity = 1.0
-    // E = 1 - avg_sensitivity = 0.8
-    // X = cross-agent = 1.0
-    // Local estimate = 0.8 * 1.0 * 0.8 * 1.0 * (1 - 0.08) = 0.5888
-    // This is NOT canonical G — it's a local proxy
-    assert.equal(G, 0.5888, `Local estimate should be 0.5888 (got ${G})`);
+    // taskJacobian uses V3 geometric mean G_local = (A · P · E · X)^(1/4) * (1 - humilityCap)\n    // A = 0.8, P = 1.0, E = 0.8, X = 1.0 -> GM(0.8, 1.0, 0.8, 1.0) = 0.894427\n    // 0.894427 * (1 - 0.08) = 0.822873 -> 0.8229\n    const entry = makeEntry(0.2);\n    entry.sensitivity = {\n      risk: 0.2, scope: 0.2, authority: 0.2, time: 0.2,\n      cost: 0.2, organ: 0.2, domain: 0.2,\n    };\n    const G = computeGFromJacobian([entry]);\n    assert.equal(G, 0.8229, `Local estimate should be 0.8229 (got ${G})`);
   });
 });
 
