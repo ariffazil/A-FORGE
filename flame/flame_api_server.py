@@ -412,6 +412,7 @@ class H(BaseHTTPRequestHandler):
                     sensitivity=sensitivity,
                     caller_id=caller_id,
                     task_class=task_class or "summarize",
+                    tool_name=tool_name,
                 )
         elif action == "classify":
             text = query.get("text", "")
@@ -426,6 +427,7 @@ class H(BaseHTTPRequestHandler):
                     sensitivity=sensitivity,
                     caller_id=caller_id,
                     task_class=task_class or "classify",
+                    tool_name=tool_name,
                 )
         elif action == "verify":
             # GAP-2: Cryptographic provenance verification
@@ -503,6 +505,7 @@ class H(BaseHTTPRequestHandler):
                 }
             else:
                 temperature = float(query.get("temperature", 0.3))
+                tool_name = query.get("tool_name", "")
                 engine = _get_engine()
                 raw = engine.call(
                     prompt,
@@ -512,6 +515,7 @@ class H(BaseHTTPRequestHandler):
                     sensitivity=sensitivity,
                     caller_id=caller_id,
                     task_class=task_class,
+                    tool_name=tool_name,
                 )
                 # Convert FlameResult to dict
                 result = {

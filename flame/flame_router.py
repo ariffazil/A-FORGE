@@ -59,7 +59,7 @@ down to Ollama as local last-resort survival.
   T9:     Cerebras — gpt-oss-120b (experimental, low-weight)
   T10:    OpenRouter — :free aggregator (gap-fill, weight=0.5)
   T11:    Groq — qwen/qwen3.6-27b (general, fast, gap-fill)
-  T12:    Ollama — qwen2.5-coder:3b (local survival knife, 10s cold-start)
+  T12:    Ollama — qwen2.5:3b (local survival knife, 10s cold-start)
 
 7 task-class reorder chains: coding, epistemic, bm_malay, classification,
   summarization, gap_fill, destructive(NEVER FLAME)
@@ -638,7 +638,7 @@ TASK_CLASS_CHAINS = {
     # "tool_local" puts Ollama first — zero-cost for grep/read_file/curl/git.
     # "architect" and "domain_petronas" route to deep cloud models.
     "tool_local": [
-        "ollama/qwen2.5-coder:3b",       # T0 — LOCAL survival knife, zero latency
+        "ollama/qwen2.5:3b",       # T0 — LOCAL survival knife, zero latency
         "groq/llama-3.1-8b-instant",     # T1 — fastest cloud fallback
     ],
     "architect": [
@@ -1638,6 +1638,7 @@ class FlameEngine:
         sensitivity: str = "PUBLIC",  # P0.4 — caller-declared sensitivity
         caller_id: str = "unknown",  # P0.7 — caller identity for audit
         task_class: str = "",  # P0.8 — per-task-class chain override (coding/epistemic/bm_malay/classification/summarization)
+        tool_name: str = "",  # Stage routing — tool name for tier interception
     ) -> FlameResult:
         """
         Route a prompt through the free-loop chain.
@@ -1705,14 +1706,89 @@ class FlameEngine:
                 sensitivity=sensitivity,
             )
 
+        # ── STAGE ROUTING: Tool-name interception (SOVEREIGN directive 2026-08-12) ──
+        # Zero-latency judge: reads metadata (tool_name), not model output.
+        # Config: routing.stage_routing.rules + routing.stage_routing.tiers
+        # This runs BEFORE task_class classifier — stage routing takes precedence.
+        # Matches SOVEREIGN directive: tool_name → tier override → chain override.
+        _stage_routed = False  # BUGFIX 2026-08-12: prevent default chain from clobbering
+        _stage_tiers_resolved = None
+
+        if tool_name:
+            _stage_rules = self.config.get("routing", {}).get("stage_routing", {}).get("rules", [])
+            _stage_tiers = self.config.get("routing", {}).get("stage_routing", {}).get("tiers", {})
+            _matched_tier = None
+
+            for rule in _stage_rules:
+                if rule.get("match_type") == "tool_name" and tool_name in rule.get("patterns", []):
+                    _matched_tier = rule.get("tier")
+                    break
+                elif rule.get("match_type") == "context_keyword":
+                    # Check if prompt contains any of the rule's keywords
+                    for kw in rule.get("patterns", []):
+                        if kw.lower() in prompt.lower():
+                            _matched_tier = rule.get("tier")
+                            break
+                    if _matched_tier:
+                        break
+
+            if _matched_tier and _matched_tier in _stage_tiers:
+                tier_cfg = _stage_tiers[_matched_tier]
+                target_provider = tier_cfg.get("provider", "")
+                target_model = tier_cfg.get("model", "")
+                override_chain = tier_cfg.get("chain", "")
+                override_effort = tier_cfg.get("effort_level", "")
+
+                logger.info(
+                    f"FLAME STAGE_ROUTE: tool={tool_name} → tier={_matched_tier} "
+                    f"target={target_provider}/{target_model} chain={override_chain}"
+                )
+
+                # Force chain override if tier specifies a different chain
+                if override_chain and override_chain in self.config["chains"]:
+                    used_chain_id = override_chain
+                    chain = self.config["chains"][used_chain_id]
+                    tiers = list(chain["tiers"])
+                    _stage_tiers_resolved = tiers
+                    task_class = ""  # suppress classifier — stage routing wins
+
+                # Hard-lock to specific model if tier specifies provider/model
+                if target_provider and target_model:
+                    # Build a single-element tier list with the target
+                    force_tier = [
+                        {"provider": target_provider, "model": target_model,
+                         "weight": 150, "tags": ["stage-routed", _matched_tier]}
+                    ]
+                    # Add fallback chain behind it
+                    fallback_chain_id = tier_cfg.get("fallback_chain", "RM0-TOOLS-FREELOOP")
+                    if fallback_chain_id in self.config["chains"]:
+                        fallback_tiers = list(self.config["chains"][fallback_chain_id]["tiers"])
+                        tiers = force_tier + fallback_tiers
+                    else:
+                        tiers = force_tier + tiers
+                    _stage_tiers_resolved = tiers
+                    task_class = ""  # suppress classifier — stage routing wins
+
+                _stage_routed = True
+        # ── END STAGE ROUTING ──
+
         # P0.8: Per-task-class chain override — reorder tiers for task-specific optimization
-        used_chain_id = (
-            chain_id
-            if (chain_id and chain_id in self.config["chains"])
-            else self.chain_id
-        )
-        chain = self.config["chains"][used_chain_id]
-        tiers = list(chain["tiers"])  # shallow copy — may reorder
+        # BUGFIX 2026-08-12: Only resolve default chain if stage routing didn't set tiers
+        if _stage_routed and _stage_tiers_resolved is not None:
+            used_chain_id = (
+                chain_id
+                if (chain_id and chain_id in self.config["chains"])
+                else self.chain_id
+            )
+            tiers = _stage_tiers_resolved  # preserve stage routing result
+        else:
+            used_chain_id = (
+                chain_id
+                if (chain_id and chain_id in self.config["chains"])
+                else self.chain_id
+            )
+            chain = self.config["chains"][used_chain_id]
+            tiers = list(chain["tiers"])  # shallow copy — may reorder
 
         # P0.8 payload classifier — auto-detect if not explicitly provided
         if not task_class:
@@ -2665,6 +2741,11 @@ def main():
         default="cli",
         help="Caller identifier for audit (P0.7)",
     )
+    parser.add_argument(
+        "--tool-name",
+        default="",
+        help="Tool name for stage routing (2026-08-12 — tool_name → tier override)",
+    )
     args = parser.parse_args()
 
     engine = FlameEngine(chain_id=args.chain)
@@ -2758,6 +2839,7 @@ def main():
                 temperature=args.temperature,
                 sensitivity=args.sensitivity,
                 caller_id=args.caller,
+                tool_name=args.tool_name,
             )
             results.append(result)
             if args.json:
@@ -2788,6 +2870,7 @@ def main():
         sensitivity=args.sensitivity,
         caller_id=args.caller,
         task_class=args.task_class,
+        tool_name=args.tool_name,
     )
 
     if args.json:
