@@ -758,12 +758,60 @@ export class McpPolicyGate {
 
   // ── persistence ───────────────────────────────────────────────────
 
+  // P1.1 (2026-08-12): Constraint pinning — load policies only when the
+  // pinned git HEAD matches the current source HEAD. Prevents governance
+  // drift where dispatch policy and runtime binary diverge (0%→38% violation
+  // rate measured). F13 override via env: AF_FORGE_POLICY_UNPINNED=1.
+  private pinnedCommit: string | null = null;
+  private pinViolation: boolean = false;
+
+  private getCurrentHeadSha(): string | null {
+    // Read deploy-stamped commit from /root/A-FORGE/.git_commit (set by
+    // make deploy-local). Falls back to git rev-parse if file missing.
+    // Uses top-level fs import (no CommonJS require) to stay ESM-safe.
+    const stamp = "/root/A-FORGE/.git_commit";
+    try {
+      const fromStamp = readFileSync(stamp, "utf-8").trim();
+      if (fromStamp && fromStamp !== "UNAVAILABLE") return fromStamp;
+    } catch {
+      // fall through
+    }
+    return null;
+  }
+
+  /** True when policy load was rejected due to commit-pin mismatch. */
+  isPinViolated(): boolean {
+    return this.pinViolation;
+  }
+
   private loadFromDisk(): void {
     const path = "/root/A-FORGE/config/mcp_policies.json";
     if (!existsSync(path)) return;
     try {
       const raw = readFileSync(path, "utf-8");
-      const parsed = JSON.parse(raw) as { policies?: McpPolicy[] };
+      const parsed = JSON.parse(raw) as { policies?: McpPolicy[]; pinned_commit?: string };
+
+      // Constraint pin check — refuse to load policies that don't match the
+      // current source HEAD. Sovereign override via env var.
+      const pinned = parsed.pinned_commit?.trim();
+      const headSha = this.getCurrentHeadSha();
+      const unpinned = process.env.AF_FORGE_POLICY_UNPINNED === "1";
+      if (pinned && headSha && !unpinned) {
+        const pinnedShort = pinned.substring(0, 7);
+        const headShort = headSha.substring(0, 7);
+        if (pinnedShort !== headShort) {
+          this.pinViolation = true;
+          process.stderr.write(
+            `[McpPolicyGate] CONSTRAINT_PIN_VIOLATION: policy pinned to ${pinnedShort} ` +
+            `but source HEAD is ${headShort}. Policies NOT loaded. Governance in fail-closed mode. ` +
+            `Override with AF_FORGE_POLICY_UNPINNED=1.\n`,
+          );
+          return;
+        }
+        this.pinnedCommit = pinnedShort;
+        process.stderr.write(`[McpPolicyGate] constraint pin OK (${pinnedShort})\n`);
+      }
+
       for (const p of parsed.policies ?? []) {
         this.policies.set(p.policy_id, p);
       }

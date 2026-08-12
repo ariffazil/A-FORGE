@@ -72,5 +72,6 @@
         "forge_agent"
       ]
     }
-  ]
+  ],
+  "pinned_commit": "b48d154cde1b0f92cf835f4c1d7126949c0a5442"
 }
