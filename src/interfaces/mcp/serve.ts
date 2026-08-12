@@ -183,6 +183,58 @@ const STATELESS_TOOLS = new Set([
     "forge_apex_goal_status",
     "forge_apex_emd",
     "forge_evaluate",
+
+    // ── OBSERVE expansion (2026-08-13) — session propagation fix ──────
+    // These tools are OBSERVE-class but were missing from the whitelist.
+    // Agents could not call them via HTTP transport without session ownership.
+    // All are read-only or have mode-level gating in their handlers.
+
+    // Entropy & diagnostics
+    "forge_entropy_sweep",        // ΔS measurement — read-only filesystem scan
+    "forge_fingerprint_check",    // tool fingerprint verification — read-only
+    "forge_runtime_verify",       // git vs wheel vs import consistency — read-only
+    "forge_isomorphism_check",    // J-space manifold stability — read-only
+
+    // Tri-witness & governance observation
+    "forge_witness",              // W³ consensus computation — read-only OBSERVE
+    "forge_check_governance",     // delegates to arifOS — read-only proxy
+    "forge_heart_critique",       // risk/ethical review — delegates to arifOS
+    "forge_predict",              // pre-action simulation — read-only forward model
+    "forge_docket_prep",          // evidence packaging — read-only, relinquishes control
+
+    // World Model observation (read-only stats/gaps/quality)
+    "forge_wm_stats",             // WM statistics dashboard — read-only
+    "forge_wm_gaps",              // WM gap alerts — read-only
+    "forge_wm_quality",           // WM trajectory quality — read-only
+
+    // Cooling & scar observation
+    "forge_cool_drift",           // cooling receipt emission — OBSERVE-class
+    "forge_cool_pattern",         // cooling receipt from recurrence — OBSERVE-class
+    "forge_scar_scan",            // SCAR database check — read-only
+
+    // Git/FS read-only modes (handler enforces mode-level gating)
+    "forge_git",                  // status/diff/log are OBSERVE; commit is gated in handler
+    "forge_worktree",             // git physics sensor — read-only
+
+    // Docker/DB read-only modes (handler enforces mode-level gating)
+    "forge_docker",               // ps/logs/images are OBSERVE; exec/images pull gated in handler
+    "forge_postgres",             // schema is OBSERVE; query gated in handler
+
+    // Infrastructure observation
+    "forge_netdata_alarms",       // Netdata alarms — read-only
+    "forge_netdata_metrics",      // Netdata chart data — read-only
+    "forge_receipt_draft",        // compliance receipt draft — read-only
+    "forge_verify_timeline",      // timeline verification — read-only
+
+    // Organ bridges (read-only relay)
+    "forge_wealth",               // WEALTH relay — OBSERVE modes only
+    "forge_well",                 // WELL relay — OBSERVE modes only
+
+    // Google Workspace read-only
+    "forge_drive",                // Google Drive — read-only connector
+    "forge_calendar",             // Google Calendar — list events (create is gated in handler)
+    "forge_sheets",               // Google Sheets — read cells (append gated in handler)
+    "forge_gmail",                // Gmail — search/read (draft/send gated in handler)
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────

@@ -283,6 +283,10 @@ const OBSERVE_TOOLS = new Set([
   "forge_scar_scan",           // artifact check against SCAR DB — OBSERVE
   "forge_predict",             // pre-action simulation — SIMULATE (moved to simulate set below)
   "forge_document_ingest",     // already above, kept for clarity
+  // ── World Model observation (2026-08-13) — read-only stats/gaps/quality ──
+  "forge_wm_stats",            // WM statistics dashboard — read-only
+  "forge_wm_gaps",             // WM gap alerts — read-only
+  "forge_wm_quality",          // WM trajectory quality — read-only
   // ── MuleRouter Multimodal (2026-07-30) ──
   // "forge_ephemeral" — REMOVED (now mode-aware in classifyTool, see line ~355)
 ]);
@@ -363,6 +367,12 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (["inspect_gap", "list_templates", "list_active"].includes(mode)) return "OBSERVE";
     if (["generate", "sandbox_test", "invoke", "verify", "retire", "propose_promotion"].includes(mode)) return "EXECUTE_REVERSIBLE";
   }
+  // forge_reality_loop: start/list/report/metrics=OBSERVE, advance/record/seal/destroy=EXECUTE_REVERSIBLE
+  if (toolName === "forge_reality_loop") {
+    if (!mode) return "OBSERVE"; // default: status query
+    if (["start", "list", "report", "metrics"].includes(mode)) return "OBSERVE";
+    if (["advance", "record", "seal", "destroy"].includes(mode)) return "EXECUTE_REVERSIBLE";
+  }
 
   // ── Name-only classification (existing sets) ──
   if (IRREVERSIBLE_TOOLS.has(toolName)) return "IRREVERSIBLE";
@@ -395,7 +405,7 @@ export function isClassifiedTool(toolName: string): boolean {
   if (SUGGEST_TOOLS.has(toolName)) return true;
   if (QUEUE_TOOLS.has(toolName)) return true;
   // Check mode-aware base names
-  const modeAware = ["forge_agent", "forge_filesystem", "forge_vault", "forge_git", "forge_docker", "forge_lease", "forge_postgres", "forge_ephemeral"];
+  const modeAware = ["forge_agent", "forge_filesystem", "forge_vault", "forge_git", "forge_docker", "forge_lease", "forge_postgres", "forge_ephemeral", "forge_reality_loop"];
   if (modeAware.includes(toolName)) return true;
   return false;
 }
