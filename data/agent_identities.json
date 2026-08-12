@@ -446,5 +446,210 @@
     },
     "registered_at": "2026-07-12T20:24:36Z",
     "trust_tier": "VERIFIED"
+  },
+  "agy": {
+    "agent_id": "agy",
+    "agent_type": "antigravity",
+    "role": "operator",
+    "authority": "777_FORGE",
+    "identity_proof": "EXEMPT",
+    "federation_lane": "333-AGI",
+    "created_at": "2026-08-12T03:11:15.110819+00:00",
+    "_provenance": "F13 ZEN directive 2026-08-12T03:00Z (P0-2 from 333-AGI TODO.md) \u2014 added by kimi-code audit"
+  },
+  "aider": {
+    "agent_id": "aider",
+    "agent_type": "cli",
+    "role": "operator",
+    "authority": "777_FORGE",
+    "identity_proof": "EXEMPT",
+    "federation_lane": "333-AGI",
+    "created_at": "2026-08-12T03:11:15.110819+00:00",
+    "_provenance": "F13 ZEN directive 2026-08-12T03:00Z (P0-2 from 333-AGI TODO.md) \u2014 added by kimi-code audit"
+  },
+  "continue-cli": {
+    "agent_id": "continue-cli",
+    "agent_type": "cli",
+    "role": "operator",
+    "authority": "777_FORGE",
+    "identity_proof": "EXEMPT",
+    "federation_lane": "333-AGI",
+    "created_at": "2026-08-12T03:11:15.110819+00:00",
+    "_provenance": "F13 ZEN directive 2026-08-12T03:00Z (P0-2 from 333-AGI TODO.md) \u2014 added by kimi-code audit"
+  },
+  "qwen-code": {
+    "agent_id": "qwen-code",
+    "agent_type": "opencode",
+    "role": "governed_coder",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519_exempt",
+      "registered_at": "2026-08-12T03:08:00Z",
+      "verification_method": "f13_sovereign_directive_2026-08-12",
+      "verified_by": "arif"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-08-12T03:08:00Z",
+    "last_seen": "2026-08-12T03:08:00Z",
+    "lease_ids": []
+  },
+  "claude-code": {
+    "agent_id": "claude-code",
+    "agent_type": "external",
+    "role": "coding_harness",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519_exempt",
+      "registered_at": "2026-08-12T03:08:00Z",
+      "verification_method": "f13_sovereign_directive_2026-08-12",
+      "verified_by": "arif"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-08-12T03:08:00Z",
+    "last_seen": "2026-08-12T03:08:00Z",
+    "lease_ids": []
+  },
+  "copilot": {
+    "agent_id": "copilot",
+    "agent_type": "external",
+    "role": "github_copilot_bridge",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519_exempt",
+      "registered_at": "2026-08-12T03:08:00Z",
+      "verification_method": "f13_sovereign_directive_2026-08-12",
+      "verified_by": "arif"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-08-12T03:08:00Z",
+    "last_seen": "2026-08-12T03:08:00Z",
+    "lease_ids": []
+  },
+  "copilot-cli": {
+    "agent_id": "copilot-cli",
+    "agent_type": "external",
+    "role": "github_copilot_cli",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519_exempt",
+      "registered_at": "2026-08-12T03:08:00Z",
+      "verification_method": "f13_sovereign_directive_2026-08-12",
+      "verified_by": "arif"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-08-12T03:08:00Z",
+    "last_seen": "2026-08-12T03:08:00Z",
+    "lease_ids": []
+  },
+  "gemini-cli": {
+    "agent_id": "gemini-cli",
+    "agent_type": "external",
+    "role": "google_gemini_cli",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519_exempt",
+      "registered_at": "2026-08-12T03:08:00Z",
+      "verification_method": "f13_sovereign_directive_2026-08-12",
+      "verified_by": "arif"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-08-12T03:08:00Z",
+    "last_seen": "2026-08-12T03:08:00Z",
+    "lease_ids": []
+  },
+  "grok": {
+    "agent_id": "grok",
+    "agent_type": "external",
+    "role": "xai_grok_bridge",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": true,
+      "mutate_files": "lease_required",
+      "shell_exec": "lease_required",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519_exempt",
+      "registered_at": "2026-08-12T03:08:00Z",
+      "verification_method": "f13_sovereign_directive_2026-08-12",
+      "verified_by": "arif"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-08-12T03:08:00Z",
+    "last_seen": "2026-08-12T03:08:00Z",
+    "lease_ids": []
+  },
+  "mesa-test-agent": {
+    "agent_id": "mesa-test-agent",
+    "agent_type": "custom",
+    "role": "federation_test_persona",
+    "authority": {
+      "observe": true,
+      "dry_run": true,
+      "propose_patch": false,
+      "mutate_files": "never",
+      "shell_exec": "never",
+      "git_commit": "888_HOLD",
+      "deploy": "888_HOLD",
+      "vault_seal": "888_HOLD"
+    },
+    "identity_proof": {
+      "type": "ed25519_exempt",
+      "registered_at": "2026-08-12T03:08:00Z",
+      "verification_method": "f13_sovereign_directive_2026-08-12",
+      "verified_by": "arif"
+    },
+    "trust_tier": "OBSERVED",
+    "registered_at": "2026-08-12T03:08:00Z",
+    "last_seen": "2026-08-12T03:08:00Z",
+    "lease_ids": []
   }
 }
