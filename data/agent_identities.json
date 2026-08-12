@@ -335,10 +335,10 @@
     "description": "OpenCode \u2014 ARIF's governed coding forge worker bound to 333-AGI. Arrow of time identity via Ed25519 SSH key.",
     "identity_proof": {
       "type": "ed25519",
-      "public_key_b64": "3if17nc8dwrx7b1BA0nsZPWeEVDKedKo5b9CFSC0LEE=",
-      "public_key_hex": "de27f5ee773c770af1edbd410349ec64f59e1150ca79d2a8e5bf421520b42c41",
-      "verified_at": "2026-07-17T07:45:00Z",
-      "method": "ssh_key"
+      "public_key_b64": "y3R6wR6GmYoIEsSQlEuvwQoY7Mq/1p+Vxk0/rfgHeUs=",
+      "public_key_hex": "cb747ac11e86998a0812c490944bafc10a18eccabfd69f95c64d3fadf807794b",
+      "verified_at": "2026-08-12T22:00:00Z",
+      "method": "ed25519_seed_rotation"
     },
     "roles": [
       "forge",
@@ -651,5 +651,18 @@
     "registered_at": "2026-08-12T03:08:00Z",
     "last_seen": "2026-08-12T03:08:00Z",
     "lease_ids": []
+  },
+  "333-AGI": {
+    "agent_type": "forge_worker",
+    "trust_tier": "SOVEREIGN",
+    "description": "333-AGI bound to opencode",
+    "identity_proof": {
+      "type": "ed25519",
+      "public_key_b64": "y3R6wR6GmYoIEsSQlEuvwQoY7Mq/1p+Vxk0/rfgHeUs=",
+      "public_key_hex": "cb747ac11e86998a0812c490944bafc10a18eccabfd69f95c64d3fadf807794b",
+      "verified_at": "2026-08-12T22:00:00Z",
+      "method": "ed25519_seed_rotation"
+    },
+    "parent_agent": null
   }
 }
