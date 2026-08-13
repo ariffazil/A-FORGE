@@ -624,6 +624,9 @@ const _originalTool = server.tool.bind(server);
     if (!aThinkUserInput && (name === "forge_shell" || name === "forge_shell_dryrun")) {
       aThinkUserInput = (typeof argsObj.command === "string") ? argsObj.command : undefined;
     }
+    if (!aThinkUserInput && name === "forge_git") {
+      aThinkUserInput = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
+    }
     const aThinkSessionId = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
     const aThinkVerdict = aThinkCheck(name, aThinkUserInput, aThinkSessionId);
     if (!aThinkVerdict.allowed) {
@@ -793,6 +796,9 @@ const _originalRegisterTool = server.registerTool.bind(server);
     let aThinkUserInput = (typeof argsObj._user_input === "string") ? argsObj._user_input : undefined;
     if (!aThinkUserInput && (name === "forge_shell" || name === "forge_shell_dryrun")) {
       aThinkUserInput = (typeof argsObj.command === "string") ? argsObj.command : undefined;
+    }
+    if (!aThinkUserInput && name === "forge_git") {
+      aThinkUserInput = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
     }
     const aThinkSessionId = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
     const aThinkVerdict = aThinkCheck(name, aThinkUserInput, aThinkSessionId);

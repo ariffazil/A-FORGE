@@ -969,6 +969,11 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               aThinkUserInput = String(toolArgs?.command ?? "");
               // Inject _user_input into args so core.ts picks it up too
               toolArgs._user_input = aThinkUserInput;
+            } else if (toolName === "forge_git") {
+              // Forward the git mode (log, diff, status, etc.) so aThinkGuard
+              // can classify read-only modes and bypass GOVERN+HOLD.
+              aThinkUserInput = String(toolArgs?.mode ?? "");
+              toolArgs._user_input = aThinkUserInput;
             }
             const aThinkVerdict = aThinkCheck(toolName, aThinkUserInput);
             if (!aThinkVerdict.allowed) {

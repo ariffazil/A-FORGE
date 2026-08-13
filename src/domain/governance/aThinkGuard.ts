@@ -209,6 +209,14 @@ const READONLY_SHELL_COMMANDS = new Set([
       // mkdir, touch, cp, ln are MUTATION — handled by forgeShell.ts gate
     ]);
 
+// Read-only forge_git modes — safe to bypass GOVERN+HOLD gate.
+// Mutate modes (commit, add, push, etc.) are NOT here and must be gated.
+const READONLY_GIT_MODES = new Set([
+  "status", "diff", "log", "show", "branch", "blame",
+  "remote", "describe", "shortlog", "name-rev", "rev-parse",
+  "ls-files", "ls-remote", "reflog", "stash list",
+]);
+
 function isReadonlyShellCommand(baseCmd: string, command: string): boolean {
   if (READONLY_SHELL_COMMANDS.has(baseCmd)) {
     return true;
@@ -450,6 +458,24 @@ export class AThinkGuard {
             allowed: false,
             status: "HOLD",
             reason: "GOVERN mode: destructive tool requires human approval",
+            mode,
+            tool_name: toolName,
+            risk_label: card.risk_label,
+            requires_human_approval: true,
+          };
+        }
+      } else if (toolName === "forge_git") {
+        // Read-only git modes (log, diff, status, show, etc.) bypass HOLD.
+        // The mode is passed as the `mode` argument in tool args, which
+        // surfaces as userInput for aThinkGuard classification.
+        const gitMode = (userInput ?? "").trim().toLowerCase();
+        if (READONLY_GIT_MODES.has(gitMode)) {
+          // Allow through — inner classifier handles safety.
+        } else {
+          return {
+            allowed: false,
+            status: "HOLD",
+            reason: "GOVERN mode: forge_git mutate mode requires human approval",
             mode,
             tool_name: toolName,
             risk_label: card.risk_label,
