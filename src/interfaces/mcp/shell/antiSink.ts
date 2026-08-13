@@ -9,7 +9,7 @@
  * - Refusal theater (saying "I can't" instead of trying)
  * - Tool accumulation without task closure (collecting tools never used)
  *
- * Calhoun's behavioral sink warns: abundance without role structure,
+ * Calhoun's governance drift warns: abundance without role structure,
  * renewal, territory, or challenge produces sterile self-preoccupation.
  * The anti-sink ecology forces structured struggle: reality contact,
  * role diversity, entropy caps, and retirement of sterile branches.

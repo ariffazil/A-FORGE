@@ -385,7 +385,7 @@ export interface RealityLoopState {
    * Reality contacts — each entry is one contact with external reality.
    * This is what separates the loop from Calhoun's beautiful ones.
    * A loop that only reflects on its own traces without external contact
-   * is a closed loop and will eventually enter behavioral sink.
+   * is a closed loop and will eventually enter governance drift.
    */
   reality_contacts: RealityContact[];
 
@@ -552,7 +552,7 @@ export interface RealityLoopConfig {
   // ── APEX Anti-Sink ────────────────────────────────────────────────────
 
   /**
-   * Anti-sink configuration — hard constraints against behavioral sink.
+   * Anti-sink configuration — hard constraints against governance drift.
    * These are NOT advisory. They are physics constraints on the loop.
    */
   antisink: AntiSinkConfig;

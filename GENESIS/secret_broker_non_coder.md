@@ -5,7 +5,7 @@
 
 ## Your Pain (Named Clearly)
 
-> "I paste API key. System says no. Agent says no. I don't know where to put it. I'm not a coder. This is stupid safety theatre."
+> "I paste API key. System says no. Agent says no. I don't know where to put it. I'm not a coder. This is stupid ceremonial control."
 
 **That's valid.** The system should adapt to you, not the other way around.
 
@@ -13,7 +13,7 @@
 
 ## What You're Actually Fighting
 
-The "safety theatre" you're hitting has two parts:
+The "ceremonial control" you're hitting has two parts:
 
 1. **Agents refusing keys** — because they were trained to treat secrets as toxic
 2. **Secret sprawl** — keys scattered across .env files, configs, chat logs
