@@ -30,6 +30,23 @@ export class SABARHaltError extends Error {
   }
 }
 
+export interface ScalarReplica {
+  value: number;
+  status: "REPLICATED";
+  source: "arifos.health";
+  replicated_at: string;
+}
+
+export interface ApexScalarReplicaSet {
+  G: ScalarReplica | null;
+  C_dark: ScalarReplica | null;
+  W3: ScalarReplica | null;
+  h: ScalarReplica | null;
+  QDF: ScalarReplica | null;
+  source: string;
+  fetched_at: string;
+}
+
 export interface GovernanceBridgeOptions {
   /** Base URL of the arifOS MCP runtime (e.g., http://localhost:8088) — live VPS port; use http://localhost:8080 for Docker dev */
   baseUrl: string;
@@ -269,6 +286,59 @@ export class GovernanceBridge {
       if (typeof psiVitality !== "number") return null;
 
       return { psi_le: psiVitality, source: `${this.baseUrl}/health#governance.psi_vitality` };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Replicate ALL apex scalars from arifOS /health.
+   *
+   * Calls GET {baseUrl}/health and extracts every scalar in apex_scalars.
+   * Timeout 3s. Returns null for the entire result on total failure (graceful
+   * degradation). Individual scalars that arifOS hasn't measured are returned
+   * as null entries — partial responses are supported.
+   *
+   * F2 TRUTH: status is "REPLICATED", never "MEASURED" — A-FORGE did not
+   * measure these values.
+   * F7 HUMILITY: no false claims of measurement provenance.
+   */
+  async fetchApexScalars(): Promise<ApexScalarReplicaSet | null> {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 3000);
+      const response = await fetch(`${this.baseUrl}/health`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      if (!response.ok) return null;
+      const body = (await response.json()) as Record<string, unknown>;
+
+      const apexScalars = body.apex_scalars as Record<string, Record<string, unknown>> | undefined;
+      if (!apexScalars) return null;
+
+      const extractScalar = (key: string): ScalarReplica | null => {
+        const field = apexScalars[key];
+        if (!field || typeof field.value !== "number") return null;
+        return {
+          value: field.value,
+          status: "REPLICATED",
+          source: "arifos.health",
+          replicated_at: new Date().toISOString(),
+        };
+      };
+
+      return {
+        G: extractScalar("G"),
+        C_dark: extractScalar("C_dark"),
+        W3: extractScalar("W3"),
+        h: extractScalar("h"),
+        QDF: extractScalar("QDF"),
+        source: "arifos.health",
+        fetched_at: new Date().toISOString(),
+      };
     } catch {
       return null;
     }

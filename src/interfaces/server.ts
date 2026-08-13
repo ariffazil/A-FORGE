@@ -58,6 +58,11 @@ import {
   assertActMutationGateOrExit,
   actMutationGateHealth,
 } from "../infrastructure/governance/actIngress.js";
+import {
+  GovernanceBridge,
+  type ScalarReplica,
+  type ApexScalarReplicaSet,
+} from "../domain/governance/GovernanceBridge.js";
 import { validateSession } from "../domain/session/sessionGate.js";
 import { classifyTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
 import { gateToolByFq } from "../domain/forge/check_verdict.js";
@@ -1022,7 +1027,7 @@ app.post("/GEOX/log_interpreter", async (req: Request, res: Response) => {
  * GET /health
  * Service health check
  */
-app.get("/health", (_req: Request, res: Response) => {
+app.get("/health", async (_req: Request, res: Response) => {
   const DEPLOY_ROOT = "/opt/a-forge/app";
   let identityHash = "UNAVAILABLE";
   let deployedCommit = "UNAVAILABLE";
@@ -1041,6 +1046,77 @@ app.get("/health", (_req: Request, res: Response) => {
   const deploymentDrift = deployedCommit !== "UNAVAILABLE" && sourceCommit !== "UNAVAILABLE" && deployedCommit !== sourceCommit;
 
   const now = new Date().toISOString();
+
+  // Replicate apex scalars from arifOS /health (GEOX pattern)
+  const arifosBridge = new GovernanceBridge({ baseUrl: "http://localhost:8088", timeoutMs: 3000 });
+  const t0 = Date.now();
+  const scalarReplicas = await arifosBridge.fetchApexScalars();
+  const replication_latency_ms = Date.now() - t0;
+
+  const SCALAR_KEYS = ["G", "C_dark", "W3", "h", "QDF"] as const;
+  const DERIVATIONS: Record<string, string> = {
+    G: "G = (A*P*E*X)^(1/4) — requires kernel-evaluated reasoning",
+    C_dark: "C_dark counts manipulation signals from judge pipeline",
+    W3: "W3 = Nash product of Human × AI × Earth × Verifier ≥ 0.75",
+    h: "h = WELL-measured human readiness",
+    QDF: "QDF is canonical only when provenance is sealed",
+  };
+  const SOURCE_REQUIRED: Record<string, string> = {
+    G: "arif_think.mode=apex (LLM-bound; A-FORGE has no reasoning backend)",
+    C_dark: "arif_judge verdict stream (deception aggregate)",
+    W3: "tri_witness_evidence + constitutional_chain_id from arif_seal",
+    h: "well_assess_homeostasis (WELL organ call)",
+    QDF: "W3 + constitutional_chain_id",
+  };
+  const MEASUREMENT_POLICY: Record<string, string> = {
+    G: "executable_only_via_kernel_authority",
+    C_dark: "executable_only_via_kernel_authority",
+    W3: "executable_only_via_kernel_authority",
+    h: "delegated_to_domain_organ",
+    QDF: "derived_from_W3+provenance",
+  };
+
+  const buildScalarEntry = (key: string): Record<string, unknown> => {
+    if (scalarReplicas) {
+      const replica: ScalarReplica | null = scalarReplicas[key as keyof ApexScalarReplicaSet] as ScalarReplica | null;
+      if (replica) {
+        return { value: replica.value, status: replica.status, source: replica.source, replicated_at: replica.replicated_at };
+      }
+      // arifOS reachable but this scalar missing — partial response
+      return {
+        value: null,
+        status: "UNREACHABLE",
+        source_required: SOURCE_REQUIRED[key],
+        measurement_policy: MEASUREMENT_POLICY[key],
+        derivation: DERIVATIONS[key],
+        note: `arifOS /health did not include scalar '${key}'`,
+      };
+    }
+    // arifOS totally unreachable
+    return {
+      value: null,
+      status: "UNREACHABLE",
+      source_required: SOURCE_REQUIRED[key],
+      measurement_policy: MEASUREMENT_POLICY[key],
+      derivation: DERIVATIONS[key],
+      note: "arifOS /health not reachable",
+    };
+  };
+
+  const apexScalars: Record<string, unknown> = {};
+  for (const key of SCALAR_KEYS) {
+    apexScalars[key] = buildScalarEntry(key);
+  }
+
+  // Determine replication status
+  const replicatedCount = scalarReplicas
+    ? SCALAR_KEYS.filter((k) => {
+        const r = scalarReplicas[k as keyof ApexScalarReplicaSet] as ScalarReplica | null;
+        return r !== null;
+      }).length
+    : 0;
+  const replication_status: "active" | "degraded" | "unreachable" =
+    replicatedCount === SCALAR_KEYS.length ? "active" : replicatedCount > 0 ? "degraded" : "unreachable";
 
   // FEDERATION SCHEMA ALIGNMENT L2 (canonical: arifOS/arifosmcp/schemas/federation_enums.py)
   // See: /root/AAA/governance/FEDERATION_SCHEMA_ALIGNMENT.md
@@ -1065,19 +1141,16 @@ app.get("/health", (_req: Request, res: Response) => {
     source_commit: sourceCommit,
     deployment_drift: deploymentDrift,
     status: isDegradedMode || deploymentDrift ? "degraded" : "healthy",
-    apex_scalars: {
-      G: { value: null, status: "UNMEASURED", source_required: "arif_think.mode=apex (LLM-bound; A-FORGE has no reasoning backend)", measurement_policy: "executable_only_via_kernel_authority", derivation: "G = (A*P*E*X)^(1/4) — requires kernel-evaluated reasoning" },
-      C_dark: { value: null, status: "UNMEASURED", source_required: "arif_judge verdict stream (deception aggregate)", measurement_policy: "executable_only_via_kernel_authority", derivation: "C_dark counts manipulation signals from judge pipeline" },
-      W3: { value: null, status: "UNMEASURED", source_required: "tri_witness_evidence + constitutional_chain_id from arif_seal", measurement_policy: "executable_only_via_kernel_authority", derivation: "W3 = Nash product of Human × AI × Earth × Verifier ≥ 0.75" },
-      h: { value: null, status: "UNMEASURED", source_required: "well_assess_homeostasis (WELL organ call)", measurement_policy: "delegated_to_domain_organ", derivation: "h = WELL-measured human readiness" },
-      QDF: { value: null, status: "UNMEASURED", source_required: "W3 + constitutional_chain_id", measurement_policy: "derived_from_W3+provenance", derivation: "QDF is canonical only when provenance is sealed" },
-    },
+    apex_scalars: apexScalars,
     // F2-fidelity fix (MCP-PROBE-2026-08-08): UNMEASURED is by-design delegation
     // to the kernel, not decorative threshold. See R2-CONTRADICTION-REGISTER C11.
     apex_scalars_policy: {
       measured_here: [],
       delegated_to: { G: "arifOS:arif_think", C_dark: "arifOS:arif_judge", W3: "arifOS:arif_seal", h: "WELL:well_assess_homeostasis", QDF: "arifOS:arif_seal+provenance" },
       replication_strategy: "A-FORGE reads apex_scalars from arifOS /health (per GEOX pattern: source='arifos.health')",
+      replicated_from: "arifos.health:8088",
+      replication_status,
+      replication_latency_ms,
     },
     federation_geometry: {
       status: "enabled",
