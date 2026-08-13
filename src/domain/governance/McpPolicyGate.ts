@@ -351,6 +351,25 @@ export class McpPolicyGate {
     this.verifiedSessions.set("__legacy_active", { actorId, verifiedAt: Date.now() });
   }
 
+  /**
+   * Register a session as verified based on arifOS kernel validation.
+   * Used when validateSessionAsync() confirms a session via kernel callback
+   * or ACT verification, but the session was never registered locally
+   * (HTTP clients like OpenCode connecting over :7072).
+   *
+   * Unlike setActor() (which sets a global __legacy_active key affecting
+   * ALL clients), this registers the specific session_id so only requests
+   * carrying that session get FULL authority.
+   */
+  registerKernelVerifiedSession(sessionId: string, actorId: string): void {
+    this.verifiedSessions.set(sessionId, { actorId, verifiedAt: Date.now() });
+  }
+
+  /** Check if a session is already in the verified map. */
+  hasVerifiedSession(sessionId: string): boolean {
+    return this.verifiedSessions.has(sessionId);
+  }
+
   /** Register or replace a policy. */
   addPolicy(policy: McpPolicy): void {
     this.policies.set(policy.policy_id, policy);

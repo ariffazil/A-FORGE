@@ -689,7 +689,10 @@ const _originalTool = server.tool.bind(server);
 
     // Inject verified session context into FloorEnforcer
     const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
-    const sessionCheck = callerSession ? validateSession(callerSession) : null;
+    const callerToken692 = (typeof argsObj.session_token === "string") ? argsObj.session_token
+      : (typeof argsObj.sct === "string") ? argsObj.sct
+      : (typeof argsObj.act === "string") ? argsObj.act : undefined;
+    const sessionCheck = callerSession ? validateSession(callerSession, callerToken692) : null;
     const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : STDIO_ACTOR;
     const verdict = enforceMcpFloor(name, argsObj, callerActor);
     if (!verdict.allowed) {
@@ -855,7 +858,10 @@ const _originalRegisterTool = server.registerTool.bind(server);
 
     // Inject verified session context into FloorEnforcer
     const callerSession = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
-    const sessionCheck = callerSession ? validateSession(callerSession) : null;
+    const callerToken857 = (typeof argsObj.session_token === "string") ? argsObj.session_token
+      : (typeof argsObj.sct === "string") ? argsObj.sct
+      : (typeof argsObj.act === "string") ? argsObj.act : undefined;
+    const sessionCheck = callerSession ? validateSession(callerSession, callerToken857) : null;
     const callerActor = sessionCheck?.valid === true ? sessionCheck.actor_id : STDIO_ACTOR;
     const verdict = enforceMcpFloor(name, argsObj, callerActor);
     if (!verdict.allowed) {

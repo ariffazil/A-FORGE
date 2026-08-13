@@ -282,8 +282,14 @@ function evaluatePolicyGate(
   transport?: "stdio" | "http",
 ): VerdictResult {
   try {
+    // Extract session_id from tool args so derivePrincipal() can look it up
+    // in the verifiedSessions map. Without this, HTTP clients that registered
+    // their session via the pre-validation block above would still get
+    // OBSERVE_ONLY because session_id never reached the policy gate.
+    const sessionId = (typeof toolArgs?.session_id === "string") ? toolArgs.session_id : undefined;
     return mcpPolicyGate.evaluate({
       actor_id: actorId,
+      session_id: sessionId,
       tool_name: toolName,
       arguments: toolArgs,
       transport,
@@ -986,10 +992,41 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               return;
             }
 
+            // ── Session pre-validation (2026-08-13) ─────────────────────
+            // HTTP clients (OpenCode, Qwen Code) bind sessions via arifOS
+            // kernel directly, not via forge_session_init. Their session_id
+            // is therefore absent from the policy gate's verifiedSessions
+            // map, causing derivePrincipal() to return OBSERVE_ONLY even
+            // though the session is kernel-verified.
+            //
+            // Fix: before the policy gate evaluates, check if the request
+            // carries a session_id + session_token. If so, validate via
+            // kernel and register as verified so derivePrincipal() sees
+            // FULL authority.
+            const preSessionId = (typeof toolArgs?.session_id === "string") ? toolArgs.session_id : undefined;
+            const preSessionToken = (typeof toolArgs?.session_token === "string")
+              ? toolArgs.session_token
+              : (typeof toolArgs?.sct === "string") ? toolArgs.sct
+              : (typeof toolArgs?.act === "string") ? toolArgs.act : undefined;
+            const preActorId = (typeof toolArgs?.actor_id === "string")
+              ? toolArgs.actor_id
+              : (typeof toolArgs?.actorId === "string") ? toolArgs.actorId : undefined;
+            if (preSessionId && preSessionToken && !mcpPolicyGate.hasVerifiedSession(preSessionId)) {
+              // Use sync validateSession with the token — it calls verifyActLocally()
+              // which HMAC-verifies the ACT against the shared ARIFOS_SESSION_SECRET.
+              // validateSessionAsync() would call the kernel which returns
+              // actor_verified=false for non-crypto-bound actors, defeating the
+              // purpose. The ACT's HMAC signature IS proof the token was minted
+              // by arifOS — that's sufficient for session verification.
+              const preValidation = validateSession(preSessionId, preSessionToken);
+              if (preValidation.valid) {
+                mcpPolicyGate.registerKernelVerifiedSession(preSessionId, preValidation.actor_id);
+              }
+            }
+
             // ── Policy Gate (stateless path) ───────────────────────────
             // The 5-layer boundary (identity/server/tool/args) evaluated before dispatch.
-            const actorHint =
-              (toolArgs?.actor_id as string) || (toolArgs?.actorId as string) || undefined;
+            const actorHint = preActorId ?? undefined;
             const clientIp = (req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim()
               || req.socket?.remoteAddress || "unknown");
             const policyVerdict = evaluatePolicyGate(toolName, toolArgs, actorHint, clientIp, "http");

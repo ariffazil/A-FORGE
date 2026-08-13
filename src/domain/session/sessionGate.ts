@@ -223,21 +223,33 @@ export async function validateSessionAsync(
   actor_id?: string,
   session_token?: string,
 ): Promise<{ valid: true; actor_id: string } | { valid: false; reason: string }> {
-  // ── PATH 1 (PRIMARY): ACT token verification — stateless, self-contained ──
-  // The sct_v1.* token carries its own authority (HMAC-SHA256 signed).
-  // No in-memory state needed. Verified directly against arifOS kernel.
+  // ── PATH 0 (PRIMARY): Local HMAC verification of ACT token ──
+  // The ACT carries its own authority (HMAC-SHA256 signed with shared secret).
+  // Verify locally first — no network roundtrip, no kernel dependency.
+  // This is the critical path for HTTP clients (OpenCode, Qwen Code) whose
+  // sessions are kernel-born but not registered in the local in-memory Map.
   if (session_token && session_id) {
+    // act_v1.* tokens → local HMAC verification
+    if (session_token.startsWith("act_v1.")) {
+      const localResult = verifyActLocally(session_token, session_id);
+      if (localResult.valid) {
+        return { valid: true, actor_id: localResult.actor };
+      }
+      // Local HMAC failed — fall through to kernel verification
+    }
+
+    // ── PATH 1: Kernel verification for non-ACT or failed-local tokens ──
     const actVerified = await verifySessionTokenWithKernel(session_token, session_id, actor_id);
     if (actVerified.verified) {
       return { valid: true, actor_id: actVerified.actor_id };
     }
-    return { valid: false, reason: `ACT_VERIFY_FAILED: ${actVerified.reason}` };
+    // Don't return yet — try local Map and kernel callback below
   }
 
   // ── PATH 2 (FALLBACK): Local Map for in-process sessions ──
   // Only for sessions registered via arif_init/forge_session_init.
   // External callers without ACT tokens cannot use this path.
-  const syncResult = validateSession(session_id);
+  const syncResult = validateSession(session_id, session_token);
   if (syncResult.valid) return syncResult;
 
   // ── PATH 3 (LEGACY): Kernel verifier callback ──

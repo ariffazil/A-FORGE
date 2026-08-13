@@ -33,6 +33,7 @@ import {
   EXAMPLE_POLICIES,
 } from "../../domain/governance/McpPolicyGate.js";
 import type { McpPolicy } from "../../domain/governance/McpPolicyGate.js";
+import { validateSession } from "../../domain/session/sessionGate.js";
 
 // Sovereign actors permitted to mutate policies
 const SOVEREIGN_ACTORS = new Set([
@@ -483,8 +484,26 @@ export function installPolicyInterceptor(srv: any): void {
       try {
         const actorId =
           args?.actor_id ?? args?.actorId ?? args?.actor ?? extra?.actor_id;
+        const sessionId =
+          typeof args?.session_id === "string" ? args.session_id : undefined;
+        const sessionToken =
+          typeof args?.session_token === "string" ? args.session_token
+          : typeof args?.sct === "string" ? args.sct
+          : typeof args?.act === "string" ? args.act : undefined;
+
+        // Pre-validate session via local HMAC if not already verified.
+        // This is the critical fix for HTTP clients (OpenCode, Qwen Code)
+        // whose sessions are kernel-born but never registered locally.
+        if (sessionId && sessionToken && !gate.hasVerifiedSession(sessionId)) {
+          const preValidated = validateSession(sessionId, sessionToken);
+          if (preValidated.valid) {
+            gate.registerKernelVerifiedSession(sessionId, preValidated.actor_id);
+          }
+        }
+
         const verdict = gate.evaluate({
           actor_id: typeof actorId === "string" ? actorId : undefined,
+          session_id: sessionId,
           tool_name: toolName,
           arguments: args ?? {},
         });

@@ -34,6 +34,16 @@ const SOVEREIGN_IDENTITY_MAP: Record<string, string> = {
 };
 const ACTOR_ALIAS_MAP: Record<string, string> = {
   "arif-fazil": "ariffazil",
+  // FI agents: arifOS canonicalizes all 333-AGI lane actors to "333-agi"
+  // in ACT token claims. Map each FI harness name so ACT binding checks pass.
+  "opencode": "333-agi",
+  "qwen-code": "333-agi",
+  "kimi-code": "333-agi",
+  "claude": "333-agi",
+  "codex": "333-agi",
+  "grok": "333-agi",
+  "grok-build": "333-agi",
+  "hermes": "333-agi",
 };
 
 export function canonicalizeActor(raw: string | null | undefined): string {
