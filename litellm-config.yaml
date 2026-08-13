@@ -66,7 +66,7 @@ model_list:
     model: openai/mimo-v2.5
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
-    order: 2
+    order: 3
     input_cost_per_token: 1.4e-07
     output_cost_per_token: 2.8e-07
     model_info:
@@ -140,7 +140,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 1
+    order: 4
     model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -161,7 +161,7 @@ model_list:
     model: openai/qwen3.6-flash
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 1
+    order: 6
     model_info:
     max_input_tokens: 262144
     max_output_tokens: 65536
@@ -572,7 +572,7 @@ model_list:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 2
+    order: 99
     model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -594,7 +594,7 @@ model_list:
     model: openai/MiniMax-M2.7
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 3
+    order: 99
     model_info:
     max_input_tokens: 204800
     max_output_tokens: 65536
@@ -707,7 +707,7 @@ model_list:
     model: openai/deepseek-v4-flash-0731
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 1
+    order: 4
     min_tokens: 200
     model_info:
     max_input_tokens: 131072
@@ -1345,7 +1345,7 @@ model_list:
     model: openai/glm-5.2
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
-    order: 2
+    order: 1
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
