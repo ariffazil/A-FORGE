@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 """
-audio_watcher.py — Watch Hermes inbound audio cache → run A-FORGE bridge.
+audio_watcher.py — Poll Hermes audio cache → A-FORGE ingest (Layer 3 memory).
 
-Non-core wiring: a background daemon that polls /root/.hermes/cache/audio/
-for new files, extracts VoiceState + transcript, persists to Qdrant, and
-writes the VoiceState sidecar that state_aware_tts.py reads.
-
-Zero modifications to hermes-agent-dev. Zero upstream-sync risk.
+Non-core wiring: watches /root/.hermes/cache/audio/ for new files,
+runs canonical voice_state extraction + Qdrant persistence. Survives
+upstream sync. Zero modifications to hermes-agent-dev.
 
 Run:
   python3 audio_watcher.py                    # foreground, poll every 2s
   python3 audio_watcher.py --once             # process new files once, exit
-  (as daemon: register in cron or hermes background process)
 
-State file tracks processed hashes in /root/A-FORGE/audio/.processed.json
-so restarts don't re-ingest.
+Processed filenames tracked in .processed.json to avoid re-ingestion on restart.
 """
 
 from __future__ import annotations
@@ -28,7 +24,7 @@ from pathlib import Path
 
 AUDIO_CACHE = Path(os.environ.get("HERMES_AUDIO_CACHE", "/root/.hermes/cache/audio"))
 PROCESSED_FILE = Path(__file__).resolve().parent / ".processed.json"
-BRIDGE = Path(__file__).resolve().parent / "audio_event_bridge.py"
+INGEST = Path(__file__).resolve().parent.parent / "tools" / "forge_audio_ingest.py"
 POLL_INTERVAL = float(os.environ.get("AUDIO_WATCH_POLL", "2.0"))
 AUDIO_EXTS = {".ogg", ".oga", ".opus", ".mp3", ".wav", ".m4a", ".aac", ".flac", ".webm"}
 
@@ -47,11 +43,11 @@ def _save_processed(done: set) -> None:
 def _scan() -> list:
     if not AUDIO_CACHE.is_dir():
         return []
-    files = []
-    for f in AUDIO_CACHE.iterdir():
-        if f.suffix.lower() in AUDIO_EXTS and f.is_file():
-            files.append(f)
-    return sorted(files, key=lambda p: p.stat().st_mtime)
+    return sorted(
+        [f for f in AUDIO_CACHE.iterdir()
+         if f.suffix.lower() in AUDIO_EXTS and f.is_file()],
+        key=lambda p: p.stat().st_mtime,
+    )
 
 
 def run_once(verbose: bool = True) -> int:
@@ -66,24 +62,27 @@ def run_once(verbose: bool = True) -> int:
     for f in candidates:
         try:
             res = subprocess.run(
-                [sys.executable, str(BRIDGE), str(f),
+                [sys.executable, str(INGEST), str(f),
                  "--platform", "telegram", "--json"],
-                capture_output=True, text=True, timeout=180,
+                capture_output=True, text=True, timeout=300,
             )
             out = res.stdout.strip()
-            data: object
+            d: dict = {}
             try:
-                data = json.loads(out)
+                d = json.loads(out)
             except Exception:
-                data = {"raw": out}
-            d = data if isinstance(data, dict) else {"raw": str(data)}
+                d = {"raw": out}
             if res.returncode == 0 and d.get("success"):
+                count += 1
+                done.add(f.name)
                 if verbose:
-                    print(f"[OK] {f.name} fatigue={vs.get('fatigue_score')} "
-                          f"arousal={vs.get('arousal_score')} emotion={hint.get('emotion')}")
+                    wf = d.get("well_features", {})
+                    print(f"[OK] {f.name} stress={wf.get('stress_load', '?')} "
+                          f"clarity={wf.get('cognitive_clarity', '?')} "
+                          f"session={d.get('session_id', '')}")
             else:
-                print(f"[FAIL] {f.name}: {res.stderr[-200:] or out[:200]}", file=sys.stderr)
-                done.add(f.name)  # don't retry broken files forever
+                print(f"[FAIL] {f.name}: {(res.stderr or out)[:200]}", file=sys.stderr)
+                done.add(f.name)
         except Exception as e:
             print(f"[ERROR] {f.name}: {e}", file=sys.stderr)
     _save_processed(done)
@@ -93,8 +92,7 @@ def run_once(verbose: bool = True) -> int:
 
 
 def main() -> int:
-    once = "--once" in sys.argv
-    if once:
+    if "--once" in sys.argv:
         run_once()
         return 0
     print(f"watching {AUDIO_CACHE} every {POLL_INTERVAL}s (Ctrl-C to stop)")
