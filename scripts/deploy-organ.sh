@@ -120,13 +120,21 @@ fi
 echo ""
 echo "── Stage 4: Deploy ──"
 if [ -d "$OPT" ]; then
+  # F1 AMANAH (2026-08-15): runtime-state + secret files live inside deploy targets
+  # (/opt/arifos/app/.env, /opt/a-forge/app/a_think/budgets.yaml, .git_commit marker).
+  # --delete would destroy them. Excluded here; rollback branch (snapshot restore)
+  # intentionally UNexcluded so it restores full pre-deploy state.
   rsync -av --delete --exclude='.git' --exclude='__pycache__' --exclude='*.pyc' \
     --exclude='node_modules' --exclude='.venv' --exclude='tests' \
+    --exclude='.env' --exclude='.env.*' --exclude='.git_commit' \
+    --exclude='budgets.yaml' \
     "$SRC/" "$OPT/" 2>&1 | tail -3
 else
   mkdir -p "$OPT"
   rsync -av --exclude='.git' --exclude='__pycache__' --exclude='*.pyc' \
     --exclude='node_modules' --exclude='.venv' --exclude='tests' \
+    --exclude='.env' --exclude='.env.*' --exclude='.git_commit' \
+    --exclude='budgets.yaml' \
     "$SRC/" "$OPT/" 2>&1 | tail -3
 fi
 echo "✅ Rsynced: $SRC → $OPT"
