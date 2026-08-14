@@ -225,6 +225,7 @@ export type EvidenceBundle = z.infer<typeof EvidenceBundleSchema>;
 
 export const PIPELINE_STAGE = {
   DECLARED: "DECLARED",       // Contract created
+  FQ_GATED: "FQ_GATED",     // FQ reality-contact gate passed
   LEASED: "LEASED",           // Worktree lease acquired
   LOCKED: "LOCKED",           // Target files locked
   EXECUTING: "EXECUTING",     // Worker executing in sandbox

@@ -30,6 +30,100 @@ import {
   PIPELINE_STAGE,
 } from "./task_contract.js";
 
+
+// ═══════════════════════════════════════════════════════════════════
+// FQ REALITY-CONTACT GATE — Stabilization Law #4
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Maps AUTH risk_tier to arifFlow RiskClass fq_required floor.
+ * Derived from SYSTEM_STABILIZATION_INIT::v0.1 — Arif F13 SOVEREIGN.
+ *
+ * | risk_tier | fq_required | rationale |
+ * |-----------|-------------|-----------|
+ * | low       | 0.1         | Single file, reversible — minimal reality contact |
+ * | medium    | 0.3         | Multi-file, moderate blast — needs grounding |
+ * | high      | 0.5         | Multi-organ, deployment — reality must constrain |
+ * | critical  | 1.0         | Irreversible, F13-gated — full verification required |
+ */
+function fqRequiredForRiskTier(risk_tier: string): number {
+  switch (risk_tier) {
+    case "low": return 0.1;
+    case "medium": return 0.3;
+    case "high": return 0.5;
+    case "critical": return 1.0;
+    default: return 0.3;
+  }
+}
+
+/**
+ * STEP FQ_GATE: Reality-contact verification.
+ * Queries arifFlow :7073/health for actor's current FQ.
+ * Compares against fq_required for contract's risk_tier.
+ * HOLD if FQ < fq_required — "Insufficient reality contact."
+ */
+async function stepFqGate(ctx: PipelineContext): Promise<PipelineContext> {
+  if (ctx.contract.action_class === "OBSERVE") return ctx;
+
+  const fq_required = fqRequiredForRiskTier(ctx.contract.risk_tier ?? "low");
+  const actor_id = ctx.contract.authority?.delegated_to
+    ?? ctx.contract.authority?.requested_by
+    ?? "unknown";
+
+  try {
+    // Query arifFlow for current FQ state
+    const resp = await fetch("http://127.0.0.1:7073/health", { signal: AbortSignal.timeout(3000) });
+    if (!resp.ok) {
+      // arifFlow unreachable — fail-closed
+      ctx.status.stage = PIPELINE_STAGE.FAILED;
+      ctx.status.error = `FQ GATE: arifFlow unreachable (HTTP ${resp.status}). Cannot verify reality contact.`;
+      ctx.status.completed_at = new Date().toISOString();
+      return ctx;
+    }
+
+    const health = await resp.json() as any;
+    const per_actor = health?.fq?.per_actor ?? {};
+    const actor_state = per_actor[actor_id];
+
+    if (!actor_state) {
+      // Actor not tracked — allow with warning (new actor, no history)
+      ctx.status.stage = PIPELINE_STAGE.FQ_GATED;
+      ctx.status.timestamps = { ...ctx.status.timestamps, fq_gated: new Date().toISOString() };
+      return ctx;
+    }
+
+    const actor_fq = actor_state.quotient ?? 0;
+    const actor_held = actor_state.held ?? false;
+
+    // Anti-simulation lock: held actor cannot proceed
+    if (actor_held) {
+      ctx.status.stage = PIPELINE_STAGE.FAILED;
+      ctx.status.error = `FQ GATE: Actor '${actor_id}' is HELD. Diagnosis: ${actor_state.diagnosis ?? "UNKNOWN"}. Verify before executing.`;
+      ctx.status.completed_at = new Date().toISOString();
+      return ctx;
+    }
+
+    // Risk-weighted FQ gate
+    if (actor_fq < fq_required) {
+      ctx.status.stage = PIPELINE_STAGE.FAILED;
+      ctx.status.error = `FQ GATE: Actor '${actor_id}' FQ=${actor_fq.toFixed(2)} < fq_required=${fq_required} (risk_tier=${ctx.contract.risk_tier}). Insufficient reality contact.`;
+      ctx.status.completed_at = new Date().toISOString();
+      return ctx;
+    }
+
+    ctx.status.stage = PIPELINE_STAGE.FQ_GATED;
+    ctx.status.timestamps = { ...ctx.status.timestamps, fq_gated: new Date().toISOString() };
+    return ctx;
+
+  } catch (err) {
+    // Network error — fail-closed (Stabilization: reality contact is non-negotiable)
+    ctx.status.stage = PIPELINE_STAGE.FAILED;
+    ctx.status.error = `FQ GATE: Failed to contact arifFlow — ${(err as Error).message}. Fail-closed: cannot verify reality contact.`;
+    ctx.status.completed_at = new Date().toISOString();
+    return ctx;
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // PIPELINE STEP HANDLERS
 // ═══════════════════════════════════════════════════════════════════
@@ -268,6 +362,7 @@ async function stepRollback(ctx: PipelineContext, error: Error): Promise<Pipelin
 
 const PIPELINE = [
   { name: "DECLARE", fn: stepDeclare },
+  { name: "FQ_GATE", fn: stepFqGate },
   { name: "LEASE", fn: stepLease },
   { name: "LOCK", fn: stepLock },
   { name: "EXECUTE", fn: stepExecute },
@@ -465,7 +560,7 @@ THE THREE LAWS:
   DEPLOY is sealed. (full pipeline + 555 verify + 888 judge + Lane A seal)
 
 PIPELINE:
-  DECLARE → LEASE → LOCK → EXECUTE → EVIDENCE → VERIFY → JUDGE → MERGE → SEAL → INGEST
+  DECLARE → FQ_GATE → LEASE → LOCK → EXECUTE → EVIDENCE → VERIFY → JUDGE → MERGE → SEAL → INGEST
 
 AUTH governs transitions, not agents. Claude Code + OBSERVE needs no contract.
 Kimi + MUTATE needs the same contract as any other agent.
