@@ -1061,7 +1061,7 @@ def run_aed_cycle() -> dict:
     ingest_flow(
         "aed-v1",
         f"aed-cycle-{cycle_id}",
-        "Verify",
+        "Barrier",
         ver_cost,
         "Observation",
         "Pass",
@@ -1071,6 +1071,7 @@ def run_aed_cycle() -> dict:
             "cycle_fq": cycle_fq,
             "allow_heavy": allow_heavy,
             "stabilize": "verify_dominant_on_throttle",
+            "heartbeat": True,
         },
     )
 
