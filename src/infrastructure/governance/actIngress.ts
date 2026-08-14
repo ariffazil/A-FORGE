@@ -44,6 +44,12 @@ const ACTOR_ALIAS_MAP: Record<string, string> = {
   "grok": "333-agi",
   "grok-build": "333-agi",
   "hermes": "333-agi",
+  // P0 FIX (2026-08-14): arifOS mint_sct stores the canonical SHORT form
+  // ("QWEN" for "qwen-code", per session_standing P0.10) in ACT actor
+  // claims. canonicalizeActor lowercases it to "qwen" — which was missing
+  // here, so ACT binding failed (ERR_ACT_BINDING_INVALID qwen vs 333-agi).
+  "qwen": "333-agi",
+  "kimi": "333-agi",
 };
 
 export function canonicalizeActor(raw: string | null | undefined): string {
