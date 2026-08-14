@@ -27,6 +27,11 @@ infra_organs: arifFlow:7073 METABOLISM, FED:7074 ADVISORY, FLAME:18901 ADVISORY,
 > **A-FORGE is the hands. It executes. It never self-authorizes.**
 > **DITEMPA BUKAN DIBERI — Execution is forged, not given.**
 
+<!-- RULE-5 First Fold -->
+> **What?** Governed execution subprocessor — the hands that build, never the mind that decides.
+> **Why?** Mutations need a SEAL verdict; execution without governance is drift.
+> **Care?** For humans — nothing mutates without your sovereign signature. For agents — bring a session ACT.
+
 **A-FORGE** is the governed execution subprocessor of the arifOS Federation. Operating on ports **7071** (Sense API) and **7072** (FastMCP Gateway), it exposes **116 live-witnessed governed tools** for filesystem mutations, Git operations, Docker container fleets, CI/CD pipelines, and VPS infrastructure — all gated behind the arifOS constitutional kernel.
 
 **For humans:** nothing in this shell mutates production without a kernel SEAL, a lease, and — for irreversible acts — your F13 consent.
