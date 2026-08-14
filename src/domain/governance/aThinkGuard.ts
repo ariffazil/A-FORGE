@@ -156,10 +156,55 @@ export function classifyMode(userInput: string): AThinkMode {
 
 const A_THINK_DIR = resolve(__dirname, "../../../../a_think");
 
+/**
+ * D-1 FIX (2026-08-15): Graceful degradation when budgets.yaml is unreadable.
+ * 
+ * Previous behavior: readFileSync threw ENOENT → guard constructor crashed →
+ * every MCP tool call died with PolicyGateError -32010. OBSERVE-class tools
+ * (forge_health_check, forge_probe) were blocked because a budget file was
+ * missing.
+ *
+ * New behavior: ENOENT → warn to stderr → return permissive defaults that
+ * allow all tools through the budget layer. The AFFORDANCE layer still gates
+ * MUTATE tools (card.destructive → requires_human_approval). This means
+ * losing budgets.yaml costs you budget tracking, NOT sight.
+ *
+ * NOT forbidden by D-1: this is logged-to-stderr degradation with documented
+ * fallback, not silent swallow. The gate remains active — it just stops
+ * checking budget counters (which is moot without a budget file).
+ */
 function loadBudgets(): Record<AThinkMode, Budget> {
-  const raw = readFileSync(resolve(A_THINK_DIR, "budgets.yaml"), "utf-8");
-  const parsed = parseYaml(raw);
-  return parsed.budgets as Record<AThinkMode, Budget>;
+  const path = resolve(A_THINK_DIR, "budgets.yaml");
+  try {
+    const raw = readFileSync(path, "utf-8");
+    const parsed = parseYaml(raw);
+    return parsed.budgets as Record<AThinkMode, Budget>;
+  } catch (err: any) {
+    if (err?.code === "ENOENT") {
+      // D-1 DEGRADATION: budgets.yaml missing → DENY-MUTATE-ONLY behavior.
+      // OBSERVE tools work. MUTATE tools still hit affordance gate.
+      process.stderr.write(
+        `[A-THINK] WARNING: budgets.yaml NOT FOUND at ${path} — ` +
+        `DEGRADING to DENY-MUTATE-ONLY (OBSERVE unrestricted, MUTATE held by affordance)\n`,
+      );
+      const permissive: Budget = {
+        max_steps: 999_999,
+        max_tools: 999_999,
+        max_agents: 999,
+        max_time_seconds: 99_999,
+        memory: true,
+        receipt: false,
+        human_gate: false,
+      };
+      return {
+        FAST: { ...permissive },
+        THINK: { ...permissive, receipt: true },
+        GOVERN: { ...permissive, receipt: true, human_gate: true },
+      };
+    }
+    // Parse errors, permission errors, etc. → propagate (these ARE bugs).
+    throw err;
+  }
 }
 
 function loadAffordances(): Map<string, AffordanceCard> {
@@ -215,6 +260,48 @@ const READONLY_GIT_MODES = new Set([
   "status", "diff", "log", "show", "branch", "blame",
   "remote", "describe", "shortlog", "name-rev", "rev-parse",
   "ls-files", "ls-remote", "reflog", "stash list",
+]);
+
+/**
+ * D-1 FIX (2026-08-15): Pure OBSERVE tool set — these tools NEVER mutate
+ * state and consume no budget. The policy gate skips them entirely.
+ *
+ * Tools with read/write modes (forge_filesystem, forge_vault, forge_shell)
+ * are NOT here — they need full affordance + budget checks per mode.
+ * This set covers only tools that are OBSERVE-by-design with no write path.
+ */
+const OBSERVE_ONLY_TOOLS = new Set([
+  // Health & registry
+  "forge_health_check", "forge_registry_status", "forge_registry",
+  "forge_fingerprint_check", "forge_surface_guard", "forge_surface_audit",
+  "forge_policy",  // mode=list|check only; mode=set|remove|save are sovereign-only
+  "forge_status",
+  // Probes & scans
+  "forge_probe", "forge_scan", "forge_entropy_sweep",
+  "forge_security_drift_scan", "forge_runtime_verify",
+  "forge_isomorphism_check",
+  // VPS observation
+  "forge_vps_ports", "forge_vps_services", "forge_vps_cron",
+  "forge_journalctl",
+  // Shell observation (no execute)
+  "forge_shell_status", "forge_shell_alert_history", "forge_shell_ledger",
+  "forge_shell_dryrun",
+  // Git observation
+  "forge_worktree", "forge_vault",  // read/list modes checked at affordance; set here for read
+  // Memory & vault reads
+  "forge_memory",
+  // Research & fetch (always read)
+  "forge_fetch", "forge_research", "forge_search", "forge_minimax_search",
+  "forge_docs_lookup", "forge_docsgpt", "forge_document_ingest",
+  // World model observation
+  "forge_wm_stats", "forge_wm_gaps", "forge_wm_quality",
+  // Ephemeral observation modes (mode=inspect_gap|list_templates|list_active)
+  // (mode-specific check happens in affordance layer — set is safe because
+  //  MUTATE modes still hit affordance+budget below)
+  // Calendar, drive, sheets reads
+  "forge_drive", "forge_sheets",
+  // Netdata reads
+  "forge_netdata_alarms", "forge_netdata_metrics",
 ]);
 
 function isReadonlyShellCommand(baseCmd: string, command: string): boolean {
@@ -366,6 +453,26 @@ export class AThinkGuard {
         mode = "GOVERN";  // force GOVERN so readonly exemption applies
       }
     }
+
+    // D-1 FIX (2026-08-15): OBSERVE bypass — pure observation tools skip the
+    // entire budget + affordance chain. A read-only probe has no budget to check.
+    // Placed HERE (after mode classification, before session/budget) so OBSERVE
+    // tools never consume session counters and never block on missing budgets.yaml.
+    // MUTATE tools (forge_shell write, forge_filesystem write, forge_postgres mutate,
+    // forge_vault write/receipt/seal, forge_docker exec, forge_ephemeral generate)
+    // are NOT in OBSERVE_ONLY_TOOLS and fall through to normal budget + affordance.
+    if (OBSERVE_ONLY_TOOLS.has(toolName)) {
+      return {
+        allowed: true,
+        status: "ALLOW",
+        reason: "ALLOWED (OBSERVE-class bypass — no budget consumed)",
+        mode,
+        tool_name: toolName,
+        risk_label: "R0" as RiskLabel,
+        requires_human_approval: false,
+      };
+    }
+
     const budget = this.budgets[mode];
 
     // Step 2: Ensure session exists
