@@ -1,8 +1,8 @@
 /**
- * Action Classifier — 7-tier action taxonomy for arifOS MCP Gate.
+ * Action Classifier — 8-tier action taxonomy for arifOS MCP Gate.
  *
- * Replaces the legacy 3-class (OBSERVE/MUTATE/ATOMIC) with a
- * 7-class model that lets agents move fast where safe and
+ * Replaces the legacy 3-class (OBSERVE/MUTATE/ATOMIC) with an
+ * 8-class model that lets agents move fast where safe and
  * stop only where necessary.
  *
  * Used by:
@@ -12,10 +12,10 @@
  *
  * Conservative: tools not explicitly listed default to OBSERVE.
  *
- * DITEMPA BUKAN DIBERI — 7 classes, not 3. Precision over simplicity.
+ * DITEMPA BUKAN DIBERI — 8 classes, not 3. Precision over simplicity.
  */
 
-// ── 7-Tier Action Class ────────────────────────────────────────────────────
+// ── 8-Tier Action Class ────────────────────────────────────────────────────
 
 export type ActionClass =
   | "OBSERVE"              // Read-only, no side effects
