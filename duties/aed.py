@@ -156,8 +156,8 @@ def read_live_fq(actor_id: Optional[str] = None) -> dict:
         out = {
             "quotient": float(fq.get("quotient") or 0.0),
             "verdict": str(fq.get("verdict") or "UNMEASURED"),
-            "execute_count": int(fq.get("execute_count") or 0),
-            "verify_count": int(fq.get("verify_count") or 0),
+            "execute_count": int(fq.get("execute_count", 0)),
+            "verify_count": int(fq.get("verify_count", 0)),
         }
         if actor_id:
             by = (fq.get("by_actor") or {}).get(actor_id) or {}
@@ -168,6 +168,35 @@ def read_live_fq(actor_id: Optional[str] = None) -> dict:
         return out
     except Exception:
         return {}
+
+
+def fq_diagnosis(fq_info: dict, prefix: str = "Flow") -> str:
+    """Return diagnosis-first description instead of scalar FQ.
+
+    Scalar FQ is deprecated as a sovereign-facing health indicator because
+    automated heartbeat pulses can inflate it. Concentration is truth.
+    """
+    if not fq_info:
+        return f"{prefix}: UNMEASURED"
+    execute = int(fq_info.get("execute_count", 0))
+    verify = int(fq_info.get("verify_count", 0))
+    total = execute + verify
+    if total == 0:
+        return f"{prefix}: UNMEASURED"
+    pct = verify / total * 100
+    balance = (
+        "VERIFICATION DOMINANCE"
+        if pct > 80
+        else "EXECUTION DOMINANCE"
+        if pct < 20
+        else "BALANCED"
+    )
+    verdict = fq_info.get("verdict", "?")
+    scalar = fq_info.get("quotient", 0.0)
+    return (
+        f"{prefix}: {balance} ({pct:.0f}% verify, {execute}E/{verify}V) "
+        f"verdict={verdict} scalar_FQ={scalar:.2f} (deprecated)"
+    )
 
 
 def fq_allows_heavy_execute(fq_info: dict) -> bool:
@@ -721,13 +750,12 @@ def run_aed_cycle() -> dict:
     fq_verdict = fq_info.get("verdict") or "UNMEASURED"
     fq_stuck = global_fq < 0.5 and fq_verdict == "STUCK"
     fq_recovery_mode = bool(fq_stuck)
+    print(f"[AED:FQ] {fq_diagnosis(fq_info)}")
     if fq_recovery_mode:
         print(
-            f"[AED:FQ] Auto-recovery active — FQ={global_fq:.3f} STUCK. "
-            f"Skipping heavy periodic Verify checks this cycle."
+            "[AED:FQ] Auto-recovery active — STUCK detected. "
+            "Skipping heavy periodic Verify checks this cycle."
         )
-    else:
-        print(f"[AED:FQ] FQ={global_fq:.3f} {fq_verdict} — normal cycle.")
 
     results["steps"]["fq_gate"] = {
         "global_fq": global_fq,
@@ -753,7 +781,7 @@ def run_aed_cycle() -> dict:
     print(
         f"  carry_forward: {len(open_loops)} loops | goals: {len(in_progress_goals)} in_progress, "
         f"{len(pending_goals)} pending ({len(auto_resume_goals)} auto-resume) | "
-        f"FQ gate: global={fq_info.get('quotient', '?')} actor={fq_info.get('actor_fq', '?')} "
+        f"{fq_diagnosis(fq_info, prefix='Flow gate')} | "
         f"heavy={'ON' if allow_heavy else 'THROTTLED'} sense→Verify"
     )
 
@@ -889,8 +917,8 @@ def run_aed_cycle() -> dict:
             GOAL_REGISTRY.write_text(json.dumps(goals, indent=2, ensure_ascii=False))
     else:
         print(
-            "[AED:FQ] Heavy Execute THROTTLED — verify-only cycle until FQ ≤ 5 "
-            f"(actor={fq_info.get('actor_fq')}, global={fq_info.get('quotient')})"
+            "[AED:FQ] Heavy Execute THROTTLED — verify-only cycle until metabolism balances "
+            f"({fq_diagnosis(fq_info, prefix='actor')} vs {fq_diagnosis(fq_info)})"
         )
         results["steps"]["fq_throttle"] = {
             "skipped": [
@@ -899,13 +927,12 @@ def run_aed_cycle() -> dict:
                 "goal_resume",
                 "seed_carry_forward",
             ],
-            "reason": "actor or global FQ > 5.0 Overheat",
+            "reason": "actor or global execution dominance / overheat",
         }
         write_receipt(
             "fq_throttle",
             "HOLD",
-            f"Heavy execute skipped: actor_fq={fq_info.get('actor_fq')} "
-            f"global_fq={fq_info.get('quotient')}",
+            f"Heavy execute skipped: {fq_diagnosis(fq_info, prefix='actor')} vs {fq_diagnosis(fq_info)}",
             "T1",
             evidence=results["steps"]["fq_throttle"],
         )
@@ -1037,6 +1064,19 @@ def run_aed_cycle() -> dict:
         ver_cost = clamp_cost_ns(ver_cost + overflow)
         exec_cost = 0
     cycle_fq = (exec_cost / max(ver_cost, 1)) if exec_cost > 0 else 0.0
+    # Diagnosis for this cycle (scalar cycle_fq kept in evidence, not human headline)
+    cycle_total_steps = (1 if exec_cost > 0 else 0) + (1 if ver_cost > 0 else 0)
+    if cycle_total_steps == 0:
+        cycle_diagnosis = "UNMEASURED"
+    else:
+        cycle_verify_pct = (1 if ver_cost > 0 else 0) / cycle_total_steps * 100
+        cycle_diagnosis = (
+            "VERIFICATION DOMINANCE"
+            if cycle_verify_pct > 80
+            else "EXECUTION DOMINANCE"
+            if cycle_verify_pct < 20
+            else "BALANCED"
+        )
     results["cycle_cost_ns"] = cycle_cost_ns
     results["metabolism"] = {
         "execute_ns": execute_ns,
@@ -1044,6 +1084,7 @@ def run_aed_cycle() -> dict:
         "execute_cost_clamped": exec_cost,
         "verify_cost_clamped": ver_cost,
         "cycle_fq": cycle_fq,
+        "cycle_diagnosis": cycle_diagnosis,
         "allow_heavy": allow_heavy,
         "sense_cost_class": results["steps"].get("sense_cost_class"),
     }
@@ -1080,7 +1121,8 @@ def run_aed_cycle() -> dict:
         "SEAL",
         f"Cycle {cycle_id}: organs={alive}/{total}→{post_alive}/{total} "
         f"entropy={json.dumps(entropy)} git={json.dumps(git_sync)} "
-        f"exec_ns={execute_ns} ver_ns={verify_ns} cycle_fq={cycle_fq:.3f} "
+        f"exec_ns={execute_ns} ver_ns={verify_ns} diagnosis={cycle_diagnosis} "
+        f"cycle_fq={cycle_fq:.3f} (deprecated) "
         f"heavy={'on' if allow_heavy else 'throttled'}",
         "T1",
         evidence=results.get("metabolism"),
@@ -1088,7 +1130,7 @@ def run_aed_cycle() -> dict:
 
     print(
         f"[AED] Cycle {cycle_id} complete — cost_ns={cycle_cost_ns} "
-        f"exec={execute_ns} ver={verify_ns} cycle_fq={cycle_fq:.3f} "
+        f"exec={execute_ns} ver={verify_ns} diagnosis={cycle_diagnosis} "
         f"organs={alive}/{total}→{post_alive}/{total}"
     )
     return results

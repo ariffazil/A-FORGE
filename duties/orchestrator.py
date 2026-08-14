@@ -487,12 +487,19 @@ def seal_loop(
         with urllib.request.urlopen(req, timeout=5) as resp:
             pass
 
-        body["step_type"] = "Verify"
+        body["step_type"] = "Barrier"
         body["receipt_id"] = str(uuid.uuid4())
         body["cost_ns"] = ver_cost
+        total_steps = 2  # one Execute + one Barrier
+        verify_pct = 50.0
+        diagnosis = "BALANCED"
         body["payload"] = {
             "organs_healthy": audit["all_healthy"],
             "cycle_fq": exec_cost / max(ver_cost, 1),
+            "diagnosis": diagnosis,
+            "verify_concentration_pct": verify_pct,
+            "heartbeat": True,
+            "note": "Barrier used for audit phase so automated pulses do not game FQ",
         }
         req2 = urllib.request.Request(
             f"{ARIFLOW_URL}/ingest",
