@@ -427,7 +427,7 @@ model_list:
 - model_name: forge-777
   litellm_params:
     model: openai/kimi-k3
-    api_base: https://api.kimi.com/coding
+    api_base: https://api.kimi.com/coding/v1
     api_key: os.environ/KIMI_API_KEY
     order: 2
   model_info:
