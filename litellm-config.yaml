@@ -827,7 +827,7 @@ model_list:
     notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: zai-pro
   litellm_params:
-    model: openai/glm-5.3[1m]
+    model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
     order: 2
@@ -988,6 +988,50 @@ model_list:
     supports_function_calling: true
     notes: 'fed-audit-glm → GLM-5.3 Z.ai (renamed 2026-08-15; auto-redirect). Was GLM-5.2 Z.ai — Audit independence alias. Gödel E3 satisfied: audit provider ≠ judge provider (DeepSeek). Use for FED audit queries, godel_lock_gate, and apex-judge isolation.'
 
+# ── ACTOR PICKER GEOMETRY (ratified F13 2026-08-15) ────────────────────
+# Picker shows WHO (agi-333, asi-555, forge-777, apex-888).
+# Router resolves HOW (envelope: memory/modality/context/capability).
+# Runtime chooses WHAT (live provider health demotes, static notes never gate).
+# Falsifier: next model release = 1 SOT edit (fed_signatures.yaml cascades),
+# 0 picker edits. Guardrail internalized at kernel (SCT for MUTATE, A-FORGE
+# lease for actuators) — vendor configs carry zero safety.
+# Compat aliases (hermes-asi, i-arif, fed-*, zai-pro…) remain until kill-date
+# 2026-09-15; translation table lives in fed_signatures.yaml actor_geometry.
+- model_name: forge-777
+  litellm_params:
+    model: openai/glm-5.3
+    api_base: os.environ/ZAI_API_BASE
+    api_key: os.environ/ZAI_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_function_calling: true
+    notes: 'forge-777 → GLM-5.3 1M ctx via Z.ai Coding Plan Pro — PRIMARY coder cascade. Chat surface is propose-only; mutations require SCT + A-FORGE lease (enforced at kernel, not here).'
+- model_name: forge-777
+  litellm_params:
+    model: openai/kimi-k3
+    api_base: https://api.kimi.com/coding
+    api_key: os.environ/KIMI_API_KEY
+    order: 2
+  model_info:
+    mode: chat
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    notes: 'forge-777 fallback — Kimi K3 coding plan. Agent swarm capable.'
+- model_name: forge-777
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'forge-777 fallback — MiniMax-M3 (FED DB: FRESH 2026-08-11; config EXHAUSTED note was stale — live route_health is the only auditor).'
+
 litellm_settings:
   callbacks: ["prometheus"]
   num_retries: 2
@@ -1040,6 +1084,9 @@ router_settings:
     - hermes-asi
   - openclaw:
     - hermes-asi
+  - forge-777:
+    - agi-333
+    - kimi-code
   allowed_fails_policy:
     cooldown_time: 60
 general_settings:
