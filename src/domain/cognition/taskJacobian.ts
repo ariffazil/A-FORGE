@@ -20,6 +20,16 @@
 
 import { createHash } from "node:crypto";
 
+// ── Constitutional Constants (F2 Truth, F7 Humility, F8 Genius) ──────────────
+/** Absolute floating-point epsilon floor. Values below this trigger Nash Collapse. */
+export const EPSILON = 1e-6;
+/** Aki-Richards sparse threshold: sensitivities below 0.6 are pruned from recompute. */
+export const SPARSE_SENSITIVITY_THRESHOLD = 0.6;
+/** Quantum Humility Floor Ω₀ ∈ [0.03, 0.05]. Default reserve = 0.04. */
+export const QUANTUM_HUMILITY_FLOOR = 0.04;
+/** Maximum allowable confidence cap P(truth) ≤ 0.96. 1.0 is pathology. */
+export const MAX_ALLOWABLE_CONFIDENCE = 1.0 - QUANTUM_HUMILITY_FLOOR;
+
 // ── Domain / organ tags ──────────────────────────────────────────────────────
 
 /** Federation organs that tasks map to */
@@ -262,9 +272,11 @@ export function generateGoalId(prefix = "gv"): string {
 export function needsRecompute(
   sensitivity: TaskSensitivity,
   changedField: keyof TaskSensitivity,
-  threshold = 0.6,
+  threshold = SPARSE_SENSITIVITY_THRESHOLD,
 ): boolean {
-  return sensitivity[changedField] >= threshold;
+  const val = sensitivity[changedField];
+  if (val < EPSILON) return false;
+  return val >= threshold;
 }
 
 /**
@@ -317,13 +329,18 @@ export function computeGFromJacobian(
   }, 0) / entries.length;
   const E = 1 - avgSensitivity;
 
+  // FPA & Nash Veto: Hard collapse if any dial drops below EPSILON (1e-6)
+  if (A < EPSILON || P < EPSILON || E < EPSILON || X < EPSILON) {
+    return 0;
+  }
+
   // V3 four-dial geometric mean (NOT five-factor). Φ is scar-gate, not dial.
   //   G_local = (A · P · E · X)^(1/4)
   //   humilityCap is a reserve — it REDUCES the ceiling, it does not multiply.
   //   The reserve is applied as a post-multiplier ceiling clamp, mirroring
   //   F7 humility reserve semantics, NOT as a 5th dial.
   const product = A * P * E * X;
-  if (product <= 0) return 0;
+  if (product < EPSILON) return 0;
   const G = Math.pow(product, 1 / 4) * (1 - humilityCap);
 
   return Math.round(G * 10000) / 10000;

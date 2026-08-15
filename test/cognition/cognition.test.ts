@@ -94,6 +94,43 @@ describe("taskJacobian — helpers", () => {
     assert.equal(ZERO_SENSITIVITY.domain, 0);
   });
 
+  it("needsRecompute ignores sub-epsilon noise (< 1e-6)", () => {
+    const s = { ...ZERO_SENSITIVITY, risk: 1e-7 };
+    assert.ok(!needsRecompute(s, "risk", 1e-8));
+  });
+
+  it("computeGFromJacobian triggers Nash Collapse if any dial < EPSILON", () => {
+    // Task with 0.0 provenance (P = 0)
+    const task: TaskVectorEntry = {
+      task_id: "tv_1",
+      label: "unverified task",
+      organ: "aforge",
+      domain: "infrastructure",
+      tool: "file_read",
+      args: {},
+      depends_on: [],
+      reversibility: "reversible",
+      risk_tier: "LOW",
+      sensitivity: ZERO_SENSITIVITY,
+      provenance: {
+        goal_intent: "", // empty intent -> P = 0
+        goal_hash: "",
+        source_risk_band: "LOW",
+        source_scope: "",
+        source_authority: "",
+        created_at: "",
+        metabolism_count: 0,
+        risk_weight_multiplier: 1.0,
+        constraint_weight_multiplier: 1.0,
+      },
+      state: "pending",
+      g_contribution: 0.8,
+      c_dark_contribution: 0.0,
+      last_sensitivity_check: null,
+    };
+    assert.equal(computeGFromJacobian([task]), 0);
+  });
+
   it("computeGFromJacobian returns 0 for empty entries", () => {
     assert.equal(computeGFromJacobian([]), 0);
   });
