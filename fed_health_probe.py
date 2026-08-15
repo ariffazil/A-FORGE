@@ -12,7 +12,7 @@ env = {}
 for line in result.stdout.split('\n'):
     if '=' in line and not line.startswith('#'):
         k, _, v = line.partition('=')
-        if k in ('QWEN_INDIVIDUAL_API_KEY', 'GEMINI_API_KEY', 'MINIMAX_API_KEY', 'MIMO_API_KEY'):
+        if k in ('QWEN_INDIVIDUAL_API_KEY', 'GEMINI_API_KEY', 'MINIMAX_API_KEY', 'MIMO_API_KEY', 'MIMO_BASE_URL'):
             env[k] = v
 
 PROVIDERS = {
@@ -35,7 +35,7 @@ PROVIDERS = {
         'payload': b'{"model":"MiniMax-M3","messages":[{"role":"user","content":"OK"}],"max_tokens":5}'
     },
     'mimo': {
-        'url': 'https://token-plan-sgp.xiaomimimo.com/v1/chat/completions',
+        'url': env.get('MIMO_BASE_URL', 'https://api.xiaomimimo.com/v1').rstrip('/') + '/chat/completions',
         'key': env.get('MIMO_API_KEY', ''),
         'model': 'mimo-v2.5',
         'payload': b'{"model":"mimo-v2.5","messages":[{"role":"user","content":"OK"}],"max_tokens":5}'
