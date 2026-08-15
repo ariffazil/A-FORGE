@@ -672,6 +672,11 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               capabilities: {
                 tools: {},
                 resources: { listChanged: false },
+                tasks: {
+                  listChanged: false,
+                  cancel: true,
+                  status: true,
+                },
                 // SEP-2577 freeze: no logging:{}. Completions cancelled (agent tool JSON).
                 // stderr observability via journald (StandardError=journal).
                 registration: { mode: "explicit", tool: "forge_agent" },
@@ -1325,6 +1330,65 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 messages: [{ role: "user", content: { type: "text", text: `Prompt "${promptName}" requires workflow-specific arguments. Use tools/list to discover capabilities.` } }],
               }));
             }
+            return;
+          }
+
+          // Case 8: tasks/list — SEP-1686 / SEP-2663 Tasks Extension
+          if (method === "tasks/list") {
+            const { taskGroups } = await import("./parallelTools.js").catch(() => ({ taskGroups: new Map() }));
+            const tasks = Array.from(taskGroups?.values() || []).map((g: any) => ({
+              taskId: g.task_group_id,
+              status: g.status,
+              createdAt: g.created_at,
+              deadline: g.deadline,
+              membersCount: g.members?.length ?? 0,
+            }));
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(jsonRpcResult(msgId, { tasks }));
+            return;
+          }
+
+          // Case 9: tasks/get or tasks/status — SEP-1686 Tasks Extension
+          if (method === "tasks/get" || method === "tasks/status") {
+            const taskId = parsed.params?.taskId ?? parsed.params?.id ?? parsed.params?.group_id;
+            if (!taskId) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, "Missing taskId in params"));
+              return;
+            }
+            const { taskGroups, assembleResult } = await import("./parallelTools.js").catch(() => ({ taskGroups: new Map(), assembleResult: null }));
+            const group = taskGroups?.get(taskId);
+            if (!group) {
+              res.writeHead(404, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, `Task "${taskId}" not found`));
+              return;
+            }
+            const result = assembleResult ? assembleResult(group) : group;
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(jsonRpcResult(msgId, { task: result }));
+            return;
+          }
+
+          // Case 10: tasks/cancel — SEP-1686 Tasks Extension
+          if (method === "tasks/cancel") {
+            const taskId = parsed.params?.taskId ?? parsed.params?.id ?? parsed.params?.group_id;
+            const reason = parsed.params?.reason ?? "user requested cancellation";
+            if (!taskId) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, "Missing taskId in params"));
+              return;
+            }
+            const { taskGroups, cancelGroup, assembleResult } = await import("./parallelTools.js").catch(() => ({ taskGroups: new Map(), cancelGroup: null, assembleResult: null }));
+            const group = taskGroups?.get(taskId);
+            if (!group) {
+              res.writeHead(404, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, `Task "${taskId}" not found`));
+              return;
+            }
+            if (cancelGroup) await cancelGroup(group, reason);
+            const result = assembleResult ? assembleResult(group) : group;
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(jsonRpcResult(msgId, { status: "canceled", task: result }));
             return;
           }
 
