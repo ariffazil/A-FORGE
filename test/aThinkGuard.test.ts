@@ -50,60 +50,79 @@ test("classifyMode: irreversible action → GOVERN", () => {
   assert.equal(classifyMode("Truncate logs"), "GOVERN");
 });
 
-// ── Budget Enforcement Tests ─────────────────────────────────────────────
+// ── Budget Enforcement Tests (D-1 2026-08-15: hermetic via injected budgets) ──
+// forge_chart = R0, non-destructive, NOT in OBSERVE_ONLY_TOOLS → consumes budget.
+// The runtime budgets.yaml is mutable operational state; tests inject fixed budgets.
 
-test("FAST mode: 0 tools budget → STOP on any tool", () => {
-  const result = aThinkCheck("forge_search", "What is MCP?", "test-fast-1");
+const TEST_BUDGETS: Record<string, any> = {
+  FAST:  { max_steps: 1,  max_tools: 0, max_agents: 1, max_time_seconds: 10,  memory: false, receipt: false, human_gate: false },
+  THINK: { max_steps: 12, max_tools: 2, max_agents: 2, max_time_seconds: 120, memory: true,  receipt: true,  human_gate: false },
+  GOVERN:{ max_steps: 20, max_tools: 5, max_agents: 3, max_time_seconds: 300, memory: true,  receipt: true,  human_gate: true  },
+};
+
+test("FAST mode: 0 tools budget → STOP on budget-consuming tool", () => {
+  const guard = new AThinkGuard(TEST_BUDGETS as any);
+  const result = guard.check("forge_chart", "What is MCP?", "test-fast-1b");
   assert.equal(result.status, "STOP");
   assert.equal(result.allowed, false);
   assert.ok(result.reason.includes("BUDGET"));
   assert.ok(result.reason.includes("max_tools=0"));
 });
 
-test("THINK mode: respects max 2 tools", () => {
-  const guard = new AThinkGuard();
+test("D-1: OBSERVE-class tool bypasses budget entirely (FAST, max_tools=0)", () => {
+  const guard = new AThinkGuard(TEST_BUDGETS as any);
+  const result = guard.check("forge_search", "What is MCP?", "test-fast-observe");
+  assert.equal(result.status, "ALLOW");
+  assert.equal(result.allowed, true);
+  assert.ok(result.reason.includes("OBSERVE-class bypass"));
+});
+
+test("THINK mode: respects max 2 tools (injected)", () => {
+  const guard = new AThinkGuard(TEST_BUDGETS as any);
 
   // First tool → ALLOW
-  const r1 = guard.check("forge_search", "Compare LangGraph vs AutoGen", "test-think-budget");
+  const r1 = guard.check("forge_chart", "Compare LangGraph vs AutoGen", "test-think-budget");
   assert.equal(r1.status, "ALLOW", `First call should be ALLOW, got ${r1.status}`);
 
   // Second tool → ALLOW
-  const r2 = guard.check("forge_search", "Compare LangGraph vs AutoGen", "test-think-budget");
+  const r2 = guard.check("forge_chart", "Compare LangGraph vs AutoGen", "test-think-budget");
   assert.equal(r2.status, "ALLOW", `Second call should be ALLOW, got ${r2.status}`);
 
   // Third tool → STOP (budget exceeded)
-  const r3 = guard.check("forge_search", "Compare LangGraph vs AutoGen", "test-think-budget");
+  const r3 = guard.check("forge_chart", "Compare LangGraph vs AutoGen", "test-think-budget");
   assert.equal(r3.status, "STOP", `Third call should be STOP, got ${r3.status}`);
   assert.ok(r3.reason.includes("BUDGET") || r3.reason.includes("max_tools"));
 });
 
-test("GOVERN mode: respects max 5 tools", () => {
-  const guard = new AThinkGuard();
+test("GOVERN mode: respects max 5 tools (injected)", () => {
+  const guard = new AThinkGuard(TEST_BUDGETS as any);
 
-  // Use 5 tools (read-only tools that are allowed in GOVERN)
+  // Use 5 tools (R0 non-destructive, allowed in GOVERN)
   for (let i = 0; i < 5; i++) {
-    const r = guard.check("forge_dry_run", "Deploy to production", "test-govern-budget");
+    const r = guard.check("forge_chart", "Deploy to production", "test-govern-budget");
     assert.equal(r.status, "ALLOW", `Tool ${i + 1} should be ALLOW, got ${r.status}`);
   }
 
   // Sixth tool → STOP
-  const r6 = guard.check("forge_dry_run", "Deploy to production", "test-govern-budget");
+  const r6 = guard.check("forge_chart", "Deploy to production", "test-govern-budget");
   assert.equal(r6.status, "STOP", `Sixth call should be STOP, got ${r6.status}`);
 });
 
-// ── Affordance: UNKNOWN = HOLD ───────────────────────────────────────────
+// ── Affordance: UNKNOWN = DEFAULT_ALLOW (SURVIVAL-OF-THE-FITTEST 2026-07-24) ──
+// Contract change: missing affordance card no longer HOLDs at the guard.
+// The guard is a coarse pre-filter; the inner arifJudge kernel gates unknown
+// tools downstream. Tests assert the pass-through, not the old HOLD.
 
-test("GOVERN + unknown tool → HOLD", () => {
+test("GOVERN + unknown tool → DEFAULT_ALLOW (kernel gates downstream)", () => {
   const result = aThinkCheck("some_random_tool", "Deploy to production", "test-unknown-1");
-  assert.equal(result.status, "HOLD");
-  assert.equal(result.allowed, false);
-  assert.ok(result.reason.includes("UNKNOWN") || result.reason.includes("no affordance card"));
+  assert.equal(result.status, "ALLOW");
+  assert.equal(result.allowed, true);
 });
 
-test("GOVERN + unregistered tool → HOLD", () => {
+test("GOVERN + unregistered tool → DEFAULT_ALLOW (kernel gates downstream)", () => {
   const result = aThinkCheck("forge_nonexistent_tool", "Deploy to production", "test-unknown-2");
-  assert.equal(result.status, "HOLD");
-  assert.equal(result.allowed, false);
+  assert.equal(result.status, "ALLOW");
+  assert.equal(result.allowed, true);
 });
 
 // ── Destructive Tool = Human Approval ────────────────────────────────────
@@ -155,16 +174,22 @@ test("THINK mode + GOVERN-only tool → DENY (mode too low)", () => {
 
 // ── Session Tracking ─────────────────────────────────────────────────────
 
-test("session tracks tool usage", () => {
-  const guard = new AThinkGuard();
+test("session tracks tool usage (budget-consuming tools only)", () => {
+  const guard = new AThinkGuard(TEST_BUDGETS as any);
 
-  guard.check("forge_search", "Compare tools", "test-tracking-1");
+  guard.check("forge_chart", "Compare tools", "test-tracking-1");
   const session = guard.getSession("test-tracking-1");
   assert.ok(session);
   assert.equal(session.tools_used, 1);
   assert.equal(session.mode, "THINK");
 
+  // OBSERVE-class bypass must NOT increment counters
   guard.check("forge_search", "Compare tools", "test-tracking-1");
+  const sessionObs = guard.getSession("test-tracking-1");
+  assert.ok(sessionObs, "session must exist after observe bypass");
+  assert.equal(sessionObs!.tools_used, 1, "observe bypass must not consume budget");
+
+  guard.check("forge_chart", "Compare tools", "test-tracking-1");
   const session2 = guard.getSession("test-tracking-1");
   assert.ok(session2);
   assert.equal(session2.tools_used, 2);
@@ -173,18 +198,20 @@ test("session tracks tool usage", () => {
 // ── Full Flow ────────────────────────────────────────────────────────────
 
 test("full flow: FAST → STOP, THINK → ALLOW, GOVERN → HOLD", () => {
-  // FAST: simple question, no tools allowed
-  const fast = aThinkCheck("forge_search", "What is MCP?", "test-full-fast");
+  const guard = new AThinkGuard(TEST_BUDGETS as any);
+
+  // FAST: simple question, no budget-consuming tools allowed
+  const fast = guard.check("forge_chart", "What is MCP?", "test-full-fast");
   assert.equal(fast.status, "STOP");
   assert.equal(fast.mode, "FAST");
 
-  // THINK: analysis, tool allowed
-  const think = aThinkCheck("forge_search", "Compare LangGraph vs AutoGen", "test-full-think");
+  // THINK: analysis, R0 tool allowed
+  const think = guard.check("forge_chart", "Compare LangGraph vs AutoGen", "test-full-think");
   assert.equal(think.status, "ALLOW");
   assert.equal(think.mode, "THINK");
 
   // GOVERN: deploy, requires approval
-  const govern = aThinkCheck("forge_execute", "Deploy to production", "test-full-govern");
+  const govern = guard.check("forge_execute", "Deploy to production", "test-full-govern");
   assert.equal(govern.status, "HOLD");
   assert.equal(govern.mode, "GOVERN");
   assert.equal(govern.requires_human_approval, true);
@@ -195,11 +222,11 @@ test("full flow: FAST → STOP, THINK → ALLOW, GOVERN → HOLD", () => {
 test("affordance cards are loaded", () => {
   const guard = new AThinkGuard();
 
-  // Known tools should have cards
+  // Known A-FORGE tools should have cards
   assert.ok(guard.getAffordance("forge_search"));
   assert.ok(guard.getAffordance("forge_execute"));
   assert.ok(guard.getAffordance("forge_shell"));
-  assert.ok(guard.getAffordance("geox_basin"));
+  assert.ok(guard.getAffordance("forge_chart")); // geox_* cards live on the GEOX organ, not this surface
 
   // Unknown tool should not
   assert.equal(guard.getAffordance("nonexistent_tool"), undefined);

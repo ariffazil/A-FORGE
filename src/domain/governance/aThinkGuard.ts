@@ -416,8 +416,11 @@ export class AThinkGuard {
   private affordanceCards: Map<string, AffordanceCard>;
   private sessions: Map<string, SessionState> = new Map();
 
-  constructor() {
-    this.budgets = loadBudgets();
+  constructor(budgetsOverride?: Record<AThinkMode, Budget>) {
+    // D-1 (2026-08-15): injectable budgets make tests hermetic — the runtime
+    // budgets.yaml is mutable operational state (retuned live); tests must
+    // not depend on it. Production callers omit the override.
+    this.budgets = budgetsOverride ?? loadBudgets();
     this.affordanceCards = loadAffordances();
     // Debug: log card count and specific lookups
     process.stderr.write(`[A-THINK] Guard initialized: ${this.affordanceCards.size} cards\n`);
