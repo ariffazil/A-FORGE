@@ -17,6 +17,7 @@ import type { PatchResult } from "../../domain/types/policy.js";
 import { resolveSandboxedPath } from "../../utils/paths.js";
 import { AmanahLockManager } from "../../domain/governance/index.js";
 import { runPreflight } from "../../domain/governance/preflight.js";
+import { ensureAmanahLock, releaseAutoLock } from "./amanah-auto-acquire.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -57,95 +58,105 @@ export class ApplyPatchesTool extends BaseTool {
     const patches = args.patches as PatchRequest[];
     const results: PatchResult[] = [];
 
-    // F1 Amanah Lock check — all patches must be covered by the same session lock
+    // F1 AMANAH Guard 2: Auto-acquire locks for ALL patched files
+    // Transparent to agent — auto-acquire if no lock, 423 if held by other
     const amanah = AmanahLockManager.getInstance();
+    const autoLocks: Array<{ lockId: string; resourceId: string }> = [];
+
     for (const patch of patches) {
       const targetPath = resolveSandboxedPath(context.workingDirectory, patch.file_path);
-      const activeLock = await amanah.getActiveLock(targetPath);
-      if (!activeLock) {
+
+      const lock = await ensureAmanahLock(
+        targetPath,
+        context.sessionId ?? "unknown",
+        context.sessionId ?? "unknown", // session IS the actor
+        `auto-acquired for apply_patches: ${targetPath}`
+      );
+
+      if (!lock.ok) {
         results.push({
           file_path: patch.file_path,
           applied: false,
           stdout: "",
-          stderr: `F1 AMANAH 888-HOLD: No lock held for ${targetPath}. Call request_amanah_lock first.`,
+          stderr: lock.error!,
         });
-        continue;
+        // Release any locks we already acquired
+        for (const al of autoLocks) {
+          await releaseAutoLock(al.lockId, context.sessionId ?? "unknown", "rollback on lock conflict");
+        }
+        return {
+          ok: false,
+          output: JSON.stringify(results, null, 2),
+          metadata: { applied: false, count: results.length, verdict: lock.verdict, holder: lock.holder, floor: "F1" },
+        };
       }
-      if (activeLock.session_id !== context.sessionId) {
-        results.push({
-          file_path: patch.file_path,
-          applied: false,
-          stdout: "",
-          stderr: `F1 AMANAH 888-HOLD: Resource locked by ${activeLock.actor_id} (${activeLock.lock_id}).`,
-        });
-        continue;
+
+      if (lock.isAutoAcquired && lock.lock_id) {
+        autoLocks.push({ lockId: lock.lock_id, resourceId: targetPath });
       }
     }
 
-    // If any patch failed the lock check, abort entirely
-    const lockFailures = results.filter((r) => !r.applied && r.stderr.includes("888-HOLD"));
-    if (lockFailures.length > 0) {
+    try {
+      // F4 Pre-flight entropy check
+      for (const patch of patches) {
+        const targetPath = resolveSandboxedPath(context.workingDirectory, patch.file_path);
+        const preflight = await runPreflight(context.sessionId, targetPath);
+        if (!preflight.ok) {
+          results.push({
+            file_path: patch.file_path,
+            applied: false,
+            stdout: "",
+            stderr: `888-HOLD: ${preflight.message}`,
+          });
+        }
+      }
+      const preflightFailures = results.filter((r) => !r.applied && r.stderr.includes("888-HOLD"));
+      if (preflightFailures.length > 0) {
+        return {
+          ok: false,
+          output: JSON.stringify(results, null, 2),
+          metadata: { applied: false, count: results.length, verdict: "888-HOLD", floor: "F1+F4", preflightFailures },
+        };
+      }
+
+      for (const patch of patches) {
+        const targetPath = resolveSandboxedPath(context.workingDirectory, patch.file_path);
+
+        if (Buffer.byteLength(patch.unified_diff, "utf8") > (context.policy?.maxFileBytes ?? 262144)) {
+          results.push({
+            file_path: patch.file_path,
+            applied: false,
+            stdout: "",
+            stderr: "Diff exceeds max size limit",
+          });
+          continue;
+        }
+
+        try {
+          const result = await applyUnifiedDiff(targetPath, patch.unified_diff, context.workingDirectory);
+          results.push(result);
+        } catch (err) {
+          results.push({
+            file_path: patch.file_path,
+            applied: false,
+            stdout: "",
+            stderr: String(err),
+          });
+        }
+      }
+
+      const allApplied = results.every((r) => r.applied);
       return {
-        ok: false,
+        ok: allApplied,
         output: JSON.stringify(results, null, 2),
-        metadata: { applied: false, count: results.length, verdict: "888-HOLD", floor: "F1" },
+        metadata: { applied: allApplied, count: results.length, auto_locks: autoLocks.length },
       };
-    }
-
-    // F4 Pre-flight entropy check (Seri Kembangan Phase 3)
-    for (const patch of patches) {
-      const targetPath = resolveSandboxedPath(context.workingDirectory, patch.file_path);
-      const preflight = await runPreflight(context.sessionId, targetPath);
-      if (!preflight.ok) {
-        results.push({
-          file_path: patch.file_path,
-          applied: false,
-          stdout: "",
-          stderr: `888-HOLD: ${preflight.message}`,
-        });
+    } finally {
+      // Release all auto-acquired locks
+      for (const al of autoLocks) {
+        await releaseAutoLock(al.lockId, context.sessionId ?? "unknown", "auto-release after patches");
       }
     }
-    const preflightFailures = results.filter((r) => !r.applied && r.stderr.includes("888-HOLD"));
-    if (preflightFailures.length > 0) {
-      return {
-        ok: false,
-        output: JSON.stringify(results, null, 2),
-        metadata: { applied: false, count: results.length, verdict: "888-HOLD", floor: "F1+F4", preflightFailures },
-      };
-    }
-
-    for (const patch of patches) {
-      const targetPath = resolveSandboxedPath(context.workingDirectory, patch.file_path);
-
-      if (Buffer.byteLength(patch.unified_diff, "utf8") > (context.policy?.maxFileBytes ?? 262144)) {
-        results.push({
-          file_path: patch.file_path,
-          applied: false,
-          stdout: "",
-          stderr: "Diff exceeds max size limit",
-        });
-        continue;
-      }
-
-      try {
-        const result = await applyUnifiedDiff(targetPath, patch.unified_diff, context.workingDirectory);
-        results.push(result);
-      } catch (err) {
-        results.push({
-          file_path: patch.file_path,
-          applied: false,
-          stdout: "",
-          stderr: String(err),
-        });
-      }
-    }
-
-    const allApplied = results.every((r) => r.applied);
-    return {
-      ok: allApplied,
-      output: JSON.stringify(results, null, 2),
-      metadata: { applied: allApplied, count: results.length },
-    };
   }
 }
 

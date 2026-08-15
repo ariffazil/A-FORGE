@@ -117,6 +117,9 @@ ACTOR_ALIAS = {
     "fed-long-context": "agi-333",
     "fed-agent-subagent": "agi-333",
     "dispatch": "agi-333",
+    # fast lane collapsed into sovereign chat organ (Stage-2 envelope; SOT has no fed-fast cascade)
+    "fed-fast": "i-arif",
+    "fed/fast": "i-arif",
     "fed-multimodal-vision": "asi-555",
     "asi-555-audio": "fed/audio",
     "asi-555-video": "fed/audio",
@@ -207,13 +210,16 @@ def _strip_responses_features(body: bytes, content_type: str) -> bytes:
     if isinstance(data, dict) and isinstance(data.get("tools"), list):
         before = len(data["tools"])
         data["tools"] = [
-            t for t in data["tools"]
+            t
+            for t in data["tools"]
             if not (isinstance(t, dict) and t.get("type") == "web_search")
         ]
         if len(data["tools"]) != before:
             mutated.append(f"web_search:dropped({before - len(data['tools'])})")
     if mutated:
-        sys.stderr.write(f"[fed-aware-middleware] responses-stripped: {'+'.join(mutated)}\n")
+        sys.stderr.write(
+            f"[fed-aware-middleware] responses-stripped: {'+'.join(mutated)}\n"
+        )
         return json.dumps(data, ensure_ascii=False).encode("utf-8")
     return body
 
@@ -291,6 +297,7 @@ def _proxy_to(
     # urllib's Request DOES auto-set Host from URL when not present, but defensive double-set
     # is bulletproof against future proxy middleware that may inject Host header.
     from urllib.parse import urlparse
+
     upstream_host = urlparse(url).netloc
     if upstream_host:
         hdrs["Host"] = upstream_host
@@ -442,7 +449,11 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
             fed_route_model = model.replace("/", "-") if "/" in model else model
 
             result = _call_fed_route(
-                task=task, model=fed_route_model, modality=modality, effort=effort, tier=tier
+                task=task,
+                model=fed_route_model,
+                modality=modality,
+                effort=effort,
+                tier=tier,
             )
             target = _select_target_route(result) if result else None
 

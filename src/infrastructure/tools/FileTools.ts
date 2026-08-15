@@ -5,6 +5,7 @@ import type { ToolExecutionContext, ToolResult } from "../../domain/types/tool.j
 import { resolveSandboxedPath } from "../../utils/paths.js";
 import { AmanahLockManager } from "../../domain/governance/index.js";
 import { runPreflight } from "../../domain/governance/preflight.js";
+import { ensureAmanahLock, releaseAutoLock } from "./amanah-auto-acquire.js";
 
 function resolveTargetPath(context: ToolExecutionContext, filePath: string): string {
   return resolveSandboxedPath(context.workingDirectory, filePath);
@@ -64,45 +65,51 @@ export class WriteFileTool extends BaseTool {
   async run(args: Record<string, unknown>, context: ToolExecutionContext): Promise<ToolResult> {
     const targetPath = resolveTargetPath(context, String(args.path ?? ""));
 
-    // F1 Amanah Lock check
-    const amanah = AmanahLockManager.getInstance();
-    const activeLock = await amanah.getActiveLock(targetPath);
-    if (!activeLock) {
+    // F1 AMANAH Guard 2: Auto-acquire lock (transparent to agent)
+    // If no lock → auto-acquire. If held by other → 423 Locked. If held by us → proceed.
+    const lock = await ensureAmanahLock(
+      targetPath,
+      context.sessionId ?? "unknown",
+      context.sessionId ?? "unknown", // session IS the actor in this context
+      `auto-acquired for write_file: ${targetPath}`
+    );
+
+    if (!lock.ok) {
       return {
         ok: false,
-        output: `F1 AMANAH 888-HOLD: No lock held for ${targetPath}. Call request_amanah_lock first.`,
-        metadata: { path: targetPath, verdict: "888-HOLD", floor: "F1" },
-      };
-    }
-    if (activeLock.session_id !== context.sessionId) {
-      return {
-        ok: false,
-        output: `F1 AMANAH 888-HOLD: Resource locked by ${activeLock.actor_id} (${activeLock.lock_id}).`,
-        metadata: { path: targetPath, verdict: "888-HOLD", holder: activeLock, floor: "F1" },
+        output: lock.error!,
+        metadata: { path: targetPath, verdict: lock.verdict, holder: lock.holder, floor: "F1" },
       };
     }
 
-    // F4 Pre-flight entropy check (Seri Kembangan Phase 3)
-    const preflight = await runPreflight(context.sessionId, targetPath);
-    if (!preflight.ok) {
-      return {
-        ok: false,
-        output: `888-HOLD: ${preflight.message}`,
-        metadata: { path: targetPath, verdict: "888-HOLD", floor: "F1+F4", preflight },
-      };
-    }
+    try {
+      // F4 Pre-flight entropy check
+      const preflight = await runPreflight(context.sessionId, targetPath);
+      if (!preflight.ok) {
+        return {
+          ok: false,
+          output: `888-HOLD: ${preflight.message}`,
+          metadata: { path: targetPath, verdict: "888-HOLD", floor: "F1+F4", preflight },
+        };
+      }
 
-    const content = String(args.content ?? "");
-    if (Buffer.byteLength(content, "utf8") > (context.policy?.maxFileBytes ?? 262144)) {
-      throw new Error(`Refusing to write file above size limit: ${targetPath}`);
+      const content = String(args.content ?? "");
+      if (Buffer.byteLength(content, "utf8") > (context.policy?.maxFileBytes ?? 262144)) {
+        throw new Error(`Refusing to write file above size limit: ${targetPath}`);
+      }
+      await mkdir(dirname(targetPath), { recursive: true });
+      await writeFile(targetPath, content, "utf8");
+      return {
+        ok: true,
+        output: `Wrote file: ${targetPath}`,
+        metadata: { path: targetPath, lock_id: lock.lock_id, auto_acquired: lock.isAutoAcquired },
+      };
+    } finally {
+      // Auto-release if we acquired the lock (not if agent already held it)
+      if (lock.isAutoAcquired && lock.lock_id) {
+        await releaseAutoLock(lock.lock_id, context.sessionId ?? "unknown");
+      }
     }
-    await mkdir(dirname(targetPath), { recursive: true });
-    await writeFile(targetPath, content, "utf8");
-    return {
-      ok: true,
-      output: `Wrote file: ${targetPath}`,
-      metadata: { path: targetPath, lock_id: activeLock.lock_id },
-    };
   }
 }
 
