@@ -98,6 +98,44 @@ CAPABILITY_PREFIXES = (
     "fed-memory",
 )
 
+# ── ACTOR-ENVELOPE COMPAT LAYER (Stage 2, 2026-08-15) ─────────────────
+# Doctrine: AAA/federation/FED_ACTOR_ENVELOPE_DOCTRINE.md
+# "State is no longer topology." Legacy aliases are translated to the
+# surviving actor/utility groups before any hop to :4000. SOT for this
+# map: AAA/federation/fed_signatures.yaml → actor_geometry.compat_aliases.
+ACTOR_ALIAS = {
+    # edge persona pair collapse
+    "hermes-asi": "i-arif",
+    "i-arif-qualia": "i-arif",
+    "zai-pro": "i-arif",
+    "openclaw": "i-arif",
+    # audit independence member
+    "fed-audit-glm": "apex-888",
+    # task lanes → actors
+    "fed-reasoning-heavy": "agi-333",
+    "fed/reasoning-heavy": "agi-333",
+    "fed-long-context": "agi-333",
+    "fed-agent-subagent": "agi-333",
+    "dispatch": "agi-333",
+    "fed-multimodal-vision": "asi-555",
+    "asi-555-audio": "fed/audio",
+    "asi-555-video": "fed/audio",
+    "fed-realtime-voice": "fed/audio",
+    # FI mirrors → forge actor
+    "opencode": "forge-777",
+    "codex": "forge-777",
+    "kimi-code": "forge-777",
+    # raw gemini → judge cascade
+    "gemini-flash-lite": "apex-888",
+    "gemini-flash": "apex-888",
+    "gemini-pro": "apex-888",
+}
+
+
+def _translate_alias(model: str) -> str:
+    """Rewrite legacy alias → surviving group. One hop, no chains."""
+    return ACTOR_ALIAS.get(model, model)
+
 
 # Provider → API-key env var mapping.
 # When forwarding to <provider>, read the corresponding env var and use as Bearer token.
@@ -245,7 +283,10 @@ def _proxy_to(
 ) -> tuple[int, dict[str, str], bytes]:
     """Forward an OpenAI-compatible POST and return (status, headers, body)."""
     hdrs = dict(headers)
-    # F2 fix 2026-08-11 12:21 MYT: explicitly derive Host header from upstream URL.
+    # F2 fix: remove hop-by-hop length headers case-insensitively —
+    # urllib recomputes Content-Length from the (possibly rewritten) body
+    for k in [k for k in hdrs if k.lower() == "content-length"]:
+        hdrs.pop(k, None)
     # Without this, Akamai-fronted upstreams (e.g. api.minimax.io) reject with "Invalid URL [No Host]".
     # urllib's Request DOES auto-set Host from URL when not present, but defensive double-set
     # is bulletproof against future proxy middleware that may inject Host header.
@@ -347,6 +388,22 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
 
         # Find model name
         model = body.get("model", "") if isinstance(body, dict) else ""
+
+        # ACTOR-ENVELOPE COMPAT (Stage 2): legacy alias → surviving actor group.
+        # Applied before capability checks so fed-* lanes also land on actors,
+        # and before passthrough so FI mirrors (codex/opencode/kimi-code)
+        # resolve even when FED routing isn't involved.
+        if model:
+            translated = _translate_alias(model)
+            if translated != model:
+                body["model"] = translated
+                model = translated
+                # keep the forwarded payload in sync with the rewrite —
+                # passthrough sends body_bytes, not the parsed dict
+                body_bytes = json.dumps(body, ensure_ascii=False).encode("utf-8")
+                sys.stderr.write(
+                    f"[fed-aware-middleware] alias->actor: -> {translated}\n"
+                )
 
         # F2 ZEN fix 2026-08-11 12:34 MYT: auto-prepend "fed/" when user picks a bare capability
         # name from the fed provider model picker. opencode.json's providers.fed.models keys are
