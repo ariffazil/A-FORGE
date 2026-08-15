@@ -827,7 +827,7 @@ model_list:
     notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: zai-pro
   litellm_params:
-    model: openai/glm-5.2
+    model: openai/glm-5.3[1m]
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
     order: 2
@@ -848,7 +848,7 @@ model_list:
       zai_struct_output_caveat: requires thinking.disabled to avoid token exhaustion
       zai_preserved_thinking: true (Coding Plan default)
       zai_endpoint: coding-plan
-    notes: 'glm-5.2 via Z.ai Coding Plan Pro — LIVE 2026-08-12T01:30Z. 1M ctx, 128K out. order=2 (competitive — fills DeepSeek-DEAD gap on fed-reasoning-heavy). All 8 capabilities verified live.'
+    notes: 'glm-5.3 via Z.ai Coding Plan Pro (swapped from glm-5.2 2026-08-15 — 5.2/5.1 auto-redirect to 5.3 server-side since 2026-08-14; frontier coding CCC-tier, NOT seated 666/999 pending FFF gate. Was: glm-5.2 via Z.ai Coding Plan Pro — LIVE 2026-08-12T01:30Z. 1M ctx, 128K out. order=2 (competitive — fills DeepSeek-DEAD gap on fed-reasoning-heavy). All 8 capabilities verified live.'
 - model_name: zai-pro
   litellm_params:
     model: openai/glm-5-turbo
@@ -926,7 +926,7 @@ model_list:
 
 - model_name: i-arif
   litellm_params:
-    model: openai/glm-5.2
+    model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
     order: 1
@@ -943,11 +943,11 @@ model_list:
       zai_default_thinking: dynamic
       zai_thinking_param: '{"type":"enabled","clear_thinking":false}'
       zai_reasoning_effort_default: max
-    notes: 'i-arif → GLM-5.2 via Z.ai Coding Plan Pro — 1M ctx, 128K out. Identity-core reasoning layer. Gödel E3: independent provider from judge.'
+    notes: 'i-arif → GLM-5.3 via Z.ai Coding Plan Pro (renamed from 5.2 2026-08-15; server auto-redirect since 2026-08-14). Was: i-arif → GLM-5.2 via Z.ai Coding Plan Pro — 1M ctx, 128K out. Identity-core reasoning layer. Gödel E3: independent provider from judge.'
 
 - model_name: i-arif-qualia
   litellm_params:
-    model: openai/glm-5.2
+    model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
     order: 1
@@ -977,7 +977,7 @@ model_list:
 
 - model_name: fed-audit-glm
   litellm_params:
-    model: openai/glm-5.2
+    model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
     order: 1
@@ -986,7 +986,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_function_calling: true
-    notes: 'fed-audit-glm → GLM-5.2 Z.ai — Audit independence alias. Gödel E3 satisfied: audit provider ≠ judge provider (DeepSeek). Use for FED audit queries, godel_lock_gate, and apex-judge isolation.'
+    notes: 'fed-audit-glm → GLM-5.3 Z.ai (renamed 2026-08-15; auto-redirect). Was GLM-5.2 Z.ai — Audit independence alias. Gödel E3 satisfied: audit provider ≠ judge provider (DeepSeek). Use for FED audit queries, godel_lock_gate, and apex-judge isolation.'
 
 litellm_settings:
   callbacks: ["prometheus"]
