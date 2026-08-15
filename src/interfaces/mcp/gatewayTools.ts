@@ -244,11 +244,85 @@ export async function handleForgeResearch(args: any) {
 }
 
 export async function handleForgeSearch(args: any) {
-  const { query, count, freshness, safesearch, synthesize, request_id } = args;
-  const receiptMeta = { tool: "forge_search", query, count, freshness };
-  const search = await braveWebSearch(query, count ?? 10, freshness ?? "any", safesearch ?? "moderate");
+  const reqId = args.request_id || `req-${Date.now().toString(36)}`;
+  const source = (args.source || "web").toLowerCase();
+  const query = args.query;
+  const count = args.count ?? args.max_results ?? 10;
+  const freshness = args.freshness ?? args.time_horizon ?? "any";
+  const safesearch = args.safesearch ?? "moderate";
+  const synthesize = !!args.synthesize;
+  const receiptMeta = { tool: "forge_search", query, source, count, freshness };
+
+  // 1. Research mode
+  if (source === "research") {
+    return handleForgeResearch({ ...args, request_id: reqId, max_results: count });
+  }
+
+  // 2. Docs mode (Context7)
+  if (source === "docs") {
+    const corpus = args.corpus ?? "all";
+    const lookup = await context7Lookup(query, corpus, count);
+    const results = lookup.ok ? lookup.results : [];
+    const gaps = lookup.ok ? [] : [lookup.error ?? "context7 index unavailable"];
+    const receipt_id = await recordReceipt({ ...receiptMeta, provider: "context7", result_count: results.length });
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          request_id: reqId,
+          source: "docs",
+          corpus,
+          results,
+          gaps,
+          receipt_id,
+          _epistemic: {
+            output_class: "DOMAIN_COMPUTATION",
+            authority_claim: "ADVISORY",
+            evidence_source: "CONTEXT7",
+          },
+        }, null, 2),
+      }],
+    };
+  }
+
+  // 3. All sources (Web + Docs combined)
+  if (source === "all") {
+    const [webRes, docsRes] = await Promise.allSettled([
+      braveWebSearch(query, count, freshness, safesearch),
+      context7Lookup(query, "all", 5),
+    ]);
+
+    const webResults = webRes.status === "fulfilled" && webRes.value.ok
+      ? webRes.value.results.map((r) => ({ title: r.title, url: r.url, snippet: r.description ?? "", source: "web" }))
+      : [];
+    const docResults = docsRes.status === "fulfilled" && docsRes.value.ok
+      ? docsRes.value.results.map((r: any) => ({ title: r.title ?? r.uri, url: r.uri, snippet: r.content ?? "", source: "docs" }))
+      : [];
+
+    const combined = [...webResults, ...docResults];
+    const receipt_id = await recordReceipt({ ...receiptMeta, provider: "brave+context7", result_count: combined.length });
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          request_id: reqId,
+          source: "all",
+          results: combined,
+          receipt_id,
+          _epistemic: {
+            output_class: "DOMAIN_COMPUTATION",
+            authority_claim: "ADVISORY",
+            evidence_source: "MULTI_SOURCE",
+          },
+        }, null, 2),
+      }],
+    };
+  }
+
+  // 4. Default: Web search (Brave)
+  const search = await braveWebSearch(query, count, freshness, safesearch);
   if (!search.ok) {
-    return gatewayError(request_id, `Search failed: ${search.error}`, receiptMeta);
+    return gatewayError(reqId, `Search failed: ${search.error}`, receiptMeta);
   }
   const results = search.results.map((r) => ({
     title: r.title,
@@ -258,7 +332,7 @@ export async function handleForgeSearch(args: any) {
   }));
   const receipt_id = await recordReceipt({ ...receiptMeta, provider: "brave", result_count: results.length });
 
-  // FLAME synthesis (optional — task_class="extract", greedy degradation on failure)
+  // FLAME synthesis (optional)
   let flame: any = null;
   if (synthesize && results.length > 0) {
     try {
@@ -273,10 +347,16 @@ export async function handleForgeSearch(args: any) {
     content: [{
       type: "text" as const,
       text: JSON.stringify({
-        request_id,
+        request_id: reqId,
+        source: "web",
         results,
         provider: "brave",
         receipt_id,
+        _epistemic: {
+          output_class: "DOMAIN_COMPUTATION",
+          authority_claim: "ADVISORY",
+          evidence_source: "BRAVE",
+        },
         ...(flame ? {
           flame_synthesis: {
             content: flame.synthesis,
@@ -842,13 +922,15 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeResearch);
 
-  server.tool("forge_search", "Governed web search via Brave. Optional FLAME synthesis.", {
-    query: z.string().max(400).describe("Search query"),
-    count: z.number().min(1).max(20).default(10).describe("Result count"),
-    freshness: z.enum(["any", "day", "week", "month", "year"]).default("any").describe("Freshness"),
-    safesearch: z.enum(["off", "moderate", "strict"]).default("moderate").describe("SafeSearch"),
-    synthesize: z.boolean().default(false).describe("Synthesize results via FLAME (task_class=extract)"),
-    request_id: z.string().describe("Caller request ID"),
+  server.tool("forge_search", "Unified governed search across web (Brave), documentation (Context7), and deep research with provenance and epistemic labels.", {
+    query: z.string().max(500).describe("Search or research query"),
+    source: z.enum(["web", "docs", "research", "all"]).default("web").describe("Search source: 'web' (Brave), 'docs' (Context7 library docs), 'research' (deep synthesis), 'all' (multi-source)"),
+    count: z.number().min(1).max(50).default(10).describe("Result count"),
+    corpus: z.enum(["arifos", "geox", "wealth", "well", "aforge", "cloudflare", "workers", "all"]).default("all").describe("Corpus filter when source is 'docs'"),
+    freshness: z.enum(["any", "day", "week", "month", "year"]).default("any").describe("Freshness horizon"),
+    safesearch: z.enum(["off", "moderate", "strict"]).default("moderate").describe("SafeSearch mode"),
+    synthesize: z.boolean().default(false).describe("Synthesize results via FLAME free inference lane"),
+    request_id: z.string().optional().describe("Optional caller request ID for audit tracing"),
   }, handleForgeSearch);
 
   server.tool("forge_docs_lookup", "Governed docs lookup via Context7.", {

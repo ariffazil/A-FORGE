@@ -692,17 +692,46 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             const compactLevel = compactParam !== null ? parseInt(compactParam, 10) || 0
               : compactHeader === "true" ? 1 : 0;
 
+            const isZodOptional = (v: any): boolean => {
+              if (!v) return false;
+              if (typeof v.isOptional === "function" && v.isOptional()) return true;
+              const tn = String(v._def?.typeName || "");
+              if (tn.toLowerCase().includes("optional") || tn.toLowerCase().includes("default")) return true;
+              if (v._def?.innerType) return isZodOptional(v._def.innerType);
+              return false;
+            };
+
+            const getZodType = (v: any): string => {
+              if (!v) return "string";
+              let cur = v;
+              while (cur._def?.innerType) cur = cur._def.innerType;
+              const tn = String(cur._def?.typeName || "").toLowerCase();
+              if (tn.includes("number") || tn.includes("bigint")) return "number";
+              if (tn.includes("boolean")) return "boolean";
+              if (tn.includes("array")) return "array";
+              if (tn.includes("object") || tn.includes("record")) return "object";
+              return "string";
+            };
+
             const { classifyTool } = await import("../../domain/governance/actionClassifier.js");
             const tools = getServerTools().map(t => {
               const name = t.name;
               const actionClass = classifyTool(name);
               const isObserve = actionClass === "OBSERVE";
               const isDestructive = ["EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"].includes(actionClass);
+              const isOpenWorld = ["forge_search", "forge_research", "forge_shell", "forge_fetch"].includes(name);
 
               // COMPACT: first sentence only
               const compactDesc = compactLevel >= 1
                 ? (t.description || "").split(/\.\s+|\.\n|\.$/)[0].replace(/\.$/, "").trim() || t.description
                 : t.description;
+
+              const affordanceMeta = {
+                action_class: actionClass,
+                mutation: !isObserve,
+                blast_radius: actionClass === "IRREVERSIBLE" ? "FEDERATION" : actionClass === "EXECUTE_HIGH_IMPACT" ? "SYSTEM" : "LOCAL",
+                requires_lease: actionClass !== "OBSERVE" && actionClass !== "SUGGEST",
+              };
 
               // COMPACT LEVEL 2: no inputSchema at all — just wire desc
               if (compactLevel >= 2) {
@@ -712,8 +741,11 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                   annotations: {
                     readOnlyHint: isObserve,
                     destructiveHint: isDestructive,
-                    idempotentHint: false,
-                    openWorldHint: false,
+                    idempotentHint: isObserve,
+                    openWorldHint: isOpenWorld,
+                  },
+                  _meta: {
+                    "io.modelcontextprotocol/affordance": affordanceMeta,
                   },
                 };
               }
@@ -725,15 +757,15 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               const required: string[] = [];
               if (schemaShape) {
                 for (const [k, v] of Object.entries(schemaShape) as [string, any][]) {
-                  const isOptional = v._def?.typeName?.includes("optional");
-                  if (!isOptional) required.push(k);
+                  const isOpt = isZodOptional(v);
+                  if (!isOpt) required.push(k);
                   if (compactLevel >= 1) {
                     // Compact: just type hint, no description
-                    properties[k] = { type: "string" };
+                    properties[k] = { type: getZodType(v) };
                   } else {
                     // Full: type + description + optional flag
                     properties[k] = {
-                      type: "string",
+                      type: getZodType(v),
                       description: v.description || "",
                     };
                   }
@@ -749,8 +781,11 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 annotations: {
                   readOnlyHint: isObserve,
                   destructiveHint: isDestructive,
-                  idempotentHint: false,
-                  openWorldHint: false,
+                  idempotentHint: isObserve,
+                  openWorldHint: isOpenWorld,
+                },
+                _meta: {
+                  "io.modelcontextprotocol/affordance": affordanceMeta,
                 },
               };
             });
@@ -793,20 +828,42 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               res.end(jsonRpcError(msgId, -32602, `Tool not found: ${toolName}`));
               return;
             }
+            const isZodOptional = (v: any): boolean => {
+              if (!v) return false;
+              if (typeof v.isOptional === "function" && v.isOptional()) return true;
+              const tn = String(v._def?.typeName || "");
+              if (tn.toLowerCase().includes("optional") || tn.toLowerCase().includes("default")) return true;
+              if (v._def?.innerType) return isZodOptional(v._def.innerType);
+              return false;
+            };
+
+            const getZodType = (v: any): string => {
+              if (!v) return "string";
+              let cur = v;
+              while (cur._def?.innerType) cur = cur._def.innerType;
+              const tn = String(cur._def?.typeName || "").toLowerCase();
+              if (tn.includes("number") || tn.includes("bigint")) return "number";
+              if (tn.includes("boolean")) return "boolean";
+              if (tn.includes("array")) return "array";
+              if (tn.includes("object") || tn.includes("record")) return "object";
+              return "string";
+            };
+
             const { classifyTool } = await import("../../domain/governance/actionClassifier.js");
             const actionClass = classifyTool(t.name);
             const isObserve = actionClass === "OBSERVE";
             const isDestructive = ["EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"].includes(actionClass);
+            const isOpenWorld = ["forge_search", "forge_research", "forge_shell", "forge_fetch"].includes(t.name);
 
             const schemaShape = t.inputSchema?.shape;
             const properties: Record<string, any> = {};
             const required: string[] = [];
             if (schemaShape) {
               for (const [k, v] of Object.entries(schemaShape) as [string, any][]) {
-                const isOptional = v._def?.typeName?.includes("optional");
-                if (!isOptional) required.push(k);
+                const isOpt = isZodOptional(v);
+                if (!isOpt) required.push(k);
                 properties[k] = {
-                  type: "string",
+                  type: getZodType(v),
                   description: v.description || "",
                 };
               }
@@ -821,8 +878,16 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 annotations: {
                   readOnlyHint: isObserve,
                   destructiveHint: isDestructive,
-                  idempotentHint: false,
-                  openWorldHint: false,
+                  idempotentHint: isObserve,
+                  openWorldHint: isOpenWorld,
+                },
+                _meta: {
+                  "io.modelcontextprotocol/affordance": {
+                    action_class: actionClass,
+                    mutation: !isObserve,
+                    blast_radius: actionClass === "IRREVERSIBLE" ? "FEDERATION" : actionClass === "EXECUTE_HIGH_IMPACT" ? "SYSTEM" : "LOCAL",
+                    requires_lease: actionClass !== "OBSERVE" && actionClass !== "SUGGEST",
+                  },
                 },
               },
             }));
@@ -1188,6 +1253,14 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
 
           // Case 6: prompts/list — list registered MCP prompts
           if (method === "prompts/list") {
+            const isZodOptional = (v: any): boolean => {
+              if (!v) return false;
+              if (typeof v.isOptional === "function" && v.isOptional()) return true;
+              const tn = String(v._def?.typeName || "");
+              if (tn.toLowerCase().includes("optional") || tn.toLowerCase().includes("default")) return true;
+              if (v._def?.innerType) return isZodOptional(v._def.innerType);
+              return false;
+            };
             const registry = (server as any)._registeredPrompts as Record<string, any>;
             const promptsList = registry ? Object.entries(registry)
               .filter(([_, p]: [string, any]) => p.enabled !== false)
@@ -1197,7 +1270,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 arguments: p.argsSchema ? Object.entries(p.argsSchema.shape).map(([k, v]: [string, any]) => ({
                   name: k,
                   description: v.description,
-                  required: !v._def?.typeName?.includes("optional"),
+                  required: !isZodOptional(v),
                 })) : [],
               })) : [];
             res.writeHead(200, { "Content-Type": "application/json" });
@@ -1231,11 +1304,19 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 res.end(jsonRpcError(msgId, -32603, err.message ?? "Prompt execution failed"));
               }
             } else {
+              const isZodOptional = (v: any): boolean => {
+                if (!v) return false;
+                if (typeof v.isOptional === "function" && v.isOptional()) return true;
+                const tn = String(v._def?.typeName || "");
+                if (tn.toLowerCase().includes("optional") || tn.toLowerCase().includes("default")) return true;
+                if (v._def?.innerType) return isZodOptional(v._def.innerType);
+                return false;
+              };
               // Fallback: return the prompt metadata
               const argDefs = prompt.argsSchema ? Object.entries(prompt.argsSchema.shape).map(([k, v]: [string, any]) => ({
                 name: k,
                 description: v.description,
-                required: !v._def?.typeName?.includes("optional"),
+                required: !isZodOptional(v),
               })) : [];
               res.writeHead(200, { "Content-Type": "application/json" });
               res.end(jsonRpcResult(msgId, {

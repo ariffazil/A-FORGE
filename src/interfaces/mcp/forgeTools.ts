@@ -1152,9 +1152,9 @@ export function registerSkillTools(server: McpServer): void {
   // ── forge_registry — query / inspect the dynamic tool registry ──────────────
   server.tool(
     "forge_registry",
-    "Dynamic skill registry. Modes: list (all generated tools + Decision Field), get (one tool manifest), scars (Scar Law history), fingerprint (registry integrity hash), scan (HARAM scan arbitrary code). Volatile + 24h expiry by default.",
+    "Dynamic skill and tool registry. Modes: status (live MCP server & tools overview), list (all generated tools + Decision Field), get (one tool manifest), scars (Scar Law history), fingerprint (registry integrity hash), scan (HARAM scan arbitrary code).",
     {
-      mode: z.enum(["list", "get", "scars", "fingerprint", "scan"]).default("list"),
+      mode: z.enum(["status", "list", "get", "scars", "fingerprint", "scan"]).default("status"),
       tool_name: z.string().optional().describe("Tool name (get mode)"),
       domain: z.enum(["geox", "wealth", "well", "arifos", "hermes", "aforge", "general"]).optional()
         .describe("Filter by domain (list mode)"),
@@ -1167,6 +1167,42 @@ export function registerSkillTools(server: McpServer): void {
       try {
         const reg = getSkillRegistry();
         await reg.load();
+
+        if (mode === "status") {
+          const registry = (server as any)._registeredTools as Record<string, any> | undefined;
+          let fingerprintResult: FingerprintCheckResult | null = null;
+          if (registry) {
+            const tools = Object.entries(registry)
+              .filter(([, t]) => t && typeof t.handler === "function" && t.enabled !== false)
+              .map(([name, t]) => ({ name, schema: t.inputSchema }));
+            fingerprintResult = checkToolFingerprints(tools);
+          }
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "SEAL",
+                mode: "status",
+                service: "A-FORGE MCP",
+                version: "0.1.0",
+                registry_truth: "VERIFIED",
+                authority_ceiling: "777_FORGE",
+                fingerprint: fingerprintResult ? {
+                  total_tools: fingerprintResult.total,
+                  unique_fingerprints: fingerprintResult.unique,
+                  duplicates_found: fingerprintResult.duplicates.length,
+                  passed: fingerprintResult.passed,
+                  checked_at: fingerprintResult.checkedAt,
+                } : null,
+                _epistemic: {
+                  output_class: "DOMAIN_COMPUTATION",
+                  authority_claim: "ADVISORY",
+                  evidence_source: "REGISTRY",
+                },
+              }, null, 2),
+            }],
+          };
+        }
 
         if (mode === "list") {
           const result = await reg.query({
