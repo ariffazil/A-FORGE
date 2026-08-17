@@ -324,10 +324,14 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (mode === "register") return "EXECUTE_REVERSIBLE";
     if (mode === "kill") return "IRREVERSIBLE";
   }
-  // forge_filesystem: read/tree/search/stat/glob/grep=OBSERVE, write/patch/move=EXECUTE_REVERSIBLE, delete(quarantine)=EXECUTE_REVERSIBLE, delete(hard)=IRREVERSIBLE
+  // forge_filesystem: read/tree/search/stat/glob/grep=OBSERVE, write/patch/move/restore=EXECUTE_REVERSIBLE, delete=EXECUTE_HIGH_IMPACT
+  // No-mode default is OBSERVE (same pattern as forge_vault). Registration-time
+  // annotations and policy-gate pre-classify must not treat a read as IRREVERSIBLE.
+  // Handler re-classifies with the actual mode on each call.
   if (toolName === "forge_filesystem") {
-    if (["read", "tree", "search", "stat", "glob", "grep"].includes(mode ?? "")) return "OBSERVE";
-    if (["write", "patch", "move"].includes(mode ?? "")) return "EXECUTE_REVERSIBLE";
+    if (!mode) return "OBSERVE";
+    if (["read", "tree", "search", "stat", "glob", "grep"].includes(mode)) return "OBSERVE";
+    if (["write", "patch", "move", "restore"].includes(mode)) return "EXECUTE_REVERSIBLE";
     if (mode === "delete") return "EXECUTE_HIGH_IMPACT";
   }
   // forge_vault: read/list=OBSERVE, write/seal=EXECUTE_REVERSIBLE, no-mode=OBSERVE (P2.1 fix)

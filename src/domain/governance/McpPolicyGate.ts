@@ -408,7 +408,8 @@ export class McpPolicyGate {
     const principal = this.derivePrincipal(req);
     const policy = this.resolvePolicy(principal.actorId ?? principal.displayLabel);
     const mcpServer = this.extractServerFromTool(req.tool_name);
-    const toolClass = classifyTool(req.tool_name); // P0.2: classify once, use everywhere
+    const toolMode = typeof req.arguments?.mode === "string" ? req.arguments.mode : undefined;
+    const toolClass = classifyTool(req.tool_name, toolMode); // P0.2: classify once, use everywhere (mode-aware)
 
     const result: VerdictResult = {
       verdict: "DENY",
@@ -644,7 +645,10 @@ export class McpPolicyGate {
       }
 
       const aaeClass = req.aae.action_class as ActionClass;
-      const toolClass = classifyTool(req.tool_name);
+      const toolClass = classifyTool(
+        req.tool_name,
+        typeof req.arguments?.mode === "string" ? req.arguments.mode : undefined,
+      );
 
       // IRREVERSIBLE tools require IRREVERSIBLE AAE
       if (toolClass === "IRREVERSIBLE" && aaeClass !== "IRREVERSIBLE") {

@@ -29,11 +29,17 @@ const ACT_RE = /^(sct_v1|act_v1)\.[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?$/;
 // canonical_actor_id = lowercase, dash-not-underscore machine identifier.
 // display_name (e.g. "ARIF") is human-only — never used for comparison.
 // P0 FIX (2026-07-29): No scattered .toLowerCase() — one canonical source.
+// Kernel ACT claims store the short sovereign form "arif"
+// (arifOS CANONICAL_ACTORS["ARIF"].aliases). Binding must treat every
+// sovereign handle as that same actor — not GitHub slug "ariffazil".
+// Scar 2026-08-18: caller "arif-fazil" → ariffazil vs ACT "arif" locked
+// the sovereign out of their own forge (ERR_ACT_BINDING_INVALID).
 const SOVEREIGN_IDENTITY_MAP: Record<string, string> = {
-  ariffazil: "ariffazil",
+  arif: "arif",
+  ariffazil: "arif",
 };
 const ACTOR_ALIAS_MAP: Record<string, string> = {
-  "arif-fazil": "ariffazil",
+  "arif-fazil": "arif",
   // FI agents: arifOS canonicalizes all 333-AGI lane actors to "333-agi"
   // in ACT token claims. Map each FI harness name so ACT binding checks pass.
   "opencode": "333-agi",

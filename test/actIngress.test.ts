@@ -182,8 +182,24 @@ describe("canonicalizeActor — identity normalisation", () => {
     assert.equal(canonicalizeActor("ARIF"), canonicalizeActor("arif"));
   });
 
-  it("arif-fazil aliased to ariffazil", () => {
-    assert.equal(canonicalizeActor("arif-fazil"), "ariffazil");
+  it("arif-fazil aliased to arif (kernel ACT claim form)", () => {
+    assert.equal(canonicalizeActor("arif-fazil"), "arif");
+  });
+
+  it("all sovereign handles bind as arif", () => {
+    for (const handle of ["arif", "ARIF", "Arif", "arif-fazil", "ariffazil", "Arif-Fazil", "arif_fazil"]) {
+      assert.equal(canonicalizeActor(handle), "arif", handle);
+    }
+  });
+
+  it("ACT actor arif binds to caller arif-fazil", async () => {
+    const token = mintTestSct(VALID_CLAIMS);
+    const r = await gateToolIngress(
+      "forge_filesystem",
+      { session_token: token, actor_id: "arif-fazil", mode: "stat", path: "/root" },
+      { requireSct: true },
+    );
+    assert.equal(r.ok, true, JSON.stringify(r));
   });
 
   it("null and empty map to anonymous", () => {
@@ -194,8 +210,8 @@ describe("canonicalizeActor — identity normalisation", () => {
   });
 
   it("underscore normalised to dash then aliased", () => {
-    // arif_fazil → arif-fazil (normalize) → ariffazil (alias map)
-    assert.equal(canonicalizeActor("arif_fazil"), "ariffazil");
+    // arif_fazil → arif-fazil (normalize) → arif (sovereign alias)
+    assert.equal(canonicalizeActor("arif_fazil"), "arif");
   });
 });
 
@@ -353,7 +369,7 @@ describe("ACT HMAC signature verification", () => {
     assert.equal(canonicalizeActor("arif"), "arif");
     assert.equal(canonicalizeActor("Arif"), "arif");
     assert.equal(canonicalizeActor("ARIF_MASTER"), "arif-master");
-    assert.equal(canonicalizeActor("Arif-Fazil"), "ariffazil");
+    assert.equal(canonicalizeActor("Arif-Fazil"), "arif");
   });
 
   it("duplicate conflicting ACTs are rejected", async () => {

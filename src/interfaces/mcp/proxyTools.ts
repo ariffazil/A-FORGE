@@ -460,7 +460,14 @@ export function registerFilesystemTools(server: McpServer): void {
         async function walkDir(dir: string, currentDepth: number): Promise<void> {
           if (currentDepth > depth || entries.length >= maxEnt) { truncated = true; return; }
           let items: string[];
-          try { items = await readdir(dir); } catch { return; }
+          try {
+            items = await readdir(dir);
+          } catch (err) {
+            // F2 TRUTH: permission/IO failure on the requested root is an
+            // error, not an empty success. Nested EACCES is skippable.
+            if (currentDepth === 0) throw err;
+            return;
+          }
           for (const item of items) {
             if (entries.length >= maxEnt) { truncated = true; return; }
             if (!include_hidden && item.startsWith(".")) continue;
@@ -469,7 +476,7 @@ export function registerFilesystemTools(server: McpServer): void {
               const s = await stat(full);
               entries.push({ path: relative(check.resolvedPath, full), type: s.isDirectory() ? "dir" : "file", size: s.isFile() ? s.size : undefined });
               if (s.isDirectory()) await walkDir(full, currentDepth + 1);
-            } catch { /* skip */ }
+            } catch { /* skip unreadable child */ }
           }
         }
         await walkDir(check.resolvedPath, 0);
@@ -540,6 +547,18 @@ export function registerFilesystemTools(server: McpServer): void {
       // ── GLOB ────────────────────────────────────────────────────────────────
       if (mode === "glob") {
         if (!pattern) return text("pattern is required for mode=glob", true);
+        // F2 TRUTH: glob libraries swallow EACCES and return []. Probe the
+        // requested cwd first so permission failure is not a hollow success.
+        try {
+          await readdir(check.resolvedPath);
+        } catch (err: any) {
+          return text({
+            status: "ERROR",
+            error: err.code || "EACCES",
+            message: err.message,
+            path: check.resolvedPath,
+          }, true);
+        }
         const results = globSync(pattern, { cwd: check.resolvedPath, nodir: true });
         const sorted = results.sort((a, b) => a.localeCompare(b)).slice(0, 500).map((p) => join(check.resolvedPath, p));
         return text({ count: sorted.length, truncated: results.length > sorted.length, files: sorted });

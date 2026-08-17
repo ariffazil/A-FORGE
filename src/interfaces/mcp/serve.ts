@@ -1176,7 +1176,10 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             // Stateless whitelist tools that are MUTATE-class (e.g. forge_shell)
             // must still carry a valid session_id. OBSERVE-class tools remain
             // fully stateless.
-            const actionClass = classifyTool(toolName);
+            const actionClass = classifyTool(
+              toolName,
+              typeof toolArgs?.mode === "string" ? toolArgs.mode : undefined,
+            );
             if (requiresGovernance(actionClass)) {
               const callerSession = (typeof toolArgs?.session_id === "string") ? toolArgs.session_id : undefined;
               const callerSct = (typeof toolArgs?.session_token === "string")

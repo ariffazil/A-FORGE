@@ -722,7 +722,7 @@ const _originalTool = server.tool.bind(server);
       return floorErrorResponse(verdict);
     }
     // FloorEnforcer approved (SEAL or CAUTION): call the original handler
-    const result = await handler(args, ctx);
+    const result = await withHandlerTelemetry(name, () => handler(args, ctx));
     return injectEpistemic(result, name) as any;
   };
   // Federation alignment: ACTUATOR header on server.tool() path too
@@ -751,7 +751,8 @@ const _originalRegisterTool = server.registerTool.bind(server);
     : options;
   const wrappedHandler = async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
-    const actionClass = classifyTool(name);
+    const toolMode = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
+    const actionClass = classifyTool(name, toolMode);
 
     // ── FQ Metabolic Gate (P0.1, 2026-08-05) ──
     // Constitutional HOLD at FQ < 0.50 — FAILS CLOSED on unreachable arifFlow
@@ -892,7 +893,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
     if (!verdict.allowed) {
       return injectEpistemic(floorErrorResponse(verdict), name) as any;
     }
-    const result = await handler(args, ctx);
+    const result = await withHandlerTelemetry(name, () => handler(args, ctx));
     return injectEpistemic(result, name) as any;
   };
   return _originalRegisterTool(name, gatedOptions, wrappedHandler as any);
@@ -901,6 +902,54 @@ const _originalRegisterTool = server.registerTool.bind(server);
 // Constitution gate — all approvals route through arifOS:8088
 process.stderr.write(`[A-FORGE-core] Constitution gate: ${getConstitutionGate()}\n`);
 const memoryContract = getMemoryContract();
+
+// Tools that already increment telemetry in their own handler. Wrapper
+// must not double-count these. Everything else (forge_filesystem,
+// forge_probe, …) was silently invisible — Claude live test 2026-08-18.
+const SELF_INSTRUMENTED_TOOLS = new Set([
+  "forge_health_check",
+  "forge_session_init",
+  "forge_heart_critique",
+  "forge_execute",
+  "forge_approve",
+  "forge_judge_proxy",
+  "forge_transfer_confirm",
+  "forge_send_confirm",
+  "forge_hf_import",
+  "forge_chart",
+  "forge_lock",
+  "forge_pipeline_run",
+  "forge_pipeline",
+  "forge_visual_qa",
+  "forge_visual_seal",
+]);
+
+async function withHandlerTelemetry<T>(toolName: string, run: () => Promise<T>): Promise<T> {
+  if (SELF_INSTRUMENTED_TOOLS.has(toolName)) return run();
+  const startedAt = Date.now();
+  try {
+    const result = await run();
+    telemetry.recordSuccess(toolName);
+    await telemetry.logEvent({
+      epoch: new Date().toISOString(),
+      tool: toolName,
+      action: "success",
+      metadata: { durationMs: Date.now() - startedAt },
+    });
+    return result;
+  } catch (err) {
+    telemetry.recordFailure(toolName);
+    const message = err instanceof Error ? err.message : String(err);
+    await telemetry.logEvent({
+      epoch: new Date().toISOString(),
+      tool: toolName,
+      action: "failure",
+      outcome: message,
+      metadata: { durationMs: Date.now() - startedAt },
+    });
+    throw err;
+  }
+}
 
 async function telemetryInvoke(tool: string): Promise<void> {
   telemetry.recordInvocation(tool);
