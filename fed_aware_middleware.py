@@ -68,6 +68,11 @@ PROVIDER_BASE_URL = {
     "moonshot": "https://api.moonshot.cn/v1",
     "zai": "https://api.z.ai/api/paas/v4",
     "litellm-federation": "http://127.0.0.1:4000/v1",
+    # ── ZEN 2026-08-17: providers FED SOT actually returns (federation-models.json) ──
+    "mulerouter": "https://api.mulerouter.ai/vendors/openai/v1",
+    "kimi-moonshot": "https://api.kimi.com/coding/v1",
+    "flame": "http://127.0.0.1:18901",
+    "comfyui": None,  # local image runtime — never chat/completions
 }
 
 # Capability signatures this middleware understands (mirrors fed_router.py CAPABILITY_SIGNATURES).
@@ -132,6 +137,61 @@ ACTOR_ALIAS = {
     "gemini-flash-lite": "apex-888",
     "gemini-flash": "apex-888",
     "gemini-pro": "apex-888",
+    # ── ZEN 2026-08-17: slash variants missing from Stage-2 map ─────
+    # These fell through to the FED-route path which returned
+    # (mulerouter, deepseek-v4-pro) → no base_url → raw model to :4000
+    # → LiteLLM 400 "Invalid model name". Now they translate to actors
+    # before any hop, matching fed/reasoning-heavy → agi-333.
+    "fed/reasoning-standard": "agi-333",
+    "fed-reasoning-standard": "agi-333",
+    "fed/multimodal": "asi-555",
+    "fed-multimodal": "asi-555",
+    "fed/vision": "asi-555",
+    "fed-vision": "asi-555",
+    "fed/agent-subagent": "agi-333",
+    "fed/long-context": "agi-333",
+}
+
+# ── ZEN 2026-08-17: resolved-model → actor fallback map ─────────────
+# When FED returns a route whose provider has no base_url mapping, the
+# middleware used to forward the RAW resolved model name to :4000, which
+# LiteLLM rejects ("Invalid model name"). This map translates known model
+# names to the surviving actor group so the fallback always lands on a
+# valid :4000 alias. Covers every model in federation-models.json cascades.
+MODEL_TO_ACTOR = {
+    "deepseek-v4-pro": "agi-333",
+    "deepseek-v4-flash": "agi-333",
+    "qwen3.6-flash": "agi-333",
+    "qwen3.7-plus": "agi-333",
+    "qwen3.7-max": "agi-333",
+    "qwen3.8-max": "agi-333",
+    "qwen-vl-max": "asi-555",
+    "qwen3-vl-plus": "asi-555",
+    "qwen3-vl-flash": "asi-555",
+    "qwen3-omni-flash": "asi-555",
+    "qwen3-max": "agi-333",
+    "MiniMax-M3": "agi-333",
+    "MiniMax-M2.7": "agi-333",
+    "MiniMax-M2.5": "agi-333",
+    "mimo-v2.5": "asi-555",
+    "mimo-v2.5-pro": "agi-333",
+    "k3": "agi-333",
+    "k3-256k": "agi-333",
+    "kimi-k3": "agi-333",
+    "kimi-k2.7-code": "forge-777",
+    "kimi-k2.6": "agi-333",
+    "kimi-k2.5": "agi-333",
+    "kimi-for-coding": "forge-777",
+    "kimi-for-coding-highspeed": "forge-777",
+    "glm-5": "agi-333",
+    "glm-5.1": "agi-333",
+    "glm-5.2": "agi-333",
+    "claude-sonnet-5": "apex-888",
+    "claude-opus-5": "apex-888",
+    "gpt-5.6-sol": "agi-333",
+    "gpt-5.5": "agi-333",
+    "gemini-2.5-flash": "apex-888",
+    "gemini-3.6-flash": "apex-888",
 }
 
 
@@ -162,6 +222,9 @@ PROVIDER_API_KEY_ENV = {
     "xai": "XAI_API_KEY",
     "zhipu-z-ai": "ZHIPU_API_KEY",
     "moonshot": "MOONSHOT_API_KEY",
+    "kimi-moonshot": "MOONSHOT_API_KEY",
+    "mulerouter": "MULEROUTER_API_KEY",
+    "flame": None,
     "zai": "ZAI_API_KEY",
     "google": "GEMINI_API_KEY",
 }
@@ -172,7 +235,7 @@ def _resolve_api_key(provider_ref: str) -> str | None:
     env_var = PROVIDER_API_KEY_ENV.get(provider_ref)
     if env_var:
         return os.environ.get(env_var)
-    return os.environ.get("OPENROUTER_API_KEY")  # legacy fallback
+    return None  # ZEN 2026-08-17: no legacy fallback
 
 
 def _is_fed_capability(model: str) -> bool:
@@ -348,7 +411,16 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                 },
             )
             return
-        # Pass through /v1/models to FED if requested
+        # /v1/models: serve static list (FED :7074 lacks /v1/models - was 502). ZEN 2026-08-17.
+        if self.path.startswith("/v1/models"):
+            caps = [m.lstrip("fed/") for m in CAPABILITY_PREFIXES if "/" in m]
+            data = {
+                "object": "list",
+                "data": [{"id": c, "object": "model", "owned_by": "fed"} for c in sorted(set(caps))],
+            }
+            self._json(200, data)
+            return
+        # Other /v1/* - pass through to FED if requested
         if self.path.startswith("/v1/"):
             try:
                 with urllib.request.urlopen(
@@ -471,6 +543,11 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                     # provider. OpenCode's "fed" provider sends a placeholder " FED" auth which
                     # upstream rejects with 401. We translate per-provider using PROVIDER_API_KEY_ENV.
                     provider_api_key = _resolve_api_key(resolved_provider)
+                    if not provider_api_key:
+                        self._forward_to_litellm(
+                            forward_body, self.headers, resolved_model, resolved_provider, model
+                        )
+                        return
                     status, hdrs, resp_body = _proxy_to(
                         base_url.rstrip("/") + "/chat/completions",
                         forward_body,
@@ -534,6 +611,21 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
     def _forward_to_litellm(
         self, body_bytes, headers, resolved_model, resolved_provider, original_cap
     ):
+        # ZEN 2026-08-17: raw model name -> actor alias so :4000 never 400s.
+        if resolved_model not in ("agi-333", "asi-555", "forge-777", "apex-888", "i-arif"):
+            alias = MODEL_TO_ACTOR.get(resolved_model)
+            if alias:
+                try:
+                    payload = json.loads(body_bytes)
+                    if isinstance(payload, dict) and payload.get("model") == resolved_model:
+                        payload["model"] = alias
+                        body_bytes = json.dumps(payload).encode("utf-8")
+                        sys.stderr.write(
+                            "[fed-aware-middleware] model->actor fallback: %s -> %s\n"
+                            % (resolved_model, alias)
+                        )
+                except Exception:
+                    pass
         status, hdrs, resp_body = _proxy_to(
             "http://127.0.0.1:4000/v1/chat/completions",
             body_bytes,

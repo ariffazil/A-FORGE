@@ -591,6 +591,42 @@ router_settings:
   num_retries: 2
   allowed_fails: 2
   cooldown_time: 60
+  # ZEN 2026-08-17: raw model names -> surviving actor groups.
+  # LiteLLM-native defense: even if a straggler sends "deepseek-v4-pro",
+  # :4000 maps it to agi-333 instead of 400 "Invalid model name".
+  model_group_alias:
+    deepseek-v4-pro: agi-333
+    deepseek-v4-flash: agi-333
+    qwen3.6-flash: agi-333
+    qwen3.7-plus: agi-333
+    qwen3.7-max: agi-333
+    qwen3.8-max: agi-333
+    qwen3-max: agi-333
+    MiniMax-M3: agi-333
+    MiniMax-M2.7: agi-333
+    MiniMax-M2.5: agi-333
+    mimo-v2.5-pro: agi-333
+    mimo-v2.5: asi-555
+    k3: agi-333
+    k3-256k: agi-333
+    kimi-k3: agi-333
+    kimi-k2.7-code: forge-777
+    kimi-k2.6: agi-333
+    kimi-k2.5: agi-333
+    kimi-for-coding: forge-777
+    glm-5: agi-333
+    glm-5.1: agi-333
+    glm-5.2: agi-333
+    claude-sonnet-5: apex-888
+    claude-opus-5: apex-888
+    gpt-5.6-sol: agi-333
+    gpt-5.5: agi-333
+    qwen-vl-max: asi-555
+    qwen3-vl-plus: asi-555
+    qwen3-vl-flash: asi-555
+    qwen3-omni-flash: asi-555
+    gemini-2.5-flash: apex-888
+    gemini-3.6-flash: apex-888
   fallbacks:
   - i-arif:
     - forge-777
