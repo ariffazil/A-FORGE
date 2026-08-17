@@ -1035,14 +1035,18 @@ app.get("/health", async (_req: Request, res: Response) => {
   try {
     identityHash = readFileSync(`${DEPLOY_ROOT}/.identity_hash`, "utf8").trim();
   } catch (e) {}
-  // Read deployed commit from deployment marker
-  try {
-    deployedCommit = readFileSync(`${DEPLOY_ROOT}/.git_commit`, "utf8").trim().substring(0, 7);
-  } catch (e) {}
-  // Read source commit from source repo marker (written at deploy time)
-  try {
-    sourceCommit = readFileSync("/root/A-FORGE/.git_commit", "utf8").trim().substring(0, 7);
-  } catch (e) {}
+  // Empty / whitespace stamp is missing, not a real SHA. A lone newline
+  // used to become "" and trip deployment_drift against a valid source stamp.
+  const readCommitStamp = (path: string): string => {
+    try {
+      const raw = readFileSync(path, "utf8").trim();
+      return raw ? raw.substring(0, 7) : "UNAVAILABLE";
+    } catch {
+      return "UNAVAILABLE";
+    }
+  };
+  deployedCommit = readCommitStamp(`${DEPLOY_ROOT}/.git_commit`);
+  sourceCommit = readCommitStamp("/root/A-FORGE/.git_commit");
   const deploymentDrift = deployedCommit !== "UNAVAILABLE" && sourceCommit !== "UNAVAILABLE" && deployedCommit !== sourceCommit;
 
   const now = new Date().toISOString();

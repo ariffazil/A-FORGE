@@ -139,6 +139,14 @@ else
 fi
 echo "✅ Rsynced: $SRC → $OPT"
 
+# Stamp SHAs after rsync. .git_commit is excluded from the sync so it
+# must be written here — an empty leftover file reads as deploy drift.
+if [ -d "$SRC/.git" ]; then
+  git -C "$SRC" rev-parse HEAD > "$OPT/.git_commit"
+  git -C "$SRC" rev-parse HEAD > "$SRC/.git_commit"
+  echo "✅ Stamped .git_commit $(git -C "$SRC" rev-parse --short HEAD) → $OPT and $SRC"
+fi
+
 # ── Stage 5: Restart ─────────────────────────────────────────────
 echo ""
 echo "── Stage 5: Restart ──"
