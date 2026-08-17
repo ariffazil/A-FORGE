@@ -467,6 +467,15 @@ function injectEpistemic(
 
       // Inject the tag
       payload._epistemic = epistemicForTool(toolName);
+      // Advisory completions must not emit kernel SEAL (P0.4).
+      if (payload.status === "SEAL" && payload.data && typeof payload.data === "object" && !payload.call_hash) {
+        const inner = payload.data;
+        inner._epistemic = payload._epistemic;
+        item.text = JSON.stringify(inner.status ? inner : { status: "OK", ...inner }, null, 2);
+        continue;
+      }
+      if (payload.status === "SEAL" && !payload.call_hash) payload.status = "OK";
+      if (payload.verdict === "SEAL" && !payload.call_hash) payload.verdict = "OK";
 
       // Re-serialize
       item.text = JSON.stringify(payload, null, 2);

@@ -32,6 +32,38 @@ import { classifyTool, requiresGovernance } from "../../domain/governance/action
 import { validateSession, validateSessionAsync } from "../../domain/session/sessionGate.js";
 import { runP0GateMiddleware, formatGateRejection } from "./p0GateMiddleware.js";
 
+/** Rewrite advisory completions that still say SEAL. Kernel owns that word. */
+function stripAdvisorySealWord(result: any, toolName: string): void {
+  if (!result || !Array.isArray(result.content)) return;
+  const action = classifyTool(toolName);
+  const advisory = action === "OBSERVE" || action === "SUGGEST" || toolName === "forge_status";
+  if (!advisory) return;
+  for (const item of result.content) {
+    if (item?.type !== "text" || typeof item.text !== "string") continue;
+    try {
+      const payload = JSON.parse(item.text);
+      if (!payload || typeof payload !== "object") continue;
+      if (payload.status === "SEAL" && payload.data && typeof payload.data === "object" && !payload.call_hash) {
+        const inner = payload.data;
+        item.text = JSON.stringify(inner.status ? inner : { status: "OK", ...inner }, null, 2);
+        continue;
+      }
+      let changed = false;
+      if (payload.status === "SEAL" && !payload.call_hash) {
+        payload.status = "OK";
+        changed = true;
+      }
+      if (payload.verdict === "SEAL" && !payload.call_hash) {
+        payload.verdict = "OK";
+        changed = true;
+      }
+      if (changed) item.text = JSON.stringify(payload, null, 2);
+    } catch {
+      /* leave non-JSON */
+    }
+  }
+}
+
 const AFORGE_ROOT = process.cwd();
 
 // Read build commit hash for runtime drift detection
@@ -1229,6 +1261,8 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               // Reference: VAULT999/process_violations/2026-08-13_F2-TRUTH_correction.json
               void toolArgs; // explicit: no mutation, no overwrite
               const result = await handler(toolArgs);
+              // Advisory tools must not emit kernel SEAL (P0.4).
+              stripAdvisorySealWord(result, toolName);
               // Ensure schema/policy denies from handlers always surface isError
               const normalized =
                 result && typeof result === "object" && result.isError === true
