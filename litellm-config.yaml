@@ -54,6 +54,43 @@ model_list:
     notes: apex-888 → QWEN deepseek-v4-pro — PRIMARY constitutional judge lane. MiniMax exhausted 2026-08-11.
 - model_name: apex-888
   litellm_params:
+    model: openai/claude-sonnet-5
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 200000
+    max_output_tokens: 8192
+    supports_vision: true
+    mode: chat
+    notes: 'OpenCode Zen — Claude Sonnet 5 JUDGE-grade (different provider from Gemini). 2026-08-17 added. Gödel E3 satisfied.'
+- model_name: apex-888
+  litellm_params:
+    model: openai/claude-opus-5
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 4
+  model_info:
+    max_input_tokens: 200000
+    max_output_tokens: 32768
+    supports_vision: true
+    mode: chat
+    notes: 'OpenCode Zen — Claude Opus 5 JUDGE-grade (higher-tier alternate). 2026-08-17 added.'
+- model_name: apex-888
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 5
+  model_info:
+    max_input_tokens: 983616
+    max_output_tokens: 32768
+    supports_vision: true
+    supports_function_calling: true
+    mode: chat
+    notes: 'OpenCode Go — qwen3.8-max flagship reasoning + vision. 2026-08-17 added.'
+- model_name: apex-888
+  litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
@@ -109,8 +146,10 @@ model_list:
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 99  # DEMOTED RATE_LIMITED 2026-08-15 fed-config-generator
     model_info: null
-    max_input_tokens: 262144
+    max_input_tokens: 1048576
     max_output_tokens: 65536
+    mode: chat
+    notes: 'qwen3.6-flash via Aliyun Token Plan — 1M ctx, fast fallback. FIX 2026-08-16: was 256K (wrong).'
 - model_name: agi-333
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -131,6 +170,49 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
+- model_name: agi-333
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 384000
+    notes: 'OpenCode Go — deepseek-v4-pro 1M ctx flagship reasoning. 2026-08-17 FED audit added. $10/mo Go tier (LIVE).'
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 983616
+    max_output_tokens: 32768
+    supports_vision: true
+    notes: 'OpenCode Go — qwen3.8-max flagship reasoning + vision. 2026-08-17 added.'
+- model_name: agi-333
+  litellm_params:
+    model: openai/kimi-k3
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 5
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    supports_vision: true
+    notes: 'OpenCode Go — kimi-k3 2.8T MoE 1M ctx vision. 2026-08-17 added.'
+- model_name: agi-333
+  litellm_params:
+    model: openai/claude-sonnet-5
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 6
+  model_info:
+    max_input_tokens: 200000
+    max_output_tokens: 8192
+    supports_vision: true
+    notes: 'OpenCode Zen — Claude Sonnet 5 reasoning + vision. 2026-08-17 added. Zen $19.96 tier (LIVE).'
 - model_name: agi-333
   litellm_params:
     model: openai/qwen3.8-max
@@ -162,6 +244,43 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
+- model_name: asi-555
+  litellm_params:
+    model: openai/minimax-m3
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    supports_image_input: true
+    mode: chat
+    notes: 'OpenCode Go — MiniMax M3 1M ctx vision (LIVE). 2026-08-17 FED audit added.'
+- model_name: asi-555
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 4
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 32768
+    supports_image_input: true
+    supports_function_calling: true
+    mode: chat
+    notes: 'OpenCode Go — qwen3.7-plus vision + reasoning + tools. 2026-08-17 added.'
+- model_name: asi-555
+  litellm_params:
+    model: openai/gemini-3.6-flash
+    api_base: https://opencode.ai/zen/v1
+    api_key: os.environ/OPENCODE_ZEN_API_KEY
+    order: 5
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    supports_image_input: true
+    mode: chat
+    notes: 'OpenCode Zen — Gemini 3.6 Flash 1M ctx vision (LIVE). 2026-08-17 added.'
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
