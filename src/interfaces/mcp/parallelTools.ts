@@ -65,7 +65,7 @@ interface TaskGroup {
 
 // ── In-memory store ──────────────────────────────────────────────────────────
 
-const taskGroups = new Map<string, TaskGroup>();
+export const taskGroups = new Map<string, TaskGroup>();
 
 // ── A2A Gateway Client ──────────────────────────────────────────────────────
 
@@ -387,7 +387,7 @@ async function collectResults(group: TaskGroup): Promise<void> {
 
 // ── Phase 4: Cancellation Propagation ───────────────────────────────────────
 
-async function cancelGroup(group: TaskGroup, reason: string): Promise<void> {
+export async function cancelGroup(group: TaskGroup, reason: string): Promise<void> {
   for (const m of group.members) {
     if (m.a2a_task_id && !isTerminal(m.status)) {
       await a2aCall("tasks/cancel", { id: m.a2a_task_id }, 5000);
@@ -404,7 +404,7 @@ async function cancelGroup(group: TaskGroup, reason: string): Promise<void> {
 // Phase 6: Δ Receipts + Audit Trail
 // Phase 7: SSE Multiplexing (polling-based, see collectResults)
 
-function assembleResult(group: TaskGroup): Record<string, unknown> {
+export function assembleResult(group: TaskGroup): Record<string, unknown> {
   const completedCount = group.members.filter(m => m.status === "TASK_STATE_COMPLETED").length;
   const failedCount = group.members.filter(m =>
     m.status === "TASK_STATE_FAILED" || m.status === "TASK_STATE_CANCELED"

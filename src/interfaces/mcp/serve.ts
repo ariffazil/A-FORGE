@@ -672,6 +672,11 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               capabilities: {
                 tools: {},
                 resources: { listChanged: false },
+                tasks: {
+                  listChanged: false,
+                  cancel: true,
+                  status: true,
+                },
                 // SEP-2577 freeze: no logging:{}. Completions cancelled (agent tool JSON).
                 // stderr observability via journald (StandardError=journal).
                 registration: { mode: "explicit", tool: "forge_agent" },
@@ -692,17 +697,46 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             const compactLevel = compactParam !== null ? parseInt(compactParam, 10) || 0
               : compactHeader === "true" ? 1 : 0;
 
+            const isZodOptional = (v: any): boolean => {
+              if (!v) return false;
+              if (typeof v.isOptional === "function" && v.isOptional()) return true;
+              const tn = String(v._def?.typeName || "");
+              if (tn.toLowerCase().includes("optional") || tn.toLowerCase().includes("default")) return true;
+              if (v._def?.innerType) return isZodOptional(v._def.innerType);
+              return false;
+            };
+
+            const getZodType = (v: any): string => {
+              if (!v) return "string";
+              let cur = v;
+              while (cur._def?.innerType) cur = cur._def.innerType;
+              const tn = String(cur._def?.typeName || "").toLowerCase();
+              if (tn.includes("number") || tn.includes("bigint")) return "number";
+              if (tn.includes("boolean")) return "boolean";
+              if (tn.includes("array")) return "array";
+              if (tn.includes("object") || tn.includes("record")) return "object";
+              return "string";
+            };
+
             const { classifyTool } = await import("../../domain/governance/actionClassifier.js");
             const tools = getServerTools().map(t => {
               const name = t.name;
               const actionClass = classifyTool(name);
               const isObserve = actionClass === "OBSERVE";
               const isDestructive = ["EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"].includes(actionClass);
+              const isOpenWorld = ["forge_search", "forge_research", "forge_shell", "forge_fetch"].includes(name);
 
               // COMPACT: first sentence only
               const compactDesc = compactLevel >= 1
                 ? (t.description || "").split(/\.\s+|\.\n|\.$/)[0].replace(/\.$/, "").trim() || t.description
                 : t.description;
+
+              const affordanceMeta = {
+                action_class: actionClass,
+                mutation: !isObserve,
+                blast_radius: actionClass === "IRREVERSIBLE" ? "FEDERATION" : actionClass === "EXECUTE_HIGH_IMPACT" ? "SYSTEM" : "LOCAL",
+                requires_lease: actionClass !== "OBSERVE" && actionClass !== "SUGGEST",
+              };
 
               // COMPACT LEVEL 2: no inputSchema at all — just wire desc
               if (compactLevel >= 2) {
@@ -712,8 +746,11 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                   annotations: {
                     readOnlyHint: isObserve,
                     destructiveHint: isDestructive,
-                    idempotentHint: false,
-                    openWorldHint: false,
+                    idempotentHint: isObserve,
+                    openWorldHint: isOpenWorld,
+                  },
+                  _meta: {
+                    "io.modelcontextprotocol/affordance": affordanceMeta,
                   },
                 };
               }
@@ -725,15 +762,15 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               const required: string[] = [];
               if (schemaShape) {
                 for (const [k, v] of Object.entries(schemaShape) as [string, any][]) {
-                  const isOptional = v._def?.typeName?.includes("optional");
-                  if (!isOptional) required.push(k);
+                  const isOpt = isZodOptional(v);
+                  if (!isOpt) required.push(k);
                   if (compactLevel >= 1) {
                     // Compact: just type hint, no description
-                    properties[k] = { type: "string" };
+                    properties[k] = { type: getZodType(v) };
                   } else {
                     // Full: type + description + optional flag
                     properties[k] = {
-                      type: "string",
+                      type: getZodType(v),
                       description: v.description || "",
                     };
                   }
@@ -749,8 +786,11 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 annotations: {
                   readOnlyHint: isObserve,
                   destructiveHint: isDestructive,
-                  idempotentHint: false,
-                  openWorldHint: false,
+                  idempotentHint: isObserve,
+                  openWorldHint: isOpenWorld,
+                },
+                _meta: {
+                  "io.modelcontextprotocol/affordance": affordanceMeta,
                 },
               };
             });
@@ -793,20 +833,42 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               res.end(jsonRpcError(msgId, -32602, `Tool not found: ${toolName}`));
               return;
             }
+            const isZodOptional = (v: any): boolean => {
+              if (!v) return false;
+              if (typeof v.isOptional === "function" && v.isOptional()) return true;
+              const tn = String(v._def?.typeName || "");
+              if (tn.toLowerCase().includes("optional") || tn.toLowerCase().includes("default")) return true;
+              if (v._def?.innerType) return isZodOptional(v._def.innerType);
+              return false;
+            };
+
+            const getZodType = (v: any): string => {
+              if (!v) return "string";
+              let cur = v;
+              while (cur._def?.innerType) cur = cur._def.innerType;
+              const tn = String(cur._def?.typeName || "").toLowerCase();
+              if (tn.includes("number") || tn.includes("bigint")) return "number";
+              if (tn.includes("boolean")) return "boolean";
+              if (tn.includes("array")) return "array";
+              if (tn.includes("object") || tn.includes("record")) return "object";
+              return "string";
+            };
+
             const { classifyTool } = await import("../../domain/governance/actionClassifier.js");
             const actionClass = classifyTool(t.name);
             const isObserve = actionClass === "OBSERVE";
             const isDestructive = ["EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE"].includes(actionClass);
+            const isOpenWorld = ["forge_search", "forge_research", "forge_shell", "forge_fetch"].includes(t.name);
 
             const schemaShape = t.inputSchema?.shape;
             const properties: Record<string, any> = {};
             const required: string[] = [];
             if (schemaShape) {
               for (const [k, v] of Object.entries(schemaShape) as [string, any][]) {
-                const isOptional = v._def?.typeName?.includes("optional");
-                if (!isOptional) required.push(k);
+                const isOpt = isZodOptional(v);
+                if (!isOpt) required.push(k);
                 properties[k] = {
-                  type: "string",
+                  type: getZodType(v),
                   description: v.description || "",
                 };
               }
@@ -821,8 +883,16 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 annotations: {
                   readOnlyHint: isObserve,
                   destructiveHint: isDestructive,
-                  idempotentHint: false,
-                  openWorldHint: false,
+                  idempotentHint: isObserve,
+                  openWorldHint: isOpenWorld,
+                },
+                _meta: {
+                  "io.modelcontextprotocol/affordance": {
+                    action_class: actionClass,
+                    mutation: !isObserve,
+                    blast_radius: actionClass === "IRREVERSIBLE" ? "FEDERATION" : actionClass === "EXECUTE_HIGH_IMPACT" ? "SYSTEM" : "LOCAL",
+                    requires_lease: actionClass !== "OBSERVE" && actionClass !== "SUGGEST",
+                  },
                 },
               },
             }));
@@ -1188,6 +1258,14 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
 
           // Case 6: prompts/list — list registered MCP prompts
           if (method === "prompts/list") {
+            const isZodOptional = (v: any): boolean => {
+              if (!v) return false;
+              if (typeof v.isOptional === "function" && v.isOptional()) return true;
+              const tn = String(v._def?.typeName || "");
+              if (tn.toLowerCase().includes("optional") || tn.toLowerCase().includes("default")) return true;
+              if (v._def?.innerType) return isZodOptional(v._def.innerType);
+              return false;
+            };
             const registry = (server as any)._registeredPrompts as Record<string, any>;
             const promptsList = registry ? Object.entries(registry)
               .filter(([_, p]: [string, any]) => p.enabled !== false)
@@ -1197,7 +1275,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 arguments: p.argsSchema ? Object.entries(p.argsSchema.shape).map(([k, v]: [string, any]) => ({
                   name: k,
                   description: v.description,
-                  required: !v._def?.typeName?.includes("optional"),
+                  required: !isZodOptional(v),
                 })) : [],
               })) : [];
             res.writeHead(200, { "Content-Type": "application/json" });
@@ -1231,11 +1309,19 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 res.end(jsonRpcError(msgId, -32603, err.message ?? "Prompt execution failed"));
               }
             } else {
+              const isZodOptional = (v: any): boolean => {
+                if (!v) return false;
+                if (typeof v.isOptional === "function" && v.isOptional()) return true;
+                const tn = String(v._def?.typeName || "");
+                if (tn.toLowerCase().includes("optional") || tn.toLowerCase().includes("default")) return true;
+                if (v._def?.innerType) return isZodOptional(v._def.innerType);
+                return false;
+              };
               // Fallback: return the prompt metadata
               const argDefs = prompt.argsSchema ? Object.entries(prompt.argsSchema.shape).map(([k, v]: [string, any]) => ({
                 name: k,
                 description: v.description,
-                required: !v._def?.typeName?.includes("optional"),
+                required: !isZodOptional(v),
               })) : [];
               res.writeHead(200, { "Content-Type": "application/json" });
               res.end(jsonRpcResult(msgId, {
@@ -1244,6 +1330,65 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 messages: [{ role: "user", content: { type: "text", text: `Prompt "${promptName}" requires workflow-specific arguments. Use tools/list to discover capabilities.` } }],
               }));
             }
+            return;
+          }
+
+          // Case 8: tasks/list — SEP-1686 / SEP-2663 Tasks Extension
+          if (method === "tasks/list") {
+            const { taskGroups } = await import("./parallelTools.js").catch(() => ({ taskGroups: new Map() }));
+            const tasks = Array.from(taskGroups?.values() || []).map((g: any) => ({
+              taskId: g.task_group_id,
+              status: g.status,
+              createdAt: g.created_at,
+              deadline: g.deadline,
+              membersCount: g.members?.length ?? 0,
+            }));
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(jsonRpcResult(msgId, { tasks }));
+            return;
+          }
+
+          // Case 9: tasks/get or tasks/status — SEP-1686 Tasks Extension
+          if (method === "tasks/get" || method === "tasks/status") {
+            const taskId = parsed.params?.taskId ?? parsed.params?.id ?? parsed.params?.group_id;
+            if (!taskId) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, "Missing taskId in params"));
+              return;
+            }
+            const { taskGroups, assembleResult } = await import("./parallelTools.js").catch(() => ({ taskGroups: new Map(), assembleResult: null }));
+            const group = taskGroups?.get(taskId);
+            if (!group) {
+              res.writeHead(404, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, `Task "${taskId}" not found`));
+              return;
+            }
+            const result = assembleResult ? assembleResult(group) : group;
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(jsonRpcResult(msgId, { task: result }));
+            return;
+          }
+
+          // Case 10: tasks/cancel — SEP-1686 Tasks Extension
+          if (method === "tasks/cancel") {
+            const taskId = parsed.params?.taskId ?? parsed.params?.id ?? parsed.params?.group_id;
+            const reason = parsed.params?.reason ?? "user requested cancellation";
+            if (!taskId) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, "Missing taskId in params"));
+              return;
+            }
+            const { taskGroups, cancelGroup, assembleResult } = await import("./parallelTools.js").catch(() => ({ taskGroups: new Map(), cancelGroup: null, assembleResult: null }));
+            const group = taskGroups?.get(taskId);
+            if (!group) {
+              res.writeHead(404, { "Content-Type": "application/json" });
+              res.end(jsonRpcError(msgId, -32602, `Task "${taskId}" not found`));
+              return;
+            }
+            if (cancelGroup) await cancelGroup(group, reason);
+            const result = assembleResult ? assembleResult(group) : group;
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(jsonRpcResult(msgId, { status: "canceled", task: result }));
             return;
           }
 

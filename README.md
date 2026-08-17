@@ -200,7 +200,29 @@ flowchart LR
 | Lease + session gate live (EXECUTE class tools) | **ACTIVE** | mutation tools lease-blocked by design |
 | Gödel Lock (executor ≠ judge ≠ sealer) | **ENFORCED** | seal path routes to arifOS `arif_seal` :8088 |
 
-**Known-open (honest):** lease bootstrap deadlock — `forge_lease(request)` is itself lease-gated; first-lease minting requires an architecture decision (kernel-minted bootstrap lease). Tracked as federation open item #1.
+## 💡 The 13 Canonical Eureka Principles (Meaning Preservation & Compression)
+
+The A-FORGE MCP architecture is governed by the 13 Eureka Insights established during the 2026-08-16 Zen Sweep:
+
+```text
+Reality ──▶ Truth Layer ──▶ Provenance Layer ──▶ Classification Layer ──▶ Formatting Layer
+```
+
+1. **Schema Loss ≠ Truth Loss**: Internal state and reality correspondence are preserved even when formatting collapses for human or agent context.
+2. **Governance Has Layers**: Formatting (readability) → Classification (epistemic) → Provenance (auditability) → Truth (reality).
+3. **The Real Asset Is Uncertainty Compression**: Pre-organizing uncertainty (`OBS`/`DER`/`INT`/`SPEC`) minimizes cognitive reconstruction costs.
+4. **Metadata Enables Trust**: Source, confidence, provenance, and authority are what allow system boundaries to coordinate safely.
+5. **Boundaries Are Transformers, Not Pipes**: Every interface transforms incoming intent into verified, bounded execution.
+6. **Intelligence Is Meaning Preservation**: Maintaining coherence of meaning, provenance, and uncertainty across every transformation.
+7. **Information Has Survivability Layers**: Evaluating the minimum surviving layer required for sound decisions.
+8. **Capability Compression**: Scaling capability through higher-order abstractions rather than tool proliferation.
+9. **Surface Area Is a Liability**: Optimizing the engineering ratio $\frac{\text{Capability}}{\text{Surface Area}}$.
+10. **Compression Is Governance**: Preserving meaning while eliminating unnecessary structure.
+11. **Scale by Preserving Meaning, Not Structure**: The invariant is the meaning, not the temporary implementation.
+12. **Complexity Is a Tax on Trust**: Every unneeded endpoint or connector creates an audit burden and provenance risk.
+13. **Successful Compression Is Knowledge Discovery**: Discovering higher-order patterns that allow full expression with minimal structure.
+
+> **Master Eureka:** *The highest form of system maturity is not maximizing capability, intelligence, or complexity. It is preserving meaning, provenance, uncertainty, authority, and trust while continuously reducing the amount of structure required to carry them.*
 
 ---
 

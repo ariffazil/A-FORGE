@@ -165,16 +165,26 @@ const origRegisterTool = server.registerTool.bind(server);
       };
     }
     // ── MCP annotations: readOnlyHint / destructiveHint (2026-07-19) ──
-    // Auto-injected from actionClassifier. ChatGPT uses these to classify
+    // Auto-injected from actionClassifier. Clients use these to classify
     // tools as safe (auto-execute) vs destructive (requires confirmation).
     if (!config.annotations) {
       const actionClass = classifyTool(name);
+      const isObserve = actionClass === "OBSERVE" || actionClass === "SUGGEST";
       config = {
         ...config,
         annotations: {
-          readOnlyHint: actionClass === "OBSERVE" || actionClass === "SUGGEST",
+          readOnlyHint: isObserve,
           destructiveHint: actionClass === "IRREVERSIBLE" || actionClass === "EXECUTE_HIGH_IMPACT",
-          idempotentHint: actionClass === "OBSERVE",
+          idempotentHint: isObserve,
+          openWorldHint: ["forge_search", "forge_research", "forge_shell", "forge_fetch"].includes(name),
+        },
+        _meta: {
+          "io.modelcontextprotocol/affordance": {
+            action_class: actionClass,
+            mutation: !isObserve,
+            blast_radius: actionClass === "IRREVERSIBLE" ? "FEDERATION" : actionClass === "EXECUTE_HIGH_IMPACT" ? "SYSTEM" : "LOCAL",
+            requires_lease: !isObserve,
+          },
         },
       };
     }
@@ -2950,8 +2960,8 @@ registerPolicyTools(server);
 registerSurfaceGuardTools(server);
 registerSurfaceAuditTools(server);
 
-  // ── Google Workspace (ZEN-MIGRATED 2026-08-03 from arifOS kernel) ──
-  registerGoogleWorkspaceTools(server);
+  // ── Google Workspace removed from active MCP surface per Phase 2 ZEN Sweep ──
+  // registerGoogleWorkspaceTools(server);
 
 // ── Prediction Bridge (pre-action simulation for GEOX/WEALTH) ──────────────
 // forge_predict: called BEFORE forge_execute for domain actions.
