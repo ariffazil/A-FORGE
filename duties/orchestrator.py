@@ -453,53 +453,63 @@ def seal_loop(
     """Write seal receipt and ingest into arifFlow with honest phase costs.
 
     FQ = execute/verify. Do NOT double-count the same wall-clock as both
-    Execute and Verify (that fakes FQ=1.0). DETECT/INVENTORY/SCORE/PROPOSE/
-    APPLY → Execute; AUDIT re-probe → Verify.
+    Execute and Verify (that fakes FQ=1.0). APPLY mutates → Execute;
+    AUDIT re-probe → Verify. Current APPLY only flags/announces/holds,
+    so pulses must not emit Execute.
     """
     print("[ORCH-8] SEAL phase...")
     import urllib.request
     import uuid
 
     COST_MIN_NS = 1_000_000
-    exec_cost = max(COST_MIN_NS, int(execute_cost_ns))
+    # APPLY currently flags/announces/holds — it does not write. `applied`
+    # increments on T1 review flags, so it is not a mutation signal.
+    mutated = False
+    exec_cost = max(COST_MIN_NS, int(execute_cost_ns)) if mutated else 0
     ver_cost = max(COST_MIN_NS, int(verify_cost_ns))
     cycle_cost_ns = exec_cost + ver_cost
 
     try:
+        if exec_cost > 0:
+            body = {
+                "actor_id": LOOP_ID,
+                "session_id": f"orch-{int(time.time())}",
+                "step_type": "Execute",
+                "step_number": 1,
+                "cost_ns": exec_cost,
+                "epistemic_label": "Observation",
+                "floor_verdict": "Pass",
+                "receipt_id": str(uuid.uuid4()),
+                "created_at": ts(),
+                "cooling_decision": "None",
+            }
+            req = urllib.request.Request(
+                f"{ARIFLOW_URL}/ingest",
+                data=json.dumps(body).encode(),
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                pass
+
         body = {
             "actor_id": LOOP_ID,
             "session_id": f"orch-{int(time.time())}",
-            "step_type": "Execute",
-            "step_number": 1,
-            "cost_ns": exec_cost,
+            "step_type": "Verify",
+            "step_number": 2 if exec_cost > 0 else 1,
+            "cost_ns": ver_cost,
             "epistemic_label": "Observation",
             "floor_verdict": "Pass",
             "receipt_id": str(uuid.uuid4()),
             "created_at": ts(),
             "cooling_decision": "None",
-        }
-        req = urllib.request.Request(
-            f"{ARIFLOW_URL}/ingest",
-            data=json.dumps(body).encode(),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            pass
-
-        body["step_type"] = "Barrier"
-        body["receipt_id"] = str(uuid.uuid4())
-        body["cost_ns"] = ver_cost
-        total_steps = 2  # one Execute + one Barrier
-        verify_pct = 50.0
-        diagnosis = "BALANCED"
-        body["payload"] = {
-            "organs_healthy": audit["all_healthy"],
-            "cycle_fq": exec_cost / max(ver_cost, 1),
-            "diagnosis": diagnosis,
-            "verify_concentration_pct": verify_pct,
-            "heartbeat": True,
-            "note": "Barrier used for audit phase so automated pulses do not game FQ",
+            "payload": {
+                "organs_healthy": audit["all_healthy"],
+                "applied": apply_results.get("applied"),
+                "held": apply_results.get("held"),
+                "heartbeat": exec_cost == 0,
+                "note": "Audit re-probe is Verify. Execute only when APPLY mutated.",
+            },
         }
         req2 = urllib.request.Request(
             f"{ARIFLOW_URL}/ingest",

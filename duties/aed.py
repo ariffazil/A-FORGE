@@ -1099,10 +1099,12 @@ def run_aed_cycle() -> dict:
             "Pass",
             payload={"phase": "sense+mutate", "allow_heavy": allow_heavy},
         )
+    # Sense-only / post-check is Verify. Barrier does not count toward FQ
+    # and left aed-v1 at exec/0-verify (SIMULATION).
     ingest_flow(
         "aed-v1",
         f"aed-cycle-{cycle_id}",
-        "Barrier",
+        "Verify",
         ver_cost,
         "Observation",
         "Pass",
@@ -1112,7 +1114,7 @@ def run_aed_cycle() -> dict:
             "cycle_fq": cycle_fq,
             "allow_heavy": allow_heavy,
             "stabilize": "verify_dominant_on_throttle",
-            "heartbeat": True,
+            "heartbeat": exec_cost == 0,
         },
     )
 
