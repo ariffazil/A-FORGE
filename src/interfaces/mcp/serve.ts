@@ -549,6 +549,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           // agents from misidentifying the bridge's authority tier.
           authority_ceiling: "777_FORGE",
           sessions: connected ? "active" : "pending",
+          tools_listed: getServerTools().length,
           stateless_tools: STATELESS_TOOLS.size,
           session: connected ? {
             idle_seconds: Math.round((now - lastActivityTime) / 1000),
@@ -582,6 +583,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               resources_read: "POST /mcp → resources/read"
             },
             docs: "https://forge.arif-fazil.com",
+            tools_listed: getServerTools().length,
             stateless_tools: STATELESS_TOOLS.size,
           }));
           return;

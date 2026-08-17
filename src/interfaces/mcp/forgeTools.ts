@@ -909,7 +909,7 @@ export function registerStatusTools(server: McpServer): void {
         const agents = Array.from(registeredAgents.values());
         result.agents = { count: agents.length, recent: agents.slice(-limit).map(a => ({ agent_id: a.agent_id, role: a.role, last_seen: a.last_seen, active_leases: Array.isArray(a.lease_ids) ? a.lease_ids.length : 0 })) };
       }
-      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", ...result }, null, 2) }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HEALTHY", ...result }, null, 2) }] };
     }
   );
 
@@ -2226,7 +2226,7 @@ export function registerPredictTools(server: McpServer): void {
         return {
           content: [{
             type: "text" as const,
-            text: JSON.stringify({ status: "SEAL", prediction, ready_for_judge: true, gate }, null, 2),
+            text: JSON.stringify({ status: "DRAFT", prediction, ready_for_judge: true, gate }, null, 2),
           }],
         };
       } catch (moduleErr: any) {
@@ -2264,7 +2264,7 @@ export function registerPredictTools(server: McpServer): void {
           epistemic_tag: "DERIVED/SIMULATED",
           timestamp: new Date().toISOString(),
         };
-        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", prediction, ready_for_judge: true }, null, 2) }] };
+        return { content: [{ type: "text" as const, text: JSON.stringify({ status: "DRAFT", prediction, ready_for_judge: true }, null, 2) }] };
       } catch (err: any) {
         return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", domain, error: err?.message ?? String(err) }, null, 2) }], isError: true };
       }

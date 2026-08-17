@@ -240,9 +240,9 @@ export function registerCoolingVerbs(server: McpServer): void {
           content: [{
             type: "text" as const,
             text: JSON.stringify({
-              verdict: "SEAL",
+              verdict: "DRAFT",
               verb: "cool_drift",
-              message: "COOLING_RECEIPT emitted and sealed to VAULT999",
+              message: "COOLING_RECEIPT emitted (draft, not constitutional SEAL)",
               receipt: envelope,
               seal_chain_result: result,
               invariants_satisfied: [
@@ -336,9 +336,9 @@ export function registerCoolingVerbs(server: McpServer): void {
           content: [{
             type: "text" as const,
             text: JSON.stringify({
-              verdict: "SEAL",
+              verdict: "DRAFT",
               verb: "cool_pattern",
-              message: "COOLING_RECEIPT emitted and sealed to VAULT999",
+              message: "COOLING_RECEIPT emitted (draft, not constitutional SEAL)",
               receipt: envelope,
               seal_chain_result: result,
               recurrence: {

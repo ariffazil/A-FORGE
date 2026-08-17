@@ -864,12 +864,12 @@ app.get("/contract", (_req: Request, res: Response) => {
     governance_surface: "HTTP bridge + MCP stdio",
     capabilities: {
       sense: true,
-      judge: true,
+      judge_proxy: true,
       governance_evaluate: true,
       a2a: true,
       operator_console: true,
       human_expert: true,
-      seal_service: true,
+      receipt_draft: true,
       peer_contract: true,
       dangerous_tools: process.env.ENABLE_DANGEROUS_TOOLS === "1" || process.env.ENABLE_DANGEROUS_TOOLS === "true",
       background_jobs: process.env.ENABLE_BACKGROUND_JOBS === "1" || process.env.ENABLE_BACKGROUND_JOBS === "true",
@@ -1197,7 +1197,7 @@ app.get("/ready", (_req: Request, res: Response) => {
     checks: {
       policy: true,
       sense: true,
-      judge: true,
+      judge_proxy: true,
       contract: true,
     },
   });

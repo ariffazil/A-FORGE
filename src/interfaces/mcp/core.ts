@@ -1339,7 +1339,7 @@ server.tool(
           content: [{
             type: "text" as const,
             text: JSON.stringify({
-              status: "SEAL",
+              status: "OK",
               session_id,
               session_token: session_token ?? null,
               parent_session_id: parent_session_id ?? null,
@@ -1349,7 +1349,7 @@ server.tool(
               intent: intent ?? "general session",
               mode: mode ?? "external",
               expires_at: session.expires_at,
-              verdict: "SEAL",
+              verdict: "OK",
               pre_minted_lease,
             }, null, 2),
           }],
