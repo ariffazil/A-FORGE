@@ -776,13 +776,13 @@ def run_aed_cycle() -> dict:
 
     sense_ns = time.time_ns() - t0
     verify_ns += sense_ns  # SENSE + organ probe = Verify always
-    results["steps"]["sense_cost_class"] = "Verify"
+    results["steps"]["sense_cost_class"] = "Route"
 
     print(
         f"  carry_forward: {len(open_loops)} loops | goals: {len(in_progress_goals)} in_progress, "
         f"{len(pending_goals)} pending ({len(auto_resume_goals)} auto-resume) | "
         f"{fq_diagnosis(fq_info, prefix='Flow gate')} | "
-        f"heavy={'ON' if allow_heavy else 'THROTTLED'} sense→Verify"
+        f"heavy={'ON' if allow_heavy else 'THROTTLED'} sense→Route"
     )
 
     # ── VERIFY work: audits, gates (post-sense validation) ────────
@@ -1099,12 +1099,13 @@ def run_aed_cycle() -> dict:
             "Pass",
             payload={"phase": "sense+mutate", "allow_heavy": allow_heavy},
         )
-    # Sense-only / post-check is Verify. Barrier does not count toward FQ
-    # and left aed-v1 at exec/0-verify (SIMULATION).
+    # Sense-only / post-check is Route (FQ-neutral). Verify caused
+    # self-reinforcing fossilization (verify→throttle→more verify).
+    # Barrier caused SIMULATION. Route is correct: dispatch to check organs.
     ingest_flow(
         "aed-v1",
         f"aed-cycle-{cycle_id}",
-        "Verify",
+        "Route",
         ver_cost,
         "Observation",
         "Pass",
