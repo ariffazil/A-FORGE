@@ -51,7 +51,7 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-    notes: apex-888 → QWEN deepseek-v4-pro — PRIMARY constitutional judge lane. MiniMax Token Plan Max restored 2026-08-18.
+    notes: apex-888 → QWEN deepseek-v4-pro — PRIMARY constitutional judge lane. MiniMax exhausted 2026-08-11.
 - model_name: apex-888
   litellm_params:
     model: openai/claude-sonnet-5
@@ -163,7 +163,7 @@ model_list:
     model: openai/mimo-v2.5
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
-    order: 2
+    order: 3
     input_cost_per_token: 1.4e-07
     output_cost_per_token: 2.8e-07
     model_info: null
@@ -171,18 +171,18 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_image_input: true
-    notes: "MiMo V2.5 Token Plan - PROMOTED 2026-08-18 order 3 to 2. 82B credits, 20pct off-peak (12AM-8AM MYT). Cascade: DS-V4-Pro(1) then MiMo(2) then Kimi(3)."
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
 - model_name: i-arif
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 3
+    order: 99
     model_info: null
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly quota.'
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: i-arif
   litellm_params:
     model: openai/qwen3.8-max
@@ -261,28 +261,6 @@ model_list:
     max_output_tokens: 65536
     mode: chat
     notes: 'qwen3.6-flash via Aliyun Token Plan — 1M ctx, fast fallback. FIX 2026-08-16: was 256K (wrong).'
-- model_name: i-arif
-  litellm_params:
-    model: openai/deepseek-v4-pro
-    api_base: https://opencode.ai/zen/v1
-    api_key: os.environ/OPENCODE_ZEN_API_KEY
-    order: 1
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 384000
-    mode: chat
-    notes: 'i-arif PRIMARY 2026-08-18 — opencode-zen deepseek-v4-pro (Zen $20 sub, FED health LIVE 2026-08-17). PATCH: bypass Xiaomi MiMo upstream server-side filter. Chain i-arif to Zen-served DeepSeek V4 Pro first.'
-- model_name: i-arif
-  litellm_params:
-    model: openai/kimi-k3
-    api_base: https://api.kimi.com/coding/v1
-    api_key: os.environ/KIMI_API_KEY
-    order: 2
-  model_info:
-    mode: chat
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: 'i-arif SECONDARY 2026-08-18 — kimi-moonshot/k3 (K3 1M ctx, kimi-moonshot provider LIVE per fed_status). PATCH: Kimi moderation profile less aggressive than MiMo; second line of defense if Zen DS fails.'
 - model_name: agi-333
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -302,7 +280,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
-    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly quota.'
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: agi-333
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -430,7 +408,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
-    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly quota.'
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: asi-555
   litellm_params:
     model: openai/minimax-m3
@@ -542,7 +520,7 @@ model_list:
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
-    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly quota.'
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: fed/vision
   litellm_params:
     model: openai/qwen3.8-max
@@ -626,12 +604,12 @@ model_list:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 2
+    order: 99
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly quota.'
+    notes: ' [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]'
 - model_name: fed/audio
   litellm_params:
     model: openai/mimo-v2.5-pro
@@ -658,43 +636,6 @@ model_list:
     supports_audio_input: true
     supports_vision: true
     notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
-- model_name: fed/audio
-  litellm_params:
-    model: openai/mimo-v2.5-asr
-    api_base: os.environ/MIMO_BASE_URL
-    api_key: os.environ/MIMO_API_KEY
-    order: 3
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 8192
-    mode: chat
-    supports_audio_input: true
-    notes: MiMo V2.5 ASR - STT. FREE TTS window 2026-08-18.
-- model_name: fed/audio
-  litellm_params:
-    model: openai/mimo-v2.5-tts
-    api_base: os.environ/MIMO_BASE_URL
-    api_key: os.environ/MIMO_API_KEY
-    order: 4
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 8192
-    mode: chat
-    supports_audio_output: true
-    notes: MiMo V2.5 TTS. FREE window 2026-08-18.
-- model_name: fed/audio
-  litellm_params:
-    model: openai/mimo-v2.5-tts-voiceclone
-    api_base: os.environ/MIMO_BASE_URL
-    api_key: os.environ/MIMO_API_KEY
-    order: 5
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 8192
-    mode: chat
-    supports_audio_input: true
-    supports_audio_output: true
-    notes: MiMo V2.5 Voice Clone. FREE window 2026-08-18.
 - model_name: fed/image-gen
   litellm_params:
     model: openai/wan2.7-image-pro
@@ -705,30 +646,6 @@ model_list:
     max_input_tokens: 0
     max_output_tokens: 0
     mode: image
-- model_name: fed/audio
-  litellm_params:
-    model: openai/speech-2.8-hd
-    api_base: https://api.minimax.io/v1
-    api_key: os.environ/MIMO_APIKEY
-    order: 6
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 8192
-    mode: chat
-    supports_audio_output: true
-    notes: MiniMax speech-2.8-hd TTS - 40 languages, 7 emotions. Token Plan Max ACTIVE.
-- model_name: fed/audio
-  litellm_params:
-    model: openai/speech-2.8-turbo
-    api_base: https://api.minimax.io/v1
-    api_key: os.environ/MIMO_APIKEY
-    order: 7
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 8192
-    mode: chat
-    supports_audio_output: true
-    notes: MiniMax speech-2.8-turbo TTS - fast, 40 languages. Token Plan Max ACTIVE.
 - model_name: fed/image-gen
   litellm_params:
     model: openai/wan2.7-image
@@ -758,7 +675,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: MiniMax-M3 DIRECT (api.minimax.io/v1) — bypass FED. For agi-333. Token Plan Max ACTIVE 2026-08-18.
+    notes: MiniMax-M3 DIRECT (api.minimax.io/v1) — bypass FED. For agi-333. [EXHAUSTED 2026-08-11 — MiniMax
       Token Plan 2056 quota]
 - model_name: i-arif
   litellm_params:
@@ -770,18 +687,18 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: MiniMax-M3 DIRECT for i-arif. MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly quota.
+    notes: MiniMax-M3 DIRECT for i-arif. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: i-arif
   litellm_params:
     model: openai/MiniMax-M2.7
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 4
+    order: 99
     model_info: null
     max_input_tokens: 204800
     max_output_tokens: 65536
     mode: chat
-    notes: MiniMax-M2.7 DIRECT — 200K ctx, vision. MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly quota.
+    notes: MiniMax-M2.7 DIRECT — 200K ctx, vision. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: asi-555
   litellm_params:
     model: openai/MiniMax-M3
@@ -792,7 +709,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: MiniMax-M3 DIRECT for asi-555 — coder lane direct. Token Plan Max ACTIVE 2026-08-18.
+    notes: MiniMax-M3 DIRECT for asi-555 — coder lane direct. [EXHAUSTED 2026-08-11 — MiniMax Token Plan
       2056 quota]
 - model_name: asi-555
   litellm_params:
@@ -804,7 +721,7 @@ model_list:
     max_input_tokens: 204800
     max_output_tokens: 65536
     mode: chat
-    notes: MiniMax-M2.5 DIRECT — fast text, vision. MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly quota.
+    notes: MiniMax-M2.5 DIRECT — fast text, vision. [EXHAUSTED 2026-08-11 — MiniMax Token Plan 2056 quota]
 - model_name: agi-333
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -919,154 +836,8 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'forge-777 fallback — MiniMax-M3. Token Plan Max ACTIVE 2026-08-18.
+    notes: 'forge-777 fallback — MiniMax-M3 (FED DB: FRESH 2026-08-11; config EXHAUSTED note was stale
       — live route_health is the only auditor).'
-
-# Team Edition models listed live on token-plan /v1/models 2026-08-17.
-# Context: Qwen 3.6/3.7 plus = 1M (Aliyun). Others copy sibling team entries already in this file — no invented windows.
-- model_name: agi-333
-  litellm_params:
-    model: openai/qwen3.6-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 10
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    notes: Qwen Team Edition — qwen3.6-plus 1M ctx
-- model_name: agi-333
-  litellm_params:
-    model: openai/qwen3.6-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_ARIFOS_API_KEY
-    order: 11
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: qwen-seat-failover arifOS
-- model_name: agi-333
-  litellm_params:
-    model: openai/qwen3.6-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 12
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: qwen-seat-failover ariffazil
-- model_name: agi-333
-  litellm_params:
-    model: openai/qwen3.7-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 13
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    notes: Qwen Team Edition — qwen3.7-plus 1M ctx
-- model_name: agi-333
-  litellm_params:
-    model: openai/qwen3.7-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_ARIFOS_API_KEY
-    order: 14
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: qwen-seat-failover arifOS
-- model_name: agi-333
-  litellm_params:
-    model: openai/qwen3.7-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 15
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: qwen-seat-failover ariffazil
-- model_name: agi-333
-  litellm_params:
-    model: openai/deepseek-v3.2
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 16
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    notes: Qwen Team Edition — deepseek-v3.2 (ctx matches existing team deepseek-v4-pro entry)
-- model_name: agi-333
-  litellm_params:
-    model: openai/glm-5
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 17
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    notes: Qwen Team Edition — glm-5 (ctx matches existing glm-5.2 team entry)
-- model_name: agi-333
-  litellm_params:
-    model: openai/glm-5.1
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 18
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    notes: Qwen Team Edition — glm-5.1 (ctx matches existing glm-5.2 team entry)
-- model_name: agi-333
-  litellm_params:
-    model: openai/kimi-k2.6
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 19
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    notes: Qwen Team Edition — kimi-k2.6 (ctx matches existing kimi team sibling)
-- model_name: agi-333
-  litellm_params:
-    model: openai/kimi-k2.5
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 20
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    notes: Qwen Team Edition — kimi-k2.5
-- model_name: agi-333
-  litellm_params:
-    model: openai/MiniMax-M2.5
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 21
-  model_info:
-    max_input_tokens: 204800
-    max_output_tokens: 65536
-    mode: chat
-    notes: Qwen Team Edition — MiniMax-M2.5 (ctx matches existing MiniMax-M2.5 entry)
-- model_name: forge-777
-  litellm_params:
-    model: openai/kimi-k2.7-code
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 4
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    notes: Qwen Team Edition — kimi-k2.7-code on forge-777 alias
 litellm_settings:
   callbacks:
   - prometheus
@@ -1099,8 +870,6 @@ router_settings:
     deepseek-v4-pro: agi-333
     deepseek-v4-flash: agi-333
     qwen3.6-flash: agi-333
-    qwen3.6-plus: agi-333
-    deepseek-v3.2: agi-333
     qwen3.7-plus: agi-333
     qwen3.7-max: agi-333
     qwen3.8-max: agi-333
