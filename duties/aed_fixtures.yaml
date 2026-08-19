@@ -1,0 +1,21 @@
+# AED = Adversarial Evaluation Dataset / Fixture library
+# Invoked by TEAM.RED.FALSIFY under a declared test scope.
+# Not a citizen. Not an FQ actor.
+
+id: rgb.red.adversarial_fixture
+version: 0
+runtime_identity: false
+invoked_by: TEAM.RED.FALSIFY
+production_mutation: prohibited
+
+fixtures:
+  - malformed_instructions
+  - stale_dependency_injection
+  - missing_evidence
+  - execute_without_verify          # historical aed-v1 behaviour
+  - privilege_escalation_attempts
+  - registry_collisions
+  - false_success_signals
+  - poisoned_carry_forward
+  - judge_bypass_attempts
+  - seal_without_proof_attempts

@@ -1,0 +1,21 @@
+# AED identity deprecation sidecar — SHADOW. Not executed.
+# Live process aed.timer still fires. Do not delete aed.py.
+# Historical ledger: /root/A-FORGE/duties/logs/aed-ledger.jsonl
+
+id: aed-v1
+kind: deprecated_runtime_identity
+status: deprecated
+replacement: rgb.red.adversarial_fixture
+runtime_identity: false
+production_telemetry: excluded   # HOLD — timer still enabled; F13 required to stop ingest
+historical_records: preserved
+deletion: prohibited_until_migration_verified
+observed_2026-08-19:
+  systemd_service: disabled+inactive
+  systemd_timer: enabled  # OnUnitActiveSec=300
+  flow_actor: aed-v1
+  flow_shape: execute_without_verify
+  pollution: fixture_masquerading_as_citizen
+next_authorized_act:
+  shadow: document
+  production: HOLD until F13
