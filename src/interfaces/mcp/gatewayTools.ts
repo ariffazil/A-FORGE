@@ -34,7 +34,8 @@ const PLAYWRIGHT_MCP_URL = process.env.PLAYWRIGHT_MCP_URL ?? "http://localhost:8
 const MINIMAX_MCP_URL = process.env.MINIMAX_MCP_URL ?? "http://localhost:18091/mcp";
 const NETDATA_URL = process.env.NETDATA_URL ?? "http://localhost:19999";
 const CONTEXT7_MCP_URL = process.env.CONTEXT7_MCP_URL ?? "https://mcp.context7.com/mcp";
-const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY ?? "";
+const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY ?? process.env.BRAVE_API_KEY ?? "";
+const SEARXNG_URL = (process.env.SEARXNG_URL ?? "http://127.0.0.1:8080").replace(/\/+$/, "");
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? "";
 
 const RECEIPT_LOG = "/root/A-FORGE/data/gateway_receipts.jsonl";
@@ -104,6 +105,7 @@ async function braveWebSearch(query: string, count: number, freshness: string, s
         Accept: "application/json",
         "X-Subscription-Token": BRAVE_API_KEY,
       },
+      signal: AbortSignal.timeout(8_000),
     });
     if (!resp.ok) {
       const body = await resp.text().catch(() => "");
@@ -120,6 +122,58 @@ async function braveWebSearch(query: string, count: number, freshness: string, s
   } catch (err: any) {
     return { ok: false, results: [], error: `Brave search failed: ${err?.message ?? String(err)}` };
   }
+}
+
+/** Local SearXNG — same box, not agent-supplied URL (SSRF does not apply). */
+async function searxngWebSearch(
+  query: string,
+  count: number,
+): Promise<{ ok: boolean; results: BraveResult[]; error?: string }> {
+  try {
+    const params = new URLSearchParams({ q: query, format: "json", pageno: "1" });
+    const resp = await fetch(`${SEARXNG_URL}/search?${params.toString()}`, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!resp.ok) {
+      return { ok: false, results: [], error: `SearXNG HTTP ${resp.status}` };
+    }
+    const data = (await resp.json()) as {
+      results?: Array<{ title?: string; url?: string; content?: string; publishedDate?: string }>;
+      unresponsive_engines?: unknown;
+    };
+    const results = (data.results ?? []).slice(0, Math.max(1, count)).map((r) => ({
+      title: r.title ?? "",
+      url: r.url ?? "",
+      description: r.content ?? "",
+      age: r.publishedDate,
+    }));
+    return { ok: true, results };
+  } catch (err: any) {
+    return { ok: false, results: [], error: `SearXNG failed: ${err?.message ?? String(err)}` };
+  }
+}
+
+async function webSearchWithFallback(
+  query: string,
+  count: number,
+  freshness: string,
+  safesearch: string,
+): Promise<{ ok: boolean; results: BraveResult[]; error?: string; provider: string }> {
+  const brave = await braveWebSearch(query, count, freshness, safesearch);
+  if (brave.ok && brave.results.length > 0) {
+    return { ...brave, provider: "brave" };
+  }
+  const local = await searxngWebSearch(query, count);
+  if (local.ok) {
+    return { ...local, provider: "searxng", error: brave.ok ? undefined : brave.error };
+  }
+  return {
+    ok: false,
+    results: [],
+    provider: "none",
+    error: `Brave: ${brave.error ?? "empty"}; SearXNG: ${local.error ?? "empty"}`,
+  };
 }
 
 // ── Context7 docs lookup ──────────────────────────────────────────────────────
@@ -221,20 +275,20 @@ export async function handleForgeResearch(args: any) {
   const { query, depth, sources, time_horizon, max_results, include_citations, request_id } = args;
   const receiptMeta = { tool: "forge_research", query, depth, sources };
 
-  const search = await braveWebSearch(query, max_results ?? 10, time_horizon ?? "any", "moderate");
+  const search = await webSearchWithFallback(query, max_results ?? 10, time_horizon ?? "any", "moderate");
   if (!search.ok) {
     return gatewayError(request_id, `Research fallback: ${search.error}. Returning low-confidence answer.`, receiptMeta);
   }
 
   const results = search.results.slice(0, max_results ?? 10);
   const citations = include_citations !== false
-    ? results.map((r) => ({ title: r.title, url: r.url, source: "brave", date: r.age ?? null }))
+    ? results.map((r) => ({ title: r.title, url: r.url, source: search.provider, date: r.age ?? null }))
     : [];
   const answer = results.map((r) => `- ${r.title}: ${r.description ?? ""}`).join("\n") || "No grounded results.";
   const confidence = results.length > 5 ? "high" : results.length > 0 ? "medium" : "low";
   const gaps = results.length === 0 ? ["No web results returned"] : [];
 
-  const receipt_id = await recordReceipt({ ...receiptMeta, provider: "brave", result_count: results.length });
+  const receipt_id = await recordReceipt({ ...receiptMeta, provider: search.provider, result_count: results.length });
   return {
     content: [{
       type: "text" as const,
@@ -288,7 +342,7 @@ export async function handleForgeSearch(args: any) {
   // 3. All sources (Web + Docs combined)
   if (source === "all") {
     const [webRes, docsRes] = await Promise.allSettled([
-      braveWebSearch(query, count, freshness, safesearch),
+      webSearchWithFallback(query, count, freshness, safesearch),
       context7Lookup(query, "all", 5),
     ]);
 
@@ -319,8 +373,8 @@ export async function handleForgeSearch(args: any) {
     };
   }
 
-  // 4. Default: Web search (Brave)
-  const search = await braveWebSearch(query, count, freshness, safesearch);
+  // 4. Default: Web search (Brave, fail-over to local SearXNG)
+  const search = await webSearchWithFallback(query, count, freshness, safesearch);
   if (!search.ok) {
     return gatewayError(reqId, `Search failed: ${search.error}`, receiptMeta);
   }
@@ -330,7 +384,7 @@ export async function handleForgeSearch(args: any) {
     snippet: r.description ?? "",
     date: r.age ?? null,
   }));
-  const receipt_id = await recordReceipt({ ...receiptMeta, provider: "brave", result_count: results.length });
+  const receipt_id = await recordReceipt({ ...receiptMeta, provider: search.provider, result_count: results.length });
 
   // FLAME synthesis (optional)
   let flame: any = null;
@@ -350,12 +404,12 @@ export async function handleForgeSearch(args: any) {
         request_id: reqId,
         source: "web",
         results,
-        provider: "brave",
+        provider: search.provider,
         receipt_id,
         _epistemic: {
           output_class: "DOMAIN_COMPUTATION",
           authority_claim: "ADVISORY",
-          evidence_source: "BRAVE",
+          evidence_source: search.provider.toUpperCase(),
         },
         ...(flame ? {
           flame_synthesis: {

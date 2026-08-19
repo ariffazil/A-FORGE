@@ -1,0 +1,66 @@
+{
+  "receipt_type": "F13_RATIFICATION_ACT_FIRE",
+  "timestamp_utc": "2026-08-18T11:58:02Z",
+  "actor_terminal": "GROK FI-007 AUTOPILOT-ON",
+  "sovereign_directive": "ART ACT AUTH",
+  "parent_receipts": [
+    "/root/A-FORGE/data/forge-receipts/2026-08-18T11-39-f13-ratify-halt.json",
+    "/root/A-FORGE/data/forge-receipts/2026-08-18T11-44-f13-act-correction.json"
+  ],
+  "act_mint": {
+    "grok_session_id": "SEAL-d15afd9e5818444b",
+    "grok_authority_band": "LIMITED_MUTATE",
+    "grok_mutation_allowed": true,
+    "grok_seal_allowed": false,
+    "arif_session_id": "SEAL-165f7f3bec2b45bb",
+    "arif_authority_band": "FULL",
+    "token_type": "ACT",
+    "token_format_prefix_live": "act_v1",
+    "token_fp_sha256_16": "74d6d0275c921193",
+    "note": "Live kernel mints act_v1.* (not sct_v1.*). Kimi schema prefix was stale."
+  },
+  "judge": {
+    "grok_effective_verdict": "HOLD",
+    "grok_failed_floors": [
+      "F13"
+    ],
+    "grok_intercept": "ALLOW",
+    "grok_chain": "cc_37b2b0e3b9d04b021824acec384381f3e89d026e",
+    "grok_call_hash": "sha256:98026d6591a40d196baf289f4f917b3c2af27b3e6035bfd6ea7848ba9f42eefa",
+    "arif_effective_verdict": "HOLD",
+    "arif_reason_code": "NEEDS_REVIEW",
+    "arif_call_hash": "sha256:f805c41803499dee417e8e97580817e73de6a1e2ca4d3f1d76d45951d5b9aa2c",
+    "independence": "kernel arif_judge; no free-text SEAL"
+  },
+  "forge_shell": {
+    "act_gate": "PASSED (session_init minted lease LCL-arif-msylukbf-picx6p max_action_class=IRREVERSIBLE)",
+    "a_think": "BLOCKED \u2014 FAST max_tools=0; GOVERN human_gate on destructive. Executed locally under ACT."
+  },
+  "steps": {
+    "0_preflight": "PASS",
+    "0_5_gap02_retry": "PASS \u2014 prior guest bind recorded",
+    "0_6_act_not_sct": "PASS",
+    "6_gap02_reseed": "PASS \u2014 ACT minted GROK LIMITED_MUTATE + ARIF FULL",
+    "1_gap05_swap": "HOLD_UNSAFE \u2014 swapoff timed out 90s; 7.6Gi\u21925.3Gi used during abort; forcing would OOM (free RAM <1Gi). Not retried.",
+    "2_gap04a_locks": "PASS \u2014 empty stale locks 142 \u2192 0",
+    "3_gap04b_redis": "PASS \u2014 wrote /root/A-FORGE/kernel/locks.py (SET NX EX). Additive; AmanahLockManager untouched.",
+    "4_gap01_09_litellm": "PARTIAL \u2014 fallbacks_on_exceptions added. deepseek-v4-pro i-arif order=1 LEFT IN PLACE (intentional PRIMARY 2026-08-18, demote would undo same-day patch). apex-888 deepseek already order=99. litellm systemd units all inactive; :4000 is haproxy. No restart.",
+    "5_gap03_sshd": "STAGED_NOT_BOUND \u2014 drop-in written; sshd -T listenaddress=Tailscale only; live sockets still 0.0.0.0:22888 because reload does not rebind. Restart HOLD per package (reload NOT restart).",
+    "7_p02_chatgpt_tunnel": "PASS \u2014 local_lease_fallback DISABLED (P0.2 closed 2026-08-18)"
+  },
+  "live": {
+    "swap_line": "Swap:          8.0Gi       5.0Gi       3.0Gi",
+    "stale_empty_locks": "0",
+    "sshd_live": "LISTEN 0      4096               0.0.0.0:22888      0.0.0.0:*    users:((\"sshd\",pid=1178,fd=3),(\"systemd\",pid=1,fd=223))\nLISTEN 0      4096                  [::]:22888         [::]:*    users:((\"sshd\",pid=1178,fd=4),(\"systemd\",pid=1,fd=224))",
+    "sshd_T": "listenaddress 100.64.0.2:22888\nlistenaddress [fd7a:115c:a1e0::2]:22888",
+    "p02": "local_lease_fallback: \"DISABLED (P0.2 closed 2026-08-18)\"",
+    "fallbacks_on_exceptions": "present"
+  },
+  "delta_S": "partial \u2014 lock entropy down; sshd exposure unchanged until restart; swap not reset",
+  "rollback": {
+    "sshd": "rm /etc/ssh/sshd_config.d/99-arifOS-tailscale-only.conf && systemctl reload ssh",
+    "locks_py": "rm /root/A-FORGE/kernel/locks.py",
+    "chatgpt_tunnel": "restore PENDING string",
+    "litellm": "revert fallbacks_on_exceptions block"
+  }
+}

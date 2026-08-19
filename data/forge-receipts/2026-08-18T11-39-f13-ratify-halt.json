@@ -1,0 +1,77 @@
+{
+  "receipt_type": "F13_RATIFICATION_HALT",
+  "session_id": "GUEST-21dffa245432",
+  "trace_id": "trc-eaf9f4072d48",
+  "timestamp_utc": "2026-08-18T11:39:51.828Z",
+  "sovereign_intent": "Execute atomic ratification package (Steps 1-7) per F13 OPEN gate",
+  "sovereign_actor_claimed": "arif-sovereign",
+  "kernel_response": {
+    "arif_init": {
+      "status": "completed (degraded)",
+      "session_id": "GUEST-21dffa245432",
+      "actor_verified": false,
+      "actor_canonicalized": false,
+      "actor_cryptographically_verified": false,
+      "authority_band": "OBSERVE_ONLY",
+      "mutation_allowed": false,
+      "seal_allowed": false,
+      "session_token": null,
+      "guest": true,
+      "reason": "actor_id not in canonical registry — guest OBSERVE_ONLY session minted (BUG-3). Claimed identity unbound; no SCT.",
+      "reason_code": "ACTOR_UNRECOGNISED_GUEST",
+      "kernel_hint": "Prefer: ARIF, FORGE, AUDITOR, OPS, PLAN, AAAGW, HERMES, OPENCLAW, OPENCODE, GROK, CLAUDE, FI-008, SOTCRON"
+    },
+    "forge_kernel": {
+      "status": "ERROR",
+      "error": "ACT_GATE: ACT_REQUIRED: Tool 'forge_kernel' requires session_token (mint via arif_init)",
+      "action_class": "EXECUTE_REVERSIBLE",
+      "adat_gate": "ACT_REQUIRED",
+      "organ": "a-forge"
+    },
+    "forge_shell_step1": {
+      "status": "ERROR",
+      "error": "ACT_GATE: ACT_REQUIRED: Tool 'forge_shell' requires session_token (mint via arif_init)",
+      "action_class": "EXECUTE_REVERSIBLE",
+      "adat_gate": "ACT_REQUIRED",
+      "organ": "a-forge"
+    }
+  },
+  "halt_reason": "GAP-02 substrate precondition unmet. Textual F13 ratification from sovereign is not cryptographically attested to the kernel; 'arif-sovereign' is not in canonical actor registry; arif_init returned a GUEST session with null session_token, which propagates as ACT_GATE: ACT_REQUIRED on every forge_* tool that requires authority.",
+  "doctrine_citation": {
+    "F1_AMANAH": "Fail-closed on missing authority — the kernel's ACT_GATE is the correct constitutional behavior",
+    "F2_TRUTH": "Evidence outranks narrative — textual ratification cannot override cryptographic registry",
+    "F13_SOVEREIGN": "Sovereignty is preserved; the substrate needs an Ed25519-bound session token to recognize it",
+    "grok_AGENTS_md": "Stale local truth → probe :port/health before claims; Live T1 wins",
+    "grok_AGENTS_md_floors": "Hard floors I won't fake → No irreversible without HOLD; do not fake SEAL"
+  },
+  "what_worked": {
+    "step_0_preflight": "PASS — baselines captured: swap 7.6G used, 142 stale locks remain, sshd still on 0.0.0.0:22888",
+    "arif_init_attempt": "PASS at protocol level — session bound as GUEST-21dffa245432 (deterministic bind), but authority degraded to OBSERVE_ONLY because actor 'arif-sovereign' is not in canonical registry"
+  },
+  "what_did_not_fire": {
+    "step_1_swap_reset": "BLOCKED — forge_shell ACT_GATE",
+    "step_2_lock_purge": "BLOCKED — forge_shell ACT_GATE",
+    "step_3_redis_primitive": "PENDING — file write would work (Write tool) but locks without substrate authority are meaningless",
+    "step_4_litellm_patch": "BLOCKED — needs ACT for litellm restart + edit",
+    "step_5_sshd_rebind": "BLOCKED — sshd_config.d write would work but reload needs ACT",
+    "step_6_gap02": "FAILED — both arif_init (guest only) and forge_kernel (ACT_GATE) returned without canonical authority",
+    "step_7_chatgptunnel": "PENDING — Edit tool would work (YAML file), but mutation gate still applies"
+  },
+  "substrate_shift_required_to_unblock": {
+    "primary": "Bind 'arif-sovereign' (or rename to 'ARIF' canonical) into the actor registry at /root/arifOS/arifosmcp/runtime/identity_registry.json (or equivalent) — requires canonical actor with ARIF authority to do so",
+    "secondary": "Generate Ed25519 keypair for sovereign; sign arif_init envelope with actor_signature; submit nonce + signature — substrate should auto-verify against stored public key",
+    "tertiary": "Use a session-bound canonical actor (FORGE, OPENCODE, GROK) as a delegation proxy — F13 sovereign intent can be relayed through any canonical actor with arif_init verified"
+  },
+  "queued_steps_unmodified": {
+    "step_1_gap05_swap": "swapoff -a && swapon -a — LOW blast radius, reversible",
+    "step_2_gap04a_locks": "find /root/.grok /root/.quarantine -name '*.lock' -size 0 -mmin +60 -delete — LOW, additive",
+    "step_3_gap04b_redis": "Write /root/A-FORGE/kernel/locks.py with redis-py SET NX EX",
+    "step_4_gap01_09_litellm": "Diff /root/A-FORGE/litellm-config.yaml to add fallbacks_on_exceptions: [AuthenticationError, RateLimitError, APIConnectionError]; demote deepseek-v4-pro order=1 → order=4",
+    "step_5_gap03_sshd": "Write /etc/ssh/sshd_config.d/99-arifOS-tailscale-only.conf with ListenAddress 100.64.0.2 + fd7a:115c:a1e0::2; systemctl reload sshd (NOT restart) for live session persistence; smoke-test from Tailscale IP",
+    "step_6_gap02_reseed": "Retry arif_init with actor_id='ARIF' (canonical) + Ed25519 signature from sovereign key",
+    "step_7_chatgptunnel_p02": "Edit /root/A-FORGE/config/chatgpt-tunnel.yaml line 42: 'PENDING — should be DISABLED (P0.2)' → 'DISABLED (P0.2 closed 2026-08-18)'"
+  },
+  "delta_S_unrealized": "0 — no mutations applied, no entropy changed. Substrate state frozen at: swap 7.6G used, 142 stale locks, sshd 0.0.0.0:22888, litellm unpatched, chatgptunnel P0.2 open, actor identity unbound",
+  "policy_compliance": "100% — halt per explicit F13 ratification policy: 'If any step returns a non-zero exit code or fails validation, quarantine the state, halt the sequence, and generate the failure receipt.'",
+  "next_action": "AWAIT — sovereign must unblock GAP-02 substrate (canonical actor binding, Ed25519 key delegation, or canonical-actor proxy) for the 7-step package to proceed."
+}
