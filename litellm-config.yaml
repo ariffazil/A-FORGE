@@ -172,46 +172,46 @@ model_list:
     notes: 'i-arif P1 PERSONA — Qwen 3.8 Max via Team Owner seat. Best BM/Penang nuance, code-switch fidelity. Primary for all human-facing output.'
 - model_name: i-arif
   litellm_params:
-    model: openai/MiniMax-M3
-    api_base: https://api.minimax.io/v1
-    api_key: os.environ/MINIMAX_API_KEY
+    model: openai/glm-5.3
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
     order: 2
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'i-arif P2 SPEED — MiniMax M3. Low latency conversational flow. Fast fallback when Qwen busy.'
-- model_name: i-arif
-  litellm_params:
-    model: openai/glm-5.3
-    api_base: https://api.z.ai/api/coding/paas/v4
-    api_key: os.environ/ZAI_API_KEY
-    order: 3
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
     supports_function_calling: true
-    notes: 'i-arif P3 LOGIC-BRIDGE — GLM-5.3 via Z.ai Coding Plan. High precision synthesis for complex reasoning collapse.'
+    notes: 'i-arif P2 LOGIC-BRIDGE — GLM-5.3 via Z.ai Coding Plan. High precision synthesis. Promoted per Seal D.'
 - model_name: i-arif
   litellm_params:
     model: openai/mimo-v2.5
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
-    order: 4
+    order: 3
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_image_input: true
-    notes: 'i-arif P4 FALLBACK — MiMo V2.5 Token Plan. Multimodal contextual awareness bridge.'
+    notes: 'i-arif P3 FALLBACK — MiMo V2.5 Token Plan. Multimodal contextual awareness bridge.'
 - model_name: i-arif
   litellm_params:
     model: openai/deepseek-v4-flash
     api_base: https://api.mulerouter.ai/vendors/openai/v1
     api_key: os.environ/MULEROUTER_API_KEY
+    order: 4
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'i-arif P4 EDGE SAFETY — DeepSeek V4 Flash via MuleRouter. Fail-safe so Telegram never times out.'
+- model_name: i-arif
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
     order: 5
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'i-arif P5 EDGE SAFETY — DeepSeek V4 Flash via MuleRouter. Fail-safe so Telegram never times out.'
+    notes: 'i-arif P5 EMERGENCY — MiniMax M3 demoted to last-resort per Seal D. M3 isolation: engine hygiene prevents persona contamination.'
 - model_name: agi-333
   litellm_params:
     model: openai/mimo-v2.5-pro
