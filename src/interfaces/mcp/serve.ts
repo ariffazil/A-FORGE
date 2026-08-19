@@ -710,8 +710,8 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 resources: { listChanged: false },
                 tasks: {
                   listChanged: false,
-                  cancel: true,
-                  status: true,
+                  cancel: {},
+                  status: {},
                 },
                 // SEP-2577 freeze: no logging:{}. Completions cancelled (agent tool JSON).
                 // stderr observability via journald (StandardError=journal).
