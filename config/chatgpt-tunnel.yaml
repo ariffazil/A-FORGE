@@ -39,4 +39,4 @@ security:
   unverified_default: "default:observe-deny (not sovereign)"
   aae_signature: "MANDATORY when present (P0.3)"
   unknown_action: "IRREVERSIBLE by default (fail-closed)"
-  local_lease_fallback: "PENDING — should be DISABLED (P0.2)"
+  local_lease_fallback: "DISABLED (P0.2 closed 2026-08-18)"

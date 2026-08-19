@@ -610,7 +610,7 @@ model_list:
     mode: chat
 - model_name: fed/vision
   litellm_params:
-    model: openai/mimo-v2.5-pro
+    model: openai/mimo-v2.5
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
     order: 1
@@ -620,7 +620,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_audio_input: true
-    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
+    supports_video: true
+    notes: "MiMo V2.5 (omni-modal) Token Plan — text+image+video+audio. mimo-v2.5-pro is text-only, use v2.5 for vision."
 - model_name: fed/vision
   litellm_params:
     model: openai/MiniMax-M3
@@ -634,7 +635,7 @@ model_list:
     notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly quota.'
 - model_name: fed/audio
   litellm_params:
-    model: openai/mimo-v2.5-pro
+    model: openai/mimo-v2.5
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
     order: 1
@@ -644,7 +645,8 @@ model_list:
     mode: chat
     supports_audio_input: true
     supports_vision: true
-    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak discount.
+    supports_video: true
+    notes: "MiMo V2.5 (omni-modal) Token Plan — text+image+video+audio. mimo-v2.5-pro is text-only, use v2.5 for audio."
 - model_name: fed/audio
   litellm_params:
     model: openai/mimo-v2.5
@@ -665,11 +667,11 @@ model_list:
     api_key: os.environ/MIMO_API_KEY
     order: 3
   model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 8192
+    max_input_tokens: 8192
+    max_output_tokens: 2048
     mode: chat
     supports_audio_input: true
-    notes: MiMo V2.5 ASR - STT. FREE TTS window 2026-08-18.
+    notes: "MiMo V2.5 ASR - STT. 8K ctx / 2K max output. FREE TTS window 2026-08-18."
 - model_name: fed/audio
   litellm_params:
     model: openai/mimo-v2.5-tts
@@ -677,11 +679,11 @@ model_list:
     api_key: os.environ/MIMO_API_KEY
     order: 4
   model_info:
-    max_input_tokens: 131072
+    max_input_tokens: 8192
     max_output_tokens: 8192
     mode: chat
     supports_audio_output: true
-    notes: MiMo V2.5 TTS. FREE window 2026-08-18.
+    notes: "MiMo V2.5 TTS. 8K ctx / 8K max output. FREE window 2026-08-18."
 - model_name: fed/audio
   litellm_params:
     model: openai/mimo-v2.5-tts-voiceclone
@@ -689,12 +691,12 @@ model_list:
     api_key: os.environ/MIMO_API_KEY
     order: 5
   model_info:
-    max_input_tokens: 131072
+    max_input_tokens: 8192
     max_output_tokens: 8192
     mode: chat
     supports_audio_input: true
     supports_audio_output: true
-    notes: MiMo V2.5 Voice Clone. FREE window 2026-08-18.
+    notes: "MiMo V2.5 Voice Clone. 8K ctx / 8K max output. FREE window 2026-08-18."
 - model_name: fed/image-gen
   litellm_params:
     model: openai/wan2.7-image-pro
@@ -1074,6 +1076,10 @@ litellm_settings:
   request_timeout: 60
   allowed_fails: 2
   cooldown_time: 60
+  fallbacks_on_exceptions:
+  - AuthenticationError
+  - RateLimitError
+  - APIConnectionError
   drop_params: true
   cache: true
   cache_params:

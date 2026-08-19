@@ -29,6 +29,54 @@ import { parse as parseYaml } from "yaml";
 import { queryRegistry } from "../../domain/forge/register.js";
 import { sanitizeArgs } from "./prompts.js";
 
+// ── B3 FIX (2026-08-18): Representation Layer Integrity ───────────────
+// A-FORGE MCP server composes tools across multiple registration modules
+// (core.ts, stateAnchorTools.ts, forgeGitEntropyCanonize.ts, etc.).
+// The hardcoded knownForgeTools list was incomplete and stale, producing
+// 50+ phantom false positives in audit reports.
+//
+// Fix: dynamically aggregate the LIVE MCP surface by scanning
+// `dist/src/interfaces/mcp/*.js` for server.tool() calls — this is the
+// code truth per META doctrine (representation-layer-integrity.md).
+async function scanLiveMcpSurface(): Promise<string[]> {
+  const distDir = "/root/A-FORGE/dist/src/interfaces/mcp";
+  const toolNames = new Set<string>();
+
+  // Aggregate from all compiled MCP module files
+  try {
+    const files: string[] = [];
+    for await (const f of glob(`${distDir}/**/*.js`)) {
+      files.push(f);
+    }
+    for (const file of files) {
+      try {
+        const content = await readFile(file, "utf-8");
+        // B3 v4 fix — require forge_ prefix to avoid matching example strings
+        // in comments (e.g. server.tool("name", ...) example syntax).
+        // Real A-FORGE tool names follow forge_<verb>[_mode] pattern.
+        const toolMatches = content.matchAll(/server\.tool\(\s*"(forge_[a-z][a-z0-9_]*)"/g);
+        for (const m of toolMatches) {
+          if (m[1]) toolNames.add(m[1]);
+        }
+        const regMatches = content.matchAll(/server\.registerTool\(\s*"(forge_[a-z][a-z0-9_]*)"/g);
+        for (const m of regMatches) {
+          if (m[1]) toolNames.add(m[1]);
+        }
+      } catch {
+        // Skip unreadable files
+      }
+    }
+  } catch {
+    // Fallback to no live surface if glob fails
+  }
+
+  // Also include Python sidecar tools (forge_elicit_server.py)
+  const pythonTools = ["forge_transfer_confirm", "forge_send_confirm"];
+  for (const t of pythonTools) toolNames.add(t);
+
+  return [...toolNames].sort();
+}
+
 type AffordanceEntry = {
   name: string;
   purpose?: string;
@@ -41,7 +89,7 @@ type AffordanceEntry = {
 };
 
 type DriftFinding = {
-  type: "PHANTOM" | "MISSING" | "DESCRIPTION_DRIFT" | "RISK_DRIFT" | "ALIAS_GHOST";
+  type: "PHANTOM" | "MISSING" | "DESCRIPTION_DRIFT" | "RISK_DRIFT" | "ALIAS_GHOST" | "DEPRECATED_DOC";
   severity: "LOW" | "MEDIUM" | "HIGH";
   tool_name: string;
   detail: string;
@@ -85,6 +133,18 @@ async function auditSurface(
   // PHANTOM entries: in affordance but NOT in registry
   for (const aff of affordanceTools) {
     if (!registrySet.has(aff.name)) {
+      // B3 v5 fix: respect deprecated:true flag — these are intentionally
+      // documented but not yet deployed (e.g. apa-* bridges pending).
+      if (aff.deprecated === true) {
+        findings.push({
+          type: "DEPRECATED_DOC",
+          severity: "LOW",
+          tool_name: aff.name,
+          detail: `In affordances.yaml marked deprecated:true but NOT in live registry. Documented but not deployed.`,
+          suggestion: `Keep deprecated entry (preserves design intent) OR build the bridge and remove deprecated flag.`,
+        });
+        continue;
+      }
       let severity: "LOW" | "MEDIUM" | "HIGH" = "MEDIUM";
       if (aff.destructive || aff.risk_label === "R4" || aff.risk_label === "R5") {
         severity = "HIGH";
@@ -120,7 +180,9 @@ async function auditSurface(
     }
   }
 
-  const isClean = findings.length === 0;
+  // B3 v6: is_clean ignores DEPRECATED_DOC — those are intentional state, not drift.
+  const realDrift = findings.filter((f) => f.type !== "DEPRECATED_DOC");
+  const isClean = realDrift.length === 0;
 
   return {
     organ,
@@ -196,33 +258,12 @@ export function registerSurfaceAuditTools(server: McpServer): void {
           .filter((t) => t.status === "REGISTERED" || t.status === "PENDING_REVIEW")
           .map((t) => t.tool_name);
 
-        // Also include known forge_* tools from the affordance itself
-        // to avoid false positives on tools that exist but aren't in forge_registry
-        const knownForgeTools = [
-          "forge_probe", "forge_health_check", "forge_filesystem", "forge_shell",
-          "forge_shell_dryrun", "forge_git", "forge_docker", "forge_postgres",
-          "forge_search", "forge_research", "forge_minimax_search", "forge_docs_lookup",
-          "forge_github", "forge_pipeline_run", "forge_lease", "forge_lock",
-          "forge_job", "forge_status", "forge_agent", "forge_abort",
-          "forge_registry", "forge_registry_status", "forge_skill", "forge_evaluate",
-          "forge_witness", "forge_scar", "forge_scar_scan", "forge_register",
-          "forge_seal", "forge_synthesize", "forge_stage", "forge_sandbox_run",
-          "forge_tier_bind", "forge_docket_prep", "forge_execute", "forge_execute_sealed",
-          "forge_session_init", "forge_check_governance", "forge_heart_critique",
-          "forge_judge_proxy", "forge_approve", "forge_reality_loop",
-          "forge_worktree", "forge_chart", "forge_document_ingest",
-          "forge_vault", "forge_journalctl", "forge_shell_status", "forge_security_drift_scan",
-          "forge_shell_ledger", "forge_shell_alert_history", "forge_netdata_alarms",
-          "forge_netdata_metrics", "forge_memory", "forge_policy",
-          "forge_surface_guard", "forge_surface_audit",
-          "forge_wealth", "forge_well", "forge_github_search_code",
-          "forge_github_search_repos", "forge_github_get_file",
-          "forge_github_create_issue", "forge_github_create_pr",
-          "forge_browser_navigate", "forge_browser_click", "forge_browser_type",
-          "forge_browser_screenshot", "forge_browser_extract_text", "forge_browser_evaluate_js",
-        ].filter(Boolean);
+        // B3 FIX: Aggregate from LIVE MCP module surface (per Representation
+        // Layer Integrity doctrine). Replaces the stale hardcoded knownForgeTools
+        // list that was producing 50+ phantom false positives.
+        const liveSurfaceTools = await scanLiveMcpSurface();
 
-        const allRegistryTools = [...new Set([...registryToolNames, ...knownForgeTools])].sort();
+        const allRegistryTools = [...new Set([...registryToolNames, ...liveSurfaceTools])].sort();
 
         const report = await auditSurface(affPath, allRegistryTools, org);
         results.push(report);

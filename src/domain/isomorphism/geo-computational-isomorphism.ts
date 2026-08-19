@@ -13,6 +13,8 @@
  */
 
 import * as crypto from "node:crypto";
+import * as fs from "node:fs";
+import { createRequire } from "node:module";
 import {
   type IsomorphismPair,
   type IsomorphismInvariant,
@@ -21,9 +23,15 @@ import {
 
 // ── Helper untuk detect sama ada module tertentu wujud ────────────────
 
+// ESM-safe module resolver (Phase-2 B2 fix, 2026-08-18)
+// Project package.json declares "type": "module" — bare `require` is undefined
+// in ESM context, so previous hasModule silently failed for all witnesses.
+// createRequire(import.meta.url) bridges ESM → CJS resolution.
+const _require = createRequire(import.meta.url);
+
 function hasModule(path: string): boolean {
   try {
-    require.resolve(path);
+    _require.resolve(path);
     return true;
   } catch {
     return false;
@@ -209,9 +217,8 @@ function buildIrreversibilityPairs(): IsomorphismPair[] {
     invariant: "IRREVERSIBILITY",
     description: "Immutable post-mortem — tak boleh diubah selepas ditulis",
     witness: () => {
-      // Check VAULT999 seal chain exists
+      // Check VAULT999 seal chain exists (B2 fix: use top-level fs import)
       try {
-        const fs = require("node:fs");
         const vaultPath = "/root/.local/share/arifos/vault999/seal_chain.jsonl";
         if (fs.existsSync(vaultPath)) {
           const stat = fs.statSync(vaultPath);
@@ -231,8 +238,8 @@ function buildIrreversibilityPairs(): IsomorphismPair[] {
     invariant: "IRREVERSIBILITY",
     description: "Record of what happened during the irreversible phase",
     witness: () => {
+      // B2 fix: use top-level fs import instead of require
       try {
-        const fs = require("node:fs");
         const forgeWork = "/root/A-FORGE/forge_work";
         return fs.existsSync(forgeWork);
       } catch {

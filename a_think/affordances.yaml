@@ -42,26 +42,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-# DEPRECATED 2026-08-08 — audit-metabolism — not present in live MCP registry (T4 verified)
-# Removal candidate; original card preserved for git history. See /root/forge_work/diagnostics/2026-08-08-aforge-patches/06-escalation-report.md
-- name: forge_approve
-  purpose: ACTUATOR [governance/MUTATE] supervised by kernel 888_JUDGE. Refuses approval — A-FORGE cannot self-authorize.
-    Route to arifOS arif_judge_deliberate via forge_ju
-  affordance_class: governance
-  capability_surface: aforge.governance.approve
-  kernel_verb: 888_JUDGE
-  mutation_class: MUTATE
-  reads:
-  - constitution
-  - session
-  writes:
-  - session
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
 - name: forge_security_drift_scan
   purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Production security telemetry — unknown public ports, new
     cron, new systemd/docker vs Machine Constitution registry. (Renamed from forge_boundaries_assert 2026-07-09.)
@@ -402,40 +382,6 @@ tools:
   purpose: ACTUATOR [git/OBSERVE] supervised by kernel 111_OBSERVE. Read a file from GitHub. OBSERVE-class.
   affordance_class: git
   capability_surface: aforge.git.github_get_file
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - repo_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-# DEPRECATED 2026-08-08 — audit-metabolism — superseded by forge_github_search_repos — not in live MCP registry (T4 verified)
-# Removal candidate; original card preserved for git history.
-- name: forge_github_search_code
-  purpose: ACTUATOR [git/OBSERVE] supervised by kernel 111_OBSERVE. Search GitHub code. OBSERVE-class.
-  affordance_class: git
-  capability_surface: aforge.git.github_search_code
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - repo_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-# DEPRECATED 2026-08-08 — audit-metabolism — superseded by forge_github (mode=search) — not in live MCP registry (T4 verified)
-# Removal candidate; original card preserved for git history.
-- name: forge_github_search_repos
-  purpose: ACTUATOR [git/OBSERVE] supervised by kernel 111_OBSERVE. Search GitHub repositories. OBSERVE-class.
-  affordance_class: git
-  capability_surface: aforge.git.github_search_repos
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
   reads:
@@ -1163,15 +1109,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-# DEPRECATED 2026-08-08 — audit-metabolism — superseded by forge_github_create_or_update_file — not in live MCP registry (T4 verified)
-# Removal candidate; original card preserved for git history.
-- name: forge_github_create_pr
-  purpose: ACTUATOR [git/MUTATE] Create GitHub pull request with title, body, head, base, draft flag. Requires lease.
-  category: git
-  authority_ceiling: EXECUTE_HIGH_IMPACT
-  risk_tier: T2
-  reversible: true
-  session_required: true
 # ── SURVIVAL-OF-THE-FITTEST 2026-07-24: missing OBSERVE cards ──
 # These tools were registered in the actionClassifier.ts OBSERVE_TOOLS set
 # but had no affordance card. The aThinkGuard defaulted to ALLOW but
@@ -1218,23 +1155,6 @@ tools:
   mutation_class: OBSERVE
   reads:
   - system_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-# DEPRECATED 2026-08-08 — audit-metabolism — superseded by forge_filesystem(mode=read) — not in live MCP registry (T4 verified)
-# Removal candidate; original card preserved for git history.
-- name: forge_filesystem_read
-  purpose: ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. Read a file or list a directory. Stateless HTTP — no lease, no session required.
-  affordance_class: fs
-  capability_surface: aforge.fs.read
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - filesystem
   writes: []
   external_side_effect: false
   destructive: false
@@ -1403,6 +1323,8 @@ tools:
   capability_surface: aforge.google_workspace.calendar
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
+  deprecated: true
+  deprecated_reason: "Not registered in live MCP — apa-calendar-bridge not deployed"
   reads:
   - tools
   - system_state
@@ -1488,6 +1410,8 @@ tools:
   capability_surface: aforge.google_workspace.drive
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
+  deprecated: true
+  deprecated_reason: "Not registered in live MCP — apa-drive-bridge not deployed"
   reads:
   - tools
   - system_state
@@ -1593,6 +1517,8 @@ tools:
   capability_surface: aforge.google_workspace.gmail
   kernel_verb: 777_FORGE
   mutation_class: MUTATE
+  deprecated: true
+  deprecated_reason: "Not registered in live MCP — apa-gmail-bridge not deployed"
   reads:
   - tools
   - system_state
@@ -1888,6 +1814,8 @@ tools:
   capability_surface: aforge.google_workspace.sheets
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
+  deprecated: true
+  deprecated_reason: "Not registered in live MCP — apa-sheets-bridge not deployed"
   reads:
   - tools
   - system_state
@@ -2040,3 +1968,39 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
+
+# ── 2026-08-18: B3 cleanup — added missing live MCP entries ──────────────
+
+- name: forge_whoami
+  purpose: "ACTUATOR [identity/OBSERVE] supervised by kernel 111_OBSERVE. A-FORGE dual-era proxy identity. Returns migration status and protocol info. Read-only."
+  affordance_class: meta
+  capability_surface: aforge.meta.whoami
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - server_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_proxy_call
+  purpose: "ACTUATOR [execute/MUTATE] Forward an MCP tool call to the v1 A-FORGE server at :7072/mcp. Phase 1b proxy for dual-era compatibility. SESSION+LEASE gated per constitutional policy."
+  affordance_class: execute
+  capability_surface: aforge.execute.proxy_call
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - session
+  - lease
+  writes:
+  - v1_proxy_log
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R2
