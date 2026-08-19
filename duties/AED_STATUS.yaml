@@ -4,10 +4,13 @@
 
 id: aed-v1
 kind: deprecated_runtime_identity
-status: deprecated
-replacement: rgb.red.adversarial_fixture
-runtime_identity: false
-production_telemetry: excluded   # HOLD — timer still enabled; F13 required to stop ingest
+status: hold_for_sequencing
+# Do NOT collapse into rgb.red.adversarial_fixture until actor_class is honest.
+# Collision: FQ Actor Classes v2.0.0 (2026-07-30) classifies aed-v1 as sensor;
+# live 2026-08-19 is 13E/0V EXECUTION DOMINANCE; aed.py also logs T2 restarts.
+replacement: pending_class_declaration  # not rgb.red.adversarial_fixture
+runtime_identity: true_until_F13  # timer still fires
+production_telemetry: still_ingesting   # HOLD — do not exclude until class + dual-run
 historical_records: preserved
 deletion: prohibited_until_migration_verified
 observed_2026-08-19:
