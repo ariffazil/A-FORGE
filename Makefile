@@ -13,11 +13,17 @@ deploy: build
 		echo "F1 AMANAH — hot-patching dist/ is BLACKLISTED. Clean build required."; \
 		echo "Run: make clean && make build"; \
 		exit 1; \
-	fi; \
+	fi
 	@GIT_SHA=$$(git rev-parse --short HEAD); \
 	echo "$$GIT_SHA" > /root/A-FORGE/.git_commit; \
 	echo "$$GIT_SHA" > /root/A-FORGE/dist/build-commit.txt; \
 	rsync -av --delete dist/ /opt/a-forge/app/dist/; \
+	echo "$$GIT_SHA" > /opt/a-forge/app/.git_commit; \
+	echo "$$GIT_SHA" > /opt/a-forge/app/dist/build-commit.txt; \
+	systemctl restart a-forge-mcp.service; \
+	sleep 3; \
+	curl -sf http://127.0.0.1:7071/health >/dev/null && echo "✅ A-FORGE :7071 healthy" || echo "❌ A-FORGE :7071 down"; \
+	curl -sf http://127.0.0.1:7072/health >/dev/null && echo "✅ A-FORGE :7072 healthy" || echo "❌ A-FORGE :7072 down"
 
 deploy-local: verify
 	@echo "═══ A-FORGE deploy-local (no rsync to /opt/) ═══"
