@@ -391,7 +391,7 @@ export async function handleForgeSearch(args: any) {
   if (synthesize && results.length > 0) {
     try {
       const { flameSynthesizeSearch } = await import("../../tools/flameClient.js");
-      flame = await flameSynthesizeSearch(query, results, "brave");
+      flame = await flameSynthesizeSearch(query, results, search.provider);
     } catch (e: any) {
       console.warn(`[forge_search] FLAME synthesis unavailable: ${e.message ?? e}`);
     }
