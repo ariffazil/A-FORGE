@@ -20,6 +20,8 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 
+const PROTOCOL_VERSION = process.env.MCP_PROTOCOL_VERSION || "2025-06-18";
+
 import { server } from "./core.js";
 import { getConstitutionGate, CONSTITUTION_GATE } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
@@ -567,7 +569,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
         const now = Date.now();
         res.writeHead(200, {
           "Content-Type": "application/json",
-          "MCP-Protocol-Version": "2025-11-25",
+          "MCP-Protocol-Version": PROTOCOL_VERSION,
         });
         res.end(JSON.stringify({
           ok: true,
@@ -597,12 +599,12 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
         if (req.method === "GET") {
           res.writeHead(200, {
             "Content-Type": "application/json",
-            "MCP-Protocol-Version": "2025-11-25",
+            "MCP-Protocol-Version": PROTOCOL_VERSION,
           });
           res.end(JSON.stringify({
             name: "A-FORGE-MCP",
             version: "0.1.0",
-            protocolVersion: "2025-11-25",
+            protocolVersion: PROTOCOL_VERSION,
             transport: "streamable-http",
             authentication: "none",
             note: "No API key, no OAuth, no token. Open MCP endpoint.",
@@ -663,7 +665,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           }
 
           // First no-session client gets a real SDK-managed MCP session.
-          res.setHeader("MCP-Protocol-Version", "2025-11-25");
+          res.setHeader("MCP-Protocol-Version", PROTOCOL_VERSION);
           if (!transport) {
             transport = new StreamableHTTPServerTransport({
               sessionIdGenerator: () => randomUUID(),
@@ -702,7 +704,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             // emit notifications/tools/list_changed to clients (we don't; poll tools/list).
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(jsonRpcResult(msgId, {
-              protocolVersion: "2025-11-25",
+              protocolVersion: PROTOCOL_VERSION,
               capabilities: {
                 tools: {},
                 resources: { listChanged: false },
@@ -1451,7 +1453,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
 
         // DELETE — session cleanup
         if (req.method === "DELETE") {
-          res.setHeader("MCP-Protocol-Version", "2025-11-25");
+          res.setHeader("MCP-Protocol-Version", PROTOCOL_VERSION);
           if (transport && connected) {
             try {
               await transport.handleRequest(req, res);

@@ -25,6 +25,8 @@ import {
   type DriftEvent,
 } from "../../domain/governance/mcp-surface-guard.js";
 
+const PROTOCOL_VERSION = process.env.MCP_PROTOCOL_VERSION || "2025-06-18";
+
 /**
  * Register the forge_surface_guard MCP tool.
  */
@@ -132,14 +134,14 @@ export function registerSurfaceGuardTools(server: McpServer): void {
               headers: {
                 "Content-Type": "application/json",
                 Accept: "application/json, text/event-stream",
-                "MCP-Protocol-Version": "2025-11-25",
+                "MCP-Protocol-Version": PROTOCOL_VERSION,
               },
               body: JSON.stringify({
                 jsonrpc: "2.0",
                 id: 1,
                 method: "initialize",
                 params: {
-                  protocolVersion: "2025-11-25",
+                  protocolVersion: PROTOCOL_VERSION,
                   capabilities: {},
                   clientInfo: { name: "surface-guard-pin", version: "1.0.0" },
                 },
@@ -178,7 +180,7 @@ export function registerSurfaceGuardTools(server: McpServer): void {
             const headers: Record<string, string> = {
               "Content-Type": "application/json",
               Accept: "application/json, text/event-stream",
-              "MCP-Protocol-Version": "2025-11-25",
+              "MCP-Protocol-Version": PROTOCOL_VERSION,
             };
             if (sessionId) headers["Mcp-Session-Id"] = sessionId;
 

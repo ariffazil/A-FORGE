@@ -17,6 +17,8 @@
 
 import * as crypto from 'crypto';
 
+const PROTOCOL_VERSION = process.env.MCP_PROTOCOL_VERSION || "2025-06-18";
+
 // ─── Types ─────────────────────────────────────────────────────────
 
 export interface ToolFingerprint {
@@ -444,7 +446,7 @@ async function fetchOrganTools(
     id: 1,
     method: 'initialize',
     params: {
-      protocolVersion: '2025-11-25',
+      protocolVersion: PROTOCOL_VERSION,
       capabilities: {},
       clientInfo: { name: 'surface-guard', version: '1.0.0' },
     },
@@ -457,7 +459,7 @@ async function fetchOrganTools(
     headers: {
       'Content-Type': 'application/json',
       Accept: 'application/json, text/event-stream',
-      'MCP-Protocol-Version': '2025-11-25',
+      'MCP-Protocol-Version': PROTOCOL_VERSION,
     },
     body: JSON.stringify(initBody),
     signal: AbortSignal.timeout(timeoutMs),
@@ -498,7 +500,7 @@ async function fetchOrganTools(
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: 'application/json, text/event-stream',
-    'MCP-Protocol-Version': '2025-11-25',
+    'MCP-Protocol-Version': PROTOCOL_VERSION,
   };
   if (sessionId) headers['Mcp-Session-Id'] = sessionId;
 
