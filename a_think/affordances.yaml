@@ -163,7 +163,7 @@ tools:
   min_mode: GOVERN
   risk_label: R3
 - name: forge_telegram_send
-  purpose: ACTUATOR [chat/MUTATE] supervised by kernel 777_FORGE. Send a Telegram message via Bot API. Backed by arif_telegram_send (arifOS MCP :8088, internal_canonical). Hermes-only caller scope (HERMES_SESSION_KEY). F1 AMANAH: first call per session requires explicit ack_irreversible=true. Telegram messages are irreversible post-delivery. C5_IRREVERSIBLE.
+  purpose: "ACTUATOR [chat/MUTATE] supervised by kernel 777_FORGE. Send a Telegram message via Bot API. Backed by arif_telegram_send (arifOS MCP :8088, internal_canonical). Hermes-only caller scope (HERMES_SESSION_KEY). F1 AMANAH: first call per session requires explicit ack_irreversible=true. Telegram messages are irreversible post-delivery. C5_IRREVERSIBLE."
   affordance_class: chat
   capability_surface: aforge.chat.telegram_send
   kernel_verb: 777_FORGE
