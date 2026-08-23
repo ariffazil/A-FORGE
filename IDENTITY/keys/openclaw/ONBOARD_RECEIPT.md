@@ -3,7 +3,7 @@
 | Item | Value |
 |------|-------|
 | Agent ID | openclaw (alias 333-AGI) |
-| Fingerprint (SPKI) | sha256:5eef4f66c26a8d61808c3e782c89e4468b489d5a245cd11070d31d4e79ae10e3 |
+| Fingerprint (SPKI) | sha256:aa1e1da7e3a0d01443ad36075b9182a8ca98bc63770f393e6c5cae8321a7c29c (device.json canonical, reconciled 2026-08-23) |
 | Public key | /root/A-FORGE/IDENTITY/keys/openclaw/openclaw_ed25519_public.pem |
 | Private key | openclaw_ed25519_private.pem (mode 600) |
 | Commission keys | /root/.local/share/arifos/agent_keys/openclaw.pem + 333-AGI.pem |
