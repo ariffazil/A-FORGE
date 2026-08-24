@@ -10,7 +10,7 @@ This reuses the production-grade "ears" (40+ STT tests upstream) rather than
 reimplementing ASR. Emits transcript tagged [OBS] — measurement, not inference.
 
 Hermes route (preferred):
-  /root/hermes-agent-dev/tools/transcription_tools.py :: transcribe_audio()
+  /usr/local/lib/hermes-agent/tools/transcription_tools.py :: transcribe_audio()
 
 Fallback (no agent-dev import / not on HERMES_HOME):
   POST {stt_openai_base}/audio/transcriptions with whisper-1
@@ -35,7 +35,7 @@ from typing import Any, Dict, Optional
 def _try_hermes_transcribe(path: str) -> Optional[Dict[str, Any]]:
     """Use Hermes' own STT pipeline if importable — preserves provider config."""
     try:
-        sys.path.insert(0, "/root/hermes-agent-dev")
+        sys.path.insert(0, os.environ.get("HERMES_AGENT_ROOT", "/usr/local/lib/hermes-agent"))
         from tools import transcription_tools as tt
         if not hasattr(tt, "transcribe_audio"):
             return None

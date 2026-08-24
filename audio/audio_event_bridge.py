@@ -2,7 +2,7 @@
 """
 audio_event_bridge.py — Hermes ↔ A-FORGE AudioEvent bridge (Layer 3, non-core).
 
-Sits in A-FORGE (NOT hermes-agent-dev core) so it survives upstream sync.
+Sits in A-FORGE (NOT hermes-agent core) so it survives upstream sync.
 Invoked as a subprocess by Hermes plugins/hooks — never imported into the
 agent core. Keeps Qdrant / STT / parselmouth out of the upstream tree
 (per Hermes AGENTS.md: "third-party backends do NOT land under plugins/").
