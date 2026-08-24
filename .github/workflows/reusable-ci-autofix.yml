@@ -270,7 +270,7 @@ jobs:
           FEDEOF
 
       - name: Create Autofix PR
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "[REPAIR] autofix: generate FEDERATION.md for ${{ inputs.organ }} — CI autofix"
           title: "🤖 [AUTOFIX] FEDERATION.md — ${{ inputs.organ }} CI heal"
@@ -321,7 +321,7 @@ jobs:
           uv run python scripts/sync_kernel_abi.py --check
 
       - name: Create Autofix PR
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "[REPAIR] autofix: regenerate ABI surface files — CI autofix"
           title: "🤖 [AUTOFIX] Kernel ABI drift — ${{ inputs.organ }} surface sync"
@@ -367,7 +367,7 @@ jobs:
           fi
 
       - name: Create Autofix PR
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: "[REPAIR] autofix: format/lint — CI autofix"
           title: "🤖 [AUTOFIX] Format/Lint — ${{ inputs.organ }} auto-format"
