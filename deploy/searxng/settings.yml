@@ -7,7 +7,7 @@ server:
   secret_key: "0eb4ed5dc2fcfa6829d9b1991e33d7f1f5726fadf41f4ebb8995d7bc881173f5"
   bind_address: "0.0.0.0"
   port: 8080
-  limiter: false
+  limiter: true
   image_proxy: true
 
 search:
