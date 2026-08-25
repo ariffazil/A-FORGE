@@ -1,16 +1,3 @@
-<!-- SOT-MANIFEST
-federation_release: v2026.08.25
-last_verified: 2026-08-25T04:30:00Z
-live_commit: 66476e22 (chore(wrap): federation alignment registry stamp + surfaceAudit arifos organ enum)
-live_port: 7072 (healthy — stateless MCP 2026-07-28, 114 tools live-witnessed 2026-08-25)
-sense_port: 7071 (healthy)
-tools_exposed_via_mcp: 114 (live-witnessed 2026-08-25 via forge.arif-fazil.com/mcp tools/list — beats any prose count)
-authority_ceiling: 777_FORGE (execution only — never adjudicate)
-act_ingress: HMAC-SHA256 verified, FI alias map complete (qwen/kimi short forms 2026-08-14)
-owner_summary: GREEN (mcp_gateway_healthy, act_bridge cross-organ bind PASS, deployment_drift: false)
-truth_rule: MCP tools/list on :7072 beats any static count in prose
-infra_organs: arifFlow:7073 METABOLISM, FED:7074 ADVISORY, FLAME:18901 ADVISORY, FRAME:frame-organ.service OBSERVE
--->
 # A-FORGE
 
 ## Execute only what has been authorized.
@@ -122,7 +109,3 @@ Promotion notes (audit 2026-08-25):
 3. SOT-MANIFEST comment block at top of current README: keep (it is machine-read), but verify every claim inside it on promotion.
 4. Single Mermaid only. This one. Delete the ladder diagram from the fold; ladder belongs in docs/.
 -->
-
----
-
-Full reference preserved: [docs/README-FULL.md](./docs/README-FULL.md) — 000–999 ladder detail, Eureka principles, CI governance, denylists, tool inventories live there.
