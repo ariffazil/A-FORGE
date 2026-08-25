@@ -88,6 +88,13 @@ export interface WmMetadata {
   wm_priority: WmPriority;
   /** Prediction gap: delta between expected and actual observation */
   prediction_gap?: number;
+  /**
+   * Explicit evidence gap: what evidence was not supplied or admitted.
+   * - "none" means a prediction was supplied.
+   * - "not_provided" means the caller omitted expected_output.
+   * - "explicit_abstention" means the caller used the no-prediction sentinel.
+   */
+  evidence_gap?: string;
   /** Timestamp of the observation */
   observed_at: string;
   /** Tool name that produced this observation */
@@ -319,6 +326,11 @@ export function buildWmMetadata(input: WmMetadataInput): WmMetadata {
   const normalizedPrediction = normalizePrediction(predictedObservation);
   const surprise = computeSurpriseScore(normalizedPrediction, observation);
   const predictionGap = computePredictionGap(normalizedPrediction, observation);
+  const evidenceGap = predictedObservation === null
+    ? "not_provided"
+    : predictedObservation === NO_PREDICTION_SENTINEL
+      ? "explicit_abstention"
+      : "none";
 
   return {
     action_hash: actionHash,
@@ -329,6 +341,7 @@ export function buildWmMetadata(input: WmMetadataInput): WmMetadata {
     wm_eligible: eligible,
     wm_priority: priority,
     prediction_gap: predictionGap >= 0 ? Math.round(predictionGap * 1000) / 1000 : undefined,
+    evidence_gap: evidenceGap,
     observed_at: new Date().toISOString(),
     tool,
   };

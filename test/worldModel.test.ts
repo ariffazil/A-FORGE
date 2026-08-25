@@ -442,6 +442,7 @@ describe("buildWmMetadata (integration)", () => {
     assert.equal(meta.agent_confidence, 0.8);
     assert.equal(meta.surprise_score, 0); // perfect match
     assert.equal(meta.prediction_gap, 0);
+    assert.equal(meta.evidence_gap, "none");
   });
 
   it("uses default confidence 0.5 when not provided", () => {
@@ -451,6 +452,7 @@ describe("buildWmMetadata (integration)", () => {
       observation: "output",
     });
     assert.equal(meta.agent_confidence, 0.5);
+    assert.equal(meta.evidence_gap, "not_provided");
   });
 
   it("surprise_score is rounded to 3 decimal places", () => {

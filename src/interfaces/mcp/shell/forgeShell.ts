@@ -31,7 +31,7 @@ import { checkModificationIntent, isGodelLocked } from "./godelLock.js";
 import { classifyShellCommand, type ActionClass } from "../../../domain/governance/execution-authority.js";
 import { classifyUnknown, isStructuredError } from "../../../domain/governance/error-classifier.js";
 import { buildWmMetadata, hashAction, NO_PREDICTION_SENTINEL, normalizePrediction, type WmMetadata } from "../../../domain/governance/worldModel.js";
-import { logTrajectory } from "../../../domain/governance/worldModelLogger.js";
+import { logPrediction, logTrajectory } from "../../../domain/governance/worldModelLogger.js";
 import { Memory, Epistemic, enrichResult } from "../../../domain/governance/epistemic-signal.js";
 import { callMCP } from "../client.js";
 import {
@@ -1034,6 +1034,29 @@ export function registerShellTools(server: McpServer): void {
         predictedObservation: resolvedPrediction,
         exitCode: result.exitCode,
       }).catch(err => console.error(`[forge_shell] WM log error: ${err.message}`));
+
+      // Prediction is recorded separately so arifFlow can measure the
+      // predicted stdout against the observed result independently of the
+      // trajectory's hash-chain record.
+      if (resolvedPrediction !== null) {
+        const actionHash = SHA256(JSON.stringify({ command, cwd: safeCwd }));
+        logPrediction(
+          "forge_shell",
+          actionHash,
+          resolvedPrediction,
+          combinedOutput,
+        ).catch((err: unknown) => console.error(`[forge_shell] prediction log error: ${err instanceof Error ? err.message : String(err)}`));
+      } else if (expected_output === NO_PREDICTION_SENTINEL) {
+        // Explicit abstention is telemetry too: it is not silently treated as a
+        // prediction and should be visible to arifFlow's calibration metric.
+        const actionHash = SHA256(JSON.stringify({ command, cwd: safeCwd }));
+        logPrediction(
+          "forge_shell",
+          actionHash,
+          NO_PREDICTION_SENTINEL,
+          combinedOutput,
+        ).catch((err: unknown) => console.error(`[forge_shell] abstention log error: ${err instanceof Error ? err.message : String(err)}`));
+      }
 
       // ── Step 3: ArifSeal (hash-chain audit) ──
       const sealer = getDefaultArifSeal();

@@ -29,6 +29,7 @@ interface NormalizedRecord {
   observation_entropy: number;
   wm_eligible: boolean;
   prediction_gap: number | null;
+  evidence_gap: string;
 }
 
 function normalizeRecord(r: Record<string, unknown>): NormalizedRecord {
@@ -43,6 +44,7 @@ function normalizeRecord(r: Record<string, unknown>): NormalizedRecord {
       observation_entropy: (wm["observation_entropy"] as number) ?? 0,
       wm_eligible: (wm["wm_eligible"] as boolean) ?? false,
       prediction_gap: null,
+      evidence_gap: String(wm["evidence_gap"] ?? "unknown"),
     };
   }
   return {
@@ -54,6 +56,7 @@ function normalizeRecord(r: Record<string, unknown>): NormalizedRecord {
     observation_entropy: (r["observation_entropy"] as number) ?? 0,
     wm_eligible: (r["wm_eligible"] as boolean) ?? false,
     prediction_gap: (r["prediction_gap"] as number) ?? null,
+    evidence_gap: String(r["evidence_gap"] ?? "unknown"),
   };
 }
 

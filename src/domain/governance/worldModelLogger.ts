@@ -87,6 +87,7 @@ export interface TrajectoryLogEntry {
   surprise_score: number;
   observation_entropy: number;
   prediction_gap?: number;
+  evidence_gap?: string;
   exit_code?: number | null;
   prev_hash: string;
   hash: string;
@@ -115,6 +116,7 @@ export async function logTrajectory(input: WmMetadataInput): Promise<TrajectoryL
     surprise_score: meta.surprise_score,
     observation_entropy: meta.observation_entropy,
     prediction_gap: meta.prediction_gap,
+    evidence_gap: meta.evidence_gap,
     exit_code: (input as any).exitCode ?? null,
     prev_hash: trajectoryPrevHash,
   };
@@ -300,6 +302,7 @@ async function _forwardTrajectoryToArifFlow(entry: TrajectoryLogEntry): Promise<
           wm_priority: entry.wm_priority,
           surprise_score: entry.surprise_score,
           prediction_gap: entry.prediction_gap,
+          evidence_gap: entry.evidence_gap,
           agent_confidence: entry.agent_confidence,
           seq: entry.seq,
         },

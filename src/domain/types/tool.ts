@@ -59,5 +59,6 @@ export type ToolResult = {
     observation_entropy: number;
     surprise_score: number;
     wm_eligible: boolean;
+    evidence_gap?: string;
   };
 };
