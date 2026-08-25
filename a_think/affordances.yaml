@@ -1321,10 +1321,9 @@ tools:
   purpose: "Google Calendar — list upcoming events, create events. Mutations gated by arif_judge. Timezone: Asia/Kuala_Lumpur."
   affordance_class: google_workspace
   capability_surface: aforge.google_workspace.calendar
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  deprecated: true
-  deprecated_reason: "Not registered in live MCP — apa-calendar-bridge not deployed"
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  # FFF survival verdict 2026-08-25: G=0.7175 SILVER tier — RESURRECTED (was deprecated, fitness says fit)
   reads:
   - tools
   - system_state
@@ -1410,8 +1409,7 @@ tools:
   capability_surface: aforge.google_workspace.drive
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
-  deprecated: true
-  deprecated_reason: "Not registered in live MCP — apa-drive-bridge not deployed"
+  # FFF survival verdict 2026-08-25: G=0.7175 SILVER tier — RESURRECTED (was deprecated, fitness says fit)
   reads:
   - tools
   - system_state
@@ -1516,9 +1514,8 @@ tools:
   affordance_class: google_workspace
   capability_surface: aforge.google_workspace.gmail
   kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  deprecated: true
-  deprecated_reason: "Not registered in live MCP — apa-gmail-bridge not deployed"
+  mutation_class: IRREVERSIBLE  # gmail.send is IRREVERSIBLE — F13-gated
+  # FFF survival verdict 2026-08-25: G=0.7175 SILVER tier — RESURRECTED (was deprecated, fitness says fit)
   reads:
   - tools
   - system_state
@@ -1812,10 +1809,9 @@ tools:
   purpose: "Google Sheets — read cell values (A1 notation, not rendering), append rows. Mutations gated by arif_judge. CELL-LEVEL reads with structured rowCount + range echo."
   affordance_class: google_workspace
   capability_surface: aforge.google_workspace.sheets
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  deprecated: true
-  deprecated_reason: "Not registered in live MCP — apa-sheets-bridge not deployed"
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  # FFF survival verdict 2026-08-25: G=0.7175 SILVER tier — RESURRECTED (was deprecated, fitness says fit)
   reads:
   - tools
   - system_state
@@ -2004,3 +2000,62 @@ tools:
   requires_human_approval: false
   min_mode: GOVERN
   risk_label: R2
+
+# ── 2026-08-25: FFF survival audit — added 2 missing live MCP entries ──────
+
+- name: forge_compose
+  purpose: "ACTUATOR · meta · MUTATE. Composition Bus — orchestrate multi-tool execution across MCP servers. 4 patterns: sequential, parallel, conditional, loop. Each step produces a receipt. DAG-based resolution with cycle detection. F1/F2/F4/F11 constitutional."
+  affordance_class: meta
+  capability_surface: aforge.meta.compose
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - tools
+  - session
+  - lease
+  writes:
+  - external_state
+  - receipts
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R2
+
+- name: forge_trust_score
+  purpose: "ACTUATOR · governance · OBSERVE. Trust scoring engine for external MCP servers. Scores on 5 dimensions (identity, uptime, auditability, mutation_risk, witnessability), maps to bands (ALLOW/LIMITED/HOLD/DENY), and gates access. F2/F7/F11/F13 constitutional."
+  affordance_class: governance
+  capability_surface: aforge.governance.trust_score
+  kernel_verb: 666_JUDGE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  - federation
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+# ── 2026-08-25: FFF survival audit + Gemini bridge ────────────────────────────
+
+- name: forge_gemini
+  purpose: "ACTUATOR · meta · OBSERVE/MUTATE. Gemini AI Studio direct bridge. 4 verbs: generate, chat, models, health. Default model gemini-3.6-flash. Bridge listens 127.0.0.1:18092. Auth: bearer-style HTTP header."
+  affordance_class: meta
+  capability_surface: aforge.meta.gemini
+  kernel_verb: 333_THINK
+  mutation_class: MUTATE
+  reads:
+  - prompts
+  - tools
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1

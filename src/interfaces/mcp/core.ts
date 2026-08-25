@@ -92,6 +92,7 @@ import { registerRuntimeVerifyTool } from "./runtimeVerify.js";
 import { registerEphemeralTools } from "./ephemeralTools.js";
 import { registerWebZenTools } from "./webZenTools.js";
 import { registerGoogleWorkspaceTools } from "../../capabilities/google-workspace/forgeGoogleWorkspace.js";
+import { registerGeminiTools } from "../../capabilities/gemini/forgeGemini.js";
 import { ArifSeal, getDefaultArifSeal } from "./shell/arifSeal.js";
 import { elicitUser, tradeConfirmationSchema, isGenuineAuthorization } from "./elicitation.js";
 import {
@@ -3020,6 +3021,9 @@ registerSurfaceAuditTools(server);
 
   // ── Google Workspace removed from active MCP surface per Phase 2 ZEN Sweep ──
   // registerGoogleWorkspaceTools(server);
+
+  // ── Gemini (forge-777 2026-08-25 F13 directive — independent of Workspace ZEN Sweep) ──
+  registerGeminiTools(server);
 
 // ── Prediction Bridge (pre-action simulation for GEOX/WEALTH) ──────────────
 // forge_predict: called BEFORE forge_execute for domain actions.
