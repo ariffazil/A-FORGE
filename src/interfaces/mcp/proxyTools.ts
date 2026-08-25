@@ -6,6 +6,7 @@ import { gitRemotePreflight, type RemotePreflightResult } from "../../domain/gov
 import { classifyUnknown, isStructuredError } from "../../domain/governance/error-classifier.js";
 import { Memory, Epistemic } from "../../domain/governance/epistemic-signal.js";
 import { readFile, writeFile, readdir, stat, mkdir, rename, rm, cp } from "node:fs/promises";
+import { readFileSync } from "node:fs";
 import { resolve, join, relative, basename } from "node:path";
 import { globSync } from "glob";
 import { JSDOM } from "jsdom";
@@ -13,6 +14,7 @@ import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
 import { registerLatentTrigger } from "../../infrastructure/causality/latentTriggerRegistry.js";
 import { validateAndResolve, type EgressProfileName } from "../../infrastructure/egress/EgressPolicy.js";
+import { SupabaseVaultClient } from "../../infrastructure/vault/SupabaseVaultClient.js";
 
 const ALLOWED_ROOTS = ["/root", "/tmp", "/data", "/var/log"];
 
@@ -710,8 +712,69 @@ export function registerPostgresTools(server: McpServer): void {
 }
 
 export function registerMemoryTools(server: McpServer): void {
+  const QDRANT_URL = "http://localhost:6333";
+  const QDRANT_COLLECTIONS = ["arifos_memory", "arifos_session_memory", "arifos_precedent"];
+  const CAPABILITY_REGISTRY_PATH = "/root/.config/capability_registry.json";
+
+  function matchesQuery(text: string, queryLower: string): boolean {
+    if (queryLower === "*" || queryLower === "") return true;
+    const textLower = text.toLowerCase();
+    if (textLower.includes(queryLower)) return true;
+    const words = queryLower.split(/\s+/).filter(w => w.length > 2);
+    if (words.length < 2) return false;
+    return words.every(w => {
+      if (textLower.includes(w)) return true;
+      const stem = w.slice(0, Math.max(4, Math.floor(w.length * 0.7)));
+      return textLower.includes(stem);
+    });
+  }
+
+  async function searchQdrant(query: string, limit: number): Promise<Array<Record<string, unknown>>> {
+    const queryLower = query.toLowerCase();
+    const results: Array<Record<string, unknown>> = [];
+    for (const coll of QDRANT_COLLECTIONS) {
+      try {
+        const resp = await fetch(`${QDRANT_URL}/collections/${coll}/points/scroll`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ limit: Math.min(limit * 3, 200), with_payload: true, with_vector: false }),
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!resp.ok) continue;
+        const data = await resp.json() as any;
+        for (const p of (data?.result?.points || [])) {
+          const payload = p.payload || {};
+          const text = payload.text || payload.content || payload.subject || JSON.stringify(payload);
+          if (matchesQuery(text, queryLower)) {
+            results.push({ id: p.id, collection: coll, ...payload });
+            if (results.length >= limit) return results;
+          }
+        }
+      } catch { /* skip collection */ }
+    }
+    return results;
+  }
+
+  function searchCapabilities(query: string): Array<Record<string, unknown>> {
+    try {
+      const reg = JSON.parse(readFileSync(CAPABILITY_REGISTRY_PATH, "utf-8"));
+      const queryLower = query.toLowerCase();
+      const results: Array<Record<string, unknown>> = [];
+      for (const [name, entry] of Object.entries(reg)) {
+        if (name === "_meta" || typeof entry !== "object" || !entry) continue;
+        const e = entry as Record<string, unknown>;
+        const intents = (e.intent as string[]) || [];
+        const searchable = [name, ...intents, JSON.stringify(e)].join(" ");
+        if (matchesQuery(searchable, queryLower)) {
+          results.push({ capability: name, ...e });
+        }
+      }
+      return results;
+    } catch { return []; }
+  }
+
   server.registerTool("forge_memory", {
-    description: "Canonical memory primitive — recall past vault entries.",
+    description: "Canonical memory primitive — recall from L3 semantic layer (Qdrant vectors + capability registry) with Supabase vault fallback.",
     inputSchema: z.object({
       mode: z.enum(["recall"]).default("recall"),
       query: z.string(),
@@ -720,30 +783,26 @@ export function registerMemoryTools(server: McpServer): void {
   }, async ({ query, limit }) => {
     try {
       const safeLimit = Math.min(limit, 50);
-      const result = execSync(`ls -t /root/arifOS/VAULT999/*.jsonl 2>/dev/null | head -${safeLimit}`, { encoding: "utf-8", timeout: 5000 });
-      const files = result.split("\n").filter(Boolean);
-      const entries: Array<Record<string, unknown>> = [];
-      const queryLower = query.toLowerCase();
-      for (const f of files) {
+      const [qdrantResults, capabilities] = await Promise.all([
+        searchQdrant(query, safeLimit),
+        Promise.resolve(searchCapabilities(query)),
+      ]);
+      const sources: string[] = [];
+      if (qdrantResults.length > 0) sources.push("qdrant");
+      if (capabilities.length > 0) sources.push("capability_registry");
+      if (qdrantResults.length === 0 && capabilities.length === 0) {
         try {
-          const content = execSync(`tail -20 "${f}"`, { encoding: "utf-8", timeout: 3000 });
-          for (const line of content.split("\n").filter(Boolean)) {
-            try {
-              const entry = JSON.parse(line);
-              if (queryLower === "*" || JSON.stringify(entry).toLowerCase().includes(queryLower)) entries.push({ file: f, entry });
-              if (entries.length >= safeLimit) break;
-            } catch { /* skip */ }
-          }
-          if (entries.length >= safeLimit) break;
-        } catch { /* skip */ }
+          const sbClient = new SupabaseVaultClient();
+          const records = await sbClient.list(undefined, safeLimit);
+          const ql = query.toLowerCase();
+          const matched = records
+            .filter(r => matchesQuery(JSON.stringify(r), ql))
+            .map(r => ({ name: r.name, category: r.category, value: r.value, created_at: r.created_at }));
+          if (matched.length > 0) sources.push("supabase");
+          return text({ status: "ok", query, count: matched.length, results: matched, source: sources.join("+") || "none" });
+        } catch { /* fall through */ }
       }
-      if (entries.length > 0) return text({ status: "ok", query, count: entries.length, results: entries });
-      try {
-        const resp = await fetch(`http://127.0.0.1:8100/api/vault/search?q=${encodeURIComponent(query)}&limit=${safeLimit}`, { signal: AbortSignal.timeout(5000) });
-        return text(await resp.json());
-      } catch {
-        return text({ status: "ok", query, count: 0, results: [], note: "No matches in VAULT999 local files; vault999-api unavailable" });
-      }
+      return text({ status: "ok", query, count: qdrantResults.length + capabilities.length, qdrant: qdrantResults, capabilities, source: sources.join("+") || "none" });
     } catch (err: any) {
       return text(`Error: ${err.message}`, true);
     }
