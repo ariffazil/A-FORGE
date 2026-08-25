@@ -1,16 +1,19 @@
 <!-- SOT-MANIFEST
 federation_release: v2026.08.25
 last_verified: 2026-08-25T04:30:00Z
-live_commit: 66476e22 (chore(wrap): federation alignment registry stamp + surfaceAudit arifos organ enum)
-live_port: 7072 (healthy — stateless MCP 2026-07-28, 114 tools live-witnessed 2026-08-25)
+live_commit: 47c679fa (chore(zen): remove README_SKELETON.md)
+source_commit: 0fc9195 (aligned: source = built = deployed)
 sense_port: 7071 (healthy)
-tools_exposed_via_mcp: 114 (live-witnessed 2026-08-25 via forge.arif-fazil.com/mcp tools/list — beats any prose count)
+forge_port: 7072 (healthy)
+tools_live: 114 (live-witnessed 2026-08-25 via :7072/health — beats any static count in prose)
 authority_ceiling: 777_FORGE (execution only — never adjudicate)
-act_ingress: HMAC-SHA256 verified, FI alias map complete (qwen/kimi short forms 2026-08-14)
-owner_summary: GREEN (mcp_gateway_healthy, act_bridge cross-organ bind PASS, deployment_drift: false)
+act_ingress: HMAC-SHA256 verified, FI alias map complete
+owner_summary: GREEN (mcp_gateway_healthy, identity_present, deployment_drift: false)
 truth_rule: MCP tools/list on :7072 beats any static count in prose
-infra_organs: arifFlow:7073 METABOLISM, FED:7074 ADVISORY, FLAME:18901 ADVISORY, FRAME:frame-organ.service OBSERVE
+infra_organs: arifFlow:7073 METABOLISM, FED:7074 ADVISORY, FLAME:18901 ADVISORY, FRAME:frame-organ OBSERVE
+readme_note: ZEN first-fold — full technical README preserved at docs/README-FULL.md
 -->
+
 # A-FORGE
 
 ## Execute only what has been authorized.
@@ -18,12 +21,11 @@ infra_organs: arifFlow:7073 METABOLISM, FED:7074 ADVISORY, FLAME:18901 ADVISORY,
 The governed execution shell of the arifOS Federation.
 
 A-FORGE is the hands.
-
 It executes.
 It never judges.
 It never self-authorizes.
 
-DITEMPA BUKAN DIBERI.
+**DITEMPA BUKAN DIBERI** — Forged, Not Given.
 
 ---
 
@@ -71,20 +73,6 @@ Request: "deploy approved release"
                      → VAULT999
 ```
 
-Witnessed example (live, 2026-08-25 11:45 MYT):
-
-```json
-{
-  "schema": "arif-sites.deploy-receipt.v1",
-  "site": "arif-fazil.com",
-  "deploy_tag": "20260825T034508317886476Z",
-  "status": "live",
-  "source_commit": "9090ff5",
-  "backup_path": "/root/forge_work/deployments/arif-fazil.com/20260825T034508317886476Z/previous",
-  "probe": { "url": "https://arif-fazil.com/", "code": "200", "ok": true }
-}
-```
-
 ## Architecture in one sentence
 
 **The executor never certifies its own work.**
@@ -102,27 +90,7 @@ flowchart LR
 
 ARIF = Sovereign · arifOS = Law · AAA = Institution · A-FORGE = Hands
 
-ARIF vetoes. arifOS judges. AAA routes. A-FORGE executes.
+**ARIF vetoes. arifOS judges. AAA routes. A-FORGE executes.**
 
-See: `arifOS/docs/FEDERATION_CARD.md`
-
----
-
-<!--
-SKELETON — DRAFT, NOT LIVE. Working-tree only. Untracked. Awaiting F13 review.
-Promotion notes (audit 2026-08-25):
-1. Tool count badge in current README says 116 (stamped 2026-08-14). Live tools/list TODAY = 114 (113 forge_* + 1 session helper), session held via forge.arif-fazil.com/mcp. Re-stamp on promotion; never carry the stale number.
-2. Move OUT of first-contact README into existing docs/ + governance/ (architecture/ does not exist yet — create or fold into docs/):
-   - 13 Eureka principles
-   - CI governance details (badge row stays, doctrine moves)
-   - package denylists
-   - tool category inventories
-   - federation navigation tables (ladder 000-999 detail)
-   - certification matrices
-3. SOT-MANIFEST comment block at top of current README: keep (it is machine-read), but verify every claim inside it on promotion.
-4. Single Mermaid only. This one. Delete the ladder diagram from the fold; ladder belongs in docs/.
--->
-
----
-
-Full reference preserved: [docs/README-FULL.md](./docs/README-FULL.md) — 000–999 ladder detail, Eureka principles, CI governance, denylists, tool inventories live there.
+Full technical README: [docs/README-FULL.md](./docs/README-FULL.md) ·
+MCP door: [forge.arif-fazil.com/mcp](https://forge.arif-fazil.com/mcp)
