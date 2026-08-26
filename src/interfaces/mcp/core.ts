@@ -1244,8 +1244,12 @@ server.tool(
         // P2.1 ACT Handoff: store the ACT alongside the session so downstream
         // tool calls can inherit it via sessionFallbackToken. Fixes ACT_GATE
         // regression where autonomous seal paths broke.
-        if (session_token) {
-          storeSessionAct(session_id, session_token);
+        // P2.2 FIX (2026-08-27): prefer caller-supplied ACT when present —
+        // arifOS responses can echo a non-verifiable SCT (act_token mint/verify
+        // split). Gate ingress verifies fail-closed, so valid caller ACT wins.
+        const actToStore = _reqToken ?? _reqSct ?? session_token;
+        if (actToStore) {
+          storeSessionAct(session_id, actToStore);
         }
         // P0.9: Store arifOS session for Mcp-Session-Id propagation on
         // subsequent callMCP calls. Fixes ::anonymous delegation hole.
@@ -1270,7 +1274,7 @@ server.tool(
             try {
               const resp = await fetch(`${ARIFOS_BASE}/mcp`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
                 body: JSON.stringify({
                   jsonrpc: "2.0", id: 1, method: "tools/call",
                   params: {
