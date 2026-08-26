@@ -241,6 +241,11 @@ const STATELESS_TOOLS = new Set([
     "forge_wm_gaps",              // WM gap alerts — read-only
     "forge_wm_quality",           // WM trajectory quality — read-only
 
+    // Experience traces (Chain-of-Experience — append-only observation)
+    "forge_experience_trace",     // record experience trace — append-only OBSERVE
+    "forge_experience_query",     // query experience traces — read-only
+    "forge_skill_select_query",   // skill selection events — read-only (SkillGate Phase 1)
+
     // Cooling & scar observation
     "forge_cool_drift",           // cooling receipt emission — OBSERVE-class
     "forge_cool_pattern",         // cooling receipt from recurrence — OBSERVE-class

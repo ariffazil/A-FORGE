@@ -28,6 +28,7 @@ import {
   type WmMetadata,
   type WmMetadataInput,
   type PredictionRecord,
+  type FeedbackData,
 } from "./worldModel.js";
 
 // ── Chain State ─────────────────────────────────────────────────────────────
@@ -89,6 +90,8 @@ export interface TrajectoryLogEntry {
   prediction_gap?: number;
   evidence_gap?: string;
   exit_code?: number | null;
+  /** Experience trace feedback — Chain-of-Experience triplet */
+  feedback?: FeedbackData;
   prev_hash: string;
   hash: string;
 }
@@ -118,6 +121,7 @@ export async function logTrajectory(input: WmMetadataInput): Promise<TrajectoryL
     prediction_gap: meta.prediction_gap,
     evidence_gap: meta.evidence_gap,
     exit_code: (input as any).exitCode ?? null,
+    feedback: meta.feedback,
     prev_hash: trajectoryPrevHash,
   };
 

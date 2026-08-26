@@ -287,6 +287,10 @@ const OBSERVE_TOOLS = new Set([
   "forge_wm_stats",            // WM statistics dashboard — read-only
   "forge_wm_gaps",             // WM gap alerts — read-only
   "forge_wm_quality",          // WM trajectory quality — read-only
+  // ── Experience Traces (2026-08-26) — Chain-of-Experience observation ──
+  "forge_experience_trace",    // record experience trace — append-only OBSERVE
+  "forge_experience_query",    // query experience traces — read-only
+  "forge_skill_select_query",  // skill selection events — read-only (SkillGate Phase 1)
   // ── MuleRouter Multimodal (2026-07-30) ──
   // "forge_ephemeral" — REMOVED (now mode-aware in classifyTool, see line ~355)
 ]);

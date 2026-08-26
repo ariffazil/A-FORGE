@@ -579,6 +579,10 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                     self.send_header("X-Fed-Resolved-Model", resolved_model)
                     self.send_header("X-Fed-Resolved-Provider", resolved_provider)
                     self.send_header("X-Fed-Original-Capability", model)
+                    # ETCSOVG harness fingerprint passthrough (arxiv 2605.23950)
+                    hcsvog_fp = (result or {}).get("meta", {}).get("hcsvog", {}).get("h_fingerprint", "")
+                    if hcsvog_fp:
+                        self.send_header("X-Harness-Fingerprint", hcsvog_fp)
                     self.end_headers()
                     self.wfile.write(resp_body)
                     return

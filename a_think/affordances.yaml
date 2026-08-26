@@ -1965,6 +1965,58 @@ tools:
   min_mode: THINK
   risk_label: R0
 
+# ── 2026-08-26: AGI Phase 1 — Chain-of-Experience experience traces ─────
+
+- name: forge_experience_trace
+  purpose: "Record an experience trace (Chain-of-Experience). Captures action→observation→feedback→delta after non-trivial tool execution. Three feedback channels: self, environmental, constitutional. Append-only hash-chained ledger."
+  affordance_class: meta
+  capability_surface: aforge.meta.experience_trace
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - tools
+  - system_state
+  writes:
+  - experience_traces
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: FAST
+  risk_label: R1
+
+- name: forge_experience_query
+  purpose: "Query experience traces. Returns traces filtered by agent, tool, or feedback type. Read-only analysis surface for experience patterns and improvement opportunities."
+  affordance_class: meta
+  capability_surface: aforge.meta.experience_query
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - experience_traces
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_skill_select_query
+  purpose: "Query skill selection events (SkillGate preparation). Returns which skills were selected, by what method, and outcomes. Read-only. Prepares for Phase 2 credit separation."
+  affordance_class: meta
+  capability_surface: aforge.meta.skill_select
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - skill_selections
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
 # ── 2026-08-18: B3 cleanup — added missing live MCP entries ──────────────
 
 - name: forge_whoami

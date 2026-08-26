@@ -17,6 +17,7 @@ const TRAJECTORY_LOG = "/root/.local/share/arifos/world-model/trajectories.jsonl
 const ALERT_LOG = "/root/.local/share/arifos/world-model/gap_alerts.jsonl";
 const CHAIN_HEAD = "/root/.local/share/arifos/world-model/chain_head.json";
 const META_FILE = "/root/.local/share/arifos/world-model/metadata.json";
+const EXPERIENCE_TRACE_LOG = "/root/.local/share/arifos/world-model/experience_traces.jsonl";
 
 // ── Helpers ──────────────────────────────────
 
@@ -84,6 +85,29 @@ async function loadAlerts(): Promise<Record<string, unknown>[]> {
       catch { return null; }
     })
     .filter((a): a is Record<string, unknown> => a !== null);
+}
+
+interface ExperienceTraceRecord {
+  trace_id: string;
+  ts: string;
+  agent_id: string;
+  action: { tool: string; input_hash: string };
+  observation: { output_hash: string; success: boolean };
+  feedback: { self?: string; environmental?: string; constitutional?: string };
+  experience_delta: { capability_change?: number; confidence_change?: number; new_scar?: string | null; new_skill?: string | null };
+}
+
+async function loadExperienceTraces(): Promise<ExperienceTraceRecord[]> {
+  if (!existsSync(EXPERIENCE_TRACE_LOG)) return [];
+  const content = await readFile(EXPERIENCE_TRACE_LOG, "utf-8");
+  return content
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      try { return JSON.parse(line) as ExperienceTraceRecord; }
+      catch { return null; }
+    })
+    .filter((t): t is ExperienceTraceRecord => t !== null);
 }
 
 // ── Registration ─────────────────────────────
@@ -170,9 +194,10 @@ export function registerWMTools(server: McpServer): void {
   // ── forge_wm_gaps ──
   server.tool(
     "forge_wm_gaps",
-    "World Model gap alerts. Returns high-confidence wrong predictions where the agent " +
-    "was confident but the output diverged significantly. Severity: CRITICAL/HIGH/MEDIUM. " +
-    "Read-only.",
+    "World Model gap alerts with experience trace cross-reference. Returns high-confidence " +
+    "wrong predictions where the agent was confident but the output diverged significantly. " +
+    "Now also shows which gaps have experience feedback and which lack it — identifying the " +
+    "highest-priority improvement targets. Severity: CRITICAL/HIGH/MEDIUM. Read-only.",
     {
       limit: z.number().default(20).describe("Max alerts to return"),
       severity: z.string().optional().describe("Filter: CRITICAL, HIGH, or MEDIUM"),
@@ -201,6 +226,72 @@ export function registerWMTools(server: McpServer): void {
           .slice(-limit);
       }
 
+      // ── Experience trace cross-reference (CoE Phase 1) ──
+      const traces = await loadExperienceTraces();
+
+      // Build per-tool experience summary
+      const toolExperience = new Map<string, {
+        trace_count: number;
+        with_feedback: number;
+        success_rate: number;
+        avg_capability_delta: number;
+        has_self: number;
+        has_env: number;
+        has_const: number;
+      }>();
+
+      for (const t of traces) {
+        const tool = t.action.tool;
+        let exp = toolExperience.get(tool);
+        if (!exp) {
+          exp = { trace_count: 0, with_feedback: 0, success_rate: 0, avg_capability_delta: 0, has_self: 0, has_env: 0, has_const: 0 };
+          toolExperience.set(tool, exp);
+        }
+        exp.trace_count++;
+        if (t.feedback.self || t.feedback.environmental || t.feedback.constitutional) exp.with_feedback++;
+        if (t.observation.success) exp.success_rate++;
+        exp.avg_capability_delta += t.experience_delta.capability_change ?? 0;
+        if (t.feedback.self) exp.has_self++;
+        if (t.feedback.environmental) exp.has_env++;
+        if (t.feedback.constitutional) exp.has_const++;
+      }
+
+      // Finalize rates
+      for (const [, exp] of toolExperience) {
+        if (exp.trace_count > 0) {
+          exp.success_rate = Math.round((exp.success_rate / exp.trace_count) * 1000) / 1000;
+          exp.avg_capability_delta = Math.round((exp.avg_capability_delta / exp.trace_count) * 1000) / 1000;
+        }
+      }
+
+      // Cross-reference: which gap tools have experience traces?
+      const gapTools = new Set(filtered.map((a) => a["tool"] as string).filter(Boolean));
+      const gapsWithExperience: string[] = [];
+      const gapsWithoutExperience: string[] = [];
+      for (const tool of gapTools) {
+        if (toolExperience.has(tool)) gapsWithExperience.push(tool);
+        else gapsWithoutExperience.push(tool);
+      }
+
+      // Identify highest-priority improvement targets:
+      // gaps with high surprise but low feedback coverage
+      const improvementTargets = filtered
+        .filter((a) => {
+          const tool = a["tool"] as string;
+          const exp = toolExperience.get(tool);
+          return !exp || (exp.with_feedback / exp.trace_count) < 0.5;
+        })
+        .map((a) => ({
+          tool: a["tool"],
+          severity: a["severity"],
+          surprise_score: a["surprise_score"],
+          experience_traces: toolExperience.get(a["tool"] as string)?.trace_count ?? 0,
+          feedback_coverage: toolExperience.get(a["tool"] as string)
+            ? Math.round((toolExperience.get(a["tool"] as string)!.with_feedback / toolExperience.get(a["tool"] as string)!.trace_count) * 100)
+            : 0,
+          reason: "High surprise + low feedback coverage = priority improvement target",
+        }));
+
       return {
         content: [{
           type: "text" as const,
@@ -209,11 +300,21 @@ export function registerWMTools(server: McpServer): void {
             total_alerts: filtered.length,
             severity_filter: severity ?? "all",
             alerts: filtered,
+            experience_analysis: {
+              total_traces: traces.length,
+              tools_with_traces: toolExperience.size,
+              gaps_with_experience: gapsWithExperience,
+              gaps_without_experience: gapsWithoutExperience,
+              improvement_targets: improvementTargets,
+              per_tool: Object.fromEntries(
+                [...toolExperience.entries()].map(([tool, exp]) => [tool, exp])
+              ),
+            },
             _epistemic: {
               evidence_layer: "DER",
               confidence: 0.85,
               source: "forge_wm_gaps",
-              note: "Gap alerts = agent was confident but environment diverged. Teaching opportunity.",
+              note: "Gap alerts cross-referenced with experience traces. Improvement targets = high surprise + low feedback coverage.",
             },
           }, null, 2),
         }],

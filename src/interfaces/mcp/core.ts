@@ -78,6 +78,7 @@ import { registerForge8Verbs } from "./forge8Verbs.js";
 import { registerAuthPipeline } from "../../domain/auth_protocol/pipeline.js";
 import { registerShellTools as registerCanonicalShellTools } from "./shell/forgeShell.js";
 import { registerWMTools } from "./wmQueryTools.js";
+import { registerExperienceTraceTools } from "./experienceTraceTools.js";
 import { registerDocumentIngestTool } from "./documentIngest.js";
 import { registerPolicyTools, installPolicyInterceptor, installElicitationGate } from "./policyTools.js";
 import { installVerdictInterceptor } from "../../domain/governance/verdict-interceptor.js";
@@ -2944,6 +2945,7 @@ registerRegistryTools(server);
 registerShellTools(server);                                // forge_shell_dryrun (legacy)
 registerCanonicalShellTools(server);                        // forge_shell + forge_shell_status (canonical)
 registerWMTools(server);                                    // forge_wm_stats + forge_wm_gaps + forge_wm_quality
+registerExperienceTraceTools(server);                       // forge_experience_trace + forge_experience_query
 registerLogTools(server);
 registerJobTools(server);
 registerStatusTools(server);

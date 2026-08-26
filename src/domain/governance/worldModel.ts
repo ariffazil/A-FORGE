@@ -71,6 +71,25 @@ export const TOOL_PRIORITY_MAP: Record<string, WmPriority> = {
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
+/**
+ * Feedback triplet — Chain-of-Experience (arxiv 2608.18027) experience trace.
+ *
+ * Three feedback channels, each optional:
+ *   - self: model self-critique (did the agent expect this outcome?)
+ *   - environmental: external signal (test pass/fail, lint, build status)
+ *   - constitutional: floor check result (did this action respect F1-F13?)
+ *
+ * All three combined = richest improvement signal.
+ */
+export interface FeedbackData {
+  /** Model self-critique — agent's post-hoc assessment of its own action */
+  self?: string;
+  /** Environmental feedback — test results, lint, build status, exit code */
+  environmental?: string;
+  /** Constitutional feedback — floor check result (PASS/FAIL/UNKNOWN) */
+  constitutional?: string;
+}
+
 export interface WmMetadata {
   /** SHA-256 of tool name + canonical args (action fingerprint) */
   action_hash: string;
@@ -99,6 +118,8 @@ export interface WmMetadata {
   observed_at: string;
   /** Tool name that produced this observation */
   tool: string;
+  /** Experience trace feedback — self + environmental + constitutional */
+  feedback?: FeedbackData;
 }
 
 export interface PredictionRecord {
@@ -300,6 +321,8 @@ export interface WmMetadataInput {
   agentConfidence?: number;
   predictedObservation?: string | null;
   exitCode?: number | null;
+  /** Experience trace feedback — Chain-of-Experience triplet */
+  feedback?: FeedbackData;
 }
 
 /**
@@ -316,6 +339,7 @@ export function buildWmMetadata(input: WmMetadataInput): WmMetadata {
     agentConfidence = 0.5,
     predictedObservation = null,
     exitCode = null,
+    feedback,
   } = input;
 
   const actionHash = hashAction(tool, args);
@@ -344,6 +368,7 @@ export function buildWmMetadata(input: WmMetadataInput): WmMetadata {
     evidence_gap: evidenceGap,
     observed_at: new Date().toISOString(),
     tool,
+    feedback: feedback ?? undefined,
   };
 }
 

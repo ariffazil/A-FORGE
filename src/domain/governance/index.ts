@@ -120,6 +120,7 @@ export {
   type WmMetadata,
   type WmMetadataInput,
   type PredictionRecord,
+  type FeedbackData,
 } from "./worldModel.js";
 
 // worldModelLogger.ts — append-only JSONL trajectory ledger
