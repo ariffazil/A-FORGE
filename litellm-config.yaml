@@ -1879,7 +1879,7 @@ litellm_settings:
   cache: true
   cache_params:
     type: redis
-    host: 172.19.0.2
+    host: 127.0.0.1
     port: 6379
     ttl: 600
     namespace: litellm-fed
@@ -1893,6 +1893,21 @@ router_settings:
   num_retries: 2
   allowed_fails: 2
   cooldown_time: 60
+  context_window_fallbacks:
+    - agi-333:
+      - apex-888
+      - i-arif
+      - forge-777
+    - forge-777:
+      - agi-333
+      - apex-888
+      - i-arif
+    - i-arif:
+      - agi-333
+      - apex-888
+    - asi-555:
+      - agi-333
+      - apex-888
   model_group_alias:
     deepseek-v4-pro: agi-333
     deepseek-v4-flash: agi-333
@@ -1948,16 +1963,21 @@ router_settings:
   - i-arif:
     - forge-777
     - agi-333
+    - apex-888
   - apex-888:
     - agi-333
   - forge-777:
     - i-arif
     - agi-333
+    - apex-888
   - agi-333:
     - i-arif
     - forge-777
+    - apex-888
   - asi-555:
     - i-arif
+    - agi-333
+    - apex-888
   allowed_fails_policy:
     cooldown_time: 60
 general_settings:
