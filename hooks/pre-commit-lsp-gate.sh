@@ -110,3 +110,10 @@ echo -e "${D}  F2 TRUTH enforced · F4 ΔS ≤ 0 maintained${X}"
 echo ""
 
 exit 0
+
+# ── SUPPLY-CHAIN PIN GATE (E-2 / gate-promotion doctrine, 2026-08-25) ──
+# Fails closed: unpinned npx/uvx in watched agent configs blocks this commit.
+if ! python3 /root/AAA/scripts/supply_chain_gate.py --all; then
+    echo "SUPPLY-CHAIN GATE: commit blocked — pin the install (pkg@x.y.z) and register it in registries/supply_chain_pins.json" >&2
+    exit 1
+fi

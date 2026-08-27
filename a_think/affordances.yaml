@@ -110,11 +110,14 @@ tools:
   min_mode: THINK
   risk_label: R0
 - name: forge_browser_navigate
-  purpose: ACTUATOR [browser/MUTATE] supervised by kernel 777_FORGE. Navigate browser to URL. OBSERVE-class.
+  purpose: ACTUATOR [browser/OBSERVE] supervised by kernel 777_FORGE. Navigate browser to URL.
+  # Misclassification fix 2026-08-20: card had destructive:false + reversible:true
+  # but was classified MUTATE/GOVERN/R3/requires_human_approval:true. Aligned to
+  # the structured intent (non-destructive, reversible) — OBSERVE/R1/THINK.
   affordance_class: browser
   capability_surface: aforge.browser.browser_navigate
   kernel_verb: 777_FORGE
-  mutation_class: MUTATE
+  mutation_class: OBSERVE
   reads:
   - web
   - browser
@@ -123,9 +126,9 @@ tools:
   external_side_effect: true
   destructive: false
   reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
 - name: forge_browser_screenshot
   purpose: ACTUATOR [browser/OBSERVE] supervised by kernel 777_FORGE. Take a browser screenshot. OBSERVE-class.
   affordance_class: browser
@@ -159,6 +162,30 @@ tools:
   requires_human_approval: true
   min_mode: GOVERN
   risk_label: R3
+- name: forge_telegram_send
+  purpose: "ACTUATOR [chat/MUTATE] supervised by kernel 777_FORGE. Send a Telegram message via Bot API. Backed by arif_telegram_send (arifOS MCP :8088, internal_canonical). Hermes-only caller scope (HERMES_SESSION_KEY). F1 AMANAH: first call per session requires explicit ack_irreversible=true. Telegram messages are irreversible post-delivery. C5_IRREVERSIBLE."
+  affordance_class: chat
+  capability_surface: aforge.chat.telegram_send
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - chat
+  writes:
+  - external_state
+  external_side_effect: true
+  destructive: false
+  reversible: false       # cannot un-send a Telegram message
+  requires_human_approval: true   # first call per session via ack_irreversible
+  min_mode: GOVERN
+  risk_label: R5
+  hermes_only: true       # caller scope gate — only HERMES_SESSION_KEY may invoke
+  allowed_senders:
+    - HERMES_SESSION_KEY  # agent:main:telegram:dm:267378578
+  forged: 2026-08-20
+  forged_for: "Arif 'hantar kat telegram' → governed outbound path"
+  design_record: /root/.claude/projects/-root/memory/forge-telegram-send-design-2026-08-20.md
+  card_status: registered
+  card_state: DEPLOYED
 - name: forge_chart
   purpose: ACTUATOR [meta/OBSERVE] supervised by kernel 333_THINK. Agentic charting + quantum eureka discovery margin patterns.
     Input data series or records; returns S
@@ -2053,19 +2080,21 @@ tools:
   min_mode: GOVERN
   risk_label: R2
 
-# ── 2026-08-25: FFF survival audit — added 2 missing live MCP entries ──────
+# ── ECOSYSTEM_EXPANSION Phase 2+4 — TRUST + COMPOSITION + GEMINI (2026-08-25) ──
 
 - name: forge_compose
-  purpose: "ACTUATOR · meta · MUTATE. Composition Bus — orchestrate multi-tool execution across MCP servers. 4 patterns: sequential, parallel, conditional, loop. Each step produces a receipt. DAG-based resolution with cycle detection. F1/F2/F4/F11 constitutional."
-  affordance_class: meta
-  capability_surface: aforge.meta.compose
+  purpose: "ACTUATOR [execute/MUTATE] Composition Bus — orchestrate multi-tool execution across MCP servers. 4 patterns: sequential, parallel, conditional, loop. Each step produces a receipt. DAG-based resolution with cycle detection. Modes: execute, status, cancel, analyze. Constitutional: F1 AMANAH, F2 TRUTH, F4 CLARITY, F11 AUDIT."
+  affordance_class: execute
+  capability_surface: aforge.execute.compose
   kernel_verb: 777_FORGE
   mutation_class: MUTATE
   reads:
+  - plans
   - tools
   - session
   - lease
   writes:
+  - filesystem
   - external_state
   - receipts
   external_side_effect: true
@@ -2076,7 +2105,7 @@ tools:
   risk_label: R2
 
 - name: forge_trust_score
-  purpose: "ACTUATOR · governance · OBSERVE. Trust scoring engine for external MCP servers. Scores on 5 dimensions (identity, uptime, auditability, mutation_risk, witnessability), maps to bands (ALLOW/LIMITED/HOLD/DENY), and gates access. F2/F7/F11/F13 constitutional."
+  purpose: "ACTUATOR [governance/OBSERVE] Trust scoring engine for external MCP servers. Scores on 5 dimensions (identity, uptime, auditability, mutation_risk, witnessability), maps to bands (ALLOW/LIMITED/HOLD/DENY), and gates access. Modes: score, evaluate, list, history, verify. Constitutional: F2 TRUTH, F7 HUMILITY, F11 AUDIT, F13 SOVEREIGN."
   affordance_class: governance
   capability_surface: aforge.governance.trust_score
   kernel_verb: 666_JUDGE
@@ -2085,15 +2114,14 @@ tools:
   - tools
   - system_state
   - federation
-  writes: []
+  writes:
+  - vault999
   external_side_effect: false
   destructive: false
   reversible: true
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-
-# ── 2026-08-25: FFF survival audit + Gemini bridge ────────────────────────────
 
 - name: forge_gemini
   purpose: "ACTUATOR · meta · OBSERVE/MUTATE. Gemini AI Studio direct bridge. 4 verbs: generate, chat, models, health. Default model gemini-3.6-flash. Bridge listens 127.0.0.1:18092. Auth: bearer-style HTTP header."
@@ -2104,6 +2132,7 @@ tools:
   reads:
   - prompts
   - tools
+  - session
   writes: []
   external_side_effect: false
   destructive: false

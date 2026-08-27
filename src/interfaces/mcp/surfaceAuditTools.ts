@@ -208,6 +208,7 @@ const ORGAN_AFFORDANCE_MAP: Record<string, string> = {
   wealth: "/root/WEALTH/tools_sot.yaml",
   well: "/root/WELL/tools_sot.yaml",
   geox: "/root/GEOX/tools_sot.yaml",
+  arifos: "/root/arifOS/tools_sot.yaml",
 };
 
 export function registerSurfaceAuditTools(server: McpServer): void {
@@ -216,7 +217,7 @@ export function registerSurfaceAuditTools(server: McpServer): void {
     "forge_surface_audit",
     "Audit MCP tool surface: compare live registry vs affordances.yaml to detect phantom entries, missing tools, description drift, and alias conflicts. Federation-wide drift detection.",
     {
-      organ: z.enum(["aforge", "geox", "wealth", "well", "all"]).default("aforge")
+      organ: z.enum(["aforge", "geox", "wealth", "well", "arifos", "all"]).default("aforge")
         .describe("Organ to audit, or 'all' for federation-wide scan"),
       mode: z.enum(["audit", "scan", "fix"]).default("audit")
         .describe("audit=full report, scan=pass/fail health, fix=generate corrected yaml"),
@@ -226,7 +227,7 @@ export function registerSurfaceAuditTools(server: McpServer): void {
     async ({ organ, mode, affordance_path }) => {
       const results: DriftReport[] = [];
       const organsToScan = organ === "all"
-        ? ["aforge", "geox", "wealth", "well"]
+        ? ["aforge", "geox", "wealth", "well", "arifos"]
         : [organ];
 
       for (const org of organsToScan) {
@@ -252,18 +253,24 @@ export function registerSurfaceAuditTools(server: McpServer): void {
           continue;
         }
 
-        // Get registry tools from the live forge_registry
-        const registry = await queryRegistry();
-        const registryToolNames = registry.tools
-          .filter((t) => t.status === "REGISTERED" || t.status === "PENDING_REVIEW")
-          .map((t) => t.tool_name);
+        let allRegistryTools: string[];
+        if (org === "aforge") {
+          // Get registry tools from the live forge_registry
+          const registry = await queryRegistry();
+          const registryToolNames = registry.tools
+            .filter((t) => t.status === "REGISTERED" || t.status === "PENDING_REVIEW")
+            .map((t) => t.tool_name);
 
-        // B3 FIX: Aggregate from LIVE MCP module surface (per Representation
-        // Layer Integrity doctrine). Replaces the stale hardcoded knownForgeTools
-        // list that was producing 50+ phantom false positives.
-        const liveSurfaceTools = await scanLiveMcpSurface();
-
-        const allRegistryTools = [...new Set([...registryToolNames, ...liveSurfaceTools])].sort();
+          // B3 FIX: Aggregate from LIVE MCP module surface (per Representation
+          // Layer Integrity doctrine). Replaces the stale hardcoded knownForgeTools
+          // list that was producing 50+ phantom false positives.
+          const liveSurfaceTools = await scanLiveMcpSurface();
+          allRegistryTools = [...new Set([...registryToolNames, ...liveSurfaceTools])].sort();
+        } else {
+          // For federation organs, parse tools from the canonical tools_sot.yaml manifest
+          const organAffordances = await parseAffordances(affPath);
+          allRegistryTools = organAffordances.map((t) => t.name).sort();
+        }
 
         const report = await auditSurface(affPath, allRegistryTools, org);
         results.push(report);

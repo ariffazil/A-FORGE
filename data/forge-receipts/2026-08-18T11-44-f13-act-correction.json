@@ -1,0 +1,23 @@
+{
+  "receipt_type": "F13_RATIFICATION_CORRECTION",
+  "parent_receipt": "/root/A-FORGE/data/forge-receipts/2026-08-18T11-39-f13-ratify-halt.json",
+  "timestamp_utc": "2026-08-18T11:44:00Z",
+  "correction": "Token type is ACT (Arif's Capability Token), not SCT. The 'sct_v1.*' string in tool descriptions is the format prefix inside the ACT envelope, not the token type name.",
+  "doctrine_citation": {
+    "forge_shell_param": "session_token: 'arifOS Arif's Capability Token sct_v1.* (federation ACT gate)'",
+    "federation_gate": "ACT",
+    "token_format_prefix": "sct_v1.*",
+    "token_type_name": "Arif's Capability Token (ACT)"
+  },
+  "what_changed": {
+    "vocabulary": "All subsequent references use ACT, not SCT",
+    "unblock_sequence": "Updated to call arif_init (not forge_kernel) with Ed25519 signature; sovereign pastes ACT into chat for forge_shell wrap",
+    "halt_state": "Unchanged — still blocked on cryptographic verification"
+  },
+  "what_did_not_change": {
+    "delta_S": "0 — no mutation fired",
+    "queue_state": "7-step package still in stasis, awaits verified ACT",
+    "cryptographic_requirement": "Non-negotiable — string 'actor_verified:true' in payload is forgery regardless of token name"
+  },
+  "compliance": "F2 TRUTH — historical receipt preserved at parent path; correction appended (not rewrite). F1 AMANAH — fail-closed preserved. F13 SOVEREIGN — intent honored with substrate-respecting path."
+}

@@ -80,6 +80,12 @@ import { registerShellTools as registerCanonicalShellTools } from "./shell/forge
 import { registerWMTools } from "./wmQueryTools.js";
 import { registerExperienceTraceTools } from "./experienceTraceTools.js";
 import { registerDocumentIngestTool } from "./documentIngest.js";
+// ECOSYSTEM_EXPANSION::v1 — Phase 2 (TRUST) + Phase 4 (COMPOSITION) wired
+import { registerTrustTools } from "./forgeTrustTools.js";
+import { registerComposeTools } from "./forgeComposeTools.js";
+// ECOSYSTEM_EXPANSION::v1 — Phase 3 (OBSERVABILITY) — OTel shim instrumentation
+import { initOtel, isOtelReady } from "../../domain/observability/OtelBootstrap.js";
+import { instrumentedToolCall } from "../../domain/observability/OtelToolWrapper.js";
 import { registerPolicyTools, installPolicyInterceptor, installElicitationGate } from "./policyTools.js";
 import { installVerdictInterceptor } from "../../domain/governance/verdict-interceptor.js";
 import { registerSurfaceGuardTools } from "./surfaceGuardTools.js";
@@ -929,17 +935,64 @@ const SELF_INSTRUMENTED_TOOLS = new Set([
 async function withHandlerTelemetry<T>(toolName: string, run: () => Promise<T>): Promise<T> {
   if (SELF_INSTRUMENTED_TOOLS.has(toolName)) return run();
   const startedAt = Date.now();
+  // ECOSYSTEM_EXPANSION::v1 Phase 3 — OTel span start (in-memory shim).
+  // INSTALL-OTEL-SDK is the OPEN LOOP for full SDK with OTLP exporter.
+  let spanStart: { trace_id: string; span_id: string } | null = null;
+  try {
+    if (isOtelReady()) {
+      const tracer = (await import("../../domain/observability/OtelBootstrap.js")).getTracer();
+      const traceBytes = new Uint8Array(16);
+      const spanBytes = new Uint8Array(8);
+      for (let i = 0; i < 16; i++) traceBytes[i] = Math.floor(Math.random() * 256);
+      for (let i = 0; i < 8; i++) spanBytes[i] = Math.floor(Math.random() * 256);
+      spanStart = {
+        trace_id: Array.from(traceBytes).map(b => b.toString(16).padStart(2, "0")).join(""),
+        span_id: Array.from(spanBytes).map(b => b.toString(16).padStart(2, "0")).join(""),
+      };
+      tracer.spans.push({
+        trace_id: spanStart.trace_id,
+        span_id: spanStart.span_id,
+        name: `tools/call ${toolName}`,
+        kind: "SERVER",
+        attributes: {
+          "mcp.method.name": "tools/call",
+          "gen_ai.tool.name": toolName,
+          "gen_ai.operation.name": "execute_tool",
+          "mcp.protocol.version": "2025-11-25",
+          "arifos.organ": "aforge",
+          "arifos.handler_telemetry": true,
+        },
+        start_time: new Date(startedAt).toISOString(),
+      });
+    }
+  } catch { /* OTel is best-effort; never block the tool call */ }
+
   try {
     const result = await run();
+    const duration = Date.now() - startedAt;
     telemetry.recordSuccess(toolName);
     await telemetry.logEvent({
       epoch: new Date().toISOString(),
       tool: toolName,
       action: "success",
-      metadata: { durationMs: Date.now() - startedAt },
+      metadata: { durationMs: duration, trace_id: spanStart?.trace_id, span_id: spanStart?.span_id },
     });
+    // OTel span end
+    try {
+      if (isOtelReady() && spanStart) {
+        const tracer = (await import("../../domain/observability/OtelBootstrap.js")).getTracer();
+        tracer.spans.push({
+          trace_id: spanStart.trace_id,
+          span_id: spanStart.span_id,
+          end_time: new Date().toISOString(),
+          status: "OK",
+          duration_ms: duration,
+        });
+      }
+    } catch { /* best-effort */ }
     return result;
   } catch (err) {
+    const duration = Date.now() - startedAt;
     telemetry.recordFailure(toolName);
     const message = err instanceof Error ? err.message : String(err);
     await telemetry.logEvent({
@@ -947,8 +1000,22 @@ async function withHandlerTelemetry<T>(toolName: string, run: () => Promise<T>):
       tool: toolName,
       action: "failure",
       outcome: message,
-      metadata: { durationMs: Date.now() - startedAt },
+      metadata: { durationMs: duration, trace_id: spanStart?.trace_id, span_id: spanStart?.span_id },
     });
+    // OTel span end with error
+    try {
+      if (isOtelReady() && spanStart) {
+        const tracer = (await import("../../domain/observability/OtelBootstrap.js")).getTracer();
+        tracer.spans.push({
+          trace_id: spanStart.trace_id,
+          span_id: spanStart.span_id,
+          end_time: new Date().toISOString(),
+          status: "ERROR",
+          error: message,
+          duration_ms: duration,
+        });
+      }
+    } catch { /* best-effort */ }
     throw err;
   }
 }
@@ -3082,6 +3149,30 @@ registerCoolingVerbs(server);
 // Compares git commit vs installed wheel vs import path.
 // Returns MATCH | DRIFT | UNKNOWN. Fail-closed on DRIFT.
 registerRuntimeVerifyTool(server);
+
+// ── ECOSYSTEM_EXPANSION::v1 Phase 2 — TRUST SCORING ────────────────────────────
+// forge_trust_score — 5-dimension trust scoring engine for external MCP servers.
+// Gates access by ALLOW/LIMITED/HOLD/DENY band. HOLD routes to 888-APEX.
+registerTrustTools(server);
+
+// ── ECOSYSTEM_EXPANSION::v1 Phase 4 — COMPOSITION BUS ───────────────────────────
+// forge_compose — multi-tool orchestration via DAG resolution.
+// 4 patterns: sequential, parallel, conditional, loop. Each step = receipt.
+registerComposeTools(server);
+
+// ── ECOSYSTEM_EXPANSION::v1 Phase 3 — OBSERVABILITY (OTel shim) ──────────────────
+// In-memory OTel tracer init. Full SDK install is OPEN LOOP #4
+// (INSTALL-OTEL-SDK — requires @opentelemetry/sdk-node + OTLP exporter).
+// Until then, spans are buffered in process memory and exported via
+// forge_observability spans or forge_wm_quality.
+if (!isOtelReady()) {
+  initOtel({
+    serviceName: "A-FORGE",
+    serviceVersion: "0.1.0-ECOSYSTEM_v1",
+    organName: "aforge",
+    otlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT ?? "",
+  });
+}
 
 // ── Multimodal surface DELETED 2026-07-31 — all 5 tools collapsed into forge_ephemeral templates ──
 // forge_multimodal_vision → forge_ephemeral(template='mulerouter_vision')

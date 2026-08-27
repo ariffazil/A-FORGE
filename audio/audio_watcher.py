@@ -4,7 +4,7 @@ audio_watcher.py — Poll Hermes audio cache → A-FORGE ingest (Layer 3 memory)
 
 Non-core wiring: watches /root/.hermes/cache/audio/ for new files,
 runs canonical voice_state extraction + Qdrant persistence + WELL homeostasis.
-Survives upstream sync. Zero modifications to hermes-agent-dev.
+Survives upstream sync. Zero modifications to /usr/local/lib/hermes-agent.
 
 Layer 5: After successful ingestion, calls WELL assess_homeostasis with
 the well_features. W0: WELL reflects, never gates — assessment is advisory.

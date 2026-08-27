@@ -27,6 +27,7 @@ import { createHash } from "node:crypto";
 import { appendFile, mkdir } from "node:fs/promises";
 import { classifyCommand, type JudgeResult } from "./arifJudge.js";
 import { getDefaultArifSeal } from "./arifSeal.js";
+import { emitFlowReceipt } from "../../../infrastructure/bridges/arifFlowBridge.js";
 import { checkModificationIntent, isGodelLocked } from "./godelLock.js";
 import { classifyShellCommand, type ActionClass } from "../../../domain/governance/execution-authority.js";
 import { classifyUnknown, isStructuredError } from "../../../domain/governance/error-classifier.js";
@@ -1079,6 +1080,45 @@ export function registerShellTools(server: McpServer): void {
       }
 
       const elapsed = Date.now() - startedAt;
+
+      // ── P1-5: arifFlow Execute receipt (Receipt Federation canary) ──
+      // Fire-and-forget, fail-open — mirrors logTrajectory pattern.
+      // Actor is the executor itself ("aforge"); session is the caller's
+      // arifOS session. Contract: POST /ingest (arifFlow :7073).
+      void emitFlowReceipt({
+        step_type: "Execute",
+        actor_id: "aforge",
+        session_id: session_id || "aforge-local",
+        cost_ns: elapsed * 1_000_000,
+        epistemic_label: "Observation",
+        floor_verdict: result.exitCode === 0 ? "Pass" : "Caution",
+        payload: {
+          tool: "forge_shell",
+          command: command.slice(0, 200),
+          cwd: safeCwd,
+          exit_code: result.exitCode,
+          judge_decision: judge.decision,
+          seal_seq: sealRecord?.seq ?? 0,
+        },
+        expected_outcome: expected_output?.slice(0, 500),
+      });
+
+      // ── P1-5: arifFlow Verify receipt — ArifSeal audit step made visible
+      // to the flow plane (the seal is genuine per-execution verification).
+      void emitFlowReceipt({
+        step_type: "Verify",
+        actor_id: "aforge",
+        session_id: session_id || "aforge-local",
+        cost_ns: 0,
+        epistemic_label: "Seal",
+        floor_verdict:
+          sealRecord?.hash && sealRecord.hash !== "pending" ? "Pass" : "Caution",
+        payload: {
+          step: "arif_seal",
+          seal_seq: sealRecord?.seq ?? 0,
+          seal_hash: String(sealRecord?.hash ?? "").slice(0, 16),
+        },
+      });
 
       // ── Step 4: Execution Authority Ladder Check ──
       const actionClass = classifyShellCommand(command);

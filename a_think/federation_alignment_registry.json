@@ -1,65 +1,65 @@
 {
   "schema": "aforge.federation.alignment.v1",
-  "generated_at": "2026-07-08T23:43:51.527217+00:00",
+  "generated_at": "2026-08-25T10:56:00.000000+08:00",
   "doctrine": {
-    "kernel_verbs": "constitutional primitives (arifOS) \u2014 law, not host mutation",
-    "aforge_tools": "execution actuators (hands) \u2014 host mutation after SESSION+LEASE+GATE(+SEAL)",
+    "kernel_verbs": "constitutional primitives (arifOS) — law, not host mutation",
+    "aforge_tools": "execution actuators (hands) — host mutation after SESSION+LEASE+GATE(+SEAL)",
     "mcp_tools": "transport envelope only",
     "access": "unrestricted logical access for AAA agents; execution denied only by kernel gates"
   },
   "kernel_verbs": {
     "000_INIT": {
-      "title": "000 Init \u00b7 Kernel Session",
+      "title": "000 Init · Kernel Session",
       "wire": "arif_init",
       "role": "session ignition"
     },
     "000_TRIAGE": {
-      "title": "000 Triage \u00b7 Session Preflight",
+      "title": "000 Triage · Session Preflight",
       "wire": "arif_triage",
       "role": "session immune status"
     },
     "111_OBSERVE": {
-      "title": "111 Observe \u00b7 Sense Reality",
+      "title": "111 Observe · Sense Reality",
       "wire": "arif_observe",
       "role": "evidence intake"
     },
     "333_THINK": {
-      "title": "333 Think \u00b7 Mind",
+      "title": "333 Think · Mind",
       "wire": "arif_think",
       "role": "structured reasoning"
     },
     "444_ROUTE": {
-      "title": "444 Route \u00b7 Intent\u2192Organ",
+      "title": "444 Route · Intent→Organ",
       "wire": "arif_route",
       "role": "intent routing / bridge"
     },
     "555_CRITIQUE": {
-      "title": "555 Critique \u00b7 Heart",
+      "title": "555 Critique · Heart",
       "wire": "arif_critique",
       "role": "ethical/dignity stress"
     },
     "MEMORY": {
-      "title": "Memory Governor \u00b7 Kernel",
+      "title": "Memory Governor · Kernel",
       "wire": "arif_memory",
-      "role": "L1\u2013L6 memory"
+      "role": "L1–L6 memory"
     },
     "777_FORGE": {
-      "title": "777 Forge \u00b7 Execute Gate",
+      "title": "777 Forge · Execute Gate",
       "wire": "arif_forge",
       "role": "execution warrant"
     },
     "888_JUDGE": {
-      "title": "888 Judge \u00b7 Verdict",
+      "title": "888 Judge · Verdict",
       "wire": "arif_judge",
       "role": "constitutional verdict"
     },
     "COMPOSE": {
-      "title": "Compose \u00b7 Kernel Reply",
+      "title": "Compose · Kernel Reply",
       "wire": "arif_compose",
       "role": "human-facing reply"
     },
     "999_SEAL": {
-      "title": "999 Seal \u00b7 VAULT999",
+      "title": "999 Seal · VAULT999",
       "wire": "arif_seal",
       "role": "immutable ledger"
     }
@@ -87,7 +87,7 @@
     "job",
     "confirm"
   ],
-  "tool_count": 98,
+  "tool_count": 100,
   "tools": [
     {
       "name": "forge_abort",
@@ -108,8 +108,8 @@
       },
       "purpose": "ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Safe stop + rollback for running execution. Requires lease or session auth. P2.3 canonical gap fill.",
       "description_live": "Safe stop + rollback for running execution. Requires lease or session auth. P2.3 canonical gap fill.",
-      "description_canonical": "ACTUATOR \u00b7 execute \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Safe stop + rollback for running execution. Requires lease or session auth. P2.3 canonical gap fill.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · execute · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Safe stop + rollback for running execution. Requires lease or session auth. P2.3 canonical gap fill.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -139,8 +139,8 @@
       },
       "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Agent identity management. Modes: register, status, list, kill. F11 AUTH.",
       "description_live": "Agent identity management. Modes: register, status, list, kill. F11 AUTH.",
-      "description_canonical": "ACTUATOR \u00b7 registry \u00b7 OBSERVE \u00b7 kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Agent identity management. Modes: register, status, list, kill. F11 AUTH.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · registry · OBSERVE · kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Agent identity management. Modes: register, status, list, kill. F11 AUTH.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -168,10 +168,10 @@
         "min_mode": "GOVERN",
         "risk_label": "R3"
       },
-      "purpose": "ACTUATOR [governance/MUTATE] supervised by kernel 888_JUDGE. Refuses approval \u2014 A-FORGE cannot self-authorize. Route to arifOS arif_judge_deliberate via forge_ju",
-      "description_live": "Refuses approval \u2014 A-FORGE cannot self-authorize. Route to arifOS arif_judge_deliberate via forge_judge_proxy instead.",
-      "description_canonical": "ACTUATOR \u00b7 governance \u00b7 MUTATE \u00b7 kernel-supervised by 888_JUDGE (arif_judge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Refuses approval \u2014 A-FORGE cannot self-authorize. Route to arifOS arif_judge_deliberate via forge_judge_proxy instead.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [governance/MUTATE] supervised by kernel 888_JUDGE. Refuses approval — A-FORGE cannot self-authorize. Route to arifOS arif_judge_deliberate via forge_ju",
+      "description_live": "Refuses approval — A-FORGE cannot self-authorize. Route to arifOS arif_judge_deliberate via forge_judge_proxy instead.",
+      "description_canonical": "ACTUATOR · governance · MUTATE · kernel-supervised by 888_JUDGE (arif_judge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Refuses approval — A-FORGE cannot self-authorize. Route to arifOS arif_judge_deliberate via forge_judge_proxy instead.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -201,8 +201,8 @@
       },
       "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Production security telemetry (renamed from forge_boundaries_assert).",
       "description_live": "Machine Constitution drift detector. Asserts live ports/services/cron against the saved Machine Constitution registry and reports unregistered mutations. OBSERVE-class; does not mutate.",
-      "description_canonical": "ACTUATOR \u00b7 probe \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Machine Constitution drift detector. Asserts live ports/services/cron against the saved Machine Constitution registry and reports unregistered mutations. OBSERV",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · probe · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Machine Constitution drift detector. Asserts live ports/services/cron against the saved Machine Constitution registry and reports unregistered mutations. OBSERV",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -233,8 +233,8 @@
       },
       "purpose": "ACTUATOR [browser/MUTATE] supervised by kernel 777_FORGE. Click a browser element. OBSERVE-class.",
       "description_live": "Click a browser element. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 browser \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Click a browser element. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · browser · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Click a browser element. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -264,8 +264,8 @@
       },
       "purpose": "ACTUATOR [browser/MUTATE] supervised by kernel 777_FORGE. Evaluate JS in browser context. OBSERVE-class.",
       "description_live": "Evaluate JS in browser context. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 browser \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Evaluate JS in browser context. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · browser · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Evaluate JS in browser context. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -295,8 +295,8 @@
       },
       "purpose": "ACTUATOR [browser/OBSERVE] supervised by kernel 777_FORGE. Extract text from browser page. OBSERVE-class.",
       "description_live": "Extract text from browser page. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 browser \u00b7 OBSERVE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Extract text from browser page. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · browser · OBSERVE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Extract text from browser page. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -314,20 +314,20 @@
       "capability_surface": "aforge.browser.browser_navigate",
       "kernel_verb": "777_FORGE",
       "kernel_wire": "arif_forge",
-      "mutation_class": "MUTATE",
+      "mutation_class": "OBSERVE",
       "gates": {
         "requires_session": true,
         "requires_lease": true,
         "requires_gate": true,
         "requires_seal": false,
-        "requires_human_approval": true,
-        "min_mode": "GOVERN",
-        "risk_label": "R3"
+        "requires_human_approval": false,
+        "min_mode": "THINK",
+        "risk_label": "R1"
       },
-      "purpose": "ACTUATOR [browser/MUTATE] supervised by kernel 777_FORGE. Navigate browser to URL. OBSERVE-class.",
+      "purpose": "ACTUATOR [browser/OBSERVE] supervised by kernel 777_FORGE. Navigate browser to URL.",
       "description_live": "Navigate browser to URL. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 browser \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Navigate browser to URL. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · browser · OBSERVE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=N. Navigate browser to URL.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -357,8 +357,8 @@
       },
       "purpose": "ACTUATOR [browser/OBSERVE] supervised by kernel 777_FORGE. Take a browser screenshot. OBSERVE-class.",
       "description_live": "Take a browser screenshot. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 browser \u00b7 OBSERVE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Take a browser screenshot. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · browser · OBSERVE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Take a browser screenshot. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -388,8 +388,8 @@
       },
       "purpose": "ACTUATOR [browser/MUTATE] supervised by kernel 777_FORGE. Type text into a browser element. OBSERVE-class.",
       "description_live": "Type text into a browser element. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 browser \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Type text into a browser element. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · browser · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Type text into a browser element. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -419,8 +419,8 @@
       },
       "purpose": "ACTUATOR [meta/OBSERVE] supervised by kernel 333_THINK. Agentic charting + quantum eureka discovery margin patterns. Input data series or records; returns S",
       "description_live": "Agentic charting + quantum eureka discovery margin patterns. Input data series or records; returns SVG + summary + eureka_candidates (reversals, high-z, curvature). Types support line/bar/scatter/pie/",
-      "description_canonical": "ACTUATOR \u00b7 meta \u00b7 OBSERVE \u00b7 kernel-supervised by 333_THINK (arif_think). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Agentic charting + quantum eureka discovery margin patterns. Input data series or records; returns SVG + summary + eureka_candidates (reversals, high-z, curvatu",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · meta · OBSERVE · kernel-supervised by 333_THINK (arif_think). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Agentic charting + quantum eureka discovery margin patterns. Input data series or records; returns SVG + summary + eureka_candidates (reversals, high-z, curvatu",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -448,10 +448,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 555_CRITIQUE. Constitutional governance check \u2014 delegates to arifOS. A-FORGE NEVER adjudicates constitutional floo",
-      "description_live": "Constitutional governance check \u2014 delegates to arifOS. A-FORGE NEVER adjudicates constitutional floors.",
-      "description_canonical": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 555_CRITIQUE (arif_critique). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Constitutional governance check \u2014 delegates to arifOS. A-FORGE NEVER adjudicates constitutional floors.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 555_CRITIQUE. Constitutional governance check — delegates to arifOS. A-FORGE NEVER adjudicates constitutional floo",
+      "description_live": "Constitutional governance check — delegates to arifOS. A-FORGE NEVER adjudicates constitutional floors.",
+      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 555_CRITIQUE (arif_critique). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Constitutional governance check — delegates to arifOS. A-FORGE NEVER adjudicates constitutional floors.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -481,8 +481,8 @@
       },
       "purpose": "ACTUATOR [docker/MUTATE] supervised by kernel 777_FORGE. Canonical Docker primitive. Modes: ps, logs, exec, images. Destructive operations stay out of this r",
       "description_live": "Canonical Docker primitive. Modes: ps, logs, exec, images. Destructive operations stay out of this read/exec surface.",
-      "description_canonical": "ACTUATOR \u00b7 docker \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Canonical Docker primitive. Modes: ps, logs, exec, images. Destructive operations stay out of this read/exec surface.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · docker · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Canonical Docker primitive. Modes: ps, logs, exec, images. Destructive operations stay out of this read/exec surface.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -510,10 +510,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [meta/OBSERVE] supervised by kernel 888_JUDGE. Package all evidence and hand off to arifOS. A-FORGE RELINQUISHES CONTROL \u2014 docket is read-only.",
-      "description_live": "Package all evidence and hand off to arifOS. A-FORGE RELINQUISHES CONTROL \u2014 docket is read-only.",
-      "description_canonical": "ACTUATOR \u00b7 meta \u00b7 OBSERVE \u00b7 kernel-supervised by 888_JUDGE (arif_judge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Package all evidence and hand off to arifOS. A-FORGE RELINQUISHES CONTROL \u2014 docket is read-only.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [meta/OBSERVE] supervised by kernel 888_JUDGE. Package all evidence and hand off to arifOS. A-FORGE RELINQUISHES CONTROL — docket is read-only.",
+      "description_live": "Package all evidence and hand off to arifOS. A-FORGE RELINQUISHES CONTROL — docket is read-only.",
+      "description_canonical": "ACTUATOR · meta · OBSERVE · kernel-supervised by 888_JUDGE (arif_judge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Package all evidence and hand off to arifOS. A-FORGE RELINQUISHES CONTROL — docket is read-only.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -543,8 +543,8 @@
       },
       "purpose": "ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Governed docs lookup via Context7. OBSERVE-class.",
       "description_live": "Governed docs lookup via Context7. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 research \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Governed docs lookup via Context7. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · research · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Governed docs lookup via Context7. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -572,10 +572,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [meta/OBSERVE] supervised by kernel 777_FORGE. Document intelligence engine \u2014 layout-first parsing with bounding-box provenance.\n\nModes:\n  analyze ",
-      "description_live": "Document intelligence engine \u2014 layout-first parsing with bounding-box provenance.\n\nModes:\n  analyze  \u2014 Layout analysis only. Return structure tree with element types and positions.\n  extract  \u2014 Full p",
-      "description_canonical": "ACTUATOR \u00b7 meta \u00b7 OBSERVE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Document intelligence engine \u2014 layout-first parsing with bounding-box provenance.\n\nModes:\n  analyze  \u2014 Layout analysis only. Return structure tree with element ",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [meta/OBSERVE] supervised by kernel 777_FORGE. Document intelligence engine — layout-first parsing with bounding-box provenance.\n\nModes:\n  analyze ",
+      "description_live": "Document intelligence engine — layout-first parsing with bounding-box provenance.\n\nModes:\n  analyze  — Layout analysis only. Return structure tree with element types and positions.\n  extract  — Full p",
+      "description_canonical": "ACTUATOR · meta · OBSERVE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Document intelligence engine — layout-first parsing with bounding-box provenance.\n\nModes:\n  analyze  — Layout analysis only. Return structure tree with element ",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -603,10 +603,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 333_THINK. APEX v36\u03a9 evaluation gate. Computes G = A\u00b7P\u00b7E\u00b7X\u00b7\u03a6 (Nash bargaining product) and C_dark = A\u00b7(1-P)\u00b7(1-",
-      "description_live": "APEX v36\u03a9 evaluation gate. Computes G = A\u00b7P\u00b7E\u00b7X\u00b7\u03a6 (Nash bargaining product) and C_dark = A\u00b7(1-P)\u00b7(1-X) for a candidate tool spec. Returns SEAL/REVIEW/VOID verdict. Does NOT generate code \u2014 evaluates o",
-      "description_canonical": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 333_THINK (arif_think). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. APEX v36\u03a9 evaluation gate. Computes G = A\u00b7P\u00b7E\u00b7X\u00b7\u03a6 (Nash bargaining product) and C_dark = A\u00b7(1-P)\u00b7(1-X) for a candidate tool spec. Returns SEAL/REVIEW/VOID verdi",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 333_THINK. APEX v36Ω evaluation gate. Computes G = A·P·E·X·Φ (Nash bargaining product) and C_dark = A·(1-P)·(1-",
+      "description_live": "APEX v36Ω evaluation gate. Computes G = A·P·E·X·Φ (Nash bargaining product) and C_dark = A·(1-P)·(1-X) for a candidate tool spec. Returns SEAL/REVIEW/VOID verdict. Does NOT generate code — evaluates o",
+      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 333_THINK (arif_think). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. APEX v36Ω evaluation gate. Computes G = A·P·E·X·Φ (Nash bargaining product) and C_dark = A·(1-P)·(1-X) for a candidate tool spec. Returns SEAL/REVIEW/VOID verdi",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -636,8 +636,8 @@
       },
       "purpose": "ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Execution and motor cortex (Stage 777 FORGE). Use this to execute an action plan. Requires cc_id for",
       "description_live": "Execution and motor cortex (Stage 777 FORGE). Use this to execute an action plan. Requires cc_id for mutations (INV-4).",
-      "description_canonical": "ACTUATOR \u00b7 execute \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=Y approval=Y. Execution and motor cortex (Stage 777 FORGE). Use this to execute an action plan. Requires cc_id for mutations (INV-4).",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · execute · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=Y approval=Y. Execution and motor cortex (Stage 777 FORGE). Use this to execute an action plan. Requires cc_id for mutations (INV-4).",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -665,10 +665,10 @@
         "min_mode": "GOVERN",
         "risk_label": "R5"
       },
-      "purpose": "ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Execute with VAULT999 seal. FAILS HARD without valid seal \u2014 no self-authorization possible.",
-      "description_live": "Execute with VAULT999 seal. FAILS HARD without valid seal \u2014 no self-authorization possible.",
-      "description_canonical": "ACTUATOR \u00b7 execute \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=Y approval=Y. Execute with VAULT999 seal. FAILS HARD without valid seal \u2014 no self-authorization possible.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Execute with VAULT999 seal. FAILS HARD without valid seal — no self-authorization possible.",
+      "description_live": "Execute with VAULT999 seal. FAILS HARD without valid seal — no self-authorization possible.",
+      "description_canonical": "ACTUATOR · execute · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=Y approval=Y. Execute with VAULT999 seal. FAILS HARD without valid seal — no self-authorization possible.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -698,8 +698,8 @@
       },
       "purpose": "ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Governed URL evidence intake + self-hosted web search. Modes: html, markdown, text, json, readable, ",
       "description_live": "Governed URL evidence intake + self-hosted web search. Modes: html, markdown, text, json, readable, metadata, links, search. OBSERVE-class, no mutations. SSRF-protected (blocks private IPs). robots.tx",
-      "description_canonical": "ACTUATOR \u00b7 research \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Governed URL evidence intake + self-hosted web search. Modes: html, markdown, text, json, readable, metadata, links, search. OBSERVE-class, no mutations. SSRF-p",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · research · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Governed URL evidence intake + self-hosted web search. Modes: html, markdown, text, json, readable, metadata, links, search. OBSERVE-class, no mutations. SSRF-p",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -729,8 +729,8 @@
       },
       "purpose": "ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Fetch a URL and parse as JSON. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=json).",
       "description_live": "Fetch a URL and parse as JSON. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=json).",
-      "description_canonical": "ACTUATOR \u00b7 research \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Fetch a URL and parse as JSON. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=json).",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · research · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Fetch a URL and parse as JSON. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=json).",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -760,8 +760,8 @@
       },
       "purpose": "ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Extract all links from a URL. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=links).",
       "description_live": "Extract all links from a URL. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=links).",
-      "description_canonical": "ACTUATOR \u00b7 research \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Extract all links from a URL. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=links).",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · research · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Extract all links from a URL. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=links).",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -791,8 +791,8 @@
       },
       "purpose": "ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Fetch URL metadata (title, author, description, dates, links). OBSERVE-class, SSRF-protected. Equiva",
       "description_live": "Fetch URL metadata (title, author, description, dates, links). OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=metadata).",
-      "description_canonical": "ACTUATOR \u00b7 research \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Fetch URL metadata (title, author, description, dates, links). OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=metadata).",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · research · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Fetch URL metadata (title, author, description, dates, links). OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=metadata).",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -822,8 +822,8 @@
       },
       "purpose": "ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Fetch a URL and return content as markdown. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch",
       "description_live": "Fetch a URL and return content as markdown. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=readable).",
-      "description_canonical": "ACTUATOR \u00b7 research \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Fetch a URL and return content as markdown. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=readable).",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · research · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Fetch a URL and return content as markdown. OBSERVE-class, SSRF-protected. Equivalent to forge_fetch(mode=readable).",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -853,8 +853,8 @@
       },
       "purpose": "ACTUATOR [fs/OBSERVE] supervised by kernel 777_FORGE. Canonical governed filesystem primitive. Modes: read, write, patch, glob, grep, stat, tree, move, de",
       "description_live": "Canonical governed filesystem primitive. Modes: read, write, patch, glob, grep, stat, tree, move, delete, restore. F8 scoped to /root, /tmp, /data, /var/log. delete defaults to quarantine (not hard de",
-      "description_canonical": "ACTUATOR \u00b7 fs \u00b7 OBSERVE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Canonical governed filesystem primitive. Modes: read, write, patch, glob, grep, stat, tree, move, delete, restore. F8 scoped to /root, /tmp, /data, /var/log. de",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · fs · OBSERVE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Canonical governed filesystem primitive. Modes: read, write, patch, glob, grep, stat, tree, move, delete, restore. F8 scoped to /root, /tmp, /data, /var/log. de",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -882,10 +882,10 @@
         "min_mode": "GOVERN",
         "risk_label": "R5"
       },
-      "purpose": "ACTUATOR [fs/MUTATE] supervised by kernel 777_FORGE. Delete a file (quarantine by default). IRREVERSIBLE for hard delete \u2014 requires 888_HOLD.",
-      "description_live": "Delete a file (quarantine by default). IRREVERSIBLE for hard delete \u2014 requires 888_HOLD.",
-      "description_canonical": "ACTUATOR \u00b7 fs \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=Y approval=Y. Delete a file (quarantine by default). IRREVERSIBLE for hard delete \u2014 requires 888_HOLD.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [fs/MUTATE] supervised by kernel 777_FORGE. Delete a file (quarantine by default). IRREVERSIBLE for hard delete — requires 888_HOLD.",
+      "description_live": "Delete a file (quarantine by default). IRREVERSIBLE for hard delete — requires 888_HOLD.",
+      "description_canonical": "ACTUATOR · fs · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=Y approval=Y. Delete a file (quarantine by default). IRREVERSIBLE for hard delete — requires 888_HOLD.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -915,8 +915,8 @@
       },
       "purpose": "ACTUATOR [fs/MUTATE] supervised by kernel 777_FORGE. Move a file or directory. EXECUTE-class, requires lease. Reversible.",
       "description_live": "Move a file or directory. EXECUTE-class, requires lease. Reversible.",
-      "description_canonical": "ACTUATOR \u00b7 fs \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Move a file or directory. EXECUTE-class, requires lease. Reversible.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · fs · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Move a file or directory. EXECUTE-class, requires lease. Reversible.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -946,8 +946,8 @@
       },
       "purpose": "ACTUATOR [fs/MUTATE] supervised by kernel 777_FORGE. Surgical text replacement in a file. EXECUTE-class, requires lease. Returns diff preview in dry_run ",
       "description_live": "Surgical text replacement in a file. EXECUTE-class, requires lease. Returns diff preview in dry_run mode.",
-      "description_canonical": "ACTUATOR \u00b7 fs \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Surgical text replacement in a file. EXECUTE-class, requires lease. Returns diff preview in dry_run mode.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · fs · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Surgical text replacement in a file. EXECUTE-class, requires lease. Returns diff preview in dry_run mode.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -977,8 +977,8 @@
       },
       "purpose": "ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. Read a file or list a directory. OBSERVE-class, no lease required. F8 scoped to /root, /tmp, /data, ",
       "description_live": "Read a file or list a directory. OBSERVE-class, no lease required. F8 scoped to /root, /tmp, /data, /var/log.",
-      "description_canonical": "ACTUATOR \u00b7 fs \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Read a file or list a directory. OBSERVE-class, no lease required. F8 scoped to /root, /tmp, /data, /var/log.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · fs · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Read a file or list a directory. OBSERVE-class, no lease required. F8 scoped to /root, /tmp, /data, /var/log.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1008,8 +1008,8 @@
       },
       "purpose": "ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. Search file contents by regex pattern. OBSERVE-class, no lease required.",
       "description_live": "Search file contents by regex pattern. OBSERVE-class, no lease required.",
-      "description_canonical": "ACTUATOR \u00b7 fs \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Search file contents by regex pattern. OBSERVE-class, no lease required.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · fs · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Search file contents by regex pattern. OBSERVE-class, no lease required.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1039,8 +1039,8 @@
       },
       "purpose": "ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. Get file/directory metadata including sha256 hash. OBSERVE-class, no lease required.",
       "description_live": "Get file/directory metadata including sha256 hash. OBSERVE-class, no lease required.",
-      "description_canonical": "ACTUATOR \u00b7 fs \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Get file/directory metadata including sha256 hash. OBSERVE-class, no lease required.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · fs · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Get file/directory metadata including sha256 hash. OBSERVE-class, no lease required.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1070,8 +1070,8 @@
       },
       "purpose": "ACTUATOR [fs/OBSERVE] supervised by kernel 111_OBSERVE. List directory tree structure. OBSERVE-class, no lease required.",
       "description_live": "List directory tree structure. OBSERVE-class, no lease required.",
-      "description_canonical": "ACTUATOR \u00b7 fs \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. List directory tree structure. OBSERVE-class, no lease required.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · fs · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. List directory tree structure. OBSERVE-class, no lease required.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1101,8 +1101,8 @@
       },
       "purpose": "ACTUATOR [fs/MUTATE] supervised by kernel 777_FORGE. Create or overwrite a file. EXECUTE-class, requires lease. F1 AMANAH: backup before overwrite.",
       "description_live": "Create or overwrite a file. EXECUTE-class, requires lease. F1 AMANAH: backup before overwrite.",
-      "description_canonical": "ACTUATOR \u00b7 fs \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Create or overwrite a file. EXECUTE-class, requires lease. F1 AMANAH: backup before overwrite.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · fs · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Create or overwrite a file. EXECUTE-class, requires lease. F1 AMANAH: backup before overwrite.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1132,8 +1132,8 @@
       },
       "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Compute and verify tool fingerprints. Detects duplicate tools (same name + schema) and schema drift.",
       "description_live": "Compute and verify tool fingerprints. Detects duplicate tools (same name + schema) and schema drift.",
-      "description_canonical": "ACTUATOR \u00b7 probe \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Compute and verify tool fingerprints. Detects duplicate tools (same name + schema) and schema drift.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · probe · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Compute and verify tool fingerprints. Detects duplicate tools (same name + schema) and schema drift.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1163,8 +1163,8 @@
       },
       "purpose": "ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Canonical git primitive. Modes: status, diff, log, commit. Mutating modes are floor-gated by A-FORGE",
       "description_live": "Canonical git primitive. Modes: status, diff, log, commit. Mutating modes are floor-gated by A-FORGE MCP ingress.",
-      "description_canonical": "ACTUATOR \u00b7 git \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Canonical git primitive. Modes: status, diff, log, commit. Mutating modes are floor-gated by A-FORGE MCP ingress.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · git · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Canonical git primitive. Modes: status, diff, log, commit. Mutating modes are floor-gated by A-FORGE MCP ingress.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1194,8 +1194,8 @@
       },
       "purpose": "ACTUATOR [git/OBSERVE] supervised by kernel 777_FORGE. Canonical GitHub primitive. Modes: search, pr. Use type for search variants instead of separate tool",
       "description_live": "Canonical GitHub primitive. Modes: search, pr. Use type for search variants instead of separate tools.",
-      "description_canonical": "ACTUATOR \u00b7 git \u00b7 OBSERVE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Canonical GitHub primitive. Modes: search, pr. Use type for search variants instead of separate tools.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · git · OBSERVE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Canonical GitHub primitive. Modes: search, pr. Use type for search variants instead of separate tools.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1223,10 +1223,10 @@
         "min_mode": "GOVERN",
         "risk_label": "R3"
       },
-      "purpose": "ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Create a GitHub issue. MUTATE \u2014 lease required.",
-      "description_live": "Create a GitHub issue. MUTATE \u2014 lease required.",
-      "description_canonical": "ACTUATOR \u00b7 git \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Create a GitHub issue. MUTATE \u2014 lease required.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Create a GitHub issue. MUTATE — lease required.",
+      "description_live": "Create a GitHub issue. MUTATE — lease required.",
+      "description_canonical": "ACTUATOR · git · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Create a GitHub issue. MUTATE — lease required.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1254,10 +1254,10 @@
         "min_mode": "GOVERN",
         "risk_label": "R3"
       },
-      "purpose": "ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Create or update a file on GitHub. MUTATE \u2014 lease required.",
-      "description_live": "Create or update a file on GitHub. MUTATE \u2014 lease required.",
-      "description_canonical": "ACTUATOR \u00b7 git \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Create or update a file on GitHub. MUTATE \u2014 lease required.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Create or update a file on GitHub. MUTATE — lease required.",
+      "description_live": "Create or update a file on GitHub. MUTATE — lease required.",
+      "description_canonical": "ACTUATOR · git · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Create or update a file on GitHub. MUTATE — lease required.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1285,10 +1285,10 @@
         "min_mode": "GOVERN",
         "risk_label": "R3"
       },
-      "purpose": "ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Create a GitHub pull request. MUTATE \u2014 lease required.",
-      "description_live": "Create a GitHub pull request. MUTATE \u2014 lease required.",
-      "description_canonical": "ACTUATOR \u00b7 git \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Create a GitHub pull request. MUTATE \u2014 lease required.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [git/MUTATE] supervised by kernel 777_FORGE. Create a GitHub pull request. MUTATE — lease required.",
+      "description_live": "Create a GitHub pull request. MUTATE — lease required.",
+      "description_canonical": "ACTUATOR · git · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Create a GitHub pull request. MUTATE — lease required.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1318,8 +1318,8 @@
       },
       "purpose": "ACTUATOR [git/OBSERVE] supervised by kernel 111_OBSERVE. Read a file from GitHub. OBSERVE-class.",
       "description_live": "Read a file from GitHub. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 git \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Read a file from GitHub. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · git · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Read a file from GitHub. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1349,8 +1349,8 @@
       },
       "purpose": "ACTUATOR [git/OBSERVE] supervised by kernel 111_OBSERVE. Search GitHub code. OBSERVE-class.",
       "description_live": "Search GitHub code. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 git \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Search GitHub code. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · git · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Search GitHub code. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1380,8 +1380,8 @@
       },
       "purpose": "ACTUATOR [git/OBSERVE] supervised by kernel 111_OBSERVE. Search GitHub repositories. OBSERVE-class.",
       "description_live": "Search GitHub repositories. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 git \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Search GitHub repositories. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · git · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Search GitHub repositories. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1411,8 +1411,8 @@
       },
       "purpose": "ACTUATOR [health/OBSERVE] supervised by kernel 111_OBSERVE. Return A-FORGE server health and constitutional genome (v2.0) status.",
       "description_live": "Return A-FORGE server health and constitutional genome (v2.0) status.",
-      "description_canonical": "ACTUATOR \u00b7 health \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Return A-FORGE server health and constitutional genome (v2.0) status.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · health · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Return A-FORGE server health and constitutional genome (v2.0) status.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1440,10 +1440,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 555_CRITIQUE. Risk assessment and ethical review \u2014 delegates to arifOS 666 HEART pipeline. A-FORGE does NOT adjudi",
-      "description_live": "Risk assessment and ethical review \u2014 delegates to arifOS 666 HEART pipeline. A-FORGE does NOT adjudicate floors locally.",
-      "description_canonical": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 555_CRITIQUE (arif_critique). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Risk assessment and ethical review \u2014 delegates to arifOS 666 HEART pipeline. A-FORGE does NOT adjudicate floors locally.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 555_CRITIQUE. Risk assessment and ethical review — delegates to arifOS 666 HEART pipeline. A-FORGE does NOT adjudi",
+      "description_live": "Risk assessment and ethical review — delegates to arifOS 666 HEART pipeline. A-FORGE does NOT adjudicate floors locally.",
+      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 555_CRITIQUE (arif_critique). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Risk assessment and ethical review — delegates to arifOS 666 HEART pipeline. A-FORGE does NOT adjudicate floors locally.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1471,10 +1471,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. J\u2011space manifold stability check. Verifies GEOX \u2194 arifOS isomorphism pairs (Identity, Authority, Irr",
-      "description_live": "J\u2011space manifold stability check. Verifies GEOX \u2194 arifOS isomorphism pairs (Identity, Authority, Irreversibility) through runtime witness functions.",
-      "description_canonical": "ACTUATOR \u00b7 probe \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. J\u2011space manifold stability check. Verifies GEOX \u2194 arifOS isomorphism pairs (Identity, Authority, Irreversibility) through runtime witness functions.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. J‑space manifold stability check. Verifies GEOX ↔ arifOS isomorphism pairs (Identity, Authority, Irr",
+      "description_live": "J‑space manifold stability check. Verifies GEOX ↔ arifOS isomorphism pairs (Identity, Authority, Irreversibility) through runtime witness functions.",
+      "description_canonical": "ACTUATOR · probe · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. J‑space manifold stability check. Verifies GEOX ↔ arifOS isomorphism pairs (Identity, Authority, Irreversibility) through runtime witness functions.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1504,8 +1504,8 @@
       },
       "purpose": "ACTUATOR [job/OBSERVE] supervised by kernel 777_FORGE. Background job system. Modes: submit, status.",
       "description_live": "Background job system. Modes: submit, status.",
-      "description_canonical": "ACTUATOR \u00b7 job \u00b7 OBSERVE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Background job system. Modes: submit, status.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · job · OBSERVE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Background job system. Modes: submit, status.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1535,8 +1535,8 @@
       },
       "purpose": "ACTUATOR [vps/OBSERVE] supervised by kernel 111_OBSERVE. Query systemd journal logs (read-only, PII-redacted). Modes: logs, errors, tail, grep.",
       "description_live": "Query systemd journal logs (read-only, PII-redacted). Modes: logs, errors, tail, grep.",
-      "description_canonical": "ACTUATOR \u00b7 vps \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Query systemd journal logs (read-only, PII-redacted). Modes: logs, errors, tail, grep.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · vps · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Query systemd journal logs (read-only, PII-redacted). Modes: logs, errors, tail, grep.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1566,8 +1566,8 @@
       },
       "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 888_JUDGE. Proxy forwarder to canonical arifOS constitutional judge.",
       "description_live": "Proxy forwarder to canonical arifOS constitutional judge.",
-      "description_canonical": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 888_JUDGE (arif_judge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Proxy forwarder to canonical arifOS constitutional judge.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 888_JUDGE (arif_judge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Proxy forwarder to canonical arifOS constitutional judge.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1595,10 +1595,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Lease lifecycle. Modes: request, status, revoke. A-FORGE does not self-issue leases \u2014 arifOS mints t",
-      "description_live": "Lease lifecycle. Modes: request, status, revoke. A-FORGE does not self-issue leases \u2014 arifOS mints them.",
-      "description_canonical": "ACTUATOR \u00b7 registry \u00b7 OBSERVE \u00b7 kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Lease lifecycle. Modes: request, status, revoke. A-FORGE does not self-issue leases \u2014 arifOS mints them.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Lease lifecycle. Modes: request, status, revoke. A-FORGE does not self-issue leases — arifOS mints t",
+      "description_live": "Lease lifecycle. Modes: request, status, revoke. A-FORGE does not self-issue leases — arifOS mints them.",
+      "description_canonical": "ACTUATOR · registry · OBSERVE · kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Lease lifecycle. Modes: request, status, revoke. A-FORGE does not self-issue leases — arifOS mints them.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1628,8 +1628,8 @@
       },
       "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Amanah/F1 lock primitive. Modes: acquire (reversible F1 gate before mutation), release (free lock).",
       "description_live": "Amanah/F1 lock primitive. Modes: acquire (reversible F1 gate before mutation), release (free lock).",
-      "description_canonical": "ACTUATOR \u00b7 registry \u00b7 OBSERVE \u00b7 kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Amanah/F1 lock primitive. Modes: acquire (reversible F1 gate before mutation), release (free lock).",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · registry · OBSERVE · kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Amanah/F1 lock primitive. Modes: acquire (reversible F1 gate before mutation), release (free lock).",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1659,8 +1659,8 @@
       },
       "purpose": "ACTUATOR [memory/OBSERVE] supervised by kernel MEMORY. Canonical memory primitive. Modes: recall. Reads VAULT999 local files, then vault999-api fallback.",
       "description_live": "Canonical memory primitive. Modes: recall. Reads VAULT999 local files, then vault999-api fallback.",
-      "description_canonical": "ACTUATOR \u00b7 memory \u00b7 OBSERVE \u00b7 kernel-supervised by MEMORY (arif_memory). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Canonical memory primitive. Modes: recall. Reads VAULT999 local files, then vault999-api fallback.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · memory · OBSERVE · kernel-supervised by MEMORY (arif_memory). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Canonical memory primitive. Modes: recall. Reads VAULT999 local files, then vault999-api fallback.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1690,8 +1690,8 @@
       },
       "purpose": "ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Search the web via MiniMax. OBSERVE-class.",
       "description_live": "Search the web via MiniMax. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 research \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Search the web via MiniMax. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · research · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Search the web via MiniMax. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1721,8 +1721,8 @@
       },
       "purpose": "ACTUATOR [health/OBSERVE] supervised by kernel 111_OBSERVE. Read Netdata alarms. OBSERVE-class.",
       "description_live": "Read Netdata alarms. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 health \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Read Netdata alarms. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · health · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Read Netdata alarms. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1752,8 +1752,8 @@
       },
       "purpose": "ACTUATOR [health/OBSERVE] supervised by kernel 111_OBSERVE. Read Netdata chart data. OBSERVE-class.",
       "description_live": "Read Netdata chart data. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 health \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Read Netdata chart data. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · health · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Read Netdata chart data. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1781,10 +1781,10 @@
         "min_mode": "GOVERN",
         "risk_label": "R5"
       },
-      "purpose": "ACTUATOR [execute/MUTATE] supervised by kernel 444_ROUTE. Autonomous intelligence pipeline (canonical). Routes organs, evidence\u2192compute\u2192(optional judge+seal).",
-      "description_live": "Autonomous intelligence pipeline (canonical). Routes organs, evidence\u2192compute\u2192(optional judge+seal). Requires cc_id/hold for mutate.",
-      "description_canonical": "ACTUATOR \u00b7 execute \u00b7 MUTATE \u00b7 kernel-supervised by 444_ROUTE (arif_route). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=Y approval=Y. Autonomous intelligence pipeline (canonical). Routes organs, evidence\u2192compute\u2192(optional judge+seal). Requires cc_id/hold for mutate.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [execute/MUTATE] supervised by kernel 444_ROUTE. Autonomous intelligence pipeline (canonical). Routes organs, evidence→compute→(optional judge+seal).",
+      "description_live": "Autonomous intelligence pipeline (canonical). Routes organs, evidence→compute→(optional judge+seal). Requires cc_id/hold for mutate.",
+      "description_canonical": "ACTUATOR · execute · MUTATE · kernel-supervised by 444_ROUTE (arif_route). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=Y approval=Y. Autonomous intelligence pipeline (canonical). Routes organs, evidence→compute→(optional judge+seal). Requires cc_id/hold for mutate.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1814,8 +1814,8 @@
       },
       "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Governed MCP Policy Engine. Modes: check (simulate call), set (add/update policy, sovereign-only), r",
       "description_live": "Governed MCP Policy Engine. Modes: check (simulate call), set (add/update policy, sovereign-only), remove (delete policy, sovereign-only), list (show loaded policies), save (persist policies to disk, ",
-      "description_canonical": "ACTUATOR \u00b7 registry \u00b7 OBSERVE \u00b7 kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Governed MCP Policy Engine. Modes: check (simulate call), set (add/update policy, sovereign-only), remove (delete policy, sovereign-only), list (show loaded pol",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · registry · OBSERVE · kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Governed MCP Policy Engine. Modes: check (simulate call), set (add/update policy, sovereign-only), remove (delete policy, sovereign-only), list (show loaded pol",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1845,8 +1845,8 @@
       },
       "purpose": "ACTUATOR [db/MUTATE] supervised by kernel 777_FORGE. Canonical Postgres primitive. Modes: query, schema. Writes require mutate=true and remain floor-gate",
       "description_live": "Canonical Postgres primitive. Modes: query, schema. Writes require mutate=true and remain floor-gated.",
-      "description_canonical": "ACTUATOR \u00b7 db \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Canonical Postgres primitive. Modes: query, schema. Writes require mutate=true and remain floor-gated.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · db · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Canonical Postgres primitive. Modes: query, schema. Writes require mutate=true and remain floor-gated.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1876,8 +1876,8 @@
       },
       "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 333_THINK. Pre-action simulation layer (prediction bridge). GEOX/WEALTH forward models run BEFORE forge_execute",
       "description_live": "Pre-action simulation layer (prediction bridge). GEOX/WEALTH forward models run BEFORE forge_execute. Result attached as evidence to arif_judge via forge_judge_proxy. Build prediction bridge first, th",
-      "description_canonical": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 333_THINK (arif_think). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Pre-action simulation layer (prediction bridge). GEOX/WEALTH forward models run BEFORE forge_execute. Result attached as evidence to arif_judge via forge_judge_",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 333_THINK (arif_think). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Pre-action simulation layer (prediction bridge). GEOX/WEALTH forward models run BEFORE forge_execute. Result attached as evidence to arif_judge via forge_judge_",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1907,8 +1907,8 @@
       },
       "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill.",
       "description_live": "Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill.",
-      "description_canonical": "ACTUATOR \u00b7 probe \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · probe · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1938,8 +1938,8 @@
       },
       "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Probe a web site or cockpit surface for federation resilience and compliance checks. Returns status,",
       "description_live": "Probe a web site or cockpit surface for federation resilience and compliance checks. Returns status, static fallbacks, and metadata.",
-      "description_canonical": "ACTUATOR \u00b7 probe \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Probe a web site or cockpit surface for federation resilience and compliance checks. Returns status, static fallbacks, and metadata.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · probe · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Probe a web site or cockpit surface for federation resilience and compliance checks. Returns status, static fallbacks, and metadata.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -1967,10 +1967,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 333_THINK. Intent compiler: 7-stage state-tracking ledger (MEANING\u2192OBSERVE\u2192ENCODE\u2192IMPROVE\u2192VERIFY\u2192SEAL\u2192RETURN). ",
-      "description_live": "Intent compiler: 7-stage state-tracking ledger (MEANING\u2192OBSERVE\u2192ENCODE\u2192IMPROVE\u2192VERIFY\u2192SEAL\u2192RETURN). Modes: start | advance | record | seal | report | metrics | list | destroy. Constitutional F1\u2013F13 at",
-      "description_canonical": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 333_THINK (arif_think). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Intent compiler: 7-stage state-tracking ledger (MEANING\u2192OBSERVE\u2192ENCODE\u2192IMPROVE\u2192VERIFY\u2192SEAL\u2192RETURN). Modes: start | advance | record | seal | report | metrics | ",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 333_THINK. Intent compiler: 7-stage state-tracking ledger (MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN). ",
+      "description_live": "Intent compiler: 7-stage state-tracking ledger (MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN). Modes: start | advance | record | seal | report | metrics | list | destroy. Constitutional F1–F13 at",
+      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 333_THINK (arif_think). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Intent compiler: 7-stage state-tracking ledger (MEANING→OBSERVE→ENCODE→IMPROVE→VERIFY→SEAL→RETURN). Modes: start | advance | record | seal | report | metrics | ",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2000,8 +2000,8 @@
       },
       "purpose": "ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. Draft a structured compliance receipt for a deployment or change. Output is standard markdown format",
       "description_live": "Draft a structured compliance receipt for a deployment or change. Output is standard markdown formatted for arifOS VAULT999 verification.",
-      "description_canonical": "ACTUATOR \u00b7 vault \u00b7 OBSERVE \u00b7 kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Draft a structured compliance receipt for a deployment or change. Output is standard markdown formatted for arifOS VAULT999 verification.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · vault · OBSERVE · kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Draft a structured compliance receipt for a deployment or change. Output is standard markdown formatted for arifOS VAULT999 verification.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2029,10 +2029,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. APEX v36\u03a9 gated registration gate. Registers a tool ONLY after all gates pass: SEAL verdict from for",
-      "description_live": "APEX v36\u03a9 gated registration gate. Registers a tool ONLY after all gates pass: SEAL verdict from forge_evaluate, CONSENSUS from forge_witness, HARAM scan pass, and scar consultation pass. Non-compensa",
-      "description_canonical": "ACTUATOR \u00b7 registry \u00b7 OBSERVE \u00b7 kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. APEX v36\u03a9 gated registration gate. Registers a tool ONLY after all gates pass: SEAL verdict from forge_evaluate, CONSENSUS from forge_witness, HARAM scan pass, ",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. APEX v36Ω gated registration gate. Registers a tool ONLY after all gates pass: SEAL verdict from for",
+      "description_live": "APEX v36Ω gated registration gate. Registers a tool ONLY after all gates pass: SEAL verdict from forge_evaluate, CONSENSUS from forge_witness, HARAM scan pass, and scar consultation pass. Non-compensa",
+      "description_canonical": "ACTUATOR · registry · OBSERVE · kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. APEX v36Ω gated registration gate. Registers a tool ONLY after all gates pass: SEAL verdict from forge_evaluate, CONSENSUS from forge_witness, HARAM scan pass, ",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2062,8 +2062,8 @@
       },
       "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Dynamic skill registry. Modes: list (all generated tools + Decision Field), get (one tool manifest),",
       "description_live": "Dynamic skill registry. Modes: list (all generated tools + Decision Field), get (one tool manifest), scars (Scar Law history), fingerprint (registry integrity hash), scan (HARAM scan arbitrary code). ",
-      "description_canonical": "ACTUATOR \u00b7 registry \u00b7 OBSERVE \u00b7 kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Dynamic skill registry. Modes: list (all generated tools + Decision Field), get (one tool manifest), scars (Scar Law history), fingerprint (registry integrity h",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · registry · OBSERVE · kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Dynamic skill registry. Modes: list (all generated tools + Decision Field), get (one tool manifest), scars (Scar Law history), fingerprint (registry integrity h",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2093,8 +2093,8 @@
       },
       "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Full A-FORGE tool registry: callable, blocked, degraded, and drift status for all registered tools. ",
       "description_live": "Full A-FORGE tool registry: callable, blocked, degraded, and drift status for all registered tools. Includes tool fingerprinting for dedupe detection.",
-      "description_canonical": "ACTUATOR \u00b7 registry \u00b7 OBSERVE \u00b7 kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Full A-FORGE tool registry: callable, blocked, degraded, and drift status for all registered tools. Includes tool fingerprinting for dedupe detection.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · registry · OBSERVE · kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Full A-FORGE tool registry: callable, blocked, degraded, and drift status for all registered tools. Includes tool fingerprinting for dedupe detection.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2124,8 +2124,8 @@
       },
       "purpose": "ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Governed research across web sources. OBSERVE-class.",
       "description_live": "Governed research across web sources. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 research \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Governed research across web sources. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · research · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Governed research across web sources. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2153,10 +2153,10 @@
         "min_mode": "GOVERN",
         "risk_label": "R3"
       },
-      "purpose": "ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Execute staged artifact in isolated sandbox. ABSOLUTE timeout \u2014 cannot be overridden.",
-      "description_live": "Execute staged artifact in isolated sandbox. ABSOLUTE timeout \u2014 cannot be overridden.",
-      "description_canonical": "ACTUATOR \u00b7 execute \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Execute staged artifact in isolated sandbox. ABSOLUTE timeout \u2014 cannot be overridden.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Execute staged artifact in isolated sandbox. ABSOLUTE timeout — cannot be overridden.",
+      "description_live": "Execute staged artifact in isolated sandbox. ABSOLUTE timeout — cannot be overridden.",
+      "description_canonical": "ACTUATOR · execute · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Execute staged artifact in isolated sandbox. ABSOLUTE timeout — cannot be overridden.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2186,8 +2186,8 @@
       },
       "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Security scan a file or directory before code execution. Detects dangerous patterns. OBSERVE-class. ",
       "description_live": "Security scan a file or directory before code execution. Detects dangerous patterns. OBSERVE-class. P2.5 canonical gap fill.",
-      "description_canonical": "ACTUATOR \u00b7 probe \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Security scan a file or directory before code execution. Detects dangerous patterns. OBSERVE-class. P2.5 canonical gap fill.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · probe · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Security scan a file or directory before code execution. Detects dangerous patterns. OBSERVE-class. P2.5 canonical gap fill.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2215,10 +2215,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. APEX v36\u03a9 scar metabolization gate. Seals failures as permanent constitutional constraints. Modes: s",
-      "description_live": "APEX v36\u03a9 scar metabolization gate. Seals failures as permanent constitutional constraints. Modes: seal (record failure), list (enumerate scars), consult (check fingerprint for matching scars). SCAR L",
-      "description_canonical": "ACTUATOR \u00b7 vault \u00b7 OBSERVE \u00b7 kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. APEX v36\u03a9 scar metabolization gate. Seals failures as permanent constitutional constraints. Modes: seal (record failure), list (enumerate scars), consult (check",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. APEX v36Ω scar metabolization gate. Seals failures as permanent constitutional constraints. Modes: s",
+      "description_live": "APEX v36Ω scar metabolization gate. Seals failures as permanent constitutional constraints. Modes: seal (record failure), list (enumerate scars), consult (check fingerprint for matching scars). SCAR L",
+      "description_canonical": "ACTUATOR · vault · OBSERVE · kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. APEX v36Ω scar metabolization gate. Seals failures as permanent constitutional constraints. Modes: seal (record failure), list (enumerate scars), consult (check",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2246,10 +2246,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. Check artifact against SCAR database. A-FORGE detects but CANNOT judge \u2014 arifOS judges.",
-      "description_live": "Check artifact against SCAR database. A-FORGE detects but CANNOT judge \u2014 arifOS judges.",
-      "description_canonical": "ACTUATOR \u00b7 vault \u00b7 OBSERVE \u00b7 kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Check artifact against SCAR database. A-FORGE detects but CANNOT judge \u2014 arifOS judges.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. Check artifact against SCAR database. A-FORGE detects but CANNOT judge — arifOS judges.",
+      "description_live": "Check artifact against SCAR database. A-FORGE detects but CANNOT judge — arifOS judges.",
+      "description_canonical": "ACTUATOR · vault · OBSERVE · kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Check artifact against SCAR database. A-FORGE detects but CANNOT judge — arifOS judges.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2279,8 +2279,8 @@
       },
       "purpose": "ACTUATOR [vault/MUTATE] supervised by kernel 999_SEAL. Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills canno",
       "description_live": "Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills cannot be deleted, demoted below TRUSTED, or expired. Requires REVIEWED tier + Tri-Witness PASS + F13 app",
-      "description_canonical": "ACTUATOR \u00b7 vault \u00b7 MUTATE \u00b7 kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=Y approval=Y. Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills cannot be deleted, demoted below TRUSTED, or expired. Requires RE",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · vault · MUTATE · kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=Y approval=Y. Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills cannot be deleted, demoted below TRUSTED, or expired. Requires RE",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2310,8 +2310,8 @@
       },
       "purpose": "ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Governed web search via Brave. OBSERVE-class.",
       "description_live": "Governed web search via Brave. OBSERVE-class.",
-      "description_canonical": "ACTUATOR \u00b7 research \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Governed web search via Brave. OBSERVE-class.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · research · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Governed web search via Brave. OBSERVE-class.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2341,8 +2341,8 @@
       },
       "purpose": "ACTUATOR [confirm/MUTATE] supervised by kernel 777_FORGE. Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensi",
       "description_live": "Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensitive credentials). F13 consent gate.",
-      "description_canonical": "ACTUATOR \u00b7 confirm \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensitive credentials). F13 consent gate.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · confirm · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensitive credentials). F13 consent gate.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2370,10 +2370,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 000_INIT. Constitutional session ignition. Proxies to arifOS kernel \u2014 A-FORGE no longer mints independent sess",
-      "description_live": "Constitutional session ignition. Proxies to arifOS kernel \u2014 A-FORGE no longer mints independent sessions. (Stage 000 INIT)",
-      "description_canonical": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 000_INIT (arif_init). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Constitutional session ignition. Proxies to arifOS kernel \u2014 A-FORGE no longer mints independent sessions. (Stage 000 INIT)",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 000_INIT. Constitutional session ignition. Proxies to arifOS kernel — A-FORGE no longer mints independent sess",
+      "description_live": "Constitutional session ignition. Proxies to arifOS kernel — A-FORGE no longer mints independent sessions. (Stage 000 INIT)",
+      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 000_INIT (arif_init). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Constitutional session ignition. Proxies to arifOS kernel — A-FORGE no longer mints independent sessions. (Stage 000 INIT)",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2403,8 +2403,8 @@
       },
       "purpose": "ACTUATOR [shell/MUTATE] supervised by kernel 777_FORGE. Canonical governed shell execution. Executes commands through constitutional gate (ArifJudge) + hash",
       "description_live": "Canonical governed shell execution. Executes commands through constitutional gate (ArifJudge) + hash-chain audit (ArifSeal). DENY patterns are hard-blocked. GATE patterns require human approval. Every",
-      "description_canonical": "ACTUATOR \u00b7 shell \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Canonical governed shell execution. Executes commands through constitutional gate (ArifJudge) + hash-chain audit (ArifSeal). DENY patterns are hard-blocked. GAT",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · shell · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Canonical governed shell execution. Executes commands through constitutional gate (ArifJudge) + hash-chain audit (ArifSeal). DENY patterns are hard-blocked. GAT",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2434,8 +2434,8 @@
       },
       "purpose": "ACTUATOR [shell/OBSERVE] supervised by kernel 111_OBSERVE. View recent ArifJudge alert history (DENY/GATE/self-modification events). Read-only.",
       "description_live": "View recent ArifJudge alert history (DENY/GATE/self-modification events). Read-only.",
-      "description_canonical": "ACTUATOR \u00b7 shell \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. View recent ArifJudge alert history (DENY/GATE/self-modification events). Read-only.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · shell · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. View recent ArifJudge alert history (DENY/GATE/self-modification events). Read-only.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2465,8 +2465,8 @@
       },
       "purpose": "ACTUATOR [shell/OBSERVE] supervised by kernel 111_OBSERVE. Preview a shell command's output WITHOUT executing it. Returns what WOULD happen. F1 AMANAH: no muta",
       "description_live": "Preview a shell command's output WITHOUT executing it. Returns what WOULD happen. F1 AMANAH: no mutation, pure dry-run. For actual execution, use forge_shell.",
-      "description_canonical": "ACTUATOR \u00b7 shell \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Preview a shell command's output WITHOUT executing it. Returns what WOULD happen. F1 AMANAH: no mutation, pure dry-run. For actual execution, use forge_shell.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · shell · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Preview a shell command's output WITHOUT executing it. Returns what WOULD happen. F1 AMANAH: no mutation, pure dry-run. For actual execution, use forge_shell.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2496,8 +2496,8 @@
       },
       "purpose": "ACTUATOR [shell/OBSERVE] supervised by kernel 111_OBSERVE. Query recent ArifSeal hash-chain ledger entries. Read-only, paged. Returns last N records with chain",
       "description_live": "Query recent ArifSeal hash-chain ledger entries. Read-only, paged. Returns last N records with chain integrity status.",
-      "description_canonical": "ACTUATOR \u00b7 shell \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Query recent ArifSeal hash-chain ledger entries. Read-only, paged. Returns last N records with chain integrity status.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · shell · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Query recent ArifSeal hash-chain ledger entries. Read-only, paged. Returns last N records with chain integrity status.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2527,8 +2527,8 @@
       },
       "purpose": "ACTUATOR [shell/OBSERVE] supervised by kernel 111_OBSERVE. Check forge_shell subsystem health: ledger state, judge pattern count, defaults.",
       "description_live": "Check forge_shell subsystem health: ledger state, judge pattern count, defaults.",
-      "description_canonical": "ACTUATOR \u00b7 shell \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Check forge_shell subsystem health: ledger state, judge pattern count, defaults.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · shell · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Check forge_shell subsystem health: ledger state, judge pattern count, defaults.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2556,10 +2556,10 @@
         "min_mode": "GOVERN",
         "risk_label": "R3"
       },
-      "purpose": "ACTUATOR [skill/MUTATE] supervised by kernel 777_FORGE. Dynamic tool forge (APEX Epoch 34\u03a9). Generates a new MCP tool via LLM, gated by HARAM scan + Decisio",
-      "description_live": "Dynamic tool forge (APEX Epoch 34\u03a9). Generates a new MCP tool via LLM, gated by HARAM scan + Decision Field (G=Q\u00b7V\u00b7\u03a8\u00b7\u03a6), sealed to VAULT999. Phase 1: human approval per generation, 24h expiry, max 1 g",
-      "description_canonical": "ACTUATOR \u00b7 skill \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Dynamic tool forge (APEX Epoch 34\u03a9). Generates a new MCP tool via LLM, gated by HARAM scan + Decision Field (G=Q\u00b7V\u00b7\u03a8\u00b7\u03a6), sealed to VAULT999. Phase 1: human appr",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [skill/MUTATE] supervised by kernel 777_FORGE. Dynamic tool forge (APEX Epoch 34Ω). Generates a new MCP tool via LLM, gated by HARAM scan + Decisio",
+      "description_live": "Dynamic tool forge (APEX Epoch 34Ω). Generates a new MCP tool via LLM, gated by HARAM scan + Decision Field (G=Q·V·Ψ·Φ), sealed to VAULT999. Phase 1: human approval per generation, 24h expiry, max 1 g",
+      "description_canonical": "ACTUATOR · skill · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Dynamic tool forge (APEX Epoch 34Ω). Generates a new MCP tool via LLM, gated by HARAM scan + Decision Field (G=Q·V·Ψ·Φ), sealed to VAULT999. Phase 1: human appr",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2589,8 +2589,8 @@
       },
       "purpose": "ACTUATOR [skill/OBSERVE] supervised by kernel 999_SEAL. Query artifact store. Semantic search with tag filtering.",
       "description_live": "Query artifact store. Semantic search with tag filtering.",
-      "description_canonical": "ACTUATOR \u00b7 skill \u00b7 OBSERVE \u00b7 kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Query artifact store. Semantic search with tag filtering.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · skill · OBSERVE · kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Query artifact store. Semantic search with tag filtering.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2620,8 +2620,8 @@
       },
       "purpose": "ACTUATOR [skill/MUTATE] supervised by kernel 777_FORGE. Store artifact with provenance. WRITE mode only. Two-layer retention with SCAR immunization.",
       "description_live": "Store artifact with provenance. WRITE mode only. Two-layer retention with SCAR immunization.",
-      "description_canonical": "ACTUATOR \u00b7 skill \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Store artifact with provenance. WRITE mode only. Two-layer retention with SCAR immunization.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · skill · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Store artifact with provenance. WRITE mode only. Two-layer retention with SCAR immunization.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2651,8 +2651,8 @@
       },
       "purpose": "ACTUATOR [vault/MUTATE] supervised by kernel 777_FORGE. Move artifact to quarantine staging. Spec becomes IMMUTABLE after staging.",
       "description_live": "Move artifact to quarantine staging. Spec becomes IMMUTABLE after staging.",
-      "description_canonical": "ACTUATOR \u00b7 vault \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Move artifact to quarantine staging. Spec becomes IMMUTABLE after staging.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · vault · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Move artifact to quarantine staging. Spec becomes IMMUTABLE after staging.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2682,8 +2682,8 @@
       },
       "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Active execution state: jobs, leases, agents. INFRA-class. P2.2 canonical gap fill.",
       "description_live": "Active execution state: jobs, leases, agents. INFRA-class. P2.2 canonical gap fill.",
-      "description_canonical": "ACTUATOR \u00b7 registry \u00b7 OBSERVE \u00b7 kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Active execution state: jobs, leases, agents. INFRA-class. P2.2 canonical gap fill.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · registry · OBSERVE · kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Active execution state: jobs, leases, agents. INFRA-class. P2.2 canonical gap fill.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2713,8 +2713,8 @@
       },
       "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Audit MCP tool surface: compare live registry vs affordances.yaml to detect phantom entries, missing",
       "description_live": "Audit MCP tool surface: compare live registry vs affordances.yaml to detect phantom entries, missing tools, description drift, and alias conflicts. Federation-wide drift detection.",
-      "description_canonical": "ACTUATOR \u00b7 probe \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Audit MCP tool surface: compare live registry vs affordances.yaml to detect phantom entries, missing tools, description drift, and alias conflicts. Federation-w",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · probe · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Audit MCP tool surface: compare live registry vs affordances.yaml to detect phantom entries, missing tools, description drift, and alias conflicts. Federation-w",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2742,10 +2742,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. MCP Surface Guard \u2014 schema fingerprinting + drift detection. Modes: check (run federation drift chec",
-      "description_live": "MCP Surface Guard \u2014 schema fingerprinting + drift detection. Modes: check (run federation drift check), status (get cached drift log), pin (snapshot current tool surface), config (show guard config). ",
-      "description_canonical": "ACTUATOR \u00b7 probe \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. MCP Surface Guard \u2014 schema fingerprinting + drift detection. Modes: check (run federation drift check), status (get cached drift log), pin (snapshot current too",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. MCP Surface Guard — schema fingerprinting + drift detection. Modes: check (run federation drift chec",
+      "description_live": "MCP Surface Guard — schema fingerprinting + drift detection. Modes: check (run federation drift check), status (get cached drift log), pin (snapshot current tool surface), config (show guard config). ",
+      "description_canonical": "ACTUATOR · probe · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. MCP Surface Guard — schema fingerprinting + drift detection. Modes: check (run federation drift check), status (get cached drift log), pin (snapshot current too",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2773,10 +2773,10 @@
         "min_mode": "GOVERN",
         "risk_label": "R3"
       },
-      "purpose": "ACTUATOR [skill/MUTATE] supervised by kernel 777_FORGE. Create artifact from intent. Code goes to temporary buffer ONLY \u2014 never touches filesystem.",
-      "description_live": "Create artifact from intent. Code goes to temporary buffer ONLY \u2014 never touches filesystem.",
-      "description_canonical": "ACTUATOR \u00b7 skill \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Create artifact from intent. Code goes to temporary buffer ONLY \u2014 never touches filesystem.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [skill/MUTATE] supervised by kernel 777_FORGE. Create artifact from intent. Code goes to temporary buffer ONLY — never touches filesystem.",
+      "description_live": "Create artifact from intent. Code goes to temporary buffer ONLY — never touches filesystem.",
+      "description_canonical": "ACTUATOR · skill · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Create artifact from intent. Code goes to temporary buffer ONLY — never touches filesystem.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2804,10 +2804,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Set trust tier LOWER BOUND only. A-FORGE cannot promote \u2014 only arifOS sets actual tier.",
-      "description_live": "Set trust tier LOWER BOUND only. A-FORGE cannot promote \u2014 only arifOS sets actual tier.",
-      "description_canonical": "ACTUATOR \u00b7 registry \u00b7 OBSERVE \u00b7 kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Set trust tier LOWER BOUND only. A-FORGE cannot promote \u2014 only arifOS sets actual tier.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Set trust tier LOWER BOUND only. A-FORGE cannot promote — only arifOS sets actual tier.",
+      "description_live": "Set trust tier LOWER BOUND only. A-FORGE cannot promote — only arifOS sets actual tier.",
+      "description_canonical": "ACTUATOR · registry · OBSERVE · kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Set trust tier LOWER BOUND only. A-FORGE cannot promote — only arifOS sets actual tier.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2837,8 +2837,8 @@
       },
       "purpose": "ACTUATOR [confirm/MUTATE] supervised by kernel 777_FORGE. Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until use",
       "description_live": "Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until user accept/decline/cancel.",
-      "description_canonical": "ACTUATOR \u00b7 confirm \u00b7 MUTATE \u00b7 kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until user accept/decline/cancel.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · confirm · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until user accept/decline/cancel.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2868,8 +2868,8 @@
       },
       "purpose": "ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. VAULT999 primitive. Modes: read, list, write, seal.",
       "description_live": "VAULT999 primitive. Modes: read, list, write, seal.",
-      "description_canonical": "ACTUATOR \u00b7 vault \u00b7 OBSERVE \u00b7 kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. VAULT999 primitive. Modes: read, list, write, seal.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · vault · OBSERVE · kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. VAULT999 primitive. Modes: read, list, write, seal.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2899,8 +2899,8 @@
       },
       "purpose": "ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Verify timeline claims require minimum 2 independent sources.\nTIMELINE_MIN_SOURCES invariant: No tim",
       "description_live": "Verify timeline claims require minimum 2 independent sources.\nTIMELINE_MIN_SOURCES invariant: No timeline claim with fewer than 2 sources passes.\nReturns verification verdict, source count, source qua",
-      "description_canonical": "ACTUATOR \u00b7 probe \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Verify timeline claims require minimum 2 independent sources.\nTIMELINE_MIN_SOURCES invariant: No timeline claim with fewer than 2 sources passes.\nReturns verifi",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · probe · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Verify timeline claims require minimum 2 independent sources.\nTIMELINE_MIN_SOURCES invariant: No timeline claim with fewer than 2 sources passes.\nReturns verifi",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2930,8 +2930,8 @@
       },
       "purpose": "ACTUATOR [vps/OBSERVE] supervised by kernel 111_OBSERVE. Machine Constitution cron registry. Lists cron jobs from root crontab, /etc/crontab, and /etc/cron.d",
       "description_live": "Machine Constitution cron registry. Lists cron jobs from root crontab, /etc/crontab, and /etc/cron.d. OBSERVE-class; does not mutate.",
-      "description_canonical": "ACTUATOR \u00b7 vps \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Machine Constitution cron registry. Lists cron jobs from root crontab, /etc/crontab, and /etc/cron.d. OBSERVE-class; does not mutate.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · vps · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Machine Constitution cron registry. Lists cron jobs from root crontab, /etc/crontab, and /etc/cron.d. OBSERVE-class; does not mutate.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2961,8 +2961,8 @@
       },
       "purpose": "ACTUATOR [vps/OBSERVE] supervised by kernel 111_OBSERVE. Machine Constitution port registry. Scans listening ports and classifies each as public, internal, o",
       "description_live": "Machine Constitution port registry. Scans listening ports and classifies each as public, internal, or unknown. OBSERVE-class; does not mutate. Does not trust UFW alone because Docker can bypass it.",
-      "description_canonical": "ACTUATOR \u00b7 vps \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Machine Constitution port registry. Scans listening ports and classifies each as public, internal, or unknown. OBSERVE-class; does not mutate. Does not trust UF",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · vps · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Machine Constitution port registry. Scans listening ports and classifies each as public, internal, or unknown. OBSERVE-class; does not mutate. Does not trust UF",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -2992,8 +2992,8 @@
       },
       "purpose": "ACTUATOR [vps/OBSERVE] supervised by kernel 111_OBSERVE. Machine Constitution service registry. Lists running systemd services and Docker containers. OBSERVE",
       "description_live": "Machine Constitution service registry. Lists running systemd services and Docker containers. OBSERVE-class; does not mutate.",
-      "description_canonical": "ACTUATOR \u00b7 vps \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Machine Constitution service registry. Lists running systemd services and Docker containers. OBSERVE-class; does not mutate.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · vps · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Machine Constitution service registry. Lists running systemd services and Docker containers. OBSERVE-class; does not mutate.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -3023,8 +3023,8 @@
       },
       "purpose": "ACTUATOR [org_bridge/OBSERVE] supervised by kernel 444_ROUTE. Route to WEALTH capital intelligence organ. Modes: emv, conservation, flow, runway, wisdom.",
       "description_live": "Route to WEALTH capital intelligence organ. Modes: emv, conservation, flow, runway, wisdom.",
-      "description_canonical": "ACTUATOR \u00b7 org_bridge \u00b7 OBSERVE \u00b7 kernel-supervised by 444_ROUTE (arif_route). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Route to WEALTH capital intelligence organ. Modes: emv, conservation, flow, runway, wisdom.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · org_bridge · OBSERVE · kernel-supervised by 444_ROUTE (arif_route). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Route to WEALTH capital intelligence organ. Modes: emv, conservation, flow, runway, wisdom.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -3054,8 +3054,8 @@
       },
       "purpose": "ACTUATOR [org_bridge/OBSERVE] supervised by kernel 444_ROUTE. WELL human readiness primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors, ",
       "description_live": "WELL human readiness primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors, anchor.",
-      "description_canonical": "ACTUATOR \u00b7 org_bridge \u00b7 OBSERVE \u00b7 kernel-supervised by 444_ROUTE (arif_route). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. WELL human readiness primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors, anchor.",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_canonical": "ACTUATOR · org_bridge · OBSERVE · kernel-supervised by 444_ROUTE (arif_route). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. WELL human readiness primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors, anchor.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -3083,10 +3083,10 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 888_JUDGE. APEX v36\u03a9 tri-witness consensus gate. Computes W\u00b3 = \u221b(Human \u00d7 AI \u00d7 External) via geometric mean (Nas",
-      "description_live": "APEX v36\u03a9 tri-witness consensus gate. Computes W\u00b3 = \u221b(Human \u00d7 AI \u00d7 External) via geometric mean (Nash 1950). Returns CONSENSUS/WEAK/DIVERGENT. All three channels must be present. Zero in any channel c",
-      "description_canonical": "ACTUATOR \u00b7 governance \u00b7 OBSERVE \u00b7 kernel-supervised by 888_JUDGE (arif_judge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. APEX v36\u03a9 tri-witness consensus gate. Computes W\u00b3 = \u221b(Human \u00d7 AI \u00d7 External) via geometric mean (Nash 1950). Returns CONSENSUS/WEAK/DIVERGENT. All three channel",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 888_JUDGE. APEX v36Ω tri-witness consensus gate. Computes W³ = ∛(Human × AI × External) via geometric mean (Nas",
+      "description_live": "APEX v36Ω tri-witness consensus gate. Computes W³ = ∛(Human × AI × External) via geometric mean (Nash 1950). Returns CONSENSUS/WEAK/DIVERGENT. All three channels must be present. Zero in any channel c",
+      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 888_JUDGE (arif_judge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. APEX v36Ω tri-witness consensus gate. Computes W³ = ∛(Human × AI × External) via geometric mean (Nash 1950). Returns CONSENSUS/WEAK/DIVERGENT. All three channel",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -3115,9 +3115,71 @@
         "risk_label": "R0"
       },
       "purpose": "ACTUATOR [git/OBSERVE] supervised by kernel 111_OBSERVE. Local git physics sensor. Returns branch, dirty state, stash, conflicts, in-progress ops, blast radi",
-      "description_live": "Local git physics sensor. Returns branch, dirty state, stash, conflicts, in-progress ops, blast radius, and actionable recommendations. OBSERVE-class \u2014 never mutates.",
-      "description_canonical": "ACTUATOR \u00b7 git \u00b7 OBSERVE \u00b7 kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Local git physics sensor. Returns branch, dirty state, stash, conflicts, in-progress ops, blast radius, and actionable recommendations. OBSERVE-class \u2014 never mu",
-      "access_policy": "AAA_UNRESTRICTED_LOGICAL \u2014 deny only via kernel lease/gate/verdict, never hide tool",
+      "description_live": "Local git physics sensor. Returns branch, dirty state, stash, conflicts, in-progress ops, blast radius, and actionable recommendations. OBSERVE-class — never mutates.",
+      "description_canonical": "ACTUATOR · git · OBSERVE · kernel-supervised by 111_OBSERVE (arif_observe). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Local git physics sensor. Returns branch, dirty state, stash, conflicts, in-progress ops, blast radius, and actionable recommendations. OBSERVE-class — never mu",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
+      "federation_agents": [
+        "AAA",
+        "A-FORGE",
+        "GEOX",
+        "WEALTH",
+        "WELL",
+        "OpenClaw",
+        "arifOS"
+      ]
+    },
+    {
+      "name": "forge_trust_score",
+      "status": "ACTIVE",
+      "affordance_class": "governance",
+      "capability_surface": "aforge.governance.trust_score",
+      "kernel_verb": "555_CRITIQUE",
+      "kernel_wire": "arif_critique",
+      "mutation_class": "OBSERVE",
+      "gates": {
+        "requires_session": true,
+        "requires_lease": false,
+        "requires_gate": true,
+        "requires_seal": false,
+        "requires_human_approval": false,
+        "min_mode": "THINK",
+        "risk_label": "R0"
+      },
+      "purpose": "ACTUATOR [governance/OBSERVE] Trust scoring engine for external MCP servers. Scores on 5 dimensions (identity, uptime, auditability, mutation_risk, witnessability), maps to bands (ALLOW/LIMITED/HOLD/DENY), and gates access. Modes: score, evaluate, list, history, verify. Constitutional: F2 TRUTH, F7 HUMILITY, F11 AUDIT, F13 SOVEREIGN.",
+      "description_live": "Trust scoring engine for external MCP servers. Scores on 5 dimensions (identity, uptime, auditability, mutation_risk, witnessability), maps to bands (ALLOW/LIMITED/HOLD/DENY), and gates access. Modes: score, evaluate, list, history, verify. Constitutional: F2 TRUTH, F7 HUMILITY, F11 AUDIT, F13 SOVEREIGN.",
+      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 555_CRITIQUE (arif_critique). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Trust scoring engine for external MCP servers — 5-dimension Bayesian composite with cold-start shrinkage. Bands: ALLOW/LIMITED/HOLD/DENY. HOLD routes to 888-APEX. Modes: score, evaluate, list, history, verify. Constitutional: F2 TRUTH, F7 HUMILITY, F11 AUDIT, F13 SOVEREIGN.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
+      "federation_agents": [
+        "AAA",
+        "A-FORGE",
+        "GEOX",
+        "WEALTH",
+        "WELL",
+        "OpenClaw",
+        "arifOS"
+      ]
+    },
+    {
+      "name": "forge_compose",
+      "status": "ACTIVE",
+      "affordance_class": "execute",
+      "capability_surface": "aforge.execute.compose",
+      "kernel_verb": "777_FORGE",
+      "kernel_wire": "arif_forge",
+      "mutation_class": "MUTATE",
+      "gates": {
+        "requires_session": true,
+        "requires_lease": true,
+        "requires_gate": true,
+        "requires_seal": false,
+        "requires_human_approval": true,
+        "min_mode": "GOVERN",
+        "risk_label": "R3"
+      },
+      "purpose": "ACTUATOR [execute/MUTATE] Composition Bus — orchestrate multi-tool execution across MCP servers. 4 patterns: sequential, parallel, conditional, loop. Each step produces a receipt. DAG-based resolution with cycle detection. Modes: execute, status, cancel, analyze. Constitutional: F1 AMANAH, F2 TRUTH, F4 CLARITY, F11 AUDIT.",
+      "description_live": "Composition Bus — orchestrate multi-tool execution across MCP servers. 4 patterns: sequential, parallel, conditional, loop. Each step produces a receipt. DAG-based resolution with cycle detection. Modes: execute, status, cancel, analyze. Constitutional: F1 AMANAH, F2 TRUTH, F4 CLARITY, F11 AUDIT.",
+      "description_canonical": "ACTUATOR · execute · MUTATE · kernel-supervised by 777_FORGE (arif_forge). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=Y gate=Y seal=N approval=Y. Composition Bus — multi-tool orchestration with DAG resolution + cycle detection. 4 patterns: sequential, parallel, conditional, loop. Each step = receipt. Modes: execute, status, cancel, analyze. Constitutional: F1 AMANAH, F2 TRUTH, F4 CLARITY, F11 AUDIT.",
+      "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",
         "A-FORGE",
@@ -3131,9 +3193,9 @@
   ],
   "contrast_rules": [
     "Each tool has unique capability_surface",
-    "No silent aliasing \u2014 deprecations must declare redirect_to",
+    "No silent aliasing — deprecations must declare redirect_to",
     "Mode-split tools (filesystem_*, fetch_*, github_*) keep distinct surfaces",
-    "forge_systemctl REMOVED 2026-07-09 \u2192 forge_shell('systemctl ...')",
-    "forge_boundaries_assert RENAMED 2026-07-09 \u2192 forge_security_drift_scan"
+    "forge_systemctl REMOVED 2026-07-09 → forge_shell('systemctl ...')",
+    "forge_boundaries_assert RENAMED 2026-07-09 → forge_security_drift_scan"
   ]
 }

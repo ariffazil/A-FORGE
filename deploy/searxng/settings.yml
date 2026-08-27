@@ -7,7 +7,7 @@ server:
   secret_key: "&{SEARXNG_SECRET}"
   bind_address: "0.0.0.0"
   port: 8080
-  limiter: false
+  limiter: true
   image_proxy: true
 
 search:

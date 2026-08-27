@@ -1,0 +1,24 @@
+# AED identity deprecation sidecar — SHADOW. Not executed.
+# Live process aed.timer still fires. Do not delete aed.py.
+# Historical ledger: /root/A-FORGE/duties/logs/aed-ledger.jsonl
+
+id: aed-v1
+kind: deprecated_runtime_identity
+status: hold_for_sequencing
+# Do NOT collapse into rgb.red.adversarial_fixture until actor_class is honest.
+# Collision: FQ Actor Classes v2.0.0 (2026-07-30) classifies aed-v1 as sensor;
+# live 2026-08-19 is 13E/0V EXECUTION DOMINANCE; aed.py also logs T2 restarts.
+replacement: pending_class_declaration  # not rgb.red.adversarial_fixture
+runtime_identity: true_until_F13  # timer still fires
+production_telemetry: still_ingesting   # HOLD — do not exclude until class + dual-run
+historical_records: preserved
+deletion: prohibited_until_migration_verified
+observed_2026-08-19:
+  systemd_service: disabled+inactive
+  systemd_timer: enabled  # OnUnitActiveSec=300
+  flow_actor: aed-v1
+  flow_shape: execute_without_verify
+  pollution: fixture_masquerading_as_citizen
+next_authorized_act:
+  shadow: document
+  production: HOLD until F13

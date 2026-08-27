@@ -2,7 +2,7 @@
 """
 forge_audio_ingest.py — Persist AudioEvent (Layer 3) to Qdrant + ledger.
 
-Consumes the CANONICAL extractor: /root/hermes-agent-dev/tools/voice_state.py
+Consumes the CANONICAL extractor: /usr/local/lib/hermes-agent/tools/voice_state.py
 (extract_voice_state + voice_state_to_well_features). This module is the
 persistence + retrieval half of Layer 3 — the "nervous system" for audio
 memory that Hermes core deliberately does not own (third-party Qdrant backend
@@ -55,8 +55,8 @@ from typing import Any, Dict, Optional
 from urllib.request import Request, urlopen
 from urllib.error import URLError
 
-HERMES_DEV = "/root/hermes-agent-dev"
-sys.path.insert(0, os.path.join(HERMES_DEV, "tools"))
+HERMES_AGENT_ROOT = os.environ.get("HERMES_AGENT_ROOT", "/usr/local/lib/hermes-agent")
+sys.path.insert(0, os.path.join(HERMES_AGENT_ROOT, "tools"))
 
 QDRANT = os.environ.get("QDRANT_URL", "http://localhost:6333")
 COLLECTION = os.environ.get("AFORGE_AUDIO_COLLECTION", "arifos_audio_memory")

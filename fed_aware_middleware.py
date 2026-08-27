@@ -633,8 +633,17 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                         )
                 except Exception:
                     pass
+        # F2 fix 2026-08-21 (FI-003): preserve Responses API path. Codex CLI
+        # (wire_api=responses) posts /v1/responses bodies with no `messages` key —
+        # forwarding them to chat/completions made litellm's Router.acompletion()
+        # raise TypeError -> HTTP 500. :4000 serves /v1/responses natively.
+        litellm_target = (
+            "http://127.0.0.1:4000/v1/responses"
+            if self.path.startswith("/v1/responses")
+            else "http://127.0.0.1:4000/v1/chat/completions"
+        )
         status, hdrs, resp_body = _proxy_to(
-            "http://127.0.0.1:4000/v1/chat/completions",
+            litellm_target,
             body_bytes,
             {k: v for k, v in headers.items()},
             None,

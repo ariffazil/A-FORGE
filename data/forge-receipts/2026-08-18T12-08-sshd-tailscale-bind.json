@@ -1,0 +1,27 @@
+{
+  "receipt_type": "F13_SSHD_TAILSCALE_BIND",
+  "timestamp_utc": "2026-08-18T12:08:12Z",
+  "parent": "/root/A-FORGE/data/forge-receipts/2026-08-18T11-58-f13-act-fire.json",
+  "directive": "restart ssh. go",
+  "first_restart": "ssh.service only \u2014 failed; systemd socket still bound 0.0.0.0:22888",
+  "root_cause": "ssh.socket + sshd-socket-generator ListenStream=0.0.0.0:22888 overrides sshd_config ListenAddress",
+  "fix": [
+    "/etc/ssh/sshd_config.d/99-arifOS-tailscale-only.conf (already staged)",
+    "/etc/systemd/system/ssh.socket.d/99-arifOS-tailscale-only.conf (new)",
+    "systemctl daemon-reload && systemctl restart ssh.socket ssh"
+  ],
+  "live": {
+    "listen": [
+      "100.64.0.2:22888",
+      "[fd7a:115c:a1e0::2]:22888"
+    ],
+    "wildcard": false,
+    "localhost_22888": "refused (111)",
+    "tailscale_connect": 0,
+    "ssh": "active",
+    "ssh_socket": "active",
+    "tailscaled": "active"
+  },
+  "reconnect": "ssh -p 22888 <user>@100.64.0.2  (public IP:22888 is closed)",
+  "rollback": "rm /etc/systemd/system/ssh.socket.d/99-arifOS-tailscale-only.conf /etc/ssh/sshd_config.d/99-arifOS-tailscale-only.conf && systemctl daemon-reload && systemctl restart ssh.socket ssh"
+}

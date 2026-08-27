@@ -1903,11 +1903,13 @@ router_settings:
       - apex-888
       - i-arif
     - i-arif:
-      - agi-333
       - apex-888
+      - forge-777
+      - agi-333
     - asi-555:
-      - agi-333
       - apex-888
+      - agi-333
+      - i-arif
   model_group_alias:
     deepseek-v4-pro: agi-333
     deepseek-v4-flash: agi-333
