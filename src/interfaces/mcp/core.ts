@@ -3573,7 +3573,7 @@ server.tool(
 );
 
 // ── VAULT999 Resources ─────────────────────────────────────────────────────────
-server.resource("forge://vault/records", "forge://vault/records", { mimeType: "application/json" }, async () => {
+server.resource("forge://vault/records", "forge://vault/records", { description: "VAULT999 records — last 50 sealed entries", mimeType: "application/json" }, async () => {
   const sbClient = new SupabaseVaultClient();
   const records = await sbClient.list(undefined, 50);
   return {
@@ -3585,7 +3585,7 @@ server.resource("forge://vault/records", "forge://vault/records", { mimeType: "a
   };
 });
 
-server.resource("forge://vault/categories", "forge://vault/categories", { mimeType: "application/json" }, async () => {
+server.resource("forge://vault/categories", "forge://vault/categories", { description: "VAULT999 record counts by category", mimeType: "application/json" }, async () => {
   const sbClient = new SupabaseVaultClient();
   const cats = ["agents", "mcp", "floor_rules", "identity", "ledger", "infrastructure", "geox", "wealth", "well"];
   const results = await Promise.all(cats.map(async (cat) => {
@@ -3601,7 +3601,7 @@ server.resource("forge://vault/categories", "forge://vault/categories", { mimeTy
   };
 });
 
-server.resource("forge://well/state", "forge://well/state", { mimeType: "application/json" }, async () => {
+server.resource("forge://well/state", "forge://well/state", { description: "Live WELL organ homeostasis state (bridges :18083)", mimeType: "application/json" }, async () => {
   const laneUrl = process.env.WELL_TRUTH_LANE_URL || "http://localhost:18083";
   let transport: StreamableHTTPClientTransport | undefined;
   try {

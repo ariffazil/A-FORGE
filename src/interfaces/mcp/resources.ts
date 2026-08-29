@@ -9,7 +9,7 @@ export function registerCoreResources(
   server.resource(
     "forge://governance/floors",
     "forge://governance/floors",
-    { mimeType: "application/json" },
+    { description: "Constitutional floors F1-F13 binding all A-FORGE operations", mimeType: "application/json" },
     async () => ({
       contents: [
         {
@@ -24,7 +24,7 @@ export function registerCoreResources(
   server.resource(
     "forge://approvals/pending",
     "forge://approvals/pending",
-    { mimeType: "application/json" },
+    { description: "Approval gate status — all gates route through arifOS:8088 constitution governance", mimeType: "application/json" },
     async () => ({
       contents: [
         {
@@ -43,7 +43,7 @@ export function registerCoreResources(
   server.resource(
     "forge://memory/working",
     "forge://memory/working",
-    { mimeType: "application/json" },
+    { description: "Working-tier memories from the A-FORGE memory contract", mimeType: "application/json" },
     async () => {
       const result = memoryContract.query({ query: "", tiers: ["working"] });
       return {
@@ -66,7 +66,7 @@ export function registerCoreResources(
   server.resource(
     "forge://execution/leases/status",
     "forge://execution/leases/status",
-    { mimeType: "application/json" },
+    { description: "Lease kernel status — execution layer L2, no judgment authority", mimeType: "application/json" },
     async () => ({
       contents: [
         {
@@ -89,7 +89,7 @@ export function registerCoreResources(
   server.resource(
     "forge://execution/reality/snapshot",
     "forge://execution/reality/snapshot",
-    { mimeType: "application/json" },
+    { description: "Reality loop snapshot pointers — physical/digital/receipts layers", mimeType: "application/json" },
     async () => ({
       contents: [
         {
@@ -112,7 +112,7 @@ export function registerCoreResources(
   server.resource(
     "forge://execution/receipts/recent",
     "forge://execution/receipts/recent",
-    { mimeType: "application/json" },
+    { description: "Recent sealed receipts — F11 audit trail", mimeType: "application/json" },
     async () => ({
       contents: [
         {
@@ -127,7 +127,7 @@ export function registerCoreResources(
   server.resource(
     "forge://execution/manifests",
     "forge://execution/manifests",
-    { mimeType: "application/json" },
+    { description: "Build/deploy manifests and provenance", mimeType: "application/json" },
     async () => ({
       contents: [
         {
@@ -142,7 +142,7 @@ export function registerCoreResources(
   server.resource(
     "forge://execution/forge_work/pointers",
     "forge://execution/forge_work/pointers",
-    { mimeType: "application/json" },
+    { description: "Pointers to sealed forge_work receipts and plans", mimeType: "application/json" },
     async () => ({
       contents: [
         {
