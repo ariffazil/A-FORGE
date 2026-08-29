@@ -40,7 +40,7 @@ describe("Test 1 — transport_fallback", () => {
   });
 
   it("allows OBSERVE tool via transport_fallback with multiple tools", () => {
-    for (const tool of ["forge_filesystem_read", "forge_search", "forge_probe"]) {
+    for (const tool of ["forge_filesystem_read", "forge_search", "forge_probe", "forge_gemini", "forge_drive"]) {
       const v = gate.evaluate({ tool_name: tool, arguments: {} });
       assert.equal(v.verdict, "ALLOW", `${tool} should ALLOW`);
       assert.equal(v.principal.source, "transport_fallback");

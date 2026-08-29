@@ -59,7 +59,7 @@ export function registerGeminiTools(server: McpServer) {
   server.registerTool(
     "forge_gemini",
     {
-      description: "ACTUATOR · meta · MUTATE. Direct bridge to Google AI Studio Gemini. 4 verbs: generate, chat, models, health. Default model: gemini-3.6-flash. Bridge listens 127.0.0.1:18092. Auth via bearer-style HTTP header from env.",
+      description: "ACTUATOR · meta · OBSERVE. Direct bridge to Google AI Studio Gemini. 4 verbs: generate, chat, models, health. Default model: gemini-3.6-flash. Bridge listens 127.0.0.1:18092. Auth via bearer-style HTTP header from env.",
       inputSchema: z.object({
         verb: z.enum(["generate", "chat", "models", "health"]).describe("Bridge verb to invoke"),
         prompt: z.string().optional().describe("Required for generate"),

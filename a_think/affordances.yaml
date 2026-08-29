@@ -2124,11 +2124,11 @@ tools:
   risk_label: R0
 
 - name: forge_gemini
-  purpose: "ACTUATOR · meta · OBSERVE/MUTATE. Gemini AI Studio direct bridge. 4 verbs: generate, chat, models, health. Default model gemini-3.6-flash. Bridge listens 127.0.0.1:18092. Auth: bearer-style HTTP header."
+  purpose: "ACTUATOR · meta · OBSERVE. Gemini AI Studio direct bridge. 4 verbs: generate, chat, models, health. Default model gemini-3.6-flash. Bridge listens 127.0.0.1:18092. Auth: bearer-style HTTP header."
   affordance_class: meta
   capability_surface: aforge.meta.gemini
-  kernel_verb: 333_THINK
-  mutation_class: MUTATE
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
   reads:
   - prompts
   - tools
@@ -2139,4 +2139,4 @@ tools:
   reversible: true
   requires_human_approval: false
   min_mode: THINK
-  risk_label: R1
+  risk_label: R0

@@ -274,6 +274,7 @@ const STATELESS_TOOLS = new Set([
     "forge_calendar",             // Google Calendar — list events (create is gated in handler)
     "forge_sheets",               // Google Sheets — read cells (append gated in handler)
     "forge_gmail",                // Gmail — search/read (draft/send gated in handler)
+    "forge_gemini",               // Google AI Studio Gemini — read-only inference & adversarial auditing
 ]);
 
 // ── MCP Policy Gate initialization ──────────────────────────────────

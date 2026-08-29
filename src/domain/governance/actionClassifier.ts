@@ -283,6 +283,9 @@ const OBSERVE_TOOLS = new Set([
   "forge_scar_scan",           // artifact check against SCAR DB — OBSERVE
   "forge_predict",             // pre-action simulation — SIMULATE (moved to simulate set below)
   "forge_document_ingest",     // already above, kept for clarity
+  // ── Google Workspace & External Model Bridges (2026-08-25) ──
+  "forge_gemini",              // Google AI Studio Gemini bridge — OBSERVE inference
+  "forge_drive",               // Google Drive search/list — OBSERVE
   // ── World Model observation (2026-08-13) — read-only stats/gaps/quality ──
   "forge_wm_stats",            // WM statistics dashboard — read-only
   "forge_wm_gaps",             // WM gap alerts — read-only
@@ -381,6 +384,21 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (["start", "list", "report", "metrics"].includes(mode)) return "OBSERVE";
     if (["advance", "record", "seal", "destroy"].includes(mode)) return "EXECUTE_REVERSIBLE";
   }
+  // forge_calendar: list/default=OBSERVE, create=EXECUTE_REVERSIBLE
+  if (toolName === "forge_calendar") {
+    if (!mode || mode === "list") return "OBSERVE";
+    if (mode === "create") return "EXECUTE_REVERSIBLE";
+  }
+  // forge_sheets: read/default=OBSERVE, append=EXECUTE_REVERSIBLE
+  if (toolName === "forge_sheets") {
+    if (!mode || mode === "read") return "OBSERVE";
+    if (mode === "append") return "EXECUTE_REVERSIBLE";
+  }
+  // forge_gmail: read-unread/default=OBSERVE, send=EXECUTE_REVERSIBLE
+  if (toolName === "forge_gmail") {
+    if (!mode || mode === "read-unread") return "OBSERVE";
+    if (mode === "send") return "EXECUTE_REVERSIBLE";
+  }
 
   // ── Name-only classification (existing sets) ──
   if (IRREVERSIBLE_TOOLS.has(toolName)) return "IRREVERSIBLE";
@@ -413,7 +431,20 @@ export function isClassifiedTool(toolName: string): boolean {
   if (SUGGEST_TOOLS.has(toolName)) return true;
   if (QUEUE_TOOLS.has(toolName)) return true;
   // Check mode-aware base names
-  const modeAware = ["forge_agent", "forge_filesystem", "forge_vault", "forge_git", "forge_docker", "forge_lease", "forge_postgres", "forge_ephemeral", "forge_reality_loop"];
+  const modeAware = [
+    "forge_agent",
+    "forge_filesystem",
+    "forge_vault",
+    "forge_git",
+    "forge_docker",
+    "forge_lease",
+    "forge_postgres",
+    "forge_ephemeral",
+    "forge_reality_loop",
+    "forge_calendar",
+    "forge_sheets",
+    "forge_gmail",
+  ];
   if (modeAware.includes(toolName)) return true;
   return false;
 }
