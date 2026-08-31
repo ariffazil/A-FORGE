@@ -290,6 +290,56 @@ def _strip_responses_features(body: bytes, content_type: str) -> bytes:
     return body
 
 
+# ── SCAR 6eaeb7e1 GUARD (2026-08-31, F13 directive) ─────────────────────────
+# Unbounded-accumulation clamp: an ASI/Hermes audit session streamed 54 min of
+# raw file dumps into a groq gpt-oss-120b (131k) request → HTTP 413 → vendor
+# compressor failed on incompressible text → session auto-reset, work lost.
+# Institution-layer fix per scar 87f89b56: clamp HERE, not per-app wrappers.
+# v1 scope: chat/completions "messages" (the ASI failure surface).
+# Responses-API "input" bodies pass unguarded (documented follow-up).
+FED_GUARD_MAX_BODY_BYTES = int(os.environ.get("FED_GUARD_MAX_BODY_BYTES", "380000"))
+FED_GUARD_KEEP_LAST_MESSAGES = int(
+    os.environ.get("FED_GUARD_KEEP_LAST_MESSAGES", "6")
+)
+
+
+def _fed_413_guard(body: dict[str, Any], body_bytes_len: int, model: str) -> bool:
+    """Clamp oversized chat payloads in-place: keep system msgs + last N msgs,
+    drop the middle, annotate. Returns True if body was mutated.
+    Session memory SURVIVES (tail + system preserved) — no provider 413, no reset."""
+    if body_bytes_len <= FED_GUARD_MAX_BODY_BYTES:
+        return False
+    msgs = body.get("messages")
+    if not isinstance(msgs, list):
+        return False  # non-chat body (e.g. embeddings) — leave untouched
+    system_msgs = [
+        m for m in msgs if isinstance(m, dict) and m.get("role") == "system"
+    ]
+    tail = [
+        m
+        for m in msgs
+        if isinstance(m, dict) and m.get("role") != "system"
+    ][-FED_GUARD_KEEP_LAST_MESSAGES:]
+    if len(msgs) <= len(system_msgs) + len(tail):
+        return False  # nothing droppable (single mega-message: agent-side duty)
+    dropped = len(msgs) - len(system_msgs) - len(tail)
+    note = {
+        "role": "system",
+        "content": (
+            f"[fed-guard] {dropped} older messages truncated to fit provider "
+            f"request cap (scar 6eaeb7e1 — unbounded accumulation). "
+            f"Session memory preserved; no reset."
+        ),
+    }
+    body["messages"] = system_msgs + [note] + tail
+    sys.stderr.write(
+        f"[fed-aware-middleware] 413-guard: model={model} bytes={body_bytes_len} "
+        f"dropped={dropped} kept_sys={len(system_msgs)} "
+        f"kept_tail={len(tail)}\n"
+    )
+    return True
+
+
 def _call_fed_route(
     task: str,
     model: str,
@@ -486,6 +536,16 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                 sys.stderr.write(
                     f"[fed-aware-middleware] alias->actor: -> {translated}\n"
                 )
+
+        # SCAR 6eaeb7e1 guard: clamp oversized chat payloads BEFORE any hop.
+        # Runs after alias-resolution so the guard sees the final actor/model
+        # string; mutates body["messages"] in place, then re-syncs body_bytes
+        # (mirrors the alias pattern above) so every downstream forward path
+        # — capability resolve, _forward_to_litellm, raw passthrough — sees
+        # the same clamped payload. Mutates only parsed dicts (chat bodies).
+        if isinstance(body, dict) and "_raw" not in body:
+            if _fed_413_guard(body, len(body_bytes), model):
+                body_bytes = json.dumps(body, ensure_ascii=False).encode("utf-8")
 
         # F2 ZEN fix 2026-08-11 12:34 MYT: auto-prepend "fed/" when user picks a bare capability
         # name from the fed provider model picker. opencode.json's providers.fed.models keys are
