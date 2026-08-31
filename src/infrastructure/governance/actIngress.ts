@@ -341,28 +341,29 @@ export function verifyLocalAct(
 
     const [_prefix, payloadB64, sigHex] = parts;
 
-    // ── 2. HMAC-SHA256 signature verification (P0 FIX) ─────────────────
+    // ── 2. HMAC-SHA256 signature verification (P0 FIX + G2 2026-08-30) ─
+    // Dual-length verification:
+    //   64-hex sig → FULL 256-bit compare (all tokens minted after the G2
+    //                upgrade — arifOS session.py / act_token.py emit full)
+    //   16-hex sig → legacy 64-bit compare (compat window; legacy tokens
+    //                expire per TTL, then this branch can be retired)
     // Reject signatures shorter than 16 hex chars (truncation floor).
     if (!sigHex || sigHex.length < 16) {
       return { ok: false, error: "ERR_ACT_SIGNATURE_SHORT", message: "HMAC signature too short" };
     }
 
-    // Canonical wire format: arifOS session.py _sign_session_payload() uses
-    // hexdigest()[:16] (16 hex chars = 64-bit truncation).
-    // Both sides MUST use identical truncation or verification fails.
-    // P0.1 (2026-07-29): Aligned with arifOS issuer.
-    // P0.2 (TODO): Upgrade both sides to full 64-char HMAC for 256-bit security.
     const secret = process.env.ARIFOS_SESSION_SECRET;
     if (!secret) {
       return { ok: false, error: "ERR_ACT_NO_SECRET", message: "ARIFOS_SESSION_SECRET not configured" };
     }
-    const expectedSig = crypto
+    const expectedFull = crypto
       .createHmac("sha256", secret)
       .update(payloadB64, "ascii")
-      .digest("hex")
-      .slice(0, 16); // Match arifOS session.py[:16] — canonical issuer determines truncation
-    const receivedSig = sigHex.slice(0, 16); // Accept longer sigs, compare first 16 chars
-    if (!crypto.timingSafeEqual(Buffer.from(expectedSig, "ascii"), Buffer.from(receivedSig, "ascii"))) {
+      .digest("hex");
+    const isFullLength = sigHex.length === 64;
+    const expectedCmp = isFullLength ? expectedFull : expectedFull.slice(0, 16);
+    const receivedCmp = isFullLength ? sigHex : sigHex.slice(0, 16);
+    if (!crypto.timingSafeEqual(Buffer.from(expectedCmp, "ascii"), Buffer.from(receivedCmp, "ascii"))) {
       return { ok: false, error: "ERR_ACT_SIGNATURE_INVALID", message: "HMAC-SHA256 signature mismatch" };
     }
 
