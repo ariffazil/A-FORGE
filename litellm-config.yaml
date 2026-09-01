@@ -1594,8 +1594,10 @@ model_list:
     max_output_tokens: 131072
     notes: FREE QUOTA — qwen3-vl-8b thinking, expires 2026-09-29. [hermes-asi-vision mirror added 2026-08-26 by 333-AGI; mirrors fed/vision]
 litellm_settings:
-  callbacks:
-  - prometheus
+  # prometheus callback REMOVED 2026-09-02: AttributeError litellm_requests_metric
+  # on every success log = 100% CPU burn. Metrics never reached Grafana anyway.
+  # Fix package properly at M3; backup at /root/backups/litellm-config.yaml.bak-prometheus-fix-*
+  callbacks: []
   num_retries: 2
   request_timeout: 60
   allowed_fails: 2
@@ -1711,7 +1713,10 @@ router_settings:
     cooldown_time: 60
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
-  database_url: os.environ/LITELLM_DATABASE_URL
+  # 2026-09-01 (Hermes): database_url disabled — prisma migrate deploy hangs at
+  # boot (system prisma CLI times out), causing infinite retry + CPU burn and
+  # leaving FED down. FED routes fine stateless. Re-enable after prisma repair.
+  # database_url: os.environ/LITELLM_DATABASE_URL
   otel_export: false
   drop_params: true
   telemetry: false
