@@ -509,7 +509,7 @@ const GOVERNANCE_FIELDS = {
   session_token: z
     .string()
     .optional()
-    .describe("arifOS Arif's Capability Token sct_v1.* (federation ACT gate)"),
+    .describe("arifOS Arif's Capability Token act_v1.* (federation ACT gate; legacy sct_v1 accepted)"),
   sct: z.string().optional().describe("Alias for session_token (legacy, use 'act')"),
   act: z.string().optional().describe("Arif's Capability Token (ACT) — preferred alias for session_token"),
 };
@@ -557,7 +557,7 @@ function extendInputSchema(schema: any): any {
         lease_id: { type: "string", description: "Governed lease ID (FORGE 2-B)" },
         session_token: {
           type: "string",
-          description: "arifOS ACT sct_v1.* (federation gate)",
+          description: "arifOS ACT act_v1.* (federation gate; legacy sct_v1 accepted)",
         },
         sct: { type: "string", description: "Alias for session_token (legacy, use 'act')" },
         act: { type: "string", description: "Arif's Capability Token (ACT) — preferred alias" },
@@ -604,20 +604,20 @@ const _originalTool = server.tool.bind(server);
     }
 
     // ── ACT federation gate (2026-07-17) ────────────────────────────────
-    // Present token → verify fail-closed. MUTATE/ATOMIC may require SCT
+    // Present token → verify fail-closed. MUTATE/ATOMIC may require ACT
     // when FORGE_ACT_REQUIRE_MUTATE=1 (default on). P2.1: fallback to legacy FORGE_SCT_REQUIRE_MUTATE.
     //
     // REVERTED 2026-08-13: ADAT AGENTIC bypass (inserted 2026-08-12) shipped
     // without F13 ack. MUTATE path widening requires F13. Reverted to:
-    // SCT required for all MUTATE/ATOMIC unless F13 ratifies otherwise.
-    const requireSct =
+    // ACT required for all MUTATE/ATOMIC unless F13 ratifies otherwise.
+    const requireAct =
       requiresGovernance(actionClass) &&
       (process.env.FORGE_ACT_REQUIRE_MUTATE ?? process.env.FORGE_SCT_REQUIRE_MUTATE ?? "1") !== "0";
-    // P2.1 ACT Handoff: derive sessionFallbackToken from stored SCT
+    // P2.1 ACT Handoff: derive sessionFallbackToken from stored ACT
     const sessId = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
     const fallbackSct = sessId ? getSessionAct(sessId) : null;
     const actGate = await gateToolIngress(name, argsObj, {
-      requireSct,
+      requireAct,
       requiredAuthority: requiresGovernance(actionClass) ? "OBSERVE_ONLY" : "OBSERVE_ONLY",
       sessionFallbackToken: fallbackSct,
     });
@@ -785,14 +785,14 @@ const _originalRegisterTool = server.registerTool.bind(server);
     }
 
     // ── ACT federation gate (registerTool path) ─────────────────────────
-    const requireSctReg =
+    const requireActReg =
       requiresGovernance(actionClass) &&
       (process.env.FORGE_ACT_REQUIRE_MUTATE ?? process.env.FORGE_SCT_REQUIRE_MUTATE ?? "1") !== "0";
-    // P2.1 ACT Handoff: derive sessionFallbackToken from stored SCT
+    // P2.1 ACT Handoff: derive sessionFallbackToken from stored ACT
     const regSessionId = (typeof argsObj.session_id === "string") ? argsObj.session_id : undefined;
     const regFallbackSct = regSessionId ? getSessionAct(regSessionId) : null;
     const actGateReg = await gateToolIngress(name, argsObj, {
-      requireSct: requireSctReg,
+      requireAct: requireActReg,
       sessionFallbackToken: regFallbackSct,
     });
     if (!actGateReg.ok) {
@@ -1253,7 +1253,7 @@ server.tool(
       + "B1 fix 2026-07-17 (T7 deliverable #4 propagation)."
     ),
     session_token: z.string().optional().describe("arifOS ACT for session continuity"),
-    sct: z.string().optional().describe("Alias for session_token"),
+    sct: z.string().optional().describe("Legacy alias for session_token — prefer act"),
     session_id: z.string().optional().describe("arifOS governance session ID (injected by middleware)"),
   },
   async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct, session_id: _govSessionId }) => {
@@ -1292,7 +1292,7 @@ server.tool(
           (sessionObj?.session_id as string | undefined) ??
           (resultObj?.session_id as string | undefined) ??
           (response.session_id as string | undefined);
-        // P1.3: Extract session_token (SCT) from kernel for downstream tools
+        // P1.3: Extract session_token (ACT) from kernel for downstream tools
         const session_token =
           (response.session_token as string | undefined) ??
           (resultObj?.session_token as string | undefined) ??
@@ -1312,7 +1312,7 @@ server.tool(
         // tool calls can inherit it via sessionFallbackToken. Fixes ACT_GATE
         // regression where autonomous seal paths broke.
         // P2.2 FIX (2026-08-27): prefer caller-supplied ACT when present —
-        // arifOS responses can echo a non-verifiable SCT (act_token mint/verify
+        // arifOS responses can echo a non-verifiable ACT (act_token mint/verify
         // split). Gate ingress verifies fail-closed, so valid caller ACT wins.
         const actToStore = _reqToken ?? _reqSct ?? session_token;
         if (actToStore) {

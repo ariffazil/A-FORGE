@@ -2,7 +2,7 @@
  * ACT Cross-Domain Bridge — arifOS Python kernel ↔ A-FORGE Node.js
  *
  * The federation has ONE canonical ACT issuer: the arifOS Python kernel
- * (`act_token.py::mint_sct`). A-FORGE (Node.js) must be able to:
+ * (`act_token.py::mint_act`). A-FORGE (Node.js) must be able to:
  *
  *   1. VERIFY tokens minted by arifOS — without a Python roundtrip.
  *      (fast-path; arifOS roundtrip remains as fallback for format drift)
@@ -12,7 +12,7 @@
  * Canonical wire format (MUST match arifOS act_token.py exactly):
  *   act_v1.<base64url(payload_json, sorted keys, no spaces)>.<hmac_sha256_hex[:16]>
  *
- * Payload claims (MUST match arifOS mint_sct exactly):
+ * Payload claims (MUST match arifOS mint_act exactly):
  *   act_v, sid, actor, auth, av, stage, lane, iat, exp, ttl, nbf, kid,
  *   verdict{state,dominant_reason}, apex{G,C_dark,W3,h}, witness{active,diversity},
  *   allowed[]

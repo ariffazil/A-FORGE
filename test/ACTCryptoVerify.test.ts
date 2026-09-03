@@ -91,7 +91,7 @@ describe("P0.5 — buildACT + verifyACT wire format", () => {
   it("verifyACT REJECTS missing act_v1/sct_v1 prefix", () => {
     const result = verifyACT("garbage.token.here", ACTOR, SESSION, SECRET);
     assert.equal(result.valid, false);
-    assert.ok(result.reason?.includes("sct_v1|act_v1"));
+    assert.ok(result.reason?.includes("act_v1|sct_v1"));
   });
 
   it("verifyACT REJECTS malformed (wrong part count)", () => {

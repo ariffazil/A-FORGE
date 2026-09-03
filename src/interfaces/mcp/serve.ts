@@ -1226,7 +1226,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 args: toolArgs,
                 sessionId: callerSession ?? "",
                 actorId: callerActor ?? "",
-                sct: callerSct,
+                act: callerSct,
               });
               if (!p0Result.passed) {
                 const rejection = formatGateRejection(p0Result);

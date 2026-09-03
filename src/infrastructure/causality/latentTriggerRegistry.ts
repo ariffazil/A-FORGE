@@ -26,7 +26,7 @@ export interface LatentTriggerRecord {
   written_by: string;
   /** arifOS session ID */
   session_id: string;
-  /** arifOS session capability token (sct_v1.*) */
+  /** arifOS Arif's Capability Token (ACT) — act_v1.* (legacy sct_v1 accepted during migration) */
   session_token?: string;
   /** Auto-classified intent */
   intent_classified: string;

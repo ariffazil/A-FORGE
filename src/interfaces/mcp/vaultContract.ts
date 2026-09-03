@@ -20,8 +20,8 @@ export const ForgeVaultInputSchema = z.object({
   tier: z.string().optional().describe("Receipt tier (for example session.ledger)"),
   actor_id: z.string().optional().describe("Actor issuing the receipt"),
   session_id: z.string().optional().describe("Governed session ID"),
-  session_token: z.string().optional().describe("Governed session capability token"),
-  sct: z.string().optional().describe("Alias for session_token"),
+  session_token: z.string().optional().describe("Arif's Capability Token (ACT) — preferred alias for session_token"),
+  sct: z.string().optional().describe("Alias for session_token (legacy alias — use act)"),
   lease_id: z.string().optional().describe("Governed lease ID"),
   metadata: z.record(z.string(), z.unknown()).optional().describe(
     "Optional metadata (write/receipt)",

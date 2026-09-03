@@ -252,12 +252,12 @@ export interface ACTVerifyResult {
  *
  * SECURITY: signature comparison uses timingSafeEqual to prevent timing attacks.
  */
-export function verifyACT(sct: string, expectedActorId: string, expectedSessionId: string, organSecret: string): ACTVerifyResult {
-  // P2.1 DUAL-ACCEPT: accept both sct_v1.* (legacy) and act_v1.* (new)
-  if (!sct.startsWith("sct_v1.") && !sct.startsWith("act_v1.")) {
-    return { valid: false, reason: "missing sct_v1|act_v1 prefix" };
+export function verifyACT(act: string, expectedActorId: string, expectedSessionId: string, organSecret: string): ACTVerifyResult {
+  // P2.1 DUAL-ACCEPT: accept both act_v1.* (canonical) and sct_v1.* (legacy during migration window)
+  if (!act.startsWith("act_v1.") && !act.startsWith("sct_v1.")) {
+    return { valid: false, reason: "missing act_v1|sct_v1 prefix" };
   }
-  const parts = sct.split(".");
+  const parts = act.split(".");
   if (parts.length !== 3) {
     return { valid: false, reason: "malformed ACT — expected 3 dot-separated parts" };
   }
@@ -283,11 +283,11 @@ export function verifyACT(sct: string, expectedActorId: string, expectedSessionI
   // P0 BOUNDARY FIX (2026-07-29): case-insensitive actor canonicalization.
   // arifOS kernel mints ACTs with claim key "actor" (lowercase).
   // A-FORGE historically used "actor_id". Normalize both key and case.
-  const sctActorRaw = (payload as any).actor ?? payload.actor_id ?? "";
-  const sctActor = String(sctActorRaw).trim().toLowerCase();
+  const actActorRaw = (payload as any).actor ?? payload.actor_id ?? "";
+  const actActor = String(actActorRaw).trim().toLowerCase();
   const expectedActor = String(expectedActorId).trim().toLowerCase();
-  if (sctActor !== expectedActor) {
-    return { valid: false, reason: `actor mismatch: ACT says "${sctActor}" expected "${expectedActor}" (case-insensitive)` };
+  if (actActor !== expectedActor) {
+    return { valid: false, reason: `actor mismatch: ACT says "${actActor}" expected "${expectedActor}" (case-insensitive)` };
   }
   if (payload.session_id !== expectedSessionId) {
     return { valid: false, reason: `session_id mismatch: ACT says "${payload.session_id}" expected "${expectedSessionId}"` };
@@ -326,9 +326,9 @@ export class McpPolicyGate {
    * Without an ACT, the session is NOT registered as verified — the
    * caller is treated as client_supplied OBSERVE_ONLY.
    */
-  registerVerifiedSession(sessionId: string, actorId: string, sct?: string, organSecret?: string): boolean {
+  registerVerifiedSession(sessionId: string, actorId: string, act?: string, organSecret?: string): boolean {
     // P0.5: ACT is MANDATORY for cryptographic verification.
-    if (!sct) {
+    if (!act) {
       // Backward compat: setActor() callers don't have ACT yet.
       // They land in the legacy "__legacy_active" key via setActor().
       return false;
@@ -337,7 +337,7 @@ export class McpPolicyGate {
     if (!secret) {
       return false;
     }
-    const verification = verifyACT(sct, actorId, sessionId, secret);
+    const verification = verifyACT(act, actorId, sessionId, secret);
     if (!verification.valid) {
       return false;
     }

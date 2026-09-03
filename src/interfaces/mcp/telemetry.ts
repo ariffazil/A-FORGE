@@ -215,19 +215,19 @@ class McpTelemetry {
       // through unauthenticated — arifOS will reject it for MUTATE-class
       // verbs; for arif_observe (OBSERVE-class), it may still accept
       // the call as an anonymous witness event.
-      let sct: string | undefined;
+      let act: string | undefined;
       try {
         const fs = await import("node:fs/promises");
         const raw = await fs.readFile("/root/.arifos/federation-session.json", "utf-8");
         const env = JSON.parse(raw) as { session_token?: string; expires_at?: string };
-        sct = env.session_token;
+        act = env.session_token;
         // Soft expiry check: if expires_at is parseable and in the past,
         // do not send the ACT. The call will likely fail but it is
         // recorded in the kernel's witness log as an anonymous attempt.
         if (env.expires_at) {
           const exp = Date.parse(env.expires_at);
           if (Number.isFinite(exp) && exp < Date.now()) {
-            sct = undefined;
+            act = undefined;
           }
         }
       } catch {
@@ -255,7 +255,7 @@ class McpTelemetry {
           },
         },
       };
-      if (sct) body.params = { ...(body.params as object), session_token: sct };
+      if (act) body.params = { ...(body.params as object), session_token: act };
 
       await fetch("http://127.0.0.1:8088/mcp", {
         method: "POST",

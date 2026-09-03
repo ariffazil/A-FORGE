@@ -11,12 +11,13 @@
  * through arif_init/forge_session_init OR verified via kernel callback.
  *
  * P1 STATELESS SIMPLIFICATION (2026-08-01): ACT-first validation for
- * stateless MCP 2026-07-28. The sct_v1.* token is self-contained
- * (HMAC-SHA256 signed). External callers skip the in-memory Map entirely —
- * their ACT is verified directly against arifOS kernel. The Map remains
- * only for locally-registered sessions (arif_init/forge_session_init
- * in-process registration). This reduces session state entropy and
- * eliminates the Map-as-single-point-of-truth for remote callers.
+ * stateless MCP 2026-07-28. The act_v1.* token (legacy sct_v1 accepted
+ * during migration) is self-contained (HMAC-SHA256 signed). External callers
+ * skip the in-memory Map entirely — their ACT is verified directly against
+ * arifOS kernel. The Map remains only for locally-registered sessions
+ * (arif_init/forge_session_init in-process registration). This reduces
+ * session state entropy and eliminates the Map-as-single-point-of-truth
+ * for remote callers.
  *
  * Authority sources:
  *   1. arif_init → returns session_id → registerSession() [local only]
@@ -269,7 +270,7 @@ export async function validateSessionAsync(
 /**
  * P0.6 BRIDGE FIX (2026-07-29): Verify an ACT session token with arifOS kernel.
  * 
- * The bridge gap: OpenCode binds via arif_init → gets session_token (sct_v1.eyJ...).
+ * The bridge gap: OpenCode binds via arif_init → gets session_token (act_v1.eyJ...).
  * A-FORGE receives this token in tool calls but has no local session registry entry.
  * This function calls arifOS kernel to verify the token and extract actor identity.
  */

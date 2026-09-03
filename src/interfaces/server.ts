@@ -121,7 +121,7 @@ function ensureOperatorTokenPolicy(): string | undefined {
 }
 
 /** Seal-A condition 3: production + FORGE_ACT_REQUIRE_MUTATE=0 → FATAL before bind. */
-function ensureSctMutationGatePolicy(): void {
+function ensureActMutationGatePolicy(): void {
   assertActMutationGateOrExit(process.env);
 }
 
@@ -1402,7 +1402,7 @@ async function initMcpTransport(): Promise<StreamableHTTPServerTransport | null>
 
 export async function startServer(): Promise<void> {
   // Production lockout BEFORE bind — ACT mutation bypass is FATAL in production.
-  ensureSctMutationGatePolicy();
+  ensureActMutationGatePolicy();
   await loadConstitution();
   mcpTransport = await initMcpTransport();
 

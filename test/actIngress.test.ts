@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import * as crypto from "crypto";
 import {
   extractActFromCall,
-  extractSctFromArgs,
+  extractActFromArgs,
   gateToolIngress,
   actMutationGateHealth,
   assertActMutationGateOrExit,
@@ -103,9 +103,9 @@ describe("extractActFromCall — multi-source", () => {
     assert.equal(e.status, "AMBIGUOUS");
   });
 
-  it("extractSctFromArgs returns null on AMBIGUOUS (no first-wins)", () => {
-    assert.equal(extractSctFromArgs({ session_token: TOK_A, sct: TOK_B }), null);
-    assert.equal(extractSctFromArgs({ session_token: TOK_A }), TOK_A);
+  it("extractActFromArgs returns null on AMBIGUOUS (no first-wins)", () => {
+    assert.equal(extractActFromArgs({ session_token: TOK_A, sct: TOK_B }), null);
+    assert.equal(extractActFromArgs({ session_token: TOK_A }), TOK_A);
   });
 });
 
@@ -114,7 +114,7 @@ describe("gateToolIngress — AMBIGUOUS reject", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: TOK_A, sct: TOK_B, actor_id: "test" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
     if (!r.ok) {
@@ -197,7 +197,7 @@ describe("canonicalizeActor — identity normalisation", () => {
     const r = await gateToolIngress(
       "forge_filesystem",
       { session_token: token, actor_id: "arif-fazil", mode: "stat", path: "/root" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, true, JSON.stringify(r));
   });
@@ -229,7 +229,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: VALID_TOKEN, actor_id: "arif" },
-      { requireSct: true, requiredAuthority: "LIMITED_MUTATE" },
+      { requireAct: true, requiredAuthority: "LIMITED_MUTATE" },
     );
     // Token has FULL authority which >= LIMITED_MUTATE
     assert.equal(r.ok, true);
@@ -247,7 +247,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: unsigned, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
     if (!r.ok) {
@@ -267,7 +267,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: tampered, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -280,7 +280,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: expired, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -293,7 +293,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: future, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -302,7 +302,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: VALID_TOKEN, actor_id: "hermes" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -315,7 +315,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: emptySig, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -326,7 +326,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: shortSig, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -349,7 +349,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: tamperedToken, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -359,7 +359,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: badBase64, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -380,7 +380,7 @@ describe("ACT HMAC signature verification", () => {
         sct: TOK_B, // Different token through different key
         actor_id: "arif",
       },
-      { requireSct: true },
+      { requireAct: true },
     );
     // AMBIGUOUS: two different tokens received
     assert.equal(r.ok, false);
@@ -392,7 +392,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: VALID_TOKEN, actor_id: "arif" },
-      { requireSct: true, requiredAuthority: "SOVEREIGN" },
+      { requireAct: true, requiredAuthority: "SOVEREIGN" },
     );
     assert.equal(r.ok, false);
   });
@@ -404,7 +404,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: forgedToken, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -414,7 +414,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: wrongVer, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -430,7 +430,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: futureIat, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -449,7 +449,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: noneToken, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
   });
@@ -463,7 +463,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: unknownKid, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, true, "KNOWN GAP: kid not enforced — token passes despite unknown kid");
   });
@@ -472,7 +472,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: "sct_v1.onlytwosegments", actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
     if (!r.ok) assert.equal(r.error, "ERR_ACT_MALFORMED");
@@ -484,7 +484,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: wrongPrefix, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
     // formatOk rejects non-sct_v1 prefix; error from verifyFederationAct
@@ -502,7 +502,7 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: valid, actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     // With valid token + available secret, this should pass
     assert.equal(r.ok, true);
@@ -512,18 +512,18 @@ describe("ACT HMAC signature verification", () => {
     const r = await gateToolIngress(
       "forge_execute",
       { session_token: "sct_v1.a.b.c.d", actor_id: "arif" },
-      { requireSct: true },
+      { requireAct: true },
     );
     assert.equal(r.ok, false);
     // formatOk rejects wrong segment count; accepts either error code variant
     if (!r.ok) assert.ok(r.error === "ACT_MALFORMED" || r.error === "ERR_ACT_MALFORMED");
   });
 
-  it("rejects when session_token present but requireSct=false and token is valid — skipped path", async () => {
+  it("rejects when session_token present but requireAct=false and token is valid — skipped path", async () => {
     const r = await gateToolIngress(
       "forge_search", // OBSERVE-class tool
       { session_token: VALID_TOKEN, actor_id: "arif" },
-      { requireSct: false }, // ACT optional
+      { requireAct: false }, // ACT optional
     );
     // Should still verify, but succeed even with valid token
     assert.equal(r.ok, true);

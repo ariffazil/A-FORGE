@@ -36,9 +36,10 @@ function flattenForScan(a: FloorContext["action"]): string {
     a.session_id,
   ];
   if (a.args) {
-    // P1.3: Skip SCT/capability tokens from F12 scan. These are kernel-minted
-    // session tokens (sct_v1.*) that legitimately contain fields like "kid"
-    // and "token" which otherwise trigger false-positive SECRET_ACCESS alerts.
+    // P1.3: Skip ACT/capability tokens from F12 scan. These are kernel-minted
+    // Arif's Capability Tokens (act_v1.*; legacy sct_v1 accepted during migration)
+    // that legitimately contain fields like "kid" and "token" which otherwise
+    // trigger false-positive SECRET_ACCESS alerts.
     const skipKeys = new Set(["session_token", "sct", "arifos_sct"]);
     for (const [k, v] of Object.entries(a.args)) {
       if (typeof v === "string" && !skipKeys.has(k)) parts.push(v);

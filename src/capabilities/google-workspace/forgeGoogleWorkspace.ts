@@ -27,8 +27,9 @@ const sessionFields = {
   session_id: z.string().optional(),
   actor_id: actorIdSchema,
   lease_id: z.string().optional(),
-  session_token: z.string().optional(),
-  sct: z.string().optional(),
+  session_token: z.string().optional().describe("Arif's Capability Token (ACT) — preferred alias for session_token"),
+  sct: z.string().optional().describe("Alias for session_token (legacy alias — use act)"),
+  act: z.string().optional().describe("Arif's Capability Token (ACT) — preferred alias for session_token"),
 };
 
 /**

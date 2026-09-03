@@ -19,7 +19,7 @@ export interface P0GateInput {
   sessionId: string;
   actorId?: string;
   leaseId?: string;
-  sct?: string;
+  act?: string;
 }
 
 export interface P0GateResult {

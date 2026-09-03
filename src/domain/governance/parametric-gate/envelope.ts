@@ -89,7 +89,7 @@ export type FloorVerdict = z.infer<typeof FloorVerdict>;
 /** F13 authorization channel — must be authenticated. */
 export const AuthChannel = z.enum([
   "telegram",
-  "sct",
+  "act",
   "local_terminal",
 ]);
 export type AuthChannel = z.infer<typeof AuthChannel>;

@@ -118,7 +118,7 @@ export function registerExperienceTraceTools(server: McpServer): void {
     "environmental (test/lint/build), constitutional (floor check). Append-only hash-chained ledger. " +
     "Returns the sealed trace with hash chain link.",
     {
-      session_id: z.string().describe("Session ID (SCT) from arif_init"),
+      session_id: z.string().describe("Session ID from arif_init"),
       agent_id: z.string().describe("Agent identity (e.g., 'fi-003', 'hermes')"),
       tool: z.string().describe("Tool name that was executed (e.g., 'forge_shell')"),
       input_summary: z.string().describe("Brief summary of the tool input (not raw args)"),
