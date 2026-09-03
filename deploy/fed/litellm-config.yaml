@@ -1,0 +1,3139 @@
+model_list:
+- model_name: apex-888
+  litellm_params:
+    model: gemini/gemini-2.5-pro
+    api_key: os.environ/GEMINI_API_KEY
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    notes: 'apex-888 → Gemini 2.5 Pro — PRIMARY constitutional judge. Deep reasoning,
+      multimodal, free tier. Gödel E3: different provider from Qwen/DeepSeek judge
+      models. Safety: BLOCK_NONE (F1-F13 is our safety layer).'
+- model_name: apex-888
+  litellm_params:
+    model: gemini/gemini-3.6-flash
+    api_key: os.environ/GEMINI_API_KEY
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    notes: 'apex-888 Gemini 3.6 Flash — fast multimodal fallback judge. Safety: BLOCK_NONE.'
+- model_name: apex-888
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: apex-888 → QWEN deepseek-v4-pro — PRIMARY constitutional judge lane. MiniMax
+      Token Plan Max restored 2026-08-18.
+- model_name: apex-888
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: apex-888 → QWEN qwen3.8-max — fallback judge lane. Vision + function calling.
+- model_name: apex-888
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: apex-888
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 100
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS Advanced 0/100k
+- model_name: apex-888
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 100
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: apex-888
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 101
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil Standard 0/25k
+- model_name: apex-888
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 101
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: i-arif
+  litellm_params:
+    model: openai/deepseek-v4-flash-vision-exp
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 0.5
+    max_input_tokens: 1048576
+    max_output_tokens: 8192
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'i-arif P0 VISION-PRIMARY-FOR-NOW (F13 2026-08-31): deepseek-v4-flash-vision-exp
+      direct. Text+vision unified, verified LIVE 2026-08-30 ($17.38, 1.1s). Primary
+      for the Hermes i-ARIF persona lane until DeepSeek GA; roles 111/777 (persona
+      lane — zero federation authority, 333/666/999 ban intact).'
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 1
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: i-arif P1 PERSONA — Qwen 3.8 Max via Team Owner seat. Best BM/Penang nuance,
+      code-switch fidelity. Primary for all human-facing output.
+- model_name: i-arif
+  litellm_params:
+    model: openai/glm-5.3
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 2
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_function_calling: true
+    notes: i-arif P2 LOGIC-BRIDGE — GLM-5.3 via Z.ai Coding Plan. High precision synthesis.
+      Promoted per Seal D. P3 MuleRouter rung REMOVED 2026-08-31 zen — provider archived
+      2026-08-04 (frozen balance, dead lane); deepseek-direct already serves as P0.
+      Order gap 3 intentional.
+- model_name: i-arif
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 4
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'i-arif P4 EMERGENCY — MiniMax M3 last-resort per Seal D. M3 isolation:
+      engine hygiene prevents persona contamination. Was P5; mimo deleted 2026-08-30.'
+- model_name: i-arif
+  litellm_params:
+    model: openai/kimi-k3
+    api_base: https://api.kimi.com/coding/v1
+    api_key: os.environ/KIMI_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: KIMI DIRECT — kimi-k3 via Moonshot API. 1M ctx, coding specialist.
+- model_name: i-arif
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: MINIMAX TOKEN PLAN — MiniMax-M3. $50/mo, 5h rolling + weekly quota.
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: INDIVIDUAL PLAN — qwen3.8-max constitutional model. 36d runway. PRIMARY.
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: INDIVIDUAL PLAN — qwen3.7-plus. BM warm, tool calling. 36d runway.
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: INDIVIDUAL PLAN — qwen3.7-max. 36d runway.
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen3.6-flash
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: INDIVIDUAL PLAN — qwen3.6-flash. Fast tier. 36d runway.
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen3.7-max-2026-06-08
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: i-arif
+  litellm_params:
+    model: openai/deepseek-v4-pro-0813
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 131072
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — deepseek-v4-pro-0813, expires 2026-11-13. Long runway.
+- model_name: i-arif
+  litellm_params:
+    model: openai/kimi-k3
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — kimi-k3, expires 2026-11-18. Long runway, 1M ctx.
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen-vl-max
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen-vl-max vision. Image understanding, OCR, visual reasoning.
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen3-vl-plus
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3-vl-plus vision. Multimodal understanding.
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen3-vl-flash
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3-vl-flash vision. Fast multimodal.
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen3-omni-flash
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3-omni-flash. Omni-modal (text+vision+audio input).
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: INDIVIDUAL PLAN — qwen3.8-max. 36d runway. PRIMARY.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: INDIVIDUAL PLAN — qwen3.7-plus. 36d runway.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: INDIVIDUAL PLAN — qwen3.7-max. 36d runway.
+- model_name: agi-333
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 0
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: INDIVIDUAL PLAN — deepseek-v4-pro. 36d runway.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-max-2026-06-08
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-max-2026-05-20
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-max-2026-05-17
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: agi-333
+  litellm_params:
+    model: openai/deepseek-v4-pro-0813
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 131072
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — deepseek-v4-pro-0813, expires 2026-11-13. Long runway.
+- model_name: agi-333
+  litellm_params:
+    model: openai/kimi-k3
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — kimi-k3, expires 2026-11-18. Long runway.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.6-max-preview
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.6-max-preview, 61% remaining, expires 2026-09-29.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-plus-2026-05-26
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3.7-plus snapshot, 99% remaining, expires 2026-09-29.
+- model_name: agi-333
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 4
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak
+      discount.
+- model_name: agi-333
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly
+      quota.'
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 7
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: Qwen Token Plan Team Owner (aliyun seat) — only live Qwen seat 2026-08-17
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 7
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 8
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS Advanced 0/100k
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 8
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 9
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil Standard 0/25k
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 9
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: asi-555
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 4
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_image_input: true
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak
+      discount.
+- model_name: asi-555
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly
+      quota.'
+- model_name: asi-555
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: asi-555
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_image_input: true
+    supports_function_calling: true
+- model_name: asi-555
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 100
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS Advanced 0/100k
+- model_name: asi-555
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 100
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: asi-555
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 101
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil Standard 0/25k
+- model_name: asi-555
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 101
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: apex-888
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly
+      quota.'
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen-vl-max
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen-vl-max. Best Qwen vision model. Image understanding,
+      OCR, visual reasoning.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-vl-plus
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3-vl-plus. Strong multimodal understanding.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-vl-flash
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3-vl-flash. Fast multimodal.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-omni-flash
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    supports_audio_input: true
+    notes: FREE QUOTA — qwen3-omni-flash. Omni-modal (text+vision+audio input).
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen-vl-ocr
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen-vl-ocr. Specialized OCR model.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 100
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS Advanced 0/100k
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 100
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 101
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil Standard 0/25k
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 101
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: fed/vision
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly
+      quota.'
+- model_name: fed/audio
+  litellm_params:
+    model: openai/mimo-v2.5-asr
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 8192
+    max_output_tokens: 2048
+    mode: chat
+    supports_audio_input: true
+    notes: MiMo V2.5 ASR - STT. 8K ctx / 2K max output. FREE TTS window 2026-08-18.
+- model_name: fed/audio
+  litellm_params:
+    model: openai/mimo-v2.5-tts
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 4
+  model_info:
+    max_input_tokens: 8192
+    max_output_tokens: 8192
+    mode: chat
+    supports_audio_output: true
+    notes: MiMo V2.5 TTS. 8K ctx / 8K max output. FREE window 2026-08-18.
+- model_name: fed/audio
+  litellm_params:
+    model: openai/mimo-v2.5-tts-voiceclone
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 5
+  model_info:
+    max_input_tokens: 8192
+    max_output_tokens: 8192
+    mode: chat
+    supports_audio_input: true
+    supports_audio_output: true
+    notes: MiMo V2.5 Voice Clone. 8K ctx / 8K max output. FREE window 2026-08-18.
+- model_name: fed/image-gen
+  litellm_params:
+    model: openai/wan2.7-image-pro
+    api_base: http://100.64.0.5:4020/v1
+    request_timeout: 180
+    order: 99
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+  model_info:
+    max_input_tokens: 32768
+    max_output_tokens: 8192
+    mode: image
+- model_name: fed/audio
+  litellm_params:
+    model: openai/speech-2.8-hd
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MIMO_APIKEY
+    order: 6
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 8192
+    mode: chat
+    supports_audio_output: true
+    notes: MiniMax speech-2.8-hd TTS - 40 languages, 7 emotions. Token Plan Max ACTIVE.
+- model_name: fed/audio
+  litellm_params:
+    model: openai/speech-2.8-turbo
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MIMO_APIKEY
+    order: 7
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 8192
+    mode: chat
+    supports_audio_output: true
+    notes: MiniMax speech-2.8-turbo TTS - fast, 40 languages. Token Plan Max ACTIVE.
+- model_name: fed/image-gen
+  litellm_params:
+    model: openai/wan2.7-image
+    api_base: http://100.64.0.5:4020/v1
+    request_timeout: 180
+    order: 99
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+  model_info:
+    max_input_tokens: 32768
+    max_output_tokens: 8192
+    mode: image
+- model_name: fed/vision
+  litellm_params:
+    model: gemini/gemini-3.6-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 50
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: Gemini vision secondary; prefer for image Q&A not agent tool loops
+- model_name: agi-333
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: MiniMax-M3 DIRECT (api.minimax.io/v1) — bypass FED. For agi-333. Token
+      Plan Max ACTIVE 2026-08-18. Token Plan 2056 quota]
+- model_name: asi-555
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: MiniMax-M3 DIRECT for asi-555 — coder lane direct. Token Plan Max ACTIVE
+      2026-08-18. 2056 quota]
+- model_name: asi-555
+  litellm_params:
+    model: openai/MiniMax-M2.5
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 204800
+    max_output_tokens: 65536
+    mode: chat
+    notes: MiniMax-M2.5 DIRECT — fast text, vision. MiniMax Token Plan Max ACTIVE
+      2026-08-18. 50 USD/mo, 5h rolling + weekly quota.
+- model_name: agi-333
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'deepseek-v4-pro via QWEN Token Plan Individual — PRIMARY (replaces dead
+      DeepSeek direct). Burst queue: 30s.'
+- model_name: asi-555
+  litellm_params:
+    model: openai/deepseek-v4-flash-0731
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+    min_tokens: 200
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'deepseek-v4-flash via QWEN Token Plan Individual — PRIMARY for asi-555.
+      Burst queue: 30s. NOTE: reasoning model, requires max_tokens>=200. [REASONING_MODEL:
+      requires max_tokens>=200, min content budget]'
+- model_name: agi-333
+  litellm_params:
+    model: openai/glm-5.2
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'glm-5.2 via QWEN Token Plan Individual — provider diversity (Gödel E3).
+      Burst queue: 30s.'
+- model_name: forge-777
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 0
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: forge-777 PRIMARY (2026-08-26 cascade fix). MiniMax-M3 Token Plan Max.
+      Streaming tool-use verified working.
+- model_name: forge-777
+  litellm_params:
+    model: openai/glm-5.3
+    api_base: os.environ/ZAI_API_BASE
+    api_key: os.environ/ZAI_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_function_calling: true
+    notes: forge-777 fallback — GLM-5.3 via Z.ai Coding Plan. Rate-limited 429 until
+      2026-08-27 15:04 UTC. Restore to order:0 when limit resets.
+- model_name: forge-777
+  litellm_params:
+    model: openai/kimi-k3
+    api_base: https://api.kimi.com/coding/v1
+    api_key: os.environ/KIMI_API_KEY
+    order: 3
+  model_info:
+    mode: chat
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    notes: forge-777 fallback — Kimi K3 coding plan. Billing cycle exhausted (403).
+      Will recover when cycle refreshes.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 10
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — qwen3.6-plus 1M ctx
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 11
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 12
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 13
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — qwen3.7-plus 1M ctx
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 14
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 15
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil
+- model_name: agi-333
+  litellm_params:
+    model: openai/deepseek-v3.2
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 16
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — deepseek-v3.2 (ctx matches existing team deepseek-v4-pro
+      entry)
+- model_name: agi-333
+  litellm_params:
+    model: openai/glm-5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 17
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — glm-5 (ctx matches existing glm-5.2 team entry)
+- model_name: agi-333
+  litellm_params:
+    model: openai/glm-5.1
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 18
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — glm-5.1 (ctx matches existing glm-5.2 team entry)
+- model_name: agi-333
+  litellm_params:
+    model: openai/kimi-k2.6
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 19
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — kimi-k2.6 (ctx matches existing kimi team sibling)
+- model_name: agi-333
+  litellm_params:
+    model: openai/kimi-k2.5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 20
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — kimi-k2.5
+- model_name: agi-333
+  litellm_params:
+    model: openai/MiniMax-M2.5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 21
+  model_info:
+    max_input_tokens: 204800
+    max_output_tokens: 65536
+    mode: chat
+    notes: Qwen Team Edition — MiniMax-M2.5 (ctx matches existing MiniMax-M2.5 entry)
+- model_name: forge-777
+  litellm_params:
+    model: openai/kimi-k2.7-code
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 4
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: forge-777 fallback — kimi-k2.7-code via Qwen Token Plan. Order:4 (Anthropic
+      format untested on this backend).
+- model_name: agi-333
+  litellm_params:
+    model: openai/deepseek-v3.2
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — deepseek-v3.2, expires 2026-09-29.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.8-27b
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.8-27b, expires 2026-11-18. Long runway.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.8-2.4t-a95b
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.8-2.4t-a95b MoE, expires 2026-11-12.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen-plus-latest
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen-plus-latest, expires 2026-09-29.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3-max-preview
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-max-preview, expires 2026-09-29.
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.7-plus-2026-05-26
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.7-plus snapshot, 99% remaining, expires 2026-09-29.
+- model_name: forge-777
+  litellm_params:
+    model: openai/qwen3-coder-plus
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 10
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-coder-plus, expires 2026-09-29. Order:10 — DashScope
+      returns 404 on Anthropic /v1/messages format (OpenAI-only).
+- model_name: forge-777
+  litellm_params:
+    model: openai/qwen3-coder-flash
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 10
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-coder-flash, expires 2026-09-29. Order:10 — DashScope
+      Anthropic format 404.
+- model_name: forge-777
+  litellm_params:
+    model: openai/qwen3-coder-next
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 10
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-coder-next, expires 2026-09-29. Order:10 — DashScope
+      Anthropic format 404.
+- model_name: forge-777
+  litellm_params:
+    model: openai/qwen3-coder-30b-a3b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 10
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-coder-30b-a3b, expires 2026-09-29. Order:10 — DashScope
+      Anthropic format 404.
+- model_name: forge-777
+  litellm_params:
+    model: openai/qwen3-coder-480b-a35b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 10
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-coder-480b-a35b flagship, expires 2026-09-29. Order:10
+      — DashScope Anthropic format 404.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-vl-235b-a22b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-235b largest VL, expires 2026-09-29.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-vl-235b-a22b-thinking
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-235b thinking VL, expires 2026-09-29.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-vl-32b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-32b, expires 2026-09-29.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-vl-32b-thinking
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-32b thinking, expires 2026-09-29.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-vl-30b-a3b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-30b MoE, expires 2026-09-29.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-vl-30b-a3b-thinking
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-30b thinking, expires 2026-09-29.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-vl-8b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-8b small, expires 2026-09-29.
+- model_name: fed/vision
+  litellm_params:
+    model: openai/qwen3-vl-8b-thinking
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-8b thinking, expires 2026-09-29.
+- model_name: asi-555
+  litellm_params:
+    model: openai/qwen3-next-80b-a3b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-next-80b-a3b, expires 2026-09-29.
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen-vl-max
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen-vl-max. Best Qwen vision model. Image understanding,
+      OCR, visual reasoning.
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-vl-plus
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3-vl-plus. Strong multimodal understanding.
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-vl-flash
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3-vl-flash. Fast multimodal.
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-omni-flash
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    supports_audio_input: true
+    notes: FREE QUOTA — qwen3-omni-flash. Omni-modal (text+vision+audio input).
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen-vl-ocr
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen-vl-ocr. Specialized OCR model.
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 100
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS Advanced 0/100k [hermes-asi-vision mirror added
+      2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 100
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 101
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil Standard 0/25k [hermes-asi-vision mirror added
+      2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 101
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly
+      quota. [hermes-asi-vision mirror added 2026-08-26 by 333-AGI; mirrors fed/vision]'
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: gemini/gemini-3.6-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 50
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: Gemini vision secondary; prefer for image Q&A not agent tool loops [hermes-asi-vision
+      mirror added 2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-vl-235b-a22b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-235b largest VL, expires 2026-09-29. [hermes-asi-vision
+      mirror added 2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-vl-235b-a22b-thinking
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-235b thinking VL, expires 2026-09-29. [hermes-asi-vision
+      mirror added 2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-vl-32b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-32b, expires 2026-09-29. [hermes-asi-vision mirror
+      added 2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-vl-32b-thinking
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-32b thinking, expires 2026-09-29. [hermes-asi-vision
+      mirror added 2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-vl-30b-a3b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-30b MoE, expires 2026-09-29. [hermes-asi-vision mirror
+      added 2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-vl-30b-a3b-thinking
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-30b thinking, expires 2026-09-29. [hermes-asi-vision
+      mirror added 2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-vl-8b-instruct
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-8b small, expires 2026-09-29. [hermes-asi-vision
+      mirror added 2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/qwen3-vl-8b-thinking
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 0
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-vl-8b thinking, expires 2026-09-29. [hermes-asi-vision
+      mirror added 2026-08-26 by 333-AGI; mirrors fed/vision]
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: INDIVIDUAL PLAN — qwen3.8-max. 36d runway. PRIMARY.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: INDIVIDUAL PLAN — qwen3.7-plus. 36d runway.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: INDIVIDUAL PLAN — qwen3.7-max. 36d runway.
+- model_name: opencode
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: INDIVIDUAL PLAN — deepseek-v4-pro. 36d runway.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-max-2026-06-08
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-max-2026-05-20
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-max-2026-05-17
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: opencode
+  litellm_params:
+    model: openai/deepseek-v4-pro-0813
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 131072
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — deepseek-v4-pro-0813, expires 2026-11-13. Long runway.
+- model_name: opencode
+  litellm_params:
+    model: openai/kimi-k3
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — kimi-k3, expires 2026-11-18. Long runway.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.6-max-preview
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.6-max-preview, 61% remaining, expires 2026-09-29.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-plus-2026-05-26
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3.7-plus snapshot, 99% remaining, expires 2026-09-29.
+- model_name: opencode
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 204
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak
+      discount.
+- model_name: opencode
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 201
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly
+      quota.'
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 207
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: Qwen Token Plan Team Owner (aliyun seat) — only live Qwen seat 2026-08-17
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 207
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 208
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS Advanced 0/100k
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 208
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 209
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil Standard 0/25k
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 209
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: opencode
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 202
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: MiniMax-M3 DIRECT (api.minimax.io/v1) — bypass FED. For agi-333. Token
+      Plan Max ACTIVE 2026-08-18. Token Plan 2056 quota]
+- model_name: opencode
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 299
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'deepseek-v4-pro via QWEN Token Plan Individual — PRIMARY (replaces dead
+      DeepSeek direct). Burst queue: 30s.'
+- model_name: opencode
+  litellm_params:
+    model: openai/glm-5.2
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 299
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'glm-5.2 via QWEN Token Plan Individual — provider diversity (Gödel E3).
+      Burst queue: 30s.'
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 210
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — qwen3.6-plus 1M ctx
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 211
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 212
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 213
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — qwen3.7-plus 1M ctx
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 214
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 215
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil
+- model_name: opencode
+  litellm_params:
+    model: openai/deepseek-v3.2
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 216
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — deepseek-v3.2 (ctx matches existing team deepseek-v4-pro
+      entry)
+- model_name: opencode
+  litellm_params:
+    model: openai/glm-5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 217
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — glm-5 (ctx matches existing glm-5.2 team entry)
+- model_name: opencode
+  litellm_params:
+    model: openai/glm-5.1
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 218
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — glm-5.1 (ctx matches existing glm-5.2 team entry)
+- model_name: opencode
+  litellm_params:
+    model: openai/kimi-k2.6
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 219
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — kimi-k2.6 (ctx matches existing kimi team sibling)
+- model_name: opencode
+  litellm_params:
+    model: openai/kimi-k2.5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 220
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — kimi-k2.5
+- model_name: opencode
+  litellm_params:
+    model: openai/MiniMax-M2.5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 221
+  model_info:
+    max_input_tokens: 204800
+    max_output_tokens: 65536
+    mode: chat
+    notes: Qwen Team Edition — MiniMax-M2.5 (ctx matches existing MiniMax-M2.5 entry)
+- model_name: opencode
+  litellm_params:
+    model: openai/deepseek-v3.2
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — deepseek-v3.2, expires 2026-09-29.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.8-27b
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.8-27b, expires 2026-11-18. Long runway.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.8-2.4t-a95b
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.8-2.4t-a95b MoE, expires 2026-11-12.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen-plus-latest
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen-plus-latest, expires 2026-09-29.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3-max-preview
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-max-preview, expires 2026-09-29.
+- model_name: opencode
+  litellm_params:
+    model: openai/qwen3.7-plus-2026-05-26
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.7-plus snapshot, 99% remaining, expires 2026-09-29.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: INDIVIDUAL PLAN — qwen3.8-max. 36d runway. PRIMARY.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: INDIVIDUAL PLAN — qwen3.7-plus. 36d runway.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: INDIVIDUAL PLAN — qwen3.7-max. 36d runway.
+- model_name: openclaw
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: INDIVIDUAL PLAN — deepseek-v4-pro. 36d runway.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-max-2026-06-08
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-max-2026-05-20
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-max-2026-05-17
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: openclaw
+  litellm_params:
+    model: openai/deepseek-v4-pro-0813
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 131072
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — deepseek-v4-pro-0813, expires 2026-11-13. Long runway.
+- model_name: openclaw
+  litellm_params:
+    model: openai/kimi-k3
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — kimi-k3, expires 2026-11-18. Long runway.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.6-max-preview
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.6-max-preview, 61% remaining, expires 2026-09-29.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-plus-2026-05-26
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3.7-plus snapshot, 99% remaining, expires 2026-09-29.
+- model_name: openclaw
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 204
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak
+      discount.
+- model_name: openclaw
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 201
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly
+      quota.'
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 207
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: Qwen Token Plan Team Owner (aliyun seat) — only live Qwen seat 2026-08-17
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 207
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 208
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS Advanced 0/100k
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 208
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 209
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil Standard 0/25k
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 209
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: openclaw
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 202
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: MiniMax-M3 DIRECT (api.minimax.io/v1) — bypass FED. For agi-333. Token
+      Plan Max ACTIVE 2026-08-18. Token Plan 2056 quota]
+- model_name: openclaw
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 299
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'deepseek-v4-pro via QWEN Token Plan Individual — PRIMARY (replaces dead
+      DeepSeek direct). Burst queue: 30s.'
+- model_name: openclaw
+  litellm_params:
+    model: openai/glm-5.2
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 299
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'glm-5.2 via QWEN Token Plan Individual — provider diversity (Gödel E3).
+      Burst queue: 30s.'
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 210
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — qwen3.6-plus 1M ctx
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 211
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 212
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 213
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — qwen3.7-plus 1M ctx
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 214
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 215
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil
+- model_name: openclaw
+  litellm_params:
+    model: openai/deepseek-v3.2
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 216
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — deepseek-v3.2 (ctx matches existing team deepseek-v4-pro
+      entry)
+- model_name: openclaw
+  litellm_params:
+    model: openai/glm-5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 217
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — glm-5 (ctx matches existing glm-5.2 team entry)
+- model_name: openclaw
+  litellm_params:
+    model: openai/glm-5.1
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 218
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — glm-5.1 (ctx matches existing glm-5.2 team entry)
+- model_name: openclaw
+  litellm_params:
+    model: openai/kimi-k2.6
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 219
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — kimi-k2.6 (ctx matches existing kimi team sibling)
+- model_name: openclaw
+  litellm_params:
+    model: openai/kimi-k2.5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 220
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — kimi-k2.5
+- model_name: openclaw
+  litellm_params:
+    model: openai/MiniMax-M2.5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 221
+  model_info:
+    max_input_tokens: 204800
+    max_output_tokens: 65536
+    mode: chat
+    notes: Qwen Team Edition — MiniMax-M2.5 (ctx matches existing MiniMax-M2.5 entry)
+- model_name: openclaw
+  litellm_params:
+    model: openai/deepseek-v3.2
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — deepseek-v3.2, expires 2026-09-29.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.8-27b
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.8-27b, expires 2026-11-18. Long runway.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.8-2.4t-a95b
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.8-2.4t-a95b MoE, expires 2026-11-12.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen-plus-latest
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen-plus-latest, expires 2026-09-29.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3-max-preview
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-max-preview, expires 2026-09-29.
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.7-plus-2026-05-26
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.7-plus snapshot, 99% remaining, expires 2026-09-29.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: INDIVIDUAL PLAN — qwen3.8-max. 36d runway. PRIMARY.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: INDIVIDUAL PLAN — qwen3.7-plus. 36d runway.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: INDIVIDUAL PLAN — qwen3.7-max. 36d runway.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 200
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: INDIVIDUAL PLAN — deepseek-v4-pro. 36d runway.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-max-2026-06-08
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-max-2026-05-20
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-max-2026-05-17
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.7-max snapshot, expires 2026-09-29. BURN FIRST.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/deepseek-v4-pro-0813
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 131072
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — deepseek-v4-pro-0813, expires 2026-11-13. Long runway.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/kimi-k3
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — kimi-k3, expires 2026-11-18. Long runway.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.6-max-preview
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    notes: FREE QUOTA — qwen3.6-max-preview, 61% remaining, expires 2026-09-29.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-plus-2026-05-26
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_vision: true
+    notes: FREE QUOTA — qwen3.7-plus snapshot, 99% remaining, expires 2026-09-29.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 204
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: MiMo V2.5 Token Plan — RE-ENABLED 2026-08-10. 82B credits, 20% off-peak
+      discount.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 201
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: ' MiniMax Token Plan Max ACTIVE 2026-08-18. 50 USD/mo, 5h rolling + weekly
+      quota.'
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 207
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: Qwen Token Plan Team Owner (aliyun seat) — only live Qwen seat 2026-08-17
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 207
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 208
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS Advanced 0/100k
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 208
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 209
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil Standard 0/25k
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 209
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 202
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: MiniMax-M3 DIRECT (api.minimax.io/v1) — bypass FED. For agi-333. Token
+      Plan Max ACTIVE 2026-08-18. Token Plan 2056 quota]
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 299
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'deepseek-v4-pro via QWEN Token Plan Individual — PRIMARY (replaces dead
+      DeepSeek direct). Burst queue: 30s.'
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/glm-5.2
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 299
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'glm-5.2 via QWEN Token Plan Individual — provider diversity (Gödel E3).
+      Burst queue: 30s.'
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 210
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — qwen3.6-plus 1M ctx
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 211
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 212
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 213
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — qwen3.7-plus 1M ctx
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 214
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover arifOS
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 215
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: qwen-seat-failover ariffazil
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/deepseek-v3.2
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 216
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — deepseek-v3.2 (ctx matches existing team deepseek-v4-pro
+      entry)
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/glm-5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 217
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — glm-5 (ctx matches existing glm-5.2 team entry)
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/glm-5.1
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 218
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    notes: Qwen Team Edition — glm-5.1 (ctx matches existing glm-5.2 team entry)
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/kimi-k2.6
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 219
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — kimi-k2.6 (ctx matches existing kimi team sibling)
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/kimi-k2.5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 220
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: Qwen Team Edition — kimi-k2.5
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/MiniMax-M2.5
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 221
+  model_info:
+    max_input_tokens: 204800
+    max_output_tokens: 65536
+    mode: chat
+    notes: Qwen Team Edition — MiniMax-M2.5 (ctx matches existing MiniMax-M2.5 entry)
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/deepseek-v3.2
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — deepseek-v3.2, expires 2026-09-29.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.8-27b
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.8-27b, expires 2026-11-18. Long runway.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.8-2.4t-a95b
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.8-2.4t-a95b MoE, expires 2026-11-12.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen-plus-latest
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen-plus-latest, expires 2026-09-29.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3-max-preview
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3-max-preview, expires 2026-09-29.
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/qwen3.7-plus-2026-05-26
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 200
+    max_input_tokens: 1048576
+    max_output_tokens: 16384
+    mode: chat
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    notes: FREE QUOTA — qwen3.7-plus snapshot, 99% remaining, expires 2026-09-29.
+litellm_settings:
+  callbacks: []
+  num_retries: 2
+  request_timeout: 60
+  allowed_fails: 2
+  cooldown_time: 60
+  fallbacks_on_exceptions:
+  - AuthenticationError
+  - RateLimitError
+  - APIConnectionError
+  - BadRequestError
+  drop_params: true
+  cache: true
+  cache_params:
+    type: redis
+    host: redis
+    port: 6379
+    ttl: 600
+    namespace: litellm-fed
+    supported_call_types:
+    - acompletion
+    - atext_completion
+    - aembedding
+router_settings:
+  routing_strategy: simple-shuffle
+  enable_pre_call_checks: true
+  num_retries: 2
+  allowed_fails: 2
+  cooldown_time: 60
+  context_window_fallbacks:
+  - agi-333:
+    - apex-888
+    - i-arif
+    - forge-777
+  - forge-777:
+    - agi-333
+    - apex-888
+    - i-arif
+  - i-arif:
+    - apex-888
+    - forge-777
+    - agi-333
+  - asi-555:
+    - apex-888
+    - agi-333
+    - i-arif
+  model_group_alias:
+    deepseek-v4-pro: agi-333
+    deepseek-v4-flash: agi-333
+    qwen3.6-flash: agi-333
+    qwen3.6-plus: agi-333
+    deepseek-v3.2: agi-333
+    qwen3.7-plus: agi-333
+    qwen3.7-max: agi-333
+    qwen3.8-max: agi-333
+    qwen3-max: agi-333
+    MiniMax-M3: agi-333
+    MiniMax-M2.7: agi-333
+    MiniMax-M2.5: agi-333
+    mimo-v2.5-pro: agi-333
+    mimo-v2.5: asi-555
+    k3: agi-333
+    k3-256k: agi-333
+    kimi-k3: agi-333
+    kimi-k2.7-code: forge-777
+    kimi-k2.6: agi-333
+    kimi-k2.5: agi-333
+    kimi-for-coding: forge-777
+    glm-5: agi-333
+    glm-5.1: agi-333
+    glm-5.2: agi-333
+    claude-sonnet-5: apex-888
+    claude-opus-5: apex-888
+    gpt-5.6-sol: agi-333
+    gpt-5.5: agi-333
+    qwen-vl-max: i-arif
+    qwen3-vl-plus: i-arif
+    qwen3-vl-flash: i-arif
+    qwen3-omni-flash: i-arif
+    gemini-2.5-flash: apex-888
+    gemini-3.6-flash: apex-888
+    qwen3.7-max-2026-06-08: agi-333
+    qwen3.7-max-2026-05-20: agi-333
+    qwen3.7-max-2026-05-17: agi-333
+    qwen3.7-max-preview: agi-333
+    deepseek-v4-pro-0813: agi-333
+    qwen3.6-max-preview: agi-333
+    qwen3.7-plus-2026-05-26: agi-333
+    qwen3.7-flash-2026-07-15: agi-333
+    qwen3.6-plus-2026-04-02: agi-333
+    qwen-plus-latest: agi-333
+    qwen3-max-2026-01-23: agi-333
+    qwen3-max-preview: agi-333
+    qwen3-coder-480b-a35b-instruct: forge-777
+    qwen3-coder-plus: forge-777
+    qwen3-coder-next: forge-777
+    qwen-vl-ocr: i-arif
+  fallbacks:
+  - i-arif:
+    - apex-888
+  - apex-888:
+    - agi-333
+  - forge-777:
+    - i-arif
+    - agi-333
+    - apex-888
+  - agi-333:
+    - i-arif
+    - forge-777
+    - apex-888
+  - asi-555:
+    - i-arif
+    - agi-333
+    - apex-888
+  - hermes-asi-vision:
+    - agi-333
+    - apex-888
+  allowed_fails_policy:
+    cooldown_time: 60
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  otel_export: false
+  drop_params: true
+  telemetry: false
+  store_model_in_db: false
+  disable_spend_logs: true
+  allow_requests_on_db_unavailable: true
+model_group_alias:
+  deepseek-v3.2: agi-333
+  qwen3.8-27b: agi-333
+  qwen3.8-2.4t-a95b: agi-333
+  qwen-plus-latest: agi-333
+  qwen3-max-preview: agi-333
+  qwen3-coder-plus: forge-777
+  qwen3-coder-flash: forge-777
+  qwen3-coder-next: forge-777
+  qwen3-coder-30b-a3b-instruct: forge-777
+  qwen3-coder-480b-a35b-instruct: forge-777
+  qwen3-vl-235b-a22b-instruct: fed/vision
+  qwen3-vl-235b-a22b-thinking: fed/vision
+  qwen3-vl-32b-instruct: fed/vision
+  qwen3-vl-32b-thinking: fed/vision
+  qwen3-vl-30b-a3b-instruct: fed/vision
+  qwen3-vl-30b-a3b-thinking: fed/vision
+  qwen3-vl-8b-instruct: fed/vision
+  qwen3-vl-8b-thinking: fed/vision
+  qwen3-next-80b-a3b-instruct: asi-555

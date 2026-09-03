@@ -1,0 +1,14 @@
+[Unit]
+Description=wan-image-shim: OpenAI-chat to Aliyun token-plan multimodal translator
+After=network-online.target
+
+[Service]
+EnvironmentFile=/docker/wan-shim/env
+Environment=WAN_SHIM_BIND=0.0.0.0
+Environment=WAN_SHIM_PORT=4020
+ExecStart=/usr/bin/python3 /docker/wan-shim/shim.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
