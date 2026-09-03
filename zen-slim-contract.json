@@ -1,0 +1,47 @@
+{
+  "contract": "P1-ZEN-SLIM + P2-ZEN-LANE execution contract",
+  "authority": "ARIF (F13) — clerk review SEAL/PARTIAL/HOLD adopted as binding",
+  "created": "2026-09-02T17:20:00+08:00",
+  "rules": {
+    "phase_separation": "P1 solo -> restart -> verify green -> P2 solo -> restart -> verify green. Never one restart for two phases.",
+    "fail_closed": "ANY live alias fails post-restart -> restore backup -> restart -> confirm green -> diagnose. No forward-fix on broken router.",
+    "cpu_expectation": "Do NOT expect CPU drop from P1/P2. %st 93% at baseline = Hostinger hypervisor steal, outside federation. P1/P2 wins are chaos/clarity, not CPU."
+  },
+  "backup": {
+    "pre_p1_config": "/root/backups/litellm-config.yaml.bak-zen-slim-20260902T171834",
+    "pre_p1_linecount": 1927,
+    "pre_p1_entries": 137,
+    "restore_cmd": "cp /root/backups/litellm-config.yaml.bak-zen-slim-20260902T171834 /root/A-FORGE/litellm-config.yaml && systemctl restart litellm-federation"
+  },
+  "baseline": {
+    "captured": "2026-09-02T17:18+08:00",
+    "vmstat_us_sy_id_wa_st": "4/4/3/0/93",
+    "health_4013": 200,
+    "health_4000": 200,
+    "morning_already_done": [
+      "prometheus callback removed (commit f8f5c597) — the real 100% CPU fix",
+      "hermes-asi-vision fallback group added (agi-333, apex-888)",
+      "BadRequestError added to fallbacks_on_exceptions — stops quota-exhaustion SIGABRT crash loop"
+    ]
+  },
+  "verify_pass_p1": {
+    "health_4013": 200,
+    "health_4000": 200,
+    "test_completions_each_live_alias": ["agi-333", "asi-555", "forge-777", "apex-888", "i-arif", "hermes-asi-vision"],
+    "config_entries_target": "<= 70 live model blocks",
+    "config_linecount_target": "< 1400",
+    "yaml_lint": "clean parse",
+    "litellm_boot": "no core dump, stable > 2min"
+  },
+  "verify_fail_action_p1": "restore backup, restart, re-verify green, then diagnose block-by-block",
+  "archive_registry": {
+    "path": "/root/A-FORGE/model-retire-registry.json",
+    "schema": "{model, alias, api_base, last_verified, reason, retired_at, restore_path}",
+    "rule": "retire = comment+archive with fingerprint, never hard-delete. 999-ARCHIVE can un-retire."
+  },
+  "p2_gate": {
+    "preconditions": ["P1 verify green", "fed/embed alias gets rate-limit + budget cap BEFORE any embed", "sanity batch = 100 docs first, full archive only after PASS"],
+    "financial_gate": "fed/embed + qwen3-rerank leave Token Plan -> PAYG metered. One un-spendable burn = breach. Cap first.",
+    "status": "PENDING_P1_GREEN"
+  }
+}
