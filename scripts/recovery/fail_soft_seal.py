@@ -16,10 +16,15 @@ import json, os, sys, hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Locate paths_resolver relative to this script:
+# scripts/recovery/fail_soft_seal.py → ../../paradox-engine/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
+
 RECOVERY_PATHS = [
-    "/root/forge_work/recovery-ledger",
+    str(org_path("forge_work") / "recovery-ledger"),
     "/root/.local/share/arifos/recovery",
-    "/root/forge_work",  # fallback to current forge_work
+    str(org_path("forge_work")),  # fallback to current forge_work
 ]
 
 def safe_path(base_dir, session_id, ext="json"):

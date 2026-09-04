@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Locate A-FORGE root + paths via paths_resolver
+A_FORGE_ROOT="$(cd "$(dirname "$0")" && cd .. && pwd)"
+PATH_R() { python3 -c "import sys; sys.path.insert(0, '$A_FORGE_ROOT/paradox-engine'); from paths_resolver import org_path; print(org_path('$1'))"; }
+
 E="/opt/arifos/app/scripts/emit_observatory_snapshot.py"
 S="/root/.arifos/observatory/snapshots"
-L="/root/A-FORGE/logs/federation-remediation.log"
+LOGDIR="$(PATH_R A-FORGE)/logs"
+L="$LOGDIR/federation-remediation.log"
 K="/tmp/federation-auto-remediation.lock"
 MCP="http://127.0.0.1:8088/mcp"
 
-mkdir -p /root/A-FORGE/logs
+mkdir -p "$LOGDIR"
 if [ -f "$K" ] && kill -0 $(cat "$K") 2>/dev/null; then echo "LOCKED" >> "$L"; exit 0; fi
 echo $$ > "$K"; trap 'rm -f "$K"' EXIT
 log() { echo "[$(date -u +%FT%TZ)] $*" >> "$L"; }

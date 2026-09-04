@@ -18,9 +18,15 @@ Exit code:
 """
 
 import sys, json, os
+from pathlib import Path
 
-# Add arifOS to sys.path
-ARIFOS_ROOT = os.environ.get("ARIFOS_ROOT", "/root/arifOS")
+# Locate paths_resolver relative to this script:
+# scripts/truth_gate.py → ../paradox-engine/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
+
+# Add arifOS to sys.path (env override still wins, then falls back to resolver)
+ARIFOS_ROOT = os.environ.get("ARIFOS_ROOT") or str(org_path("arifOS"))
 sys.path.insert(0, ARIFOS_ROOT)
 
 try:

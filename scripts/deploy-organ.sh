@@ -12,48 +12,52 @@ FORCE="${2:-}"
 TIMESTAMP=$(date +%Y%m%dT%H%M%SZ)
 BACKUP_ROOT="/root/backups/deploy-rollbacks"
 
+# Locate A-FORGE root from this script: scripts/deploy-organ.sh → ..
+A_FORGE_ROOT="$(cd "$(dirname "$0")" && cd .. && pwd)"
+PATH_R() { python3 -c "import sys; sys.path.insert(0, '$A_FORGE_ROOT/paradox-engine'); from paths_resolver import org_path; print(org_path('$1'))"; }
+
 # ── Organ configuration ──────────────────────────────────────────
 declare -A ORGAN_SOURCE ORGAN_OPT ORGAN_SERVICE ORGAN_PORT ORGAN_HEALTH ORGAN_TEST
-ORGAN_SOURCE[arifos]="/root/arifOS"
+ORGAN_SOURCE[arifos]="$(PATH_R arifOS)"
 ORGAN_OPT[arifos]="/opt/arifos/app"
 ORGAN_SERVICE[arifos]="arifos"
 ORGAN_PORT[arifos]="8088"
 ORGAN_HEALTH[arifos]="http://localhost:8088/health"
-ORGAN_TEST[arifos]="cd /root/arifOS && uv sync --frozen && pytest tests/ -q --tb=short -m 'not e3e and not slow'"
+ORGAN_TEST[arifos]="cd $(PATH_R arifOS) && uv sync --frozen && pytest tests/ -q --tb=short -m 'not e3e and not slow'"
 
-ORGAN_SOURCE[aforge]="/root/A-FORGE"
+ORGAN_SOURCE[aforge]="$(PATH_R A-FORGE)"
 ORGAN_OPT[aforge]="/opt/a-forge/app"
 ORGAN_SERVICE[aforge]="a-forge"
 ORGAN_PORT[aforge]="7071"
 ORGAN_HEALTH[aforge]="http://localhost:7071/health"
-ORGAN_TEST[aforge]="cd /root/A-FORGE && npm ci && npm run build && npm test"
+ORGAN_TEST[aforge]="cd $(PATH_R A-FORGE) && npm ci && npm run build && npm test"
 
-ORGAN_SOURCE[aforge-mcp]="/root/A-FORGE"
+ORGAN_SOURCE[aforge-mcp]="$(PATH_R A-FORGE)"
 ORGAN_OPT[aforge-mcp]="/opt/a-forge/app"
 ORGAN_SERVICE[aforge-mcp]="a-forge-mcp"
 ORGAN_HEALTH[aforge-mcp]="http://localhost:7072/mcp"
 ORGAN_TEST[aforge-mcp]=""  # Share with aforge
 
-ORGAN_SOURCE[wealth]="/root/WEALTH"
+ORGAN_SOURCE[wealth]="$(PATH_R WEALTH)"
 ORGAN_OPT[wealth]="/opt/wealth/app"
 ORGAN_SERVICE[wealth]="wealth-organ"
 ORGAN_PORT[wealth]="18082"
 ORGAN_HEALTH[wealth]="http://localhost:18082/health"
-ORGAN_TEST[wealth]="cd /root/WEALTH && uv sync --frozen && pytest tests/ -q --tb=short"
+ORGAN_TEST[wealth]="cd $(PATH_R WEALTH) && uv sync --frozen && pytest tests/ -q --tb=short"
 
-ORGAN_SOURCE[geox]="/root/GEOX"
+ORGAN_SOURCE[geox]="$(PATH_R GEOX)"
 ORGAN_OPT[geox]="/opt/geox/app"
 ORGAN_SERVICE[geox]="geox-mcp"
 ORGAN_PORT[geox]="8081"
 ORGAN_HEALTH[geox]="http://localhost:8081/health"
-ORGAN_TEST[geox]="cd /root/GEOX && uv sync --frozen && pytest tests/ -q --tb=short"
+ORGAN_TEST[geox]="cd $(PATH_R GEOX) && uv sync --frozen && pytest tests/ -q --tb=short"
 
-ORGAN_SOURCE[well]="/root/WELL"
+ORGAN_SOURCE[well]="$(PATH_R WELL)"
 ORGAN_OPT[well]="/opt/well/app"
 ORGAN_SERVICE[well]="well"
 ORGAN_PORT[well]="18083"
 ORGAN_HEALTH[well]="http://localhost:18083/health"
-ORGAN_TEST[well]="cd /root/WELL && uv sync --frozen && pytest tests/ -q --tb=short"
+ORGAN_TEST[well]="cd $(PATH_R WELL) && uv sync --frozen && pytest tests/ -q --tb=short"
 
 # ── Validate organ ──────────────────────────────────────────────
 SRC="${ORGAN_SOURCE[$ORGAN]:-}"
@@ -182,7 +186,7 @@ done
 # ── Stage 7: Receipt ─────────────────────────────────────────────
 echo ""
 echo "── Stage 7: Receipt ──"
-RECEIPT_DIR="/root/forge_work/$(date +%Y-%m-%d)"
+RECEIPT_DIR="$(PATH_R forge_work)/$(date +%Y-%m-%d)"
 mkdir -p "$RECEIPT_DIR"
 cat > "$RECEIPT_DIR/deploy-${ORGAN}-${TIMESTAMP}.json" << EOF
 {

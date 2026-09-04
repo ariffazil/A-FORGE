@@ -22,9 +22,15 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
 
-# Add arifOS to path for imports
-ARIFOS_ROOT = os.environ.get("ARIFOS_ROOT", "/root/arifOS")
+# Locate paths_resolver relative to this script:
+# scripts/hf_import.py → ../paradox-engine/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
+
+# Add arifOS to path for imports (env override still wins, then falls back to resolver)
+ARIFOS_ROOT = os.environ.get("ARIFOS_ROOT") or str(org_path("arifOS"))
 sys.path.insert(0, ARIFOS_ROOT)
 
 

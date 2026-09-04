@@ -4,8 +4,11 @@
 # Purpose: Auto-recovery from manual recovery (entropy containment)
 
 set -e
-REAPER="/root/A-FORGE/scripts/recovery/forge_zombie_reaper.py"
-LOG_DIR="/root/forge_work/recovery-scans/cron-logs"
+# Locate A-FORGE root + forge_work via paths_resolver (no hardcoded /root/)
+A_FORGE_ROOT="$(cd "$(dirname "$0")" && cd ../.. && pwd)"
+PATH_R() { python3 -c "import sys; sys.path.insert(0, '$A_FORGE_ROOT/paradox-engine'); from paths_resolver import org_path; print(org_path('$1'))"; }
+REAPER="$A_FORGE_ROOT/scripts/recovery/forge_zombie_reaper.py"
+LOG_DIR="$(PATH_R forge_work)/recovery-scans/cron-logs"
 LOG_FILE="$LOG_DIR/zombie-reaper.log"
 
 mkdir -p "$LOG_DIR"
@@ -22,7 +25,7 @@ echo "=== $TS reaper exit=$EXIT_CODE ===" >> "$LOG_FILE"
 echo "$OUTPUT" >> "$LOG_FILE"
 
 # Emit system-wide FQ+closure signal — write structured snapshot
-SNAPSHOT="/root/forge_work/recovery-scans/cron-snapshots/reaper-${TS//:/_}.json"
+SNAPSHOT="$(PATH_R forge_work)/recovery-scans/cron-snapshots/reaper-${TS//:/_}.json"
 mkdir -p "$(dirname "$SNAPSHOT")"
 
 # Extract numbers from output
@@ -30,7 +33,7 @@ TOTAL=$(echo "$OUTPUT" | grep "Total items:" | awk '{print $3}')
 HOLD=$(echo "$OUTPUT" | grep "⚠" | grep -oE "[0-9]+" | head -1 || echo "0")
 
 # Read latest full scan JSON for surface breakdown
-LATEST=$(ls -t /root/forge_work/recovery-scans/reap-*.json 2>/dev/null | head -1)
+LATEST=$(ls -t "$(PATH_R forge_work)/recovery-scans/reap-*.json" 2>/dev/null | head -1)
 
 cat > "$SNAPSHOT" << JSON
 {

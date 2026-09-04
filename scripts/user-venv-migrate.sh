@@ -14,7 +14,11 @@
 
 set -euo pipefail
 
-BACKUP_DIR="/root/forge_work/2026-07-31/user-venv-migration-backups"
+# Locate A-FORGE root from this script: scripts/user-venv-migrate.sh → ..
+A_FORGE_ROOT="$(cd "$(dirname "$0")" && cd .. && pwd)"
+PATH_R() { python3 -c "import sys; sys.path.insert(0, '$A_FORGE_ROOT/paradox-engine'); from paths_resolver import org_path; print(org_path('$1'))"; }
+
+BACKUP_DIR="$(PATH_R forge_work)/2026-07-31/user-venv-migration-backups"
 TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
 
 # ─── SERVICE MAP ─────────────────────────────────────────────────────

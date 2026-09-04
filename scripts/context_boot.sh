@@ -11,8 +11,10 @@
 
 set -euo pipefail
 
-COMPILER="/root/A-FORGE/scripts/context_compile.py"
-SURFACE_GEN="/root/A-FORGE/scripts/tool_surface_gen.py"
+# Locate A-FORGE root from this script: scripts/context_boot.sh → ..
+A_FORGE_ROOT="$(cd "$(dirname "$0")" && cd .. && pwd)"
+COMPILER="$A_FORGE_ROOT/scripts/context_compile.py"
+SURFACE_GEN="$A_FORGE_ROOT/scripts/tool_surface_gen.py"
 BOOT_DIR="/tmp/context_boot"
 TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
 

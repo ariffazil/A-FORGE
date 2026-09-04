@@ -12,7 +12,9 @@
 
 set -euo pipefail
 
-COMPILER="/root/A-FORGE/scripts/context_compile.py"
+# Locate A-FORGE root from this script: scripts/context_compile.sh → ..
+A_FORGE_ROOT="$(cd "$(dirname "$0")" && cd .. && pwd)"
+COMPILER="$A_FORGE_ROOT/scripts/context_compile.py"
 CARRY_FORWARD="/root/.local/share/arifos/carry_forward.json"
 
 # Colors

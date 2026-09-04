@@ -43,11 +43,16 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Locate paths_resolver relative to this script:
+# scripts/identity/agent-onboard.py → ../../paradox-engine/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
+
 # Paths
-REGISTRY_PATH = Path("/root/A-FORGE/data/agent_identities.json")
-KEYS_DIR = Path("/root/A-FORGE/IDENTITY/keys")
-ALERTS_LOG = Path("/root/A-FORGE/data/governance_alerts.log")
-SOVEREIGN_KEY = Path("/root/AAA/IDENTITY/keys/arif_public.pem")
+REGISTRY_PATH = org_path("A-FORGE") / "data" / "agent_identities.json"
+KEYS_DIR = org_path("A-FORGE") / "IDENTITY" / "keys"
+ALERTS_LOG = org_path("A-FORGE") / "data" / "governance_alerts.log"
+SOVEREIGN_KEY = org_path("AAA") / "IDENTITY" / "keys" / "arif_public.pem"
 
 
 def load_registry() -> dict:

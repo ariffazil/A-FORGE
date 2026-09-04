@@ -21,12 +21,31 @@ const fs = require("fs");
 const path = require("path");
 const { execSync } = require("child_process");
 
+// Resolve A-FORGE root from this script: scripts/metabolism-tracker.cjs → ..
+const A_FORGE_ROOT = path.resolve(__dirname, "..");
+
+// Locator: shell out to Python paths_resolver for cross-language SOT.
+function _resolveOrgan(name) {
+  try {
+    return execSync(
+      `python3 -c "import sys; sys.path.insert(0, '${A_FORGE_ROOT}/paradox-engine'); from paths_resolver import org_path; print(org_path('${name}'))"`,
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }
+    ).trim();
+  } catch {
+    // Fallback to relative resolution if Python unavailable
+    if (name === "AAA") return path.resolve(A_FORGE_ROOT, "..", "AAA");
+    if (name === "arifOS") return path.resolve(A_FORGE_ROOT, "..", "arifOS");
+    if (name === "VAULT999") return path.resolve(A_FORGE_ROOT, "..", "arifOS", "VAULT999");
+    return A_FORGE_ROOT;
+  }
+}
+
 const SEAL_CHAIN_PATH =
   process.env.VAULT999_PATH ||
   "/root/.local/share/arifos/vault999/seal_chain.jsonl";
 const SEAL_CHAIN_JS =
   process.env.SEAL_CHAIN_JS_PATH ||
-  "/root/AAA/a2a-server/seal_chain.js";
+  `${_resolveOrgan("AAA")}/a2a-server/seal_chain.js`;
 const F13_SEAL_CHAIN_PATH =
   process.env.F13_ESCALATION_PATH ||
   "/root/.local/share/arifos/vault999/F13_ESCALATIONS.md";

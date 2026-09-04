@@ -18,7 +18,13 @@ import re
 import hashlib
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
+
+# Locate paths_resolver relative to this script:
+# scripts/context_compile.py → ../paradox-engine/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
 
 # ─── FEDERATION ORGAN REGISTRY ───────────────────────────────────────────
 
@@ -459,31 +465,31 @@ DOCS = {
         "keywords": ["federation", "organs", "ports", "autonomy", "floors"],
     },
     "INIT.md": {
-        "path": "/root/AAA/prompts/INIT.md",
+        "path": str(org_path("AAA") / "prompts/INIT.md"),
         "size_kb": 42,
         "always": False,
         "keywords": ["boot", "trinity", "rsi", "constitutional", "init"],
     },
     "TOOLS.md": {
-        "path": "/root/AAA/agents/opencode/TOOLS.md",
+        "path": str(org_path("AAA") / "agents/opencode/TOOLS.md"),
         "size_kb": 11,
         "always": False,
         "keywords": ["tools", "mcp", "capabilities", "server"],
     },
     "AUTONOMOUS_GOVERNANCE.md": {
-        "path": "/root/AAA/agents/opencode/AUTONOMOUS_GOVERNANCE.md",
+        "path": str(org_path("AAA") / "agents/opencode/AUTONOMOUS_GOVERNANCE.md"),
         "size_kb": 6,
         "always": True,
         "keywords": ["autonomy", "authority", "tier", "auto-do"],
     },
     "IDENTITY.md": {
-        "path": "/root/AAA/agents/opencode/IDENTITY.md",
+        "path": str(org_path("AAA") / "agents/opencode/IDENTITY.md"),
         "size_kb": 9,
         "always": True,
         "keywords": ["identity", "voice", "sovereign"],
     },
     "AAA-ZEN-ALIGNMENT.md": {
-        "path": "/root/AAA/prompts/AAA-ZEN-ALIGNMENT.md",
+        "path": str(org_path("AAA") / "prompts/AAA-ZEN-ALIGNMENT.md"),
         "size_kb": 12,
         "always": False,
         "keywords": ["zen", "alignment", "probe", "drift"],

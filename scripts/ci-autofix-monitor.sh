@@ -71,12 +71,12 @@ ORG_MCP[geox]="geox_* — https://geox.arif-fazil.com/mcp"
 ORG_MCP[wealth]="capital_* — https://wealth.arif-fazil.com/mcp"
 ORG_MCP[well]="well_* — https://well.arif-fazil.com/mcp"
 
-ORG_DIR[arifos]="/root/arifOS"
-ORG_DIR[aforge]="/root/A-FORGE"
-ORG_DIR[aaa]="/root/AAA"
-ORG_DIR[geox]="/root/GEOX"
-ORG_DIR[wealth]="/root/WEALTH"
-ORG_DIR[well]="/root/WELL"
+ORG_DIR[arifos]="$(PATH_R arifOS)"
+ORG_DIR[aforge]="$(PATH_R A-FORGE)"
+ORG_DIR[aaa]="$(PATH_R AAA)"
+ORG_DIR[geox]="$(PATH_R GEOX)"
+ORG_DIR[wealth]="$(PATH_R WEALTH)"
+ORG_DIR[well]="$(PATH_R WELL)"
 
 # ── Check CI status ──────────────────────────────────────────────────────
 check_ci_status() {

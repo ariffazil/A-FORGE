@@ -1,6 +1,13 @@
 import os
+from pathlib import Path
 
-base_dir = "/root/A-FORGE"
+# Locate paths_resolver relative to this script:
+# scripts/build_reports.py → ../paradox-engine/
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
+
+base_dir = str(org_path("A-FORGE"))
 
 reports = {
     "EXTERNAL_AGENT_STACK_BENCHMARK.md": """# External Agent Stack Benchmark

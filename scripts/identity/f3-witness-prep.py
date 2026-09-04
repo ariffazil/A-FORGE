@@ -9,14 +9,19 @@ import sys
 import urllib.request
 from pathlib import Path
 
+# Locate paths_resolver relative to this script:
+# scripts/identity/f3-witness-prep.py → ../../paradox-engine/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
+
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
 BASE = "http://127.0.0.1:8088/mcp"
-OUT = Path("/root/A-FORGE/forge_work/2026-07-09/F3-WITNESS-SESSIONS.json")
+OUT = org_path("A-FORGE") / "forge_work" / "2026-07-09" / "F3-WITNESS-SESSIONS.json"
 
 AGENTS = {
-    "hermes": Path("/root/A-FORGE/IDENTITY/keys/hermes/hermes_ed25519_private.pem"),
-    "openclaw": Path("/root/A-FORGE/IDENTITY/keys/openclaw/openclaw_ed25519_private.pem"),
+    "hermes": org_path("A-FORGE") / "IDENTITY" / "keys" / "hermes" / "hermes_ed25519_private.pem",
+    "openclaw": org_path("A-FORGE") / "IDENTITY" / "keys" / "openclaw" / "openclaw_ed25519_private.pem",
 }
 
 
