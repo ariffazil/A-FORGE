@@ -2315,85 +2315,53 @@ model_list:
     mode: chat
     supports_audio_input: true
     notes: Gemini 3.5 Transcribe standalone
-- model_name: fed/audio
+- model_name: fed/audio-tts
   litellm_params:
-    model: gemini/gemini-3.5-transcribe
+    model: gemini/gemini-2.5-flash-preview-tts
+    api_key: os.environ/GEMINI_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    supports_audio_output: true
+    notes: 'P1 TTS: Gemini 2.5 Flash Preview TTS'
+- model_name: fed/audio-tts
+  litellm_params:
+    model: openai/speech-2.8-hd
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    mode: chat
+    supports_audio_output: true
+    notes: 'P2 TTS: MiniMax speech-2.8-hd'
+- model_name: fed/audio-asr
+  litellm_params:
+    model: gemini/gemini-2.5-flash
     api_key: os.environ/GEMINI_API_KEY
     order: 1
   model_info:
     mode: chat
     supports_audio_input: true
-    notes: 'P1 ASR: Gemini 3.5 Transcribe'
-- model_name: fed/audio
+    notes: 'P1 ASR: Gemini 2.5 Flash Native Audio Perception'
+- model_name: fed/audio-asr
   litellm_params:
-    model: gemini/gemini-2.5-flash-preview-tts
+    model: gemini/gemini-3.5-transcribe
     api_key: os.environ/GEMINI_API_KEY
     order: 2
   model_info:
     mode: chat
-    supports_audio_output: true
-    notes: 'P1 TTS: Gemini 2.5 Flash Preview TTS'
-- model_name: fed/audio
-  litellm_params:
-    model: openai/speech-2.8-hd
-    api_base: https://api.minimax.io/v1
-    api_key: os.environ/MINIMAX_API_KEY
-    order: 3
-  model_info:
-    mode: chat
-    supports_audio_output: true
-    notes: 'P2 TTS: MiniMax speech-2.8-hd (Token Plan Max)'
-- model_name: fed/audio
-  litellm_params:
-    model: openai/mimo-v2.5-asr
-    api_base: https://token-plan-sgp.xiaomimimo.com/v1
-    api_key: os.environ/MIMO_API_KEY
-    order: 4
-  model_info:
-    mode: chat
     supports_audio_input: true
-    notes: 'P2 ASR: Xiaomi MiMo V2.5 ASR'
-- model_name: fed/audio
-  litellm_params:
-    model: openai/mimo-v2.5-tts
-    api_base: https://token-plan-sgp.xiaomimimo.com/v1
-    api_key: os.environ/MIMO_API_KEY
-    order: 5
-  model_info:
-    mode: chat
-    supports_audio_output: true
-    notes: 'P3 TTS: Xiaomi MiMo V2.5 TTS'
-- model_name: fed/audio
+    notes: 'P2 ASR: Gemini 3.5 Transcribe'
+- model_name: fed/audio-voiceclone-restricted
   litellm_params:
     model: openai/mimo-v2.5-tts-voiceclone
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_API_KEY
-    order: 6
-  model_info:
-    mode: chat
-    supports_audio_input: true
-    supports_audio_output: true
-    notes: 'Voice Clone: Xiaomi MiMo V2.5 (F13 SOVEREIGN)'
-- model_name: fed/audio
-  litellm_params:
-    model: openai/qwen-audio-3.0-asr-flash
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 7
-  model_info:
-    mode: chat
-    supports_audio_input: true
-    notes: 'P3 ASR: Qwen Audio 3.0 ASR Flash (Individual Plan)'
-- model_name: fed/audio
-  litellm_params:
-    model: openai/qwen-audio-3.0-tts-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 8
+    order: 1
   model_info:
     mode: chat
     supports_audio_output: true
-    notes: 'P4 TTS: Qwen Audio 3.0 TTS Plus (Individual Plan)'
+    notes: 'RESTRICTED F13 SOVEREIGN: Voice cloning route. Locked under 888_HOLD.'
 litellm_settings:
   callbacks: []
   num_retries: 2
@@ -2496,13 +2464,13 @@ router_settings:
     - gemini-2.5-flash
     - qwen3.8-max
     - qwen3.7-plus
-  - fed/audio:
-    - gemini-3.5-transcribe
-    - speech-2.8-hd
-    - mimo-v2.5-asr
   - gemini-2.5-flash:
     - qwen3.8-max
     - gemini-2.5-pro
+  - fed/audio-tts:
+    - speech-2.8-hd
+  - fed/audio-asr:
+    - gemini-3.5-transcribe
   context_window_fallbacks:
   - agi-333:
     - apex-888
@@ -2529,6 +2497,12 @@ router_settings:
     gemini-flash: gemini-2.5-flash
     gemini-pro: gemini-2.5-pro
     qwen-vision: fed/vision
+    tts: fed/audio-tts
+    speech: fed/audio-tts
+    asr: fed/audio-asr
+    stt: fed/audio-asr
+    transcribe: fed/audio-asr
+    fed/audio: fed/audio-tts
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   otel_export: false
@@ -2563,3 +2537,9 @@ model_group_alias:
   gemini-flash: gemini-2.5-flash
   gemini-pro: gemini-2.5-pro
   qwen-vision: fed/vision
+  tts: fed/audio-tts
+  speech: fed/audio-tts
+  asr: fed/audio-asr
+  stt: fed/audio-asr
+  transcribe: fed/audio-asr
+  fed/audio: fed/audio-tts
