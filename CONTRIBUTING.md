@@ -1,42 +1,49 @@
-# Contributing to A-FORGE
+# Contributing to arifOS
 
-> **SOT:** 2026-07-25 | **DITEMPA BUKAN DIBERI**
+Thank you for your interest in contributing to the arifOS Federation.
 
-A-FORGE is the governed execution shell of the arifOS Federation. It builds, deploys, and mutates — but only after arifOS SEAL and F13 approval.
+## Code of Conduct
 
-## Before You Start
+We expect all contributors to uphold a culture of respect, intellectual honesty,
+and governance-first thinking. arifOS exists because ungoverned AI is a liability,
+not an asset.
 
-1. Read the [README](README.md) — understand the 4-layer forge gate
-2. Read [AGENTS.md](AGENTS.md) — execution boundary
-3. Run `curl :7071/health` — ensure the forge is running
+## How to Contribute
 
-## Setup
+1. **Fork** the repository you want to contribute to.
+2. **Branch** from `main` — feature branches must be descriptive.
+3. **Commit** with conventional commit messages: `feat:`, `fix:`, `docs:`, `chore:`, `test:`.
+4. **Test** your changes before opening a PR. Each organ has its own test suite.
+5. **Open a Pull Request** against `main`.
 
-```bash
-git clone git@github.com:ariffazil/A-FORGE.git && cd A-FORGE
-npm ci && npm run build
-npm start                    # starts on :7071
-curl http://localhost:7071/health
-```
+## Pull Request Requirements
 
-## Making Changes
+Every PR must include:
+- A clear description of **what** changed and **why**.
+- Reference to an issue or session discussion (if applicable).
+- Evidence that tests pass (CI must be green).
+- For structural changes: an updated README or docs file.
 
-1. **Fork → Branch → Edit → Test → PR**
-2. Run `make test` before pushing (security-audit + build + all suites)
-3. NodeNext ESM: intra-repo imports require explicit `.js` extensions
-4. Tests run from `dist/test/` — rebuild before testing
+## Constitutional Alignment
 
-## Boundaries
+arifOS is a governed system. Changes that affect:
+- **Constitutional floors (F1–F13)** require explicit sovereign approval.
+- **MCP tool contracts** must maintain backward compatibility or include a migration guide.
+- **VAULT999 schema** changes require a seal approval and migration script.
 
-- A-FORGE executes — never adjudicates (arifOS does that)
-- A-FORGE mutates — never self-authorizes
-- Every execution passes the 4-layer forge gate: F1 → Model → Governance → Irreversibility
-- No `rm -rf` of unknown directories without F13 approval
+## License
 
-## Federation
+Unless otherwise noted, this project is licensed under the **AGPL-3.0**.
+See [LICENSE](LICENSE) for the full text. The GEOX organ is licensed under the
+**Business Source License 1.1** (BSL-1.1); see the GEOX repository for details.
 
-A-FORGE is one of 7 organs. See [ariffazil/ariffazil](https://github.com/ariffazil/ariffazil) for the federation map.
+By contributing, you agree that your contributions will be licensed under the
+same license as the repository.
 
----
+## Governance
 
-*Maintained under F13 SOVEREIGN by Muhammad Arif bin Fazil.*
+The arifOS Federation is governed by a constitutional kernel (F1–F13).
+External contributions are welcome but subject to constitutional review before
+merging into production branches.
+
+**DITEMPA BUKAN DIBERI** — Forged, Not Given.
