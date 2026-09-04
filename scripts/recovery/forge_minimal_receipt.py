@@ -38,7 +38,12 @@ import json, os, sys, hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
-RECEIPT_BASE = "/root/forge_work/minimal-receipts"
+# Locate paths_resolver relative to this script:
+# scripts/recovery/forge_minimal_receipt.py → ../../paradox-engine/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
+
+RECEIPT_BASE = str(org_path("forge_work") / "minimal-receipts")
 
 
 def emit_minimal_receipt(session_id, actor, intent, files_touched):
@@ -74,7 +79,6 @@ def emit_minimal_receipt(session_id, actor, intent, files_touched):
     for base in [
         RECEIPT_BASE,
         "/root/.local/share/arifos/recovery",
-        "/root/forge_work/minimal-receipts",
     ]:
         try:
             Path(base).mkdir(parents=True, exist_ok=True)

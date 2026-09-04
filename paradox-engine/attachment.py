@@ -17,7 +17,8 @@ import time
 from dataclasses import dataclass
 from typing import Optional
 
-sys.path.insert(0, "/root/A-FORGE/paradox-engine")
+from paths_resolver import org_import_root
+sys.path.insert(0, org_import_root("A-FORGE") + "/paradox-engine")
 
 from models import MotifState, SOMATIC_DIM
 from registry import MotifRegistry

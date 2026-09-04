@@ -13,9 +13,14 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
+# Locate paths_resolver relative to this script:
+# scripts/drift-monitor.py → ../paradox-engine/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
+
 # ── Config ─────────────────────────────────────────────────────────────
-CANON_REGISTRY = Path("/root/AAA/docs/CANONICAL_CLAIMS_REGISTRY.json")
-LOG_DIR = Path("/root/forge_work/ci-autofix")
+CANON_REGISTRY = org_path("AAA") / "docs" / "CANONICAL_CLAIMS_REGISTRY.json"
+LOG_DIR = org_path("forge_work") / "ci-autofix"
 
 ORGAN_PORTS: dict[str, int] = {
     "arifOS": 8088, "A-FORGE": 7071, "AAA": 3001,

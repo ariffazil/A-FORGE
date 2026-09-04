@@ -14,14 +14,19 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+# Locate paths_resolver relative to this script:
+# scripts/federation_housekeeping.py → ../paradox-engine/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
+
 
 ALLOWED_PREFIXES = (
-    Path("/root/A-FORGE"),
-    Path("/root/arifOS"),
-    Path("/root/AAA"),
-    Path("/root/GEOX"),
-    Path("/root/WEALTH"),
-    Path("/root/WELL"),
+    org_path("A-FORGE"),
+    org_path("arifOS"),
+    org_path("AAA"),
+    org_path("GEOX"),
+    org_path("WEALTH"),
+    org_path("WELL"),
     Path("/root"),
 )
 

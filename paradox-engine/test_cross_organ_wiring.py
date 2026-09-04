@@ -20,10 +20,12 @@ from pathlib import Path
 
 import numpy as np
 
+from paths_resolver import org_import_root
+
 # ── 1. A-FORGE engine side: produce a state file ─────────────────────────────
 
-sys.path.insert(0, "/root/A-FORGE/paradox-engine")
-sys.path.insert(0, "/root/arifOS")
+sys.path.insert(0, org_import_root("A-FORGE") + "/paradox-engine")
+sys.path.insert(0, org_import_root("arifOS"))
 
 from models import MotifState, ParadoxState, SOMATIC_DIM
 from engine import ParadoxEngine

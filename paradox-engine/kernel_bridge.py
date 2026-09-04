@@ -22,8 +22,8 @@ from pathlib import Path
 
 import numpy as np
 
-# Add A-FORGE paradox-engine to path
-sys.path.insert(0, "/root/A-FORGE/paradox-engine")
+from paths_resolver import org_import_root
+sys.path.insert(0, org_import_root("A-FORGE") + "/paradox-engine")
 
 from models import MotifState, ParadoxState, SomaticSnapshot, SOMATIC_DIM
 from registry import MotifRegistry

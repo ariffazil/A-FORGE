@@ -24,14 +24,19 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-OUTPUT_BASE = "/root/forge_work/recovery-scans"
+# Locate paths_resolver relative to this script:
+# scripts/recovery/forge_zombie_reaper.py → ../../paradox-engine/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "paradox-engine"))
+from paths_resolver import org_path  # noqa: E402
+
+OUTPUT_BASE = str(org_path("forge_work") / "recovery-scans")
 SURFACES = {
     "pending_receipts": "/root/.local/share/arifos/pending_receipts.jsonl",
     "seal_pending": "/root/.local/share/arifos/seal-pending",
     "handoff": "/root/.local/share/arifos/handoff",
     "recovery": "/root/.local/share/arifos/recovery",
-    "minimal_receipts": "/root/forge_work/minimal-receipts",
-    "forge_work": "/root/forge_work",
+    "minimal_receipts": str(org_path("forge_work") / "minimal-receipts"),
+    "forge_work": str(org_path("forge_work")),
 }
 
 STALE_DAYS = 7  # beyond this → ARCHIVE

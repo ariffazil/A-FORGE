@@ -1,7 +1,13 @@
 import os
+import sys
+from pathlib import Path
 
-arifos_dir = "/root/arifOS"
-aforge_dir = "/root/A-FORGE"
+# Add A-FORGE/paradox-engine to sys.path so we can import paths_resolver
+sys.path.insert(0, str(Path(__file__).parent.parent / "paradox-engine"))
+from paths_resolver import org_path
+
+arifos_dir = str(org_path("arifOS"))
+aforge_dir = str(org_path("A-FORGE"))
 
 # 1. Source of truth
 os.makedirs(f"{arifos_dir}/docs", exist_ok=True)

@@ -6,7 +6,7 @@
   "bin": {
     "agent": "./dist/src/interfaces/cli.js",
     "arifos-mcp": "./dist/src/interfaces/mcp/cli.js",
-    "arifos-mcp-server": "./dist/src/interfaces/mcp/server.js",
+    "arifos-mcp-server": "./dist/src/interfaces/mcp/cli.js",
     "arifos-mcp-stdio": "./dist/src/interfaces/mcp/stdio.js"
   },
   "scripts": {
