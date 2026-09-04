@@ -1,0 +1,902 @@
+[
+  {
+    "organ": "arifos",
+    "port": 8088,
+    "authority": "JUDGE_ONLY",
+    "overall": "PARTIAL",
+    "pass": 6,
+    "fail": 3,
+    "na": 1,
+    "probes": [
+      {
+        "probe_id": 1,
+        "name": "server/discover",
+        "organ": "arifos",
+        "passed": true,
+        "status_code": 200,
+        "detail": "resultType=complete, supported=['2026-07-28', '2025-11-25', '2025-06-18', '2025-03-26', '2024-11-05']",
+        "evidence": {
+          "supportedVersions": [
+            "2026-07-28",
+            "2025-11-25",
+            "2025-06-18",
+            "2025-03-26",
+            "2024-11-05"
+          ],
+          "resultType": "complete",
+          "capabilities": {
+            "tools": {
+              "listChanged": true
+            },
+            "resources": {
+              "listChanged": true,
+              "subscribe": false
+            },
+            "prompts": {
+              "listChanged": true
+            },
+            "extensions": {
+              "io.modelcontextprotocol/ui": {}
+            }
+          }
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 2,
+        "name": "tools/list cache",
+        "organ": "arifos",
+        "passed": false,
+        "status_code": 406,
+        "detail": "tools=0, ttlMs=False, cacheScope=False, resultType=False",
+        "evidence": {
+          "tool_count": 0,
+          "ttlMs": null,
+          "cacheScope": null,
+          "resultType": null,
+          "first_names": []
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 3,
+        "name": "tools/call headers",
+        "organ": "arifos",
+        "passed": null,
+        "status_code": null,
+        "detail": "No tools available to test",
+        "evidence": {},
+        "severity": "INFO"
+      },
+      {
+        "probe_id": 4,
+        "name": "header/body mismatch",
+        "organ": "arifos",
+        "passed": true,
+        "status_code": 400,
+        "detail": "rejected=True, http=400, mcp_error=-32020",
+        "evidence": {
+          "status": 400,
+          "error_code": -32020,
+          "body_keys": [
+            "jsonrpc",
+            "id",
+            "error"
+          ]
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 5,
+        "name": "unsupported version",
+        "organ": "arifos",
+        "passed": true,
+        "status_code": 400,
+        "detail": "status=400, guided=True, supported=[]",
+        "evidence": {
+          "status": 400,
+          "supportedVersions": []
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 6,
+        "name": "no session header",
+        "organ": "arifos",
+        "passed": true,
+        "status_code": 200,
+        "detail": "session_minted=False, session_id=None",
+        "evidence": {
+          "session_id": null,
+          "status": 200
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 7,
+        "name": "legacy initialize",
+        "organ": "arifos",
+        "passed": false,
+        "status_code": 406,
+        "detail": "legacy_supported=False, protocol=None",
+        "evidence": {
+          "status": 406,
+          "protocolVersion": null,
+          "capabilities": null
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 8,
+        "name": "MRTR awareness",
+        "organ": "arifos",
+        "passed": false,
+        "status_code": 406,
+        "detail": "resultType=False, elicitation_hints=False",
+        "evidence": {
+          "resultType": null,
+          "tool_count": 0
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 9,
+        "name": "origin validation",
+        "organ": "arifos",
+        "passed": true,
+        "status_code": 200,
+        "detail": "origin_rejected=False, status=200",
+        "evidence": {
+          "status": 200,
+          "origin_rejected": false
+        },
+        "severity": "INFO"
+      },
+      {
+        "probe_id": 10,
+        "name": "auth discovery",
+        "organ": "arifos",
+        "passed": true,
+        "status_code": 200,
+        "detail": "issuer=https://mcp.arif-fazil.com",
+        "evidence": {
+          "issuer": "https://mcp.arif-fazil.com"
+        },
+        "severity": "PASS"
+      }
+    ]
+  },
+  {
+    "organ": "aforge",
+    "port": 7071,
+    "authority": "EXECUTE_AFTER_SEAL",
+    "overall": "LEGACY",
+    "pass": 3,
+    "fail": 5,
+    "na": 2,
+    "probes": [
+      {
+        "probe_id": 1,
+        "name": "server/discover",
+        "organ": "aforge",
+        "passed": false,
+        "status_code": 400,
+        "detail": "resultType=None, supported=[]",
+        "evidence": {
+          "supportedVersions": [],
+          "resultType": null,
+          "capabilities": null
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 2,
+        "name": "tools/list cache",
+        "organ": "aforge",
+        "passed": false,
+        "status_code": 400,
+        "detail": "tools=0, ttlMs=False, cacheScope=False, resultType=False",
+        "evidence": {
+          "tool_count": 0,
+          "ttlMs": null,
+          "cacheScope": null,
+          "resultType": null,
+          "first_names": []
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 3,
+        "name": "tools/call headers",
+        "organ": "aforge",
+        "passed": null,
+        "status_code": null,
+        "detail": "No tools available to test",
+        "evidence": {},
+        "severity": "INFO"
+      },
+      {
+        "probe_id": 4,
+        "name": "header/body mismatch",
+        "organ": "aforge",
+        "passed": true,
+        "status_code": 400,
+        "detail": "rejected=True, http=400, mcp_error=-32000",
+        "evidence": {
+          "status": 400,
+          "error_code": -32000,
+          "body_keys": [
+            "jsonrpc",
+            "error",
+            "id"
+          ]
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 5,
+        "name": "unsupported version",
+        "organ": "aforge",
+        "passed": true,
+        "status_code": 400,
+        "detail": "status=400, guided=True, supported=[]",
+        "evidence": {
+          "status": 400,
+          "supportedVersions": []
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 6,
+        "name": "no session header",
+        "organ": "aforge",
+        "passed": false,
+        "status_code": 400,
+        "detail": "session_minted=False, session_id=None",
+        "evidence": {
+          "session_id": null,
+          "status": 400
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 7,
+        "name": "legacy initialize",
+        "organ": "aforge",
+        "passed": false,
+        "status_code": 406,
+        "detail": "legacy_supported=False, protocol=None",
+        "evidence": {
+          "status": 406,
+          "protocolVersion": null,
+          "capabilities": null
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 8,
+        "name": "MRTR awareness",
+        "organ": "aforge",
+        "passed": false,
+        "status_code": 400,
+        "detail": "resultType=False, elicitation_hints=False",
+        "evidence": {
+          "resultType": null,
+          "tool_count": 0
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 9,
+        "name": "origin validation",
+        "organ": "aforge",
+        "passed": true,
+        "status_code": 400,
+        "detail": "origin_rejected=False, status=400",
+        "evidence": {
+          "status": 400,
+          "origin_rejected": false
+        },
+        "severity": "INFO"
+      },
+      {
+        "probe_id": 10,
+        "name": "auth discovery",
+        "organ": "aforge",
+        "passed": null,
+        "status_code": 404,
+        "detail": "No OAuth discovery endpoint (acceptable for local servers)",
+        "evidence": {},
+        "severity": "INFO"
+      }
+    ]
+  },
+  {
+    "organ": "aaa",
+    "port": 3001,
+    "authority": "DISPLAY_ONLY",
+    "overall": "LEGACY",
+    "pass": 1,
+    "fail": 7,
+    "na": 2,
+    "probes": [
+      {
+        "probe_id": 1,
+        "name": "server/discover",
+        "organ": "aaa",
+        "passed": false,
+        "status_code": 404,
+        "detail": "resultType=None, supported=[]",
+        "evidence": {
+          "supportedVersions": [],
+          "resultType": null,
+          "capabilities": null
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 2,
+        "name": "tools/list cache",
+        "organ": "aaa",
+        "passed": false,
+        "status_code": 404,
+        "detail": "tools=0, ttlMs=False, cacheScope=False, resultType=False",
+        "evidence": {
+          "tool_count": 0,
+          "ttlMs": null,
+          "cacheScope": null,
+          "resultType": null,
+          "first_names": []
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 3,
+        "name": "tools/call headers",
+        "organ": "aaa",
+        "passed": null,
+        "status_code": null,
+        "detail": "No tools available to test",
+        "evidence": {},
+        "severity": "INFO"
+      },
+      {
+        "probe_id": 4,
+        "name": "header/body mismatch",
+        "organ": "aaa",
+        "passed": false,
+        "status_code": 404,
+        "detail": "rejected=False, http=404, mcp_error=-32601",
+        "evidence": {
+          "status": 404,
+          "error_code": -32601,
+          "body_keys": [
+            "jsonrpc",
+            "id",
+            "error"
+          ]
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 5,
+        "name": "unsupported version",
+        "organ": "aaa",
+        "passed": false,
+        "status_code": 404,
+        "detail": "status=404, guided=False, supported=[]",
+        "evidence": {
+          "status": 404,
+          "supportedVersions": []
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 6,
+        "name": "no session header",
+        "organ": "aaa",
+        "passed": false,
+        "status_code": 404,
+        "detail": "session_minted=False, session_id=None",
+        "evidence": {
+          "session_id": null,
+          "status": 404
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 7,
+        "name": "legacy initialize",
+        "organ": "aaa",
+        "passed": false,
+        "status_code": 404,
+        "detail": "legacy_supported=False, protocol=None",
+        "evidence": {
+          "status": 404,
+          "protocolVersion": null,
+          "capabilities": null
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 8,
+        "name": "MRTR awareness",
+        "organ": "aaa",
+        "passed": false,
+        "status_code": 404,
+        "detail": "resultType=False, elicitation_hints=False",
+        "evidence": {
+          "resultType": null,
+          "tool_count": 0
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 9,
+        "name": "origin validation",
+        "organ": "aaa",
+        "passed": true,
+        "status_code": 404,
+        "detail": "origin_rejected=False, status=404",
+        "evidence": {
+          "status": 404,
+          "origin_rejected": false
+        },
+        "severity": "INFO"
+      },
+      {
+        "probe_id": 10,
+        "name": "auth discovery",
+        "organ": "aaa",
+        "passed": null,
+        "status_code": 404,
+        "detail": "No OAuth discovery endpoint (acceptable for local servers)",
+        "evidence": {},
+        "severity": "INFO"
+      }
+    ]
+  },
+  {
+    "organ": "geox",
+    "port": 8081,
+    "authority": "COMPUTE_ONLY",
+    "overall": "LEGACY",
+    "pass": 2,
+    "fail": 6,
+    "na": 2,
+    "probes": [
+      {
+        "probe_id": 1,
+        "name": "server/discover",
+        "organ": "geox",
+        "passed": false,
+        "status_code": 406,
+        "detail": "resultType=None, supported=[]",
+        "evidence": {
+          "supportedVersions": [],
+          "resultType": null,
+          "capabilities": null
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 2,
+        "name": "tools/list cache",
+        "organ": "geox",
+        "passed": false,
+        "status_code": 406,
+        "detail": "tools=0, ttlMs=False, cacheScope=False, resultType=False",
+        "evidence": {
+          "tool_count": 0,
+          "ttlMs": null,
+          "cacheScope": null,
+          "resultType": null,
+          "first_names": []
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 3,
+        "name": "tools/call headers",
+        "organ": "geox",
+        "passed": null,
+        "status_code": null,
+        "detail": "No tools available to test",
+        "evidence": {},
+        "severity": "INFO"
+      },
+      {
+        "probe_id": 4,
+        "name": "header/body mismatch",
+        "organ": "geox",
+        "passed": false,
+        "status_code": 406,
+        "detail": "rejected=False, http=406, mcp_error=-32600",
+        "evidence": {
+          "status": 406,
+          "error_code": -32600,
+          "body_keys": [
+            "jsonrpc",
+            "id",
+            "error"
+          ]
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 5,
+        "name": "unsupported version",
+        "organ": "geox",
+        "passed": true,
+        "status_code": 400,
+        "detail": "status=400, guided=True, supported=[]",
+        "evidence": {
+          "status": 400,
+          "supportedVersions": []
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 6,
+        "name": "no session header",
+        "organ": "geox",
+        "passed": false,
+        "status_code": 406,
+        "detail": "session_minted=True, session_id=d56b7d357b5e492b951d1ec480d5f1a8",
+        "evidence": {
+          "session_id": "d56b7d357b5e492b951d1ec480d5f1a8",
+          "status": 406
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 7,
+        "name": "legacy initialize",
+        "organ": "geox",
+        "passed": false,
+        "status_code": 406,
+        "detail": "legacy_supported=False, protocol=None",
+        "evidence": {
+          "status": 406,
+          "protocolVersion": null,
+          "capabilities": null
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 8,
+        "name": "MRTR awareness",
+        "organ": "geox",
+        "passed": false,
+        "status_code": 406,
+        "detail": "resultType=False, elicitation_hints=False",
+        "evidence": {
+          "resultType": null,
+          "tool_count": 0
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 9,
+        "name": "origin validation",
+        "organ": "geox",
+        "passed": true,
+        "status_code": 403,
+        "detail": "origin_rejected=True, status=403",
+        "evidence": {
+          "status": 403,
+          "origin_rejected": true
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 10,
+        "name": "auth discovery",
+        "organ": "geox",
+        "passed": null,
+        "status_code": 404,
+        "detail": "No OAuth discovery endpoint (acceptable for local servers)",
+        "evidence": {},
+        "severity": "INFO"
+      }
+    ]
+  },
+  {
+    "organ": "wealth",
+    "port": 18082,
+    "authority": "COMPUTE_ONLY",
+    "overall": "LEGACY",
+    "pass": 4,
+    "fail": 5,
+    "na": 1,
+    "probes": [
+      {
+        "probe_id": 1,
+        "name": "server/discover",
+        "organ": "wealth",
+        "passed": false,
+        "status_code": 400,
+        "detail": "resultType=None, supported=[]",
+        "evidence": {
+          "supportedVersions": [],
+          "resultType": null,
+          "capabilities": null
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 2,
+        "name": "tools/list cache",
+        "organ": "wealth",
+        "passed": false,
+        "status_code": 400,
+        "detail": "tools=0, ttlMs=False, cacheScope=False, resultType=False",
+        "evidence": {
+          "tool_count": 0,
+          "ttlMs": null,
+          "cacheScope": null,
+          "resultType": null,
+          "first_names": []
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 3,
+        "name": "tools/call headers",
+        "organ": "wealth",
+        "passed": null,
+        "status_code": null,
+        "detail": "No tools available to test",
+        "evidence": {},
+        "severity": "INFO"
+      },
+      {
+        "probe_id": 4,
+        "name": "header/body mismatch",
+        "organ": "wealth",
+        "passed": true,
+        "status_code": 400,
+        "detail": "rejected=True, http=400, mcp_error=-32000",
+        "evidence": {
+          "status": 400,
+          "error_code": -32000,
+          "body_keys": [
+            "jsonrpc",
+            "error"
+          ]
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 5,
+        "name": "unsupported version",
+        "organ": "wealth",
+        "passed": true,
+        "status_code": 400,
+        "detail": "status=400, guided=True, supported=[]",
+        "evidence": {
+          "status": 400,
+          "supportedVersions": []
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 6,
+        "name": "no session header",
+        "organ": "wealth",
+        "passed": false,
+        "status_code": 400,
+        "detail": "session_minted=False, session_id=None",
+        "evidence": {
+          "session_id": null,
+          "status": 400
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 7,
+        "name": "legacy initialize",
+        "organ": "wealth",
+        "passed": false,
+        "status_code": 406,
+        "detail": "legacy_supported=False, protocol=None",
+        "evidence": {
+          "status": 406,
+          "protocolVersion": null,
+          "capabilities": null
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 8,
+        "name": "MRTR awareness",
+        "organ": "wealth",
+        "passed": false,
+        "status_code": 400,
+        "detail": "resultType=False, elicitation_hints=False",
+        "evidence": {
+          "resultType": null,
+          "tool_count": 0
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 9,
+        "name": "origin validation",
+        "organ": "wealth",
+        "passed": true,
+        "status_code": 400,
+        "detail": "origin_rejected=False, status=400",
+        "evidence": {
+          "status": 400,
+          "origin_rejected": false
+        },
+        "severity": "INFO"
+      },
+      {
+        "probe_id": 10,
+        "name": "auth discovery",
+        "organ": "wealth",
+        "passed": true,
+        "status_code": 200,
+        "detail": "issuer=https://mcp.arif-fazil.com",
+        "evidence": {
+          "issuer": "https://mcp.arif-fazil.com"
+        },
+        "severity": "PASS"
+      }
+    ]
+  },
+  {
+    "organ": "well",
+    "port": 18083,
+    "authority": "REFLECT_ONLY",
+    "overall": "LEGACY",
+    "pass": 4,
+    "fail": 4,
+    "na": 2,
+    "probes": [
+      {
+        "probe_id": 1,
+        "name": "server/discover",
+        "organ": "well",
+        "passed": false,
+        "status_code": 400,
+        "detail": "resultType=None, supported=[]",
+        "evidence": {
+          "supportedVersions": [],
+          "resultType": null,
+          "capabilities": null
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 2,
+        "name": "tools/list cache",
+        "organ": "well",
+        "passed": false,
+        "status_code": 400,
+        "detail": "tools=0, ttlMs=False, cacheScope=False, resultType=False",
+        "evidence": {
+          "tool_count": 0,
+          "ttlMs": null,
+          "cacheScope": null,
+          "resultType": null,
+          "first_names": []
+        },
+        "severity": "FAIL"
+      },
+      {
+        "probe_id": 3,
+        "name": "tools/call headers",
+        "organ": "well",
+        "passed": null,
+        "status_code": null,
+        "detail": "No tools available to test",
+        "evidence": {},
+        "severity": "INFO"
+      },
+      {
+        "probe_id": 4,
+        "name": "header/body mismatch",
+        "organ": "well",
+        "passed": true,
+        "status_code": 400,
+        "detail": "rejected=True, http=400, mcp_error=-32000",
+        "evidence": {
+          "status": 400,
+          "error_code": -32000,
+          "body_keys": [
+            "jsonrpc",
+            "error"
+          ]
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 5,
+        "name": "unsupported version",
+        "organ": "well",
+        "passed": true,
+        "status_code": 400,
+        "detail": "status=400, guided=True, supported=[]",
+        "evidence": {
+          "status": 400,
+          "supportedVersions": []
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 6,
+        "name": "no session header",
+        "organ": "well",
+        "passed": false,
+        "status_code": 400,
+        "detail": "session_minted=False, session_id=None",
+        "evidence": {
+          "session_id": null,
+          "status": 400
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 7,
+        "name": "legacy initialize",
+        "organ": "well",
+        "passed": true,
+        "status_code": 200,
+        "detail": "legacy_supported=True, protocol=2025-11-25",
+        "evidence": {
+          "status": 200,
+          "protocolVersion": "2025-11-25",
+          "capabilities": [
+            "experimental",
+            "logging",
+            "prompts",
+            "resources",
+            "tools",
+            "tasks",
+            "extensions"
+          ]
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 8,
+        "name": "MRTR awareness",
+        "organ": "well",
+        "passed": false,
+        "status_code": 400,
+        "detail": "resultType=False, elicitation_hints=False",
+        "evidence": {
+          "resultType": null,
+          "tool_count": 0
+        },
+        "severity": "WARN"
+      },
+      {
+        "probe_id": 9,
+        "name": "origin validation",
+        "organ": "well",
+        "passed": true,
+        "status_code": 403,
+        "detail": "origin_rejected=True, status=403",
+        "evidence": {
+          "status": 403,
+          "origin_rejected": true
+        },
+        "severity": "PASS"
+      },
+      {
+        "probe_id": 10,
+        "name": "auth discovery",
+        "organ": "well",
+        "passed": null,
+        "status_code": 404,
+        "detail": "No OAuth discovery endpoint (acceptable for local servers)",
+        "evidence": {},
+        "severity": "INFO"
+      }
+    ]
+  }
+]
