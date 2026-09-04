@@ -368,7 +368,8 @@ def main():
             organ_client = MockClient()
 
         if not health_check(organ_client, pack):
-            print(f"  ❌ {organ_name}: health check FAILED — skipping")
+            # Shadow acknowledged: organ is unhealthy — this is recorded as evidence, not hidden
+            print(f"  ⚠️  {organ_name}: health check FAILED — witness recorded, tests skipped")
             all_results.append(
                 {
                     "organ": organ_name,

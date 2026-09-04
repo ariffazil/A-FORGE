@@ -409,8 +409,9 @@ def probe_06_no_session_header(port: int, organ: str) -> ProbeResult:
         headers = dict(e.headers) if e.headers else {}
         try:
             body = json.loads(e.read().decode())
-        except:
-            body = {}
+        except Exception:
+            # Shadow acknowledged: HTTP error body failed to parse as JSON
+            body = {"_error": "http_error_body_not_json", "status": e.code}
     except Exception as e:
         code = 0
         headers = {}
@@ -523,8 +524,9 @@ def probe_09_origin_validation(port: int, organ: str) -> ProbeResult:
         code = e.code
         try:
             body = json.loads(e.read().decode())
-        except:
-            body = {}
+        except Exception:
+            # Shadow acknowledged: HTTP error body failed to parse as JSON
+            body = {"_error": "http_error_body_not_json", "status": e.code}
     except Exception as e:
         code = 0
         body = {"_error": str(e)}
