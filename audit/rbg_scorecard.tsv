@@ -1,0 +1,121 @@
+name	F	fiqh	usage_30d	last_commit	tests	family	verdict
+auth_pipeline		?	0	2026-08-14			KEEP-COLD-STANDBY
+forge_abort	0.1538	makruh	0	2026-08-17			REVIEW-COLD
+forge_agent	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_apex_emd	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_apex_encode	0.3333	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_apex_goal_status	0.5667	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_apex_metabolize	0.4	sunat	0	2026-08-17			KEEP-COLD-STANDBY
+forge_apex_recompute	0.4	sunat	0	2026-08-17			KEEP-COLD-STANDBY
+forge_browser_click	0.1894	makruh	0	2026-08-19			REVIEW-COLD
+forge_browser_evaluate_js	0.2273	harus	0	2026-08-19			KEEP-COLD-STANDBY
+forge_browser_extract_text	0.303	harus	0	2026-08-19			KEEP-COLD-STANDBY
+forge_browser_navigate	0.2755	harus	2	2026-08-19			FIT-WARM
+forge_browser_screenshot	0.303	harus	0	2026-08-19			KEEP-COLD-STANDBY
+forge_browser_type	0.1894	makruh	0	2026-08-19			REVIEW-COLD
+forge_canonize	0.3333	harus	0	2026-07-31			KEEP-COLD-STANDBY
+forge_chart	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_check_governance	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_compose	0.2219	harus	0	2026-08-20			KEEP-COLD-STANDBY
+forge_cool_drift	0.3333	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_cool_pattern	0.3333	harus	0	2026-09-04		cooling-duo	MERGE
+forge_docker	0.1538	wajib*	0	2026-09-04			WAJIB-PINNED
+forge_docket_prep	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_docs_lookup	0.4242	sunat	0	2026-08-19		research-stack	MERGE
+forge_docsgpt	0.4	sunat	0	2026-09-04		research-stack	MERGE
+forge_document_ingest	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_entropy_sweep	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_ephemeral	0.3333	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_evaluate	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_execute	0.1538	wajib*	0	2026-08-13			WAJIB-PINNED
+forge_execute_sealed	0.2051	harus	0	2026-08-13			KEEP-COLD-STANDBY
+forge_experience_query	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_experience_trace	0.303	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_fetch	0.3333	harus	7	2026-09-04			FIT-HOT
+forge_filesystem	0.5667	sunat	2	2026-09-04			FIT-WARM
+forge_fingerprint_check	0.4	sunat	2	2026-09-04			FIT-WARM
+forge_gemini	0.4	sunat	0	2026-08-30			KEEP-COLD-STANDBY
+forge_git	0.322	wajib*	0	2026-09-04			WAJIB-PINNED
+forge_git_commit	0.4722	sunat	0	2026-07-31		git-commit-wrapper	MERGE
+forge_github	0.5667	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_github_create_issue	0.322	harus	0	2026-08-19		github-granular	MERGE
+forge_github_create_or_update_file	0.322	harus	0	2026-08-19		github-granular	MERGE
+forge_github_get_file	0.5667	sunat	0	2026-08-19		github-granular	MERGE
+forge_health_check	0.5667	sunat	5	2026-09-04			FIT-HOT
+forge_heart_critique	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_hf_import	0.3333	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_isomorphism_check	0.3333	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_job	0.4	sunat	0	2026-08-17			KEEP-COLD-STANDBY
+forge_journalctl	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_judge_proxy	0.5333	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_kernel	0.3333	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_lease	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_lock	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_memory	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_minimax_search	0.4242	sunat	2	2026-08-19		research-stack	FIT-WARM
+forge_netdata_alarms	0.4	sunat	0	2026-08-19			KEEP-COLD-STANDBY
+forge_netdata_metrics	0.4	sunat	0	2026-08-19			KEEP-COLD-STANDBY
+forge_parallel	0.3333	harus	0	2026-08-17			KEEP-COLD-STANDBY
+forge_parallel_cancel	0.4	sunat	0	2026-08-17			KEEP-COLD-STANDBY
+forge_parallel_list	0.4	sunat	0	2026-08-17			KEEP-COLD-STANDBY
+forge_parallel_status	0.5667	sunat	0	2026-08-17			KEEP-COLD-STANDBY
+forge_pipeline_run	0.1538	makruh	0	2026-09-04			REVIEW-COLD
+forge_policy	0.2667	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_postgres	0.2273	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_predict	0.3333	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_probe	0.5667	sunat	15	2026-09-04			FIT-HOT
+forge_probe_site	0.5667	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_proxy_call	0.2622	harus	0	?	?		PHANTOM-CLEAN
+forge_reality_loop	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_receipt_draft	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_register	0.4	sunat	0	2026-08-17			KEEP-COLD-STANDBY
+forge_registry	0.4	sunat	1	2026-09-04			FIT-WARM
+forge_registry_status	0.5667	sunat	3	2026-09-04			FIT-WARM
+forge_research	0.4242	sunat	0	2026-08-19			KEEP-COLD-STANDBY
+forge_runtime_verify	0.4	sunat	0	2026-07-13			KEEP-COLD-STANDBY
+forge_sandbox_auto_evict	0.4	sunat	0	2026-08-13		sandbox-evict	ROUTE
+forge_sandbox_list_paused	0.4	sunat	0	2026-08-13			KEEP-COLD-STANDBY
+forge_sandbox_pause	0.4	sunat	0	2026-08-13			KEEP-COLD-STANDBY
+forge_sandbox_resume	0.4	sunat	0	2026-08-13			KEEP-COLD-STANDBY
+forge_sandbox_run	0.2273	harus	0	2026-08-13			KEEP-COLD-STANDBY
+forge_scan	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_scar	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_scar_scan	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_seal	0.2051	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_search	0.4242	sunat	2	2026-08-19			FIT-WARM
+forge_security_drift_scan	0.4	sunat	1	2026-09-04			FIT-WARM
+forge_send_confirm	0.1538	makruh	0	2026-08-25			REVIEW-COLD
+forge_session_init	0.6333	wajib	1	2026-09-04			FIT-WARM
+forge_shell	0.2179	wajib*	12	2026-09-04			WAJIB-PINNED
+forge_shell_alert_history	0.5667	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_shell_dryrun	0.5667	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_shell_ledger	0.5667	sunat	2	2026-09-04			FIT-WARM
+forge_shell_status	0.5667	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_skill	0.2273	harus	0	2026-08-17			KEEP-COLD-STANDBY
+forge_skill_select_query	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_skillstore_read	0.4	sunat	0	2026-08-13			KEEP-COLD-STANDBY
+forge_skillstore_write	0.2273	harus	0	2026-08-13			KEEP-COLD-STANDBY
+forge_stage	0.2273	harus	0	2026-08-13			KEEP-COLD-STANDBY
+forge_status	0.5667	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_surface_audit	0.4	sunat	3	2026-09-04			FIT-WARM
+forge_surface_guard	0.4	sunat	2	2026-09-04		registry-drift-quintet	FIT-WARM
+forge_synthesize	0.2273	harus	0	2026-08-13			KEEP-COLD-STANDBY
+forge_tier_bind	0.4	sunat	0	2026-08-13			KEEP-COLD-STANDBY
+forge_transfer_confirm	0.1538	makruh	0	2026-08-25			REVIEW-COLD
+forge_trust_score	0.3333	harus	0	2026-08-20			KEEP-COLD-STANDBY
+forge_vault	0.4	sunat	3	2026-09-04			FIT-WARM
+forge_verify_timeline	0.3333	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_visual_qa	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_visual_seal	0.5333	sunat	0	2026-09-04		witness-seal-family	HOLD-DESIGN
+forge_vps_cron	0.4	sunat	3	2026-09-04			FIT-WARM
+forge_vps_ports	0.4	sunat	5	2026-09-04			FIT-HOT
+forge_vps_services	0.4	sunat	3	2026-09-04			FIT-WARM
+forge_wealth	0.4	sunat	0	2026-09-04		organ-bridges	ROUTE
+forge_web_zen	0.3333	harus	0	2026-09-04			KEEP-COLD-STANDBY
+forge_well	0.4	sunat	0	2026-09-04		organ-bridges	ROUTE
+forge_whoami	0.4	sunat	0	?	?		PHANTOM-CLEAN
+forge_witness	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_wm_gaps	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_wm_quality	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_wm_stats	0.4	sunat	0	2026-09-04			KEEP-COLD-STANDBY
+forge_worktree	0.4	sunat	3	2026-08-19			FIT-WARM

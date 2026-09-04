@@ -1,11 +1,30 @@
 # AFFORDANCE SURFACE NOTE (2026-08-09)
 # Live MCP :7072 reports ~48 stateless tools; this file is broader design surface.
-# External APA bridges (not always in MCP tool list): forge_calendar, forge_drive,
-# forge_gmail, forge_sheets — systemd apa-*-bridge.service when present.
+# APA GWS cards (forge_calendar/drive/gmail/sheets) REMOVED 2026-09-04 RBG audit —
+# surface-swept 2026-08-17 (core.ts 21e8a608c) but cards + zero-traffic bridges lingered.
+# forge_gemini card KEPT (live, core.ts:3099). Rollback: git revert this commit.
 # Phantom audit: compare to live tools/list before claiming tool exists.
 # DITEMPA BUKAN DIBERI — no fake alignment with unregistered tools.
 _comment: A-FORGE Affordance Cards — federation align v2. Actuators not plugins. Deny via gate/lease/SEAL only.
 tools:
+- name: auth_pipeline
+  purpose: "AUTH INSTITUTIONAL PROTOCOL — DECLARE → FQ_GATE → LEASE → LOCK → EXECUTE → EVIDENCE → VERIFY → JUDGE → MERGE → SEAL → INGEST. Governs OBSERVE(free)/MUTATE(contract+lease)/DEPLOY(sealed) transitions. Federation ACT gate upstream."
+  affordance_class: governance
+  capability_surface: aforge.governance.auth_pipeline
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  # RBG 2026-09-04: card added — tool was live on :7072 but undocumented (audit gap: one-directional phantom check)
+  reads:
+  - session
+  - lease
+  writes:
+  - vault999_receipts
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R2
 - name: forge_abort
   purpose: ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Safe stop + rollback for running execution. Requires
     lease or session auth. P2.3 canonical gap fill.
@@ -162,30 +181,6 @@ tools:
   requires_human_approval: true
   min_mode: GOVERN
   risk_label: R3
-- name: forge_telegram_send
-  purpose: "ACTUATOR [chat/MUTATE] supervised by kernel 777_FORGE. Send a Telegram message via Bot API. Backed by arif_telegram_send (arifOS MCP :8088, internal_canonical). Hermes-only caller scope (HERMES_SESSION_KEY). F1 AMANAH: first call per session requires explicit ack_irreversible=true. Telegram messages are irreversible post-delivery. C5_IRREVERSIBLE."
-  affordance_class: chat
-  capability_surface: aforge.chat.telegram_send
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - chat
-  writes:
-  - external_state
-  external_side_effect: true
-  destructive: false
-  reversible: false       # cannot un-send a Telegram message
-  requires_human_approval: true   # first call per session via ack_irreversible
-  min_mode: GOVERN
-  risk_label: R5
-  hermes_only: true       # caller scope gate — only HERMES_SESSION_KEY may invoke
-  allowed_senders:
-    - HERMES_SESSION_KEY  # agent:main:telegram:dm:267378578
-  forged: 2026-08-20
-  forged_for: "Arif 'hantar kat telegram' → governed outbound path"
-  design_record: /root/.claude/projects/-root/memory/forge-telegram-send-design-2026-08-20.md
-  card_status: registered
-  card_state: DEPLOYED
 - name: forge_chart
   purpose: ACTUATOR [meta/OBSERVE] supervised by kernel 333_THINK. Agentic charting + quantum eureka discovery margin patterns.
     Input data series or records; returns S
@@ -1344,24 +1339,6 @@ tools:
   min_mode: THINK
   risk_label: R0
 
-- name: forge_calendar
-  purpose: "Google Calendar — list upcoming events, create events. Mutations gated by arif_judge. Timezone: Asia/Kuala_Lumpur."
-  affordance_class: google_workspace
-  capability_surface: aforge.google_workspace.calendar
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  # FFF survival verdict 2026-08-25: G=0.7175 SILVER tier — RESURRECTED (was deprecated, fitness says fit)
-  reads:
-  - tools
-  - system_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-
 - name: forge_canonize
   purpose: "Promote a draft artifact to canonical state. Copies from source to forge_work/CANON/, computes SHA256, records provenance receipt. Does NOT delete source (F1 AMANAH). Classification: EXECUTE_REVERSIBLE."
   affordance_class: vault
@@ -1419,24 +1396,6 @@ tools:
   capability_surface: aforge.research.docsgpt
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
-  reads:
-  - tools
-  - system_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-
-- name: forge_drive
-  purpose: "Google Drive — list recent files, search by name. OBSERVE-class. Read-only connector."
-  affordance_class: google_workspace
-  capability_surface: aforge.google_workspace.drive
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  # FFF survival verdict 2026-08-25: G=0.7175 SILVER tier — RESURRECTED (was deprecated, fitness says fit)
   reads:
   - tools
   - system_state
@@ -1522,27 +1481,6 @@ tools:
   capability_surface: aforge.git.github_create_or_update_file
   kernel_verb: 777_FORGE
   mutation_class: MUTATE
-  reads:
-  - tools
-  - system_state
-  - plans
-  writes:
-  - filesystem
-  - external_state
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
-
-- name: forge_gmail
-  purpose: "Google Gmail — search, read, draft, send emails through constitutional gate. ACTUATOR · gmail · MUTATE. OBSERVE-class for reads. Every write gated by arif_judge + F1/F3/F13."
-  affordance_class: google_workspace
-  capability_surface: aforge.google_workspace.gmail
-  kernel_verb: 777_FORGE
-  mutation_class: IRREVERSIBLE  # gmail.send is IRREVERSIBLE — F13-gated
-  # FFF survival verdict 2026-08-25: G=0.7175 SILVER tier — RESURRECTED (was deprecated, fitness says fit)
   reads:
   - tools
   - system_state
@@ -1832,24 +1770,6 @@ tools:
   min_mode: GOVERN
   risk_label: R5
 
-- name: forge_sheets
-  purpose: "Google Sheets — read cell values (A1 notation, not rendering), append rows. Mutations gated by arif_judge. CELL-LEVEL reads with structured rowCount + range echo."
-  affordance_class: google_workspace
-  capability_surface: aforge.google_workspace.sheets
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  # FFF survival verdict 2026-08-25: G=0.7175 SILVER tier — RESURRECTED (was deprecated, fitness says fit)
-  reads:
-  - tools
-  - system_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-
 - name: forge_skillstore_write
   purpose: "ACTUATOR · skill · MUTATE. Store artifact with provenance. WRITE mode only. Two-layer retention with SCAR immunization."
   affordance_class: skill
@@ -2044,41 +1964,7 @@ tools:
   min_mode: THINK
   risk_label: R0
 
-# ── 2026-08-18: B3 cleanup — added missing live MCP entries ──────────────
-
-- name: forge_whoami
-  purpose: "ACTUATOR [identity/OBSERVE] supervised by kernel 111_OBSERVE. A-FORGE dual-era proxy identity. Returns migration status and protocol info. Read-only."
-  affordance_class: meta
-  capability_surface: aforge.meta.whoami
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - server_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-
-- name: forge_proxy_call
-  purpose: "ACTUATOR [execute/MUTATE] Forward an MCP tool call to the v1 A-FORGE server at :7072/mcp. Phase 1b proxy for dual-era compatibility. SESSION+LEASE gated per constitutional policy."
-  affordance_class: execute
-  capability_surface: aforge.execute.proxy_call
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - session
-  - lease
-  writes:
-  - v1_proxy_log
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: GOVERN
-  risk_label: R2
+# ── RBG 2026-09-04: whoami/proxy_call cards removed — dual-era proxy tools no longer on live surface ──
 
 # ── ECOSYSTEM_EXPANSION Phase 2+4 — TRUST + COMPOSITION + GEMINI (2026-08-25) ──
 
