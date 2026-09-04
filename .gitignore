@@ -157,3 +157,4 @@ deploy/rollback/
 # F1 AMANAH: operational snapshot backups (not source)
 *.snap-*
 .aider.chat.history.md
+_backups/
