@@ -2146,15 +2146,30 @@ model_list:
 - model_name: glm-5.2
   litellm_params:
     model: openai/glm-5.2
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
+    api_base: https://api.z.ai/api/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 0
+    mode: chat
+    notes: 'REPOINTED 2026-09-06: Z.ai coding-plan subscription (was dead team token-plan pin).'
 - model_name: deepseek-v4-flash
   litellm_params:
-    model: openai/deepseek-v4-flash
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
+    model: openai/deepseek-chat
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 0
+    mode: chat
+    notes: 'REPOINTED 2026-09-06: DeepSeek direct PAYG (balance $1.94, last-resort rung). deepseek-chat maps to v4-flash server-side.'
+- model_name: deepseek-v4-flash-vision
+  litellm_params:
+    model: openai/deepseek-v4-flash-vision-exp
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 0
+    max_input_tokens: 131072
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    notes: 'F13 directive 2026-09-06: i-arif sovereign vision rung. DeepSeek direct PAYG, vision-capable flash tier.'
 - model_name: MiniMax-M3
   litellm_params:
     model: openai/MiniMax-M3
@@ -2395,68 +2410,91 @@ router_settings:
   num_retries: 2
   allowed_fails: 2
   cooldown_time: 60
+  # BIJAKSANA ROUTING — provider-diverse fallback chains
+  # Rule: never chain two models from the same provider
+  # Updated: 2026-09-06 after deep probe of all provider balances
   fallbacks:
+  # === AGENT MODEL GROUPS ===
   - i-arif:
-    - qwen3.8-max
-    - kimi-k3
-    - glm-5.3
-    - MiniMax-M3
-  - qwen3.8-max:
-    - qwen3.7-plus
-    - kimi-k3
-    - glm-5.3
-    - MiniMax-M3
-  - qwen3.7-plus:
-    - qwen3.8-max
-    - kimi-k3
-    - glm-5.3
-  - qwen3.6-plus:
-    - qwen3.8-max
-    - kimi-k3
-    - glm-5.3
-  - mimo-v2.5-pro:
-    - mimo-v2.5
-    - qwen3.8-max
-    - kimi-k3
-    - MiniMax-M3
-  - mimo-v2.5:
-    - qwen3.8-max
-    - kimi-k3
-    - MiniMax-M3
-  - kimi-k3:
-    - qwen3.8-max
-    - glm-5.3
-    - MiniMax-M3
-  - glm-5.3:
-    - qwen3.8-max
-    - kimi-k3
-    - MiniMax-M3
-  - MiniMax-M3:
-    - qwen3.8-max
-    - kimi-k3
-    - glm-5.3
+    - kimi-k3                   # Kimi coding-plan (100 req/wk, resets 2026-09-10T14:07Z)
+    - glm-5.3                   # Z.ai coding-plan (subscription, LIVE)
+    - deepseek-v4-flash-vision  # DeepSeek PAYG vision (F13 directive 2026-09-06)
+    - mimo-v2.5                 # MiMo token-plan (LIVE)
+    - gemini-3.6-flash          # Gemini free tier (LIVE)
   - agi-333:
-    - i-arif
-    - qwen3.8-max
-    - kimi-k3
-    - MiniMax-M3
+    - kimi-k3          # Kimi coding-plan (weekly quota)
+    - mimo-v2.5        # MiMo token-plan (LIVE)
+    - gemini-3.6-flash # Gemini free tier (LIVE)
+    - glm-5.3          # Z.ai coding-plan (LIVE)
   - asi-555:
-    - i-arif
-    - qwen3.8-max
-    - kimi-k3
-    - MiniMax-M3
+    - kimi-k3          # Kimi coding-plan (100 req/wk)
+    - mimo-v2.5        # MiMo token-plan (credits)
+    - gemini-3.6-flash  # Gemini free tier (LIVE)
+  - apex-888:
+    - gemini-3.6-flash # Gemini flash (same family, fast)
+    - kimi-k3          # Kimi coding-plan (100 req/wk)
+    - mimo-v2.5        # MiMo token-plan (credits)
   - forge-777:
-    - qwen3.8-max
-    - kimi-k3
-    - glm-5.3
-    - MiniMax-M3
+    - kimi-k3          # Kimi coding-plan (100 req/wk)
+    - mimo-v2.5        # MiMo token-plan (credits)
+    - gemini-3.6-flash  # Gemini free tier (LIVE)
   - hermes-asi:
-    - i-arif
-    - qwen3.8-max
-    - kimi-k3
-    - MiniMax-M3
+    - kimi-k3          # Kimi coding-plan (100 req/wk)
+    - mimo-v2.5        # MiMo token-plan (credits)
+    - gemini-3.6-flash  # Gemini free tier (LIVE)
+  # === QWEN MODEL GROUPS (exhausted → cross-provider) ===
+  - qwen3.8-max:
+    - kimi-k3          # Kimi coding-plan (100 req/wk) (different provider)
+    - mimo-v2.5        # MiMo token-plan (credits) (different provider)
+    - gemini-3.6-flash  # Gemini free tier (LIVE)
+  - qwen3.6-plus:
+    - kimi-k3          # Kimi coding-plan (100 req/wk)
+    - mimo-v2.5        # MiMo token-plan (credits)
+    - gemini-3.6-flash  # Gemini free tier (LIVE)
+  # === MIMO MODEL GROUPS ===
+  - mimo-v2.5-pro:
+    - mimo-v2.5        # Same provider, cheaper model
+    - kimi-k3          # Kimi coding-plan (100 req/wk) (different provider)
+    - gemini-3.6-flash  # Gemini free tier (LIVE)
+  - mimo-v2.5:
+    - kimi-k3          # Kimi coding-plan (100 req/wk) (different provider)
+    - gemini-3.6-flash  # Gemini free tier (LIVE)
+    - glm-5.3          # Z.ai coding-plan (different provider)
+  # === KIMI MODEL GROUPS ===
+  - kimi-k3:
+    - mimo-v2.5        # MiMo token-plan (credits) (different provider)
+    - gemini-3.6-flash  # Gemini free tier (LIVE)
+    - glm-5.3          # Z.ai coding-plan (different provider)
+  # === Z.AI MODEL GROUPS ===
+  - glm-5.3:
+    - kimi-k3          # Kimi coding-plan (100 req/wk) (different provider)
+    - mimo-v2.5        # MiMo token-plan (credits) (different provider)
+    - gemini-3.6-flash  # Gemini free tier (LIVE)
+  # === MINIMAX MODEL GROUPS (exhausted → cross-provider) ===
+  - MiniMax-M3:
+    - kimi-k3          # Kimi coding-plan (100 req/wk) (different provider)
+    - mimo-v2.5        # MiMo token-plan (credits) (different provider)
+    - gemini-3.6-flash  # Gemini free tier (LIVE)
+  # === VISION MODEL GROUPS ===
   - fed/vision:
     - gemini-2.5-flash
+    - deepseek-v4-flash-vision  # DeepSeek PAYG vision (LIVE)
+    - kimi-k3
+    - qwen3.8-max  # revives 2026-09-11T04:01Z
+  - hermes-asi-vision:
+    - gemini-2.5-flash
+    - deepseek-v4-flash-vision  # DeepSeek PAYG vision (LIVE)
+    - kimi-k3
+    - qwen3.8-max  # revives 2026-09-11T04:01Z
+  - gemini-2.5-flash:
+    - kimi-k3
+    - qwen3.8-max
+    - gemini-2.5-pro
+  # === AUDIO MODEL GROUPS ===
+  - fed/audio-tts:
+    - speech-2.8-hd
+  - fed/audio-asr:
+    - gemini-3.5-transcribe
     - qwen3.8-max
     - qwen3.7-plus
     - gemini-2.5-pro
