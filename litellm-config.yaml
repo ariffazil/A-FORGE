@@ -2179,6 +2179,9 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'F13 multimodal 2026-09-06: image_url + video_url content parts (OpenAI-compat passthrough; img<=10MB JPEG/PNG/GIF/WEBP, vid<=50MB MP4/AVI/MOV/MKV, <=512MB via mm_file://; detail low/default/high, video fps 0.2-5). NO audio input. thinking + reasoning_split supported.'
 - model_name: glm-5.3
   litellm_params:
     model: openai/glm-5.3
@@ -2339,16 +2342,8 @@ model_list:
     mode: chat
     supports_audio_output: true
     notes: 'P1 TTS: Gemini 2.5 Flash Preview TTS'
-- model_name: fed/audio-tts
-  litellm_params:
-    model: openai/speech-2.8-hd
-    api_base: https://api.minimax.io/v1
-    api_key: os.environ/MINIMAX_API_KEY
-    order: 2
-  model_info:
-    mode: chat
-    supports_audio_output: true
-    notes: 'P2 TTS: MiniMax speech-2.8-hd'
+# MiniMax speech-2.8-hd/2.8-turbo TTS = t2a_v2 custom API — NOT /chat/completions proxiable.
+# Lane: minimax-mcp skill tools / mmx-cli / direct t2a_v2 (voice_id + audio_setting schema). Ghost chat deployment removed 2026-09-06 (F2 reality leak).
 - model_name: fed/audio-asr
   litellm_params:
     model: gemini/gemini-2.5-flash
@@ -2486,11 +2481,13 @@ router_settings:
   - fed/vision:
     - gemini-2.5-flash
     - deepseek-v4-flash-vision  # DeepSeek PAYG vision (LIVE)
+    - MiniMax-M3              # Token Plan Max: image+video input, 1M ctx (F13 2026-09-06)
     - kimi-k3
     - qwen3.8-max  # revives 2026-09-11T04:01Z
   - hermes-asi-vision:
     - gemini-2.5-flash
     - deepseek-v4-flash-vision  # DeepSeek PAYG vision (LIVE)
+    - MiniMax-M3              # Token Plan Max: image+video input, 1M ctx (F13 2026-09-06)
     - kimi-k3
     - qwen3.8-max  # revives 2026-09-11T04:01Z
   - gemini-2.5-flash:
@@ -2498,8 +2495,6 @@ router_settings:
     - qwen3.8-max
     - gemini-2.5-pro
   # === AUDIO MODEL GROUPS ===
-  - fed/audio-tts:
-    - speech-2.8-hd
   - fed/audio-asr:
     - gemini-3.5-transcribe
     - qwen3.8-max
@@ -2512,8 +2507,6 @@ router_settings:
   - gemini-2.5-flash:
     - qwen3.8-max
     - gemini-2.5-pro
-  - fed/audio-tts:
-    - speech-2.8-hd
   - fed/audio-asr:
     - gemini-3.5-transcribe
   context_window_fallbacks:
