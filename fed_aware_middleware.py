@@ -71,7 +71,7 @@ PROVIDER_BASE_URL = {
     # ── ZEN 2026-08-17: providers FED SOT actually returns (federation-models.json) ──
     "mulerouter": "https://api.mulerouter.ai/vendors/openai/v1",
     "kimi-moonshot": "https://api.kimi.com/coding/v1",
-    "flame": "http://127.0.0.1:18901",
+    "flame": None,  # DECOMMISSIONED 2026-09-04 (888 directive), F13 ack 2026-09-06 — FED flash lane replaces (deprecation-registry: flame-api.service)
     "comfyui": None,  # local image runtime — never chat/completions
 }
 
