@@ -2417,17 +2417,20 @@ router_settings:
   # === AGENT MODEL GROUPS ===
   - i-arif:
     - kimi-k3                   # Kimi coding-plan (100 req/wk, resets 2026-09-10T14:07Z)
+    - MiniMax-M3               # Token Plan Max — resubscribed 2026-09-06, ~5.1B tok/mo, renews 2026-10-05
     - glm-5.3                   # Z.ai coding-plan (subscription, LIVE)
     - deepseek-v4-flash-vision  # DeepSeek PAYG vision (F13 directive 2026-09-06)
     - mimo-v2.5                 # MiMo token-plan (LIVE)
     - gemini-3.6-flash          # Gemini free tier (LIVE)
   - agi-333:
     - kimi-k3          # Kimi coding-plan (weekly quota)
+    - MiniMax-M3               # Token Plan Max — resubscribed 2026-09-06, ~5.1B tok/mo, renews 2026-10-05
     - mimo-v2.5        # MiMo token-plan (LIVE)
     - gemini-3.6-flash # Gemini free tier (LIVE)
     - glm-5.3          # Z.ai coding-plan (LIVE)
   - asi-555:
     - kimi-k3          # Kimi coding-plan (100 req/wk)
+    - MiniMax-M3               # Token Plan Max — resubscribed 2026-09-06, ~5.1B tok/mo, renews 2026-10-05
     - mimo-v2.5        # MiMo token-plan (credits)
     - gemini-3.6-flash  # Gemini free tier (LIVE)
   - apex-888:
@@ -2436,19 +2439,23 @@ router_settings:
     - mimo-v2.5        # MiMo token-plan (credits)
   - forge-777:
     - kimi-k3          # Kimi coding-plan (100 req/wk)
+    - MiniMax-M3               # Token Plan Max — resubscribed 2026-09-06, ~5.1B tok/mo, renews 2026-10-05
     - mimo-v2.5        # MiMo token-plan (credits)
     - gemini-3.6-flash  # Gemini free tier (LIVE)
   - hermes-asi:
     - kimi-k3          # Kimi coding-plan (100 req/wk)
+    - MiniMax-M3               # Token Plan Max — resubscribed 2026-09-06, ~5.1B tok/mo, renews 2026-10-05
     - mimo-v2.5        # MiMo token-plan (credits)
     - gemini-3.6-flash  # Gemini free tier (LIVE)
   # === QWEN MODEL GROUPS (exhausted → cross-provider) ===
   - qwen3.8-max:
     - kimi-k3          # Kimi coding-plan (100 req/wk) (different provider)
+    - MiniMax-M3               # Token Plan Max — resubscribed 2026-09-06, ~5.1B tok/mo, renews 2026-10-05
     - mimo-v2.5        # MiMo token-plan (credits) (different provider)
     - gemini-3.6-flash  # Gemini free tier (LIVE)
   - qwen3.6-plus:
     - kimi-k3          # Kimi coding-plan (100 req/wk)
+    - MiniMax-M3               # Token Plan Max — resubscribed 2026-09-06, ~5.1B tok/mo, renews 2026-10-05
     - mimo-v2.5        # MiMo token-plan (credits)
     - gemini-3.6-flash  # Gemini free tier (LIVE)
   # === MIMO MODEL GROUPS ===
