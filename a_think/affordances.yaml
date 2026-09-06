@@ -7,24 +7,6 @@
 # DITEMPA BUKAN DIBERI — no fake alignment with unregistered tools.
 _comment: A-FORGE Affordance Cards — federation align v2. Actuators not plugins. Deny via gate/lease/SEAL only.
 tools:
-- name: auth_pipeline
-  purpose: "AUTH INSTITUTIONAL PROTOCOL — DECLARE → FQ_GATE → LEASE → LOCK → EXECUTE → EVIDENCE → VERIFY → JUDGE → MERGE → SEAL → INGEST. Governs OBSERVE(free)/MUTATE(contract+lease)/DEPLOY(sealed) transitions. Federation ACT gate upstream."
-  affordance_class: governance
-  capability_surface: aforge.governance.auth_pipeline
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  # RBG 2026-09-04: card added — tool was live on :7072 but undocumented (audit gap: one-directional phantom check)
-  reads:
-  - session
-  - lease
-  writes:
-  - vault999_receipts
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R2
 - name: forge_abort
   purpose: ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Safe stop + rollback for running execution. Requires
     lease or session auth. P2.3 canonical gap fill.
@@ -2009,20 +1991,23 @@ tools:
   min_mode: THINK
   risk_label: R0
 
-- name: forge_gemini
-  purpose: "ACTUATOR · meta · OBSERVE. Gemini AI Studio direct bridge. 4 verbs: generate, chat, models, health. Default model gemini-3.6-flash. Bridge listens 127.0.0.1:18092. Auth: bearer-style HTTP header."
-  affordance_class: meta
-  capability_surface: aforge.meta.gemini
+- name: forge_whoami
+  purpose: "Identity introspection — returns caller actor, session binding, and authority band. Z4 sync 2026-09-06 (was missing from affordances)."
+  affordance_class: probe
+  capability_surface: aforge.probe.whoami
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
   reads:
-  - prompts
-  - tools
   - session
   writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
+- name: forge_proxy_call
+  purpose: "Governed MCP proxy invocation — forwards a tool call through the constitutional membrane. Z4 sync 2026-09-06 (was missing from affordances)."
+  affordance_class: execute
+  capability_surface: aforge.execute.proxy_call
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - session
+  - lease
+  writes:
+  - vault999_receipts
