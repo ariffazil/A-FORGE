@@ -10,6 +10,7 @@
 import { homedir } from "node:os";
 import { resolve, dirname } from "node:path";
 import { appendFile, mkdir } from "node:fs/promises";
+import { classifyTool } from "../../domain/governance/actionClassifier.js";
 
 export type AuditEventAction =
   | "invoke"
@@ -171,10 +172,23 @@ class McpTelemetry {
       const { emitAForgeReceipt } = await import(
         "../../infrastructure/receipts/flowEmit.js"
       );
+      // FQ semantic honesty (2026-09-12): stamping every audit event Execute
+      // made a-forge Execute-dominant by construction (74 exec / 0 verify
+      // scar). Read-only tool calls (OBSERVE/SUGGEST per canonical
+      // actionClassifier) are witness actions — they verify reality, they
+      // do not mutate it. Mode-aware tools degrade to OBSERVE when the
+      // audit event carries no mode; that overcounts Verify for rare
+      // mode-less writes, which is the conservative-safe direction.
+      const actionClass = classifyTool(
+        event.tool,
+        (event.metadata as Record<string, unknown> | undefined)?.mode as string | undefined,
+      );
+      const isWitnessAction =
+        actionClass === "OBSERVE" || actionClass === "SUGGEST";
       await emitAForgeReceipt({
         actor_id: "a-forge",
         session_id: event.session_id ?? `aforge-mcp-${new Date().toISOString().slice(0, 10)}`,
-        step_type: "Execute",
+        step_type: isWitnessAction ? "Verify" : "Execute",
         summary: `${event.tool}:${event.action}`,
         epistemic_label: "OBS",
         floor_verdict:

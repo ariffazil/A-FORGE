@@ -1158,11 +1158,12 @@ export function registerShellTools(server: McpServer): void {
 
       // ── P1-5: arifFlow Execute receipt (Receipt Federation canary) ──
       // Fire-and-forget, fail-open — mirrors logTrajectory pattern.
-      // Actor is the executor itself ("aforge"); session is the caller's
-      // arifOS session. Contract: POST /ingest (arifFlow :7073).
+      // Actor is the executor itself ("a-forge" — unified telemetry identity,
+      // was split "aforge"/"a-forge" which fragmented FQ 2026-09-12); session
+      // is the caller's arifOS session. Contract: POST /ingest (arifFlow :7073).
       void emitFlowReceipt({
         step_type: "Execute",
-        actor_id: "aforge",
+        actor_id: "a-forge",
         session_id: session_id || "aforge-local",
         cost_ns: elapsed * 1_000_000,
         epistemic_label: "Observation",
@@ -1182,7 +1183,7 @@ export function registerShellTools(server: McpServer): void {
       // to the flow plane (the seal is genuine per-execution verification).
       void emitFlowReceipt({
         step_type: "Verify",
-        actor_id: "aforge",
+        actor_id: "a-forge",
         session_id: session_id || "aforge-local",
         cost_ns: 0,
         epistemic_label: "Seal",

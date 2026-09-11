@@ -104,7 +104,18 @@ async function loadExperienceTraces(): Promise<ExperienceTraceRecord[]> {
     .split("\n")
     .filter(Boolean)
     .map((line) => {
-      try { return JSON.parse(line) as ExperienceTraceRecord; }
+      try {
+        // JSONL is a system boundary: hand-rolled writers (e.g. hermes emitter
+        // test 2026-09-09) can omit sub-objects — normalize before downstream reads.
+        const t = JSON.parse(line) as Partial<ExperienceTraceRecord>;
+        return {
+          ...t,
+          action: t.action ?? { tool: "unknown", input_hash: "" },
+          observation: t.observation ?? { output_hash: "", success: false },
+          feedback: t.feedback ?? {},
+          experience_delta: t.experience_delta ?? {},
+        } as ExperienceTraceRecord;
+      }
       catch { return null; }
     })
     .filter((t): t is ExperienceTraceRecord => t !== null);
