@@ -28,14 +28,17 @@ jobs:
 
       - name: Block geophysics compute in execution shell
         run: |
-          if grep -r --exclude='*.LEGACY' --exclude='TriWitnessValidator.ts' "Archie\|PHIE\|Vsh\|MATRIX_DENSITY\|porosity_fraction\|sw_calculat" src/; then
+          # --exclude-dir=test: test fixtures legitimately quote GEOX tool
+          # descriptions (toolDescriptionPoison.test.ts) — domain-boundary
+          # applies to execution code, not test corpora. Mirrors b579c8ff FP fix.
+          if grep -r --exclude='*.LEGACY' --exclude='TriWitnessValidator.ts' --exclude-dir=test "Archie\|PHIE\|Vsh\|MATRIX_DENSITY\|porosity_fraction\|sw_calculat" src/; then
             echo "::error::A-FORGE must not contain geophysics domain computation. Move to GEOX."
             exit 1
           fi
 
       - name: Block hardcoded finance in execution shell
         run: |
-          if grep -r --exclude='*.LEGACY' "5000000\|12.5 / riskMultiplier\|capitalRequired.*5000000" src/; then
+          if grep -r --exclude='*.LEGACY' --exclude-dir=test "5000000\|12.5 / riskMultiplier\|capitalRequired.*5000000" src/; then
             echo "::error::A-FORGE must not contain hardcoded finance logic. Move to WEALTH."
             exit 1
           fi
