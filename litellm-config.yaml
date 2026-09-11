@@ -1,3 +1,7 @@
+# ⚠️ 2026-08-25 QUOTA FREEZE: OpenCode Go monthly usage 100% EXHAUSTED (resets ~2026-09-10).
+# All 6 /zen/go/v1 entries below return 402 Insufficient-balance until reset. LiteLLM
+# cooldown should skip them; if judge seats degrade, re-order Go entries lower and rely
+# on direct/zai/minimax hops. ox-alpha-free lane on Go remains live. — 333-AGI
 model_list:
 - model_name: apex-888
   litellm_params:
