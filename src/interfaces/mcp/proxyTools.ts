@@ -7,6 +7,7 @@ import { classifyUnknown, isStructuredError } from "../../domain/governance/erro
 import { Memory, Epistemic } from "../../domain/governance/epistemic-signal.js";
 import { readFile, writeFile, readdir, stat, mkdir, rename, rm, cp } from "node:fs/promises";
 import { readFileSync } from "node:fs";
+import { evaluateSro, loadPolicy, countRefusal, SRO_GATED_COLLECTIONS } from "./sroAdmissibility.js";
 import { resolve, join, relative, basename } from "node:path";
 import { globSync } from "glob";
 import { JSDOM } from "jsdom";
@@ -729,9 +730,14 @@ export function registerMemoryTools(server: McpServer): void {
     });
   }
 
-  async function searchQdrant(query: string, limit: number): Promise<Array<Record<string, unknown>>> {
+  async function searchQdrant(
+    query: string,
+    limit: number,
+    mode: "default" | "historical" = "default",
+  ): Promise<{ results: Array<Record<string, unknown>>; refused: Record<string, number>; policyVersion: number | undefined }> {
     const queryLower = query.toLowerCase();
     const results: Array<Record<string, unknown>> = [];
+    const refused: Record<string, number> = {};
     for (const coll of QDRANT_COLLECTIONS) {
       try {
         const resp = await fetch(`${QDRANT_URL}/collections/${coll}/points/scroll`, {
@@ -744,15 +750,29 @@ export function registerMemoryTools(server: McpServer): void {
         const data = await resp.json() as any;
         for (const p of (data?.result?.points || [])) {
           const payload = p.payload || {};
+          // SRO v1 read gate — collections under contract only; refusals counted, never silent
+          let sroLabel: string | null = null;
+          if (SRO_GATED_COLLECTIONS.has(coll)) {
+            const decision = evaluateSro(payload, mode);
+            if (!decision.admitted) {
+              countRefusal(refused, decision.reasonCode ?? "SRO_EXCLUDED");
+              continue;
+            }
+            sroLabel = decision.label;
+          }
           const text = payload.text || payload.content || payload.subject || JSON.stringify(payload);
           if (matchesQuery(text, queryLower)) {
-            results.push({ id: p.id, collection: coll, ...payload });
-            if (results.length >= limit) return results;
+            const entry: Record<string, unknown> = { id: p.id, collection: coll, ...payload };
+            if (sroLabel) entry.admissibility_label = sroLabel;
+            results.push(entry);
+            if (results.length >= limit) {
+              return { results, refused, policyVersion: loadPolicy().policy_version };
+            }
           }
         }
       } catch { /* skip collection */ }
     }
-    return results;
+    return { results, refused, policyVersion: loadPolicy().policy_version };
   }
 
   function searchCapabilities(query: string): Array<Record<string, unknown>> {
@@ -774,19 +794,30 @@ export function registerMemoryTools(server: McpServer): void {
   }
 
   server.registerTool("forge_memory", {
-    description: "Canonical memory primitive — recall from L3 semantic layer (Qdrant vectors + capability registry) with Supabase vault fallback.",
+    description: "Canonical memory primitive — recall from L3 semantic layer (Qdrant vectors + capability registry) with Supabase vault fallback. SRO v1 admissibility gate: arifos_memory results are filtered by the federation policy (default = currently-valid only; include_historical=true admits EXPIRED/SUPERSEDED, each labelled HISTORICAL).",
     inputSchema: z.object({
       mode: z.enum(["recall"]).default("recall"),
       query: z.string(),
       limit: z.number().default(10),
+      include_historical: z.boolean().default(false),
     }),
-  }, async ({ query, limit }) => {
+  }, async ({ query, limit, include_historical }) => {
     try {
       const safeLimit = Math.min(limit, 50);
-      const [qdrantResults, capabilities] = await Promise.all([
-        searchQdrant(query, safeLimit),
+      const sroMode = include_historical ? "historical" as const : "default" as const;
+      const [qdrantSearch, capabilities] = await Promise.all([
+        searchQdrant(query, safeLimit, sroMode),
         Promise.resolve(searchCapabilities(query)),
       ]);
+      const { results: qdrantResults, refused: sroRefused, policyVersion } = qdrantSearch;
+      const admissibility = {
+        mode: sroMode,
+        policy_version: policyVersion,
+        gated_collections: [...SRO_GATED_COLLECTIONS],
+        admitted: qdrantResults.length,
+        refused: sroRefused,
+        silent: false,
+      };
       const sources: string[] = [];
       if (qdrantResults.length > 0) sources.push("qdrant");
       if (capabilities.length > 0) sources.push("capability_registry");
@@ -799,10 +830,10 @@ export function registerMemoryTools(server: McpServer): void {
             .filter(r => matchesQuery(JSON.stringify(r), ql))
             .map(r => ({ name: r.name, category: r.category, value: r.value, created_at: r.created_at }));
           if (matched.length > 0) sources.push("supabase");
-          return text({ status: "ok", query, count: matched.length, results: matched, source: sources.join("+") || "none" });
+          return text({ status: "ok", query, count: matched.length, results: matched, source: sources.join("+") || "none", admissibility });
         } catch { /* fall through */ }
       }
-      return text({ status: "ok", query, count: qdrantResults.length + capabilities.length, qdrant: qdrantResults, capabilities, source: sources.join("+") || "none" });
+      return text({ status: "ok", query, count: qdrantResults.length + capabilities.length, qdrant: qdrantResults, capabilities, source: sources.join("+") || "none", admissibility });
     } catch (err: any) {
       return text(`Error: ${err.message}`, true);
     }
