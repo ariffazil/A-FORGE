@@ -165,3 +165,7 @@ vendor/
 # === test output / regenerable (2026-09-11 BIJAKSANA sweep) ===
 tests/mcp-conformance/results/conformance-*.json
 artifacts/alpha-zen-daily/
+
+# FED config snapshot backups (not source) — 2026-09-12
+litellm-config.yaml.pre-*
+litellm-config.order-snapshot.json
