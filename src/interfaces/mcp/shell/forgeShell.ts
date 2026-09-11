@@ -155,7 +155,11 @@ function matchScarsByKeywords(command: string): ScarHit[] {
       }
     }
     return hits.sort((a, b) => b.scar_pressure - a.scar_pressure);
-  } catch {
+  } catch (err) {
+    // F11 AUDIT: never silently swallow scar-index read failures.
+    // Non-fatal — reflex gate fails open to [] (no scar match), but the
+    // failure is logged so a corrupt index doesn't degrade silently.
+    console.warn("[forge_shell] scar reflex matcher read failed (non-fatal):", err);
     return [];
   }
 }
