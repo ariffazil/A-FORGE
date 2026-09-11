@@ -65,6 +65,7 @@ const CODE_ACCEPTING_TOOLS = new Set([
   "forge_register",
   "forge_registry",
   "forge_shell_dryrun",
+  "forge_shell",
   "forge_vault",
   // Governance bridge tools: forge_session_init and forge_kernel proxy
   // session tokens and kernel arguments through arifOS — they have their
