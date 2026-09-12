@@ -129,7 +129,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 1
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -162,7 +162,7 @@ model_list:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 2
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -189,12 +189,35 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+- model_name: i-arif
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    extra_headers:
+      x-opencode-session: arif-fed-i-arif-lane-001
+    order: 1  # co-primary with token-plan P1 — two independent qwen3.8-max sources, load-shared
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'i-arif P0-Go (OpenCode Go lane, embedded 2026-09-13 FED doctor FI-008 after Arif
+      resubscribed): qwen3.8-max via OPENCODE_GO_API_KEY @ opencode.ai/zen/go/v1. REQUIRES
+      x-opencode-session header (Anomaly Go routing rule — MissingSessionID 400 without it;
+      header set above). Payment verified 2026-09-13, chat 200 GO-LIVE cost 0. Second
+      independent source so token-plan quota walls (e.g. 09-11 lockout) cannot degrade
+      the lane. Generator note: opencode.ai base not in demotion map — manage manually.'
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
 - model_name: agi-333
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 1
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -210,7 +233,7 @@ model_list:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 2
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -225,7 +248,7 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 3
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -239,7 +262,7 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 4
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
@@ -513,7 +536,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 1
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -529,7 +552,7 @@ model_list:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 2
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -544,7 +567,7 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 3
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -558,7 +581,7 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 4
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
@@ -587,7 +610,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 1
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -603,7 +626,7 @@ model_list:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 2
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -618,7 +641,7 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 3
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -632,7 +655,7 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 4
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
@@ -661,7 +684,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 1
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -677,7 +700,7 @@ model_list:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 2
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -692,7 +715,7 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 3
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -706,7 +729,7 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 4
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
@@ -758,7 +781,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 1
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1200,7 +1223,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 3
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1213,7 +1236,7 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 4
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -1224,7 +1247,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 2
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1236,7 +1259,7 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 2
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -1247,7 +1270,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 99  # DEMOTED RATE_LIMITED 2026-09-11 fed-config-generator
+    order: 3
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
