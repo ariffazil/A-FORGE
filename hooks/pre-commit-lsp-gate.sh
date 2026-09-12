@@ -28,6 +28,17 @@ HOOK_NAME="LSP-PRE-COMMIT-GATE"
 # Colors
 G='\033[1;32m'; Y='\033[1;33m'; R='\033[1;31m'; C='\033[1;36m'; D='\033[2;37m'; X='\033[0m'
 
+# ── DOCTRINE STATUS GATE (U18 / constitutional-invariants v1.1, 2026-09-12) ──
+# K6 scar (UL-002): status-line reclassification caught by peer, not boundary.
+# Deterministic staged-content check — zero detection debt. Runs BEFORE the
+# code-file early-exit so pure-.md doctrine commits are gated too.
+if [ -f "/root/AAA/scripts/doctrine_status_gate.py" ]; then
+    if ! python3 /root/AAA/scripts/doctrine_status_gate.py; then
+        echo -e "${R}DOCTRINE-STATUS GATE: commit blocked — ratified-class Status needs F13 instrument (date or quote); ANNEX-class forbidden; new watched .md must carry Status.${X}" >&2
+        exit 1
+    fi
+fi
+
 # ── Find staged code files ──────────────────────────────────
 STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E "\.(${GATED_EXTENSIONS})$" 2>/dev/null || true)
 
