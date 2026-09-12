@@ -16,7 +16,8 @@
  *   X (EXECUTION/XPLORE):   F6, F8, F9, Risk → Empathy, Genius, Anti-Hantu, Risk
  *
  * NOTE: F4 (CLARITY) appears in both A and E — this is intentional. Cross-cutting.
- * NOTE: Energy appears TWICE in E (squared drag) — thermodynamic stability is the hardest property.
+ * NOTE: E carries two separately-typed energy inputs (Energy₁, Energy₂), NOT algebraically
+ *       squared. "Squared drag" was a stale pre-V3 label — no E² inflation per APEX MATH CANON A7.
  *
  * @module governance/apexDials
  * @constitutional APEX_T000_THEOREM.md — CANONICALLY RATIFIED 2026-07-26
