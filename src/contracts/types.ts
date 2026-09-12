@@ -121,7 +121,7 @@ export interface GateDecision {
   /** Fingerprint: sha256[:16] of (domain + intent + normalized implementation) */
   fingerprint: string;
 
-  /** G = A · P · E · X · Φ — local actuator product (NOT kernel G-fold) */
+  /** G = (A · P · E · X)^(1/4) — local actuator estimate (NOT kernel G-fold) */
   G: number;
   /** C_dark = A · (1-P) · (1-X) — local misalignment vector */
   C_dark: number;
@@ -140,6 +140,9 @@ export interface GateDecision {
    *   Ω₀ ∉ [0.03, 0.05]           → REVIEW  (uncalibrated evaluator)
    */
   verdict: "SEAL" | "REVIEW" | "VOID";
+
+  /** Verdict namespace — D-03 (2026-09-12): which instrument emitted this verdict */
+  verdict_namespace?: string;
 
   /** If VOID, the scar record that was sealed */
   scar_record?: ScarRecord;

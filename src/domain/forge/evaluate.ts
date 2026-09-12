@@ -383,15 +383,15 @@ function estimateX(spec: CandidateSpec): { score: number; rationale: string[] } 
 }
 
 /**
- * Φ (Phi/Wisdom): scar-adjusted wisdom.
+ * scarPressure (wisdom): scar-adjusted wisdom.
  *
- * Φ = 1 − Σ(scar_pressure × severity_multiplier)
+ * scarPressure = 1 − Σ(scar_pressure × severity_multiplier)
  *
  * Delegates to scar consultation. Returns 1.0 if no matching scars.
  *
  * Phase 2 (TODO): semantic scar matching via Qdrant vector similarity.
  */
-async function estimatePhi(
+async function estimateScarPressure(
   fingerprint: string,
   domain: GovernedDomain,
   consultScars: (fingerprint: string, domain: GovernedDomain) => Promise<{ scarPressure: number; count: number }>,
@@ -400,17 +400,17 @@ async function estimatePhi(
   const { scarPressure, count } = await consultScars(fingerprint, domain);
 
   if (count === 0) {
-    rationale.push("Φ↑: no matching scars — clean wisdom, full Φ");
+    rationale.push("scarPressure↑: no matching scars — clean wisdom, full score");
     return { score: 1.0, rationale, scarsConsulted: 0, scarPressureApplied: 0 };
   }
 
   const score = Math.max(0, 1 - scarPressure);
   if (scarPressure >= 0.5) {
-    rationale.push(`Φ↓: ${count} matching scar(s), scar_pressure=${scarPressure.toFixed(2)} — wisdom heavily reduced`);
+    rationale.push(`scarPressure↓: ${count} matching scar(s), scar_pressure=${scarPressure.toFixed(2)} — wisdom heavily reduced`);
   } else if (scarPressure >= 0.2) {
-    rationale.push(`Φ~: ${count} matching scar(s), scar_pressure=${scarPressure.toFixed(2)} — moderate scar pressure`);
+    rationale.push(`scarPressure~: ${count} matching scar(s), scar_pressure=${scarPressure.toFixed(2)} — moderate scar pressure`);
   } else {
-    rationale.push(`Φ↑: ${count} matching scar(s), scar_pressure=${scarPressure.toFixed(2)} — minor scar pressure`);
+    rationale.push(`scarPressure↑: ${count} matching scar(s), scar_pressure=${scarPressure.toFixed(2)} — minor scar pressure`);
   }
 
   return { score, rationale, scarsConsulted: count, scarPressureApplied: scarPressure };
@@ -804,6 +804,7 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
     C_dark,
     scores,
     verdict,
+    verdict_namespace: "apex.tool_registration",
     apex_scalars: scalars,
     is_canonical_qdf,
     psi_le_components: psi_le_components ?? null,
@@ -880,6 +881,7 @@ export function evaluateDryRun(spec: CandidateSpec, evaluatorCount = 1): Omit<Ga
     C_dark,
     scores,
     verdict: scores.X === 0 ? "VOID" : verdict, // HARAM CRITICAL → VOID even in dry run
+    verdict_namespace: "apex.tool_registration",
     apex_scalars: dryScalars,
     is_canonical_qdf: false,
     evaluator_disagreement: 0,

@@ -83,6 +83,7 @@ export interface ApexGeniusResult {
   verdict: "SEAL" | "SABAR" | "HOLD";  // canonical T-000 §3: VOID reserved for hard floor breach
   weakest_dial: keyof ApexDials;
   weakest_value: number;
+  verdict_namespace: "apex.organism_layer";
   derivation: "eigendecomposition_of_13_floors";
   provenance: "constitutional_measurement";
 }
@@ -326,18 +327,16 @@ export function floorsToDials(
   ]);
 
   // E = ENTROPY × ENERGY — canonical T-000 §2.3
-  // Floors: F3 (Witness), F4 (Clarity — cross-cutting), F12 (Resilience)
-  // Plus: Energy₁ and Energy₂ (governance-event coverage, double-weighted)
-  const eFloors = geometricMean([
+  // D-01 RATIFIED (2026-09-12): flat equal-component E = GM(F3, F4, F12, E₁, E₂).
+  // Equal internal dignity — no nested grouping, no hidden energy reweighting.
+  // (E₁, E₂ are two DISTINCT typed energy inputs, NOT an algebraic E².)
+  const E = geometricMean([
     floors.f3_tri_witness,
     floors.f4_clarity,    // cross-cutting — also in A
     floors.f12_injection,
+    energy1,
+    energy2,
   ]);
-  const eEnergy = geometricMean([energy1, energy2]);
-  // E = GM(F3, F4, F12, Energy₁, Energy₂) — 5 components, energy double-weighted
-  // E = GM(F3, F4, F12, Energy₁, Energy₂) — single eFloors, single-weighted
-  //   No E² inflation per APEX MATH CANON A7: equal dignity of all dial inputs
-  const E = geometricMean([eFloors, energy1, energy2]);
 
   // X = EXPLORATION × AMANAH — canonical T-000 §2.4
   // Floors: F6 (Empathy), F8 (Genius), F9 (Anti-Hantu), Risk (exploration safety)
@@ -391,6 +390,7 @@ export function calculateGeniusFromFloors(
     verdict,
     weakest_dial,
     weakest_value: dialValues[weakest_dial],
+    verdict_namespace: "apex.organism_layer",
     derivation: "eigendecomposition_of_13_floors",
     provenance: "constitutional_measurement",
   };
