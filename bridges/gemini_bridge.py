@@ -29,7 +29,10 @@ def _get_gkey():
     return os.environ.get(_ENV_NAME)
 
 def _get_base():
-    return os.environ.get("GEMINI_BASE_URL", DEFAULT_BASE)
+    # Native Gemini base. Must NOT inherit the OpenAI-compat GEMINI_BASE_URL
+    # (…/v1beta/openai) used by opencode/hermes/litellm — the native API path is
+    # {base}/models and {base}/models/{model}:generateContent, which 404s under /openai.
+    return os.environ.get("GEMINI_NATIVE_BASE_URL", DEFAULT_BASE)
 
 def _call(model, contents, *, max_output_tokens=2048, temperature=0.7,
           system_instruction=None, safety_settings=None):

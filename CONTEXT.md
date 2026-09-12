@@ -1,3 +1,4 @@
+> **DEPRECATED (2026-09-12):** tiered-context-system abandoned. carry_forward.json is the actual continuity mechanism. Do not edit or rely on this file.
 # 🎯 CONTEXT — Live Focus
 
 > **SOT:** 2026-07-20 | **Organ:** A-FORGE
