@@ -52,12 +52,12 @@ if [ "$UNCOMMITTED" -gt 5 ]; then
 "
 fi
 
-# Dead processes
-DEAD_PROCS=$(ps aux 2>/dev/null | grep -c '[d]efunct' || true)
+# Dead processes (count only for entropy band; provenance is pulse_observe.py)
+DEAD_PROCS=$(ps -eo stat= 2>/dev/null | awk '$1 ~ /Z/ {c++} END {print c+0}')
 DEAD_PROCS=${DEAD_PROCS:-0}
 if [ "$DEAD_PROCS" -gt 3 ]; then
   ENTROPY_SCORE=$((ENTROPY_SCORE + 1))
-  ENTROPY_DETAILS="${ENTROPY_DETAILS}  ⚠️  ${DEAD_PROCS} zombie processes
+  ENTROPY_DETAILS="${ENTROPY_DETAILS}  ⚠️  ${DEAD_PROCS} zombie processes (see Process hygiene — do not reap from this pulse)
 "
 fi
 
@@ -69,11 +69,11 @@ if [ "$DISK_PCT" -gt 70 ]; then
 "
 fi
 
-# Stale forge_work entries (older than 7 days)
+# forge_work dirs older than 7 days (ledger in pulse_observe.py — not declared stale until inspected)
 STALE_WORK=$(find /root/A-FORGE/forge_work -maxdepth 1 -type d -mtime +7 2>/dev/null | wc -l)
 if [ "$STALE_WORK" -gt 3 ]; then
   ENTROPY_SCORE=$((ENTROPY_SCORE + 1))
-  ENTROPY_DETAILS="${ENTROPY_DETAILS}  ⚠️  ${STALE_WORK} stale forge_work directories (>7d)
+  ENTROPY_DETAILS="${ENTROPY_DETAILS}  ⚠️  ${STALE_WORK} forge_work directories age>7d (retention ledger — inspect before purge)
 "
 fi
 
@@ -170,6 +170,14 @@ VPS_C_STATE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.
 VPS_CAUSE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('primary_cause','Unknown'))" 2>/dev/null || echo "Unknown")
 VPS_EVIDENCE=$(echo "$VPS_OUTPUT" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('evidence_confidence','?'))" 2>/dev/null || echo "?")
 
+OBSERVE_MD=""
+OBSERVE_JSON="${LOG_DIR}/vitality-pulse-$(date +%H%M)-observe.json"
+if [ -x /root/A-FORGE/duties/pulse_observe.py ] || [ -f /root/A-FORGE/duties/pulse_observe.py ]; then
+  OBSERVE_MD=$(python3 /root/A-FORGE/duties/pulse_observe.py \
+    --h "${VPS_H_SCORE}" --m "${VPS_M_SCORE}" --g "${VPS_G_SCORE}" --c "${VPS_C_SCORE}" \
+    --reported "${VPS_SCORE}" --json-out "${OBSERVE_JSON}" 2>/dev/null || true)
+fi
+
 # ── REPORT ──────────────────────────────────────────────────────────────
 cat > "$REPORT" <<EOF
 # 🔥 FORGE · Vitality Pulse — ${TODAY} $(date +%H:%M) MYT
@@ -200,11 +208,15 @@ cat > "$REPORT" <<EOF
 **Evidence confidence: ${VPS_EVIDENCE}**
 
 **F2 label: OBS** (live probes) + **DER** (computed scores) · H from WELL self-report when sensors absent (HR3)
+**Measurement:** curl localhost PORT/health for organ-up; latency cohorts (n=5) below. One sample is not a verdict.
+**C HOLD:** no process kill, container recycle, forge_work purge, Caddy reload, or public A2A change from this pulse.
 
-## Organ Vitals
+${OBSERVE_MD}
 
-| Organ | Status | Latency |
-|-------|--------|---------|
+## Organ Vitals (single-shot UP/DOWN — not the latency verdict)
+
+| Organ | Status | One-shot ms |
+|-------|--------|-------------|
 ${ORGAN_TABLE}
 ## Entropy Details
 
@@ -252,4 +264,6 @@ Tools: ${TOOL_COUNT} | VAULT999: ${SCAR_COUNT}
 _${RECOMMENDATION}_
 
 Report: \`${REPORT}\`"
-/root/A-FORGE/duties/forge-notify.sh "$NOTIFY_MSG" 2>/dev/null || true
+if [ "${PULSE_NOTIFY:-1}" != "0" ]; then
+  /root/A-FORGE/duties/forge-notify.sh "$NOTIFY_MSG" 2>/dev/null || true
+fi
