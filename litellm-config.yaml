@@ -552,12 +552,26 @@ model_list:
     notes: 'forge-777 P2 (ZAI GLM-5.3-Flash): 1M context, 3x quota.'
 - model_name: forge-777
   litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-777 P3 (MiniMax-M3 Token Plan Max, topped up 2026-09-13): 1M context,
+      vision, function calling. Reasoning model — needs max_tokens>=200 headroom.'
+- model_name: forge-777
+  litellm_params:
     model: openai/qwen3.8-max
     api_base: https://opencode.ai/zen/go/v1
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-forge-777-lane-001
-    order: 3
+    order: 4
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -570,7 +584,7 @@ model_list:
     model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
-    order: 4
+    order: 5
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1076,27 +1090,27 @@ model_list:
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 0
     mode: chat
-    notes: 'REPOINTED 2026-09-06: DeepSeek direct PAYG (balance $1.94, last-resort
-      rung). deepseek-chat maps to v4-flash server-side.'
+    notes: 'UPDATED 2026-09-13: alias compat-routes server-side to DeepSeek-V4.1-Flash
+      (canonical name deepseek-flash, released 2026-09-10). Direct PAYG last-resort rung. Live-verified 2026-09-13.'
   model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 8192
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
     mode: chat
 - model_name: deepseek-v4-flash-vision
   litellm_params:
-    model: openai/deepseek-v4-flash-vision-exp
+    model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 0
-    max_input_tokens: 131072
-    max_output_tokens: 65536
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
     mode: chat
     supports_vision: true
-    notes: 'F13 directive 2026-09-06: i-arif sovereign vision rung. DeepSeek direct
-      PAYG, vision-capable flash tier.'
+    notes: 'UPDATED 2026-09-13: legacy vision-exp retired in V4.1-Flash release (2026-09-10);
+      served by deepseek-flash native multimodal. i-arif sovereign vision rung, DeepSeek direct PAYG.'
   model_info:
-    max_input_tokens: 65536
-    max_output_tokens: 8192
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
     mode: chat
     supports_vision: true
 - model_name: MiniMax-M3
