@@ -44,6 +44,30 @@ model_list:
       \ BLOCK_NONE."
 - model_name: apex-888
   litellm_params:
+    model: mistral/mistral-large-latest
+    api_key: os.environ/MISTRAL_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 128000
+    max_output_tokens: 32768
+    mode: chat
+    supports_function_calling: true
+    notes: 'apex-888 P3 (Mistral Large): independent external judge lane.'
+- model_name: apex-888
+  litellm_params:
+    model: openai/glm-5.3-flash
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 4
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'apex-888 P4 (ZAI GLM-5.3-Flash): 1M context fallback judge.'
+- model_name: apex-888
+  litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
@@ -260,45 +284,62 @@ model_list:
     mode: chat
 - model_name: agi-333
   litellm_params:
+    model: mistral/mistral-large-latest
+    api_key: os.environ/MISTRAL_API_KEY
+    order: 0
+  model_info:
+    max_input_tokens: 128000
+    max_output_tokens: 32768
+    mode: chat
+    supports_function_calling: true
+    notes: 'agi-333 P0 (Mistral Large): 128k context, active paid lane, zero quota friction.'
+- model_name: agi-333
+  litellm_params:
     model: openai/qwen3.8-max
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    extra_headers:
+      x-opencode-session: arif-fed-agi-333-lane-001
     order: 1
+  model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.8-max. 36d runway. PRIMARY."
+    notes: 'agi-333 P1 (OpenCode Go): 1M context, paid resubscribed 2026-09-13.'
+- model_name: agi-333
+  litellm_params:
+    model: openai/glm-5.3-flash
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'agi-333 P2 (ZAI GLM-5.3-Flash): 1M context, 3x quota, multimodal.'
+- model_name: agi-333
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 3
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'agi-333 P3: Individual Token Plan qwen3.8-max.'
 - model_name: agi-333
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 2
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-plus. 36d runway."
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-- model_name: agi-333
-  litellm_params:
-    model: openai/qwen3.7-max
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 3
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-max. 36d runway."
+    order: 4
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -308,11 +349,7 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 4
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    notes: "INDIVIDUAL PLAN \u2014 deepseek-v4-pro. 36d runway."
+    order: 5
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -323,28 +360,61 @@ model_list:
     api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/DASHSCOPE_API_KEY
     order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_vision: true
-    notes: "FREE QUOTA \u2014 kimi-k3, expires 2026-11-18. Long runway."
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
 - model_name: asi-555
   litellm_params:
+    model: mistral/mistral-large-latest
+    api_key: os.environ/MISTRAL_API_KEY
+    order: 0
+  model_info:
+    max_input_tokens: 128000
+    max_output_tokens: 32768
+    mode: chat
+    supports_function_calling: true
+    notes: 'asi-555 P0 (Mistral Large): 128k context, active paid lane.'
+- model_name: asi-555
+  litellm_params:
+    model: openai/glm-5.3-flash
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'asi-555 P1 (ZAI GLM-5.3-Flash): 1M context, 3x quota.'
+- model_name: asi-555
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    extra_headers:
+      x-opencode-session: arif-fed-asi-555-lane-001
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'asi-555 P2 (OpenCode Go): 1M context, paid resubscribed.'
+- model_name: asi-555
+  litellm_params:
     model: openai/mimo-v2.5-pro
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
-    order: 1
+    order: 3
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_image_input: true
-    notes: "MiMo V2.5 Token Plan \u2014 RE-ENABLED 2026-08-10. 82B credits, 20% off-peak\
-      \ discount."
+    notes: "MiMo V2.5 Token Plan — 82B credits, 20% off-peak discount."
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -447,17 +517,66 @@ model_list:
       \ requires max_tokens>=200, min content budget]"
 - model_name: forge-777
   litellm_params:
+    model: mistral/codestral-latest
+    api_key: os.environ/MISTRAL_API_KEY
+    order: 0
+  model_info:
+    max_input_tokens: 256000
+    max_output_tokens: 32768
+    mode: chat
+    supports_function_calling: true
+    notes: 'forge-777 P0 (Codestral): 256k context, dedicated coding engine.'
+- model_name: forge-777
+  litellm_params:
+    model: mistral/mistral-large-latest
+    api_key: os.environ/MISTRAL_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 128000
+    max_output_tokens: 32768
+    mode: chat
+    supports_function_calling: true
+    notes: 'forge-777 P1 (Mistral Large): 128k context, active paid lane.'
+- model_name: forge-777
+  litellm_params:
+    model: openai/glm-5.3-flash
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-777 P2 (ZAI GLM-5.3-Flash): 1M context, 3x quota.'
+- model_name: forge-777
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    extra_headers:
+      x-opencode-session: arif-fed-forge-777-lane-001
+    order: 3
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-777 P3 (OpenCode Go): 1M context, paid resubscribed.'
+- model_name: forge-777
+  litellm_params:
     model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
-    order: 1
+    order: 4
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_function_calling: true
-    notes: "forge-777 fallback \u2014 GLM-5.3 via Z.ai Coding Plan. Rate-limited 429\
-      \ until 2026-08-27 15:04 UTC. Restore to order:0 when limit resets."
+    notes: 'forge-777 P4 (ZAI GLM-5.3): standard coding plan fallback.'
 - model_name: forge-777
   litellm_params:
     model: openai/kimi-k3
@@ -653,16 +772,55 @@ model_list:
     mode: chat
 - model_name: openclaw
   litellm_params:
+    model: mistral/mistral-large-latest
+    api_key: os.environ/MISTRAL_API_KEY
+    order: 0
+  model_info:
+    max_input_tokens: 128000
+    max_output_tokens: 32768
+    mode: chat
+    supports_function_calling: true
+    notes: 'openclaw P0 (Mistral Large): 128k context, active paid lane.'
+- model_name: openclaw
+  litellm_params:
     model: openai/qwen3.8-max
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    extra_headers:
+      x-opencode-session: arif-fed-openclaw-lane-001
     order: 1
+  model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.8-max. 36d runway. PRIMARY."
+    notes: 'openclaw P1 (OpenCode Go): 1M context, paid resubscribed.'
+- model_name: openclaw
+  litellm_params:
+    model: openai/glm-5.3-flash
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'openclaw P2 (ZAI GLM-5.3-Flash): 1M context, 3x quota.'
+- model_name: openclaw
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 3
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: "INDIVIDUAL PLAN — qwen3.8-max. 36d runway."
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1480,11 +1638,14 @@ router_settings:
     - MiniMax-M3
     - gemini-3.6-flash
   - apex-888:
+    - mistral-large-latest
+    - glm-5.3-flash
     - gemini-3.6-flash
     - mimo-v2.5-pro
     - MiniMax-M3
     - qwen3.8-max
   - forge-777:
+    - codestral-latest
     - mistral-large-latest
     - glm-5.3-flash
     - deepseek-v4-pro
@@ -1492,6 +1653,17 @@ router_settings:
     - MiniMax-M3
     - gemini-3.6-flash
     - glm-5.3
+  - openclaw:
+    - mistral-large-latest
+    - glm-5.3-flash
+    - mimo-v2.5
+    - MiniMax-M3
+    - gemini-3.6-flash
+  - opencode:
+    - codestral-latest
+    - mistral-large-latest
+    - glm-5.3-flash
+    - deepseek-v4-pro
   - hermes-asi:
     - mistral-large-latest
     - glm-5.3-flash
