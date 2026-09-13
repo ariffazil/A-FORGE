@@ -50,6 +50,13 @@ interface ExperienceTrace {
   observation: {
     output_hash: string;
     success: boolean;
+    // Provenance of the `success` verdict. ABSENT on legacy records (< 2026-09-14).
+    //   "execution_cleanliness" — derived from tool_metrics.error_count (Lane A)
+    //   "self_reported"         — supplied by the acting agent, NOT verified (Lane B)
+    // Never treat a bare `success: true` as evidence without reading this field.
+    success_basis?: string;
+    // true only when an independent verifier confirmed the outcome.
+    success_verified?: boolean;
   };
   feedback: {
     self?: string;
@@ -221,7 +228,15 @@ export async function recordExperienceTrace(params: {
       },
       observation: {
         output_hash: outputHash,
+        // 2026-09-14 · F13 session — Lane B provenance.
+        // `success` here is supplied BY THE CALLING AGENT (params.success) and is
+        // NOT derived from any measurement, and NOT verified by a third party.
+        // Recorded as such so a self-report cannot be mistaken for evidence.
+        // Contrast Lane A (session-trace.py) which derives success from
+        // tool_metrics.error_count and records "execution_cleanliness".
         success: params.success,
+        success_basis: "self_reported",
+        success_verified: false,
       },
       feedback: {
         self: params.feedback_self,
