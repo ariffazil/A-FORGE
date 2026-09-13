@@ -1,14 +1,16 @@
 <!-- SOT-MANIFEST
-federation_release: v2026.09.05
-last_verified: 2026-09-05T00:00:00Z
-live_commit: main
+federation_release: v2026.09.13
+last_verified: 2026-09-13T06:32:00Z
+live_commit: a4ef6b9b
 sense_port: 7071 (healthy)
 forge_port: 7072 (healthy)
-tools_live: 116+ (live-witnessed via :7072/tools/list — beats any static count in prose)
+tools_live: 119 (live-witnessed via :7072/health tools_listed)
 authority_ceiling: 777_FORGE (execution only — never adjudicate)
+apex_zen: A2A delegates ⊥ MCP equips ⊥ ACT mutates ⊥ arifOS governs ⊥ F13 decides
 act_ingress: HMAC-SHA256 verified, FI alias map complete
 infra_organs: arifFlow:7073 METABOLISM, FED:7074 ADVISORY, FRAME:frame-organ OBSERVE (FLAME:18901 decommissioned 2026-09-04)
 truth_rule: MCP tools/list on :7072 beats any static count in prose
+public_a2a_card: none by default — A-FORGE is actuator, not a public A2A mind
 -->
 
 # A-FORGE
