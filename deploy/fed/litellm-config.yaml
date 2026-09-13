@@ -1,3 +1,8 @@
+# MANUAL_SYNC 2026-09-13T08:36Z — synced from /root/A-FORGE/litellm-config.yaml (root canonical, sha cf4ee23415ae3a3bb6aa5cf682827de8cc5309b54837cf78de5ebece3ce75146).
+# DeepSeek canonicalization (V4.1-Flash, vision-exp repoint) reflected in root but NOT bulk-synced here yet. Do NOT deploy until HK.8.6 regen.
+# Source: HK8-KIMI-EXECUTION-RECEIPT.md (Kimi Code FI-008, HK.8.6).
+# Generated-from: /root/A-FORGE/litellm-config.yaml (root canonical, ec57c9c2 applied 2026-09-13).
+# Reversal: see .bak-20260913-manual-sync-header
 model_list:
 - model_name: apex-888
   litellm_params:
