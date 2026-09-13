@@ -26,7 +26,8 @@
  * DITEMPA BUKAN DIBERI — Forged, Not Given.
  */
 
-const FLAME_BASE = "http://127.0.0.1:18901";
+// DEPRECATION NOTICE: FLAME (:18901) was retired on 2026-09-04.
+const FLAME_BASE = process.env.FLAME_BASE || "";
 const DEFAULT_TIMEOUT_MS = 8_000;
 const MAX_BODY_CHARS = 8_000;
 
@@ -53,6 +54,9 @@ async function _flamePost(
   payload: Record<string, unknown>,
   timeoutMs = DEFAULT_TIMEOUT_MS,
 ): Promise<Record<string, unknown> | null> {
+  if (!FLAME_BASE) {
+    return null;
+  }
   const url = `${FLAME_BASE}${endpoint}`;
   const body = JSON.stringify(payload);
 

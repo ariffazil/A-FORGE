@@ -1780,6 +1780,31 @@ general_settings:
   store_model_in_db: false
   disable_spend_logs: true
   allow_requests_on_db_unavailable: true
+  # ── MiMo federation: pass-through for the bodies litellm's parser cannot carry ──
+  # Added 2026-09-13 (FI-008). WHY THIS EXISTS:
+  #   litellm's translator crashes on MiMo audio responses — `message.audio` is not part of its
+  #   Message schema. REPRODUCED LIVE 2026-09-13 on litellm 1.102.0 via the existing
+  #   fed/audio-voiceclone-restricted route:
+  #     litellm.InternalServerError ... convert_dict_to_response.py:681 Message(...) → HTTP 500 (15.7 s)
+  #   So `model_list` federates TEXT/OMNI only (mimo-v2.5, mimo-v2.5-pro — both verified working).
+  #   The 4 audio ids (asr / tts / tts-voiceclone / tts-voicedesign) ride THIS pass-through instead:
+  #   FED becomes the single front door for all 6 MiMo models, request/response bodies carried verbatim.
+  # TRADE-OFF, stated explicitly: pass-through bypasses litellm routing, spend logs and cost tracking —
+  #   it is a raw authenticated proxy. Credit accounting for these calls comes from MiMo's own console,
+  #   NOT from FED spend logs. Direct lane ($MIMO_BASE_URL) remains equivalent and documented in
+  #   /root/AAA/skills/mimo-audio/SKILL.md.
+  # USAGE:  POST http://<fed>/mimo/chat/completions   (any of the 6 models, incl. audio)
+  #         GET  http://<fed>/mimo/models
+  pass_through_endpoints:
+    - path: "/mimo/chat/completions"
+      target: "https://token-plan-sgp.xiaomimimo.com/v1/chat/completions"
+      timeout: 600
+      headers:
+        Authorization: "Bearer os.environ/MIMO_TOKEN_PLAN_API_KEY"
+    - path: "/mimo/models"
+      target: "https://token-plan-sgp.xiaomimimo.com/v1/models"
+      headers:
+        Authorization: "Bearer os.environ/MIMO_TOKEN_PLAN_API_KEY"
 model_group_alias:
   deepseek-v3.2: agi-333
   qwen3.8-27b: agi-333

@@ -983,7 +983,7 @@ export function registerGatewayTools(server: McpServer): void {
     corpus: z.enum(["arifos", "geox", "wealth", "well", "aforge", "cloudflare", "workers", "all"]).default("all").describe("Corpus filter when source is 'docs'"),
     freshness: z.enum(["any", "day", "week", "month", "year"]).default("any").describe("Freshness horizon"),
     safesearch: z.enum(["off", "moderate", "strict"]).default("moderate").describe("SafeSearch mode"),
-    synthesize: z.boolean().default(false).describe("Synthesize results via FLAME free inference lane"),
+    synthesize: z.boolean().default(false).describe("Synthesize results (legacy FLAME lane decommissioned 2026-09-04; falls back to raw results)"),
     request_id: z.string().optional().describe("Optional caller request ID for audit tracing"),
   }, handleForgeSearch);
 
