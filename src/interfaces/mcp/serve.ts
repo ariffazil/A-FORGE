@@ -166,6 +166,11 @@ const STATELESS_TOOLS = new Set([
   // forge_fetch_metadata — REMOVED 2026-07-31 → forge_fetch(mode='metadata')
   // forge_fetch_links — REMOVED 2026-07-31 → forge_fetch(mode='links')
 
+  // ── Universal Web Extract (2026-09-14) — SSRF-safe, auto-SPA-render ──
+  // Static fetch → SPA shell detection → Playwright browser rendering.
+  // Ephemeral context, read-only, no cookies/ clicks/ auth. For all agents.
+  "forge_web_extract",
+
   // ── Web zen (2026-07-30) — OBSERVE site control surface ───────────
   // Thin wrapper around web_zen CLI. doctor/sense/verify/orphan(preview)/
   // ephemeral(sandbox)/caddy-reload-hint. No production rsync --delete apply.

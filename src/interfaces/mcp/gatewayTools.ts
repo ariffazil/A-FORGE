@@ -631,6 +631,343 @@ export async function handleForgeBrowserEvaluateJs(args: any) {
   }
 }
 
+// ── SSRF Guard ──────────────────────────────────────────────────────────────
+
+const BLOCKED_HOSTS = new Set([
+  "localhost", "localhost.", "0.0.0.0",
+  "metadata.google.internal", "metadata.azure.internal",
+  "169.254.169.254", "metadata.google.internal.",
+]);
+
+const PRIVATE_CIDRS: Array<[number, number, number]> = [
+  [0x7F000000, 0xFF000000, 8],   // 127.0.0.0/8
+  [0x0A000000, 0xFF000000, 8],   // 10.0.0.0/8
+  [0xAC100000, 0xFFF00000, 12],  // 172.16.0.0/12
+  [0xC0A80000, 0xFFFF0000, 16],  // 192.168.0.0/16
+  [0xA9FE0000, 0xFFFF0000, 16],  // 169.254.0.0/16
+  [0x64400000, 0xFFC00000, 10],  // 100.64.0.0/10 (CGNAT)
+];
+
+function ip4ToInt(ip: string): number | null {
+  const parts = ip.split(".").map(Number);
+  if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255)) return null;
+  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+}
+
+function isPrivateOrReserved(ip: string): boolean {
+  // IPv6 loopback and private ranges
+  if (ip === "::1" || ip === "0:0:0:0:0:0:0:1") return true;
+  if (ip.startsWith("fc") || ip.startsWith("fd")) return true; // ULA
+  if (ip.startsWith("fe80")) return true; // link-local
+  if (ip === "0.0.0.0") return true;
+
+  const intIp = ip4ToInt(ip);
+  if (intIp === null) return false; // IPv6 non-mapped — skip for now
+  for (const [network, mask] of PRIVATE_CIDRS) {
+    if ((intIp & mask) === (network & mask)) return true;
+  }
+  return false;
+}
+
+async function ssrfGuard(rawUrl: string): Promise<{ ok: boolean; error?: string }> {
+  let parsed: URL;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return { ok: false, error: "INVALID_URL" };
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    return { ok: false, error: `SSRF_BLOCKED: scheme ${parsed.protocol} not allowed` };
+  }
+  const hostname = parsed.hostname.toLowerCase();
+  if (BLOCKED_HOSTS.has(hostname)) {
+    return { ok: false, error: `SSRF_BLOCKED: host ${hostname} is blocked` };
+  }
+  const port = parsed.port ? parseInt(parsed.port, 10) : (parsed.protocol === "https:" ? 443 : 80);
+  if (port !== 80 && port !== 443) {
+    return { ok: false, error: `SSRF_BLOCKED: port ${port} not allowed (only 80/443)` };
+  }
+  // DNS resolution check — block private/loopback IPs
+  try {
+    const { lookup } = await import("node:dns/promises");
+    const results = await lookup(hostname, { all: true, family: 0 });
+    for (const r of results) {
+      if (isPrivateOrReserved(r.address)) {
+        return { ok: false, error: `SSRF_BLOCKED: ${hostname} resolves to private IP ${r.address}` };
+      }
+    }
+  } catch {
+    // DNS failure — let the fetch/browser handle it (could be transient)
+  }
+  return { ok: true };
+}
+
+// ── SPA Shell Detection ─────────────────────────────────────────────────────
+
+function isSpaShell(html: string, statusCode: number): boolean {
+  if (statusCode === 404 || statusCode === 403) {
+    // 404 on a known section might be SPA client-side routing
+    const hasAppShell = /id=["'](?:root|app|__next|__nuxt|main)["']/i.test(html);
+    const hasLoading = /loading|spinner|skeleton/i.test(html);
+    if (hasAppShell && hasLoading) return true;
+  }
+  if (statusCode !== 200) return false;
+
+  const textContent = html.replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .trim();
+
+  // Very little visible content despite 200 response
+  if (textContent.length < 500 && html.length > 5000) return true;
+
+  // Empty app containers
+  const appShellMatch = html.match(/<(?:div|main|section)\s+id=["'](?:root|app|__next|__nuxt|main)["'][^>]*>\s*<\/(?:div|main|section)>/i);
+  if (appShellMatch) return true;
+
+  return false;
+}
+
+// ── Handler: forge_web_extract — Full Agentic Web Capability ──────────────
+// SSRF-protected, auto-SPA-rendering, browser actions, auth, downloads.
+// All agents get full web capability. DITEMPA BUKAN DIBERI.
+
+export async function handleForgeWebExtract(args: any) {
+  const { url, render, max_chars, timeout_ms, actions, cookies, headers: customHeaders, download, request_id } = args;
+  const effectiveMaxChars = Math.min(max_chars ?? 50000, 200000);
+  const effectiveTimeout = Math.min(timeout_ms ?? 30000, 120000);
+  const renderMode = render ?? "auto";
+
+  // SSRF guard
+  const ssrf = await ssrfGuard(url);
+  if (!ssrf.ok) {
+    return gatewayError(request_id, ssrf.error!, { tool: "forge_web_extract", url, reason: "ssrf_blocked" });
+  }
+
+  // Build headers — merge custom headers with defaults
+  const fetchHeaders: Record<string, string> = {
+    "User-Agent": "A-FORGE/1.0 (arifOS Federation; +https://arif-fazil.com)",
+    "Accept": "text/html,application/xhtml+xml,*/*;q=0.8",
+    ...customHeaders,
+  };
+
+  // Build cookie header if provided
+  if (cookies?.length) {
+    fetchHeaders["Cookie"] = cookies.map((c: any) => `${c.name}=${c.value}`).join("; ");
+  }
+
+  // ── Download mode ──
+  if (download) {
+    try {
+      const dlDir = "/root/forge-downloads";
+      await mkdir(dlDir, { recursive: true });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), effectiveTimeout);
+      const resp = await fetch(url, { signal: controller.signal, headers: fetchHeaders, redirect: "follow" });
+      clearTimeout(timer);
+      if (!resp.ok) {
+        return gatewayError(request_id, `Download failed: HTTP ${resp.status}`, { tool: "forge_web_extract", url, route: "download" });
+      }
+      const buffer = Buffer.from(await resp.arrayBuffer());
+      const urlPath = new URL(url).pathname;
+      const filename = urlPath.split("/").pop() || `download-${Date.now()}`;
+      const filePath = `${dlDir}/${filename}`;
+      const { writeFile } = await import("node:fs/promises");
+      await writeFile(filePath, buffer);
+      const receipt_id = await recordReceipt({ tool: "forge_web_extract", url, route: "download", file: filePath, size: buffer.length });
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            request_id, status: "ok", route: "download",
+            file: filePath, size: buffer.length, content_type: resp.headers.get("content-type"),
+            receipt_id,
+          }, null, 2),
+        }],
+      };
+    } catch (err: any) {
+      return gatewayError(request_id, `Download failed: ${err?.message ?? String(err)}`, { tool: "forge_web_extract", url, route: "download" });
+    }
+  }
+
+  // ── Step 1: Try static fetch ──
+  let staticResult: { html: string; status: number; finalUrl: string; title: string } | null = null;
+  let staticError: string | null = null;
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), Math.min(effectiveTimeout, 15000));
+    const resp = await fetch(url, { signal: controller.signal, redirect: "follow", headers: fetchHeaders });
+    clearTimeout(timer);
+    const html = await resp.text();
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    staticResult = { html, status: resp.status, finalUrl: resp.url, title: titleMatch?.[1]?.trim() ?? "" };
+  } catch (err: any) {
+    staticError = err?.message ?? String(err);
+  }
+
+  // ── Step 2: Decide if we need browser rendering ──
+  const hasActions = actions?.length > 0;
+  const needsRender = renderMode === "always" || hasActions
+    || (renderMode === "auto" && staticResult && isSpaShell(staticResult.html, staticResult.status))
+    || (renderMode === "auto" && staticError !== null);
+
+  // ── Step 2a: If static fetch worked and no render needed ──
+  if (staticResult && !needsRender) {
+    const text = staticResult.html
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
+      .replace(/\s+/g, " ").trim();
+
+    const receipt_id = await recordReceipt({ tool: "forge_web_extract", url, route: "static_fetch", spa_detected: false, text_length: text.length });
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          request_id, status: "ok", route: "static_fetch",
+          source: { requested_url: url, final_url: staticResult.finalUrl, title: staticResult.title, retrieved_at: new Date().toISOString() },
+          content: { text: text.slice(0, effectiveMaxChars), truncated: text.length > effectiveMaxChars, content_length: text.length },
+          diagnostics: { spa_detected: false, browser_used: false },
+          receipt_id,
+        }, null, 2),
+      }],
+    };
+  }
+
+  // ── Step 3: Browser rendering via Playwright (full capability) ──
+  if (needsRender) {
+    try {
+      // Set cookies if provided
+      if (cookies?.length) {
+        try {
+          await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_navigate", { url: "about:blank" });
+          for (const cookie of cookies) {
+            await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_evaluate", {
+              function: `document.cookie = "${cookie.name}=${cookie.value}; domain=${cookie.domain || new URL(url).hostname}; path=${cookie.path || "/"}"`,
+            });
+          }
+        } catch { /* cookie setup best-effort */ }
+      }
+
+      // Navigate
+      await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_navigate", { url });
+
+      // Wait for page to settle
+      try { await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_wait_for", { time: 3 }); } catch { /* best-effort */ }
+
+      // Execute browser actions if provided
+      const actionResults: any[] = [];
+      if (hasActions) {
+        for (const action of actions) {
+          try {
+            switch (action.type) {
+              case "click":
+                await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_click", { target: action.selector, button: "left" });
+                actionResults.push({ type: "click", selector: action.selector, success: true });
+                break;
+              case "type":
+                await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_type", { target: action.selector, text: action.value || "" });
+                actionResults.push({ type: "type", selector: action.selector, success: true });
+                break;
+              case "select":
+                await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_select_option", { target: action.selector, value: action.value });
+                actionResults.push({ type: "select", selector: action.selector, success: true });
+                break;
+              case "wait":
+                await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_wait_for", { time: (action.wait_ms || 1000) / 1000 });
+                actionResults.push({ type: "wait", ms: action.wait_ms, success: true });
+                break;
+              case "scroll":
+                await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_evaluate", { function: `window.scrollBy(0, ${action.value || 500})` });
+                actionResults.push({ type: "scroll", success: true });
+                break;
+              case "screenshot":
+                const ss = await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_take_screenshot", { type: "png" }) as any;
+                const ssText = typeof ss === "string" ? ss : ss?.content?.[0]?.text ?? "";
+                actionResults.push({ type: "screenshot", data: ssText.slice(0, 1000), success: true });
+                break;
+              case "download":
+                // Navigate to download URL
+                await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_navigate", { url: action.value || url });
+                actionResults.push({ type: "download", url: action.value, success: true });
+                break;
+            }
+          } catch (actErr: any) {
+            actionResults.push({ type: action.type, success: false, error: actErr?.message ?? String(actErr) });
+          }
+          // Brief pause between actions
+          try { await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_wait_for", { time: 0.5 }); } catch { /* */ }
+        }
+      }
+
+      // Extract text — try evaluate first (works with all browser types), fallback to snapshot
+      let rawText = "";
+      try {
+        const evalRes = await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_evaluate", {
+          function: `(() => {
+            const clone = document.body.cloneNode(true);
+            clone.querySelectorAll('script,style,noscript,svg').forEach(el => el.remove());
+            return clone.innerText || clone.textContent || '';
+          })()`,
+        }) as any;
+        rawText = typeof evalRes === "string" ? evalRes : evalRes?.content?.[0]?.text ?? evalRes?.result ?? "";
+      } catch {
+        // Fallback to snapshot
+        try {
+          const snapshotRes = await callHttpMcp(PLAYWRIGHT_MCP_URL, "browser_snapshot", {}) as any;
+          rawText = typeof snapshotRes === "string" ? snapshotRes : snapshotRes?.content?.[0]?.text ?? "";
+        } catch { /* both failed */ }
+      }
+
+      const title = staticResult?.title ?? "";
+      const receipt_id = await recordReceipt({ tool: "forge_web_extract", url, route: "browser_render", spa_detected: true, actions: actionResults.length, text_length: rawText.length });
+      return {
+        content: [{
+          type: "text" as const,
+          text: JSON.stringify({
+            request_id, status: "ok", route: "browser_render",
+            source: { requested_url: url, final_url: url, title, retrieved_at: new Date().toISOString() },
+            content: { text: rawText.slice(0, effectiveMaxChars), truncated: rawText.length > effectiveMaxChars, content_length: rawText.length },
+            actions: actionResults.length > 0 ? actionResults : undefined,
+            diagnostics: { spa_detected: true, browser_used: true, actions_executed: actionResults.length },
+            receipt_id,
+          }, null, 2),
+        }],
+      };
+    } catch (err: any) {
+      const errMsg = err?.message ?? String(err);
+      const isUnavailable = errMsg.includes("ECONNREFUSED") || errMsg.includes("fetch failed");
+
+      if (staticResult) {
+        const fallbackText = staticResult.html
+          .replace(/<script[\s\S]*?<\/script>/gi, "")
+          .replace(/<style[\s\S]*?<\/style>/gi, "")
+          .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+
+        const receipt_id = await recordReceipt({ tool: "forge_web_extract", url, route: "static_fallback", browser_error: errMsg });
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              request_id, status: "partial", route: "static_fallback",
+              source: { requested_url: url, final_url: staticResult.finalUrl, title: staticResult.title, retrieved_at: new Date().toISOString() },
+              content: { text: fallbackText.slice(0, effectiveMaxChars), truncated: fallbackText.length > effectiveMaxChars, content_length: fallbackText.length },
+              diagnostics: { spa_detected: true, browser_used: false, browser_error: isUnavailable ? "BROWSER_UNAVAILABLE" : errMsg },
+              receipt_id,
+            }, null, 2),
+          }],
+        };
+      }
+      return gatewayError(request_id, isUnavailable ? "BROWSER_UNAVAILABLE" : `browser_render failed: ${errMsg.slice(0, 200)}`, { tool: "forge_web_extract", url, route: "browser_render" });
+    }
+  }
+
+  // ── Step 4: Static fetch failed ──
+  return gatewayError(request_id, `fetch failed: ${staticError ?? "unknown"}`, { tool: "forge_web_extract", url, route: "static_fetch" });
+}
+
 // ── Handlers: GitHub ──────────────────────────────────────────────────────────
 
 export async function handleForgeGitHubSearchCode(args: any) {
@@ -1113,4 +1450,31 @@ export function registerGatewayTools(server: McpServer): void {
     max_results: z.number().min(1).max(20).default(10).describe("Max results"),
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeMinimaxSearch);
+
+  // ── Universal Web Extract (2026-09-14) — Full agentic web capability ──
+  // Static fetch → SPA detection → Playwright render. Browser actions, auth,
+  // downloads. DITEMPA BUKAN DIBERI — agents deserve full web capability.
+  server.tool("forge_web_extract", "Full-capability agentic web extraction — auto-SPA-rendering, browser actions, authenticated sessions, downloads. All agents. DITEMPA BUKAN DIBERI.", {
+    url: z.string().describe("URL to extract content from"),
+    render: z.enum(["auto", "never", "always"]).default("auto").describe("Rendering mode: auto=detect SPA, never=static only, always=browser render"),
+    max_chars: z.number().min(100).max(200000).default(50000).describe("Max characters to return"),
+    timeout_ms: z.number().min(1000).max(120000).default(30000).describe("Total timeout in ms"),
+    // Browser actions — click, type, scroll, wait, download, screenshot
+    actions: z.array(z.object({
+      type: z.enum(["click", "type", "select", "wait", "scroll", "download", "screenshot"]),
+      selector: z.string().optional().describe("CSS selector for the target element"),
+      value: z.string().optional().describe("Value for type/select actions or URL for download"),
+      wait_ms: z.number().optional().describe("Wait time in ms"),
+    })).optional().describe("Browser actions to perform after navigation"),
+    // Auth support
+    cookies: z.array(z.object({
+      name: z.string(),
+      value: z.string(),
+      domain: z.string().optional(),
+      path: z.string().optional(),
+    })).optional().describe("Cookies to set before navigation"),
+    headers: z.record(z.string()).optional().describe("Additional HTTP headers for the request"),
+    download: z.boolean().default(false).describe("Download URL content to /tmp/forge-downloads/"),
+    request_id: z.string().describe("Caller request ID"),
+  }, handleForgeWebExtract);
 }

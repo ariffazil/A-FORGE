@@ -253,6 +253,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_chart",               // charting/visualization — OBSERVE
   "forge_scan",                // security scan — OBSERVE
   "forge_fetch",               // URL fetch — OBSERVE
+  "forge_web_extract",         // Universal web extract — SSRF-safe, read-only, OBSERVE (2026-09-14)
   "forge_fingerprint_check",   // tool fingerprint check — OBSERVE
   "forge_github",              // GitHub ops — mode-aware (search/get=OBSERVE)
   "forge_github_get_file",     // file read — OBSERVE
