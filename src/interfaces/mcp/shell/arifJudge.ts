@@ -274,11 +274,15 @@ export function classifyCommand(command: string, cwd?: string): JudgeResult {
     }
   }
 
-  // ── ALLOW (read-only or low-blast-radius) ──
+  // ── DEFAULT: GATE (require authority verification) ──
+  // APEX ZEN: unknown commands must not auto-execute.
+  // Default to "gate" so authority envelope is checked.
+  // Previously defaulted to "allow" which bypassed ACT scope enforcement.
   return {
-    decision: "allow",
-    reason: "Read-only or low-blast-radius operation — auto-allowed",
-    actionClass: "EXECUTE_REVERSIBLE",
+    decision: "gate",
+    reason: "Unknown command pattern — requires authority verification before execution",
+    matchedPattern: "default_gate",
+    actionClass: "MUTATE",
   };
 }
 

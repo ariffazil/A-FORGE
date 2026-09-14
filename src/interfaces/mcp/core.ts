@@ -690,15 +690,18 @@ const _originalTool = server.tool.bind(server);
           const actor = sessionCheck.actor_id || "opencode";
           const localLeaseId = `AUTO-${actor}-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
           const { registerLocalLease } = await import("./forgeTools.js");
+          // P2 ACT SCOPE FIX: auto-leases are fallback, not governance-blessed.
+          // forge_shell/forge_shell_dryrun require explicit lease (F1 AMANAH).
+          // max_action_class capped to MUTATE — IRREVERSIBLE requires explicit lease.
           registerLocalLease({
             lease_id: localLeaseId,
             agent_id: actor,
-            scope: ["forge_filesystem", "forge_vault", "forge_shell", "forge_shell_dryrun", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_seal_lane_a"],
-            max_action_class: "IRREVERSIBLE",
+            scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_seal_lane_a"],
+            max_action_class: "MUTATE",
             ttl_seconds: ttl,
             issued_at: now,
             expires_at: now + ttl * 1000,
-            forbidden: [],
+            forbidden: ["forge_shell", "forge_shell_dryrun"],
             revoked: false,
             verdict_geometry: {
               trace_id: `auto-${localLeaseId}`,
@@ -863,15 +866,18 @@ const _originalRegisterTool = server.registerTool.bind(server);
           const actor = sessionCheck.actor_id || "opencode";
           const localLeaseId = `AUTO-${actor}-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
           const { registerLocalLease } = await import("./forgeTools.js");
+          // P2 ACT SCOPE FIX: auto-leases are fallback, not governance-blessed.
+          // forge_shell/forge_shell_dryrun require explicit lease (F1 AMANAH).
+          // max_action_class capped to MUTATE — IRREVERSIBLE requires explicit lease.
           registerLocalLease({
             lease_id: localLeaseId,
             agent_id: actor,
-            scope: ["forge_filesystem", "forge_vault", "forge_shell", "forge_shell_dryrun", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_seal_lane_a"],
-            max_action_class: "IRREVERSIBLE",
+            scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_seal_lane_a"],
+            max_action_class: "MUTATE",
             ttl_seconds: ttl,
             issued_at: now,
             expires_at: now + ttl * 1000,
-            forbidden: [],
+            forbidden: ["forge_shell", "forge_shell_dryrun"],
             revoked: false,
             verdict_geometry: {
               trace_id: `auto-${localLeaseId}`,
