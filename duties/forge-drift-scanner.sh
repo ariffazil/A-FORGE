@@ -60,7 +60,10 @@ check_drift "AAA"     "/root/AAA"     "/opt/aaa/app/.git_commit"     2>/dev/null
 #   Monitoring: 3000 9090 9100 8125 8222 19999 4222
 #   Infra: 22 80 443 22888 20241 11434 5001 8100 8001 8082 8083 8090 8094 50443
 #   Internal: 3050 3100 3456 4317 51001 18000 18081 18990 9222
-KNOWN_PORTS="22 53 80 443 3000 3001 3050 3100 3456 4096 4222 4317 5001 51001 5432 6274 6277 6333 6334 6379 6380 7071 7072 7073 8000 8001 8080 8081 8082 8083 8088 8090 8094 8100 8125 8222 8787 8931 9000 9001 9090 9100 9222 11434 18000 18081 18082 18083 18084 18086 18090 18093 18094 18095 18096 18789 18990 19999 20241 22888 50443"
+#   FED/enforcement (added 2026-09-14 — verified live): 4012 4013 4318 4319 7080 15000 15020 15021
+#     4012=haproxy(FED intake) 4013=litellm(model brain) 4318/4319=kabaran(OTEL collector)
+#     7080/15000/15020/15021=agentgateway-shadow(FED enforcement bayang)
+KNOWN_PORTS="22 53 80 443 3000 3001 3050 3100 3456 4012 4013 4096 4222 4317 4318 4319 5001 51001 5432 6274 6277 6333 6334 6379 6380 7071 7072 7073 7080 8000 8001 8080 8081 8082 8083 8088 8090 8094 8100 8125 8222 8787 8931 9000 9001 9090 9100 9222 11434 15000 15020 15021 18000 18081 18082 18083 18084 18086 18090 18093 18094 18095 18096 18789 18990 19999 20241 22888 50443"
 
 # ── 3.5 FEDERATION PORT SOT (zen-2026-08-06 AUDIT-M2) ───────────────────
 # Augment KNOWN_PORTS from the federation machine-port SOT at
@@ -164,16 +167,9 @@ Review findings above. Silent when clean — this report exists because drift wa
 EOF
   echo "[DRIFT] ${REPORT}"
   
-  # ── TELEGRAM NOTIFY (only on findings) ─────────────────────────────
-  NOTIFY_MSG="🔥 *FORGE · Drift Scanner*
-${TODAY} $(date +%H:%M) MYT
-
-*Status: DRIFT DETECTED*
-
-$(echo -e "${FINDINGS}")
-
-Review: \`${REPORT}\`"
-  /root/A-FORGE/duties/forge-notify.sh "$NOTIFY_MSG" 2>/dev/null || true
+  # ── TELEGRAM NOTIFY moved to event bridge (/root/scripts/scanner-event.sh) ──
+  # The event bridge runs at 02:01, reads this report, delta-gates it.
+  # Direct posting removed 2026-09-14 — all posts now via event-bridge.sh.
 else
   echo "[CLEAN] $(date +%Y-%m-%dT%H:%M:%S) — no drift detected"
 fi
