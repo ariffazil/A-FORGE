@@ -371,3 +371,28 @@ export function getSessionAct(session_id: string): string | null {
   const record = sessions.get(session_id);
   return record?.act_token ?? null;
 }
+
+/**
+ * P0 ACT SCOPE: Extract auth band and allowed verbs from an ACT token payload.
+ * Decodes the base64url payload WITHOUT verifying HMAC (caller already validated).
+ * Returns null if the token is malformed or has no parseable claims.
+ */
+export function parseActClaims(
+  act_token: string,
+): { auth: string; allowed: string[] } | null {
+  try {
+    const parts = act_token.split(".");
+    if (parts.length < 2) return null;
+    const payloadB64 = parts[1];
+    if (!payloadB64) return null;
+    // base64url decode
+    const padded = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const raw = Buffer.from(padded, "base64").toString("utf-8");
+    const claims = JSON.parse(raw) as Record<string, unknown>;
+    const auth = typeof claims.auth === "string" ? claims.auth : "OBSERVE_ONLY";
+    const allowed = Array.isArray(claims.allowed) ? claims.allowed.map(String) : [];
+    return { auth, allowed };
+  } catch {
+    return null;
+  }
+}
