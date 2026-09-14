@@ -728,9 +728,64 @@ function isSpaShell(html: string, statusCode: number): boolean {
   return false;
 }
 
-// ── Handler: forge_web_extract — Full Agentic Web Capability ──────────────
-// SSRF-protected, auto-SPA-rendering, browser actions, auth, downloads.
-// All agents get full web capability. DITEMPA BUKAN DIBERI.
+// ── Epistemic Reflex Guard ─────────────────────────────────────────────────
+// SCAR REPEAT #1 (2026-09-04 + 2026-09-14): agents claim "X runs on Y"
+// without probing. This guard forces the response to separate OBSERVED facts
+// from INFERRED claims, so downstream agents cannot silently upgrade
+// web-scraped text into infrastructure assertions.
+//
+// Rule: web content is OBS (observed from page text). Infrastructure claims
+// (which host, which port, which service) are DER at best — the page says
+// "we host on AWS" but reality may differ. Never upgrade DER to OBS.
+
+interface EpistemicClaim {
+  text: string;
+  label: "OBS" | "DER" | "INT" | "SPEC";
+  source: string;
+  confidence: number;
+}
+
+function epistemicGuard(content: string, url: string): {
+  claims: EpistemicClaim[];
+  reflex_warning: string | null;
+} {
+  const claims: EpistemicClaim[] = [];
+  let reflexWarning: string | null = null;
+
+  // Detect infrastructure/location claims in extracted text
+  const infraPatterns = [
+    { pattern: /runs?\s+on\s+(KVM\d+|server|host|VPS|AWS|Azure|GCP)/gi, label: "DER" as const, reason: "infrastructure_location" },
+    { pattern: /hosted?\s+(?:on|at|in)\s+(\S+)/gi, label: "DER" as const, reason: "hosting_claim" },
+    { pattern: /port\s+(\d{2,5})/gi, label: "DER" as const, reason: "port_reference" },
+    { pattern: /(?:deployed|migrat(?:ed|ing))\s+to\s+(\S+)/gi, label: "DER" as const, reason: "deployment_claim" },
+    { pattern: /(?:live|running|active)\s+(?:on|at)\s+(\S+)/gi, label: "DER" as const, reason: "runtime_claim" },
+  ];
+
+  for (const { pattern, label, reason } of infraPatterns) {
+    const matches = content.matchAll(pattern);
+    for (const match of matches) {
+      claims.push({
+        text: match[0],
+        label,
+        source: `page_text:${url}`,
+        confidence: 0.3, // web page claims about infrastructure are low-confidence
+      });
+    }
+  }
+
+  // If infrastructure claims detected, add reflex warning
+  if (claims.length > 0) {
+    reflexWarning = [
+      "REFLEX_GUARD: This content contains infrastructure/location claims.",
+      "Web page text is OBSERVED (what the page says), NOT VERIFIED (what reality is).",
+      "Before asserting: X runs on Y / X is hosted at Y / X uses port Z —",
+      "you MUST probe live state: `hostname`, `systemctl is-active <svc>`, `ss -tlnp | grep <port>`.",
+      "SCAR REPEAT #1: memory exists since 2026-09-04. Apply it.",
+    ].join(" ");
+  }
+
+  return { claims, reflex_warning: reflexWarning };
+}
 
 export async function handleForgeWebExtract(args: any) {
   const { url, render, max_chars, timeout_ms, actions, cookies, headers: customHeaders, download, request_id } = args;
@@ -822,6 +877,7 @@ export async function handleForgeWebExtract(args: any) {
       .replace(/\s+/g, " ").trim();
 
     const receipt_id = await recordReceipt({ tool: "forge_web_extract", url, route: "static_fetch", spa_detected: false, text_length: text.length });
+    const guard = epistemicGuard(text, url);
     return {
       content: [{
         type: "text" as const,
@@ -830,6 +886,7 @@ export async function handleForgeWebExtract(args: any) {
           source: { requested_url: url, final_url: staticResult.finalUrl, title: staticResult.title, retrieved_at: new Date().toISOString() },
           content: { text: text.slice(0, effectiveMaxChars), truncated: text.length > effectiveMaxChars, content_length: text.length },
           diagnostics: { spa_detected: false, browser_used: false },
+          epistemic_guard: guard.claims.length > 0 ? { claims: guard.claims, warning: guard.reflex_warning } : undefined,
           receipt_id,
         }, null, 2),
       }],
@@ -923,6 +980,7 @@ export async function handleForgeWebExtract(args: any) {
 
       const title = staticResult?.title ?? "";
       const receipt_id = await recordReceipt({ tool: "forge_web_extract", url, route: "browser_render", spa_detected: true, actions: actionResults.length, text_length: rawText.length });
+      const guard = epistemicGuard(rawText, url);
       return {
         content: [{
           type: "text" as const,
@@ -932,6 +990,7 @@ export async function handleForgeWebExtract(args: any) {
             content: { text: rawText.slice(0, effectiveMaxChars), truncated: rawText.length > effectiveMaxChars, content_length: rawText.length },
             actions: actionResults.length > 0 ? actionResults : undefined,
             diagnostics: { spa_detected: true, browser_used: true, actions_executed: actionResults.length },
+            epistemic_guard: guard.claims.length > 0 ? { claims: guard.claims, warning: guard.reflex_warning } : undefined,
             receipt_id,
           }, null, 2),
         }],
