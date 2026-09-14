@@ -1,6 +1,30 @@
 model_list:
 - model_name: apex-888
   litellm_params:
+    model: openai/deepseek-chat
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 65536
+    max_output_tokens: 8192
+    mode: chat
+    notes: "apex-888 P1 (DeepSeek-V3 Direct PAYG $14.28 balance): primary verified living lane 2026-09-14."
+- model_name: apex-888
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: "apex-888 P2 (MiniMax-M3 Token Plan Max): 1M context, vision, function calling verified live 2026-09-14."
+- model_name: apex-888
+  litellm_params:
     model: gemini/gemini-2.5-pro
     api_key: os.environ/GEMINI_API_KEY
     safety_settings:
@@ -12,15 +36,13 @@ model_list:
       threshold: BLOCK_NONE
     - category: HARM_CATEGORY_DANGEROUS_CONTENT
       threshold: BLOCK_NONE
-    order: 1
+    order: 3
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 65536
     mode: chat
     supports_vision: true
-    notes: "apex-888 \u2192 Gemini 2.5 Pro \u2014 PRIMARY constitutional judge. Deep\
-      \ reasoning, multimodal, free tier. G\xF6del E3: different provider from Qwen/DeepSeek\
-      \ judge models. Safety: BLOCK_NONE (F1-F13 is our safety layer)."
+    notes: "apex-888 → Gemini 2.5 Pro — fallback constitutional judge."
 - model_name: apex-888
   litellm_params:
     model: gemini/gemini-3.6-flash
@@ -34,31 +56,30 @@ model_list:
       threshold: BLOCK_NONE
     - category: HARM_CATEGORY_DANGEROUS_CONTENT
       threshold: BLOCK_NONE
-    order: 2
+    order: 4
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 65536
     mode: chat
     supports_vision: true
-    notes: "apex-888 Gemini 3.6 Flash \u2014 fast multimodal fallback judge. Safety:\
-      \ BLOCK_NONE."
+    notes: "apex-888 Gemini 3.6 Flash — fast multimodal fallback judge. Safety: BLOCK_NONE."
 - model_name: apex-888
   litellm_params:
     model: mistral/mistral-large-latest
     api_key: os.environ/MISTRAL_API_KEY
-    order: 3
+    order: 5
   model_info:
     max_input_tokens: 128000
     max_output_tokens: 32768
     mode: chat
     supports_function_calling: true
-    notes: 'apex-888 P3 (Mistral Large): independent external judge lane.'
+    notes: 'apex-888 P5 (Mistral Large): independent external judge lane.'
 - model_name: apex-888
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     api_key: os.environ/ZAI_API_KEY
-    order: 4
+    order: 6
   model_info:
     max_input_tokens: 1000000
     max_output_tokens: 128000
