@@ -1077,20 +1077,26 @@ model_list:
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
     order: 4
+    supports_vision: true
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_vision: true
+    notes: 'F13 2026-09-14: supports_vision enabled for image input.'
 - model_name: mimo-v2.5
   litellm_params:
     model: openai/mimo-v2.5
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
     order: 4
+    supports_vision: true
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_vision: true
+    notes: 'F13 2026-09-14: supports_vision enabled for image input.'
 - model_name: glm-5.2
   litellm_params:
     model: openai/glm-5.2
@@ -1294,30 +1300,24 @@ model_list:
     max_output_tokens: 131072
   model_name: fed/vision-parked
 - litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/anthropic/v1
+    api_key: os.environ/MINIMAX_API_KEY
     order: 1
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P1 PRIMARY: Gemini 2.5 Flash. Sub-second multimodal vision, OCR, document
-      reading.'
+    notes: 'P1 PRIMARY (F13 2026-09-14): MiniMax M3. Proven working — no content filtering, low latency, multimodal.'
     max_input_tokens: 1048576
-    max_output_tokens: 65536
+    max_output_tokens: 131072
   model_name: hermes-asi-vision
 - litellm_params:
-    model: openai/qwen3.8-max
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    model: deepseek/deepseek-v4-flash-vision-exp
+    api_key: os.environ/DEEPSEEK_API_KEY
     order: 2
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1326,14 +1326,14 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P2: Qwen 3.8 Max (Individual Plan 75% runway, 1M ctx visual reasoning).'
+    notes: 'P2: DeepSeek V4 Flash Vision. Dedicated vision model, no content moderation.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
 - litellm_params:
-    model: openai/qwen3.7-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    model: openai/mimo-v2.5
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
     order: 3
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1342,14 +1342,78 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P3: Qwen 3.7 Plus (Individual Plan multimodal).'
+    notes: 'P3: MiMo v2.5 (Xiaomi). CORRECTED 2026-09-14 — mimo-v2.5-pro is TEXT-ONLY per SOT. mimo-v2.5 is the omni-modal model.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
 - litellm_params:
-    model: gemini/gemini-2.5-pro
-    api_key: os.environ/GEMINI_API_KEY
+    model: openai/glm-5.3-flash
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
     order: 4
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'P4: GLM 5.3 Flash (Z.AI). 3x quota, points-based — quota-outage-proof.'
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+  model_name: hermes-asi-vision
+- litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 5
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'P4: Qwen 3.8 Max (Individual Plan). Token plan — may be rate-limited.'
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+  model_name: hermes-asi-vision
+- litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    order: 6
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'P6: Qwen 3.7 Plus (Individual Plan).'
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+  model_name: hermes-asi-vision
+- litellm_params:
+    model: openai/qwen3.6-plus
+    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/QWEN_HERMES_API_KEY
+    order: 7
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'P7: Qwen 3.6 Plus (Hermes Seat).'
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+  model_name: hermes-asi-vision
+- litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 8
     safety_settings:
     - category: HARM_CATEGORY_HARASSMENT
       threshold: BLOCK_NONE
@@ -1362,36 +1426,40 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P4: Gemini 2.5 Pro. Deep multimodal reasoning.'
+    notes: 'P10: Gemini 2.5 Flash. Last resort — Google server-side content moderation may block images.'
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+  model_name: hermes-asi-vision
+- litellm_params:
+    model: gemini/gemini-2.5-pro
+    api_key: os.environ/GEMINI_API_KEY
+    order: 9
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'P9: Gemini 2.5 Pro. Deep reasoning last resort.'
     max_input_tokens: 1048576
     max_output_tokens: 65536
   model_name: hermes-asi-vision
 - litellm_params:
     model: gemini/gemini-3.6-flash
     api_key: os.environ/GEMINI_API_KEY
-    order: 5
+    order: 10
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P5: Gemini 3.6 Flash fallback.'
+    notes: 'P10: Gemini 3.6 Flash. Final fallback.'
     max_input_tokens: 1048576
     max_output_tokens: 65536
-  model_name: hermes-asi-vision
-- litellm_params:
-    model: openai/qwen3.6-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'P6: Qwen 3.6 Plus (Hermes Seat standard).'
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
   model_name: hermes-asi-vision
 - model_name: gemini-2.5-flash
   litellm_params:
@@ -1637,14 +1705,17 @@ litellm_settings:
   cache: true
   cache_params:
     type: redis
-    host: redis
+    host: 100.64.0.2
     port: 6379
-    ttl: 600
+    password: os.environ/REDIS_FED_PASSWORD
+    ttl: 1800
     namespace: litellm-fed
     supported_call_types:
     - acompletion
     - atext_completion
     - aembedding
+    - completion
+    - embedding
 router_settings:
   routing_strategy: simple-shuffle
   enable_pre_call_checks: true
