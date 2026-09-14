@@ -745,9 +745,9 @@ A-FORGE is one of **6 active organs** in the arifOS Federation. APEX (port 3002)
 
 | Organ | Repository | Role | Port |
 |-------|-----------|------|------|
-| **arifOS** | [ariffazil/arifos](https://github.com/ariffazil/arifos) | Constitutional Kernel · Judge | 8088 |
-| **A-FORGE** | [ariffazil/A-FORGE](https://github.com/ariffazil/A-FORGE) | Execution Shell · Forge | 7071/7072 |
-| **AAA** | [ariffazil/AAA](https://github.com/ariffazil/AAA) | Control Plane · Cockpit | 3001 |
+| **arifOS** | [ariffazil/arifos](https://github.com/ariffazil/arifos) | Constitutional Kernel · Judge (Authority Plane) | 8088 |
+| **A-FORGE** | [ariffazil/A-FORGE](https://github.com/ariffazil/A-FORGE) | Execution Shell · Forge (Execution Plane) | 7071/7072 |
+| **AAA** | [ariffazil/AAA](https://github.com/ariffazil/AAA) | Attention Plane · Cockpit | 3001 |
 | **GEOX** | [ariffazil/geox](https://github.com/ariffazil/geox) | Earth Intelligence | 8081 |
 | **WEALTH** | [ariffazil/wealth](https://github.com/ariffazil/wealth) | Capital Intelligence | 18082 |
 | **WELL** | [ariffazil/well](https://github.com/ariffazil/well) | Human Readiness | 18083 |
