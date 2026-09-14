@@ -1444,8 +1444,9 @@ server.tool(
             const localLeaseId = `LCL-${actor_id}-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
             pre_minted_lease = {
               lease_id: localLeaseId,
-            scope: ["forge_filesystem", "forge_vault", "forge_shell", "forge_shell_dryrun", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_seal_lane_a"],
-              max_action_class: "IRREVERSIBLE",
+            // P2 ACT SCOPE FIX: forge_shell requires explicit lease
+            scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_seal_lane_a"],
+              max_action_class: "MUTATE",
               ttl_seconds: ttl,
               expires_at: now + ttl * 1000,
             };
@@ -1455,11 +1456,11 @@ server.tool(
               lease_id: localLeaseId,
               agent_id: actor_id,
               scope: pre_minted_lease.scope,
-              max_action_class: "IRREVERSIBLE",
+              max_action_class: "MUTATE",
               ttl_seconds: ttl,
               issued_at: now,
               expires_at: now + ttl * 1000,
-              forbidden: [],
+              forbidden: ["forge_shell", "forge_shell_dryrun"],
               revoked: false,
               // P1.3: Verdict geometry for autonomous seal path.
               // Local leases need trace_id to satisfy the verdict loop check
