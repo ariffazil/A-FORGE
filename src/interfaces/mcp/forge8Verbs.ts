@@ -1119,5 +1119,5 @@ export function registerForge8Verbs(server: McpServer) {
     forgeSandboxAutoEvictHandler
   );
 
-  console.log("[A-FORGE] Registered 8 FORGE execution verbs (+ 1 split skillstore) + 4 sandbox persistence tools");
+  console.error("[A-FORGE] Registered 8 FORGE execution verbs (+ 1 split skillstore) + 4 sandbox persistence tools");
 }

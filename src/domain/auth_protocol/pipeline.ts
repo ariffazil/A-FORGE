@@ -569,5 +569,5 @@ The institution does not care WHO holds the scalpel — only whether the cut req
     authPipelineHandler
   );
 
-  console.log("[A-FORGE] Registered auth_pipeline — the institutional protocol");
+  console.error("[A-FORGE] Registered auth_pipeline — the institutional protocol");
 }
