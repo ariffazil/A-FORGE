@@ -19,6 +19,7 @@ import { readFileSync } from "node:fs";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { aaaMemoryGate } from "../aaa/AaaMemoryLinkage.js";
+import { forwardLegacyReceipt } from "../../infrastructure/arifflow/flowClient.js";
 
 // ═══════════════════════════════════════════════════════════
 // Persistence
@@ -447,9 +448,9 @@ export class CoolingGate {
   // ── Internal ──
 
   /**
-   * P1-5d: Forward cooling receipt to arifFLOW :7073/receipt/emit.
+   * P1-5d: Forward cooling receipt to arifFLOW /ingest (P1-7 migrated 2026-09-15).
    * Fire-and-forget — failure is silent, local persist + AAA gate are primary.
-   * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+   * P1-7 DONE 2026-09-15: forwards via forwardLegacyReceipt → arifflowClient.emitReceipt (canonical /ingest).
    */
   private async _forwardToArifFlow(opts: {
     action: string;
@@ -458,10 +459,7 @@ export class CoolingGate {
     risk_tier: string;
   }): Promise<void> {
     try {
-      await fetch("http://127.0.0.1:7073/receipt/emit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await forwardLegacyReceipt({
           organ: "A-FORGE",
           producer: "CoolingGate",
           action: `cooling:${opts.action}`,
@@ -476,9 +474,7 @@ export class CoolingGate {
             description: opts.description.slice(0, 100),
             risk_tier: opts.risk_tier,
           },
-        }),
-        signal: AbortSignal.timeout(3000),
-      });
+        });
     } catch {
       // arifFLOW unreachable — local persistence + AAA gate are primary
     }

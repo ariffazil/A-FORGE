@@ -40,6 +40,7 @@ import { getRecoveryStrategy } from "./error-classifier.js";
 import { rollbackFile } from "./GitDiffGuard.js";
 import { isGodelLocked } from "../../interfaces/mcp/shell/godelLock.js";
 import { checkGapAlert } from "./observationPredictor.js";
+import { forwardLegacyReceipt } from "../../infrastructure/arifflow/flowClient.js";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -619,9 +620,9 @@ export function faultBlastRadius(fault: FaultReport): BlastRadius {
 }
 
 /**
- * P1-5c: Forward fault-fix cycle to arifFLOW :7073/receipt/emit.
+ * P1-5c: Forward fault-fix cycle to arifFLOW /ingest (P1-7 migrated 2026-09-15).
  * Fire-and-forget — failure is silent, local cycle is canonical.
- * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ * P1-7 DONE 2026-09-15: forwards via forwardLegacyReceipt → arifflowClient.emitReceipt (canonical /ingest).
  */
 async function _forwardFaultFixToArifFlow(
   fault: FaultReport,
@@ -631,10 +632,7 @@ async function _forwardFaultFixToArifFlow(
   context: { attempted_tool: string; intent: string; gap_score?: number; confidence?: number },
 ): Promise<void> {
   try {
-    await fetch("http://127.0.0.1:7073/receipt/emit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await forwardLegacyReceipt({
         organ: "A-FORGE",
         producer: "faultFixFlow",
         action: `fault_fix:${fault.source}`,
@@ -652,9 +650,7 @@ async function _forwardFaultFixToArifFlow(
           receipt_hash: result.receipt_hash,
           gap_score: context.gap_score,
         },
-      }),
-      signal: AbortSignal.timeout(3000),
-    });
+      });
   } catch {
     // arifFLOW unreachable — local fault-fix cycle is canonical
   }

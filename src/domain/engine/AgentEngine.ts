@@ -1155,6 +1155,7 @@ export class AgentEngine {
           cost_ns: 0,
           step_number: Math.max(1, result.turnCount),
           created_at: new Date().toISOString(),
+          cooling_decision: "None", // P1-7: required by /ingest FlowReceipt schema (was silently 400ing since P1-5f)
           floor_verdict: metrics.completion ? "Pass" : "Hold",
           payload: {
             organ: "A-FORGE",

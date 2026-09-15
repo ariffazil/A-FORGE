@@ -16,6 +16,7 @@
  */
 
 import * as crypto from 'crypto';
+import { forwardLegacyReceipt } from "../../infrastructure/arifflow/flowClient.js";
 
 const PROTOCOL_VERSION = process.env.MCP_PROTOCOL_VERSION || "2025-06-18";
 
@@ -669,16 +670,13 @@ export class SurfaceGuardRunner {
 // ── P1-5g: arifFlow drift report forwarding ────────────────────────────────
 
 /**
- * P1-5g: Forward federation drift report to arifFLOW :7073/receipt/emit.
+ * P1-5g: Forward federation drift report to arifFLOW /ingest (P1-7 migrated 2026-09-15).
  * Fire-and-forget — failure is silent, local drift report is canonical.
- * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ * P1-7 DONE 2026-09-15: forwards via forwardLegacyReceipt → arifflowClient.emitReceipt (canonical /ingest).
  */
 async function _forwardDriftToArifFlow(report: FederationDriftReport): Promise<void> {
   try {
-    await fetch("http://127.0.0.1:7073/receipt/emit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await forwardLegacyReceipt({
         organ: "A-FORGE",
         producer: "SurfaceGuard",
         action: "drift_report",
@@ -695,9 +693,7 @@ async function _forwardDriftToArifFlow(report: FederationDriftReport): Promise<v
           organs_down: report.organs.filter(o => o.status === "DOWN").map(o => o.organ_id),
           organs_drift: report.organs.filter(o => o.status === "DRIFT").map(o => o.organ_id),
         },
-      }),
-      signal: AbortSignal.timeout(3000),
-    });
+      });
   } catch {
     // arifFLOW unreachable — local drift report is canonical
   }

@@ -17,6 +17,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { execSync } from "node:child_process";
+import { forwardLegacyReceipt } from "../../infrastructure/arifflow/flowClient.js";
 
 const SEAL_CHAIN_JS = "/root/AAA/a2a-server/seal_chain.js";
 
@@ -374,16 +375,13 @@ export function registerCoolingVerbs(server: McpServer): void {
 }
 
 /**
- * P1-5h: Forward cooling receipt to arifFLOW :7073/receipt/emit.
+ * P1-5h: Forward cooling receipt to arifFLOW /ingest (P1-7 migrated 2026-09-15).
  * Fire-and-forget — failure is silent, seal_chain.js write is canonical.
- * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ * P1-7 DONE 2026-09-15: forwards via forwardLegacyReceipt → arifflowClient.emitReceipt (canonical /ingest).
  */
 async function _forwardCoolingToArifFlow(envelope: Record<string, unknown>): Promise<void> {
   try {
-    await fetch("http://127.0.0.1:7073/receipt/emit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await forwardLegacyReceipt({
         organ: "A-FORGE",
         producer: "coolingVerbs",
         action: `cooling:${envelope.cooling_source || "unknown"}`,
@@ -405,9 +403,7 @@ async function _forwardCoolingToArifFlow(envelope: Record<string, unknown>): Pro
           required_authority: envelope.required_authority,
           witness_organ: envelope.witness_organ,
         },
-      }),
-      signal: AbortSignal.timeout(3000),
-    });
+      });
   } catch {
     // arifFLOW unreachable — seal_chain.js is canonical
   }

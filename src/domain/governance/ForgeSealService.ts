@@ -31,6 +31,7 @@ import type { SkillRecord, TrustTier } from "../../infrastructure/skills/SkillSt
 import type { TriWitnessResult } from "./TriWitnessValidator.js";
 import { getSkillStore } from "../../infrastructure/skills/SkillStore.js";
 import { callMCP } from "../../interfaces/mcp/client.js";
+import { forwardLegacyReceipt } from "../../infrastructure/arifflow/flowClient.js";
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -223,16 +224,13 @@ export class ForgeSealService {
   }
 
   /**
-   * P1-5a: Forward seal receipt to arifFLOW :7073/receipt/emit.
+   * P1-5a: Forward seal receipt to arifFLOW /ingest (P1-7 migrated 2026-09-15).
    * Fire-and-forget — failure is silent, local receipt is canonical.
-   * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+   * P1-7 DONE 2026-09-15: forwards via forwardLegacyReceipt → arifflowClient.emitReceipt (canonical /ingest).
    */
   private async _forwardToArifFlow(receipt: SealReceipt): Promise<void> {
     try {
-      await fetch("http://127.0.0.1:7073/receipt/emit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      await forwardLegacyReceipt({
           organ: "A-FORGE",
           producer: "ForgeSealService",
           action: "seal",
@@ -250,9 +248,7 @@ export class ForgeSealService {
             generation_depth: receipt.generation_depth,
             irreversible: receipt.irreversible,
           },
-        }),
-        signal: AbortSignal.timeout(3000),
-      });
+        });
     } catch {
       // arifFLOW unreachable — local seal receipt is canonical
     }

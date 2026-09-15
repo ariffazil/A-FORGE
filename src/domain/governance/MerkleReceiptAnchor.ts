@@ -13,6 +13,7 @@ import { existsSync, readFileSync, appendFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { execSync } from "node:child_process";
 import { getSupabaseClient } from "../../infrastructure/vault/SupabaseVaultClient.js";
+import { forwardLegacyReceipt } from "../../infrastructure/arifflow/flowClient.js";
 
 const RECEIPTS_PATH = "/root/VAULT999/qqq_receipts.jsonl";
 const MERKLE_ROOTS_PATH = "/root/VAULT999/merkle/roots.jsonl";
@@ -141,16 +142,13 @@ export async function checkAndAnchorReceipts(): Promise<MerkleBlockRoot | null> 
 }
 
 /**
- * P1-5b: Forward Merkle anchor to arifFLOW :7073/receipt/emit.
+ * P1-5b: Forward Merkle anchor to arifFLOW /ingest (P1-7 migrated 2026-09-15).
  * Fire-and-forget — failure is silent, local roots.jsonl + Supabase + Git tag are primary.
- * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ * P1-7 DONE 2026-09-15: forwards via forwardLegacyReceipt → arifflowClient.emitReceipt (canonical /ingest).
  */
 async function _forwardMerkleToArifFlow(block: MerkleBlockRoot): Promise<void> {
   try {
-    await fetch("http://127.0.0.1:7073/receipt/emit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await forwardLegacyReceipt({
         organ: "A-FORGE",
         producer: "MerkleReceiptAnchor",
         action: "merkle_anchor",
@@ -166,9 +164,7 @@ async function _forwardMerkleToArifFlow(block: MerkleBlockRoot): Promise<void> {
           merkle_root: block.merkle_root,
           prev_root: block.prev_root,
         },
-      }),
-      signal: AbortSignal.timeout(3000),
-    });
+      });
   } catch {
     // arifFLOW unreachable — local anchors + Supabase + Git tag are primary
   }

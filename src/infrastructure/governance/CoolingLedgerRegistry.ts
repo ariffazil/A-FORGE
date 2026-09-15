@@ -1,5 +1,6 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { forwardLegacyReceipt } from "../arifflow/flowClient.js";
 
 const DEFAULT_COOLING_LEDGER_DIR = "/root/AAA/registries/cooling_ledger";
 
@@ -72,9 +73,9 @@ export function recordCoolingLedgerEvent(params: CoolingLedgerRecordParams): str
 }
 
 /**
- * P1-5d: Forward cooling ledger event to arifFLOW :7073/receipt/emit.
+ * P1-5d: Forward cooling ledger event to arifFLOW /ingest (P1-7 migrated 2026-09-15).
  * Fire-and-forget — failure is silent, local markdown ledger is canonical.
- * DEPRECATED P1-7: will be replaced by arifFLOW client import post-extraction.
+ * P1-7 DONE 2026-09-15: forwards via forwardLegacyReceipt → arifflowClient.emitReceipt (canonical /ingest).
  */
 async function _forwardCoolingToArifFlow(
   params: CoolingLedgerRecordParams,
@@ -82,10 +83,7 @@ async function _forwardCoolingToArifFlow(
   ordinal: number,
 ): Promise<void> {
   try {
-    await fetch("http://127.0.0.1:7073/receipt/emit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    await forwardLegacyReceipt({
         organ: "A-FORGE",
         producer: "CoolingLedgerRegistry",
         action: "cooling_ledger",
@@ -101,9 +99,7 @@ async function _forwardCoolingToArifFlow(
           task: params.task.slice(0, 500),
           source: params.source,
         },
-      }),
-      signal: AbortSignal.timeout(3000),
-    });
+      });
   } catch {
     // arifFLOW unreachable — local markdown ledger is canonical
   }
