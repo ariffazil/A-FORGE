@@ -551,6 +551,73 @@ model_list:
     mode: chat
     supports_function_calling: true
     notes: 'forge-economy P1 (DeepSeek V4 Flash-0731): $0.14/$0.28 per MTok, 79% SWE-bench Verified. COST-FRONTIER default for high-volume inner loops. Post-topup 2026-09-13 verify PENDING.'
+- model_name: forge-economy
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    extra_headers:
+      x-opencode-session: arif-fed-forge-economy-lane-001
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-economy P2 (Qwen3.8-Max via OpenCode Go): $10/mo flat fallback when deepseek-v4-flash 429/quota.'
+- model_name: forge-economy
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-economy P3 (MiMo V2.5): 82B credits, multimodal fallback for forge-economy.'
+- model_name: forge-planner
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-planner P1 (MiniMax-M3): 1M ctx, task decomposition, scope/budget/architecture planning. Token Plan Max fresh 2026-09-13.'
+- model_name: forge-planner
+  litellm_params:
+    model: openai/glm-5.3-flash
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-planner P2 (ZAI GLM-5.3-Flash): 3x ZAI Coding Plan quota — KingBench-3 #1 fallback when MiniMax-M3 busy.'
+- model_name: forge-planner
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-planner P3 (MiMo V2.5): cheap planner fallback.'
 - model_name: forge-judge
   litellm_params:
     model: openai/MiniMax-M3
