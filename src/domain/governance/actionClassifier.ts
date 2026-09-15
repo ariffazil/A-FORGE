@@ -143,6 +143,11 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_abort",               // safe stop + rollback — EXECUTE_REVERSIBLE
   "forge_parallel",            // spawn N concurrent tasks — EXECUTE_REVERSIBLE
   "forge_parallel_cancel",     // cancel parallel agents — EXECUTE_REVERSIBLE
+  // ── Sandbox Lifecycle Operations ──
+  "forge_sandbox_pause",       // pause sandbox upperdir — EXECUTE_REVERSIBLE
+  "forge_sandbox_resume",      // resume sandbox overlay — EXECUTE_REVERSIBLE
+  "forge_sandbox_auto_evict",   // evict stale sandbox snapshots — EXECUTE_REVERSIBLE
+  "forge_hf_import",           // HuggingFace model import — EXECUTE_REVERSIBLE
   // ── MuleRouter Multimodal (2026-07-30) — EXECUTE_REVERSIBLE ──
   // "forge_ephemeral" — REMOVED (now mode-aware in classifyTool, see line ~355)
 ]);
@@ -295,6 +300,20 @@ const OBSERVE_TOOLS = new Set([
   "forge_experience_trace",    // record experience trace — append-only OBSERVE
   "forge_experience_query",    // query experience traces — read-only
   "forge_skill_select_query",  // skill selection events — read-only (SkillGate Phase 1)
+  // ── APEX J-Space & Metabolic Tools (evaluation & task vector modeling, no filesystem mutation) ──
+  "forge_apex_encode",         // goal → task vector with Jacobian J=∂T/∂G — read-only J-space model, OBSERVE
+  "forge_apex_metabolize",     // metabolic weight adjustment in session store — OBSERVE
+  "forge_apex_recompute",      // sparse sensitivity recomputation — OBSERVE
+  "forge_apex_emd",            // EMD consistency check — OBSERVE
+  "forge_apex_goal_status",    // inspect J-space goal vector — read-only, OBSERVE
+  // ── Sandbox & External Search Observation ──
+  "forge_sandbox_list_paused", // list paused sandboxes — read-only, OBSERVE
+  "forge_minimax_search",      // MiniMax search — read-only, OBSERVE
+  // ── RSI State Vector & Frequency Signals ──
+  "forge_rsi_impulse_response",// RSI impulse response sensor — read-only, OBSERVE
+  "forge_rsi_dual_rate_fq",    // RSI dual rate FQ signal — read-only, OBSERVE
+  "forge_rsi_state_vector",    // RSI state vector snapshot — read-only, OBSERVE
+  "auth_pipeline",             // Auth pipeline status & verification — read-only, OBSERVE
   // ── MuleRouter Multimodal (2026-07-30) ──
   // "forge_ephemeral" — REMOVED (now mode-aware in classifyTool, see line ~355)
 ]);

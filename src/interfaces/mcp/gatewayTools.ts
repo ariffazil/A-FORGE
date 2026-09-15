@@ -11,6 +11,7 @@
  */
 
 import { z } from "zod";
+import { JSDOM } from "jsdom";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
@@ -787,6 +788,116 @@ function epistemicGuard(content: string, url: string): {
   return { claims, reflex_warning: reflexWarning };
 }
 
+/**
+ * Table-aware HTML extraction (2026-09-15).
+ *
+ * WHY: the static path reduced HTML with `.replace(/<[^>]+>/g, " ")`, which
+ * flattens every <table> into whitespace-separated soup — row/column
+ * association was destroyed before the agent ever saw it. Callers had to
+ * re-derive structure by guessing. This helper reads the DOM and returns
+ * real tables so structure survives to the consumer.
+ *
+ * Contract (ADDITIVE — `content.text` is unchanged for existing consumers):
+ *   tables: [{ index, caption, headers, rows, markdown, row_count, col_count }]
+ *
+ * F2 TRUTH: values are OBSERVED as rendered in the served markup, not VERIFIED.
+ * Uses jsdom, already an A-FORGE dependency. No new deps, no network.
+ */
+export function extractHtmlTables(
+  html: string,
+  opts: { maxTables?: number; maxRows?: number; maxCols?: number } = {},
+): Array<Record<string, unknown>> {
+  const maxTables = opts.maxTables ?? 20;
+  const maxRows = opts.maxRows ?? 500;
+  const maxCols = opts.maxCols ?? 50;
+
+  let dom: JSDOM;
+  try {
+    dom = new JSDOM(html);
+  } catch {
+    return []; // malformed HTML must never fail the extraction
+  }
+
+  const doc = dom.window.document;
+  // Layout/script tables are almost never the payload the agent wants.
+  const tableEls = Array.from(doc.querySelectorAll("table")).filter((t) => {
+    if (t.closest("nav, header, footer")) return false;
+    return t.querySelectorAll("tr").length > 0;
+  });
+
+  const cellText = (cell: Element | null): string => {
+    if (!cell) return "";
+    // <br> is a token boundary, not glue: "extracted<br>January" must not
+    // collapse to "extractedJanuary". Clone first (never mutate the source DOM).
+    const clone = cell.cloneNode(true) as Element;
+    clone.querySelectorAll("br").forEach((b) => b.replaceWith(" "));
+    const t = (clone.textContent ?? "")
+      .replace(/\u00a0/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return t;
+  };
+
+  const escapePipe = (s: string): string => s.replace(/\|/g, "\\|");
+
+  const tables: Array<Record<string, unknown>> = [];
+
+  for (let i = 0; i < Math.min(tableEls.length, maxTables); i++) {
+    const el = tableEls[i];
+    const rowEls = Array.from(el.querySelectorAll("tr")).slice(0, maxRows);
+    if (rowEls.length === 0) continue;
+
+    const grid: string[][] = rowEls.map((r) =>
+      Array.from(r.querySelectorAll("th,td"))
+        .slice(0, maxCols)
+        .map((c) => cellText(c)),
+    );
+
+    // Header detection: explicit <th> in the first row, or a <thead>.
+    const firstRowHasTh = Array.from(rowEls[0].querySelectorAll("th")).length > 0;
+    const inThead = !!rowEls[0].closest("thead");
+    const hasHeader = firstRowHasTh || inThead;
+
+    const headers = hasHeader ? grid[0] : [];
+    const bodyRows = hasHeader ? grid.slice(1) : grid;
+
+    const colCount = Math.max(...grid.map((r) => r.length), 0);
+
+    // Markdown rendering — the "tables as structured JSON alongside markdown"
+    // expectation recorded in the Hermes skill.
+    let markdown = "";
+    if (colCount > 0) {
+      const head = hasHeader
+        ? headers
+        : Array.from({ length: colCount }, (_, c) => `col_${c + 1}`);
+      markdown += `| ${head.map((h) => escapePipe(h)).join(" | ")} |\n`;
+      markdown += `| ${head.map(() => "---").join(" | ")} |\n`;
+      for (const row of bodyRows) {
+        const padded = Array.from({ length: colCount }, (_, c) => escapePipe(row[c] ?? ""));
+        markdown += `| ${padded.join(" | ")} |\n`;
+      }
+    }
+
+    tables.push({
+      index: i,
+      caption: cellText(el.querySelector("caption")) || null,
+      headers,
+      rows: bodyRows,
+      row_count: bodyRows.length,
+      col_count: colCount,
+      markdown: markdown.trim(),
+      has_header: hasHeader,
+      // F2 TRUTH: merged cells are NOT expanded into a resolved grid — the row
+      // array preserves document order, so a rowspan/colspan table will show
+      // fewer cells in some rows. Flagged so consumers do not silently treat
+      // position as a reliable column index.
+      merged_cells_present: el.querySelectorAll("[rowspan], [colspan]").length > 0,
+    });
+  }
+
+  return tables;
+}
+
 export async function handleForgeWebExtract(args: any) {
   const { url, render, max_chars, timeout_ms, actions, cookies, headers: customHeaders, download, request_id } = args;
   const effectiveMaxChars = Math.min(max_chars ?? 50000, 200000);
@@ -876,7 +987,8 @@ export async function handleForgeWebExtract(args: any) {
       .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"')
       .replace(/\s+/g, " ").trim();
 
-    const receipt_id = await recordReceipt({ tool: "forge_web_extract", url, route: "static_fetch", spa_detected: false, text_length: text.length });
+    const tables = extractHtmlTables(staticResult.html);
+    const receipt_id = await recordReceipt({ tool: "forge_web_extract", url, route: "static_fetch", spa_detected: false, text_length: text.length, tables: tables.length });
     const guard = epistemicGuard(text, url);
     return {
       content: [{
@@ -884,8 +996,15 @@ export async function handleForgeWebExtract(args: any) {
         text: JSON.stringify({
           request_id, status: "ok", route: "static_fetch",
           source: { requested_url: url, final_url: staticResult.finalUrl, title: staticResult.title, retrieved_at: new Date().toISOString() },
-          content: { text: text.slice(0, effectiveMaxChars), truncated: text.length > effectiveMaxChars, content_length: text.length },
-          diagnostics: { spa_detected: false, browser_used: false },
+          content: {
+            text: text.slice(0, effectiveMaxChars),
+            truncated: text.length > effectiveMaxChars,
+            content_length: text.length,
+            // ADDITIVE: structured tables so row/column association survives.
+            tables: tables.length > 0 ? tables : undefined,
+            tables_count: tables.length,
+          },
+          diagnostics: { spa_detected: false, browser_used: false, tables_extracted: tables.length },
           epistemic_guard: guard.claims.length > 0 ? { claims: guard.claims, warning: guard.reflex_warning } : undefined,
           receipt_id,
         }, null, 2),
@@ -1006,14 +1125,22 @@ export async function handleForgeWebExtract(args: any) {
           .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
         const receipt_id = await recordReceipt({ tool: "forge_web_extract", url, route: "static_fallback", browser_error: errMsg });
+        const fallbackTables = extractHtmlTables(staticResult.html);
         return {
           content: [{
             type: "text" as const,
             text: JSON.stringify({
               request_id, status: "partial", route: "static_fallback",
               source: { requested_url: url, final_url: staticResult.finalUrl, title: staticResult.title, retrieved_at: new Date().toISOString() },
-              content: { text: fallbackText.slice(0, effectiveMaxChars), truncated: fallbackText.length > effectiveMaxChars, content_length: fallbackText.length },
-              diagnostics: { spa_detected: true, browser_used: false, browser_error: isUnavailable ? "BROWSER_UNAVAILABLE" : errMsg },
+              content: {
+                text: fallbackText.slice(0, effectiveMaxChars),
+                truncated: fallbackText.length > effectiveMaxChars,
+                content_length: fallbackText.length,
+                // ADDITIVE: structured tables so row/column association survives.
+                tables: fallbackTables.length > 0 ? fallbackTables : undefined,
+                tables_count: fallbackTables.length,
+              },
+              diagnostics: { spa_detected: true, browser_used: false, browser_error: isUnavailable ? "BROWSER_UNAVAILABLE" : errMsg, tables_extracted: fallbackTables.length },
               receipt_id,
             }, null, 2),
           }],
