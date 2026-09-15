@@ -76,6 +76,7 @@ import {
 import { registerGatewayTools } from "./gatewayTools.js";
 import { startupIsomorphismCheck } from "../../domain/isomorphism/isomorphism-check.js";
 import { registerForge8Verbs } from "./forge8Verbs.js";
+import { registerForgeCompilerTools } from "./forgeCompilerTools.js";
 import { registerAuthPipeline } from "../../domain/auth_protocol/pipeline.js";
 import { registerShellTools as registerCanonicalShellTools } from "./shell/forgeShell.js";
 import { registerWMTools } from "./wmQueryTools.js";
@@ -95,6 +96,7 @@ import { registerStateAnchorTools } from "./stateAnchorTools.js";
 import { registerVerifyTimelineTools } from "./verifyTimelineTools.js";
 import { registerParallelTools } from "./parallelTools.js";
 import { registerCoolingVerbs } from "./coolingVerbs.js";
+import { registerRSITools } from "./rsiTools.js";
 import { registerRuntimeVerifyTool } from "./runtimeVerify.js";
 // multimodalTools.ts DELETED 2026-07-31 — all 4 tools deprecated, replaced by forge_ephemeral templates
 import { registerEphemeralTools } from "./ephemeralTools.js";
@@ -3088,14 +3090,19 @@ registerGatewayTools(server);
 
 // ── FORGE8 Execution Verbs: Governed artifact lifecycle (v42.1) ─────────────
 // 8 constitutional verbs: synthesize → stage → sandbox_run → scar_scan → 
-// skillstore_sync → tier_bind → docket_prep → execute
-// Each verb has enforced boundaries. forge_execute requires VAULT999 SEAL.
-registerForge8Verbs(server);
+ // skillstore_sync → tier_bind → docket_prep → execute
+ // Each verb has enforced boundaries. forge_execute requires VAULT999 SEAL.
+ registerForge8Verbs(server);
 
-// ── AUTH Institutional Protocol: The non-bypassable pipeline ──────────────
-// Contract → Lease → Lock → Sandbox → Evidence → Verify → Judge → Merge → Seal → Ingest
-// AUTH governs transitions, not agents. OBSERVE=free, MUTATE=governed, DEPLOY=sealed.
-registerAuthPipeline(server);
+ // ── FORGE-777 Compiler Tools: TaskIR binding over arifOS 8-verb chain ───────
+ // 4 thin shims (forge_compile_task → forge_dispatch_lane → forge_collect_evidence
+ // → forge_seal_run). No new database. No new organ. Reuses constitutional chain.
+ registerForgeCompilerTools(server);
+
+ // ── AUTH Institutional Protocol: The non-bypassable pipeline ──────────────
+ // Contract → Lease → Lock → Sandbox → Evidence → Verify → Judge → Merge → Seal → Ingest
+ // AUTH governs transitions, not agents. OBSERVE=free, MUTATE=governed, DEPLOY=sealed.
+ registerAuthPipeline(server);
 
 // P2.6 canonical gap fill — forge_git_commit, forge_entropy_sweep, forge_canonize
 import {
@@ -3176,6 +3183,11 @@ registerIsomorphismTools(server);
 // Routes through seal_chain.js validateCooling() → VAULT999 append.
 // INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK. INV-C4: explicit governance.
 registerCoolingVerbs(server);
+
+// ── RSI State Vector & Measurement — forge_rsi_* ─────────────────────────────────
+// P0 impulse-response h(t), dual-rate FQ (7-day governance + daily cockpit), state vector snapshot.
+// OBS-class. All measurements are read-only; R ∉ S — not in the decision path they measure.
+registerRSITools(server);
 
 // ── EUREKA P1: Runtime Verify — forge_runtime_verify ─────────────────────────────
 // Compares git commit vs installed wheel vs import path.
