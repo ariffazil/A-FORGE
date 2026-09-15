@@ -236,9 +236,12 @@ export function registerCoolingVerbs(server: McpServer): void {
           };
         }
 
+        // Map public verb (drift|pattern) to the receipt contract (cool_drift|cool_pattern).
+        // Must come AFTER the spread — placing it first let params.verb overwrite the mapping.
+        const { verb: publicVerb, ...coolParams } = params;
         const envelope = craftCoolingReceipt({
-          verb: params.verb === "pattern" ? "cool_pattern" : "cool_drift",
-          ...params,
+          ...coolParams,
+          verb: publicVerb === "pattern" ? "cool_pattern" : "cool_drift",
           caller,
         });
 
