@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -49,10 +50,18 @@ NOTIFY = Path("/root/A-FORGE/duties/forge-notify.sh")
 # byte-identical when this is unset.
 DRILL = os.environ.get("SECURITY_WATCH_DRILL") == "1"
 
-# Must equal the number PUBLISHED in SECURITY.md §Disclosure Policy step 3:
-# "You will receive acknowledgment within 72 hours". Verified against the file
-# itself 2026-09-16. Do not set this from memory or from a summary of the doc —
-# a watch whose window differs from the promise is worse than no watch.
+# Must equal the number the REPORTER is promised — i.e. the public copy at
+# arifOS/SECURITY.md §Disclosure Policy step 3 ("acknowledgment within 72 hours"),
+# which is also the file this unit's Documentation= URL points at. Verified against
+# origin/main 2026-09-16, not from memory or a summary.
+#
+# DRIFT (measured 2026-09-16, for whoever reconciles it): a second family of copies
+# exists that says **48 hours** — AAA, GEOX, WEALTH, A-FORGE, WELL, arifFlow, FRAME.
+# Two published numbers for one promise. 72h is kept here because that is what an
+# outside researcher actually reads; an alert text that cites a window the reader
+# cannot find in the public doc would be its own falsehood. If the public promise is
+# ever tightened to 48h, change this constant and the two alert strings in the same
+# commit as the document.
 ACK_WINDOW = timedelta(hours=72)
 REALERT_EVERY = timedelta(hours=24)
 SCAN_WINDOW_DAYS = 60
@@ -156,6 +165,47 @@ def thread_has_our_reply(thread_id: str):
     return False
 
 
+def _norm_subject(s: str) -> str:
+    """Subject with reply/forward prefixes and [tags] stripped, for conversation matching."""
+    t = re.sub(r"^\s*(\[[^\]]*\]\s*)*((re|fwd|fw|aw|sv)\s*:\s*)*", "", (s or ""), flags=re.I)
+    t = re.sub(r"^\s*(\[[^\]]*\]\s*)*((re|fwd|fw|aw|sv)\s*:\s*)*", "", t, flags=re.I)
+    return " ".join(t.split()).lower()
+
+
+def conversation_has_our_reply(subject: str, limit: int = 6):
+    """Did we answer this conversation in ANY thread it lives in?
+
+    Gmail splits a conversation into several threads (a reporter's reply can land
+    in a fresh threadId while our answer sits in the original one). Checking only
+    the tracked threadId therefore reads an answered conversation as unanswered
+    and, at the deadline, raises a P0 on a reporter who is already satisfied.
+    Observed 2026-09-16: message 1a0a3f0cffd5eae8 came in on its own thread while
+    the reply sat in 1a034a0dc7d3bfc5.
+
+    Only called when the thread-level check says no — so the extra API calls land
+    on the alarm path, never on a clean run. Returns None when it cannot tell.
+    """
+    norm = _norm_subject(subject)
+    if not norm:
+        return None
+    ok, ids = gmail_list(f'in:inbox newer_than:{SCAN_WINDOW_DAYS}d subject:"{norm}"', limit=limit)
+    if not ok:
+        return None
+    seen = set()
+    for mid in ids:
+        meta = gmail_meta(mid)
+        if not meta:
+            continue
+        tid = meta.get("threadId")
+        if not tid or tid in seen:
+            continue
+        seen.add(tid)
+        replied = thread_has_our_reply(tid)
+        if replied:
+            return True
+    return False
+
+
 def load() -> dict:
     try:
         s = json.loads(STATE.read_text())
@@ -228,6 +278,15 @@ def main() -> int:
             continue
         if replied:
             rec["acknowledged"] = now.isoformat()
+            continue
+        # Gmail splits conversations across threads: our answer may live in a
+        # sibling thread. Ask the conversation, not the threadId.
+        convo = conversation_has_our_reply(rec.get("subject", ""))
+        if convo:
+            rec["acknowledged"] = now.isoformat()
+            rec["acknowledged_via"] = "sibling thread (Gmail split the conversation)"
+            continue
+        if convo is None:
             continue
         rec["last_realert"] = now.isoformat()
         age = now - since

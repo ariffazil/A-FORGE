@@ -188,7 +188,11 @@ def smoke_l6() -> dict:
     """L6: VAULT999 outcomes.jsonl readable, append-only path live."""
     path = VAULT_OUTCOMES
     if not path.exists():
-        alt = Path("/root/.local/share/arifos/vault999/outcomes.jsonl")
+        # 2026-09-15 SOT fix: fallback previously pointed at
+        # /root/.local/share/arifos/vault999/outcomes.jsonl, FROZEN 2026-08-25.
+        # Live event log is /root/VAULT999/outcomes.jsonl (same inode as
+        # /root/arifOS/VAULT999/outcomes.jsonl).
+        alt = Path("/root/VAULT999/outcomes.jsonl")
         path = alt if alt.exists() else path
     if not path.exists():
         return {"tier": "L6", "name": "VAULT999", "pass": False, "error": "outcomes.jsonl missing"}

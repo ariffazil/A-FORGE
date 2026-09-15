@@ -531,7 +531,13 @@ def t1_memory_smoke_test() -> dict:
         result["all_alive"] = False
 
     # L6 — VAULT999 immutable ledger
-    vault_path = Path("/root/.local/share/arifos/vault999/outcomes.jsonl")
+    # 2026-09-15 SOT fix: this pointed at
+    # /root/.local/share/arifos/vault999/outcomes.jsonl, which is FROZEN at
+    # 2026-08-25 (2,953 lines) and is not the live seal ledger. The live event
+    # log is /root/VAULT999/outcomes.jsonl (also visible as
+    # /root/arifOS/VAULT999/outcomes.jsonl — same inode). Pointing at the dead
+    # file made this liveness check a permanent false-green.
+    vault_path = Path("/root/VAULT999/outcomes.jsonl")
     vault_alive = vault_path.exists()
     if vault_alive:
         try:
