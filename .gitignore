@@ -169,3 +169,4 @@ artifacts/alpha-zen-daily/
 # FED config snapshot backups (not source) — 2026-09-12
 litellm-config.yaml.pre-*
 litellm-config.order-snapshot.json
+.ua/
