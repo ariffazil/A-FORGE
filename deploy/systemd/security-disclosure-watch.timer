@@ -1,0 +1,13 @@
+[Unit]
+Description=Security Disclosure Watch timer — every 4h
+
+[Timer]
+# 4-hourly at :23 — offset from this host's other 47 timers and the :00 cron cluster.
+OnCalendar=*-*-* 00,04,08,12,16,20:23:00
+# Catch up if the host was down at the slot; a security check must not skip a day.
+Persistent=true
+RandomizedDelaySec=120
+Unit=security-disclosure-watch.service
+
+[Install]
+WantedBy=timers.target

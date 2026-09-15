@@ -1,0 +1,18 @@
+[Unit]
+Description=Security Disclosure Watch — guards the 72h acknowledgment promise as published in SECURITY.md
+Documentation=https://github.com/ariffazil/arifOS/blob/main/SECURITY.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /root/A-FORGE/duties/security-disclosure-watch.py
+User=root
+WorkingDirectory=/root
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=security-disclosure-watch
+Nice=10
+
+[Install]
+WantedBy=multi-user.target
