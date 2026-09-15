@@ -215,12 +215,13 @@ const STATELESS_TOOLS = new Set([
     "forge_ephemeral",
 
     // ── EMD / APEX pipeline (2026-08-06) — OBSERVE validation lane ────
-    // encode, emd, goal_status, evaluate are read-only OBSERVE-class.
-    // They validate goals and compute G/C_dark without mutating host state.
-    // metabolize + recompute remain session-gated (they modify goalStore).
+    // encode, emd, goal_status, evaluate, recompute, metabolize operate on
+    // in-memory goalStore (scoped by goal_id) without mutating host filesystem.
     "forge_apex_encode",
     "forge_apex_goal_status",
     "forge_apex_emd",
+    "forge_apex_recompute",
+    "forge_apex_metabolize",
     "forge_evaluate",
 
     // ── OBSERVE expansion (2026-08-13) — session propagation fix ──────
@@ -255,6 +256,14 @@ const STATELESS_TOOLS = new Set([
     "forge_cool_drift",           // cooling receipt emission — OBSERVE-class
     "forge_cool_pattern",         // cooling receipt from recurrence — OBSERVE-class
     "forge_scar_scan",            // SCAR database check — read-only
+
+    // RSI measurement — read-only, OBS-class, never mutates state
+    // Added 2026-09-15 (F13 PARTIAL-SEAL): the loop that measures improvement
+    // must be able to READ its own measurement, or "learning" is a diary.
+    // All three are OBSERVE-class per contracts/rsi.ts.
+    "forge_rsi_impulse_response", // h(t) — causal half-life of HOLD/scar/fix events
+    "forge_rsi_dual_rate_fq",     // daily (cockpit) + 7-day rolling (governance) FQ
+    "forge_rsi_state_vector",     // s_t snapshot — computed from live traces, not stored
 
     // Git/FS read-only modes (handler enforces mode-level gating)
     "forge_git",                  // status/diff/log are OBSERVE; commit is gated in handler
