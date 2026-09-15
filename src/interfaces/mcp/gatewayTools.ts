@@ -1489,15 +1489,17 @@ export async function handleForgeMinimaxSearch(args: any) {
 
 export function registerGatewayTools(server: McpServer): void {
   // Research & Search
-  server.tool("forge_research", "Governed research across web sources.", {
-    query: z.string().max(500).describe("Research query"),
-    depth: z.enum(["quick", "standard", "deep"]).default("standard").describe("Research depth"),
-    sources: z.array(z.enum(["web", "news", "academic", "docs", "all"])).default(["all"]).describe("Source filters"),
-    time_horizon: z.enum(["any", "day", "week", "month", "year"]).default("any").describe("Time horizon"),
-    max_results: z.number().min(1).max(50).default(10).describe("Max results"),
-    include_citations: z.boolean().default(true).describe("Include citations"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeResearch);
+  // forge_research — REMOVED 2026-09-16. Redundant: forge_search(source=research) dispatches to same handler.
+  // Handler retained — used by forge_search dispatch.
+  // server.tool("forge_research", "Governed research across web sources.", {
+  //   query: z.string().max(500).describe("Research query"),
+  //   depth: z.enum(["quick", "standard", "deep"]).default("standard").describe("Research depth"),
+  //   sources: z.array(z.enum(["web", "news", "academic", "docs", "all"])).default(["all"]).describe("Source filters"),
+  //   time_horizon: z.enum(["any", "day", "week", "month", "year"]).default("any").describe("Time horizon"),
+  //   max_results: z.number().min(1).max(50).default(10).describe("Max results"),
+  //   include_citations: z.boolean().default(true).describe("Include citations"),
+  //   request_id: z.string().describe("Caller request ID"),
+  // }, handleForgeResearch);
 
   server.tool("forge_search", "Unified governed search across web (Brave), documentation (Context7), and deep research with provenance and epistemic labels.", {
     query: z.string().max(500).describe("Search or research query"),
@@ -1510,12 +1512,14 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().optional().describe("Optional caller request ID for audit tracing"),
   }, handleForgeSearch);
 
-  server.tool("forge_docs_lookup", "Governed docs lookup via Context7.", {
-    query: z.string().describe("Docs query"),
-    corpus: z.enum(["arifos", "geox", "wealth", "well", "aforge", "cloudflare", "workers", "all"]).default("all").describe("Corpus"),
-    max_results: z.number().min(1).max(20).default(5).describe("Max results"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeDocsLookup);
+  // forge_docs_lookup — REMOVED 2026-09-16. Redundant: forge_search(source=docs) dispatches to same context7Lookup.
+  // Handler retained — used by forge_search dispatch.
+  // server.tool("forge_docs_lookup", "Governed docs lookup via Context7.", {
+  //   query: z.string().describe("Docs query"),
+  //   corpus: z.enum(["arifos", "geox", "wealth", "well", "aforge", "cloudflare", "workers", "all"]).default("all").describe("Corpus"),
+  //   max_results: z.number().min(1).max(20).default(5).describe("Max results"),
+  //   request_id: z.string().describe("Caller request ID"),
+  // }, handleForgeDocsLookup);
 
   // Browser
   server.tool("forge_browser_navigate", "Navigate browser to URL.", {
@@ -1630,12 +1634,13 @@ export function registerGatewayTools(server: McpServer): void {
     request_id: z.string().describe("Caller request ID"),
   }, handleForgeNetdataMetrics);
 
-  // MiniMax
-  server.tool("forge_minimax_search", "Search the web via MiniMax.", {
-    query: z.string().max(400).describe("Search query"),
-    max_results: z.number().min(1).max(20).default(10).describe("Max results"),
-    request_id: z.string().describe("Caller request ID"),
-  }, handleForgeMinimaxSearch);
+  // MiniMax — REMOVED 2026-09-16 (ENT-001). Declared DELETED in toolDedupe.ts:88.
+  // MiniMax backend deprecated; use forge_search(source=brave).
+  // server.tool("forge_minimax_search", "Search the web via MiniMax.", {
+  //   query: z.string().max(400).describe("Search query"),
+  //   max_results: z.number().min(1).max(20).default(10).describe("Max results"),
+  //   request_id: z.string().describe("Caller request ID"),
+  // }, handleForgeMinimaxSearch);
 
   // ── Universal Web Extract (2026-09-14) — Full agentic web capability ──
   // Static fetch → SPA detection → Playwright render. Browser actions, auth,

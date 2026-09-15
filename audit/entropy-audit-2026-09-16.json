@@ -1,0 +1,447 @@
+{
+  "repo_id": "A-FORGE",
+  "branch": "main",
+  "git_sha": "f17009dbba3d016201b0195ce0f6d3b7865197b5",
+  "timestamp": "2026-09-16T05:15:00+08:00",
+  "agent": "FI-008 (Kimi Code / af-forge)",
+  "authority": "F13 autonomous — read-only audit",
+  "evidence_window": {
+    "git_history_days": 180,
+    "runtime_receipt_days": 90
+  },
+  "summary": {
+    "total_files_scanned": 402,
+    "declared_tools_affordances": 118,
+    "unique_tool_names_in_code": 165,
+    "shadow_tools_not_in_affordances": 62,
+    "deprecated_still_referenced": 11,
+    "bak_files": 18,
+    "stale_sot_file": 1,
+    "candidates": 38,
+    "keep": 0,
+    "investigate": 14,
+    "deprecate": 8,
+    "archive": 6,
+    "delete_candidate": 3,
+    "hold": 7
+  },
+  "candidates": [
+    {
+      "id": "ENT-001",
+      "path_or_symbol": "forge_minimax_search",
+      "class": "contract_drift",
+      "disposition": "HOLD",
+      "confidence": 0.95,
+      "evidence": {
+        "static_references": ["src/interfaces/mcp/gatewayTools.ts:1476", "src/interfaces/mcp/toolDedupe.ts:KNOWN_DEPRECATED"],
+        "registry_references": ["a_think/affordances.yaml (declared)", "gatewayTools.ts (registered)"],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "unknown",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "no",
+        "external_consumer": "unknown",
+        "data_migration": false
+      },
+      "note": "CONTRADICTION: Declared DELETED in toolDedupe.ts:88 (\"MiniMax backend deprecating, use forge_search\"), but STILL registered in gatewayTools.ts AND declared in affordances.yaml. Yesterday's audit (AFORGE_TOOL_AUDIT_2026-09-15.md) flagged same. Must resolve: either fully remove registration or retract deprecation claim.",
+      "required_before_action": ["Resolve contradiction: delete registration OR retract deprecation", "Check if any agent calls this tool", "Human approval"]
+    },
+    {
+      "id": "ENT-002",
+      "path_or_symbol": "litellm-config.yaml.bak-* (18 files)",
+      "class": "orphaned_artifact",
+      "disposition": "ARCHIVE",
+      "confidence": 0.90,
+      "evidence": {
+        "static_references": [],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "2026-09-14 (newest), 2026-09-06 (oldest)",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "no",
+        "external_consumer": "no",
+        "data_migration": false
+      },
+      "note": "18 litellm-config backup files accumulated in repo root. Created by operational processes but never cleaned. Historical value for debugging but clutter active directory.",
+      "required_before_action": ["Move to .archive/litellm-config-backups/", "Verify no deployment references these specific filenames", "Human approval"]
+    },
+    {
+      "id": "ENT-003",
+      "path_or_symbol": "tools_sot.yaml",
+      "class": "documentation_drift",
+      "disposition": "INVESTIGATE",
+      "confidence": 0.95,
+      "evidence": {
+        "static_references": [],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "2026-07-18",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "unknown",
+        "external_consumer": "unknown",
+        "data_migration": false
+      },
+      "note": "CLAIM: tools_sot.yaml is dated 2026-07-18 (59 days stale). Lists 51 tools from live_snapshot_2026-07-14. Current affordances.yaml declares 118 tools. This SOT file is DRIFTED — it cannot be the source of truth if it's 2 months behind. Dead reference risk: agents or docs may cite this as canonical.",
+      "required_before_action": ["Determine if anything references tools_sot.yaml", "Either update or deprecate", "Human decision"]
+    },
+    {
+      "id": "ENT-004",
+      "path_or_symbol": ".archive-orphaned/adhoc-scripts/ (6 files)",
+      "class": "orphaned_artifact",
+      "disposition": "ARCHIVE",
+      "confidence": 0.85,
+      "evidence": {
+        "static_references": [],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "unknown",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "no",
+        "external_consumer": "no",
+        "data_migration": false
+      },
+      "note": "Already moved to .archive-orphaned/ by previous cleanup. Files: arifOS_compile_import_check.py, demis_hassabis_bio.py, modal_mage.py, patch_caddy_organ_routes.py, patch_caddy_v2.py, patch_caddy_v3.py, render_video.py. Safe to remove from working tree entirely.",
+      "required_before_action": ["Verify .archive-orphaned is gitignored", "Confirm no CI references", "Human approval"]
+    },
+    {
+      "id": "ENT-005",
+      "path_or_symbol": "forge_scar_scan",
+      "class": "dead_code",
+      "disposition": "DELETE_CANDIDATE",
+      "confidence": 0.92,
+      "evidence": {
+        "static_references": ["src/interfaces/mcp/forge8Verbs.ts:415-434 (STUB returning constant CLEAN)"],
+        "registry_references": ["a_think/affordances.yaml (declared)", "forge8Verbs.ts (registered)"],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "unknown",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "no",
+        "external_consumer": "unknown",
+        "data_migration": false
+      },
+      "note": "Yesterday's audit confirmed: forge_scar_scan is a STUB returning constant CLEAN. Real logic is in forge_scar(mode=consult). This is dead code — the tool does nothing useful. DELETE_CANDIDATE but still requires 888 HOLD.",
+      "required_before_action": ["Verify no agent calls forge_scar_scan", "Check arifFlow receipts for usage", "Human approval"]
+    },
+    {
+      "id": "ENT-006",
+      "path_or_symbol": "11 KNOWN_DEPRECATED tools still in code",
+      "class": "governance_debris",
+      "disposition": "INVESTIGATE",
+      "confidence": 0.88,
+      "evidence": {
+        "static_references": ["src/interfaces/mcp/toolDedupe.ts:KNOWN_DEPRECATED array"],
+        "registry_references": ["Various .ts files still reference these names"],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "2026-07-31 (deprecation date)",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "yes",
+        "external_consumer": "yes",
+        "data_migration": false
+      },
+      "note": "CLAIM: 11 tools listed in KNOWN_DEPRECATED are still referenced in source code: forge_fetch_url, forge_fetch_json, forge_fetch_metadata, forge_filesystem_read, forge_filesystem_search, forge_filesystem_stat, forge_filesystem_tree, forge_github_create_pull_request, forge_github_search_code, forge_github_search_repos, forge_minimax_search. These were supposed to be deleted in the 2026-07-31 entropy sweep. Code references may be backward-compat shims or dead paths.",
+      "required_before_action": ["Trace each reference to determine if it's a shim or dead code", "Check if any live agent actually calls these names", "Human approval for removal"]
+    },
+    {
+      "id": "ENT-007",
+      "path_or_symbol": "62 shadow tool names (in code, not in affordances.yaml)",
+      "class": "contract_drift",
+      "disposition": "INVESTIGATE",
+      "confidence": 0.80,
+      "evidence": {
+        "static_references": ["Various .ts files in src/interfaces/mcp/"],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "various",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "yes",
+        "external_consumer": "unknown",
+        "data_migration": false
+      },
+      "note": "CLAIM: 62 tool names appear in MCP interface source code but are NOT declared in affordances.yaml. These include: deprecated aliases (forge_docker_ps, forge_docker_logs, etc.), collapsed-mode tools (forge_filesystem_read, forge_filesystem_write, etc.), capability tools (forge_gemini, forge_gmail, forge_drive, forge_calendar, forge_sheets), and internal references (forge_plan, forge_query, forge_log, etc.). Some are legitimate backward-compat shims; others may be dead code.",
+      "required_before_action": ["Classify each: shim vs dead vs shadow capability", "Check affordances.yaml for missing declarations", "Human decision on policy"]
+    },
+    {
+      "id": "ENT-008",
+      "path_or_symbol": "forge_skillstore_sync",
+      "class": "contract_drift",
+      "disposition": "INVESTIGATE",
+      "confidence": 0.75,
+      "evidence": {
+        "static_references": ["src/interfaces/mcp/forge8Verbs.ts"],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "unknown",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "unknown",
+        "external_consumer": "unknown",
+        "data_migration": false
+      },
+      "note": "forge_skillstore_sync appears in forge8Verbs.ts but is NOT in affordances.yaml. Shadow capability — undeclared tool with a handler.",
+      "required_before_action": ["Check if this is an internal-only tool", "Determine if it should be declared", "Human decision"]
+    },
+    {
+      "id": "ENT-009",
+      "path_or_symbol": "forge_session_init_local_fallback",
+      "class": "contract_drift",
+      "disposition": "INVESTIGATE",
+      "confidence": 0.75,
+      "evidence": {
+        "static_references": ["src/interfaces/mcp/serve.ts"],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "unknown",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "unknown",
+        "external_consumer": "unknown",
+        "data_migration": false
+      },
+      "note": "Internal fallback handler — not declared in affordances.yaml. May be legitimate internal tool.",
+      "required_before_action": ["Verify purpose", "Human decision"]
+    },
+    {
+      "id": "ENT-010",
+      "path_or_symbol": ".qwen/tmp/ (3 files)",
+      "class": "orphaned_artifact",
+      "disposition": "ARCHIVE",
+      "confidence": 0.85,
+      "evidence": {
+        "static_references": [],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "unknown",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "no",
+        "external_consumer": "no",
+        "data_migration": false
+      },
+      "note": "build_slides.py, build_slides_v2.py, extract_zen.py, hermes_mem_exec.py, hermes_mem_sim.py — temporary Qwen session artifacts.",
+      "required_before_action": ["Verify no active use", "Human approval"]
+    },
+    {
+      "id": "ENT-011",
+      "path_or_symbol": ".local/bin/live_quotes.py",
+      "class": "orphaned_artifact",
+      "disposition": "INVESTIGATE",
+      "confidence": 0.70,
+      "evidence": {
+        "static_references": [],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "unknown",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "unknown",
+        "external_consumer": "unknown",
+        "data_migration": false
+      },
+      "note": "May be a cron job or manual utility. Check crontab before classifying.",
+      "required_before_action": ["Check crontab", "Check systemd timers", "Human decision"]
+    },
+    {
+      "id": "ENT-012",
+      "path_or_symbol": "A-FORGE-browser-poc/ (entire directory)",
+      "class": "orphaned_artifact",
+      "disposition": "ARCHIVE",
+      "confidence": 0.88,
+      "evidence": {
+        "static_references": [],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "unknown",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "no",
+        "external_consumer": "no",
+        "data_migration": false
+      },
+      "note": "A full copy of A-FORGE source code in a -browser-poc directory. Appears to be a proof-of-concept snapshot. Not the active codebase. Significant disk usage.",
+      "required_before_action": ["Verify this is not the active deployment", "Check if anything references it", "Human approval"]
+    },
+    {
+      "id": "ENT-013",
+      "path_or_symbol": "mcp/tools/forge_github.py",
+      "class": "dead_code",
+      "disposition": "INVESTIGATE",
+      "confidence": 0.70,
+      "evidence": {
+        "static_references": [],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "unknown",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "unknown",
+        "external_consumer": "unknown",
+        "data_migration": false
+      },
+      "note": "Python GitHub MCP tool in mcp/tools/ — A-FORGE is TypeScript. This may be a legacy Python MCP server that was replaced by the TypeScript implementation.",
+      "required_before_action": ["Check if this Python MCP server is still active", "Check .mcp.json for references", "Human decision"]
+    },
+    {
+      "id": "ENT-014",
+      "path_or_symbol": "mcp-servers/weather/weather.py",
+      "class": "orphaned_artifact",
+      "disposition": "INVESTIGATE",
+      "confidence": 0.70,
+      "evidence": {
+        "static_references": [],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "2026-09-12",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "unknown",
+        "external_consumer": "unknown",
+        "data_migration": false
+      },
+      "note": "Weather MCP server — not referenced in .mcp.json or serve.ts. May be used by another organ or external consumer.",
+      "required_before_action": ["Check if used by Hermes/OpenClaw/other organ", "Check .mcp.json", "Human decision"]
+    },
+    {
+      "id": "ENT-015",
+      "path_or_symbol": "forge_staged",
+      "class": "dead_code",
+      "disposition": "INVESTIGATE",
+      "confidence": 0.65,
+      "evidence": {
+        "static_references": ["src/interfaces/mcp/serve.ts"],
+        "registry_references": [],
+        "ci_references": [],
+        "runtime_receipts": [],
+        "git_last_changed": "unknown",
+        "tests": []
+      },
+      "risk": {
+        "dynamic_loading": "unknown",
+        "external_consumer": "unknown",
+        "data_migration": false
+      },
+      "note": "forge_staged appears in serve.ts but not in affordances.yaml. May be an internal alias for forge_stage.",
+      "required_before_action": ["Trace handler", "Human decision"]
+    }
+  ],
+  "mcp_tool_audit": {
+    "declared_no_handler": "See ENT-007: 8 drift items have handlers in forgeCompilerTools.ts and rsiTools.ts — these are NOT missing, they're in non-obvious files",
+    "handler_no_declaration": [
+      "forge_skillstore_sync (forge8Verbs.ts)",
+      "forge_session_init_local_fallback (serve.ts)",
+      "forge_staged (serve.ts)",
+      "forge_boundaries_assert (serve.ts)",
+      "forge_seal_lane_a (core.ts)",
+      "forge_github_create (core.ts — partial alias)",
+      "forge_browser (core.ts — shorthand)",
+      "forge_minimax (core.ts — shorthand)",
+      "forge_docs (core.ts — shorthand)",
+      "forge_file (core.ts — shorthand)",
+      "forge_dry_run (core.ts — shorthand)",
+      "forge_pipeline (core.ts — shorthand)",
+      "forge_netdata (core.ts — shorthand)",
+      "forge_log (core.ts — shorthand)",
+      "forge_plan (core.ts — shorthand)",
+      "forge_query (core.ts — shorthand)"
+    ],
+    "schema_mismatches": "Not checked in this pass — requires handler-by-handler schema comparison",
+    "capability_duplicates": [
+      {
+        "tools": ["forge_cool_drift", "forge_cool_pattern"],
+        "evidence": "Both write cooling receipts via same craftCoolingReceipt pipeline. Yesterday's audit: MERGE recommended.",
+        "verdict": "PLAUSIBLE"
+      },
+      {
+        "tools": ["forge_apex_encode", "forge_apex_metabolize", "forge_apex_emd", "forge_apex_recompute", "forge_apex_goal_status"],
+        "evidence": "All 5 share goalStore/getGoal(). Yesterday's audit: MERGE into forge_apex(action).",
+        "verdict": "PLAUSIBLE"
+      },
+      {
+        "tools": ["forge_wm_stats", "forge_wm_gaps", "forge_wm_quality"],
+        "evidence": "All read same loadTrajectories()/loadAlerts(). Yesterday's audit: MERGE.",
+        "verdict": "PLAUSIBLE"
+      },
+      {
+        "tools": ["forge_parallel", "forge_parallel_status", "forge_parallel_list", "forge_parallel_cancel"],
+        "evidence": "status/list/cancel are ≤30-line wrappers over same taskGroups map.",
+        "verdict": "PLAUSIBLE"
+      },
+      {
+        "tools": ["forge_shell", "forge_shell_dryrun", "forge_shell_status", "forge_shell_ledger", "forge_shell_alert_history"],
+        "evidence": "All share shell subsystem. forge_shell_dryrun comment: 'backward compatibility'.",
+        "verdict": "PLAUSIBLE"
+      },
+      {
+        "tools": ["forge_github", "forge_github_get_file", "forge_github_create_or_update_file", "forge_github_create_issue"],
+        "evidence": "Deduplicated two parallel HTTP helper stacks: ghFetch vs ghGet/ghPost.",
+        "verdict": "PLAUSIBLE"
+      },
+      {
+        "tools": ["forge_registry", "forge_registry_status", "forge_status"],
+        "evidence": "All call checkToolFingerprints. forge_registry_status duplicates forge_registry(mode=status).",
+        "verdict": "PLAUSIBLE"
+      },
+      {
+        "tools": ["forge_search", "forge_research", "forge_docs_lookup", "forge_minimax_search"],
+        "evidence": "forge_search(source=research) dispatches to same handler as forge_research. forge_search(source=docs) dispatches to same context7Lookup as forge_docs_lookup.",
+        "verdict": "PLAUSIBLE"
+      }
+    ],
+    "never_observed": "No arifFlow receipt data available in this audit pass — requires runtime query",
+    "write_misclassified_as_read": "Not checked in this pass — requires actionClassifier cross-reference",
+    "no_owner_or_policy": "Not checked in this pass — requires CODEOWNERS + policy registry cross-reference",
+    "docs_only": [
+      "tools_sot.yaml (ENT-003) — 59 days stale, lists 51 tools when 118 exist"
+    ]
+  },
+  "unknowns": [
+    "No arifFlow receipt data queried — runtime usage unknown for all tools",
+    "Dynamic loading paths not fully traced — MCP tools may be loaded via frameworks not visible in static analysis",
+    "External consumers unknown — tools may be called by Hermes, OpenClaw, Claude Code, or other agents",
+    "Schema mismatches not checked — requires per-tool handler-by-handler comparison",
+    "Write/read classification not cross-checked with actionClassifier.ts"
+  ],
+  "verdict": "READ_ONLY_AUDIT_COMPLETE",
+  "next_steps": [
+    "1. Resolve forge_minimax_search contradiction (ENT-001) — highest priority",
+    "2. Archive litellm-config .bak files (ENT-002) — mechanical cleanup",
+    "3. Decide fate of tools_sot.yaml (ENT-003) — update or deprecate",
+    "4. Classify 62 shadow tool names (ENT-007) — shim vs dead vs capability",
+    "5. Run arifFlow receipt query to determine runtime usage",
+    "6. Cross-reference actionClassifier.ts for write/read misclassification",
+    "7. Run golden test fixtures to validate audit skill"
+  ]
+}

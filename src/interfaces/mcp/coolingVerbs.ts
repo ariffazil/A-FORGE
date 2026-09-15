@@ -181,11 +181,15 @@ function writeCoolingReceipt(envelope: Record<string, unknown>): Record<string, 
 }
 
 export function registerCoolingVerbs(server: McpServer): void {
-  // ── /cool_drift — Emit cooling receipt with convergence signal ────────────
+  // ── forge_cool — Unified cooling receipt emission (2026-09-16 merge)
+  // Merged forge_cool_drift + forge_cool_pattern into single tool.
+  // verb=drift: single drift event. verb=pattern: recurrence with first_seen/last_seen.
+  // INV-C1..C4 preserved verbatim. Handler pipeline unchanged.
   server.tool(
-    "forge_cool_drift",
-    "Emit a COOLING_RECEIPT with convergence signal (CONVERGING/DIVERGING/STABLE). Routes through seal_chain.js validateCooling() → VAULT999 append. INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK. INV-C4: explicit governance.",
+    "forge_cool",
+    "Emit a COOLING_RECEIPT. verb=drift for single convergence signal; verb=pattern for observed failure recurrence. Routes through seal_chain.js validateCooling() → VAULT999 append. INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK. INV-C4: explicit governance.",
     {
+      verb: z.enum(["drift", "pattern"]).describe("drift=single convergence signal, pattern=observed failure recurrence"),
       session_id: z.string().describe("Session ID of the cooled session"),
       original_seal_seq: z.number().int().describe("Seq of the SEAL being cooled"),
       original_verdict: z.string().describe("Original verdict: SEAL|HOLD|SABAR|VOID"),
@@ -205,9 +209,12 @@ export function registerCoolingVerbs(server: McpServer): void {
       governance_floor: z.string().describe("Target floor: F1-F13"),
       required_authority: z.enum(["AUTO", "OBSERVE_ONLY", "888_HOLD", "F13_SOVEREIGN"]).describe("Required authority level"),
       convergence: z.enum(["CONVERGING", "DIVERGING", "STABLE", "first_cooling"]).describe("Convergence state"),
-      // T2.3: witness_organ for ΔΩΨ physical grounding routing
+      // Pattern-only fields (optional — required when verb=pattern)
+      recurrence_count: z.number().int().min(1).optional().describe("How many times this pattern has been observed (pattern only)"),
+      first_seen: z.string().optional().describe("ISO-8601 timestamp of first observation (pattern only)"),
+      last_seen: z.string().optional().describe("ISO-8601 timestamp of most recent observation (pattern only)"),
       witness_organ: z.enum(["GEOX", "WEALTH", "WELL", "arifOS", "A-FORGE", "AAA"]).optional()
-        .describe("Domain organ that witnessed the drift (GEOX/WEALTH/WELL for physical grounding)"),
+        .describe("Domain organ that witnessed the drift/pattern (GEOX/WEALTH/WELL for physical grounding)"),
       caller: z.string().optional().describe("Override caller (default: hermes-prime)"),
     },
     async (params) => {
@@ -230,7 +237,7 @@ export function registerCoolingVerbs(server: McpServer): void {
         }
 
         const envelope = craftCoolingReceipt({
-          verb: "cool_drift",
+          verb: params.verb === "pattern" ? "cool_pattern" : "cool_drift",
           ...params,
           caller,
         });
@@ -242,10 +249,17 @@ export function registerCoolingVerbs(server: McpServer): void {
             type: "text" as const,
             text: JSON.stringify({
               verdict: "DRAFT",
-              verb: "cool_drift",
+              verb: params.verb,
               message: "COOLING_RECEIPT emitted (draft, not constitutional SEAL)",
               receipt: envelope,
               seal_chain_result: result,
+              ...(params.verb === "pattern" ? {
+                recurrence: {
+                  count: params.recurrence_count,
+                  first_seen: params.first_seen,
+                  last_seen: params.last_seen,
+                },
+              } : {}),
               invariants_satisfied: [
                 "INV-C1: action_class=OBSERVE",
                 "INV-C2: caller not forge",
@@ -261,7 +275,7 @@ export function registerCoolingVerbs(server: McpServer): void {
             type: "text" as const,
             text: JSON.stringify({
               verdict: "HOLD",
-              verb: "cool_drift",
+              verb: params.verb,
               error: err.message,
               status: "failed",
             }, null, 2),
@@ -272,106 +286,9 @@ export function registerCoolingVerbs(server: McpServer): void {
     }
   );
 
-  // ── /cool_pattern — Emit cooling receipt from observed failure recurrence ──
-  server.tool(
-    "forge_cool_pattern",
-    "Emit a COOLING_RECEIPT from observed failure recurrence. Same pipeline as cool_drift with additional recurrence_count, first_seen, last_seen fields. Routes through seal_chain.js validateCooling() → VAULT999 append.",
-    {
-      session_id: z.string().describe("Session ID of the cooled session"),
-      original_seal_seq: z.number().int().describe("Seq of the SEAL being cooled"),
-      original_verdict: z.string().describe("Original verdict: SEAL|HOLD|SABAR|VOID"),
-      judge_hash: z.string().describe("SHA-256 of the arif_judge verdict envelope"),
-      judge_summary: z.string().describe("1-line summary of what 888 decided"),
-      drift_dimension: z.enum([
-        "runtime_commit", "tool_behavior", "memory_staleness",
-        "authority_leak", "unexpected_output", "timing_anomaly",
-        "prediction_failure", "human_reaction", "other"
-      ]).describe("Dimension where drift was detected"),
-      drift_delta: z.string().describe("What Reality saw that the plan didn't predict"),
-      epistemic_label: z.enum(["OBS", "DER", "INT"]).describe("Epistemic label for drift claim"),
-      severity: z.enum(["INFO", "MINOR", "SIGNIFICANT", "CRITICAL"]).describe("Drift severity"),
-      hypothesis: z.string().describe("What the cooling suggests would fix this drift"),
-      evidence: z.string().describe("What supports this hypothesis"),
-      governance_organ: z.enum(["arifOS", "A-FORGE", "AAA", "GEOX", "WEALTH", "WELL"]).describe("Target organ"),
-      governance_floor: z.string().describe("Target floor: F1-F13"),
-      required_authority: z.enum(["AUTO", "OBSERVE_ONLY", "888_HOLD", "F13_SOVEREIGN"]).describe("Required authority level"),
-      convergence: z.enum(["CONVERGING", "DIVERGING", "STABLE", "first_cooling"]).describe("Convergence state"),
-      recurrence_count: z.number().int().min(1).describe("How many times this pattern has been observed"),
-      first_seen: z.string().describe("ISO-8601 timestamp of first observation"),
-      last_seen: z.string().describe("ISO-8601 timestamp of most recent observation"),
-      // T2.3: witness_organ for ΔΩΨ physical grounding routing
-      witness_organ: z.enum(["GEOX", "WEALTH", "WELL", "arifOS", "A-FORGE", "AAA"]).optional()
-        .describe("Domain organ that witnessed the pattern (GEOX/WEALTH/WELL for physical grounding)"),
-      caller: z.string().optional().describe("Override caller (default: hermes-prime)"),
-    },
-    async (params) => {
-      try {
-        const caller = params.caller || "hermes-prime";
-        if (caller.toLowerCase().includes("forge")) {
-          return {
-            content: [{
-              type: "text" as const,
-              text: JSON.stringify({
-                verdict: "HOLD",
-                reason: "INV-C2: COOLING caller must not contain 'forge'.",
-                invariant: "INV-C2_CALLER_NOT_FORGE",
-                status: "rejected",
-              }, null, 2),
-            }],
-            isError: true,
-          };
-        }
-
-        const envelope = craftCoolingReceipt({
-          verb: "cool_pattern",
-          ...params,
-          recurrence_count: params.recurrence_count,
-          first_seen: params.first_seen,
-          last_seen: params.last_seen,
-          caller,
-        });
-
-        const result = writeCoolingReceipt(envelope);
-
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              verdict: "DRAFT",
-              verb: "cool_pattern",
-              message: "COOLING_RECEIPT emitted (draft, not constitutional SEAL)",
-              receipt: envelope,
-              seal_chain_result: result,
-              recurrence: {
-                count: params.recurrence_count,
-                first_seen: params.first_seen,
-                last_seen: params.last_seen,
-              },
-              invariants_satisfied: [
-                "INV-C1: action_class=OBSERVE",
-                "INV-C2: caller not forge",
-                "INV-C3: supersedes.type=COLD_LINK",
-                "INV-C4: governance_path explicit",
-              ],
-            }, null, 2),
-          }],
-        };
-      } catch (err: any) {
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              verdict: "HOLD",
-              verb: "cool_pattern",
-              error: err.message,
-              status: "failed",
-            }, null, 2),
-          }],
-          isError: true,
-        };
-      }
-    }
-  );
+  // ── forge_cool_pattern — REMOVED 2026-09-16. Merged into forge_cool(verb=pattern).
+  // Handler pipeline unchanged — craftCoolingReceipt already supports both verbs.
+  // server.tool("forge_cool_pattern", ...);
 }
 
 /**

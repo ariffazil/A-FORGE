@@ -1037,13 +1037,14 @@ export function registerForge8Verbs(server: McpServer) {
     forgeSandboxRunHandler
   );
 
-  // VERB 4: forge_scar_scan
-  server.tool(
-    "forge_scar_scan",
-    "Check artifact against SCAR database. A-FORGE detects but CANNOT judge — arifOS judges.",
-    ForgeScarScanRequestSchema.shape,
-    forgeScarScanHandler
-  );
+  // VERB 4: forge_scar_scan — REMOVED 2026-09-16 (ENT-005). Stub returning constant CLEAN.
+  // Real SCAR logic lives in forge_scar(mode=consult). Handler retained for reference.
+  // server.tool(
+  //   "forge_scar_scan",
+  //   "Check artifact against SCAR database. A-FORGE detects but CANNOT judge — arifOS judges.",
+  //   ForgeScarScanRequestSchema.shape,
+  //   forgeScarScanHandler
+  // );
 
   // VERB 5a: forge_skillstore_write
   server.tool(

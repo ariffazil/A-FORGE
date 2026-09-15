@@ -1,0 +1,28 @@
+{
+  "_comment": "GOLDEN TEST FIXTURE — Dynamic Registry Canary. Test 5: Dynamic-load false-positive canary.",
+  "_created": "2026-09-16",
+  "_purpose": "Validates that the entropy audit does NOT flag dynamically registered handlers for deletion",
+  "tool_registry": {
+    "fixture_dynamic_handler": {
+      "description": "This handler is registered via JSON config, not via static import. A static analyzer will see no normal import path. The audit MUST NOT call it dead.",
+      "handler_path": "./dynamic_handler_canary.py",
+      "handler_function": "handle_dynamic_request",
+      "classification": "OBSERVE",
+      "risk_tier": "R0",
+      "capability": "fixture.dynamic.read",
+      "dynamic_loading": true,
+      "expected_verdict": "NOT_DELETE_CANDIDATE — dynamic registration is evidence of use"
+    },
+    "fixture_plugin_handler": {
+      "description": "Loaded via plugin discovery, not direct import. Another false-positive trap.",
+      "handler_path": "./dynamic_handler_canary.py",
+      "handler_function": "handle_plugin_request",
+      "classification": "OBSERVE",
+      "risk_tier": "R0",
+      "capability": "fixture.plugin.read",
+      "dynamic_loading": true,
+      "plugin_discovery": true,
+      "expected_verdict": "NOT_DELETE_CANDIDATE — plugin discovery is a valid loading mechanism"
+    }
+  }
+}

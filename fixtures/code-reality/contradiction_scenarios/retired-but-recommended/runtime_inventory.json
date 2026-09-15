@@ -1,0 +1,21 @@
+{
+  "_fixture_banner": "OBSERVED-state shadow of the 2026-09-16 Graphiti event. NOT LIVE INVENTORY.",
+  "runtime_inventory": {
+    "scanned_at": "2026-09-16T04:40:00+08:00",
+    "containers": [
+      {
+        "name": "graphiti-shadow-mcp",
+        "state": "ACTIVE (healthy)",
+        "created_at": "2026-09-16T01:10:00+08:00",
+        "note": "created 11 days AFTER retirement order — fresh deployment, not restart",
+        "restart_count": 0,
+        "ports": {},
+        "depends_on": ["falkordb-shadow"],
+        "config": {"database": "falkordb", "group_id": "arifos-shadow"}
+      }
+    ],
+    "dependency_edges": [
+      {"from": "graphiti-shadow-mcp", "to": "falkordb-shadow", "type": "live-backend", "observed": true}
+    ]
+  }
+}

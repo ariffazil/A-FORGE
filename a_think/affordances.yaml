@@ -229,21 +229,7 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_docs_lookup
-  purpose: ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Governed docs lookup via Context7. OBSERVE-class.
-  affordance_class: research
-  capability_surface: aforge.research.docs_lookup
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - web
-  writes: []
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
+# forge_docs_lookup REMOVED 2026-09-16 — redundant: forge_search(source=docs) dispatches to same context7Lookup.
 - name: forge_document_ingest
   purpose: "ACTUATOR [meta/OBSERVE] supervised by kernel 777_FORGE. Document intelligence engine — layout-first parsing with\
     \ bounding-box provenance.\n\nModes:\n  analyze "
@@ -529,21 +515,9 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_minimax_search
-  purpose: ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Search the web via MiniMax. OBSERVE-class.
-  affordance_class: research
-  capability_surface: aforge.research.minimax_search
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - web
-  writes: []
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
+# forge_minimax_search REMOVED 2026-09-16 — declared DELETED in toolDedupe.ts:88
+# (47-day contradiction resolved). MiniMax backend deprecated; use forge_search(source=brave).
+# See: audit/entropy-audit-2026-09-16.md (ENT-001)
 - name: forge_netdata_alarms
   purpose: ACTUATOR [health/OBSERVE] supervised by kernel 111_OBSERVE. Read Netdata alarms. OBSERVE-class.
   affordance_class: health
@@ -711,21 +685,7 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_research
-  purpose: ACTUATOR [research/OBSERVE] supervised by kernel 111_OBSERVE. Governed research across web sources. OBSERVE-class.
-  affordance_class: research
-  capability_surface: aforge.research.research
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - web
-  writes: []
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
+# forge_research REMOVED 2026-09-16 — redundant: forge_search(source=research) dispatches to same handler.
 - name: forge_sandbox_run
   purpose: ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Execute staged artifact in isolated sandbox. ABSOLUTE
     timeout — cannot be overridden.
@@ -761,22 +721,7 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_scar_scan
-  purpose: ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. Check artifact against SCAR database. A-FORGE detects but
-    CANNOT judge — arifOS judges.
-  affordance_class: vault
-  capability_surface: aforge.vault.scar_scan
-  kernel_verb: 999_SEAL
-  mutation_class: OBSERVE
-  reads:
-  - vault999
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
+# forge_scar_scan REMOVED 2026-09-16 — stub returning constant CLEAN. Real logic in forge_scar(mode=consult).
 - name: forge_seal
   purpose: ACTUATOR [vault/MUTATE] supervised by kernel 999_SEAL. Seal a Tri-Witness validated skill into permanent VAULT999
     memory. Irreversible. Sealed skills canno
@@ -1338,27 +1283,12 @@ tools:
   min_mode: THINK
   risk_label: R0
 
-- name: forge_cool_drift
-  purpose: "Emit a COOLING_RECEIPT with convergence signal (CONVERGING/DIVERGING/STABLE). Routes through seal_chain.js validateCooling() → VAULT999 append. INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK. INV-C4: explicit governance."
+# forge_cool_drift + forge_cool_pattern MERGED 2026-09-16 into forge_cool(verb=drift|pattern).
+# INV-C1..C4 preserved verbatim. Handler pipeline unchanged.
+- name: forge_cool
+  purpose: "Emit a COOLING_RECEIPT. verb=drift for single convergence signal; verb=pattern for observed failure recurrence. INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK. INV-C4: explicit governance."
   affordance_class: vault
-  capability_surface: aforge.vault.cool_drift
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - tools
-  - system_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-
-- name: forge_cool_pattern
-  purpose: "Emit a COOLING_RECEIPT from observed failure recurrence. Same pipeline as cool_drift with additional recurrence_count, first_seen, last_seen fields. Routes through seal_chain.js validateCooling() → VAULT999 append."
-  affordance_class: vault
-  capability_surface: aforge.vault.cool_pattern
+  capability_surface: aforge.vault.cool
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
   reads:
