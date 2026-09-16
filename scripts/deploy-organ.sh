@@ -146,9 +146,19 @@ echo "✅ Rsynced: $SRC → $OPT"
 # Stamp SHAs after rsync. .git_commit is excluded from the sync so it
 # must be written here — an empty leftover file reads as deploy drift.
 if [ -d "$SRC/.git" ]; then
-  git -C "$SRC" rev-parse HEAD > "$OPT/.git_commit"
-  git -C "$SRC" rev-parse HEAD > "$SRC/.git_commit"
-  echo "✅ Stamped .git_commit $(git -C "$SRC" rev-parse --short HEAD) → $OPT and $SRC"
+  SHA="$(git -C "$SRC" rev-parse HEAD)"
+  echo "$SHA" > "$OPT/.git_commit"
+  echo "$SHA" > "$SRC/.git_commit"
+  # aforge-mcp :7072 serves dist/build-commit.txt and systemd runs the
+  # services from $SRC/dist — stamp both trees or the served identity
+  # goes stale (drift-check reads a commit the running code left behind).
+  if [ -d "$SRC/dist" ]; then
+    echo "$SHA" > "$SRC/dist/build-commit.txt"
+    [ -d "$OPT/dist" ] && echo "$SHA" > "$OPT/dist/build-commit.txt"
+    echo "✅ Stamped .git_commit + dist/build-commit.txt ($(git -C "$SRC" rev-parse --short HEAD)) → $OPT and $SRC"
+  else
+    echo "✅ Stamped .git_commit $(git -C "$SRC" rev-parse --short HEAD) → $OPT and $SRC"
+  fi
 fi
 
 # ── Stage 5: Restart ─────────────────────────────────────────────
