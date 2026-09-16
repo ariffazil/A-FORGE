@@ -8,9 +8,9 @@
  * F12 Fail-Closed: Abort → git checkout HEAD → log to vault999.jsonl
  */
 
-import { execSync } from "child_process";
-import { existsSync } from "fs";
-import { join } from "path";
+import { spawnSync } from "node:child_process";
+import { existsSync, appendFileSync } from "node:fs";
+import { join } from "node:path";
 
 export interface DiffResult {
   clean: boolean;
@@ -31,11 +31,23 @@ const VAULT_PATH = process.env.AF_FORGE_VAULT ?? "/root/A-FORGE/data/vault999.js
 
 function execGit(cwd: string, args: string[]): string {
   try {
-    return execSync(`git ${args.join(" ")}`, {
+    // S-01 (2026-09-17 audit): switched from `execSync(`git ${args.join(" ")}`, ...)`
+    // (shell interpolation of filepath) to spawn+argv. Original was HIGH RISK because
+    // any user-supplied filepath containing `"`, `$()`, or backticks would be interpreted
+    // as shell metacharacters. Spawn with explicit argv + shell:false is immune.
+    const result = spawnSync("git", args, {
       cwd,
       encoding: "utf-8",
       timeout: 10_000,
+      shell: false,  // critical: no shell, argv passed verbatim
     });
+    if (result.status !== 0) {
+      const stderr = result.stderr ?? "";
+      if (stderr.includes("not a git repository")) return "";
+      if (stderr.includes("ambiguous argument")) return "";
+      throw new Error(`git ${args[0]} failed: ${stderr || result.error?.message || "unknown"}`);
+    }
+    return result.stdout ?? "";
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
     if (msg.includes("not a git repository")) return "";
@@ -142,7 +154,6 @@ export function logAnomaly(
   };
   const line = JSON.stringify(entry) + "\n";
   try {
-    const { appendFileSync } = require("fs");
     appendFileSync(VAULT_PATH, line);
   } catch {
     // vault not available — skip
