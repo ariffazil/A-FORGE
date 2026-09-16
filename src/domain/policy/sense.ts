@@ -162,7 +162,10 @@ export function senseDeep(query: string, liteResult?: SenseResult): SenseResult 
   if (query.includes("config:") || query.includes("setting:")) evidence_count += 1;
   
   evidence_quality = evidence_count > 0 ? 0.7 + (0.3 * Math.random()) : 0.3;
-  
+  // F-06 (2026-09-17 audit): evidence_quality is HEURISTIC noise, not measurement.
+  // Marked below in return envelope as `_epistemic: HEURISTIC` until Phase 2 ensemble lands.
+  // See evaluate.ts:78 TODO — semantic-entropy measurement via ensemble sampling.
+
   let uncertainty_score = 0;
   if (baseHeuristics.ambiguity_markers > 0) uncertainty_score += 0.15 * baseHeuristics.ambiguity_markers;
   if (evidence_count < 2) uncertainty_score += 0.3;
@@ -184,6 +187,7 @@ export function senseDeep(query: string, liteResult?: SenseResult): SenseResult 
     evidence_quality,
     uncertainty_band,
     recommended_next_stage,
+    _epistemic: "HEURISTIC",  // F-06 (2026-09-17): noise-based heuristic, not measurement
     contradiction_flags: 0,
     query_complexity_score: baseHeuristics.complexity_score,
     risk_indicators: baseHeuristics.risk_indicators,

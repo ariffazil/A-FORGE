@@ -18,6 +18,7 @@ export type SenseResult = {
   query_complexity_score: number;
   risk_indicators: string[];
   ambiguity_markers?: number; // From Lite heuristics
+  _epistemic?: "MEASUREMENT" | "HEURISTIC";  // F-06 (2026-09-17): distinguish measured from noise-based
   metadata: {
     lite_tokens_used?: number;
     deep_tokens_used?: number;

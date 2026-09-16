@@ -122,6 +122,11 @@ export class SkillStagingGate {
   }
 
   private _generateToken(): string {
+    // Local staging anti-replay token (NOT an F13 sovereign approval token).
+    // Real F13 sovereign approval is HMAC-signed by arifOS (`arifSeal.ts:125`).
+    // This token only prevents accidental re-promotion of the same staging result
+    // within a single agent's local session. Authority comes from mesaDetector +
+    // Landauer gate (lines 70-74), not from this token.
     const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
     let token = "stg_";
     for (let i = 0; i < 16; i++) {

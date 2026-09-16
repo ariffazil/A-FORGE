@@ -6,8 +6,10 @@
  * forge_execute FAILS HARD without valid VAULT999 SEAL from arifOS.
  *
  * EXECUTION LOOP:
- *   synthesize → stage → sandbox_run → scar_scan →
+ *   synthesize → stage → sandbox_run →
  *   skillstore_sync → tier_bind → docket_prep → execute
+ *
+ * (scar_scan REMOVED 2026-09-17 ENT-005 — use forge_scar(mode=consult))
  *
  * @module mcp/forge8Verbs
  * @constitutional F1 AMANAH — reversible-first, irreversible requires seal
@@ -28,7 +30,6 @@ import {
   ForgeSynthesizeRequestSchema,
   ForgeStageRequestSchema,
   ForgeSandboxRunRequestSchema,
-  ForgeScarScanRequestSchema,
   ForgeSkillstoreWriteRequestSchema,
   ForgeSkillstoreReadRequestSchema,
   ForgeTierBindRequestSchema,
@@ -410,28 +411,8 @@ async function forgeSandboxRunHandler(args: z.infer<typeof ForgeSandboxRunReques
   };
 }
 
-// ── VERB 4: forge_scar_scan ────────────────────────────────────────────────
-
-async function forgeScarScanHandler(args: z.infer<typeof ForgeScarScanRequestSchema>) {
-  // Check against SCAR database
-  // In production: query Qdrant for similar SCAR vectors
-  const scar_matches: any[] = [];
-  const verdict = scar_matches.length === 0 ? "CLEAN" : "SCAR_MATCH";
-
-  return {
-    content: [{
-      type: "text" as const,
-      text: JSON.stringify({
-        artifact_id: args.artifact_id,
-        scan_depth: args.scan_depth,
-        scar_matches,
-        verdict,
-        scanned_at: new Date().toISOString(),
-        _epistemic: epistemicTag("forge_scar_scan"),
-      }, null, 2),
-    }],
-  };
-}
+// ── VERB 4: forge_scar_scan — REMOVED 2026-09-17 ENT-005 ────────────────────
+// (Handler deleted; use forge_scar(mode=consult))
 
 // ── VERB 5: forge_skillstore_sync (WRITE) ──────────────────────────────────
 
@@ -1037,14 +1018,9 @@ export function registerForge8Verbs(server: McpServer) {
     forgeSandboxRunHandler
   );
 
-  // VERB 4: forge_scar_scan — REMOVED 2026-09-16 (ENT-005). Stub returning constant CLEAN.
-  // Real SCAR logic lives in forge_scar(mode=consult). Handler retained for reference.
-  // server.tool(
-  //   "forge_scar_scan",
-  //   "Check artifact against SCAR database. A-FORGE detects but CANNOT judge — arifOS judges.",
-  //   ForgeScarScanRequestSchema.shape,
-  //   forgeScarScanHandler
-  // );
+  // VERB 4: forge_scar_scan — REMOVED 2026-09-17 ENT-005 (full purge, F-03).
+  // Handler deleted, registration deleted, this comment retained for git archaeology.
+  // Real SCAR logic lives in forge_scar(mode=consult).
 
   // VERB 5a: forge_skillstore_write
   server.tool(

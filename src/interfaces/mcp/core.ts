@@ -2979,12 +2979,23 @@ server.tool(
     const isDir = stats.isDirectory();
     const files: string[] = [];
     if (isDir) {
-      // TODO: BYPASS RISK — execSync with user-supplied target path allows shell injection.
-      // Add path scope validation (F8) before execution + ArifSeal audit.
-      // Migrate to forge_shell for governed execution.
-      const { execSync } = await import("node:child_process");
-      const out = execSync(`find "${target}" -name "*.ts" -o -name "*.js" -o -name "*.py" 2>/dev/null | head -200`, { encoding: "utf-8", timeout: 10000 });
-      files.push(...out.trim().split("\n").filter(Boolean));
+      // F-08 (2026-09-17 audit): hardened against shell injection via spawn+argv (no shell interpolation).
+      // Replaces execSync with user-supplied path. Original bypass risk documented in commit history.
+      const { spawn } = await import("node:child_process");
+      type FindChunk = Buffer | string;
+      const out = await new Promise<string>((resolve, reject) => {
+        const child = spawn(
+          "find",
+          [target, "(", "-name", "*.ts", "-o", "-name", "*.js", "-o", "-name", "*.py", ")", "-print"],
+          { shell: false, timeout: 10000 },  // critical: no shell interpolation of `target`
+        );
+        let buf = "";
+        child.stdout?.setEncoding("utf-8");
+        child.stdout?.on("data", (chunk: FindChunk) => { buf += chunk.toString(); });
+        child.on("error", reject);
+        child.on("close", () => resolve(buf));
+      });
+      files.push(...out.trim().split("\n").filter(Boolean).slice(0, 200));
     } else {
       files.push(target);
     }

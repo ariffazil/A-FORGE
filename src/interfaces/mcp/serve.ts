@@ -255,7 +255,7 @@ const STATELESS_TOOLS = new Set([
     // Cooling & scar observation
     "forge_cool_drift",           // cooling receipt emission — OBSERVE-class
     "forge_cool_pattern",         // cooling receipt from recurrence — OBSERVE-class
-    "forge_scar_scan",            // SCAR database check — read-only
+    // forge_scar_scan REMOVED 2026-09-17 ENT-005 (use forge_scar(mode=consult))
 
     // RSI measurement — read-only, OBS-class, never mutates state
     // Added 2026-09-15 (F13 PARTIAL-SEAL): the loop that measures improvement

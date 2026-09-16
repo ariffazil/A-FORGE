@@ -1079,7 +1079,7 @@ export function registerSkillTools(server: McpServer): void {
     "Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills cannot be deleted, demoted below TRUSTED, or expired. Requires REVIEWED tier + Tri-Witness PASS + F13 approval token.",
     {
       skill_name: z.string().describe("Tool name to seal (forge_*)"),
-      human_approval_token: z.string().describe("F13 sovereign approval token (stg_<16+>)"),
+      human_approval_token: z.string().describe("Audit-only human approval reference (recorded into seal receipt for F2 Truth provenance; NOT used as authorization gate — authorization comes from tri_witness_evidence + constitutional_chain_id)"),
       tri_witness_evidence: z.string()
         .describe("JSON-serialized TriWitnessResult from prior validation (REQUIRED for Q9 self-seal rejection)"),
       constitutional_chain_id: z.string()

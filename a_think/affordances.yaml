@@ -1921,23 +1921,179 @@ tools:
   min_mode: THINK
   risk_label: R0
 
-- name: forge_whoami
-  purpose: "Identity introspection — returns caller actor, session binding, and authority band. Z4 sync 2026-09-06 (was missing from affordances)."
-  affordance_class: probe
-  capability_surface: aforge.probe.whoami
-  kernel_verb: 111_OBSERVE
+# forge_whoami + forge_proxy_call REMOVED 2026-09-17 F-05 (declared but not live on wire).
+# Phantom audit guard: compare to live tools/list before claiming tool exists.
+
+# ── 10 LIVE TOOLS ADDED 2026-09-17 F-04 (live on wire, missing from catalogue) ──
+
+- name: auth_pipeline
+  purpose: "AUTH INSTITUTIONAL PROTOCOL — governs OBSERVE→MUTATE→DEPLOY transitions. OBSERVE is free, MUTATE is governed (contract + lease + evidence + receipt), DEPLOY is sealed (10-stage pipeline + 555 verify + 888 judge + Lane A seal)."
+  affordance_class: governance
+  capability_surface: aforge.governance.auth_pipeline
+  kernel_verb: 555_AUDIT
   mutation_class: OBSERVE
   reads:
-  - session
+  - contracts
+  - leases
   writes: []
-- name: forge_proxy_call
-  purpose: "Governed MCP proxy invocation — forwards a tool call through the constitutional membrane. Z4 sync 2026-09-06 (was missing from affordances)."
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R0
+
+- name: forge_seal_run
+  purpose: "Submit completed TaskIR + evidence to constitutional judgment (arif_judge.666). Returns AWAITING_VERIFICATION. The execute half of forge_compile_task → forge_seal_run."
+  affordance_class: governance
+  capability_surface: aforge.governance.seal_run
+  kernel_verb: 666_JUDGE
+  mutation_class: MUTATE
+  reads:
+  - taskir
+  - evidence_packets
+  writes:
+  - vault999_receipts
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R2
+
+- name: forge_compile_task
+  purpose: "Compile a coding intent into an immutable TaskIR (over arif_route.444). Returns task_id + sha256. TaskIR is frozen once sealed."
   affordance_class: execute
-  capability_surface: aforge.execute.proxy_call
+  capability_surface: aforge.execute.compile_task
+  kernel_verb: 444_ROUTE
+  mutation_class: MUTATE
+  reads:
+  - intents
+  - plans
+  writes:
+  - taskir_store
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R1
+
+- name: forge_dispatch_lane
+  purpose: "Dispatch a frozen TaskIR to one bounded lane (forge-scout / forge-builder / etc.). Returns run_id + lane envelope. One-direction flow, no rollback."
+  affordance_class: execute
+  capability_surface: aforge.execute.dispatch_lane
   kernel_verb: 777_FORGE
   mutation_class: MUTATE
   reads:
-  - session
-  - lease
+  - taskir
   writes:
-  - vault999_receipts
+  - lane_queues
+  external_side_effect: true
+  destructive: false
+  reversible: false
+  requires_human_approval: false
+  min_mode: ACT
+  risk_label: R3
+
+- name: forge_collect_evidence
+  purpose: "Collect runtime reality (diffs + tests + cost) into a typed evidence packet. F1: refuses payload containing secret-like patterns."
+  affordance_class: execute
+  capability_surface: aforge.execute.collect_evidence
+  kernel_verb: 555_AUDIT
+  mutation_class: MUTATE
+  reads:
+  - diffs
+  - test_results
+  - cost_metrics
+  writes:
+  - evidence_packets
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R2
+
+- name: forge_web_extract
+  purpose: "Full-capability agentic web extraction — auto-SPA-rendering, browser actions, authenticated sessions, downloads. Bounded epistemic reflexivity (F11)."
+  affordance_class: probe
+  capability_surface: aforge.probe.web_extract
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - urls
+  - sessions
+  writes:
+  - extraction_cache
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R1
+
+- name: forge_gemini
+  purpose: "Direct bridge to Google AI Studio Gemini. 4 verbs: generate, chat, models, health. Default model: gemini-3.6-flash. Federated under organ_capability."
+  affordance_class: execute
+  capability_surface: aforge.execute.gemini
+  kernel_verb: 333_REASON
+  mutation_class: MUTATE
+  reads:
+  - prompts
+  writes:
+  - external_state
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R2
+
+- name: forge_rsi_dual_rate_fq
+  purpose: "RSI measurement — dual-rate FQ (Foresight Quotient) compute. OBSERVE-only, no mutation."
+  affordance_class: probe
+  capability_surface: aforge.probe.rsi_dual_rate_fq
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - state_vectors
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_rsi_impulse_response
+  purpose: "RSI measurement — impulse response compute. OBSERVE-only, no mutation."
+  affordance_class: probe
+  capability_surface: aforge.probe.rsi_impulse_response
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - state_vectors
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_rsi_state_vector
+  purpose: "RSI measurement — state vector snapshot. OBSERVE-only, no mutation."
+  affordance_class: probe
+  capability_surface: aforge.probe.rsi_state_vector
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads:
+  - state_snapshots
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0

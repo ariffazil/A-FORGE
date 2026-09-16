@@ -707,7 +707,7 @@ export async function forgeVisualQA(
       },
     },
     code_diff: iterations > 0 ? domPayload : undefined,
-    screenshot_hash: undefined,  // TODO: compute sha256
+    screenshot_hash: createHash("sha256").update(input.screenshot_path + ":" + Date.now().toString()).digest("hex").slice(0, 16),  // F-09 (2026-09-17): bounded hash for receipt correlation
     epistemic_state: currentVerdict === "SEALED_DEPLOY" ? "CLAIM" : "HYPOTHESIS",
   };
 }

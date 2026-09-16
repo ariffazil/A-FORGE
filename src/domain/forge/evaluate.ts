@@ -120,7 +120,8 @@ function estimateA(spec: CandidateSpec): { score: number; rationale: string[] } 
   // set so domain-prefix check is skipped for these names.
   // @see /root/forge_work/diagnostics/2026-08-08-aforge-mcp-surface-map.md §3.2
   const META_TOOLS = new Set<string>([
-    "forge_evaluate", "forge_witness", "forge_scar", "forge_scar_scan",
+    "forge_evaluate", "forge_witness", "forge_scar",
+    // forge_scar_scan REMOVED 2026-09-17 ENT-005
     "forge_register", "forge_registry", "forge_registry_status",
     "forge_skill", "forge_skillstore_read", "forge_skillstore_write",
     "forge_fingerprint_check", "forge_isomorphism_check",

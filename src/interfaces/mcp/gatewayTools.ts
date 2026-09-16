@@ -41,6 +41,129 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? "";
 
 const RECEIPT_LOG = "/root/A-FORGE/data/gateway_receipts.jsonl";
 
+// ── Circuit Breaker ───────────────────────────────────────────────────────────
+// Per-provider failure tracking. After CONSECUTIVE_FAILURE_THRESHOLD failures,
+// provider is skipped for COOLDOWN_MS milliseconds.
+
+interface CircuitState {
+  failures: number;
+  lastFailure: number;
+  openUntil: number;
+}
+
+const CONSECUTIVE_FAILURE_THRESHOLD = 3;
+const COOLDOWN_MS = 60_000; // 1 minute cooldown after 3 consecutive failures
+const circuitState: Record<string, CircuitState> = {};
+
+function circuitIsOpen(provider: string): boolean {
+  const state = circuitState[provider];
+  if (!state) return false;
+  if (state.failures < CONSECUTIVE_FAILURE_THRESHOLD) return false;
+  if (Date.now() < state.openUntil) return true;
+  // Cooldown expired — half-open: allow one try
+  state.failures = CONSECUTIVE_FAILURE_THRESHOLD - 1;
+  return false;
+}
+
+function circuitRecordSuccess(provider: string): void {
+  circuitState[provider] = { failures: 0, lastFailure: 0, openUntil: 0 };
+}
+
+function circuitRecordFailure(provider: string): void {
+  const prev = circuitState[provider] || { failures: 0, lastFailure: 0, openUntil: 0 };
+  const failures = prev.failures + 1;
+  circuitState[provider] = {
+    failures,
+    lastFailure: Date.now(),
+    openUntil: failures >= CONSECUTIVE_FAILURE_THRESHOLD ? Date.now() + COOLDOWN_MS : 0,
+  };
+}
+
+// ── Provider Scoring ──────────────────────────────────────────────────────────
+
+type WebIntent = "discovery" | "verification" | "extraction" | "research";
+
+interface ProviderScore {
+  provider: string;
+  score: number;
+  reasons: string[];
+}
+
+function scoreProviders(
+  intent: WebIntent,
+  availableProviders: string[],
+): ProviderScore[] {
+  // Base capability match per intent
+  const capabilityMatrix: Record<string, Record<string, number>> = {
+    discovery: { brave: 0.9, searxng: 0.7, ddgs: 0.6, minimax: 0.7, context7: 0.3 },
+    verification: { brave: 0.7, searxng: 0.8, context7: 0.5, minimax: 0.5 },
+    extraction: { brave: 0.3, searxng: 0.2, context7: 0.8, minimax: 0.3 },
+    research: { brave: 0.7, searxng: 0.6, context7: 0.9, minimax: 0.6 },
+  };
+
+  const caps = capabilityMatrix[intent] || capabilityMatrix.discovery;
+
+  return availableProviders
+    .filter((p) => !circuitIsOpen(p))
+    .map((provider) => {
+      let score = caps[provider] ?? 0.5;
+      const reasons: string[] = [];
+      reasons.push(`capability=${(score * 100).toFixed(0)}%`);
+      // Bonus for local providers (lower latency)
+      if (provider === "searxng") { score += 0.05; reasons.push("local+5%"); }
+      // Penalty for circuit-open (already filtered above, but state matters)
+      const cs = circuitState[provider];
+      if (cs && cs.failures > 0) {
+        const penalty = cs.failures * 0.05;
+        score = Math.max(0, score - penalty);
+        reasons.push(`failure_penalty=${cs.failures}`);
+      }
+      return { provider, score, reasons };
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+// ── Evidence Normalization ────────────────────────────────────────────────────
+
+interface EvidenceItem {
+  evidence_id: string;
+  url: string;
+  title: string;
+  excerpt: string;
+  provider: string;
+  retrieved_at: string;
+  rank: number;
+  source_type: "primary" | "official" | "reporting" | "secondary";
+  extraction_status: "ok" | "partial" | "failed";
+  content_hash?: string;
+}
+
+function normalizeEvidenceItem(
+  raw: { title: string; url: string; description?: string; snippet?: string; age?: string },
+  provider: string,
+  rank: number,
+): EvidenceItem {
+  const excerpt = raw.description || raw.snippet || "";
+  // Simple source-type heuristics
+  const url = (raw.url || "").toLowerCase();
+  let source_type: EvidenceItem["source_type"] = "secondary";
+  if (/\.(gov|edu|mil|org)\b/.test(url)) source_type = "official";
+  else if (/reuters|bloomberg|thestar\.com|nst\.com\.my|bernama|petronas\.com/i.test(url)) source_type = "reporting";
+  else if (/petronas\.com|petros|jpsi\.go\.my|bnm\.gov\.my|bos\.gov\.my/i.test(url)) source_type = "primary";
+
+  return {
+    evidence_id: `ev-${randomUUID().slice(0, 12)}`,
+    url: raw.url || "",
+    title: raw.title || "",
+    excerpt,
+    provider,
+    retrieved_at: new Date().toISOString(),
+    rank,
+    source_type,
+    extraction_status: excerpt.length > 10 ? "ok" : "partial",
+  };
+}
+
 // ── Receipts ──────────────────────────────────────────────────────────────────
 
 async function recordReceipt(meta: Record<string, unknown>): Promise<string> {
@@ -160,20 +283,44 @@ async function webSearchWithFallback(
   count: number,
   freshness: string,
   safesearch: string,
-): Promise<{ ok: boolean; results: BraveResult[]; error?: string; provider: string }> {
-  const brave = await braveWebSearch(query, count, freshness, safesearch);
-  if (brave.ok && brave.results.length > 0) {
-    return { ...brave, provider: "brave" };
+): Promise<{ ok: boolean; results: BraveResult[]; error?: string; provider: string; evidence?: EvidenceItem[] }> {
+  // Score providers by intent (default: discovery for generic search)
+  const allProviders = ["brave", "searxng"];
+  const scored = scoreProviders("discovery", allProviders);
+
+  const errors: string[] = [];
+  const evidence: EvidenceItem[] = [];
+
+  for (const { provider } of scored) {
+    let attempt: { ok: boolean; results: BraveResult[]; error?: string };
+
+    if (provider === "brave") {
+      attempt = await braveWebSearch(query, count, freshness, safesearch);
+    } else if (provider === "searxng") {
+      attempt = await searxngWebSearch(query, count);
+    } else {
+      continue; // Unknown provider in scored list
+    }
+
+    if (attempt.ok && attempt.results.length > 0) {
+      circuitRecordSuccess(provider);
+      // Normalize results to evidence items
+      attempt.results.forEach((r, i) => {
+        evidence.push(normalizeEvidenceItem(r, provider, i + 1));
+      });
+      return { ...attempt, provider, evidence };
+    }
+
+    circuitRecordFailure(provider);
+    errors.push(`${provider}: ${attempt.error ?? "empty results"}`);
   }
-  const local = await searxngWebSearch(query, count);
-  if (local.ok) {
-    return { ...local, provider: "searxng", error: brave.ok ? undefined : brave.error };
-  }
+
   return {
     ok: false,
     results: [],
     provider: "none",
-    error: `Brave: ${brave.error ?? "empty"}; SearXNG: ${local.error ?? "empty"}`,
+    error: errors.join("; ") || "All providers failed",
+    evidence,
   };
 }
 
@@ -374,18 +521,33 @@ export async function handleForgeSearch(args: any) {
     };
   }
 
-  // 4. Default: Web search (Brave, fail-over to local SearXNG)
+  // 4. Default: Web search (scored providers, circuit-breaker protected)
   const search = await webSearchWithFallback(query, count, freshness, safesearch);
   if (!search.ok) {
     return gatewayError(reqId, `Search failed: ${search.error}`, receiptMeta);
   }
-  const results = search.results.map((r) => ({
+  const results = search.results.map((r, i) => ({
     title: r.title,
     url: r.url,
     snippet: r.description ?? "",
     date: r.age ?? null,
+    position: i + 1,
   }));
-  const receipt_id = await recordReceipt({ ...receiptMeta, provider: search.provider, result_count: results.length });
+  // Evidence items for governance/audit
+  const evidence = search.evidence ?? results.map((r, i) =>
+    normalizeEvidenceItem(
+      { title: r.title, url: r.url, description: r.snippet },
+      search.provider,
+      i + 1,
+    ),
+  );
+  const receipt_id = await recordReceipt({
+    ...receiptMeta,
+    provider: search.provider,
+    result_count: results.length,
+    evidence_count: evidence.length,
+    providers_considered: ["brave", "searxng"],
+  });
 
   // FLAME synthesis (optional)
   let flame: any = null;
@@ -407,6 +569,7 @@ export async function handleForgeSearch(args: any) {
         results,
         provider: search.provider,
         receipt_id,
+        evidence,
         _epistemic: {
           output_class: "DOMAIN_COMPUTATION",
           authority_claim: "ADVISORY",

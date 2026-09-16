@@ -129,7 +129,7 @@ const TOOL_FAMILIES: Record<string, string> = {
   forge_vault: "vault",
   forge_seal: "vault",
   forge_scar: "vault",
-  forge_scar_scan: "vault",
+  // forge_scar_scan REMOVED 2026-09-17 ENT-005
   // Governance family
   forge_evaluate: "governance",
   forge_witness: "governance",

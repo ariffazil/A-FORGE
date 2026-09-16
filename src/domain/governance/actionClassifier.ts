@@ -241,7 +241,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_docket_prep",        // evidence packaging — read-only, OBSERVE
   "forge_verify_timeline",    // timeline claim verification — read-only, OBSERVE
   "forge_verify",              // WAJIB 2 verification lane — read-only, OBSERVE (verifier ≠ executor)
-  "forge_scar_scan",          // artifact SCAR database check — read-only, OBSERVE
+  // forge_scar_scan REMOVED 2026-09-17 ENT-005 (use forge_scar(mode=consult))
   "forge_skillstore_read",    // artifact store query — read-only, OBSERVE
   "forge_registry",           // skill registry (list/get) — read-only, OBSERVE
   "forge_policy",             // MCP policy engine (check/list) — read-only, OBSERVE
@@ -286,7 +286,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_evaluate",            // tool evaluation — OBSERVE (computes G + C_dark, no mutation)
   "forge_witness",             // tri-witness consensus — OBSERVE (computes W³, no mutation)
   "forge_entropy_sweep",       // entropy measurement — OBSERVE
-  "forge_scar_scan",           // artifact check against SCAR DB — OBSERVE
+  // forge_scar_scan REMOVED 2026-09-17 ENT-005 (use forge_scar(mode=consult))
   "forge_predict",             // pre-action simulation — SIMULATE (moved to simulate set below)
   "forge_document_ingest",     // already above, kept for clarity
   // ── Google Workspace & External Model Bridges (2026-08-25) ──
