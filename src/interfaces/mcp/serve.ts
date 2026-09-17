@@ -28,6 +28,67 @@ import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
 import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpPolicyGate.js";
 import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
+
+// ── arifFlow Post-Execution Receipt Hook (F13-ratified 2026-09-17) ──
+// F4 CLARITY: verify/execute ratio drives FQ. Every tool call mints a receipt.
+// F2 TRUTH: receipts are evidence of execution, not assertion.
+// Fire-and-forget: never blocks the MCP response.
+
+const ARIFLOW_INGEST = "http://127.0.0.1:7073/ingest";
+
+function classifyFlowStepType(toolName: string): string {
+  if (toolName.includes("check") || toolName.includes("verify") || toolName.includes("probe") ||
+      toolName.includes("health") || toolName.includes("scan") || toolName.includes("fingerprint")) {
+    return "Verify";
+  }
+  if (toolName.includes("seal") || toolName.includes("vault") || toolName.includes("canonize")) {
+    return "Seal";
+  }
+  if (toolName.includes("route") || toolName.includes("dispatch")) {
+    return "Route";
+  }
+  return "Execute";
+}
+
+function classifyFlowEpistemic(toolName: string): string {
+  if (toolName.includes("probe") || toolName.includes("health") || toolName.includes("status") ||
+      toolName.includes("scan") || toolName.includes("observe")) {
+    return "Observation";
+  }
+  if (toolName.includes("compute") || toolName.includes("score") || toolName.includes("evaluate")) {
+    return "Derivation";
+  }
+  if (toolName.includes("think") || toolName.includes("reason") || toolName.includes("analyze")) {
+    return "Interpretation";
+  }
+  return "Derivation";
+}
+
+let _flowReceiptSeq = 0;
+
+function mintFlowReceipt(
+  toolName: string,
+  actorId: string,
+  sessionId: string,
+  durationMs: number,
+  isError: boolean,
+): void {
+  const receipt = {
+    actor_id: actorId || "aforge-stateless",
+    session_id: sessionId || "http-stateless",
+    step_type: classifyFlowStepType(toolName),
+    step_number: ++_flowReceiptSeq,
+    epistemic_label: classifyFlowEpistemic(toolName),
+    floor_verdict: isError ? "Void" : "Pass",
+    cost_ns: Math.max(1, Math.round(durationMs * 1_000_000)),
+    payload: { tool: toolName, source: "aforge-post-exec-hook" },
+  };
+  fetch(ARIFLOW_INGEST, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(receipt),
+  }).catch(() => {}); // fire-and-forget; never blocks, never throws
+}
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
 import { assertActMutationGateOrExit } from "../../infrastructure/governance/actIngress.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
@@ -1285,7 +1346,9 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               // Forward the args as-is; let the ACT path + PolicyGate derive principal.
               // Reference: VAULT999/process_violations/2026-08-13_F2-TRUTH_correction.json
               void toolArgs; // explicit: no mutation, no overwrite
+              const _toolStartMs = Date.now();
               const result = await handler(toolArgs);
+              const _toolDurationMs = Date.now() - _toolStartMs;
               // Advisory tools must not emit kernel SEAL (P0.4).
               stripAdvisorySealWord(result, toolName);
               // Ensure schema/policy denies from handlers always surface isError
@@ -1298,6 +1361,14 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 verdict: normalized?.isError ? "failure" : "success",
                 actor_id: toolArgs?.actor_id ?? "stateless-client",
               }, `${toolName} → ${normalized?.isError ? "isError" : "success"}`);
+              // ── arifFlow post-execution receipt (F13-ratified 2026-09-17) ──
+              mintFlowReceipt(
+                toolName,
+                toolArgs?.actor_id ?? toolArgs?.actorId ?? "",
+                toolArgs?.session_id ?? "",
+                _toolDurationMs,
+                !!(normalized && typeof normalized === "object" && normalized.isError),
+              );
               res.writeHead(200, { "Content-Type": "application/json" });
               res.end(jsonRpcResult(msgId, normalized));
             } catch (err: any) {
