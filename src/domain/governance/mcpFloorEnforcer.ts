@@ -17,6 +17,7 @@
 
 import { randomUUID } from "node:crypto";
 import { checkAll, type Verdict } from "./FloorEnforcer.js";
+import { classifyTool } from "./actionClassifier.js";
 import type { ActionRequest, FloorContext, ActionCategory, EpistemicTier } from "../types/action-request.js";
 
 // ─── Action category classifier (tool_name → category) ────────────────
@@ -24,10 +25,25 @@ import type { ActionRequest, FloorContext, ActionCategory, EpistemicTier } from 
 /**
  * Classify a tool call into an ActionCategory based on tool name + args.
  * Conservative: defaults to OTHER if unsure (FloorEnforcer will HOLD if needed).
+ *
+ * 2026-09-17 (333-AGI): CANONICAL FIRST — the 8-tier actionClassifier is the
+ * single taxonomy source (F10 ONTOLOGY). Tools explicitly classified OBSERVE
+ * or SIMULATE there must never be misread as EXECUTE by substring heuristics
+ * below (real defect: "forge_runtime_verify".includes("forge_run") → EXECUTE
+ * → F5 LIVE_SERVICE_BLAST false-HOLD on a read-only verifier).
  */
 export function classifyAction(toolName: string, args: Record<string, unknown>): ActionCategory {
   const n = toolName.toLowerCase();
   const a = JSON.stringify(args || {}).toLowerCase();
+
+  // CANONICAL TAXONOMY FIRST: OBSERVE/SIMULATE tools → READ, regardless of
+  // name-substring collisions. Unknown tools (IRREVERSIBLE per P0.6) fall
+  // through to the heuristics below — fail-closed behavior is unchanged.
+  const mode = typeof (args as Record<string, unknown>).mode === "string"
+    ? (args as Record<string, unknown>).mode as string
+    : undefined;
+  const canonicalClass = classifyTool(toolName, mode);
+  if (canonicalClass === "OBSERVE" || canonicalClass === "SIMULATE") return "READ";
 
   // VAULT operations
   if (n.includes("vault_seal")) return "VAULT_SEAL";

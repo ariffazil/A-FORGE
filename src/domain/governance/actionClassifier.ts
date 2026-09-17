@@ -241,6 +241,8 @@ const OBSERVE_TOOLS = new Set([
   "forge_docket_prep",        // evidence packaging — read-only, OBSERVE
   "forge_verify_timeline",    // timeline claim verification — read-only, OBSERVE
   "forge_verify",              // WAJIB 2 verification lane — read-only, OBSERVE (verifier ≠ executor)
+  // forge_visual_seal REMOVED from OBSERVE 2026-09-17 (333-AGI F10 fix):
+  // it is IRREVERSIBLE (listed above) — dual classification was a ghost.
   // forge_scar_scan REMOVED 2026-09-17 ENT-005 (use forge_scar(mode=consult))
   "forge_skillstore_read",    // artifact store query — read-only, OBSERVE
   "forge_registry",           // skill registry (list/get) — read-only, OBSERVE
@@ -250,7 +252,8 @@ const OBSERVE_TOOLS = new Set([
   "forge_well",               // WELL organ relay — read-only, OBSERVE
   "forge_docsgpt",            // DocsGPT knowledge spine — read-only, OBSERVE (FORGE-1 membrane)
   "forge_github_get_file",    // GitHub file read — read-only, OBSERVE
-  "forge_visual_seal",        // VAULT999 composite seal — IRREVERSIBLE (requires tri-witness)
+  // forge_visual_seal REMOVED from OBSERVE 2026-09-17 (333-AGI F10 fix):
+  // it is IRREVERSIBLE (listed above) — dual classification was a ghost.
   // ── P0.2 FIX (2026-07-19): 68 previously-unclassified tools now explicitly assigned ──
   "forge_session_init",        // session ignition — OBSERVE (creates context, no mutation)
   "forge_heart_critique",      // risk/ethics critique — OBSERVE

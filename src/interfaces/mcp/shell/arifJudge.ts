@@ -193,6 +193,84 @@ const GATE_PATTERNS: RegExp[] = [
 // ── Classifier ─────────────────────────────────────────────────────────────
 
 /**
+ * SAFE band — known read-only programs + read-only git subcommands.
+ *
+ * 2026-09-17 (333-AGI): The header previously documented three bands
+ * (ALLOW/GATE/DENY) but only DENY and GATE existed in code — every
+ * unmatched command fell through to default MUTATE/gate. Harmless
+ * read-only one-liners (printf/uname/id) were classified MUTATE.
+ *
+ * Rule: a command is SAFE only if EVERY parsed program is in this set,
+ * there is NO output redirect ( > >> ), and NO DENY/GATE pattern matched
+ * (SAFE is checked after both). Fail-closed: unknown programs still gate.
+ */
+const SAFE_PROGRAMS = new Set([
+  // pure info
+  "uname", "id", "whoami", "who", "hostname", "date", "cal", "uptime",
+  "pwd", "env", "printenv", "true", "false", "sleep", "seq",
+  // text/print
+  "echo", "printf", "wc", "test",
+  // filesystem read
+  "ls", "cat", "head", "tail", "stat", "file", "du", "df", "free",
+  "grep", "find", "jq", "sort", "uniq", "cut", "awk", "sed",
+  "which", "type", "whereis", "basename", "dirname", "realpath", "readlink",
+  // processes read
+  "ps", "top", "lsof", "jobs",
+  // misc read
+  "less", "more", "column", "column", "md5sum", "sha256sum", "wc",
+]);
+
+/** Read-only git subcommands (git <sub> ...). Anything else in git → gate. */
+const SAFE_GIT_SUBCOMMANDS = new Set([
+  "status", "log", "diff", "show", "branch", "remote", "tag", "rev-parse",
+  "ls-files", "ls-remote", "describe", "blame", "shortlog", "config", "stash", "worktree",
+]);
+
+/**
+ * Try to classify a command as SAFE (purely read-only).
+ *
+ * Conservative: returns true only when EVERY program segment is in
+ * SAFE_PROGRAMS (or git with a SAFE_GIT_SUBCOMMAND), AND the command
+ * contains no output redirect. Unknown programs → false (fail-closed).
+ */
+function trySafe(command: string): boolean {
+  // Disqualify any redirect to a file (writes to FS).
+  // Allow harmless 2>&1 redirection by excluding the standard error dup pattern.
+  const noStdErrDup = command.replace(/\b2>&1\b/g, "");
+  if (/[<>]/.test(noStdErrDup)) return false;
+
+  // Split on common command separators.
+  const parts = noStdErrDup.split(/\s*(?:&&|\|\||;|\|)\s*/);
+  for (const rawPart of parts) {
+    const part = rawPart.trim();
+    if (!part) continue;
+    if (part.startsWith("#")) continue; // comment
+    // Strip wrapping subshell parens.
+    const stripped = part.replace(/^\(\s*/, "").replace(/\s*\)$/, "");
+    const m = stripped.match(/^([A-Za-z0-9._\/-]+)/);
+    const prog = m ? m[1] : "";
+    if (!prog) continue;
+    const base = prog.split("/").pop() ?? prog;
+    if (base === "git") {
+      const subMatch = stripped.match(/^git\s+([A-Za-z0-9-]+)/);
+      if (!subMatch || !SAFE_GIT_SUBCOMMANDS.has(subMatch[1])) return false;
+      continue;
+    }
+    if (!SAFE_PROGRAMS.has(base)) return false;
+  }
+  return parts.some((p) => p.trim().length > 0);
+}
+
+function isSafeProgramSegment(seg: { program: string; args: string[]; redirects: unknown[] }): boolean {
+  const prog = seg.program;
+  if (prog === "git") {
+    const sub = seg.args[0];
+    return typeof sub === "string" && SAFE_GIT_SUBCOMMANDS.has(sub);
+  }
+  return SAFE_PROGRAMS.has(prog);
+}
+
+/**
  * Classify a shell command into ALLOW/GATE/DENY.
  *
  * Uses effect-based classification: looks for patterns in the command
@@ -236,6 +314,18 @@ export function classifyCommand(command: string, cwd?: string): JudgeResult {
         actionClass: "EXECUTE_HIGH_IMPACT",
       };
     }
+  }
+
+  // ── SAFE check (implemented 2026-09-17) ──
+  // Known read-only one-liners → ALLOW/OBSERVE. Checked AFTER DENY/GATE so
+  // any dangerous pattern still wins. Fail-closed: unknown programs gate.
+  if (trySafe(trimmed)) {
+    return {
+      decision: "allow",
+      reason: "Read-only command — all programs in SAFE list, no redirects",
+      matchedPattern: "safe_read_only",
+      actionClass: "OBSERVE",
+    };
   }
 
   // ── Self-modification check ──

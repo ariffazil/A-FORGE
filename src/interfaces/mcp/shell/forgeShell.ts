@@ -116,6 +116,16 @@ interface ScarHit {
 
 const SCAR_RUNTIME_INDEX = "/root/A-FORGE/.runtime/scars/index.json";
 
+// 2026-09-17 (333-AGI): filter common command/IO English tokens that have
+// caused false-positive scar matches (e.g. printf/uname commands matching
+// scar text containing "test", "output", "value", "token", "command"...).
+const SCAR_STOPWORDS = new Set([
+  "printf", "echo", "print", "input", "output", "stdout", "stderr", "stdin",
+  "token", "value", "string", "number", "result", "return", "error", "warning",
+  "fetch", "http", "https", "json", "yaml", "config", "command", "argv",
+  "test", "tests", "match", "match_count", "count",
+]);
+
 function matchScarsByKeywords(command: string): ScarHit[] {
   try {
     if (!existsSync(SCAR_RUNTIME_INDEX)) return [];
@@ -127,24 +137,39 @@ function matchScarsByKeywords(command: string): ScarHit[] {
       scar_pressure?: number;
       constraint_imposed?: string;
     }>;
-    // Split command into primary tokens and sub-tokens (splitting across delimiters including . - _ /)
-    const rawTokens = command.toLowerCase().split(/[\s,;:|&()]+/).filter(t => t.length >= 3);
-    const subTokens = command.toLowerCase().split(/[\s,;:|&().\-_/]+/).filter(t => t.length >= 4);
-    const allTokens = Array.from(new Set([...rawTokens, ...subTokens]));
+    // 2026-09-17 (333-AGI): harden scar matching to stop ChatGPT-class scar
+    // false positives where benign command tokens (printf, uname, id, test,
+    // push, time, brief, exec…) fuzzy-matched unrelated scar text.
+    // Three layered guards:
+    //   (1) token length raised from 3/4 → 5 (filters short generic tokens)
+    //   (2) SCAR_STOPWORDS drops common command-English words
+    //   (3) word-boundary regex instead of .includes() — "brief" no longer
+    //       matches "briefing", "test" no longer matches "testing"
+    const rawTokens = command.toLowerCase().split(/[\s,;:|&()]+/).filter(t => t.length >= 5);
+    const subTokens = command.toLowerCase().split(/[\s,;:|&().\-_/]+/).filter(t => t.length >= 6);
+    const allTokens = Array.from(new Set([...rawTokens, ...subTokens]))
+      .filter(t => !SCAR_STOPWORDS.has(t));
     if (allTokens.length === 0) return [];
 
     const hits: ScarHit[] = [];
     for (const [id, scar] of Object.entries(scars)) {
       const text = `${scar.failure_mode || ""} ${scar.constraint_imposed || ""}`.toLowerCase();
       let matchCount = 0;
+      let specificHit = false;
       for (const token of allTokens) {
-        if (text.includes(token)) {
+        // Word-boundary match (escaped regex)
+        const escapeRegex = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const re = new RegExp(`\\b${escapeRegex}\\b`);
+        if (re.test(text)) {
           matchCount++;
+          if (token.length >= 7) specificHit = true;
         }
       }
       const isCritical = (scar.severity || "").toUpperCase() === "CRITICAL";
-      const hasSpecificHit = allTokens.some(t => t.length >= 5 && text.includes(t));
-      if (matchCount >= 2 || (isCritical && matchCount >= 1) || (matchCount >= 1 && hasSpecificHit)) {
+      // Tighter thresholds: >=2 distinct token matches (any), OR critical +
+      // word-boundary hit on a long token, OR 1 hit with explicit 7+ char
+      // specific match. Prevents single-word coincidences.
+      if (matchCount >= 2 || (isCritical && specificHit) || (matchCount >= 1 && specificHit)) {
         hits.push({
           scar_id: scar.scar_id || id,
           failure_mode: scar.failure_mode || "",

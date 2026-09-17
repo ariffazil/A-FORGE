@@ -2097,3 +2097,101 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
+
+# ── 6 TOOLS ADDED 2026-09-17 (333-AGI registry-truth fix; surface_audit MISSING findings) ──
+# Live on MCP wire + in live registry, missing from this catalogue. Rollback: git revert.
+
+- name: forge_cool_pattern
+  purpose: "COOLING_RECEIPT verb=pattern — observed failure recurrence signal. Routes through seal_chain validateCooling to VAULT999. OBSERVE-only."
+  affordance_class: probe
+  capability_surface: aforge.vault.cool_pattern
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads: [cooling_state]
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_docs_lookup
+  purpose: "Context7 documentation lookup — governed library docs query. OBSERVE-only."
+  affordance_class: probe
+  capability_surface: aforge.research.docs_lookup
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads: [external_docs]
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_minimax_search
+  purpose: "MiniMax web search — governed external search lane. OBSERVE-only."
+  affordance_class: probe
+  capability_surface: aforge.research.minimax_search
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads: [web]
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_proxy_call
+  purpose: "Governed proxy forwarder — future proxy actuator surface (mubeng/corp-proxy/tor lanes). Currently returns BLOCKED with reason. OBSERVE-only."
+  affordance_class: probe
+  capability_surface: aforge.research.proxy_call
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads: [egress_state]
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_research
+  purpose: "Unified governed research — Brave web + Context7 docs + deep synthesis with provenance and epistemic labels. OBSERVE-only."
+  affordance_class: probe
+  capability_surface: aforge.research.research
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads: [web, docs]
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+- name: forge_whoami
+  purpose: "Actor identity introspection — returns current ACT-bound actor, authority band, session. OBSERVE-only."
+  affordance_class: probe
+  capability_surface: aforge.identity.whoami
+  kernel_verb: 111_OBSERVE
+  mutation_class: OBSERVE
+  reads: [session_state]
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R0
+
+# KNOWN LIMITATION 2026-09-17 (333-AGI): auth_pipeline + forge_gemini entries above are
+# LIVE MCP tools but scanLiveMcpSurface() only regex-matches forge_*-prefixed
+# server.tool() registrations, so they report PHANTOM. Scanner fix = separate task
+# (FED-SURFACE-001), NOT a manifest deletion — deleting would orphan live tools.
