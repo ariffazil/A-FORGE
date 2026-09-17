@@ -69,6 +69,10 @@ export function processSpanToReceipt(span: SpanRecord): FlowReceipt | null {
   // Cost in nanoseconds
   const costNs = span.duration_ms * 1_000_000;
 
+  // Mutation-class tools emit Execute + paired Verify (breaks exec:0 ratio)
+  // Stored on span for the caller to detect and emit both
+  (span as any).__mutationClass = stepType === "Execute" && isMutationTool(toolName);
+
   return {
     trace_id: span.trace_id,
     span_id: span.span_id,
@@ -89,12 +93,32 @@ export function processSpansToReceipts(spans: SpanRecord[]): FlowReceipt[] {
   const receipts: FlowReceipt[] = [];
   for (const span of spans) {
     const receipt = processSpanToReceipt(span);
-    if (receipt) receipts.push(receipt);
+    if (!receipt) continue;
+    receipts.push(receipt);
+
+    // Mutation-class Execute: emit paired Verify receipt (1:1 exec:verify)
+    if ((span as any).__mutationClass) {
+      const arifos = extractArifosAttributes(span.attributes);
+      receipts.push({
+        ...receipt,
+        span_id: receipt.span_id + ":verify",
+        step_type: "Verify",
+        epistemic_label: "Observation",
+        floor_verdict: receipt.floor_verdict,
+        cost_ns: 0,
+      });
+    }
   }
   return receipts;
 }
 
 // ── Classification Helpers ──────────────────────────────────────────
+
+/** Mutation-class tools: execution that needs a paired Verify receipt */
+function isMutationTool(toolName: string): boolean {
+  const mutationPatterns = ["execute", "shell", "git_commit", "write", "edit", "deploy", "docker", "compose", "skill", "seal", "register"];
+  return mutationPatterns.some(p => toolName.includes(p));
+}
 
 function classifyStepType(toolName: string, status: string): string {
   // Verify patterns

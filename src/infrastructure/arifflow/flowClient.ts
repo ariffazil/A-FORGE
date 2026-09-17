@@ -41,16 +41,21 @@ function floorFromVerdict(verdict: string | undefined): "PASS" | "HOLD" | "VOID"
  * arifflowClient falls back to local JSONL on failure (no silent drop).
  */
 export async function forwardLegacyReceipt(legacy: ArifFlowLegacyReceipt): Promise<void> {
+  const common = {
+    organ: legacy.organ,
+    actor_id: legacy.actor_id || legacy.organ || "A-FORGE",
+    session_id: legacy.session_id || "aforge-unbound",
+    floor_verdict: floorFromVerdict(legacy.verdict) as EmitParams["floor_verdict"],
+    cost_ns: 0,
+  };
+
   try {
+    // 1. Execute receipt (the mutation itself)
     await emitReceipt({
-      organ: legacy.organ,
-      actor_id: legacy.actor_id || legacy.organ || "A-FORGE",
-      session_id: legacy.session_id || "aforge-unbound",
+      ...common,
       step_type: "Execute",
       summary: legacy.action,
       epistemic_label: String(legacy.epistemic_label ?? "DER").toUpperCase() as EmitParams["epistemic_label"],
-      floor_verdict: floorFromVerdict(legacy.verdict) as EmitParams["floor_verdict"],
-      cost_ns: 0,
       details: {
         producer: legacy.producer,
         scope: legacy.scope,
@@ -59,6 +64,19 @@ export async function forwardLegacyReceipt(legacy: ArifFlowLegacyReceipt): Promi
         legacy_verdict: legacy.verdict,
         metadata: legacy.metadata,
         p1_7_migrated: true,
+      },
+    });
+
+    // 2. Paired Verify receipt (observed execution completed — breaks A-FORGE exec:0 ratio)
+    await emitReceipt({
+      ...common,
+      step_type: "Verify",
+      summary: `verify: ${legacy.action}`,
+      epistemic_label: "OBS",
+      details: {
+        producer: legacy.producer,
+        paired_with: legacy.action,
+        verify_reason: "post-execution observation",
       },
     });
   } catch {
