@@ -169,14 +169,25 @@ fi
 # forge_shell action_class DENY) is the GATE-tier enforcement to avoid detection debt.
 # Per gate-promotion.md: paired with runtime gate = no detection debt.
 if [ -f "/root/AAA/scripts/musyawarah_gate.py" ]; then
-    echo -e "${C}[MUSYAWARAH-GATE]${X} scanning arifFlow ledger (OBSERVE_ONLY)..."
-    MUSYAWARAH_OUT=$(python3 /root/AAA/scripts/musyawarah_gate.py --scan-ledger --dry-run 2>&1)
-    MUSYAWARAH_RC=$?
+    # The strict flag must actually change the invocation. It previously read
+    # MUSYAWARAH_RC from a run that ALWAYS passed --dry-run, and a dry run never
+    # calls sys.exit(1) — so `RC -ne 0` was unreachable and STRICT=1 escalated
+    # to a wall made of air. A guard that cannot fire is not a guard; it is a
+    # guard-shaped comment.
+    if [ "${MUSYAWARAH_STRICT:-0}" = "1" ]; then
+        echo -e "${C}[MUSYAWARAH-GATE]${X} scanning arifFlow ledger (STRICT — may block)..."
+        MUSYAWARAH_OUT=$(python3 /root/AAA/scripts/musyawarah_gate.py --scan-ledger 2>&1)
+        MUSYAWARAH_RC=$?
+    else
+        echo -e "${C}[MUSYAWARAH-GATE]${X} scanning arifFlow ledger (OBSERVE_ONLY)..."
+        MUSYAWARAH_OUT=$(python3 /root/AAA/scripts/musyawarah_gate.py --scan-ledger --dry-run 2>&1)
+        MUSYAWARAH_RC=$?
+    fi
     if [ -n "$MUSYAWARAH_OUT" ]; then
         echo "$MUSYAWARAH_OUT" | sed 's/^/  /'
     fi
-    # OBSERVE_ONLY: do not block commit. Runtime gate is Phase 2 step 3.
-    # Set MUSYAWARAH_STRICT=1 to escalate to blocking (development flag).
+    # OBSERVE_ONLY is the default: do not block commit. Runtime gate is Phase 2 step 3.
+    # Set MUSYAWARAH_STRICT=1 to escalate to blocking.
     if [ "${MUSYAWARAH_STRICT:-0}" = "1" ] && [ "$MUSYAWARAH_RC" -ne 0 ]; then
         echo -e "${R}MUSYAWARAH GATE (STRICT): commit blocked — fix T2/T3 violations in arifFlow ledger${X}" >&2
         ERRORS=$((ERRORS + 1))
