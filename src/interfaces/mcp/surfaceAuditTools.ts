@@ -40,25 +40,31 @@ import { sanitizeArgs } from "./prompts.js";
 // code truth per META doctrine (representation-layer-integrity.md).
 async function scanLiveMcpSurface(): Promise<string[]> {
   const distDir = "/root/A-FORGE/dist/src/interfaces/mcp";
+  const domainDir = "/root/A-FORGE/dist/src/domain";
+  const capDir = "/root/A-FORGE/dist/src/capabilities";
   const toolNames = new Set<string>();
 
   // Aggregate from all compiled MCP module files
+  // P1-E FIX: Scan domain/ and capabilities/ dirs too — auth_pipeline registers in
+  // domain/auth_protocol/, forge_gemini in capabilities/gemini/.
+  const scanDirs = [distDir, domainDir, capDir];
   try {
     const files: string[] = [];
-    for await (const f of glob(`${distDir}/**/*.js`)) {
-      files.push(f);
+    for (const dir of scanDirs) {
+      for await (const f of glob(`${dir}/**/*.js`)) {
+        files.push(f);
+      }
     }
     for (const file of files) {
       try {
         const content = await readFile(file, "utf-8");
-        // B3 v4 fix — require forge_ prefix to avoid matching example strings
-        // in comments (e.g. server.tool("name", ...) example syntax).
-        // Real A-FORGE tool names follow forge_<verb>[_mode] pattern.
-        const toolMatches = content.matchAll(/server\.tool\(\s*"(forge_[a-z][a-z0-9_]*)"/g);
+        // B3 v4 fix — require forge_ or auth_ prefix to avoid matching example strings
+        // in comments. Real A-FORGE tool names follow forge_<verb> or auth_<verb> pattern.
+        const toolMatches = content.matchAll(/server\.tool\(\s*"((?:forge_|auth_)[a-z][a-z0-9_]*)"/g);
         for (const m of toolMatches) {
           if (m[1]) toolNames.add(m[1]);
         }
-        const regMatches = content.matchAll(/server\.registerTool\(\s*"(forge_[a-z][a-z0-9_]*)"/g);
+        const regMatches = content.matchAll(/server\.registerTool\(\s*"((?:forge_|auth_)[a-z][a-z0-9_]*)"/g);
         for (const m of regMatches) {
           if (m[1]) toolNames.add(m[1]);
         }
@@ -225,10 +231,12 @@ export function registerSurfaceAuditTools(server: McpServer): void {
         .describe("Override affordance file path (default: auto-resolve from organ)"),
     },
     async ({ organ, mode, affordance_path }) => {
+      // P0-FIX: MCP may pass null/undefined despite Zod default — normalize to "aforge"
+      const normalizedOrgan = organ ?? "aforge";
       const results: DriftReport[] = [];
-      const organsToScan = organ === "all"
+      const organsToScan = normalizedOrgan === "all"
         ? ["aforge", "geox", "wealth", "well", "arifos"]
-        : [organ];
+        : [normalizedOrgan];
 
       for (const org of organsToScan) {
         const affPath = affordance_path || ORGAN_AFFORDANCE_MAP[org];

@@ -854,17 +854,34 @@ export function registerGitTools(server: McpServer): void {
       push: z.boolean().default(false),
     }),
   }, async ({ mode, repo, staged, limit, count, message, files, push }) => {
+    const startTime = Date.now();
     try {
       if (mode === "status") {
         const branch = gitExec(repo, ["rev-parse", "--abbrev-ref", "HEAD"]).trim();
         const status = gitExec(repo, ["status", "--short"]);
-        return text(`Branch: ${branch}\n${status || "(clean)"}`);
+        const result = text(`Branch: ${branch}\n${status || "(clean)"}`);
+        // P0-FIX: emit experience trace for forge_git (close critical WM gap)
+        const { recordExperienceTrace } = await import("./experienceTraceTools.js");
+        void recordExperienceTrace({
+          session_id: "forge-git-auto",
+          agent_id: "aforge",
+          tool: "forge_git",
+          input_summary: `git status on ${repo}`,
+          output_summary: `branch=${branch}, dirty=${status.length > 0}, latency=${Date.now() - startTime}ms`,
+          success: true,
+          feedback_environmental: `mode=status, branch=${branch}, dirty=${status.length > 0}`,
+          feedback_constitutional: "PASS",
+          capability_change: 0,
+          confidence_change: 0.05,
+        }).catch(() => {});
+        return result;
       }
       if (mode === "diff") {
         const diffArgs = staged ? ["diff", "--cached", "--unified=3"] : ["diff", "--unified=3"];
         const diffOutput = gitExec(repo, diffArgs).split("\n").slice(0, limit).join("\n") || "(no diff)";
         const diffBytes = Buffer.byteLength(diffOutput, "utf-8");
-        return text({
+        const diffLines = diffOutput.split("\n").length;
+        const result = text({
           diff: diffOutput,
           bytes: diffBytes,
           landauer_joules: landauerCostBytes(diffBytes),
@@ -877,8 +894,41 @@ export function registerGitTools(server: McpServer): void {
             thermodynamic_band: "LOW",
           },
         });
+        // P0-FIX: emit experience trace
+        const { recordExperienceTrace } = await import("./experienceTraceTools.js");
+        void recordExperienceTrace({
+          session_id: "forge-git-auto",
+          agent_id: "aforge",
+          tool: "forge_git",
+          input_summary: `git diff on ${repo} (staged=${staged})`,
+          output_summary: `diff_lines=${diffLines}, bytes=${diffBytes}, latency=${Date.now() - startTime}ms`,
+          success: true,
+          feedback_environmental: `mode=diff, lines=${diffLines}, bytes=${diffBytes}`,
+          feedback_constitutional: "PASS",
+          capability_change: 0,
+          confidence_change: 0.02,
+        }).catch(() => {});
+        return result;
       }
-      if (mode === "log") return text(gitExec(repo, ["log", "--oneline", `-${Math.min(count, 50)}`]));
+      if (mode === "log") {
+        const logOutput = gitExec(repo, ["log", "--oneline", `-${Math.min(count, 50)}`]);
+        const logLines = logOutput.split("\n").filter(Boolean).length;
+        // P0-FIX: emit experience trace
+        const { recordExperienceTrace } = await import("./experienceTraceTools.js");
+        void recordExperienceTrace({
+          session_id: "forge-git-auto",
+          agent_id: "aforge",
+          tool: "forge_git",
+          input_summary: `git log on ${repo} (count=${count})`,
+          output_summary: `log_entries=${logLines}, latency=${Date.now() - startTime}ms`,
+          success: true,
+          feedback_environmental: `mode=log, entries=${logLines}`,
+          feedback_constitutional: "PASS",
+          capability_change: 0,
+          confidence_change: 0.02,
+        }).catch(() => {});
+        return text(logOutput);
+      }
       if (!message) return text("message is required for mode=commit", true);
 
       // ── P34 MUTATION GATE: authorize before git mutation ──
@@ -902,6 +952,21 @@ export function registerGitTools(server: McpServer): void {
       if (push) {
         // Discovery 7: Remote Truth — preflight before push
         const preflight = gitRemotePreflight(repo);
+        // P0-FIX: emit experience trace (push blocked = still a learning signal)
+        const { recordExperienceTrace: recPush } = await import("./experienceTraceTools.js");
+        void recPush({
+          session_id: "forge-git-auto",
+          agent_id: "aforge",
+          tool: "forge_git",
+          input_summary: `git commit + push on ${repo} (files=${files?.length ?? "all"})`,
+          output_summary: `commit_ok, push_blocked, latency=${Date.now() - startTime}ms`,
+          success: false,
+          feedback_self: "Push blocked by F1 AMANAH — commit succeeded but push requires separate judge path",
+          feedback_environmental: `mode=commit+push, msg_bytes=${msgBytes}`,
+          feedback_constitutional: "PUSH_BLOCKED",
+          capability_change: 0.1,
+          confidence_change: -0.05,
+        }).catch(() => {});
         return text({
           status: "PUSH_BLOCKED",
           reason: "F1 AMANAH: push requires separate judge/lease path; commit created but push refused.",
@@ -916,6 +981,20 @@ export function registerGitTools(server: McpServer): void {
           },
         }, true);
       }
+      // P0-FIX: emit experience trace for successful commit
+      const { recordExperienceTrace: recCommit } = await import("./experienceTraceTools.js");
+      void recCommit({
+        session_id: "forge-git-auto",
+        agent_id: "aforge",
+        tool: "forge_git",
+        input_summary: `git commit on ${repo} (files=${files?.length ?? "all"})`,
+        output_summary: `commit_ok, msg_bytes=${msgBytes}, latency=${Date.now() - startTime}ms`,
+        success: true,
+        feedback_environmental: `mode=commit, msg_bytes=${msgBytes}, output=${output.slice(0, 100)}`,
+        feedback_constitutional: "PASS",
+        capability_change: 0.15,
+        confidence_change: 0.1,
+      }).catch(() => {});
       return text({
         commit: output,
         message_bytes: msgBytes,
@@ -930,6 +1009,22 @@ export function registerGitTools(server: McpServer): void {
         },
       });
     } catch (err: any) {
+      // P0-FIX: emit experience trace for forge_git errors (close WM gap)
+      const { recordExperienceTrace: recErr } = await import("./experienceTraceTools.js");
+      void recErr({
+        session_id: "forge-git-auto",
+        agent_id: "aforge",
+        tool: "forge_git",
+        input_summary: `git ${mode} on ${repo}`,
+        output_summary: `error: ${err.message?.slice(0, 200) ?? "unknown"}, latency=${Date.now() - startTime}ms`,
+        success: false,
+        feedback_self: `Error: ${err.message?.slice(0, 200)}`,
+        feedback_environmental: `mode=${mode}, exit_class=ERROR`,
+        feedback_constitutional: "UNKNOWN",
+        capability_change: -0.05,
+        confidence_change: -0.1,
+        new_scar: err.message?.includes("EACCES") ? "SCAR-EGIT-EACCES" : undefined,
+      }).catch(() => {});
       // Discovery 3: Failure Truth — structured error envelope
       const classified = classifyUnknown(err, { source_tool: 'forge_git', source_organ: 'aforge' });
       if (isStructuredError(classified)) {
@@ -1016,18 +1111,62 @@ export function registerDockerTools(server: McpServer): void {
       tail: z.number().default(50),
     }),
   }, async ({ mode, all, container, command, interactive, tail }) => {
+    const startTime = Date.now();
     try {
       if (mode === "ps") {
         const output = execFileSync("docker", ["ps", ...(all ? ["-a"] : []), "--format", "table {{.Names}}\t{{.Status}}\t{{.Ports}}"], { encoding: "utf-8", timeout: 10000 });
+        const lines = output.split("\n").filter(Boolean).length;
+        // P1-A: emit experience trace
+        const { recordExperienceTrace: recDkPs } = await import("./experienceTraceTools.js");
+        void recDkPs({
+          session_id: "forge-docker-auto",
+          agent_id: "aforge",
+          tool: "forge_docker",
+          input_summary: `docker ps (all=${all})`,
+          output_summary: `containers=${lines}, latency=${Date.now() - startTime}ms`,
+          success: true,
+          feedback_environmental: `mode=ps, containers=${lines}`,
+          feedback_constitutional: "PASS",
+          capability_change: 0,
+          confidence_change: 0.02,
+        }).catch(() => {});
         return text(output);
       }
       if (mode === "images") {
         const output = execFileSync("docker", ["images", "--format", "table {{.Repository}}\t{{.Tag}}\t{{.Size}}"], { encoding: "utf-8", timeout: 10000 });
+        const lines = output.split("\n").filter(Boolean).length;
+        const { recordExperienceTrace: recDkImg } = await import("./experienceTraceTools.js");
+        void recDkImg({
+          session_id: "forge-docker-auto",
+          agent_id: "aforge",
+          tool: "forge_docker",
+          input_summary: `docker images`,
+          output_summary: `images=${lines}, latency=${Date.now() - startTime}ms`,
+          success: true,
+          feedback_environmental: `mode=images, count=${lines}`,
+          feedback_constitutional: "PASS",
+          capability_change: 0,
+          confidence_change: 0.02,
+        }).catch(() => {});
         return text(output);
       }
       if (!container) return text("container is required for mode=logs or mode=exec", true);
       if (mode === "logs") {
         const output = execFileSync("docker", ["logs", "--tail", String(tail), container], { encoding: "utf-8", timeout: 10000 });
+        const bytes = Buffer.byteLength(output, "utf-8");
+        const { recordExperienceTrace: recDkLog } = await import("./experienceTraceTools.js");
+        void recDkLog({
+          session_id: "forge-docker-auto",
+          agent_id: "aforge",
+          tool: "forge_docker",
+          input_summary: `docker logs ${container} (tail=${tail})`,
+          output_summary: `bytes=${bytes}, latency=${Date.now() - startTime}ms`,
+          success: true,
+          feedback_environmental: `mode=logs, container=${container}, bytes=${bytes}`,
+          feedback_constitutional: "PASS",
+          capability_change: 0,
+          confidence_change: 0.02,
+        }).catch(() => {});
         return text(output);
       }
       if (!command) return text("command is required for mode=exec", true);
@@ -1044,8 +1183,37 @@ export function registerDockerTools(server: McpServer): void {
 
       const args = ["exec", ...(interactive ? ["-it"] : []), container, ...command.split(" ")];
       const output = execFileSync("docker", args, { encoding: "utf-8", timeout: 30000 });
+      // P1-A: emit experience trace for docker exec
+      const { recordExperienceTrace: recDkExec } = await import("./experienceTraceTools.js");
+      void recDkExec({
+        session_id: "forge-docker-auto",
+        agent_id: "aforge",
+        tool: "forge_docker",
+        input_summary: `docker exec ${container} ${command.slice(0, 80)}`,
+        output_summary: `output_bytes=${Buffer.byteLength(output, "utf-8")}, latency=${Date.now() - startTime}ms`,
+        success: true,
+        feedback_environmental: `mode=exec, container=${container}, cmd=${command.slice(0, 50)}`,
+        feedback_constitutional: "PASS",
+        capability_change: 0.1,
+        confidence_change: 0.05,
+      }).catch(() => {});
       return text(output);
     } catch (err: any) {
+      // P1-A: emit experience trace for docker errors
+      const { recordExperienceTrace: recDkErr } = await import("./experienceTraceTools.js");
+      void recDkErr({
+        session_id: "forge-docker-auto",
+        agent_id: "aforge",
+        tool: "forge_docker",
+        input_summary: `docker ${mode} ${container ?? ""}`.trim(),
+        output_summary: `error: ${err.message?.slice(0, 200)}, latency=${Date.now() - startTime}ms`,
+        success: false,
+        feedback_self: `Error: ${err.message?.slice(0, 200)}`,
+        feedback_environmental: `mode=${mode}, exit_class=ERROR`,
+        feedback_constitutional: "UNKNOWN",
+        capability_change: -0.05,
+        confidence_change: -0.1,
+      }).catch(() => {});
       return text(`Error: ${err.message?.slice(0, 1000)}`, true);
     }
   });

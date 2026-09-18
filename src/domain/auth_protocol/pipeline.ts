@@ -356,6 +356,46 @@ async function stepRollback(ctx: PipelineContext, error: Error): Promise<Pipelin
   return ctx;
 }
 
+/**
+ * STEP 3.5: RUNTIME_VERIFY — Verify runtime identity before execution.
+ * P1-D: Ensures source commit matches dist artifact before mutation.
+ * Fail-closed: HOLD if runtime identity cannot be verified.
+ */
+async function stepRuntimeVerify(ctx: PipelineContext): Promise<PipelineContext> {
+  if (ctx.contract.action_class === "OBSERVE") return ctx;
+
+  try {
+    const { execSync } = await import("node:child_process");
+    const { existsSync, readFileSync, statSync } = await import("node:fs");
+
+    // Check git commit matches dist build timestamp
+    const workspace = "/root/A-FORGE";
+    const gitCommit = execSync(`git -C ${workspace} rev-parse HEAD 2>/dev/null`, { encoding: "utf-8", timeout: 5000 }).trim();
+    const commitTime = Number(execSync(`git -C ${workspace} log -1 --format=%ct 2>/dev/null`, { encoding: "utf-8", timeout: 5000 }).trim()) * 1000;
+
+    const distPath = `${workspace}/dist/src/interfaces/mcp/serve.js`;
+    if (!existsSync(distPath)) {
+      ctx.status.stage = PIPELINE_STAGE.FAILED;
+      ctx.status.error = "RUNTIME_VERIFY: dist entry point not found — project not built";
+      return ctx;
+    }
+
+    const distStat = statSync(distPath);
+    if (distStat.mtimeMs < commitTime) {
+      ctx.status.stage = PIPELINE_STAGE.FAILED;
+      ctx.status.error = `RUNTIME_VERIFY: dist older than last commit (${new Date(distStat.mtimeMs).toISOString()} < ${new Date(commitTime).toISOString()}) — rebuild required`;
+      return ctx;
+    }
+
+    ctx.status.timestamps = { ...ctx.status.timestamps, runtime_verified: new Date().toISOString() };
+    return ctx;
+  } catch (err: any) {
+    ctx.status.stage = PIPELINE_STAGE.FAILED;
+    ctx.status.error = `RUNTIME_VERIFY: ${err.message?.slice(0, 200)}`;
+    return ctx;
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // PIPELINE EXECUTOR — The Institution Itself
 // ═══════════════════════════════════════════════════════════════════
@@ -365,6 +405,7 @@ const PIPELINE = [
   { name: "FQ_GATE", fn: stepFqGate },
   { name: "LEASE", fn: stepLease },
   { name: "LOCK", fn: stepLock },
+  { name: "RUNTIME_VERIFY", fn: stepRuntimeVerify },
   { name: "EXECUTE", fn: stepExecute },
   { name: "EVIDENCE", fn: stepEvidence },
   { name: "VERIFY", fn: stepVerify },
@@ -560,7 +601,7 @@ THE THREE LAWS:
   DEPLOY is sealed. (full pipeline + 555 verify + 888 judge + Lane A seal)
 
 PIPELINE:
-  DECLARE → FQ_GATE → LEASE → LOCK → EXECUTE → EVIDENCE → VERIFY → JUDGE → MERGE → SEAL → INGEST
+  DECLARE → FQ_GATE → LEASE → LOCK → RUNTIME_VERIFY → EXECUTE → EVIDENCE → VERIFY → JUDGE → MERGE → SEAL → INGEST
 
 AUTH governs transitions, not agents. Claude Code + OBSERVE needs no contract.
 Kimi + MUTATE needs the same contract as any other agent.
