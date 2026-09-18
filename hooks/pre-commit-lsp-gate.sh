@@ -134,22 +134,19 @@ for file in $STAGED; do
     # ── Scar-001 Check: ESM require() guard (FORGE-esm-require-guard) ──
     case "$ext" in
         ts|tsx|js|jsx|mjs)
-            DIR=$(dirname "$file")
-            PKG_JSON=""
-            while [ "$DIR" != "/" ] && [ "$DIR" != "." ] && [ -n "$DIR" ]; do
-                if [ -f "$DIR/package.json" ]; then
-                    PKG_JSON="$DIR/package.json"
-                    break
-                fi
-                DIR=$(dirname "$DIR")
-            done
-            [ -z "$PKG_JSON" ] && [ -f "package.json" ] && PKG_JSON="package.json"
-            
-            if [ -n "$PKG_JSON" ] && grep -q '"type"[[:space:]]*:[[:space:]]*"module"' "$PKG_JSON" 2>/dev/null; then
-                REQUIRE_HITS=$(grep -nE '\brequire\s*\(' "$file" 2>/dev/null | grep -v 'import.*require' | grep -v 'node_modules' || true)
-                if [ -n "$REQUIRE_HITS" ]; then
-                    echo -e "  ${R}✗${X} ${file} — SCAR-001 VIOLATION: illegal require() in ESM package (${PKG_JSON})"
-                    echo -e "    ${R}${REQUIRE_HITS}${X}"
+            # Delegated to a precise checker (2026-09-18). The previous inline grep
+            # flagged 3 files on a real merge and all 3 were false positives: one had
+            # its only require() inside a JSDoc block, and two establish a
+            # `require = createRequire(...)` binding at module scope, where
+            # require('node:crypto') resolves fine under `node --input-type=module`.
+            # A lexical grep cannot see comments or a binding — read the construct in
+            # its enclosing scope. Real violations (bare require, no binding) still block.
+            if [ -f "/root/AAA/scripts/esm_require_guard.py" ]; then
+                GUARD_OUT=$(python3 /root/AAA/scripts/esm_require_guard.py "$file" 2>&1)
+                GUARD_RC=$?
+                if [ "$GUARD_RC" -ne 0 ]; then
+                    echo -e "  ${R}✗${X} ${file}${X}"
+                    echo -e "$GUARD_OUT" | sed 's/^/  /'
                     ERRORS=$((ERRORS + 1))
                 fi
             fi
