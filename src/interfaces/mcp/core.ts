@@ -25,6 +25,9 @@ import { createLlmProvider } from "../../infrastructure/llm/providerFactory.js";
 import { getConstitutionGate, CONSTITUTION_GATE } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
+// Tuas 2 — shared federation invocation telemetry (contract:
+// /root/AAA/lib/invocation_log.py). Additive: one line per dispatched tool call.
+import { withInvocationLog } from "../../infrastructure/metrics/invocationLog.js";
 import { runStage, recordFloorViolation } from "../../infrastructure/metrics/prometheus.js";
 import type { MetabolicStage } from "../../domain/types/aki.js";
 import { FileVaultClient, SupabaseVaultClient, type VaultVerdict } from "../../infrastructure/vault/index.js";
@@ -46,6 +49,10 @@ import { domLinter } from "../../infrastructure/tools/domLinter.js";
 import { getMcpPolicyGate } from "../../domain/governance/McpPolicyGate.js";
 import { enforceMcpFloor, floorErrorResponse } from "../../domain/governance/mcpFloorEnforcer.js";
 import { gateToolIngress } from "../../infrastructure/governance/actIngress.js";
+import {
+  gateToolClaim,
+  claimGateRefusalResponse,
+} from "../../infrastructure/governance/claimGate.js";
 import {
   registerFilesystemTools,
   registerPostgresTools,
@@ -515,6 +522,20 @@ const GOVERNANCE_FIELDS = {
     .describe("arifOS Arif's Capability Token act_v1.* (federation ACT gate; legacy sct_v1 accepted)"),
   sct: z.string().optional().describe("Alias for session_token (legacy, use 'act')"),
   act: z.string().optional().describe("Arif's Capability Token (ACT) — preferred alias for session_token"),
+  // ── CLAIM-CLASS justification (claim_kernel gate) ──
+  // Any ingress caller may attach the justification for a governed
+  // (mutation/execution) call. Stated claims are judged by the canonical
+  // claim_kernel: MEASURED | MECHANISM | PATTERN pass, NARRATIVE and
+  // UNCLASSIFIED are refused before the handler runs. Omit both fields and
+  // the gate is not applicable (existing behaviour).
+  justification: z
+    .string()
+    .optional()
+    .describe("Why this action is being taken (judged by the claim-class gate)"),
+  claim_class: z
+    .enum(["MEASURED", "MECHANISM", "PATTERN", "NARRATIVE", "UNCLASSIFIED"])
+    .optional()
+    .describe("Declared class of the justification claim (claim_kernel/v1)"),
 };
 
 function extendZodSchema(schema: any): any {
@@ -564,6 +585,15 @@ function extendInputSchema(schema: any): any {
         },
         sct: { type: "string", description: "Alias for session_token (legacy, use 'act')" },
         act: { type: "string", description: "Arif's Capability Token (ACT) — preferred alias" },
+        justification: {
+          type: "string",
+          description: "Why this action is being taken (judged by the claim-class gate)",
+        },
+        claim_class: {
+          type: "string",
+          enum: ["MEASURED", "MECHANISM", "PATTERN", "NARRATIVE", "UNCLASSIFIED"],
+          description: "Declared class of the justification claim (claim_kernel/v1)",
+        },
       },
     };
   }
@@ -579,7 +609,10 @@ const _originalTool = server.tool.bind(server);
 ) {
   const gatedSchema = extendZodSchema(schema);
   const baseActionClass = classifyTool(name); // registration-time classification for annotations
-  const wrappedHandler = async (args: any, ctx: any) => {
+  // Tuas 2 invocation telemetry. This wrapper is the narrowest point common to
+  // every dispatch transport (stdio / :7072 gated / :7071 in-process) — all of
+  // them call the handler stored in the SDK registry. Fail-soft, additive.
+  const wrappedHandler = withInvocationLog(name, async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     const toolMode = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
     const actionClass = classifyTool(name, toolMode); // runtime classification with mode
@@ -643,6 +676,19 @@ const _originalTool = server.tool.bind(server);
         ],
         isError: true,
       };
+    }
+
+    // ── CLAIM-CLASS GATE (explanatory-class justification) ──────────────
+    // Canonical kernel: /root/AAA/lib/claim_kernel/claim_kernel.py (claim_kernel/v1)
+    // Module: /root/A-FORGE/src/infrastructure/governance/claimGate.ts
+    // A NARRATIVE-class claim may be published but may never be the sole
+    // justification for a mutation; an UNCLASSIFIED claim fails closed.
+    // Mechanical refusal at this ingress chokepoint, before any handler body
+    // runs. Additive: governed action classes only, and only when the caller
+    // actually states a justification claim and/or declares its class.
+    const claimGate = await gateToolClaim(name, argsObj, actionClass);
+    if (!claimGate.ok) {
+      return claimGateRefusalResponse(claimGate) as any;
     }
 
     // ── A-THINK Guard: classify → budget → affordance → permission ──
@@ -748,7 +794,7 @@ const _originalTool = server.tool.bind(server);
     // FloorEnforcer approved (SEAL or CAUTION): call the original handler
     const result = await withHandlerTelemetry(name, () => handler(args, ctx));
     return injectEpistemic(result, name) as any;
-  };
+  });
   // Federation alignment: ACTUATOR header on server.tool() path too
   const actuatorDesc = enrichActuatorDescription(name, description);
   // ── MCP annotations: readOnlyHint / destructiveHint (2026-07-19) ──
@@ -773,7 +819,9 @@ const _originalRegisterTool = server.registerTool.bind(server);
         description: enrichActuatorDescription(name, options.description),
       }
     : options;
-  const wrappedHandler = async (args: any, ctx: any) => {
+  // Tuas 2 invocation telemetry — registerTool dispatch path (same shared
+  // contract, same single line per call).
+  const wrappedHandler = withInvocationLog(name, async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     const toolMode = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
     const actionClass = classifyTool(name, toolMode);
@@ -830,6 +878,19 @@ const _originalRegisterTool = server.registerTool.bind(server);
         ],
         isError: true,
       };
+    }
+
+    // ── CLAIM-CLASS GATE (explanatory-class justification) ──────────────
+    // Canonical kernel: /root/AAA/lib/claim_kernel/claim_kernel.py (claim_kernel/v1)
+    // Module: /root/A-FORGE/src/infrastructure/governance/claimGate.ts
+    // A NARRATIVE-class claim may be published but may never be the sole
+    // justification for a mutation; an UNCLASSIFIED claim fails closed.
+    // Mechanical refusal at this ingress chokepoint, before any handler body
+    // runs. Additive: governed action classes only, and only when the caller
+    // actually states a justification claim and/or declares its class.
+    const claimGate = await gateToolClaim(name, argsObj, actionClass);
+    if (!claimGate.ok) {
+      return claimGateRefusalResponse(claimGate) as any;
     }
 
     // ── A-THINK Guard: classify → budget → affordance → permission ──
@@ -931,7 +992,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
     }
     const result = await withHandlerTelemetry(name, () => handler(args, ctx));
     return injectEpistemic(result, name) as any;
-  };
+  });
   return _originalRegisterTool(name, gatedOptions, wrappedHandler as any);
 };
 

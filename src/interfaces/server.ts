@@ -65,6 +65,10 @@ import {
 } from "../domain/governance/GovernanceBridge.js";
 import { validateSession } from "../domain/session/sessionGate.js";
 import { classifyTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
+import {
+  gateToolClaim,
+  claimGateHoldBody,
+} from "../infrastructure/governance/claimGate.js";
 import { gateToolByFq } from "../domain/forge/check_verdict.js";
 import { preForgeCheck, PreForgeGateBlockedError, registerEarthMeasurement } from "../domain/governance/PreForgeGateClient.js";
 import { actCheck, ActGateBlockedError } from "../domain/governance/ActGateClient.js";
@@ -570,6 +574,19 @@ app.post("/execute", async (req: Request, res: Response) => {
       });
     }
 
+    // ── CLAIM-CLASS GATE (explanatory-class justification) ──────────────
+    // Canonical kernel: /root/AAA/lib/claim_kernel/claim_kernel.py (claim_kernel/v1)
+    // Module: /root/A-FORGE/src/infrastructure/governance/claimGate.ts
+    // A NARRATIVE-class claim may be published but may never be the sole
+    // justification for a mutation; an UNCLASSIFIED claim fails closed.
+    // Mechanical refusal at the HTTP ingress, before any tool is proxied.
+    {
+      const claimGate = await gateToolClaim(tool, (args && typeof args === "object") ? args : {}, actionClass);
+      if (!claimGate.ok) {
+        return res.status(423).json(claimGateHoldBody(claimGate));
+      }
+    }
+
     // ── FORGE 2-B: Kernel Session Gate (MUTATE + ATOMIC require session + lease) ──
     if (requiresGovernance(actionClass)) {
       if (!session_id) {
@@ -617,6 +634,7 @@ app.post("/execute", async (req: Request, res: Response) => {
         return;
       }
     }
+
 
     // 888_HOLD gate: require F13 SOVEREIGN verdict for high-severity actions
     if (requires888Hold(actionClass)) {
