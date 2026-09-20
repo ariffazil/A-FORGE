@@ -93,7 +93,17 @@ secrets = []
 for k, v in os.environ.items():
     if any(x in k.lower() for x in ['secret', 'key', 'token', 'password', 'api']):
         secrets.append(k)
-print(json.dumps({"found_keys": len(secrets), "keys": secrets[:5]}))
+result = {"found_keys": len(secrets), "keys": secrets[:5]}
+# FIX (2026-09-21, 333-AGI session SEAL-d3de8b650b9d4427):
+# If no secrets are visible, that IS the security property. The probe must
+# mark itself "blocked" so testEscape interprets it as a pass. Previously
+# the probe returned {found_keys:0} and testEscape (which checks for the
+# substring "blocked") reported not-blocked — a false-positive in CI when
+# --clearenv worked. This was opposite of the actual security reality.
+if len(secrets) == 0:
+    result["blocked"] = True
+    result["reason"] = "no_secrets_visible_after_clearenv"
+print(json.dumps(result))
 `.trim();
 
 /** Python tool that spawns child processes */
