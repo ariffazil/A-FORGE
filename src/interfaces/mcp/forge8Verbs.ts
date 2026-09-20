@@ -49,6 +49,7 @@ import {
   getSession,
   createSandbox,
   runInSandbox,
+  governedExecute,
 } from "../../domain/containment/ExecutionSandbox.js";
 import { SandboxStorage } from "../../domain/containment/SandboxStorage.js";
 
@@ -380,12 +381,19 @@ async function forgeSandboxRunHandler(args: z.infer<typeof ForgeSandboxRunReques
   let stderr = "";
 
   try {
-    const result = await execAsync(`bash artifact.code`, {
-      cwd: staging_path,
-      timeout: timeout_ms,
-    });
-    stdout = result.stdout;
-    stderr = result.stderr;
+    // G-04 FIX (2026-09-20, FI-008): this ran `bash artifact.code` RAW on the
+    // host with the A-FORGE service user's privileges, while the containment
+    // engine was imported above and never called. Isolation was declared,
+    // imported and absent. Route through governedExecute so the command runs
+    // inside the verdict-derived sandbox (bwrap/firejail/docker).
+    const { result: contained } = await governedExecute(
+      "SEAL",
+      `bash artifact.code`,
+      { verdictHash: args.stage_id, sessionId: args.stage_id },
+    );
+    stdout = contained.stdout ?? "";
+    stderr = contained.stderr ?? "";
+    exit_code = contained.exitCode ?? 0;
   } catch (error: any) {
     exit_code = error.code || 1;
     stdout = error.stdout || "";
@@ -756,13 +764,21 @@ async function forgeExecuteHandler(args: z.infer<typeof ForgeExecuteRequestSchem
 
   // Execute with full resource access (trust tier set by arifOS)
   const staging_path = path.join(FORGE8_STAGING_DIR, docket.stage_id);
+  // Execute inside the containment sandbox (G-04 FIX 2026-09-20, FI-008).
+  // Previously a raw `execAsync("bash artifact.code")` on the host. The
+  // `trust_tier` was metadata passed to the same bash call regardless of tier;
+  // now the verdict-derived policy actually bounds the process.
   let execution_output = "";
   try {
-    const { stdout } = await execAsync(`bash artifact.code`, {
-      cwd: staging_path,
-      timeout: SANDBOX_TIMEOUT_MAX_MS.C3_SOVEREIGN,
-    });
-    execution_output = stdout;
+    const { result: contained } = await governedExecute(
+      "SEAL",
+      `bash artifact.code`,
+      { verdictHash: String(args.vault_seal_id || ""), sessionId: docket.stage_id },
+    );
+    execution_output = contained.stdout ?? "";
+    if (contained.stderr) {
+      execution_output += `\n[stderr] ${contained.stderr}`;
+    }
   } catch (error: any) {
     execution_output = `Execution failed: ${error.message}`;
   }

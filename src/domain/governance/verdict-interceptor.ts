@@ -10,7 +10,13 @@
  * DITEMPA BUKAN DIBERI
  */
 
-import { verdict, sealVerdict, errorVerdict, type VerdictEnvelope } from "./verdict-envelope.js";
+import {
+  verdict,
+  sealVerdict,
+  errorVerdict,
+  type VerdictEnvelope,
+  type VerdictStatus,
+} from "./verdict-envelope.js";
 
 const WRAPPED = Symbol.for("aforge.verdict.intercepted");
 
@@ -49,14 +55,27 @@ function extractData(raw: any): Record<string, unknown> | string | null {
 
 /**
  * Determine verdict status from raw response.
+ *
+ * G-15 FIX (2026-09-20, FI-008). Previously this returned only
+ * "SEAL" | "ERROR", collapsing HOLD, VOID and SABAR into ERROR — so a
+ * constitutional refusal was indistinguishable from a crash, and the
+ * Judgment -> Receipt edge lost the verdict. A refusal is not a fault;
+ * downstream consumers must be able to tell them apart.
  */
-function determineStatus(raw: any): "SEAL" | "ERROR" {
+function determineStatus(raw: any): VerdictStatus {
   if (!raw) return "ERROR";
   if (raw.isError === true) return "ERROR";
   if (raw.error) return "ERROR";
-  if (raw.status === "ERROR" || raw.status === "VOID" || raw.status === "HOLD") {
-    return "ERROR";
+  // Verdict-status field wins. Preserve it verbatim — do not flatten.
+  const s = raw.status;
+  if (s === "SEAL" || s === "HOLD" || s === "SABAR" || s === "VOID" || s === "ERROR") {
+    return s;
   }
+  // Explicit constitutional refusal signals, checked before the default pass.
+  if (raw.verdict === "HOLD" || raw.verdict === "VOID" || raw.verdict === "SABAR") {
+    return raw.verdict;
+  }
+  if (raw.blocked === true || raw.allowed === false) return "HOLD";
   return "SEAL";
 }
 
