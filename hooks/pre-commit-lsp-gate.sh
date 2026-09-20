@@ -119,12 +119,20 @@ for file in $STAGED; do
             fi
             ;;
         py)
-            # Python: check with python -m py_compile
-            if python3 -m py_compile "$file" 2>/dev/null; then
+            # Python: syntax check via ast.parse.
+            #
+            # NOT py_compile — that WRITES __pycache__, which fails with EPERM
+            # inside the chattr +i trees (AAA/governance, AAA/canon,
+            # arifOS/GENESIS). Under `set -e -o pipefail` the failing error
+            # capture then aborted this hook with NO message at all, so every
+            # commit touching a canon-locked .py file died at "Running LSP
+            # diagnostics..." and was indistinguishable from a real block.
+            # ast.parse validates syntax and writes nothing (fixed 2026-09-20).
+            if python3 -c 'import ast,sys; ast.parse(open(sys.argv[1], encoding="utf-8").read())' "$file" 2>/dev/null; then
                 echo -e "  ${G}✓${X} ${D}${file}${X} — syntax valid"
                 CLEAN=$((CLEAN + 1))
             else
-                PY_ERR=$(python3 -m py_compile "$file" 2>&1 | head -3)
+                PY_ERR=$(python3 -c 'import ast,sys; ast.parse(open(sys.argv[1], encoding="utf-8").read())' "$file" 2>&1 | head -3) || true
                 echo -e "  ${R}✗${X} ${file} — SYNTAX ERROR"
                 echo -e "    ${R}${PY_ERR}${X}"
                 ERRORS=$((ERRORS + 1))
@@ -142,8 +150,11 @@ for file in $STAGED; do
             # A lexical grep cannot see comments or a binding — read the construct in
             # its enclosing scope. Real violations (bare require, no binding) still block.
             if [ -f "/root/AAA/scripts/esm_require_guard.py" ]; then
-                GUARD_OUT=$(python3 /root/AAA/scripts/esm_require_guard.py "$file" 2>&1)
-                GUARD_RC=$?
+                # `cmd && RC=0 || RC=$?` — a bare capture followed by reading `$?`
+                # on the next line can never observe a failure under `set -e`:
+                # the non-zero status aborts the hook before the read. Same class
+                # of defect as the py_compile abort above (fixed 2026-09-20).
+                GUARD_OUT=$(python3 /root/AAA/scripts/esm_require_guard.py "$file" 2>&1) && GUARD_RC=0 || GUARD_RC=$?
                 if [ "$GUARD_RC" -ne 0 ]; then
                     echo -e "  ${R}✗${X} ${file}${X}"
                     echo -e "$GUARD_OUT" | sed 's/^/  /'
@@ -176,12 +187,10 @@ if [ -f "/root/AAA/scripts/musyawarah_gate.py" ]; then
     # guard-shaped comment.
     if [ "${MUSYAWARAH_STRICT:-0}" = "1" ]; then
         echo -e "${C}[MUSYAWARAH-GATE]${X} scanning arifFlow ledger (STRICT — may block)..."
-        MUSYAWARAH_OUT=$(python3 /root/AAA/scripts/musyawarah_gate.py --scan-ledger 2>&1)
-        MUSYAWARAH_RC=$?
+        MUSYAWARAH_OUT=$(python3 /root/AAA/scripts/musyawarah_gate.py --scan-ledger 2>&1) && MUSYAWARAH_RC=0 || MUSYAWARAH_RC=$?
     else
         echo -e "${C}[MUSYAWARAH-GATE]${X} scanning arifFlow ledger (OBSERVE_ONLY)..."
-        MUSYAWARAH_OUT=$(python3 /root/AAA/scripts/musyawarah_gate.py --scan-ledger --dry-run 2>&1)
-        MUSYAWARAH_RC=$?
+        MUSYAWARAH_OUT=$(python3 /root/AAA/scripts/musyawarah_gate.py --scan-ledger --dry-run 2>&1) && MUSYAWARAH_RC=0 || MUSYAWARAH_RC=$?
     fi
     if [ -n "$MUSYAWARAH_OUT" ]; then
         echo "$MUSYAWARAH_OUT" | sed 's/^/  /'
