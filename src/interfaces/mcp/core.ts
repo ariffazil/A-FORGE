@@ -2430,6 +2430,16 @@ server.registerTool("forge_vault", {
 // ── Domain Tools (Tier 03) ───────────────────────────────────────────────────
 // forge_wealth: Domain router to WEALTH organ. No local computation.
 // Routes to WEALTH MCP (port 18082) for all capital intelligence.
+//
+// BRIDGE FIX 2026-09-21 (session continuity, F13 directive):
+// arifOS WEALTH enforces L11 SESSION_REQUIRED via arifosmcp/runtime/wealth_auth/.
+// Prior to this fix, A-FORGE forge_wealth called WEALTH as a fresh anonymous
+// MCP client; WEALTH received session_id="_default", actor_id="wealth-mcp"
+// and returned VOID / SESSION_REQUIRED. Mirror the forge_kernel pattern:
+// extract inbound identity (actor_id, session_id, session_token/sct/act)
+// from the caller's args and forward both as HTTP headers
+// (X-ArifOS-Actor-ID, X-ArifOS-Session-ID, Authorization: Bearer <sct>)
+// and into the WEALTH tool arguments. Never weaken the gate — fix the wire.
 server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: emv, conservation, flow, runway, wisdom.", {
   mode: z.enum(["emv", "conservation", "flow", "runway", "wisdom"]).describe("WEALTH tool to invoke"),
   outcomes: z.array(z.number()).optional().describe("outcomes"),
@@ -2438,26 +2448,89 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
   liabilities: z.array(z.record(z.string(), z.unknown())).optional().describe("Conservation liabilities"),
   proposal: z.string().optional().describe("Wisdom proposal"),
 }, async (args) => {
+  // Tool map: forge_wealth modes → actual WEALTH @mcp.tool names (verified
+  // against /root/WEALTH/internal/monolith.py @mcp.tool decorators).
+  // Previously used internal/candidate names that did not exist as FastMCP
+  // tools (e.g. wealth_conservation_check → unknown tool). Each mode passes
+  // the subset of arguments that the target WEALTH tool accepts; missing
+  // params fall through to that tool's own defaults.
   const toolMap: Record<string, string> = {
-    emv: "wealth_compute_emv",
-    conservation: "wealth_conservation_check",
-    flow: "wealth_flow_check",
-    runway: "wealth_runway_check",
-    wisdom: "wealth_wisdom_evaluate",
+    emv: "wealth_signal_information",            // mode=evoi (petroleum) — closest EMV compute
+    conservation: "wealth_conservation_capital",  // mode=state, takes assets/liabilities
+    flow: "wealth_flow_liquidity",                // mode=cashflow, takes income/expenses
+    runway: "wealth_energy_productivity",         // mode=pi, takes cash_flows/discount_rate
+    wisdom: "wealth_boundary_governance",         // mode=floors, takes proposal
   };
   const toolName = toolMap[args.mode];
   const toolArgs: Record<string, unknown> = {};
-  if (args.mode === "emv") { toolArgs.outcomes = args.outcomes; toolArgs.probabilities = args.probabilities; }
-  if (args.mode === "conservation") { toolArgs.assets = args.assets; toolArgs.liabilities = args.liabilities; }
-  if (args.mode === "flow") { toolArgs.income = args.assets; toolArgs.expenses = args.liabilities; }
-  if (args.mode === "runway") { toolArgs.liquid_assets = (args.assets?.[0] as Record<string, unknown>)?.value; toolArgs.monthly_burn = (args.liabilities?.[0] as Record<string, unknown>)?.value; }
-  if (args.mode === "wisdom") { toolArgs.proposal = args.proposal; }
+  if (args.mode === "emv") {
+    // wealth_signal_information wants well_cost_musd / p50_value_musd;
+    // legacy outcomes/probabilities shape is mapped via prior_pos_samples.
+    if (Array.isArray(args.outcomes) && Array.isArray(args.probabilities)) {
+      toolArgs.prospect_metrics = {
+        outcomes: args.outcomes,
+        probabilities: args.probabilities,
+      };
+    }
+  }
+  if (args.mode === "conservation") {
+    toolArgs.assets = args.assets;
+    toolArgs.liabilities = args.liabilities;
+  }
+  if (args.mode === "flow") {
+    toolArgs.income = args.assets;
+    toolArgs.expenses = args.liabilities;
+  }
+  if (args.mode === "runway") {
+    // wealth_energy_productivity takes initial_investment + cash_flows; we
+    // approximate by passing a single-period cash flow.
+    const liquid = (args.assets?.[0] as Record<string, unknown>)?.value;
+    const burn = (args.liabilities?.[0] as Record<string, unknown>)?.value;
+    if (typeof liquid === "number") toolArgs.initial_investment = liquid;
+    if (typeof burn === "number") toolArgs.cash_flows = [-burn];
+  }
+  if (args.mode === "wisdom") {
+    // wealth_boundary_governance wants proposal as a dict; we wrap string.
+    toolArgs.proposal = { text: String(args.proposal ?? "") };
+  }
+
+  // Extract inbound identity (F13: never widen CanMutate; forward what the
+  // caller actually proved, never invent one).
+  const inboundActorId =
+    (typeof (args as any).actor_id === "string" && (args as any).actor_id) ||
+    (typeof (args as any).actorId === "string" && (args as any).actorId) ||
+    "A-FORGE";
+  const inboundSessionId =
+    (typeof (args as any).session_id === "string" && (args as any).session_id) || undefined;
+  const inboundSct =
+    (typeof (args as any).session_token === "string" && (args as any).session_token) ||
+    (typeof (args as any).sct === "string" && (args as any).sct) ||
+    (typeof (args as any).act === "string" && (args as any).act) || undefined;
+  const inboundTraceId =
+    (typeof (args as any).trace_id === "string" && (args as any).trace_id) || undefined;
+
+  // Mirror identity into WEALTH tool args (any tool that introspects args).
+  toolArgs.actor_id = inboundActorId;
+  if (inboundSessionId) toolArgs.session_id = inboundSessionId;
+  if (inboundTraceId) toolArgs.trace_id = inboundTraceId;
+
+  // Build bridge HTTP headers so WEALTH stateful_middleware can extract the
+  // envelope and authorize() can validate the bearer.
+  const bridgeHeaders: Record<string, string> = {
+    "X-ArifOS-Actor-ID": inboundActorId,
+    "X-ArifOS-Session-ID": inboundSessionId || "",
+  };
+  if (inboundSct) bridgeHeaders.Authorization = `Bearer ${inboundSct}`;
+  if (inboundTraceId) bridgeHeaders["X-ArifOS-Trace-ID"] = inboundTraceId;
 
   const laneUrl = process.env.WEALTH_TRUTH_LANE_URL || "http://localhost:18082";
   let transport: StreamableHTTPClientTransport | undefined;
   try {
     const client = new Client({ name: "A-FORGE-forge-wealth", version: "0.1.0" }, { capabilities: {} });
-    transport = new StreamableHTTPClientTransport(new URL(`${laneUrl.replace(/\/$/, "")}/mcp`));
+    transport = new StreamableHTTPClientTransport(
+      new URL(`${laneUrl.replace(/\/$/, "")}/mcp`),
+      { requestInit: { headers: bridgeHeaders } }
+    );
     await client.connect(transport);
     const result = await client.callTool({ name: toolName, arguments: toolArgs });
     const text = Array.isArray(result.content) && typeof result.content[0]?.text === "string" ? result.content[0].text : JSON.stringify(result);
