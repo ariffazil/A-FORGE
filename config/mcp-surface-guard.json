@@ -4,21 +4,93 @@
   "enforce_hold": true,
   "drift_archive_age_ms": 86400000,
   "organs": [
-    { "id": "arifos", "url": "http://localhost:8088", "required_tools": ["arif_init", "arif_observe", "arif_think", "arif_route", "arif_memory", "arif_judge", "arif_forge", "arif_seal"] },
-    { "id": "aforge", "url": "http://localhost:7072", "required_tools": ["forge_execute", "forge_shell", "forge_git", "forge_docker"] },
-    { "id": "geox", "url": "http://localhost:8081", "required_tools": ["geox_well_ingest", "geox_petrophysics", "geox_seismic_compute", "geox_basin"] },
-    { "id": "wealth", "url": "http://localhost:18082", "required_tools": ["capital_primitive", "capital_health", "capital_market", "capital_ledger"] },
-    { "id": "well", "url": "http://localhost:18083", "required_tools": ["well_validate_vitality", "well_assess_homeostasis", "well_assess_reliability"] }
+    {
+      "id": "arifos",
+      "url": "http://localhost:8088",
+      "required_tools": [
+        "arif_init",
+        "arif_observe",
+        "arif_think",
+        "arif_route",
+        "arif_memory",
+        "arif_judge",
+        "arif_forge",
+        "arif_seal"
+      ]
+    },
+    {
+      "id": "aforge",
+      "url": "http://localhost:7072",
+      "required_tools": [
+        "forge_execute",
+        "forge_shell",
+        "forge_git",
+        "forge_docker"
+      ]
+    },
+    {
+      "id": "geox",
+      "url": "http://localhost:8081",
+      "required_tools": [
+        "geox_well_ingest",
+        "geox_petrophysics",
+        "geox_seismic_compute",
+        "geox_basin"
+      ]
+    },
+    {
+      "id": "wealth",
+      "url": "http://localhost:18082",
+      "required_tools": [
+        "capital_primitive",
+        "capital_health",
+        "capital_market",
+        "capital_ledger"
+      ]
+    },
+    {
+      "id": "well",
+      "url": "http://localhost:18083",
+      "required_tools": [
+        "well_validate_vitality",
+        "well_assess_homeostasis",
+        "well_assess_reliability"
+      ]
+    }
   ],
   "on_drift": {
     "verdict": "HOLD",
     "reason": "MCP_TOOL_SURFACE_DRIFT",
-    "notify": ["arif", "aaa_cockpit"],
-    "log_to": "vault999"
+    "alert_surface": {
+      "journal": "systemd journal, identifier surface-guard (error level, per drift organ/tool)",
+      "state_file": "/var/log/surface-guard/latest.json \u2014 single always-current state",
+      "transition_files": "/var/log/surface-guard/drift-<ts>.json \u2014 written ONLY on state change",
+      "pull": "MCP tools forge_surface_guard / forge_surface_audit (agents query on demand)",
+      "nats_push": "NON-FUNCTIONAL \u2014 the `nats` client package is not installed in this repo, so publishHoldAlert() logs 'NATS module not available' every time (44+ occurrences in the retained journal). A NATS server IS running on 127.0.0.1:4222; the client is the missing half. No subscriber for subject 888_HOLD has been verified. Do not read this as an alerting path until both halves exist."
+    },
+    "config_drift_note": "Removed decorative keys 2026-09-20 under F13 order; see /root/VAULT999/RECEIPTS/2026-09-20-surface-guard-baseline-persistence.json"
   },
   "error_envelope": {
     "version": "2.0.0",
-    "classes": ["BAD_INPUT_SHAPE", "BAD_INPUT_VALUE", "MISSING_REQUIRED_FIELD", "DOWNSTREAM_FAILURE", "DOWNSTREAM_PARSER_FAIL", "RESOURCE_EXHAUSTED", "INTERNAL_ERROR", "AUTHORITY_BLOCK", "FLOOR_BLOCK", "TOOL_SURFACE_DRIFT"],
-    "recoverability_levels": ["AGENT_CAN_RETRY", "AGENT_CAN_ROUTE", "ESCALATE_TO_HUMAN", "ESCALATE_TO_888_HOLD", "FATAL_DO_NOT_RETRY", "RETRY_SAME_LATER"]
+    "classes": [
+      "BAD_INPUT_SHAPE",
+      "BAD_INPUT_VALUE",
+      "MISSING_REQUIRED_FIELD",
+      "DOWNSTREAM_FAILURE",
+      "DOWNSTREAM_PARSER_FAIL",
+      "RESOURCE_EXHAUSTED",
+      "INTERNAL_ERROR",
+      "AUTHORITY_BLOCK",
+      "FLOOR_BLOCK",
+      "TOOL_SURFACE_DRIFT"
+    ],
+    "recoverability_levels": [
+      "AGENT_CAN_RETRY",
+      "AGENT_CAN_ROUTE",
+      "ESCALATE_TO_HUMAN",
+      "ESCALATE_TO_888_HOLD",
+      "FATAL_DO_NOT_RETRY",
+      "RETRY_SAME_LATER"
+    ]
   }
 }

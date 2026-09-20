@@ -170,3 +170,6 @@ artifacts/alpha-zen-daily/
 litellm-config.yaml.pre-*
 litellm-config.order-snapshot.json
 .ua/
+
+# Surface Guard baseline is runtime state, not source
+config/surface-snapshots.json

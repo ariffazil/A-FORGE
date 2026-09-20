@@ -19,6 +19,7 @@ import { join } from 'path';
 import {
   getSurfaceGuardStore,
   SurfaceGuardRunner,
+  type SurfaceGuardStore,
   type FederationDriftReport,
   type OrganConfig,
 } from '../src/domain/governance/mcp-surface-guard.js';
@@ -99,7 +100,55 @@ function writeLatest(report: FederationDriftReport): void {
   writeFileSync(join(LOG_DIR, 'latest.json'), JSON.stringify(report, null, 2));
 }
 
+function writeBaselineReceipt(store: SurfaceGuardStore, organs: OrganConfig[]): void {
+  ensureLogDir();
+  const load = store.getBaselineLoad();
+  const pinned = organs.map(o => ({
+    organ_id: o.id,
+    reference_signature: store.getPinnedSignature(o.id) || null,
+  }));
+  const receipt = {
+    schema: 'arifos.surface-guard.baseline-receipt.v1',
+    ts: new Date().toISOString(),
+    pid: process.pid,
+    baseline_path: load.path,
+    baseline_loaded: load.loaded,
+    baseline_saved_at: load.saved_at ?? null,
+    baseline_organ_count: load.organ_count ?? null,
+    oldest_reference_at: load.oldest_snapshot_at ?? null,
+    load_error: load.error ?? null,
+    amnesty_granted: !load.loaded,
+    amnesty_note: load.loaded
+      ? 'reference loaded from disk — drift accumulated before this boot is still measured'
+      : 'NO reference on disk — organs pinned at current state. Pre-boot drift is NOT reported by this process.',
+    organs: pinned,
+  };
+  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+  writeFileSync(join(LOG_DIR, `baseline-${ts}.json`), JSON.stringify(receipt, null, 2));
+  console.log(
+    `[SurfaceGuard] BASELINE ${load.loaded ? 'LOADED' : 'ABSENT (amnesty)'} ` +
+    `path=${load.path} organs=${pinned.length} saved_at=${load.saved_at ?? 'n/a'}`
+  );
+  for (const p of pinned) console.log(`[SurfaceGuard]   ref ${p.organ_id}: ${p.reference_signature ?? '(newly pinned)'}`);
+}
+
 // ─── NATS Alert ────────────────────────────────────────────────────
+
+// A read that differed from the reference and then matched it on the
+// confirmation probe is a transient (cold or flapping organ), not a change.
+// It is reported — at warning level, in the journal, which is this watchdog's
+// real alert surface — but it never becomes an event file and never moves the
+// reference.
+let transientsSeen = 0;
+function noteTransients(runner: SurfaceGuardRunner): void {
+  const t = runner.getTransients();
+  for (let i = transientsSeen; i < t.length; i++) {
+    console.warn(
+      `[SurfaceGuard] TRANSIENT READ DISCARDED organ=${t[i].organ_id} differing=${t[i].tools_differing_on_first_read} — ${t[i].resolution}`
+    );
+  }
+  transientsSeen = t.length;
+}
 
 async function publishHoldAlert(report: FederationDriftReport): Promise<void> {
   try {
@@ -142,6 +191,14 @@ async function main(): Promise<void> {
   const store = getSurfaceGuardStore();
   let lastReport: FederationDriftReport | null = null;
   let consecutiveDrifts = 0;
+
+  // ─── BASELINE RECEIPT (2026-09-20, F13-authorized) ────────────────
+  // A restart must never be silent. If the reference was loaded from disk we
+  // say what it is and how old it is. If it was absent, we say so explicitly:
+  // the organs were pinned at their CURRENT state, which means any drift that
+  // existed before this boot is NOT being reported. That is an amnesty, and an
+  // amnesty that leaves no record is indistinguishable from a clean bill.
+  writeBaselineReceipt(store, organs);
 
   const onDrift = async (report: FederationDriftReport) => {
     consecutiveDrifts++;
@@ -205,6 +262,7 @@ async function main(): Promise<void> {
         await onDrift(report);
       }
 
+      noteTransients(runner);
       writeLatest(report); // latest.json is the single live state file — always current
       lastReport = report;
     } catch (err) {

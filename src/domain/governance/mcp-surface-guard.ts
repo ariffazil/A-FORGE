@@ -16,6 +16,8 @@
  */
 
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 import { forwardLegacyReceipt } from "../../infrastructure/arifflow/flowClient.js";
 
 const PROTOCOL_VERSION = process.env.MCP_PROTOCOL_VERSION || "2025-06-18";
@@ -94,6 +96,112 @@ export const DEFAULT_CONFIG: SurfaceGuardConfig = {
   enforce_hold: true,
   drift_archive_age_ms: 86_400_000, // 24 hours
 };
+
+// ─── Baseline persistence ──────────────────────────────────────────
+//
+// F1 AMANAH — the pinned reference must SURVIVE restart.
+//
+// Before 2026-09-20 the store lived only in memory (see the class comment that
+// used to sit above SurfaceGuardStore). Every daemon restart silently re-pinned
+// whatever the organs happened to be serving at that instant and then reported
+// PASS: a HOLD accumulated over 45 days evaporated on `systemctl restart`, and
+// nothing recorded that the amnesty had happened. Restart was absolution.
+//
+// Two changes fix that, and they must ship together:
+//   1. the baseline is written to disk and loaded at boot;
+//   2. a changed surface must be seen CONFIRMATIONS_TO_PROMOTE times in a row
+//      before it becomes the new baseline, so one unstable answer from an organ
+//      cannot silently rewrite the reference.
+//
+// Authority: F13 SOVEREIGN (Arif, 2026-09-20) — "execute all non stop until seal".
+
+export const SNAPSHOT_PATH =
+  process.env.SURFACE_GUARD_SNAPSHOT_PATH || '/root/A-FORGE/config/surface-snapshots.json';
+export const SNAPSHOT_SCHEMA = 'arifos.surface-guard.snapshots.v1';
+/** A changed surface must be observed this many consecutive checks before promotion. */
+export const CONFIRMATIONS_TO_PROMOTE = 3;
+
+interface PersistedOrgan {
+  organ_id: string;
+  organ_url: string;
+  snapshot_at: string;
+  tool_count: number;
+  list_changed_capable: boolean;
+  ttl_ms: number;
+  cache_scope: 'public' | 'private';
+  tools: Record<string, ToolFingerprint>;
+}
+
+export interface PersistedSnapshotFile {
+  schema: string;
+  saved_at: string;
+  organs: Record<string, PersistedOrgan>;
+}
+
+export interface BaselineLoadState {
+  loaded: boolean;
+  path: string;
+  saved_at?: string;
+  organ_count?: number;
+  oldest_snapshot_at?: string;
+  error?: string;
+}
+
+export interface BaselineEvent {
+  at: string;
+  organ_id: string;
+  from_signature: string;
+  to_signature: string;
+  confirmations: number;
+  tool_count: number;
+}
+
+/** Stable signature of a whole organ surface — sorted name:hash pairs, order-independent. */
+export function snapshotSignature(snap: OrganSurfaceSnapshot): string {
+  const parts = [...snap.tools.entries()]
+    .map(([name, fp]) => `${name}:${fp.schema_hash}`)
+    .sort();
+  return crypto.createHash('sha256').update(parts.join('\n')).digest('hex').slice(0, 16);
+}
+
+export function serializeSnapshots(
+  snapshots: Map<string, OrganSurfaceSnapshot>
+): PersistedSnapshotFile {
+  const organs: Record<string, PersistedOrgan> = {};
+  for (const [id, snap] of snapshots.entries()) {
+    organs[id] = {
+      organ_id: snap.organ_id,
+      organ_url: snap.organ_url,
+      snapshot_at: snap.snapshot_at,
+      tool_count: snap.tool_count,
+      list_changed_capable: snap.list_changed_capable,
+      ttl_ms: snap.ttl_ms,
+      cache_scope: snap.cache_scope,
+      tools: Object.fromEntries(snap.tools.entries()),
+    };
+  }
+  return { schema: SNAPSHOT_SCHEMA, saved_at: new Date().toISOString(), organs };
+}
+
+export function deserializeSnapshots(raw: unknown): Map<string, OrganSurfaceSnapshot> {
+  const out = new Map<string, OrganSurfaceSnapshot>();
+  const file = raw as PersistedSnapshotFile | null;
+  if (!file || file.schema !== SNAPSHOT_SCHEMA || !file.organs) return out;
+  for (const [id, o] of Object.entries(file.organs)) {
+    if (!o || !o.tools) continue;
+    out.set(id, {
+      organ_id: o.organ_id ?? id,
+      organ_url: o.organ_url ?? '',
+      tools: new Map(Object.entries(o.tools)),
+      snapshot_at: o.snapshot_at ?? new Date().toISOString(),
+      tool_count: o.tool_count ?? Object.keys(o.tools).length,
+      list_changed_capable: !!o.list_changed_capable,
+      ttl_ms: o.ttl_ms ?? 0,
+      cache_scope: o.cache_scope ?? 'public',
+    });
+  }
+  return out;
+}
 
 // ─── Fingerprinting ────────────────────────────────────────────────
 
@@ -270,21 +378,91 @@ export function checkToolCall(
 // ─── Surface Guard Store ───────────────────────────────────────────
 
 /**
- * In-memory store for surface guard state.
- * Production: persist to /root/A-FORGE/config/surface-snapshots.json
+ * Persisted baseline store for surface guard state.
+ *
+ * The baseline is the REFERENCE the federation is measured against. It is
+ * written to SNAPSHOT_PATH and reloaded at boot so that a HOLD cannot be
+ * erased by restarting the watchdog, and so every restart can say what it
+ * remembered and what it forgot.
  */
 export class SurfaceGuardStore {
   private snapshots = new Map<string, OrganSurfaceSnapshot>();
   private driftLog: DriftEvent[] = [];
   private config: SurfaceGuardConfig;
+  /** Candidate new surfaces awaiting enough consecutive confirmations. */
+  private pending = new Map<string, { signature: string; count: number }>();
+  /** Every baseline promotion (a surface that became the new reference). */
+  private promotions: BaselineEvent[] = [];
+  private baseline: BaselineLoadState;
+  private snapshotPath: string;
+  private persistEnabled: boolean;
 
-  constructor(config: Partial<SurfaceGuardConfig> = {}) {
+  constructor(
+    config: Partial<SurfaceGuardConfig> = {},
+    opts: { snapshotPath?: string; persist?: boolean } = {}
+  ) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+    this.snapshotPath = opts.snapshotPath ?? SNAPSHOT_PATH;
+    this.persistEnabled = opts.persist !== false;
+    this.baseline = { loaded: false, path: this.snapshotPath };
+    this.loadBaseline();
   }
 
-  /** Pin a snapshot for an organ */
+  /** Load the pinned reference from disk. Never throws — a bad file re-pins. */
+  private loadBaseline(): void {
+    try {
+      if (!fs.existsSync(this.snapshotPath)) return;
+      const raw = JSON.parse(fs.readFileSync(this.snapshotPath, 'utf-8'));
+      const loaded = deserializeSnapshots(raw);
+      if (loaded.size === 0) {
+        this.baseline.error = `unreadable or wrong schema (${String(raw?.schema ?? 'none')})`;
+        return;
+      }
+      this.snapshots = loaded;
+      const times = [...loaded.values()].map(s => s.snapshot_at).sort();
+      this.baseline = {
+        loaded: true,
+        path: this.snapshotPath,
+        saved_at: raw?.saved_at,
+        organ_count: loaded.size,
+        oldest_snapshot_at: times[0],
+      };
+    } catch (err) {
+      this.baseline.error = String(err);
+    }
+  }
+
+  /** What the store found at boot — surfaced by the daemon in a startup receipt. */
+  getBaselineLoad(): BaselineLoadState {
+    return { ...this.baseline };
+  }
+
+  private saveBaseline(): void {
+    if (!this.persistEnabled) return;
+    try {
+      const dir = path.dirname(this.snapshotPath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(this.snapshotPath, JSON.stringify(serializeSnapshots(this.snapshots), null, 2));
+    } catch (err) {
+      console.error(`[SurfaceGuard] baseline persist failed (non-fatal): ${err}`);
+    }
+  }
+
+  /** Pin a snapshot for an organ — the reference, persisted. */
   pin(organId: string, snapshot: OrganSurfaceSnapshot): void {
     this.snapshots.set(organId, snapshot);
+    this.saveBaseline();
+  }
+
+  /** Pending candidate for an organ (a surface that has not yet been confirmed). */
+  getPending(organId: string): { signature: string; count: number } | undefined {
+    const p = this.pending.get(organId);
+    return p ? { ...p } : undefined;
+  }
+
+  /** Baseline promotions observed this process lifetime. */
+  getPromotions(): BaselineEvent[] {
+    return this.promotions.map(p => ({ ...p }));
   }
 
   /** Get pinned snapshot */
@@ -312,22 +490,68 @@ export class SurfaceGuardStore {
   ): DriftEvent[] {
     const pinned = this.snapshots.get(organId);
     if (!pinned) {
-      // First time — pin and return no drift
+      // First sight of this organ — pin it as the reference and record the fact.
       const url = this.config.organs.find(o => o.id === organId)?.url ?? '';
-      this.pin(organId, createSnapshot(organId, url, currentTools, listChangedCapable, ttlMs, cacheScope));
+      const snap = createSnapshot(organId, url, currentTools, listChangedCapable, ttlMs, cacheScope);
+      if (this.baseline.loaded) {
+        // The organ exists in the federation but was absent from the persisted
+        // baseline: it is NEW, not drifted. Promotion is explicit and recorded.
+        this.promotions.push({
+          at: new Date().toISOString(),
+          organ_id: organId,
+          from_signature: '(absent from baseline)',
+          to_signature: snapshotSignature(snap),
+          confirmations: 0,
+          tool_count: snap.tool_count,
+        });
+      }
+      this.pin(organId, snap);
       return [];
     }
 
     const current = createSnapshot(organId, pinned.organ_url, currentTools, listChangedCapable, ttlMs, cacheScope);
     const drifts = detectDrift(pinned, current);
 
-    if (drifts.length > 0) {
-      this.driftLog.push(...drifts);
-      // Update pinned snapshot to current state (the drift is logged)
+    if (drifts.length === 0) {
+      // Reference matches reality — any pending candidate is abandoned.
+      this.pending.delete(organId);
+      return [];
+    }
+
+    this.driftLog.push(...drifts);
+
+    // DO NOT re-pin on first sight of a change. Before 2026-09-20 this line
+    // re-pinned immediately, so an organ that answered with two different
+    // schemas on alternate probes produced an endless alternation of identical
+    // "121 tools drifted" reports, each one measured against the answer the
+    // previous probe had just installed. The reference now only moves after
+    // CONFIRMATIONS_TO_PROMOTE consecutive identical observations — a surface
+    // must prove it is the new reality before it becomes the new reference.
+    const sig = snapshotSignature(current);
+    const prev = this.pending.get(organId);
+    const count = prev && prev.signature === sig ? prev.count + 1 : 1;
+    this.pending.set(organId, { signature: sig, count });
+
+    if (count >= CONFIRMATIONS_TO_PROMOTE) {
+      this.promotions.push({
+        at: new Date().toISOString(),
+        organ_id: organId,
+        from_signature: snapshotSignature(pinned),
+        to_signature: sig,
+        confirmations: count,
+        tool_count: current.tool_count,
+      });
       this.pin(organId, current);
+      this.pending.delete(organId);
     }
 
     return drifts;
+  }
+
+  /** Signature of the current reference for an organ ('' if none pinned). */
+  getPinnedSignature(organId: string): string {
+    const p = this.snapshots.get(organId);
+    return p ? snapshotSignature(p) : '';
   }
 
   /** Full federation check — returns verdict */
@@ -400,6 +624,8 @@ export interface OrganDriftReport {
   required_tools_present: string[];
   required_tools_missing: string[];
   drift_events: DriftEvent[];
+  /** Tool hashes that differed on the first read and matched on the confirmation probe. */
+  transient_reads?: number;
   latency_ms: number;
   checked_at: string;
 }
@@ -546,6 +772,8 @@ export class SurfaceGuardRunner {
   private store: SurfaceGuardStore;
   private organs: OrganConfig[];
   private onDrift: ((report: FederationDriftReport) => void) | null = null;
+  /** Reads discarded because the confirmation probe disagreed with them. */
+  private transients: Array<{ at: string; organ_id: string; tools_differing_on_first_read: number; resolution: string }> = [];
 
   constructor(
     store: SurfaceGuardStore,
@@ -555,6 +783,11 @@ export class SurfaceGuardRunner {
     this.store = store;
     this.organs = organs;
     this.onDrift = onDrift ?? null;
+  }
+
+  /** Transient reads seen this process lifetime — a cold/flapping organ, not a change. */
+  getTransients(): Array<{ at: string; organ_id: string; tools_differing_on_first_read: number; resolution: string }> {
+    return this.transients.map(t => ({ ...t }));
   }
 
   /** Run a single drift check across all organs */
@@ -576,9 +809,61 @@ export class SurfaceGuardRunner {
       };
 
       try {
-        const result = await fetchOrganTools(organ.url);
+        let result = await fetchOrganTools(organ.url);
         report.tool_count = result.tools.length;
         report.latency_ms = result.latency_ms;
+        let transientThisOrgan = 0;
+
+        // WARM READ (2026-09-20). An MCP server that builds its transport or
+        // tool registry lazily answers the FIRST session request from a cold
+        // state and a different answer once warm. A-FORGE-MCP logs exactly this
+        // ("Transport created on first session request"), and the two answers
+        // differ across all 121 tools. A reference pinned from a cold answer
+        // makes the warm answer look like 121 drifts forever. So: on first
+        // contact with an organ, discard the cold read and pin the warm one.
+        if (!this.store.getPinned(organ.id)) {
+          result = await fetchOrganTools(organ.url);
+          report.latency_ms = result.latency_ms;
+        }
+
+        const normalise = (tools: MCPToolFromListResponse[]) =>
+          tools.map(t => ({
+            name: t.name,
+            description: t.description,
+            inputSchema: t.inputSchema,
+            outputSchema: t.outputSchema,
+          }));
+
+        // CONFIRMATION PROBE. A drift is a claim that an organ CHANGED. One
+        // reading is not enough to make it: a cold, flapping or half-loaded
+        // server produces the same signature as a real change. Re-read once
+        // against the SAME reference — if the organ agrees with the reference on
+        // the second read, the first was a transient and is discarded, and the
+        // reference is left untouched.
+        const pinnedBefore = this.store.getPinned(organ.id);
+        if (pinnedBefore) {
+          const first = detectDrift(
+            pinnedBefore,
+            createSnapshot(organ.id, pinnedBefore.organ_url, normalise(result.tools), result.list_changed_capable)
+          );
+          if (first.length > 0) {
+            const second = await fetchOrganTools(organ.url);
+            const secondDrift = detectDrift(
+              pinnedBefore,
+              createSnapshot(organ.id, pinnedBefore.organ_url, normalise(second.tools), second.list_changed_capable)
+            );
+            if (secondDrift.length === 0) {
+              this.transients.push({
+                at: new Date().toISOString(),
+                organ_id: organ.id,
+                tools_differing_on_first_read: first.length,
+                resolution: 'reference matched on the confirmation probe — first read was transient (cold/flapping), not a change',
+              });
+              transientThisOrgan = first.length;
+              result = second;
+            }
+          }
+        }
 
         // Check required tools
         const toolNames = new Set(result.tools.map(t => t.name));
@@ -594,17 +879,13 @@ export class SurfaceGuardRunner {
         // Run drift detection against pinned snapshot
         const drifts = this.store.checkOrgan(
           organ.id,
-          result.tools.map(t => ({
-            name: t.name,
-            description: t.description,
-            inputSchema: t.inputSchema,
-            outputSchema: t.outputSchema,
-          })),
+          normalise(result.tools),
           result.list_changed_capable
         );
 
         report.drift_events = drifts;
         totalDrifts += drifts.length;
+        if (transientThisOrgan > 0) report.transient_reads = transientThisOrgan;
 
         if (report.required_tools_missing.length > 0) {
           report.status = 'MISSING_REQUIRED';
