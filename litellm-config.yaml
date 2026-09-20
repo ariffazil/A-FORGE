@@ -4,25 +4,25 @@ model_list:
     model: openai/deepseek-chat
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 8
   model_info:
     max_input_tokens: 65536
     max_output_tokens: 8192
     mode: chat
-    notes: "apex-888 P1 (DeepSeek-V3 Direct PAYG $14.28 balance): primary verified living lane 2026-09-14."
+    notes: "apex-888 P8 (DeepSeek-V3 Direct PAYG): demoted 2026-09-21 F13 FI-008 — 65K cap makes it unusable for constitutional judging of >65K evidence. Last-resort fallback only."
 - model_name: apex-888
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 2
+    order: 1
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: "apex-888 P2 (MiniMax-M3 Token Plan Max): 1M context, vision, function calling verified live 2026-09-14."
+    notes: "apex-888 P1 (MiniMax-M3 Token Plan Max): promoted 2026-09-21 F13 FI-008 — 1M-capable primary for constitutional judging of large evidence."
 - model_name: apex-888
   litellm_params:
     model: gemini/gemini-2.5-pro
@@ -457,12 +457,13 @@ model_list:
     model: openai/wan2.7-image-pro
     api_base: http://100.64.0.5:4020/v1
     request_timeout: 180
-    order: 99
+    order: 1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
   model_info:
     max_input_tokens: 32768
     max_output_tokens: 8192
     mode: image
+    notes: "fed/image-gen P1 (wan2.7-image-pro): promoted 2026-09-21 F13 FI-008 — was order=99 (misrouted as fallback), now order=1 primary."
 - model_name: fed/image-gen
   litellm_params:
     model: openai/wan2.7-image
@@ -675,10 +676,23 @@ model_list:
     notes: 'forge-777 P3 (OpenCode Go): 1M context, paid resubscribed.'
 - model_name: forge-777
   litellm_params:
+    model: openai/mimo-v2.5
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 5
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-777 P4 (MiMo v2.5 Token Plan Max, SGP): 1M ctx, omni-modal vision, function calling. Cheapest meter ($0.14/$0.28 per MTok). PROBED 2026-09-06 LIVE 637-981ms. CORRECTED 2026-09-14: mimo-v2.5 is the omni-modal model (v2.5-pro is text-only).'
+- model_name: forge-777
+  litellm_params:
     model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
-    order: 5
+    order: 7
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -690,19 +704,19 @@ model_list:
     model: openai/deepseek-v4-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 4
+    order: 6
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
     supports_function_calling: true
-    notes: 'forge-777 P4 (DeepSeek V4 Flash-0731): COST-FRONTIER default for high-volume inner loops. $0.14/$0.28 per MTok, 79% SWE-bench Verified. Post-topup 2026-09-13 — VERIFIED LIVE.'
+    notes: 'forge-777 P5 (DeepSeek V4 Flash-0731): COST-FRONTIER default for high-volume inner loops. $0.14/$0.28 per MTok, 79% SWE-bench Verified. Post-topup 2026-09-13 — VERIFIED LIVE.'
 - model_name: forge-777
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
     api_base: https://api.sea-lion.ai/v1
     api_key: os.environ/SEA_LION_API_KEY
-    order: 5
+    order: 97
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 8192
@@ -719,98 +733,6 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     notes: "forge-777 fallback — Kimi K3 coding plan. Billing cycle exhausted (403). Will recover when cycle refreshes."
-- model_name: forge-777
-  litellm_params:
-    model: openai/kimi-k2.7-code
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    notes: "forge-777 fallback \u2014 kimi-k2.7-code via Qwen Token Plan. Order:4\
-      \ (Anthropic format untested on this backend)."
-- model_name: forge-777
-  litellm_params:
-    model: openai/qwen3-coder-plus
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: "FREE QUOTA \u2014 qwen3-coder-plus, expires 2026-09-29. Order:10 \u2014\
-      \ DashScope returns 404 on Anthropic /v1/messages format (OpenAI-only)."
-    mode: chat
-- model_name: forge-777
-  litellm_params:
-    model: openai/qwen3-coder-flash
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: "FREE QUOTA \u2014 qwen3-coder-flash, expires 2026-09-29. Order:10 \u2014\
-      \ DashScope Anthropic format 404."
-    mode: chat
-- model_name: forge-777
-  litellm_params:
-    model: openai/qwen3-coder-next
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: "FREE QUOTA \u2014 qwen3-coder-next, expires 2026-09-29. Order:10 \u2014\
-      \ DashScope Anthropic format 404."
-    mode: chat
-- model_name: forge-777
-  litellm_params:
-    model: openai/qwen3-coder-30b-a3b-instruct
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: "FREE QUOTA \u2014 qwen3-coder-30b-a3b, expires 2026-09-29. Order:10 \u2014\
-      \ DashScope Anthropic format 404."
-    mode: chat
-- model_name: forge-777
-  litellm_params:
-    model: openai/qwen3-coder-480b-a35b-instruct
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: "FREE QUOTA \u2014 qwen3-coder-480b-a35b flagship, expires 2026-09-29.\
-      \ Order:10 \u2014 DashScope Anthropic format 404."
-    mode: chat
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3-next-80b-a3b-instruct
@@ -845,12 +767,12 @@ model_list:
     model: openai/deepseek-v4-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 8
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
-    notes: 'hermes-asi alias compressed -> forge-777 chain via deepseek-v4-flash-0731.'
+    notes: 'hermes-asi alias-compressed fast-path to deepseek-v4-flash — demoted 2026-09-21 F13 FI-008 from order=1 to break race with hermes-asi Block-2 qwen3.8-max (both were at order=1). Kept as last-resort-first before kimi-k3.'
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.8-max
@@ -1615,23 +1537,23 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 2
+    order: 98
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-    notes: forge-777 -> QWEN deepseek-v4-pro live Individual coding
+    notes: "forge-777 P7 (QWEN Individual deepseek-v4-pro, topped up 2026-09-13) — secondary fallback via Aliyun Individual plan. VERIFIED LIVE."
 - model_name: forge-777
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 3
+    order: 8
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: forge-777 -> QWEN qwen3.8-max live Individual coding fallback
+    notes: "forge-777 P8 (QWEN Individual qwen3.8-max, topped up 2026-09-13) — tertiary fallback via Aliyun Individual plan. VERIFIED LIVE."
 - model_name: fed/sealion
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4-32B-IT
