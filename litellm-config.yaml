@@ -1618,7 +1618,10 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
 litellm_settings:
-  callbacks: []
+  # 2026-09-21 FI-008: FedSpendCallback writes per-call to token_bank.db.
+  # Container mounts callback at /app/fed_spend_callback.py and DB at /app/data/.
+  # Note: must point at INSTANCE (proxy_handler_instance), not class.
+  callbacks: ["fed_spend_callback.proxy_handler_instance"]
   num_retries: 2
   request_timeout: 60
   allowed_fails: 2
