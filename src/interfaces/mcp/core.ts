@@ -2448,29 +2448,23 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
   liabilities: z.array(z.record(z.string(), z.unknown())).optional().describe("Conservation liabilities"),
   proposal: z.string().optional().describe("Wisdom proposal"),
 }, async (args) => {
-  // Tool map: forge_wealth modes → actual WEALTH @mcp.tool names (verified
-  // against /root/WEALTH/internal/monolith.py @mcp.tool decorators).
-  // Previously used internal/candidate names that did not exist as FastMCP
-  // tools (e.g. wealth_conservation_check → unknown tool). Each mode passes
-  // the subset of arguments that the target WEALTH tool accepts; missing
-  // params fall through to that tool's own defaults.
+  // Tool map: forge_wealth modes → CANONICAL WEALTH public MCP surface.
+  // The 14-tool canonical SOT (capital_primitive, capital_health, ...,
+  // capital_civx + wealth_judge_handoff) is the FastMCP-registered surface.
+  // The wealth_* names in monolith.py are internal-only (legacy aliases).
   const toolMap: Record<string, string> = {
-    emv: "wealth_signal_information",            // mode=evoi (petroleum) — closest EMV compute
-    conservation: "wealth_conservation_capital",  // mode=state, takes assets/liabilities
-    flow: "wealth_flow_liquidity",                // mode=cashflow, takes income/expenses
-    runway: "wealth_energy_productivity",         // mode=pi, takes cash_flows/discount_rate
-    wisdom: "wealth_boundary_governance",         // mode=floors, takes proposal
+    emv: "capital_primitive",
+    conservation: "capital_health",
+    flow: "capital_health",
+    runway: "capital_health",
+    wisdom: "wealth_judge_handoff",
   };
   const toolName = toolMap[args.mode];
-  const toolArgs: Record<string, unknown> = {};
+  const toolArgs: Record<string, unknown> = { mode: args.mode === "emv" ? "emv" : args.mode === "wisdom" ? "prepare" : args.mode };
   if (args.mode === "emv") {
-    // wealth_signal_information wants well_cost_musd / p50_value_musd;
-    // legacy outcomes/probabilities shape is mapped via prior_pos_samples.
     if (Array.isArray(args.outcomes) && Array.isArray(args.probabilities)) {
-      toolArgs.prospect_metrics = {
-        outcomes: args.outcomes,
-        probabilities: args.probabilities,
-      };
+      toolArgs.outcomes = args.outcomes;
+      toolArgs.probabilities = args.probabilities;
     }
   }
   if (args.mode === "conservation") {
@@ -2482,16 +2476,16 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
     toolArgs.expenses = args.liabilities;
   }
   if (args.mode === "runway") {
-    // wealth_energy_productivity takes initial_investment + cash_flows; we
-    // approximate by passing a single-period cash flow.
     const liquid = (args.assets?.[0] as Record<string, unknown>)?.value;
     const burn = (args.liabilities?.[0] as Record<string, unknown>)?.value;
-    if (typeof liquid === "number") toolArgs.initial_investment = liquid;
-    if (typeof burn === "number") toolArgs.cash_flows = [-burn];
+    if (typeof liquid === "number") toolArgs.liquid_assets = liquid;
+    if (typeof burn === "number") toolArgs.monthly_burn = burn;
   }
   if (args.mode === "wisdom") {
-    // wealth_boundary_governance wants proposal as a dict; we wrap string.
-    toolArgs.proposal = { text: String(args.proposal ?? "") };
+    toolArgs.intent = String(args.proposal ?? "");
+    toolArgs.reversibility = "REVERSIBLE";
+    toolArgs.blast_radius = "low";
+    toolArgs.actor_id = "arif";
   }
 
   // Extract inbound identity (F13: never widen CanMutate; forward what the
