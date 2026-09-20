@@ -1,0 +1,34 @@
+[Unit]
+Description=arifOS Token-Custody Broker (sanctioned Google Workspace path)
+Documentation=file:/root/AAA/canon/FEDERATION_GMAIL_GATEWAY_SPEC.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/mailgw/mailgw_broker.py
+Restart=always
+RestartSec=3
+
+# ── Capability boundary ──────────────────────────────────────────────────────
+# The broker runs as `mail-gateway`, NOT as root. That UID owns the OAuth token
+# store (0700). A non-root warga cannot read the credentials at all, by DAC
+# alone; the socket is the only way in.
+User=mail-gateway
+Group=mail-gateway
+SupplementaryGroups=mailgw-clients
+
+# The store this service exists to hold.
+Environment=GOOGLE_WORKSPACE_CLI_CONFIG_DIR=/var/lib/mail-gateway/gws
+
+# AppArmor profile: the only context permitted to read the token store. The
+# citizen profile attached to the gws CLI denies it to every other caller.
+AppArmorProfile=arifos-gws-broker
+
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mailgw-broker
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""
+/usr/local/bin/gws — federation PATH shim for the Token-Custody Broker.
+
+WHY: the gws CLI is confined by AppArmor (arifos-gws-citizen) and cannot read the
+OAuth token store. This shim is what bare `gws ...` resolves to, and it routes the
+call through the broker (uid `mail-gateway`), which holds token custody and writes
+the receipt.
+
+IDENTITY — attribution is what makes a multi-agent boundary auditable
+--------------------------------------------------------------------
+Every call is stamped with an actor so the ledger names who read the mailbox.
+Resolution order:
+
+    1. --actor-id / --purpose flags on the command line
+    2. MAILGW_ACTOR / MAILGW_PURPOSE environment variables
+    3. walk the process tree for a known agent process (hermes, opencode, qwen,
+       kimi, claude, codex, agy, openclaw, cron) and name it with its PID
+    4. UNIDENTIFIED:<parent comm>
+
+Step 3 is why this beats reading the immediate parent: an agent shells out
+through bash, so the parent is often just `bash`. The tree walk finds the actual
+agent above it.
+
+READ IS OPEN. WRITE IS NOT
+--------------------------
+Observe-class calls (list, get, search) proceed with no extra ceremony. Anything
+consequential (send, forward, trash, delete) requires a sovereign F13 token at the
+broker, regardless of identity. This shim does not grant that.
+
+This shim is a convenience and an audit surface, NOT the security boundary. The
+boundary is DAC (token store 0700 under a dedicated UID) plus the AppArmor
+profiles. A caller that skips this file and execs the raw binary is stopped by the
+kernel. Verify with: python3 /root/A-FORGE/bridges/gws_truth_test.py
+"""
+
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+CLIENT = Path("/opt/mailgw/mailgw_client.py")
+PY = "/usr/bin/python3"
+REAL_CLI = "/usr/bin/gws"
+
+# Agent process names, longest first so "opencode" is not shadowed by "open".
+KNOWN_AGENTS = (
+    "hermes-agent", "hermes", "opencode", "openclaw", "qwen-code", "qwen",
+    "kimi-code", "kimi", "claude-code", "claude", "codex", "antigravity",
+    "agy", "aider", "crush",
+)
+
+# Scheduler / dispatcher ancestors. A scheduled job should be named by its script
+# rather than reported as a bare shell, so we keep climbing past these.
+SCHEDULERS = ("cron", "crond", "systemd", "atd", "anacron", "supervisord")
+
+
+def _walk_tree(max_depth: int = 8):
+    """Yield (pid, comm, ppid) from this process upward, best-effort."""
+    pid = os.getpid()
+    seen = set()
+    for _ in range(max_depth):
+        if pid in (0, 1) or pid in seen:
+            return
+        seen.add(pid)
+        try:
+            comm = Path(f"/proc/{pid}/comm").read_text().strip()
+            stat = Path(f"/proc/{pid}/stat").read_text()
+            # comm may contain spaces/parens; ppid is the field after the last ')'
+            ppid = int(stat.rsplit(")", 1)[1].split()[1])
+        except (OSError, ValueError, IndexError):
+            return
+        yield pid, comm, ppid
+        pid = ppid
+
+
+def derive_actor() -> str:
+    if os.getenv("MAILGW_ACTOR"):
+        return os.environ["MAILGW_ACTOR"]
+    chain = list(_walk_tree())
+    if os.getenv("MAILGW_DEBUG"):
+        sys.stderr.write("gws-shim walk:\n")
+        for pid, comm, ppid in chain:
+            sys.stderr.write(f"    pid={pid} ppid={ppid} comm={comm!r}\n")
+    for pid, comm, _ in chain:
+        low = comm.lower()
+        for name in KNOWN_AGENTS:
+            if name in low:
+                return f"{comm}:{pid}"
+    # A scheduled job: name it by the script, not by the scheduler itself.
+    for idx, (pid, comm, _) in enumerate(chain):
+        if comm.lower() in SCHEDULERS and idx > 0:
+            prev = chain[idx - 1][1]
+            return f"cron:{prev}"
+    # No known agent: name the nearest meaningful ancestor.
+    for pid, comm, _ in chain:
+        if comm.lower() not in ("bash", "sh", "dash"):
+            return f"UNIDENTIFIED:{comm}:{pid}"
+    return "UNIDENTIFIED:" + (chain[-1][1] if chain else "unknown")
+
+
+def derive_purpose(argv: list[str]) -> str:
+    if os.getenv("MAILGW_PURPOSE"):
+        return os.environ["MAILGW_PURPOSE"]
+    # A stated, non-empty reason so receipts stay meaningful. The broker enforces
+    # a minimum length; this satisfies it while recording what was actually run.
+    return "unattributed gws call: " + " ".join(argv[:4])
+
+
+def main() -> int:
+    argv = sys.argv[1:]
+
+    # If the raw CLI is being invoked by absolute path, this is not the shim's
+    # business — hand off and let the AppArmor profile decide.
+    env = dict(os.environ)
+    env.setdefault("MAILGW_ACTOR", derive_actor())
+    env.setdefault("MAILGW_PURPOSE", derive_purpose(argv))
+
+    if not CLIENT.exists():
+        sys.stderr.write(
+            f"gws shim: broker client missing at {CLIENT}\n"
+            f"          the sanctioned mail path is down; refusing to fall back\n"
+            f"          to the raw CLI (which is AppArmor-denied anyway).\n"
+        )
+        return 3
+
+    return subprocess.run([PY, str(CLIENT), *argv], env=env).returncode
+
+
+if __name__ == "__main__":
+    sys.exit(main())

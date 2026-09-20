@@ -1,0 +1,85 @@
+# arifOS Gmail Chokepoint — AppArmor profiles
+#
+# ARCHITECTURE (2026-09-20, second iteration)
+#   Token custody lives with a dedicated service identity, `mail-gateway`
+#   (uid 977), at /var/lib/mail-gateway/gws. The broker runs as that identity.
+#
+# THREE LAYERS, in order of what actually binds:
+#   1. DAC      — the store is 0700 mail-gateway:mail-gateway. A NON-ROOT warga
+#                 cannot read it at all. This is the layer that closes the
+#                 boundary once warga stop running as root.
+#   2. AppArmor — `arifos-gws-citizen` is attached to the gws CLI entrypoint and
+#                 denies both token stores to any process that runs gws,
+#                 including root. `arifos-gws-broker` is entered only by the
+#                 systemd unit and carries an explicit `ix` on the CLI chain so
+#                 it does NOT fall back into the citizen profile.
+#   3. Socket   — warga reach the capability through /run/mailgw/broker.sock
+#                 (group mailgw-clients). The socket carries no credentials.
+#
+# PATTERN: broad allow (`/** rwklmix`) plus specific deny. In AppArmor a deny
+#   rule always beats an allow rule at any level of the path, so a wildcard
+#   cannot re-open what a deny has closed. The explicit `ix` on the CLI keeps the
+#   broker in its own profile across the node launcher's exec chain.
+#
+# WHAT THIS DOES NOT DO
+#   It does not stop a ROOT process from reading the token store with an
+#   unconfined interpreter (python3, node, cat). No DAC rule and no path-attached
+#   LSM profile denies root on the same kernel. Closing that requires either
+#   non-root warga or off-host custody.
+#
+# VERIFIED 2026-09-20 by /root/A-FORGE/bridges/gws_truth_test.py
+
+#include <tunables/global>
+
+@{gws_cli}=/usr/lib/node_modules/@googleworkspace/cli/run.js
+@{gws_tree}=/usr/lib/node_modules/@googleworkspace/cli/**
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CITIZEN — attached to the gws CLI entrypoint. Default-deny on both stores.
+# ─────────────────────────────────────────────────────────────────────────────
+profile arifos-gws-citizen @{gws_cli} flags=(attach_disconnected) {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  network inet stream,
+  network inet dgram,
+  network inet6 stream,
+  network inet6 dgram,
+
+  /** rwklmix,
+
+  deny /root/.config/gws/ r,
+  deny /root/.config/gws/** rwkl,
+  deny /var/lib/mail-gateway/ r,
+  deny /var/lib/mail-gateway/** rwkl,
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BROKER — named profile, entered by mailgw-broker.service via AppArmorProfile=.
+# ─────────────────────────────────────────────────────────────────────────────
+profile arifos-gws-broker flags=(attach_disconnected) {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/ssl_certs>
+
+  network inet stream,
+  network inet dgram,
+  network inet6 stream,
+  network inet6 dgram,
+  network netlink raw,
+
+  /** rwklmix,
+
+  # Keep the node launcher and its native child inside THIS profile instead of
+  # letting the path-attached citizen profile take over.
+  @{gws_tree} ix,
+  /usr/bin/node ix,
+  /usr/bin/env ix,
+
+  # The one capability the broker exists to hold.
+  /var/lib/mail-gateway/ rwk,
+  /var/lib/mail-gateway/** rwkl,
+
+  # The migrated-away store must be unreachable even to the broker.
+  deny /root/.config/gws/** rwkl,
+}
