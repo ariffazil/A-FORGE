@@ -96,7 +96,11 @@ function estimateA(spec: CandidateSpec): { score: number; rationale: string[] } 
   }
 
   // Implementation structure
-  const impl = spec.implementation;
+  // SESAT FIX 2026-09-20: defensive nullish-coalescing — missing `implementation`
+  // MUST default to empty string, not throw on `.includes()` / `.length`. Same
+  // doctrine as the deps/perms fix below — preserve the A-drift signal
+  // (no implementation ⇒ A~ with rationale) instead of silently swallowing.
+  const impl = spec.implementation ?? "";
   if (impl.includes("export") || impl.includes("async")) score += 0.10;
   if (impl.includes("return")) score += 0.05;
   if (impl.includes("eval(")) {
@@ -202,8 +206,15 @@ function estimateP(spec: CandidateSpec): { score: number; rationale: string[] } 
   const rationale: string[] = [];
   let score = 0.7; // baseline — moderately stable
 
-  const deps = spec.declared_side_effects;
-  const perms = spec.required_permissions;
+  // SESAT FIX 2026-09-20: defensive nullish-coalescing. Missing
+  // `declared_side_effects` or `required_permissions` MUST default to empty
+  // arrays, not throw on `.length` / `.includes()`. Prior behavior: G-space
+  // evaluator crashed with "Cannot read properties of undefined (reading 'includes')"
+  // when caller omitted optional spec fields. Witness before mutation: defensive
+  // defaults preserve the P-drift signal (zero side-effects ⇒ P↑ boost) instead
+  // of silently swallowing.
+  const deps = spec.declared_side_effects ?? [];
+  const perms = spec.required_permissions ?? [];
 
   // Fewer side effects = higher stability
   if (deps.length === 0) {

@@ -2958,9 +2958,9 @@ server.tool(
 // P2.1: forge_probe — Federation organ liveness check
 server.tool(
   "forge_probe",
-  "Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill.",
+  "Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill. (2026-09-20: arifflow + frame added — both daemons live on :7073 and :18085 but were excluded from probe enum/targets.)",
   {
-    organs: z.array(z.enum(["arifos", "geox", "wealth", "well", "aforge", "aaa"])).optional()
+    organs: z.array(z.enum(["arifos", "geox", "wealth", "well", "aforge", "aaa", "arifflow", "frame"])).optional()
       .describe("Organs to probe (default: all except self)"),
     include_latency: z.boolean().default(true).describe("Include latency measurement"),
   },
@@ -2971,6 +2971,8 @@ server.tool(
     : organs;
   const targets: Record<string, string> = {
     arifos: "http://localhost:8088/health",
+    arifflow: "http://localhost:7073/health",
+    frame: "http://localhost:18085/health",
     geox: "http://localhost:8081/health",
     wealth: "http://localhost:18082/health",
     well: "http://localhost:18083/health",

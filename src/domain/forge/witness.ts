@@ -57,7 +57,13 @@ function validateChannel(channel: WitnessChannel): { valid: boolean; issues: str
     issues.push(`${channel.channel}: confidence ${channel.confidence} outside [0,1]`);
   }
 
-  if (channel.evidence.length === 0 && channel.confidence > 0) {
+  // SESAT FIX 2026-09-20: defensive nullish-coalescing. Missing `evidence` array
+  // MUST default to empty, not throw on `.length`. Prior behavior: tri-witness
+  // evaluator crashed with "Cannot read properties of undefined (reading 'length')"
+  // when caller passed a channel without `evidence` field. Earth-witness precondition
+  // (zero evidence + confidence > 0 ⇒ reduces to 0) is preserved as the signal.
+  const evidence = channel.evidence ?? [];
+  if (evidence.length === 0 && channel.confidence > 0) {
     issues.push(`${channel.channel}: confidence=${channel.confidence} but zero evidence — confidence reduced to 0`);
   }
 
@@ -184,15 +190,21 @@ export async function evaluateWitness(opts: WitnessOptions): Promise<WitnessVerd
   let aiConf = bundle.ai.confidence;
   let extConf = bundle.external.confidence;
 
-  if (bundle.human.evidence.length === 0 && hConf > 0) {
+  // SESAT FIX 2026-09-20: defensive nullish-coalescing for bundle.*.evidence.
+  // Mirrors the validateChannel fix above — prevents "Cannot read properties of
+  // undefined (reading 'length')" when caller omits bundle channels.
+  const humanEvidence = bundle.human.evidence ?? [];
+  const aiEvidence = bundle.ai.evidence ?? [];
+  const externalEvidence = bundle.external.evidence ?? [];
+  if (humanEvidence.length === 0 && hConf > 0) {
     rationale.push("Human: confidence reduced to 0 — no evidence provided");
     hConf = 0;
   }
-  if (bundle.ai.evidence.length === 0 && aiConf > 0) {
+  if (aiEvidence.length === 0 && aiConf > 0) {
     rationale.push("AI: confidence reduced to 0 — no evidence provided");
     aiConf = 0;
   }
-  if (bundle.external.evidence.length === 0 && extConf > 0) {
+  if (externalEvidence.length === 0 && extConf > 0) {
     rationale.push("External: confidence reduced to 0 — no evidence provided");
     extConf = 0;
   }
@@ -222,9 +234,9 @@ export async function evaluateWitness(opts: WitnessOptions): Promise<WitnessVerd
   return {
     W3,
     channels: {
-      human: { confidence: hConf, evidence_count: bundle.human.evidence.length },
-      ai: { confidence: aiConf, evidence_count: bundle.ai.evidence.length },
-      external: { confidence: extConf, evidence_count: bundle.external.evidence.length },
+      human: { confidence: hConf, evidence_count: humanEvidence.length },
+      ai: { confidence: aiConf, evidence_count: aiEvidence.length },
+      external: { confidence: extConf, evidence_count: externalEvidence.length },
     },
     verdict,
     seal_eligible: sealEligible,
