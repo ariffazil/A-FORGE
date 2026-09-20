@@ -60,6 +60,12 @@ export interface ForgeTrustScoreInput {
   band?: TrustBand;
   /** Limit for history mode */
   limit?: number;
+  /** Session attribution (required for score/evaluate modes that persist) */
+  session_id?: string;
+  session_token?: string;
+  actor_id?: string;
+  /** Lease ID for MUTATE-class score/evaluate calls */
+  lease_id?: string;
 }
 
 // ── Tool Handler ────────────────────────────────────────────────────
@@ -67,6 +73,30 @@ export interface ForgeTrustScoreInput {
 export async function forgeTrustScore(
   input: ForgeTrustScoreInput
 ): Promise<{ content: Array<{ type: string; text: string }> }> {
+  // ── Mode-level session gating (2026-09-20) ─────────────────────────
+  // MUTATE modes (score, evaluate) persist to Postgres trust_scores + trust_history.
+  // They require a session_id so the ACT path can attribute the upsert
+  // and the audit chain is unbroken. OBSERVE modes (list, history, verify)
+  // are pure reads and may run statelessly — same pattern as forge_scar.
+  //
+  // HTTP clients that haven't bound a session get a graceful 400 with the
+  // fix path: "call arif_init(mode='init') and pass session_id here".
+  const MUTATE_MODES = new Set(["score", "evaluate"]);
+  if (MUTATE_MODES.has(input.mode) && !input.session_id && !input.session_token) {
+    return {
+      content: [{
+        type: "text",
+        text: JSON.stringify({
+          error: "SESSION_REQUIRED",
+          mode: input.mode,
+          message: `forge_trust_score(mode='${input.mode}') persists to trust_scores and trust_history. Provide session_id (and ideally session_token) so the upsert is attributed to a kernel-bound actor.`,
+          fix: "Call arif_init(mode='init') first, then pass session_id (and/or session_token) to forge_trust_score.",
+          recoverability: "AGENT_CAN_RETRY",
+        }, null, 2),
+      }],
+    };
+  }
+
   const reg = getRegistry();
 
   switch (input.mode) {

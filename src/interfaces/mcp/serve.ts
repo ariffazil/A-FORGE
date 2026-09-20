@@ -275,6 +275,11 @@ const STATELESS_TOOLS = new Set([
     // sandbox_test, invoke, verify, retire are session-gated in handler.
     "forge_ephemeral",
 
+    // ── Trust Scoring (2026-09-20) — OBSERVE list/history/verify are stateless;
+    //    score/evaluate persist to Postgres trust_scores and require session_id
+    //    (mode-level gating enforced in handler: forge_trust_score.ts)
+    "forge_trust_score",
+
     // ── EMD / APEX pipeline (2026-08-06) — OBSERVE validation lane ────
     // encode, emd, goal_status, evaluate, recompute, metabolize operate on
     // in-memory goalStore (scoped by goal_id) without mutating host filesystem.
