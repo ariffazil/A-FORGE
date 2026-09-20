@@ -69,7 +69,9 @@ function getGitInfo(workspace: string): { commit: string | null; branch: string 
 
 function getWheelInfo(): { location: string | null; version: string | null } {
   try {
-    const pipShow = safeExec("pip show arifos 2>/dev/null");
+    const venvPip = "/opt/arifos/current/venv/bin/pip";
+    const pipCmd = existsSync(venvPip) ? `${venvPip} show arifos 2>/dev/null` : "pip show arifos 2>/dev/null";
+    const pipShow = safeExec(pipCmd);
     if (!pipShow) return { location: null, version: null };
 
     let location: string | null = null;
@@ -102,11 +104,13 @@ function getWheelInfo(): { location: string | null; version: string | null } {
 
 function getImportInfo(): { path: string | null; version: string | null } {
   try {
+    const venvPy = "/opt/arifos/current/venv/bin/python";
+    const pyCmd = existsSync(venvPy) ? venvPy : "python3";
     const importPath = safeExec(
-      'python3 -c "import arifos; print(arifos.__file__)" 2>/dev/null'
+      `${pyCmd} -c "try:\n import arifos; print(arifos.__file__)\nexcept ImportError:\n import arifosmcp; print(arifosmcp.__file__)" 2>/dev/null`
     );
     const importVersion = safeExec(
-      "python3 -c \"import arifos; print(getattr(arifos, '__version__', 'unknown'))\" 2>/dev/null"
+      `${pyCmd} -c "try:\n import arifos; print(getattr(arifos, '__version__', 'unknown'))\nexcept ImportError:\n import arifosmcp; print(getattr(arifosmcp, '__version__', 'unknown'))" 2>/dev/null`
     );
     return { path: importPath, version: importVersion };
   } catch {
