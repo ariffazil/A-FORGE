@@ -329,7 +329,12 @@ describe('EphemeralGenesisRunner — E2E GREEN Flow', () => {
 
   it('Step 7: invoke with real input', async () => {
     if (!backendAvailable) return;
-    const input = 'col1,col2,col3\n1,2,3\n4,5,6\n7,8,9';
+    // FIX (2026-09-21, 333-AGI session SEAL-d3de8b650b9d4427):
+    // The earlier CSV string failed because SIMPLE_PYTHON_TOOL calls
+    // json.load(), which rejects CSV. Step 5 sends JSON, so Step 7
+    // must match. Capability was declared text/csv but tool is JSON;
+    // we fix the test to match the actual tool (FIX 2 in P11 analysis).
+    const input = JSON.stringify({ well: 'A-1', depth: [100, 200, 300], gr: [45, 67, 89] });
     const result = await runner.invoke(input);
     assert.ok(result);
     assert.equal(result.exitCode, 0);
