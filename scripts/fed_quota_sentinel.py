@@ -21,11 +21,15 @@ mutate routing (F1: witness, not act; policy flips stay sovereign).
 import os, json, time, re, urllib.request, urllib.error, sqlite3, glob
 
 AK = "API" + "_" + "KEY"
-envf = glob.glob("/root/.sec*/*.flat.env")[0]
-for l in open(envf):
-    if "=" in l and not l.startswith("#"):
-        k, v = l.strip().split("=", 1)
-        os.environ.setdefault(k, v)
+# 2026-09-21 FI-008 fix: load ALL .flat.env files. Previous [0] picked one file
+# non-deterministically; KIMI_API_KEY only exists in kunci-mas.flat.env so
+# TypeError broke the sentinel hourly (token_bank_spend never updated since
+# 2026-08-30). setdefault is safe across multiple files.
+for envf in sorted(glob.glob("/root/.sec*/*.flat.env")):
+    for l in open(envf):
+        if "=" in l and not l.startswith("#"):
+            k, v = l.strip().split("=", 1)
+            os.environ.setdefault(k, v)
 K = lambda p: os.getenv(p + AK)
 
 SD = "/root/.local/share/arifos"

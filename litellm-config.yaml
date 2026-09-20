@@ -107,11 +107,12 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "apex-888 P97 (legacy qwen3.7-max QWEN Team Owner): documented 2026-09-21 F13 FI-008 — older model fallback for when qwen3.8-max failover chains exhaust."
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -128,11 +129,12 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_ARIFOS_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "apex-888 P97 (legacy qwen3.7-max arifOS Advanced seat): documented 2026-09-21 F13 FI-008 — older model parallel to arifOS qwen3.8-max failover."
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -149,11 +151,12 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "apex-888 P97 (legacy qwen3.7-max ariffazil Standard seat): documented 2026-09-21 F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover."
 - model_name: i-arif
   litellm_params:
     model: openai/deepseek-flash
@@ -393,23 +396,25 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "asi-555 P97 (legacy qwen3.8-max QWEN Team Owner): documented 2026-09-21 F13 FI-008 — Team Owner seat qwen3.8-max fallback."
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_image_input: true
     supports_function_calling: true
+    notes: "asi-555 P97 (legacy qwen3.7-max QWEN Team Owner): documented 2026-09-21 F13 FI-008 — older model parallel to Team Owner qwen3.8-max."
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -426,11 +431,12 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_ARIFOS_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "asi-555 P97 (legacy qwen3.7-max arifOS Advanced seat): documented 2026-09-21 F13 FI-008 — older model parallel to arifOS qwen3.8-max failover."
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -447,11 +453,12 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "asi-555 P97 (legacy qwen3.7-max ariffazil Standard seat): documented 2026-09-21 F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover."
 - model_name: fed/image-gen
   litellm_params:
     model: openai/wan2.7-image-pro
@@ -806,13 +813,13 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 3
+    order: 6
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: "INDIVIDUAL PLAN — qwen3.8-max. 36d runway."
+    notes: "INDIVIDUAL PLAN — qwen3.8-max. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=3 (was colliding with qwen3.7-max at order=3)."
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -822,12 +829,12 @@ model_list:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 2
+    order: 5
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-plus. 36d runway."
+    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-plus. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=2 (was colliding with glm-5.3-flash at order=2)."
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -837,11 +844,11 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 3
+    order: 7
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-max. 36d runway."
+    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-max. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=3 (was colliding with qwen3.8-max at order=3)."
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -851,11 +858,11 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 4
+    order: 8
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-    notes: "INDIVIDUAL PLAN \u2014 deepseek-v4-pro. 36d runway."
+    notes: "INDIVIDUAL PLAN \u2014 deepseek-v4-pro. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=4 (sequential cascade realignment)."
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
