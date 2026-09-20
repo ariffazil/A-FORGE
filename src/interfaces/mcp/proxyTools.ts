@@ -573,9 +573,11 @@ export function registerFilesystemTools(server: McpServer): void {
         try {
           // P0.6 FIX (2026-07-19): Use execFileSync with argument array instead of
           // shell string interpolation. Prevents command injection through pattern/include.
-          const args: string[] = ["-rn", "--", pattern];
+          // arg-order fix (2026-09-21): --include must precede the `--` separator,
+          // otherwise grep treats it as a filename pattern, not an option.
+          const args: string[] = ["-rn"];
           if (include) args.push("--include", include);
-          args.push(check.resolvedPath);
+          args.push("--", pattern, check.resolvedPath);
           const output = execFileSync("grep", args, {
             encoding: "utf-8",
             timeout: 15000,
