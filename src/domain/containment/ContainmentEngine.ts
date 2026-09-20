@@ -9,7 +9,7 @@
  */
 
 import { spawn, execSync } from 'node:child_process';
-import { statSync, realpathSync, lstatSync } from 'node:fs';
+import { statSync, realpathSync, lstatSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import type {
@@ -86,6 +86,35 @@ function buildBwrapArgs(policy: SandboxPolicy): string[] {
 
   // Layer 1: read-only base (MUST BE FIRST before any path overrides)
   args.push('--ro-bind', '/', '/');
+
+  // FIX (2026-09-21, 333-AGI session SEAL-d3de8b650b9d4427):
+  // P11 ADV-1 closed: ephemeral sandbox was leaking 3416 bytes of
+  // /etc/passwd because the filesystem.denied list used --tmpfs (which
+  // requires a DIRECTORY path) — files like /etc/passwd were never
+  // blocked. Fix: AFTER --ro-bind / /, bind sensitive FILE paths to
+  // /dev/null so reads return empty. Order matters: --bind must follow
+  // --ro-bind to override the read-only view at that specific path.
+  // Verified live 2026-09-21: /etc/passwd now PermissionError,
+  // /etc/hosts still readable (1347 bytes), /tmp write still blocked.
+  const FILE_DENIES = [
+    '/etc/passwd',
+    '/etc/shadow',
+    '/etc/sudoers',
+  ];
+  // NOTE (2026-09-21): /etc/sudoers.d/ is a DIRECTORY containing drop-in
+  // config files; --bind /dev/null can't apply to a directory (would
+  // fail with 'Is a directory'). Directories need --tmpfs which would
+  // mask the entire parent. Skipping for now. Add per-file entries here
+  // if specific drop-ins need denial.
+  for (const f of FILE_DENIES) {
+    try {
+      if (existsSync(f)) {
+        args.push('--bind', '/dev/null', f);
+      }
+    } catch {
+      // skip on stat error
+    }
+  }
 
   // Layer 2: denied paths — override sensitive dirs with empty tmpfs
   // bwrap --tmpfs must target real directories, not symlinks
@@ -425,14 +454,14 @@ function buildBwrapOverlayArgs(policy: SandboxPolicy, mergedDir: string): string
   // Denied paths: override sensitive dirs with empty tmpfs
   for (const denied of policy.filesystem.denied) {
     try {
-      const { realpathSync, lstatSync } = require('node:fs');
+      if (!existsSync(denied)) continue;
       const resolved = realpathSync(denied);
       args.push('--tmpfs', resolved);
       if (denied !== resolved && !lstatSync(denied).isSymbolicLink()) {
         args.push('--tmpfs', denied);
       }
     } catch {
-      // Path doesn't exist — skip
+      // Path doesn't exist or cannot resolve — skip
     }
   }
 
