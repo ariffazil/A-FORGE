@@ -134,6 +134,19 @@ function writeBaselineReceipt(store: SurfaceGuardStore, organs: OrganConfig[]): 
 
 // ─── NATS Alert ────────────────────────────────────────────────────
 
+// SUBJECT — corrected 2026-09-21 (F13 order: execute all apex-zen).
+// The alert was published to the literal subject `888_HOLD`, which has NO
+// subscriber anywhere in the federation: a live subscriber census on
+// 127.0.0.1:8222/connz showed one client — /root/AAA/a2a-server/server.js
+// (pid 2253605, :3001, 42,642 msgs in) — subscribed to arifos.verdicts,
+// arifos.floor_breach, arifos.gate.> and arifos.organ.>, and nothing at all
+// on `888_HOLD`. The alert fired correctly on the wire and reached nobody.
+// A watchdog whose alarm has no listener is decoration, not a watchdog.
+// Persist on JetStream stream arifos-governance (subjects arifos.floor.>).
+// Underscore token arifos.floor_breach does NOT match that stream.
+// `type: '888_HOLD'` stays in the payload. Durable consumer: aaa-ops-fabric.
+const NATS_ALERT_SUBJECT = 'arifos.floor.breach';
+
 // A read that differed from the reference and then matched it on the
 // confirmation probe is a transient (cold or flapping organ), not a change.
 // It is reported — at warning level, in the journal, which is this watchdog's
@@ -162,6 +175,8 @@ async function publishHoldAlert(report: FederationDriftReport): Promise<void> {
 
     const alert = {
       type: '888_HOLD',
+      schema: 'arifos.surface_guard.alert.v1',
+      subject: NATS_ALERT_SUBJECT,
       reason: report.verdict_reason ?? 'MCP_TOOL_SURFACE_DRIFT',
       source: 'surface-guard',
       timestamp: new Date().toISOString(),
@@ -174,10 +189,10 @@ async function publishHoldAlert(report: FederationDriftReport): Promise<void> {
       },
     };
 
-    nc.publish('888_HOLD', JSON.stringify(alert));
+    nc.publish(NATS_ALERT_SUBJECT, JSON.stringify(alert));
     await nc.flush();
     await nc.close();
-    console.log(`[SurfaceGuard] 888_HOLD alert published to NATS`);
+    console.log(`[SurfaceGuard] 888_HOLD alert published to NATS subject ${NATS_ALERT_SUBJECT}`);
   } catch (err) {
     // NATS may not be running — log but don't crash
     console.warn(`[SurfaceGuard] NATS publish failed (non-fatal): ${err}`);
