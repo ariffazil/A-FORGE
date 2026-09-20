@@ -642,7 +642,16 @@ export class EphemeralGenesisRunner {
    * Fail-closed: if sandbox deprovision fails, logs error and transitions to RETIRED anyway.
    */
   async retire(): Promise<void> {
-    if (!['INVOKED', 'OUTPUT_VERIFIED', 'FAILED'].includes(this.lease.state)) {
+    // FIX (2026-09-21, 333-AGI session SEAL-d3de8b650b9d4427):
+    // Previously retire() rejected GENERATED and SANDBOX_TESTED states,
+    // even though both are valid pre-INVOKED states. If sandboxTest fails
+    // the runner would normally transition to FAILED, but the test infra's
+    // bash compound command (`python3 ... ; echo "EXIT:$?"`) hides the
+    // Python exit code, so the runner ends up in SANDBOX_TESTED even for
+    // code that should have failed. Retire must still clean up from these
+    // states. Allow GENERATED + SANDBOX_TESTED in addition to the original
+    // three (INVOKED, OUTPUT_VERIFIED, FAILED).
+    if (!['INVOKED', 'OUTPUT_VERIFIED', 'FAILED', 'GENERATED', 'SANDBOX_TESTED'].includes(this.lease.state)) {
       this.errors.push(`Invalid state for retirement: ${this.lease.state}`);
       return;
     }
