@@ -476,6 +476,7 @@ export function isClassifiedTool(toolName: string): boolean {
     "forge_calendar",
     "forge_sheets",
     "forge_gmail",
+    "forge_trust_score",
   ];
   if (modeAware.includes(toolName)) return true;
   return false;
