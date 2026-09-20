@@ -13,6 +13,7 @@
  */
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
+import { createHash } from 'crypto';
 import { join } from 'path';
 
 import {
@@ -26,6 +27,7 @@ import {
 
 const CONFIG_PATH = '/root/A-FORGE/config/mcp-surface-guard.json';
 const LOG_DIR = '/var/log/surface-guard';
+const SIG_PATH = join(LOG_DIR, '.last-signature');
 const CHECK_INTERVAL_MS = 60_000; // 60 seconds
 const NATS_URL = 'nats://127.0.0.1:4222';
 
@@ -55,12 +57,41 @@ function ensureLogDir(): void {
   }
 }
 
-function writeReport(report: FederationDriftReport): void {
+// Volatile fields carry no governance content: they differ on every probe by
+// construction. Strip them before hashing so the signature reflects STATE, not clock.
+function substantiveSignature(report: FederationDriftReport): string {
+  const strip = (o: unknown): unknown => {
+    if (Array.isArray(o)) return o.map(strip);
+    if (o && typeof o === 'object') {
+      const out: Record<string, unknown> = {};
+      for (const k of Object.keys(o as Record<string, unknown>).sort()) {
+        if (k === 'checked_at' || k === 'detected_at' || k === 'latency_ms') continue;
+        out[k] = strip((o as Record<string, unknown>)[k]);
+      }
+      return out;
+    }
+    return o;
+  };
+  return createHash('sha256').update(JSON.stringify(strip(report))).digest('hex');
+}
+
+// STATE TRANSITION EMITTER (2026-09-20, F13-authorized).
+// Writes an event file ONLY when the substantive state differs from the last
+// persisted signature. Before this gate the daemon emitted drift-<ts>.json every
+// probe: 38,282 files / 45 days, 100% HOLD, 46% byte-identical duplicates, and no
+// reader on the box. Witness that cannot change a decision is archive, not governance.
+// latest.json remains the single always-current state file (overwritten in place).
+function writeReport(report: FederationDriftReport): boolean {
   ensureLogDir();
+  const sig = substantiveSignature(report);
+  const prev = existsSync(SIG_PATH) ? readFileSync(SIG_PATH, 'utf-8').trim() : '';
+  if (sig === prev) return false;
   const ts = new Date().toISOString().replace(/[:.]/g, '-');
   const path = join(LOG_DIR, `drift-${ts}.json`);
   writeFileSync(path, JSON.stringify(report, null, 2));
-  console.log(`[SurfaceGuard] Report written: ${path}`);
+  writeFileSync(SIG_PATH, sig + '\n');
+  console.log(`[SurfaceGuard] STATE TRANSITION ${sig.slice(0, 12)} → report written: ${path}`);
+  return true;
 }
 
 function writeLatest(report: FederationDriftReport): void {
@@ -173,7 +204,8 @@ async function main(): Promise<void> {
       } else {
         await onDrift(report);
       }
-      
+
+      writeLatest(report); // latest.json is the single live state file — always current
       lastReport = report;
     } catch (err) {
       console.error(`[SurfaceGuard] Check failed: ${err}`);
