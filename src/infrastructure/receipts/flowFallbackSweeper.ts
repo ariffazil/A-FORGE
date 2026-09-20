@@ -152,6 +152,57 @@ export async function sweepFallback(dryRun = false): Promise<SweepReport> {
   return report;
 }
 
+/**
+ * Single-flight, best-effort drain.
+ *
+ * The trigger is an EVENT, not a schedule: a SUCCESSFUL arifFLOW emission is
+ * observed proof that the plane is back, so the backlog can be replayed the
+ * moment that happens. No timer, no cron — and nothing to run when the
+ * backlog is empty, because sweepFallback returns on an empty file.
+ *
+ * Concurrent callers share one sweep: two emissions landing together must not
+ * replay the same line twice before either has written the .replayed ledger.
+ * A sweep that fails re-queues every line it could not deliver; the caller is
+ * never blocked and never sees the error.
+ */
+let _sweepInFlight: Promise<SweepReport | null> | null = null;
+
+export function maybeSweep(reason = "unspecified"): Promise<SweepReport | null> {
+  if (_sweepInFlight) return _sweepInFlight;
+  _sweepInFlight = sweepFallback(false)
+    .then((report) => {
+      if (report.replayed > 0 || report.failed > 0 || report.remaining > 0) {
+        process.stderr.write(
+          JSON.stringify({
+            level: report.failed > 0 ? "warn" : "info",
+            component: "flowSweeper",
+            msg: "fallback sweep",
+            reason,
+            ...report,
+          }) + "\n",
+        );
+      }
+      return report;
+    })
+    .catch((err: unknown) => {
+      // A failed sweep must never break the emission path that triggered it.
+      process.stderr.write(
+        JSON.stringify({
+          level: "error",
+          component: "flowSweeper",
+          msg: "sweep failed",
+          reason,
+          error: err instanceof Error ? err.message : String(err),
+        }) + "\n",
+      );
+      return null;
+    })
+    .finally(() => {
+      _sweepInFlight = null;
+    });
+  return _sweepInFlight;
+}
+
 const isMain = process.argv[1]?.endsWith("flowFallbackSweeper.js") ||
   process.argv[1]?.endsWith("flowFallbackSweeper.ts");
 

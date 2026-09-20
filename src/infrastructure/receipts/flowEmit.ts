@@ -5,8 +5,10 @@
  * preserved · arifFLOW is receipt authority, not judge.
  *
  * Every emission attempt that fails (arifFLOW down, chain reject, network)
- * is APPENDED to the fallback JSONL — never silently dropped. A sweeper
- * (future P1-7) can replay the fallback when the plane returns.
+ * is APPENDED to the fallback JSONL — never silently dropped. The P1-7
+ * sweeper (`flowFallbackSweeper.ts`) replays that backlog, triggered by the
+ * event that proves the plane is back — a successful emission — so no timer
+ * or cron is involved (G-13 closed 2026-09-20).
  *
  * Wired 2026-09-09 under F13 "go" (NEXT MUTATION GATE: P1-5f canary).
  * DITEMPA BUKAN DIBERI.
@@ -21,6 +23,7 @@ import {
   type EmitReceiptParams,
   type IngestResponse,
 } from "./arifflowClient.js";
+import { maybeSweep } from "./flowFallbackSweeper.js";
 
 const FALLBACK_PATH =
   process.env.AF_FLOW_FALLBACK_PATH ??
@@ -64,6 +67,11 @@ export async function emitAForgeReceipt(
       organ: "A-FORGE",
       ...params,
     });
+    // G-13 closure (2026-09-20, FI-003): a successful emission IS the
+    // "plane is back" event — drain whatever the fallback collected while
+    // arifFLOW was unreachable. Fire-safe: the caller is not blocked, the
+    // sweep is single-flight, and a failed replay re-queues its lines.
+    void maybeSweep("emit-success");
     return { ok: true, receipt_id: undefined, error: undefined, ...(resp as object) } as FlowEmitResult;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
