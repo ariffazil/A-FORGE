@@ -1528,7 +1528,7 @@ server.tool(
               lease_id: localLeaseId,
             // P2 ACT SCOPE FIX: forge_shell requires explicit lease.
             // P3: forge_seal_lane_a removed (phantom purge 2026-09-15).
-            scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral"],
+            scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_trust_score"],
               max_action_class: "MUTATE",
               ttl_seconds: ttl,
               expires_at: now + ttl * 1000,
