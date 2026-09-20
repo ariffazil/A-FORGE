@@ -422,6 +422,15 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (!mode || mode === "read-unread") return "OBSERVE";
     if (mode === "send") return "EXECUTE_REVERSIBLE";
   }
+  // forge_trust_score: list/history/verify=OBSERVE (read-only trust ledger queries),
+  // score/evaluate=EXECUTE_REVERSIBLE (persist to Postgres trust_scores + trust_history).
+  // Without mode-aware override, the tool falls through to IRREVERSIBLE_TOOLS and
+  // even a read of mode='list' gets blocked. Same pattern as forge_ephemeral.
+  if (toolName === "forge_trust_score") {
+    if (!mode) return "OBSERVE"; // default: harmless list query
+    if (["list", "history", "verify"].includes(mode)) return "OBSERVE";
+    if (["score", "evaluate"].includes(mode)) return "EXECUTE_REVERSIBLE";
+  }
 
   // ── Name-only classification (existing sets) ──
   if (IRREVERSIBLE_TOOLS.has(toolName)) return "IRREVERSIBLE";
