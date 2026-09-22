@@ -462,7 +462,7 @@ function computeGate(scores: Omit<EstimatorScores, "rationale" | "Omega">): {
   G: number;
   C_dark: number;
   g_authority: "local_estimate";
-  g_canonical_source: "arif_think.mode=apex";
+  g_canonical_source: "local_proxy";
 } {
   // Canonical V3: G = (A · P · E · X)^(1/4)
   const clampSafe = (v: number) => Math.max(1e-10, v);
@@ -475,7 +475,9 @@ function computeGate(scores: Omit<EstimatorScores, "rationale" | "Omega">): {
     G,
     C_dark,
     g_authority: "local_estimate",
-    g_canonical_source: "arif_think.mode=apex",
+    // F2: local geometric mean is NOT kernel-derived. Label its true provenance
+    // so downstream gates cannot mistake proxy-G for constitutional G.
+    g_canonical_source: "local_proxy",
   };
 }
 
@@ -503,7 +505,7 @@ async function computeGateWithKernelG(
   G: number;
   C_dark: number;
   g_authority: "arif_think.mode=apex" | "local_estimate";
-  g_canonical_source: "arif_think.mode=apex";
+  g_canonical_source: "arif_think.mode=apex" | "local_proxy";
 }> {
   const C_dark = scores.A * (1 - scores.P) * (1 - scores.X);
 
@@ -532,7 +534,9 @@ async function computeGateWithKernelG(
     G,
     C_dark,
     g_authority: "local_estimate",
-    g_canonical_source: "arif_think.mode=apex",
+    // F2: local geometric mean is NOT kernel-derived. Label its true provenance
+    // so downstream gates cannot mistake proxy-G for constitutional G.
+    g_canonical_source: "local_proxy",
   };
 }
 
@@ -825,7 +829,7 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
     evaluated_at: now,
     expires_at: expiresAt,
     g_authority: "local_estimate",
-    g_canonical_source: "arif_think.mode=apex",
+    g_canonical_source: "local_proxy",
   };
 
   // If VOID, attach a scar record (the caller seals it)
@@ -901,6 +905,6 @@ export function evaluateDryRun(spec: CandidateSpec, evaluatorCount = 1): Omit<Ga
     evaluated_at: now,
     expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     g_authority: "local_estimate",
-    g_canonical_source: "arif_think.mode=apex",
+    g_canonical_source: "local_proxy",
   };
 }

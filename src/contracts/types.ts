@@ -127,7 +127,11 @@ export interface GateDecision {
   C_dark: number;
   /** Authority stamp — constitutional G is arif_think.mode=apex only */
   g_authority?: "local_estimate" | "arif_think.mode=apex";
-  g_canonical_source?: "arif_think.mode=apex";
+  // F2 (2026-09-22, 333-AGI): provenance must be able to say "local_proxy".
+  // The Layer-3 fallback and evaluateDryRun compute G from heuristic estimators
+  // with declared priors (A@0.5, P@0.7, Ω@const). Pinning this to the kernel
+  // literal let a local proxy masquerade as constitutional G.
+  g_canonical_source?: "arif_think.mode=apex" | "local_proxy";
 
   /** Per-component scores */
   scores: EstimatorScores;
