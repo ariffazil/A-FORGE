@@ -42,7 +42,7 @@ LEDGER = RECEIPT_DIR / "aed-ledger.jsonl"
 ARIFLOW_URL = "http://127.0.0.1:7073"
 ARIFOS_URL = "http://127.0.0.1:8088"
 A_FORGE_URL = "http://127.0.0.1:7071"
-FLAME_URL = "http://127.0.0.1:18901"
+# FLAME :18901 retired 2026-09-04 — dead constant removed (F13 subtraction 2026-09-22).
 SELF_CHECK_INTERVAL = 300  # seconds between daemon cycles
 
 # arifFlow cost clamp (receipt.rs COST_MIN_NS / COST_MAX_NS)
