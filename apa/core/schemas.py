@@ -17,7 +17,7 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -145,6 +145,32 @@ class VAULT999Receipt(BaseModel):
     )
 
     # ── Validity ──
+
+    # WAJIB #16 — Confidence/calibration
+    confidence: Optional[float] = Field(
+        default=None,
+        description="Calibrated confidence score [0.0, 1.0]. Null until calibration loop backfills.",
+        ge=0.0,
+        le=1.0,
+    )
+    confidence_source: Optional[str] = Field(
+        default=None,
+        description="Origin of confidence: 'declared', 'observed', 'calibrated'.",
+    )
+
+    # WAJIB #17 — Contradiction register
+    contradictions: List[str] = Field(
+        default_factory=list,
+        description="Receipt IDs that contradict this one. Never erased — preserved as evidence.",
+    )
+    supersedes: Optional[str] = Field(
+        default=None,
+        description="Receipt ID this receipt supersedes (per WAJIB #20).",
+    )
+    superseded_by: Optional[str] = Field(
+        default=None,
+        description="Receipt ID that supersedes this one (set when superseded).",
+    )
 
     @field_validator("timestamp", mode="before")
     @classmethod
@@ -278,7 +304,7 @@ class APAResponse(BaseModel):
     @field_validator("receipt")
     @classmethod
     def receipt_required_for_mutate(
-        cls, v: Optional[VAULT999Receipt], info: Any
+        cls, v: Optional[VAULT999Receipt]
     ) -> Optional[VAULT999Receipt]:
         """Receipt is strongly recommended for MUTATE/EXTERNAL_SIDE_EFFECT verbs.
 

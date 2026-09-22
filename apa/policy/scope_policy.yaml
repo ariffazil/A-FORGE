@@ -1,0 +1,123 @@
+# Scope Restriction Policy — WAJIB #5
+# =======================================
+#
+# Each connector (bridge / tool) declares its scope. Actions outside scope
+# MUST be denied at the APA gate. Reversibility: rm this file → revert
+# (default-deny fallback applies).
+#
+# DITEMPA BUKAN DIBERI — Scope is forged, not assumed.
+
+version: "1.0"
+effective_date: "2026-09-23"
+canonical_path: "/root/A-FORGE/apa/policy/scope_policy.yaml"
+
+# ── Global defaults ─────────────────────────────────────────────────────────
+default_action: "deny"        # WAJIB #59 fail-closed default
+require_lease: true           # all scopes require lease_id
+require_receipt: true         # all MUTATE/EXTERNAL_SIDE_EFFECT require receipt
+
+# ── Connector scopes ─────────────────────────────────────────────────────────
+
+connectors:
+  github:
+    description: "GitHub repo + issue + PR operations"
+    allowed_actions:
+      - "read:repos"
+      - "read:issues"
+      - "read:pulls"
+      - "write:issues"           # requires lease_class ≥ DEVELOPER
+      - "write:pulls"            # requires lease_class ≥ DEVELOPER
+      - "write:repos"            # requires lease_class ≥ MAINTAINER
+    denied_actions:
+      - "delete:repos"           # requires IRREVERSIBLE verb_class + F13
+      - "force_push"             # requires IRREVERSIBLE verb_class + F13
+    lease_class_required: "DEVELOPER"
+    blast_radius_max: "HIGH"
+
+  gmail:
+    description: "Email send/receive"
+    allowed_actions:
+      - "read:inbox"
+      - "send:draft"
+      - "send:external"          # requires lease_class ≥ AUTHOR
+    denied_actions:
+      - "delete:all"
+      - "bulk_archive"           # requires EXPLICIT_F13
+    lease_class_required: "AUTHOR"
+    blast_radius_max: "CRITICAL"  # external side effect
+
+  telegram:
+    description: "Telegram bot + channel operations"
+    allowed_actions:
+      - "send:message"
+      - "read:channel"
+    denied_actions:
+      - "delete:chat"
+      - "ban:user"
+    lease_class_required: "OPERATOR"
+    blast_radius_max: "MEDIUM"
+
+  calendar:
+    description: "Calendar read/write"
+    allowed_actions:
+      - "read:events"
+      - "write:events"
+    denied_actions:
+      - "delete:all_events"
+    lease_class_required: "OPERATOR"
+    blast_radius_max: "LOW"
+
+  drive:
+    description: "Drive file operations"
+    allowed_actions:
+      - "read:files"
+      - "write:files"
+    denied_actions:
+      - "delete:all_files"
+      - "share:public"
+    lease_class_required: "DEVELOPER"
+    blast_radius_max: "MEDIUM"
+
+  sheets:
+    description: "Sheets read/write"
+    allowed_actions:
+      - "read:rows"
+      - "write:rows"
+    denied_actions:
+      - "delete:all"
+    lease_class_required: "OPERATOR"
+    blast_radius_max: "LOW"
+
+  voice:
+    description: "Twilio voice bridge"
+    allowed_actions:
+      - "initiate:call"
+      - "stream:audio"
+    denied_actions:
+      - "premium:route"
+    lease_class_required: "AUTHOR"
+    blast_radius_max: "MEDIUM"
+
+  mcp_constitutional_gateway:
+    description: "Constitutional MCP gateway"
+    allowed_actions:
+      - "route:request"
+      - "emit:receipt"
+    denied_actions:
+      - "override:verdict"
+    lease_class_required: "SOVEREIGN"  # the gateway itself
+    blast_radius_max: "LOW"
+
+# ── Scope violations ────────────────────────────────────────────────────────
+violation_response:
+  on_scope_violation: "HOLD"
+  require_incident_receipt: true
+  log_to: ["audit", "vault999"]
+  notify_actor: true
+
+# ── Receipt ─────────────────────────────────────────────────────────────────
+# This policy file was forged 2026-09-23 under BIJAKSANA Gap Audit Item #5.
+# Reversible via rm. No canonical mutation. No F13 required.
+forged_by: "Claude forge-777 (under EXECUTION-FIRST + IRFAN runtime form)"
+forged_at: "2026-09-23T04:30:00Z"
+reference: "forge_work/2026-09-23-irfan-path-b-matrix/BIJAKSANA-GAP-AUDIT.md"

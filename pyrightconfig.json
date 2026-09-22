@@ -1,0 +1,11 @@
+{
+  "include": [
+    "apa",
+    "tests"
+  ],
+  "extraPaths": [
+    "."
+  ],
+  "reportMissingImports": "information",
+  "reportOptionalMemberAccess": "information"
+}
