@@ -13,7 +13,7 @@ health_endpoint: http://localhost:7071/health
 runtime: nodejs_22
 build_target: dist/src/
 
- tools:
+tools:
   ReadFileTool:
     category: file_system
     owner_repo: ariffazil/A-FORGE

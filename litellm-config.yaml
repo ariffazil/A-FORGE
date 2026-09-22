@@ -175,13 +175,13 @@ model_list:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 90
     max_input_tokens: 1048576
     max_output_tokens: 131072
     min_tokens: 200
     mode: chat
     supports_vision: true
-    notes: 'i-arif DeepSeek Flash Vision: deepseek-flash (V4.1 native multimodal).
+    notes: 'PARKED order 90 (2026-09-22): probe HTTP 402 Insufficient Balance - dead rung at order 1 cost every i-arif request a failed hop. Revive by restoring order: 1 after balance top-up. Original: i-arif DeepSeek Flash Vision: deepseek-flash (V4.1 native multimodal).
       Upstream: api.deepseek.com. Direct PAYG. PRIMARY. min_tokens=200 for reasoning headroom.'
   model_info:
     max_input_tokens: 1048576
@@ -250,12 +250,12 @@ model_list:
     model: openai/mimo-v2.5
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
-    order: 5
+    order: 91
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-    notes: 'i-arif MiMo v2.5 (Xiaomi). Upstream: xiaomimimo.com. Omni-modal vision.'
+    notes: 'PARKED order 91 (2026-09-22): token-plan lane 429-dead (5 probes/30min, incl 0-credit TTS => entitlement dead not balance). Superseded by mimo-v2.6-pro-payg at order 2. Revive by restoring order: 5. Original: i-arif MiMo v2.5 (Xiaomi). Upstream: xiaomimimo.com. Omni-modal vision.'
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -293,6 +293,32 @@ model_list:
     max_input_tokens: 1000000
     max_output_tokens: 128000
     mode: chat
+# MiMo-V2.6-Pro PAYG wired into i-arif per F13 directive 2026-09-22
+# ("make mimo latest model as part of FED generally and i-ARIF specifically")
+# Evidence: HTTP 200 on live probe, tool_calls verified (finish=tool_calls, args correct),
+# vision verified (image_tokens=9, correct colour). Token-plan lane is 429-dead incl. its
+# 0-credit TTS path => PAYG (sk- platform key) is the only live MiMo lane today.
+- model_name: i-arif
+  litellm_params:
+    model: openai/mimo-v2.6-pro-payg
+    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    order: 2
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    min_tokens: 200
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'i-arif MiMo-V2.6-Pro (Xiaomi Platform API / PAYG). Live-verified 2026-09-22:
+      HTTP 200, tool_calls OK, vision OK. min_tokens=200 for reasoning headroom.
+      Native omni-modal. Added per F13 directive.'
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
 - model_name: agi-333
   litellm_params:
     model: openai/qwen3.8-max
@@ -694,12 +720,41 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'forge-777 P3 (OpenCode Go): 1M context, paid resubscribed.'
+# Stage 2 — promote MiMo-V2.6 series into forge-777 cascade as primary quality tier (2026-09-22)
+# Order values < existing mimo-v2.5 (order 5) so V2.6 is tried first; V2.5 kept at order 5 as live fallback ("have both" + Stage 3 SABAR).
+# Two distinct endpoints so quota pressure on one does not collapse the other:
+#   P1 (order 1): mimo-v2.6-pro on PAYG platform (api.xiaomimimo.com) — fresh quota, live-verified 2026-09-22T03:42Z.
+#   P2 (order 2): mimo-v2.6-pro on Token Plan (token-plan-sgp) — distinct quota pool from PAYG.
+- model_name: forge-777
+  litellm_params:
+    model: openai/mimo-v2.6-pro-payg
+    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: 'Stage 2 (2026-09-22): forge-777 P1 — MiMo-V2.6-Pro PAYG/platform. AA Index 46, $0.43/$0.87 per 1M. Multimodal text+image+video+audio. Primary quality tier for federation; V2.5 demoted to order 5 fallback.'
+- model_name: forge-777
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 97
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: 'PARKED order 97 (2026-09-22): GHOST CAPABILITY. Routed through the 429-dead token-plan lane and returned "No fallback model group found". Revive by restoring order: 2 once TP entitlement is restored. Original: Stage 2 (2026-09-22): forge-777 P2 — MiMo-V2.6-Pro Token Plan (SG). Distinct quota pool from PAYG above; cascades if PAYG exhausts.'
 - model_name: forge-777
   litellm_params:
     model: openai/mimo-v2.5
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
-    order: 5
+    order: 91
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1074,6 +1129,75 @@ model_list:
     mode: chat
     supports_vision: true
     notes: 'F13 2026-09-14: supports_vision enabled for image input.'
+
+# Stage 1 sidecar — MiMo-V2.6 series (Xiaomi) added 2026-09-22 per AGI→ASI→APEX decision packet
+# (kernel-judge SEAL 0.92; VAULT held pending substrate recovery). Distinct model_name per endpoint
+# so sovereign retains explicit choice ("have both" intent). Zero edits to existing v2.5 entries.
+- model_name: mimo-v2.6-pro
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 5
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: '2026-09-22 Stage 1 sidecar — token-plan endpoint (token-plan-sgp.xiaomimimo.com). AA Index 46 (v4.3.2). $0.43 in / $0.87 out per 1M. multimodal text+image+video+audio.'
+- model_name: mimo-v2.6-pro-payg
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    order: 5
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: '2026-09-22 Stage 1 sidecar — PAYG/platform endpoint (api.xiaomimimo.com). Distinct model_name for "have both" choice.'
+- model_name: mimo-v2.6-flash
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 5
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: '2026-09-22 Stage 1 sidecar — token-plan endpoint. Cheaper than Pro.'
+- model_name: mimo-v2.6-flash-payg
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    order: 5
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: '2026-09-22 Stage 1 sidecar — PAYG/platform endpoint. Distinct model_name for "have both" choice.'
+- model_name: mimo-v2.6-pro-ultraspeed
+  litellm_params:
+    model: openai/mimo-v2.6-pro-ultraspeed
+    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    order: 5
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: '2026-09-22 Stage 1 sidecar — PAYG-only (token-plan /models probe did NOT list ultraspeed). Vendor-claimed 20x speed; pending live latency probe.'
 - model_name: glm-5.2
   litellm_params:
     model: openai/glm-5.2
@@ -1759,6 +1883,26 @@ router_settings:
     - mimo-v2.5
     - MiniMax-M3
     - gemini-3.6-flash
+  # Added 2026-09-22: the v2.6 token-plan lanes had NO fallback group, so a TP 429
+  # was terminal (observed: "No fallback model group found for lookup_groups=mimo-v2.6...").
+  # Repoint at the live PAYG lanes.
+  - mimo-v2.6-pro:
+    - mimo-v2.6-pro-payg
+    - MiniMax-M3
+  - mimo-v2.6-flash:
+    - mimo-v2.6-flash-payg
+    - MiniMax-M3
+  # Added 2026-09-22 stabilization (FI-008): terminal groups for the PAYG lanes +
+  # ultraspeed. mimo-platform balance telemetry read $0 / UltraSpeed fell off top-3;
+  # without these, a PAYG or ultraspeed failure was terminal (same failure class as
+  # the token-plan 429 above). Cascade: ultraspeed -> pro-payg -> MiniMax-M3.
+  - mimo-v2.6-pro-ultraspeed:
+    - mimo-v2.6-pro-payg
+    - MiniMax-M3
+  - mimo-v2.6-pro-payg:
+    - MiniMax-M3
+  - mimo-v2.6-flash-payg:
+    - MiniMax-M3
   - mimo-v2.5:
     - MiniMax-M3
     - gemini-3.6-flash

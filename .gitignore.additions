@@ -1,0 +1,5 @@
+# Forge additions 2026-09-23 — ARIF · SALAM · IRFAN
+# State directories (sqlite databases from test runs)
+apa/state/
+# Empty stubs directory
+apa/core/stubs/

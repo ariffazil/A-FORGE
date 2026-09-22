@@ -842,6 +842,152 @@ export function registerMemoryTools(server: McpServer): void {
   });
 }
 
+/**
+ * Witness Semantic Recall — bridge to /root/arifOS/witness-semantic/witness_recall.py
+ *
+ * Adds a new MCP tool `forge_canon_recall` (beside the existing `forge_memory`)
+ * that performs semantic recall over the federation canon corpus with a
+ * 3-lane embedding fallback:
+ *   Lane 1: Alibaba qwen3.7-text-embedding  (free quota, expires 2026-11-09)
+ *   Lane 2: Ollama bge-m3                  (sovereign, no expiry)
+ *   Lane 3: substring-on-stored-text        (always-works)
+ *
+ * Why this is its own tool (not folded into forge_memory):
+ *   - forge_memory uses substring/stem matching against stored payloads,
+ *     no embedding step. Conflating semantic vs lexical recall would
+ *     silently degrade precision.
+ *   - This tool is additive: forge_memory callers see no behaviour change.
+ *   - Reversible: deletion of this register removes the tool entirely.
+ *
+ * Layer: federation canon recall is read-only. Lane B (autonomous).
+ */
+export function registerCanonRecallTools(server: McpServer): void {
+  const WITNESS_PATH = "/root/arifOS/witness-semantic/witness_recall.py";
+  const DEFAULT_LIMIT = 7;
+  const SUBPROC_TIMEOUT_MS = 30_000;
+
+  server.registerTool(
+    "forge_canon_recall",
+    {
+      description:
+        "Semantic recall over the federation canon corpus (instruction/canon/eureka/governance/scar/session_closure) with 3-lane embedding fallback: Alibaba qwen3.7-text-embedding → Ollama bge-m3 → substring. Returns top-K with provenance and the lane used.",
+      inputSchema: z.object({
+        query: z.string().describe("Natural-language recall query"),
+        limit: z.number().int().min(1).max(20).default(DEFAULT_LIMIT),
+      }),
+    },
+    async ({ query, limit }) => {
+      const t0 = Date.now();
+      try {
+        if (!query || query.trim() === "") {
+          return text("Empty query. Provide a phrase to search.", true);
+        }
+        const args = [
+          "-u",
+          WITNESS_PATH,
+          query,
+          "--limit",
+          String(limit),
+          "--json",
+        ];
+        let stdout: string;
+        try {
+          stdout = execFileSync("python3", args, {
+            timeout: SUBPROC_TIMEOUT_MS,
+            maxBuffer: 16 * 1024 * 1024,
+            cwd: "/root/arifOS/witness-semantic",
+          }).toString("utf8");
+        } catch (e: any) {
+          // Surface a clean error to the agent instead of a Node stack.
+          const msg =
+            (e && e.stderr && e.stderr.toString())
+              ? e.stderr.toString().slice(0, 400)
+              : (e && e.message) || String(e);
+          return text(
+            JSON.stringify({
+              status: "error",
+              query,
+              code: (e && e.code) || "WITNESS_RECALL_FAIL",
+              message: `witness_recall.py failed: ${msg}`,
+              elapsed_ms: Date.now() - t0,
+            }),
+            true,
+          );
+        }
+        // witness_recall.py --json emits a single JSON object on stdout
+        let parsed: any;
+        try {
+          parsed = JSON.parse(stdout);
+        } catch {
+          return text(
+            JSON.stringify({
+              status: "error",
+              query,
+              code: "WITNESS_PARSE_FAIL",
+              message: "witness_recall.py returned non-JSON output",
+              raw_excerpt: stdout.slice(0, 400),
+              elapsed_ms: Date.now() - t0,
+            }),
+            true,
+          );
+        }
+        const elapsed_ms = Date.now() - t0;
+        // Normalise the lane state into a small header for the agent.
+        const lane = parsed.lane || "unknown";
+        const alibabaFail =
+          parsed.lane_state?.alibaba_consecutive_fail ?? 0;
+        const header =
+          lane === "lane1-alibaba"
+            ? `lane=alibaba(qwen3.7) failures_in_a_row=${alibabaFail}`
+            : lane === "lane2-ollama-bge-m3"
+              ? `lane=sovereign-bge-m3(ollama) — no quota dependency`
+              : lane === "lane3-substring"
+                ? `lane=substring(text-only) — semantic precision limited`
+                : `lane=${lane}`;
+        return text(
+          JSON.stringify(
+            {
+              status: "ok",
+              query,
+              lane,
+              header,
+              result_count: parsed.result_count ?? 0,
+              results: (parsed.results || []).map((h: any) => ({
+                score: h.score,
+                doc_type: h.payload?.doc_type,
+                source: h.payload?.source,
+                section: h.payload?.section,
+                text_excerpt: (h.payload?.text || "").slice(0, 200),
+              })),
+              alibaba_consecutive_fail: alibabaFail,
+              elapsed_ms: parsed.elapsed_ms ?? elapsed_ms,
+              meta_elapsed_ms: elapsed_ms,
+              ts: parsed.ts,
+              note:
+                "witness_semantic collection: 4213 points (Qwen-built, 1024-dim Cosine). " +
+                "Sovereign BGE-M3 sibling collection: growing in background; " +
+                "witness_recall.py consults whichever is live.",
+            },
+            null,
+            2,
+          ),
+        );
+      } catch (err: any) {
+        return text(
+          JSON.stringify({
+            status: "error",
+            query,
+            code: "TOOL_INTERNAL",
+            message: err?.message || String(err),
+            elapsed_ms: Date.now() - t0,
+          }),
+          true,
+        );
+      }
+    },
+  );
+}
+
 export function registerGitTools(server: McpServer): void {
   server.registerTool("forge_git", {
     description: "Canonical git primitive — status, diff, log, and commit.",

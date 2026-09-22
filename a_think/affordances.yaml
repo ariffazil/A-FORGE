@@ -2195,3 +2195,70 @@ tools:
 # LIVE MCP tools but scanLiveMcpSurface() only regex-matches forge_*-prefixed
 # server.tool() registrations, so they report PHANTOM. Scanner fix = separate task
 # (FED-SURFACE-001), NOT a manifest deletion — deleting would orphan live tools.
+
+# ── Google Workspace Capability (2026-08-03 extraction from arifOS kernel) ──
+# Constitutional gating per forgeGoogleWorkspace.ts:
+#   - All reads: OBSERVE (no lease required)
+#   - All mutates: actor_id + lease + arif_judge SEAL required
+#   - Irreversible (gmail send): ACK + WITNESS + capability membrane
+
+- name: forge_gmail
+  purpose: "Gmail read/search/label — read paths OBSERVE, send requires ACK + WITNESS + capability membrane."
+  affordance_class: gated_io
+  capability_surface: aforge.google_workspace.gmail
+  kernel_verb: 111_OBSERVE
+  mutation_class: IRREVERSIBLE
+  reads: [gmail_messages, gmail_labels]
+  writes: [gmail_send]
+  external_side_effect: true
+  destructive: false
+  reversible: false
+  requires_human_approval: true
+  min_mode: THINK
+  risk_label: R3
+
+- name: forge_drive
+  purpose: "Google Drive list/read/upload — reads OBSERVE, uploads require lease + arif_judge SEAL."
+  affordance_class: gated_io
+  capability_surface: aforge.google_workspace.drive
+  kernel_verb: 111_OBSERVE
+  mutation_class: EXECUTE_REVERSIBLE
+  reads: [drive_files, drive_metadata]
+  writes: [drive_upload]
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R2
+
+- name: forge_sheets
+  purpose: "Google Sheets read/write — reads OBSERVE, writes require lease."
+  affordance_class: gated_io
+  capability_surface: aforge.google_workspace.sheets
+  kernel_verb: 111_OBSERVE
+  mutation_class: EXECUTE_REVERSIBLE
+  reads: [sheets_values, sheets_metadata]
+  writes: [sheets_update]
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R2
+
+- name: forge_calendar
+  purpose: "Google Calendar list/read/create events — reads OBSERVE, event create requires lease."
+  affordance_class: gated_io
+  capability_surface: aforge.google_workspace.calendar
+  kernel_verb: 111_OBSERVE
+  mutation_class: EXECUTE_REVERSIBLE
+  reads: [calendar_events, calendar_metadata]
+  writes: [calendar_event_create]
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: THINK
+  risk_label: R2
+

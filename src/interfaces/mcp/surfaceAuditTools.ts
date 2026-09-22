@@ -28,6 +28,7 @@ import { glob } from "node:fs/promises";
 import { parse as parseYaml } from "yaml";
 import { queryRegistry } from "../../domain/forge/register.js";
 import { sanitizeArgs } from "./prompts.js";
+import { validateGovernanceYamls, FEDERATION_YAML_PATHS } from "./yamlGovernanceValidator.js";
 
 // ── B3 FIX (2026-08-18): Representation Layer Integrity ───────────────
 // A-FORGE MCP server composes tools across multiple registration modules
@@ -233,6 +234,30 @@ export function registerSurfaceAuditTools(server: McpServer): void {
     async ({ organ, mode, affordance_path }) => {
       // P0-FIX: MCP may pass null/undefined despite Zod default — normalize to "aforge"
       const normalizedOrgan = organ ?? "aforge";
+
+      // ═══ FEDERATION-YAML-BOOT-CANARY (P0-1 / 2026-09-21) ═══════════════
+      // Pre-flight: every governance YAML must parse before any audit work.
+      // A constitutional rule that cannot be parsed is not governance.
+      // It is dead text. (Sovereign-directive: JANGAN jalankan audit
+      // dengan YAML yang cacat.)
+      const yamlGate = await validateGovernanceYamls(FEDERATION_YAML_PATHS);
+      if (!yamlGate.ok) {
+        return {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              status: "YAML_GATE_BLOCKED",
+              canary: yamlGate.canary_signature,
+              summary: `${yamlGate.parsed}/${yamlGate.total} governance YAMLs parsed`,
+              failures: yamlGate.failures,
+              recommendation:
+                "Repair the listed YAML files (parse error → fix indentation/quotes/encoding) and re-run forge_surface_audit. Boot canary FEDERATION-YAML-BOOT-CANARY will gate deployment until ok=true.",
+              timestamp: new Date().toISOString(),
+            }, null, 2),
+          }],
+        };
+      }
+
       const results: DriftReport[] = [];
       const organsToScan = normalizedOrgan === "all"
         ? ["aforge", "geox", "wealth", "well", "arifos"]

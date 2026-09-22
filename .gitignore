@@ -173,3 +173,4 @@ litellm-config.order-snapshot.json
 
 # Surface Guard baseline is runtime state, not source
 config/surface-snapshots.json
+data/token_bank.db

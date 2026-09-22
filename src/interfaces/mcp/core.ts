@@ -57,6 +57,7 @@ import {
   registerFilesystemTools,
   registerPostgresTools,
   registerMemoryTools,
+  registerCanonRecallTools,
   registerGitTools,
   registerGitHubTools,
   registerDockerTools,
@@ -2502,17 +2503,27 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
     (typeof (args as any).act === "string" && (args as any).act) || undefined;
   const inboundTraceId =
     (typeof (args as any).trace_id === "string" && (args as any).trace_id) || undefined;
+  // P0-3 dual-identity (2026-09-21): forward caller_service so WEALTH can
+  // attest the authenticated machine channel even when the subject
+  // (actor_id) is anonymous. Without this, an anonymous caller through
+  // A-FORGE hits the strict ACTOR_UNVERIFIED gate and the federation
+  // collapses to "only sovereign can call WEALTH".
+  const inboundCallerService =
+    (typeof (args as any).caller_service === "string" && (args as any).caller_service) ||
+    "aforge";  // default: A-FORGE IS the authenticated channel
 
   // Mirror identity into WEALTH tool args (any tool that introspects args).
   toolArgs.actor_id = inboundActorId;
   if (inboundSessionId) toolArgs.session_id = inboundSessionId;
   if (inboundTraceId) toolArgs.trace_id = inboundTraceId;
+  toolArgs.caller_service = inboundCallerService;
 
   // Build bridge HTTP headers so WEALTH stateful_middleware can extract the
   // envelope and authorize() can validate the bearer.
   const bridgeHeaders: Record<string, string> = {
     "X-ArifOS-Actor-ID": inboundActorId,
     "X-ArifOS-Session-ID": inboundSessionId || "",
+    "X-ArifOS-Caller-Service": inboundCallerService,
   };
   if (inboundSct) bridgeHeaders.Authorization = `Bearer ${inboundSct}`;
   if (inboundTraceId) bridgeHeaders["X-ArifOS-Trace-ID"] = inboundTraceId;
@@ -3172,13 +3183,14 @@ server.tool(
   return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
 });
 
-// ── Tier 1 Proxy Tools (forge_filesystem, forge_postgres, forge_memory, forge_git, forge_github, forge_docker) ──
+// ── Tier 1 Proxy Tools (forge_filesystem, forge_postgres, forge_memory, forge_canon_recall, forge_git, forge_github, forge_docker) ──
 // Each group registers 4-6 tools under the forge_* namespace.
 // F8 LAW: All filesystem ops scoped to /root, /tmp, /data.
 // F11 AUTH: git push and docker destructive ops require 888_HOLD.
 registerFilesystemTools(server);
 registerPostgresTools(server);
 registerMemoryTools(server);
+registerCanonRecallTools(server);
 registerGitTools(server);
 registerGitHubTools(server);
 registerDockerTools(server);

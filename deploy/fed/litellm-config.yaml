@@ -4,25 +4,25 @@ model_list:
     model: openai/deepseek-chat
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 8
   model_info:
     max_input_tokens: 65536
     max_output_tokens: 8192
     mode: chat
-    notes: "apex-888 P1 (DeepSeek-V3 Direct PAYG $14.28 balance): primary verified living lane 2026-09-14."
+    notes: "apex-888 P8 (DeepSeek-V3 Direct PAYG): demoted 2026-09-21 F13 FI-008 — 65K cap makes it unusable for constitutional judging of >65K evidence. Last-resort fallback only."
 - model_name: apex-888
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 2
+    order: 1
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: "apex-888 P2 (MiniMax-M3 Token Plan Max): 1M context, vision, function calling verified live 2026-09-14."
+    notes: "apex-888 P1 (MiniMax-M3 Token Plan Max): promoted 2026-09-21 F13 FI-008 — 1M-capable primary for constitutional judging of large evidence."
 - model_name: apex-888
   litellm_params:
     model: gemini/gemini-2.5-pro
@@ -107,11 +107,12 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "apex-888 P97 (legacy qwen3.7-max QWEN Team Owner): documented 2026-09-21 F13 FI-008 — older model fallback for when qwen3.8-max failover chains exhaust."
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -128,11 +129,12 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_ARIFOS_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "apex-888 P97 (legacy qwen3.7-max arifOS Advanced seat): documented 2026-09-21 F13 FI-008 — older model parallel to arifOS qwen3.8-max failover."
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -149,47 +151,33 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "apex-888 P97 (legacy qwen3.7-max ariffazil Standard seat): documented 2026-09-21 F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover."
 - model_name: i-arif
   litellm_params:
-    model: openai/qwen3.8-max
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 1
+    model: openai/deepseek-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 90
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    min_tokens: 200
+    mode: chat
+    supports_vision: true
+    notes: 'PARKED order 90 (2026-09-22): probe HTTP 402 Insufficient Balance - dead rung at order 1 cost every i-arif request a failed hop. Revive by restoring order: 1 after balance top-up. Original: i-arif DeepSeek Flash Vision: deepseek-flash (V4.1 native multimodal).
+      Upstream: api.deepseek.com. Direct PAYG. PRIMARY. min_tokens=200 for reasoning headroom.'
+  model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-    supports_function_calling: true
-    notes: 'i-arif P1 (Individual Token Plan): qwen3.8-max via QWEN_INDIVIDUAL_API_KEY.
-      Sub-2s latency, high Penang/BM fluency, full multimodal.'
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
 - model_name: i-arif
   litellm_params:
     model: openai/qwen3.8-max
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: 'i-arif P2 (Hermes Seat Failover): qwen3.8-max via QWEN_HERMES_API_KEY.'
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-- model_name: i-arif
-  litellm_params:
-    model: openai/qwen3.7-plus
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 2
@@ -198,23 +186,7 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'i-arif P3 (Warm Reasoning Failover): qwen3.7-plus via QWEN_INDIVIDUAL_API_KEY.'
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-- model_name: i-arif
-  litellm_params:
-    model: openai/qwen3.6-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: 'i-arif P4 (Hermes Seat Recovery): qwen3.6-plus via QWEN_HERMES_API_KEY.'
+    notes: 'i-arif Qwen Individual: qwen3.8-max. Upstream: Qwen Token Plan.'
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -226,39 +198,68 @@ model_list:
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-i-arif-lane-001
-    order: 1
+    order: 3
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: "i-arif P0-Go (OpenCode Go lane, embedded 2026-09-13 FED doctor FI-008\
-      \ after Arif resubscribed): qwen3.8-max via OPENCODE_GO_API_KEY @ opencode.ai/zen/go/v1.\
-      \ REQUIRES x-opencode-session header (Anomaly Go routing rule \u2014 MissingSessionID\
-      \ 400 without it; header set above). Payment verified 2026-09-13, chat 200 GO-LIVE\
-      \ cost 0. Second independent source so token-plan quota walls (e.g. 09-11 lockout)\
-      \ cannot degrade the lane. Generator note: opencode.ai base not in demotion\
-      \ map \u2014 manage manually."
+    notes: 'i-arif OpenCode Go: qwen3.8-max. Upstream: opencode.ai (separate infra).'
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
 - model_name: i-arif
   litellm_params:
-    model: openai/glm-5.3
-    api_base: os.environ/ZAI_API_BASE
-    api_key: os.environ/ZAI_API_KEY
-    order: 3
+    model: gemini/gemini-3.6-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 4
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+    notes: 'i-arif Gemini 3.6 Flash. Upstream: Google. Vision. Safety: BLOCK_NONE.'
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+- model_name: i-arif
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 91
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_vision: true
+    notes: 'PARKED order 91 (2026-09-22): token-plan lane 429-dead (5 probes/30min, incl 0-credit TTS => entitlement dead not balance). Superseded by mimo-v2.6-pro-payg at order 2. Revive by restoring order: 5. Original: i-arif MiMo v2.5 (Xiaomi). Upstream: xiaomimimo.com. Omni-modal vision.'
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+- model_name: i-arif
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 6
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
     supports_function_calling: true
-    notes: "i-arif P5 (ZAI GLM Coding Plan Pro): glm-5.3 via ZAI_API_KEY. Added 2026-09-13\
-      \ after vision outage scar \u2014 mimo-v2.5 quota-exhausted and ALL fallbacks\
-      \ (glm-5.3 text-only group, MiniMax-M3, gemini) rejected image content type,\
-      \ leaving Hermes blind while a paid ZAI seat sat idle. ZAI plan includes GLM-4.6V\
-      \ vision (input 1.2/Mtok) but coding-plan license scope = coding tools only;\
-      \ vision uses GLM-4.6V via MCP lane separately. This rung = text reasoning failover."
+    notes: 'i-arif MiniMax-M3. Upstream: minimax.io. Vision.'
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -268,18 +269,43 @@ model_list:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     api_key: os.environ/ZAI_API_KEY
-    order: 4
+    order: 7
     max_input_tokens: 1000000
     max_output_tokens: 128000
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'i-arif P6 (ZAI GLM-5.3-Flash): 3x quota, 1M context, multimodal-capable
-      fallback rung. Active 24/7 with 50% off-peak discount and campaign doubling.'
+    notes: 'i-arif GLM-5.3-Flash (Z.AI). Upstream: api.z.ai. 3x quota. Vision.'
   model_info:
     max_input_tokens: 1000000
     max_output_tokens: 128000
     mode: chat
+# MiMo-V2.6-Pro PAYG wired into i-arif per F13 directive 2026-09-22
+# ("make mimo latest model as part of FED generally and i-ARIF specifically")
+# Evidence: HTTP 200 on live probe, tool_calls verified (finish=tool_calls, args correct),
+# vision verified (image_tokens=9, correct colour). Token-plan lane is 429-dead incl. its
+# 0-credit TTS path => PAYG (sk- platform key) is the only live MiMo lane today.
+- model_name: i-arif
+  litellm_params:
+    model: openai/mimo-v2.6-pro-payg
+    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    order: 2
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    min_tokens: 200
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'i-arif MiMo-V2.6-Pro (Xiaomi Platform API / PAYG). Live-verified 2026-09-22:
+      HTTP 200, tool_calls OK, vision OK. min_tokens=200 for reasoning headroom.
+      Native omni-modal. Added per F13 directive.'
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
 - model_name: agi-333
   litellm_params:
     model: openai/qwen3.8-max
@@ -396,23 +422,25 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "asi-555 P97 (legacy qwen3.8-max QWEN Team Owner): documented 2026-09-21 F13 FI-008 — Team Owner seat qwen3.8-max fallback."
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_image_input: true
     supports_function_calling: true
+    notes: "asi-555 P97 (legacy qwen3.7-max QWEN Team Owner): documented 2026-09-21 F13 FI-008 — older model parallel to Team Owner qwen3.8-max."
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -429,11 +457,12 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_ARIFOS_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "asi-555 P97 (legacy qwen3.7-max arifOS Advanced seat): documented 2026-09-21 F13 FI-008 — older model parallel to arifOS qwen3.8-max failover."
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -450,22 +479,24 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 99
+    order: 97
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes: "asi-555 P97 (legacy qwen3.7-max ariffazil Standard seat): documented 2026-09-21 F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover."
 - model_name: fed/image-gen
   litellm_params:
     model: openai/wan2.7-image-pro
     api_base: http://100.64.0.5:4020/v1
     request_timeout: 180
-    order: 99
+    order: 1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
   model_info:
     max_input_tokens: 32768
     max_output_tokens: 8192
     mode: image
+    notes: "fed/image-gen P1 (wan2.7-image-pro): promoted 2026-09-21 F13 FI-008 — was order=99 (misrouted as fallback), now order=1 primary."
 - model_name: fed/image-gen
   litellm_params:
     model: openai/wan2.7-image
@@ -491,6 +522,149 @@ model_list:
     notes: "deepseek-v4-flash via QWEN Token Plan Individual \u2014 PRIMARY for asi-555.\
       \ Burst queue: 30s. NOTE: reasoning model, requires max_tokens>=200. [REASONING_MODEL:\
       \ requires max_tokens>=200, min content budget]"
+- model_name: forge-scout
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-scout P1 (MiMo V2.5 omni-modal): multimodal evidence reader — screenshots, diagrams, browser DOM, logs. License: coding-tools-only compliant. Token Plan Max 82B credits fresh 2026-09-13. PONG 1500ms.'
+- model_name: forge-scout-pro
+  litellm_params:
+    model: openai/mimo-v2.5-pro
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-scout-pro P1 (MiMo V2.5 Pro 1T/42B MoE): heavy multimodal synthesis — design review, architecture diff, multimodal contract analysis. Token Plan Max. PONG 1840ms.'
+- model_name: forge-builder
+  litellm_params:
+    model: openai/deepseek-v4-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 32768
+    mode: chat
+    supports_function_calling: true
+    notes: 'forge-builder P1 (DeepSeek V4 Flash-0731) — TEMP PROMOTION 2026-09-15 13:40 MYT: ZAI Coding Plan Pro quota exhausted until 16:13 MYT. Demoted glm-5.3-flash to order=2 fallback. DeepSeek V4 Flash: 79% SWE-bench Verified at $0.14/$0.28 per MTok. Best cost-frontier for high-volume builder loops.'
+- model_name: forge-builder
+  litellm_params:
+    model: openai/glm-5.3-flash
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-builder P2 (ZAI GLM-5.3-Flash): QUOTA EXHAUSTED until 2026-09-15 16:13 MYT. Order demoted 1→2 behind DeepSeek V4 Flash. Restore probe required before re-promotion.'
+- model_name: forge-economy
+  litellm_params:
+    model: openai/deepseek-v4-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 32768
+    mode: chat
+    supports_function_calling: true
+    notes: 'forge-economy P1 (DeepSeek V4 Flash-0731): $0.14/$0.28 per MTok, 79% SWE-bench Verified. COST-FRONTIER default for high-volume inner loops. Post-topup 2026-09-13 verify PENDING.'
+- model_name: forge-economy
+  litellm_params:
+    model: openai/qwen3.8-max
+    api_base: https://opencode.ai/zen/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    extra_headers:
+      x-opencode-session: arif-fed-forge-economy-lane-001
+    order: 2
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-economy P2 (Qwen3.8-Max via OpenCode Go): $10/mo flat fallback when deepseek-v4-flash 429/quota.'
+- model_name: forge-economy
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-economy P3 (MiMo V2.5): 82B credits, multimodal fallback for forge-economy.'
+- model_name: forge-planner
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-planner P1 (MiniMax-M3): 1M ctx, task decomposition, scope/budget/architecture planning. Token Plan Max fresh 2026-09-13.'
+- model_name: forge-planner
+  litellm_params:
+    model: openai/glm-5.3-flash
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 2
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-planner P2 (ZAI GLM-5.3-Flash): 3x ZAI Coding Plan quota — KingBench-3 #1 fallback when MiniMax-M3 busy.'
+- model_name: forge-planner
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-planner P3 (MiMo V2.5): cheap planner fallback.'
+- model_name: forge-judge
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-judge P1 (MiniMax-M3 Token Plan Max): constitutional adjudication lane — diff+receipt comparison. 1M ctx, multimodal evidence accepted. Fresh 2026-09-13.'
 - model_name: forge-777
   litellm_params:
     model: openai/glm-5.3-flash
@@ -533,18 +707,83 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'forge-777 P3 (OpenCode Go): 1M context, paid resubscribed.'
+# Stage 2 — promote MiMo-V2.6 series into forge-777 cascade as primary quality tier (2026-09-22)
+# Order values < existing mimo-v2.5 (order 5) so V2.6 is tried first; V2.5 kept at order 5 as live fallback ("have both" + Stage 3 SABAR).
+# Two distinct endpoints so quota pressure on one does not collapse the other:
+#   P1 (order 1): mimo-v2.6-pro on PAYG platform (api.xiaomimimo.com) — fresh quota, live-verified 2026-09-22T03:42Z.
+#   P2 (order 2): mimo-v2.6-pro on Token Plan (token-plan-sgp) — distinct quota pool from PAYG.
+- model_name: forge-777
+  litellm_params:
+    model: openai/mimo-v2.6-pro-payg
+    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: 'Stage 2 (2026-09-22): forge-777 P1 — MiMo-V2.6-Pro PAYG/platform. AA Index 46, $0.43/$0.87 per 1M. Multimodal text+image+video+audio. Primary quality tier for federation; V2.5 demoted to order 5 fallback.'
+- model_name: forge-777
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 97
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: 'PARKED order 97 (2026-09-22): GHOST CAPABILITY. Routed through the 429-dead token-plan lane and returned "No fallback model group found". Revive by restoring order: 2 once TP entitlement is restored. Original: Stage 2 (2026-09-22): forge-777 P2 — MiMo-V2.6-Pro Token Plan (SG). Distinct quota pool from PAYG above; cascades if PAYG exhausts.'
+- model_name: forge-777
+  litellm_params:
+    model: openai/mimo-v2.5
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 91
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-777 P4 (MiMo v2.5 Token Plan Max, SGP): 1M ctx, omni-modal vision, function calling. Cheapest meter ($0.14/$0.28 per MTok). PROBED 2026-09-06 LIVE 637-981ms. CORRECTED 2026-09-14: mimo-v2.5 is the omni-modal model (v2.5-pro is text-only).'
 - model_name: forge-777
   litellm_params:
     model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
-    order: 5
+    order: 7
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_function_calling: true
     notes: 'forge-777 P4 (ZAI GLM-5.3): standard coding plan fallback.'
+- model_name: forge-777
+  litellm_params:
+    model: openai/deepseek-v4-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 6
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 32768
+    mode: chat
+    supports_function_calling: true
+    notes: 'forge-777 P5 (DeepSeek V4 Flash-0731): COST-FRONTIER default for high-volume inner loops. $0.14/$0.28 per MTok, 79% SWE-bench Verified. Post-topup 2026-09-13 — VERIFIED LIVE.'
+- model_name: forge-777
+  litellm_params:
+    model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
+    api_base: https://api.sea-lion.ai/v1
+    api_key: os.environ/SEA_LION_API_KEY
+    order: 97
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 8192
+    mode: chat
+    notes: 'forge-777 P6 (SEA-LION v4.5-27B): sovereign BM/SEA-language lane. SG-jurisdiction. Coding-task evaluation pending — RESEARCH state.'
 - model_name: forge-777
   litellm_params:
     model: openai/kimi-k3
@@ -555,100 +794,7 @@ model_list:
     mode: chat
     max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: "forge-777 fallback \u2014 Kimi K3 coding plan. Billing cycle exhausted\
-      \ (403). Will recover when cycle refreshes."
-- model_name: forge-777
-  litellm_params:
-    model: openai/kimi-k2.7-code
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    notes: "forge-777 fallback \u2014 kimi-k2.7-code via Qwen Token Plan. Order:4\
-      \ (Anthropic format untested on this backend)."
-- model_name: forge-777
-  litellm_params:
-    model: openai/qwen3-coder-plus
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: "FREE QUOTA \u2014 qwen3-coder-plus, expires 2026-09-29. Order:10 \u2014\
-      \ DashScope returns 404 on Anthropic /v1/messages format (OpenAI-only)."
-    mode: chat
-- model_name: forge-777
-  litellm_params:
-    model: openai/qwen3-coder-flash
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: "FREE QUOTA \u2014 qwen3-coder-flash, expires 2026-09-29. Order:10 \u2014\
-      \ DashScope Anthropic format 404."
-    mode: chat
-- model_name: forge-777
-  litellm_params:
-    model: openai/qwen3-coder-next
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: "FREE QUOTA \u2014 qwen3-coder-next, expires 2026-09-29. Order:10 \u2014\
-      \ DashScope Anthropic format 404."
-    mode: chat
-- model_name: forge-777
-  litellm_params:
-    model: openai/qwen3-coder-30b-a3b-instruct
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: "FREE QUOTA \u2014 qwen3-coder-30b-a3b, expires 2026-09-29. Order:10 \u2014\
-      \ DashScope Anthropic format 404."
-    mode: chat
-- model_name: forge-777
-  litellm_params:
-    model: openai/qwen3-coder-480b-a35b-instruct
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    notes: "FREE QUOTA \u2014 qwen3-coder-480b-a35b flagship, expires 2026-09-29.\
-      \ Order:10 \u2014 DashScope Anthropic format 404."
-    mode: chat
+    notes: "forge-777 fallback — Kimi K3 coding plan. Billing cycle exhausted (403). Will recover when cycle refreshes."
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3-next-80b-a3b-instruct
@@ -664,80 +810,31 @@ model_list:
     max_output_tokens: 131072
     notes: "FREE QUOTA \u2014 qwen3-next-80b-a3b, expires 2026-09-29."
     mode: chat
+# 2026-09-15 FI-008 forge-777 compiler compression:
+# opencode/openclaw/hermes-asi aliases route into the deepseek-v4-flash chain.
+# Single-deployment aliases = effective chain share with forge-777.
 - model_name: opencode
   litellm_params:
-    model: openai/qwen3.8-max
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    model: openai/deepseek-v4-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.8-max. 36d runway. PRIMARY."
   model_info:
     max_input_tokens: 1048576
-    max_output_tokens: 131072
+    max_output_tokens: 32768
     mode: chat
-- model_name: opencode
+    notes: 'opencode alias compressed -> forge-777 chain via deepseek-v4-flash-0731.'
+- model_name: hermes-asi
   litellm_params:
-    model: openai/qwen3.7-plus
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 2
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-plus. 36d runway."
+    model: openai/deepseek-v4-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 8
   model_info:
     max_input_tokens: 1048576
-    max_output_tokens: 131072
+    max_output_tokens: 32768
     mode: chat
-- model_name: opencode
-  litellm_params:
-    model: openai/qwen3.7-max
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 3
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-max. 36d runway."
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-- model_name: opencode
-  litellm_params:
-    model: openai/deepseek-v4-pro
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 4
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    notes: "INDIVIDUAL PLAN \u2014 deepseek-v4-pro. 36d runway."
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-- model_name: opencode
-  litellm_params:
-    model: openai/kimi-k3
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
-    max_input_tokens: 1048576
-    max_output_tokens: 16384
-    mode: chat
-    supports_vision: true
-    notes: "FREE QUOTA \u2014 kimi-k3, expires 2026-11-18. Long runway."
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
+    notes: 'hermes-asi alias-compressed fast-path to deepseek-v4-flash — demoted 2026-09-21 F13 FI-008 from order=1 to break race with hermes-asi Block-2 qwen3.8-max (both were at order=1). Kept as last-resort-first before kimi-k3.'
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.8-max
@@ -771,13 +868,13 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 3
+    order: 6
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: "INDIVIDUAL PLAN — qwen3.8-max. 36d runway."
+    notes: "INDIVIDUAL PLAN — qwen3.8-max. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=3 (was colliding with qwen3.7-max at order=3)."
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -787,12 +884,12 @@ model_list:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 2
+    order: 5
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-plus. 36d runway."
+    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-plus. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=2 (was colliding with glm-5.3-flash at order=2)."
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -802,11 +899,11 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 3
+    order: 7
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-max. 36d runway."
+    notes: "INDIVIDUAL PLAN \u2014 qwen3.7-max. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=3 (was colliding with qwen3.8-max at order=3)."
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -816,11 +913,11 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 4
+    order: 8
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-    notes: "INDIVIDUAL PLAN \u2014 deepseek-v4-pro. 36d runway."
+    notes: "INDIVIDUAL PLAN \u2014 deepseek-v4-pro. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=4 (sequential cascade realignment)."
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -1019,6 +1116,75 @@ model_list:
     mode: chat
     supports_vision: true
     notes: 'F13 2026-09-14: supports_vision enabled for image input.'
+
+# Stage 1 sidecar — MiMo-V2.6 series (Xiaomi) added 2026-09-22 per AGI→ASI→APEX decision packet
+# (kernel-judge SEAL 0.92; VAULT held pending substrate recovery). Distinct model_name per endpoint
+# so sovereign retains explicit choice ("have both" intent). Zero edits to existing v2.5 entries.
+- model_name: mimo-v2.6-pro
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 5
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: '2026-09-22 Stage 1 sidecar — token-plan endpoint (token-plan-sgp.xiaomimimo.com). AA Index 46 (v4.3.2). $0.43 in / $0.87 out per 1M. multimodal text+image+video+audio.'
+- model_name: mimo-v2.6-pro-payg
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    order: 5
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: '2026-09-22 Stage 1 sidecar — PAYG/platform endpoint (api.xiaomimimo.com). Distinct model_name for "have both" choice.'
+- model_name: mimo-v2.6-flash
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 5
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: '2026-09-22 Stage 1 sidecar — token-plan endpoint. Cheaper than Pro.'
+- model_name: mimo-v2.6-flash-payg
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    order: 5
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: '2026-09-22 Stage 1 sidecar — PAYG/platform endpoint. Distinct model_name for "have both" choice.'
+- model_name: mimo-v2.6-pro-ultraspeed
+  litellm_params:
+    model: openai/mimo-v2.6-pro-ultraspeed
+    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    order: 5
+    supports_vision: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: '2026-09-22 Stage 1 sidecar — PAYG-only (token-plan /models probe did NOT list ultraspeed). Vendor-claimed 20x speed; pending live latency probe.'
 - model_name: glm-5.2
   litellm_params:
     model: openai/glm-5.2
@@ -1502,23 +1668,23 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 2
+    order: 98
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-    notes: forge-777 -> QWEN deepseek-v4-pro live Individual coding
+    notes: "forge-777 P7 (QWEN Individual deepseek-v4-pro, topped up 2026-09-13) — secondary fallback via Aliyun Individual plan. VERIFIED LIVE."
 - model_name: forge-777
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 3
+    order: 8
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: forge-777 -> QWEN qwen3.8-max live Individual coding fallback
+    notes: "forge-777 P8 (QWEN Individual qwen3.8-max, topped up 2026-09-13) — tertiary fallback via Aliyun Individual plan. VERIFIED LIVE."
 - model_name: fed/sealion
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4-32B-IT
@@ -1576,7 +1742,10 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
 litellm_settings:
-  callbacks: []
+  # 2026-09-21 FI-008: FedSpendCallback writes per-call to token_bank.db.
+  # Container mounts callback at /app/fed_spend_callback.py and DB at /app/data/.
+  # Note: must point at INSTANCE (proxy_handler_instance), not class.
+  callbacks: ["fed_spend_callback.proxy_handler_instance"]
   num_retries: 2
   request_timeout: 60
   allowed_fails: 2
@@ -1606,19 +1775,18 @@ litellm_settings:
     - completion
     - embedding
 router_settings:
-  routing_strategy: simple-shuffle
+  routing_strategy: latency-based-routing
   enable_pre_call_checks: true
-  num_retries: 2
+  num_retries: 1
   allowed_fails: 2
-  cooldown_time: 60
+  cooldown_time: 30
   fallbacks:
   - i-arif:
-    - deepseek-v4-flash-vision
-    - MiniMax-M3
+    - deepseek-flash
     - mimo-v2.5
-    - glm-5.3-flash
-    - qwen3.8-max
+    - MiniMax-M3
     - gemini-3.6-flash
+    - glm-5.3-flash
   - agi-333:
     - deepseek-v4-flash
     - MiniMax-M3
@@ -1645,6 +1813,33 @@ router_settings:
     - glm-5.3-flash
     - qwen3.8-max
     - gemini-3.6-flash
+  # 2026-09-15 FI-008 forge-777 compiler upgrade: 5-lane aliases inherit
+  # the forge-777 fallback graph. Each lane is a typed evidence-packet dispatch.
+  - forge-scout:
+    - mimo-v2.5-pro
+    - MiniMax-M3
+    - gemini-3.6-flash
+  - forge-scout-pro:
+    - mimo-v2.5
+    - MiniMax-M3
+    - gemini-3.6-flash
+  - forge-builder:
+    - glm-5.3
+    - deepseek-v4-pro
+    - MiniMax-M3
+  - forge-economy:
+    - glm-5.3-flash
+    - deepseek-v4-pro
+    - MiniMax-M3
+    - mimo-v2.5
+  - forge-judge:
+    - mimo-v2.5
+    - gemini-3.6-flash
+    - glm-5.3
+  - forge-planner:
+    - MiniMax-M3
+    - glm-5.3-flash
+    - mimo-v2.5
   - openclaw:
     - deepseek-v4-flash
     - MiniMax-M3
@@ -1652,6 +1847,7 @@ router_settings:
     - glm-5.3-flash
     - gemini-3.6-flash
   - opencode:
+    - forge-777
     - deepseek-v4-flash
     - MiniMax-M3
     - glm-5.3-flash
@@ -1674,6 +1870,15 @@ router_settings:
     - mimo-v2.5
     - MiniMax-M3
     - gemini-3.6-flash
+  # Added 2026-09-22: the v2.6 token-plan lanes had NO fallback group, so a TP 429
+  # was terminal (observed: "No fallback model group found for lookup_groups=mimo-v2.6...").
+  # Repoint at the live PAYG lanes.
+  - mimo-v2.6-pro:
+    - mimo-v2.6-pro-payg
+    - MiniMax-M3
+  - mimo-v2.6-flash:
+    - mimo-v2.6-flash-payg
+    - MiniMax-M3
   - mimo-v2.5:
     - MiniMax-M3
     - gemini-3.6-flash
@@ -1787,6 +1992,13 @@ model_group_alias:
   qwen3.8-2.4t-a95b: agi-333
   qwen-plus-latest: agi-333
   qwen3-max-preview: agi-333
+  # 2026-09-15 FI-008 forge-777 compiler upgrade: compress legacy coding
+  # aliases into the forge-777 TaskIR dispatcher. New lane aliases
+  # (forge-scout, forge-builder, etc.) have their OWN deployments in
+  # model_list and resolve directly — do NOT add them here.
+  opencode: forge-777
+  openclaw: forge-777
+  hermes-asi: forge-777
   qwen3-coder-plus: forge-777
   qwen3-coder-flash: forge-777
   qwen3-coder-next: forge-777

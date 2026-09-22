@@ -1,12 +1,19 @@
-.PHONY: build up down logs test clean install
+.PHONY: build up down logs test clean install federation-canary
 
 # AF FORGE — Makefile for local dev and VPS ops
 
 build: security-audit
 	npm run build
 
+# ── FEDERATION-E2E-CANARY (P0 2026-09-21, S5) ─────────────────────────
+# Mandatory federation gate. Every deploy MUST pass before rsync.
+# Failures block the deploy with 888_HOLD. Evidence: /root/AAA/canary/logs/
+federation-canary:
+	@echo "═══ FEDERATION-E2E-CANARY — pre-deploy gate ═══"
+	@bash /root/AAA/canary/federation_e2e_canary.sh
+
 # Deploy to /opt and sync commit markers (prevents deployment_drift)
-deploy: build
+deploy: federation-canary build
 	@echo "═══ F1 PRE-FLIGHT: dist/ source-of-truth check ═══"
 	@if git status --porcelain dist/ | grep -q .; then \
 		echo "888_HOLD: dist/ has untracked or modified build artifacts."; \
@@ -25,7 +32,7 @@ deploy: build
 	curl -sf http://127.0.0.1:7071/health >/dev/null && echo "✅ A-FORGE :7071 healthy" || echo "❌ A-FORGE :7071 down"; \
 	curl -sf http://127.0.0.1:7072/health >/dev/null && echo "✅ A-FORGE :7072 healthy" || echo "❌ A-FORGE :7072 down"
 
-deploy-local: verify
+deploy-local: federation-canary verify
 	@echo "═══ A-FORGE deploy-local (no rsync to /opt/) ═══"
 	@GIT_SHA=$$(git rev-parse --short HEAD); \
 	echo "$$GIT_SHA" > /root/A-FORGE/.git_commit; \

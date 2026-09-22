@@ -223,6 +223,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_visual_qa",          // constitutional visual QA — read-only analysis, OBSERVE
   "forge_heart_critique",     // risk assessment — read-only, OBSERVE
   "forge_session_init",       // constitutional session ignition — OBSERVE
+  "forge_canon_recall",       // semantic recall over federation canon — read-only, OBSERVE (shells out to witness_recall.py)
   "forge_memory",             // memory recall — read-only, OBSERVE
   "forge_predict",            // pre-action simulation — read-only, OBSERVE
   "forge_isomorphism_check",  // J-space manifold check — read-only, OBSERVE
@@ -275,6 +276,7 @@ const OBSERVE_TOOLS = new Set([
   "forge_registry",            // registry read — OBSERVE
   "forge_scar",                // scar ledger — mode-aware (list/consult=OBSERVE)
   "forge_skillstore_read",     // skill store read — OBSERVE
+  "forge_canon_recall",         // semantic recall over federation canon — OBSERVE (reads Qdrant + Qwen/Ollama, no mutation)
   "forge_status",              // execution state overview — OBSERVE
   "forge_surface_audit",       // tool surface audit — OBSERVE
   "forge_surface_guard",       // surface guard check — OBSERVE
