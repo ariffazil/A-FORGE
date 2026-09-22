@@ -1,3 +1,16 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# SPEND-REPORTING DEFICIT — documented 2026-09-23 (B1, F2 truth discipline)
+# Spend is under-reported because models use openai/ prefix for routing;
+# litellm cost lookup misses (the openai/ prefix is REQUIRED here for
+# OpenAI-compatible routing — do not remove it to "fix" costing).
+# Accurate per-model input/output cost_per_token needs to be backfilled from
+# provider pricing before spend totals are auditable. DO NOT TRUST $ TOTALS
+# UNTIL THEN. Token counts remain accurate; only the $ conversion is wrong.
+# disable_spend_logs was flipped true → false this date so per-call spend
+# rows resume accumulating and the backfill has raw data to work from.
+# (Known residual: /mimo/* pass-through endpoints bypass litellm spend logs
+# entirely — see the TRADE-OFF note near pass_through_endpoints below.)
+# ═══════════════════════════════════════════════════════════════════════════
 model_list:
 - model_name: apex-888
   litellm_params:
@@ -1826,7 +1839,10 @@ general_settings:
   drop_params: true
   telemetry: false
   store_model_in_db: false
-  disable_spend_logs: true
+  # B1 2026-09-23: flipped true → false (re-enable spend tracking). Spend $
+  # is STILL under-reported — openai/ routing prefix defeats litellm cost
+  # lookup; see the SPEND-REPORTING DEFICIT block at the top of this file.
+  disable_spend_logs: false
   allow_requests_on_db_unavailable: true
   # ── MiMo federation: pass-through for the bodies litellm's parser cannot carry ──
   # Added 2026-09-13 (FI-008). WHY THIS EXISTS:
