@@ -51,6 +51,14 @@ export interface FlowReceiptInput {
   intent_reason?: string;
   expected_outcome?: string;
   step_number?: number;
+  /**
+   * F13-ratified 2026-09-25 (Spec: A-FORGE UNKNOWN_OUTCOME v1 §4.4).
+   * Optional OutcomeClass from A-FORGE executor. When present and equal
+   * to "UNKNOWN_OUTCOME", the emitted receipt is forced to floor_verdict
+   * "Caution" (spec §2.6 — UNKNOWN receipts count as neither execute-success
+   * nor failure in FQ accounting).
+   */
+  outcome_class?: string;
 }
 
 export interface FlowIngestResult {
@@ -82,6 +90,13 @@ export async function emitFlowReceipt(
     return { ok: false, status: "disabled" };
   }
 
+  // Spec §2.6 / §4.4 — UNKNOWN_OUTCOME → Caution. Caller-supplied floor_verdict
+  // is respected UNLESS the executor signalled UNKNOWN_OUTCOME.
+  const effectiveFloor: FlowFloorVerdict =
+    input.outcome_class === "UNKNOWN_OUTCOME"
+      ? "Caution"
+      : input.floor_verdict ?? "Pass";
+
   const receipt: Record<string, unknown> = {
     receipt_id: randomUUID(),
     actor_id: input.actor_id,
@@ -91,9 +106,12 @@ export async function emitFlowReceipt(
     cost_ns: Math.max(0, Math.round(input.cost_ns)),
     step_number: input.step_number ?? 1,
     created_at: new Date().toISOString(),
-    floor_verdict: input.floor_verdict ?? "Pass",
+    floor_verdict: effectiveFloor,
     cooling_decision: input.cooling_decision ?? "None",
   };
+  if (input.outcome_class !== undefined) {
+    receipt.outcome_class = input.outcome_class;
+  }
   if (input.payload !== undefined) receipt.payload = input.payload;
   if (input.intent_reason) receipt.intent_reason = input.intent_reason;
   if (input.expected_outcome) receipt.expected_outcome = input.expected_outcome;

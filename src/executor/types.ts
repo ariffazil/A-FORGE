@@ -60,17 +60,72 @@ export interface ExecutorReceipt {
   };
 }
 
+
+/**
+ * OutcomeClass — F13-RATIFIED 2026-09-25 (Spec: A-FORGE UNKNOWN_OUTCOME v1).
+ *
+ * First-class enum on every actuator receipt. Absence of `outcome_class`
+ * on a dispatched action = receipt invalid (F2).
+ *
+ * Semantics:
+ *   SUCCESS         — execute completed, result verified at boundary
+ *   FAILURE         — execute completed with known failure cause
+ *   UNKNOWN_OUTCOME — execute dispatched, result UNVERIFIED (timeout,
+ *                     response truncation, transport drop). NEVER auto-retry;
+ *                     requires reconcile() probe with same action_hash.
+ *   RECOVERY        — execute failed, system self-recovered
+ *   DENIED          — auth/policy deny BEFORE dispatch (no side effect)
+ */
+export type OutcomeClass =
+  | "SUCCESS"
+  | "FAILURE"
+  | "UNKNOWN_OUTCOME"
+  | "RECOVERY"
+  | "DENIED";
+
+export const ALL_OUTCOME_CLASSES: ReadonlyArray<OutcomeClass> = [
+  "SUCCESS",
+  "FAILURE",
+  "UNKNOWN_OUTCOME",
+  "RECOVERY",
+  "DENIED",
+];
+
+/**
+ * Map ActionResult.status (legacy 4-state) to OutcomeClass (5-state).
+ * Centralised so the legacy FAILURE bucket does NOT silently capture
+ * UNKNOWN_OUTCOME — the spec calls timeout/transport-drop UNKNOWN.
+ */
+export function outcomeClassFromStatus(
+  status: ActionResult["status"],
+): OutcomeClass {
+  switch (status) {
+    case "SUCCESS": return "SUCCESS";
+    case "FAILURE": return "FAILURE";
+    case "PARTIAL": return "RECOVERY";   // partial execution = system recovered partially
+    case "REFUSED": return "DENIED";     // refused before dispatch = no side effect
+  }
+}
+
+
 // ── Action Results ───────────────────────────
 
 export interface ActionResult {
   actionId: string;
+  /** Stable hash of the dispatched action. Used by reconcile() to probe. */
+  actionHash?: string;
   status: "SUCCESS" | "FAILURE" | "PARTIAL" | "REFUSED";
+  /** F13-ratified 2026-09-25 — every receipt carries its outcome class. */
+  outcome_class: OutcomeClass;
   tool: string;
   output: unknown;
   error?: string;
   timestamp: string;
   durationMs: number;
 }
+
+
+
 
 // ── Forge Command (internal) ─────────────────
 
@@ -92,6 +147,17 @@ export interface ExecutionReport {
     failed: number;
     totalDurationMs: number;
     verdict: "SUCCESS" | "PARTIAL" | "FAILURE" | "REFUSED";
+    /**
+     * F13-ratified 2026-09-25 — aggregate outcome class across actions.
+     * Rules:
+     *   - any UNKNOWN_OUTCOME in results → UNKNOWN_OUTCOME
+     *   - any FAILURE and no UNKNOWN  → FAILURE
+     *   - any RECOVERY and no UNKNOWN/FAILURE → RECOVERY
+     *   - all SUCCESS                       → SUCCESS
+     *   - any DENIED (with no others)       → DENIED
+     * Executor self-report CANNOT downgrade UNKNOWN_OUTCOME (Q9 anti-self-seal).
+     */
+    outcome_class: OutcomeClass;
   };
   /** Hard-fail reasons when receipt validation fails */
   refusalReasons?: string[];

@@ -13,12 +13,68 @@
  * DITEMPA BUKAN DIBERI — Forged, Not Given.
  */
 
+import { createHash } from "node:crypto";
 import {
   type ExecutorReceipt,
   type ActionResult,
   type ExecutionReport,
+  type OutcomeClass,
+  outcomeClassFromStatus,
 } from "./types.js";
+import { recordUnknownOutcome } from "./reconcile.js";
 import { recordExperienceTrace } from "../interfaces/mcp/experienceTraceTools.js";
+
+
+/**
+ * Compute stable action_hash for reconcile() lookup.
+ * Canonical: sha256 of `${tool}|${inputHash_or_params_hash}|${actorId}|${timestamp}`.
+ * Spec §2.2 — reconcile-before-retry requires same action_hash.
+ */
+function computeActionHash(
+  toolName: string,
+  params: Record<string, unknown>,
+  authority: ExecutorReceipt["authority"],
+  timestamp: string,
+): string {
+  const paramsJson = stableStringify(params);
+  const material = `${toolName}|${paramsJson}|${authority.actorId}|${timestamp}`;
+  return createHash("sha256").update(material).digest("hex");
+}
+
+/** Stable stringify (sorted keys) so identical inputs hash identically. */
+function stableStringify(v: unknown): string {
+  if (v === null || typeof v !== "object") return JSON.stringify(v);
+  if (Array.isArray(v)) return "[" + v.map(stableStringify).join(",") + "]";
+  const obj = v as Record<string, unknown>;
+  const keys = Object.keys(obj).sort();
+  return "{" + keys.map((k) => JSON.stringify(k) + ":" + stableStringify(obj[k])).join(",") + "}";
+}
+
+/**
+ * Spec §2.3 — aggregate outcome_class across results, with anti-self-seal:
+ * if ANY result is UNKNOWN_OUTCOME, the aggregate stays UNKNOWN_OUTCOME.
+ * Executor self-report CANNOT promote UNKNOWN_OUTCOME → SUCCESS/FAILURE
+ * (that requires reconcile() with an external probe receipt — Q9 anti-self-seal).
+ */
+function aggregateOutcomeClass(results: ActionResult[]): OutcomeClass {
+  let hasSuccess = false;
+  let hasFailure = false;
+  let hasRecovery = false;
+  let hasDenied = false;
+  for (const r of results) {
+    if (r.outcome_class === "UNKNOWN_OUTCOME") return "UNKNOWN_OUTCOME"; // wins by spec
+    if (r.outcome_class === "FAILURE") hasFailure = true;
+    else if (r.outcome_class === "SUCCESS") hasSuccess = true;
+    else if (r.outcome_class === "RECOVERY") hasRecovery = true;
+    else if (r.outcome_class === "DENIED") hasDenied = true;
+  }
+  if (hasFailure) return "FAILURE";
+  if (hasRecovery) return "RECOVERY";
+  if (hasSuccess && hasDenied) return "RECOVERY"; // mixed success + denied → treat as recovery
+  if (hasSuccess) return "SUCCESS";
+  if (hasDenied) return "DENIED";
+  return "DENIED"; // no results = nothing was allowed to execute
+}
 
 // ── Tool Registry ────────────────────────────
 
@@ -65,34 +121,46 @@ async function executeCommand(
 ): Promise<ActionResult> {
   const startTime = Date.now();
   const actionId = `act-${crypto.randomUUID().slice(0, 8)}`;
+  const actionTimestamp = new Date().toISOString();
 
   // Find tool
   const tool = toolRegistry.get(toolName);
   if (!tool) {
-    return {
+    const r: ActionResult = {
       actionId,
       status: "FAILURE",
+      outcome_class: "FAILURE",
       tool: toolName,
       output: null,
       error: `Tool '${toolName}' not registered in A-FORGE`,
-      timestamp: new Date().toISOString(),
+      timestamp: actionTimestamp,
       durationMs: Date.now() - startTime,
     };
+    r.actionHash = computeActionHash(toolName, params, authority, actionTimestamp);
+    return r;
   }
 
   // Check bounds: timeout
   const timeout = bounds.timeoutMs ?? 30000;
   if (timeout > 120000) {
-    return {
+    const r: ActionResult = {
       actionId,
       status: "FAILURE",
+      outcome_class: "FAILURE",
       tool: toolName,
       output: null,
       error: `Timeout ${timeout}ms exceeds maximum 120000ms`,
-      timestamp: new Date().toISOString(),
+      timestamp: actionTimestamp,
       durationMs: Date.now() - startTime,
     };
+    r.actionHash = computeActionHash(toolName, params, authority, actionTimestamp);
+    return r;
   }
+
+  // Spec §2.4: Timeout / AbortError / external transport-drop → UNKNOWN_OUTCOME,
+  // NOT FAILURE. The external side may have succeeded with the response lost.
+  // Promise.race timeout error message must match this pattern.
+  const TIMEOUT_ERROR_RE = /^(Timed out|AbortError|aborted|The operation was aborted)/i;
 
   try {
     const output = await Promise.race([
@@ -102,24 +170,36 @@ async function executeCommand(
       ),
     ]);
 
-    return {
+    const r: ActionResult = {
       actionId,
       status: "SUCCESS",
+      outcome_class: "SUCCESS",
       tool: toolName,
       output,
       timestamp: new Date().toISOString(),
       durationMs: Date.now() - startTime,
     };
+    r.actionHash = computeActionHash(toolName, params, authority, r.timestamp);
+    return r;
   } catch (err) {
-    return {
+    const msg = err instanceof Error ? err.message : String(err);
+    const isTransport = TIMEOUT_ERROR_RE.test(msg);
+    const r: ActionResult = {
       actionId,
-      status: "FAILURE",
+      status: isTransport ? "FAILURE" : "FAILURE", // legacy status unchanged
+      outcome_class: isTransport ? "UNKNOWN_OUTCOME" : "FAILURE",
       tool: toolName,
       output: null,
-      error: err instanceof Error ? err.message : String(err),
+      error: msg,
       timestamp: new Date().toISOString(),
       durationMs: Date.now() - startTime,
     };
+    r.actionHash = computeActionHash(toolName, params, authority, r.timestamp);
+    if (isTransport) {
+      // Spec §2 — record for reconcile() before the function returns.
+      recordUnknownOutcome(r);
+    }
+    return r;
   }
 }
 
@@ -235,6 +315,7 @@ export async function forgeExecute(
         failed: 0,
         totalDurationMs: 0,
         verdict: "REFUSED",
+        outcome_class: "DENIED", // F13-ratified 2026-09-25
       },
       refusalReasons: validation.violations,
       timestamp: new Date().toISOString(),
@@ -252,6 +333,7 @@ export async function forgeExecute(
         failed: 0,
         totalDurationMs: 0,
         verdict: "REFUSED",
+        outcome_class: "DENIED",
       },
       refusalReasons: [
         `Verdict ${receipt.verdict} is not executable — only SEAL|SABAR after 888`,
@@ -286,6 +368,10 @@ export async function forgeExecute(
     failed === 0 ? "SUCCESS" :
     succeeded === 0 ? "FAILURE" :
     "PARTIAL";
+
+  // F13-ratified 2026-09-25 — aggregate outcome_class (anti-self-seal preserved
+  // by aggregateOutcomeClass: any UNKNOWN_OUTCOME wins).
+  const summaryOutcome = aggregateOutcomeClass(results);
 
   // ── P1: Auto-diff expected vs actual (F13-ratified 2026-09-08) ──
   // For each action that supplied expected_output (e.g., forge_shell's
@@ -342,6 +428,7 @@ export async function forgeExecute(
       failed,
       totalDurationMs: totalDuration,
       verdict: summaryVerdict,
+      outcome_class: summaryOutcome,
     },
     timestamp: new Date().toISOString(),
   };
