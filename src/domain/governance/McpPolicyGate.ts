@@ -345,10 +345,36 @@ export class McpPolicyGate {
     return true;
   }
 
-  /** @deprecated Use registerVerifiedSession(sessionId, actorId, sct, organSecret) instead. */
+  /**
+   * @deprecated — LOUD DEPRECATION (F13 L09, 2026-09-25, scar 1790290092175_3c76c6f9).
+   *
+   * Historically this wrote a SINGLE GLOBAL key `"__legacy_active"` into the
+   * verifiedSessions map, which was then read by `derivePrincipal()` as the
+   * silent attribution path for EVERY incoming request — attributing actions
+   * across ALL clients to whatever actor last called setActor(). That is the
+   * silent cross-client attribution defect that produced scar 1790290092175.
+   *
+   * New behaviour (F13 L09, 2026-09-25):
+   *   1. Stores under a per-actorId key `"__legacy_actor:<actorId>"` — so two
+   *      concurrent clients cannot stomp each other's attribution.
+   *   2. Emits a deprecation log on stderr.
+   *   3. The global `"__legacy_active"` key is NO LONGER used by derivePrincipal().
+   *      A caller that genuinely needs the old global behavior must explicitly
+   *      set FORGE_ALLOW_LEGACY_ACTOR_FALLBACK=1 (logs a warning each call).
+   *
+   * Prefer registerVerifiedSession(sessionId, actorId, act, organSecret) or
+   * registerKernelVerifiedSession(sessionId, actorId) for verified attribution.
+   */
   setActor(actorId: string): void {
-    // Backward compat: store under legacy key for existing callers
-    this.verifiedSessions.set("__legacy_active", { actorId, verifiedAt: Date.now() });
+    // Per-actorId key — concurrent clients each get their own attribution.
+    this.verifiedSessions.set(`__legacy_actor:${actorId}`, { actorId, verifiedAt: Date.now() });
+    // Loud deprecation — every call is a candidate migration target.
+    // eslint-disable-next-line no-console
+    process.stderr.write(
+      `[DEPRECATION] McpPolicyGate.setActor("${actorId}") is deprecated (L09, 2026-09-25). ` +
+      `Migrate to registerVerifiedSession() or registerKernelVerifiedSession(). ` +
+      `Per-actor keying used — global "__legacy_active" attribution is disabled.\n`,
+    );
   }
 
   /**
@@ -724,16 +750,33 @@ export class McpPolicyGate {
       };
     }
 
-    // Legacy compat: check __legacy_active key (for setActor callers)
-    if (this.verifiedSessions.has("__legacy_active")) {
-      const sess = this.verifiedSessions.get("__legacy_active")!;
-      return {
-        actorId: sess.actorId,
-        displayLabel: sess.actorId,
-        source: "verified_session",
-        authenticated: true,
-        authority: "FULL",
-      };
+    // L09 (2026-09-25): The silent global `"__legacy_active"` attribution path is REMOVED.
+    // setActor() now writes a per-actorId key `"__legacy_actor:<id>"`. If the caller has
+    // no session_id and explicitly opts in to legacy global behavior via env, allow the
+    // fallback. Without the env flag, attribution falls through to client_supplied /
+    // transport_fallback (the safe default) — no silent cross-client leakage.
+    if (process.env.FORGE_ALLOW_LEGACY_ACTOR_FALLBACK === "1") {
+      // eslint-disable-next-line no-console
+      process.stderr.write(
+        `[WARN] FORGE_ALLOW_LEGACY_ACTOR_FALLBACK=1 — global setActor() attribution path is active. ` +
+        `This is F13-deprecated and MUST be removed before F13 audit close.\n`,
+      );
+      // Use the most recent per-actor key as a "best-effort" proxy for the legacy global.
+      // Sorted by verifiedAt descending — pick the freshest entry.
+      let best: { actorId: string; verifiedAt: number } | null = null;
+      for (const [key, val] of this.verifiedSessions.entries()) {
+        if (!key.startsWith("__legacy_actor:")) continue;
+        if (!best || val.verifiedAt > best.verifiedAt) best = val;
+      }
+      if (best) {
+        return {
+          actorId: best.actorId,
+          displayLabel: best.actorId,
+          source: "verified_session",
+          authenticated: true,
+          authority: "FULL",
+        };
+      }
     }
 
     // Case 3: Client explicitly supplied a valid-looking actor_id

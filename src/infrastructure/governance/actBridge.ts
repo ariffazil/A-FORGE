@@ -66,6 +66,28 @@ export interface ActClaims {
   apex: { G: unknown; C_dark: unknown; W3: unknown; h: unknown };
   witness: { active: number; diversity: string };
   allowed: string[];
+  // F13-ratified 2026-09-25 (loop L11): envelope Budget + RevocationRef (authority-envelope.md).
+  // Optional in the wire format for legacy compatibility. REQUIRED on NEW mints at
+  // MUTATE-and-above authority (see validateEnvelope). Verification warns (does not hard-fail)
+  // when fields are missing on legacy tokens so existing callers are not hard-broken.
+  budget?: EnvelopeBudget;
+  revocation_ref?: string;
+}
+
+/**
+ * Authority Envelope Budget (F13-ratified 2026-09-25, loop L11).
+ * "A budgetless envelope is an open tap." Bound consumption ceiling on the
+ * envelope: how many seconds wall-clock, how many organ calls, how many cost
+ * units. Expiry bounds *when*; Budget bounds *how much*. Either exhausted →
+ * envelope DEAD, re-issue required.
+ *
+ * Any combination of keys may be present. Values must be non-negative
+ * integers. Negative or non-finite values are rejected.
+ */
+export interface EnvelopeBudget {
+  max_seconds?: number;
+  max_organ_calls?: number;
+  cost_units?: number;
 }
 
 export interface ActMintOptions {
@@ -81,6 +103,8 @@ export interface ActMintOptions {
   apex?: Partial<ActClaims["apex"]>;
   witness?: Partial<ActClaims["witness"]>;
   allowed?: string[];
+  budget?: EnvelopeBudget;
+  revocation_ref?: string;
 }
 
 /** Resolve the shared ARIFOS_SESSION_SECRET. Same env contract as arifOS. */
@@ -158,17 +182,33 @@ export function mintAct(
       diversity: opts.witness?.diversity ?? (opts.av ? "PARTIAL" : "NONE"),
     },
     allowed: opts.allowed ?? [],
+    budget: opts.budget,
+    revocation_ref: opts.revocation_ref,
   };
 
   // MUST mirror arifOS: json.dumps(claims, sort_keys=True, separators=(",", ":"))
-  const dump = JSON.stringify(claims, Object.keys(claims).sort());
-  const payloadB64 = b64urlEncode(Buffer.from(dump, "utf8"));
+  // Top-level keys are emitted in sorted order (matches arifOS sort_keys=True at depth 0).
+  // Nested objects (e.g. budget) are preserved as-is via the explicit reconstruction
+  // below — the original key-allowlist replacer stripped them.
+  const sortedTopKeys = Object.keys(claims).sort();
+  const orderedClaims: Record<string, unknown> = {};
+  for (const k of sortedTopKeys) orderedClaims[k] = (claims as unknown as Record<string, unknown>)[k];
+  const finalDump = JSON.stringify(orderedClaims);
+  const payloadB64 = b64urlEncode(Buffer.from(finalDump, "utf8"));
   const sig = signActPayload(payloadB64, secret);
   return { token: `${ACT_PREFIX}.${payloadB64}.${sig}`, claims };
 }
 
 export type ActVerifyResult =
-  | { ok: true; claims: ActClaims; actor: string; authority: string }
+  | {
+      ok: true;
+      claims: ActClaims;
+      actor: string;
+      authority: string;
+      // F13 2026-09-25 (L11): envelope warnings (legacy tokens missing budget/revocation_ref
+      // at MUTATE+ bands still verify, but the warnings surface to the consumer).
+      envelopeWarnings: string[];
+    }
   | { ok: false; error: string; message: string };
 
 /**
@@ -249,7 +289,114 @@ export function verifyAct(
     }
   }
 
-  return { ok: true, claims, actor, authority };
+  // F13 2026-09-25 (L11): validate envelope Budget + RevocationRef. Malformed
+  // shapes → REJECT (ok=false); missing fields on MUTATE+ bands → warnings
+  // attached to the ok result. Legacy callers without the fields still verify.
+  const envelope = validateEnvelope(claims);
+  if (!envelope.valid) {
+    return { ok: false, error: "ERR_ENVELOPE_MALFORMED", message: envelope.reason || "envelope malformed" };
+  }
+  return { ok: true, claims, actor, authority, envelopeWarnings: envelope.warnings };
+}
+
+
+/**
+ * F13-ratified 2026-09-25 (loop L11) — Authority Envelope Budget + RevocationRef validation.
+ * Mirrors arifOS contract: malformed shapes are rejected; legacy tokens without the
+ * fields are still valid but produce a WARNING at MUTATE-and-above authority.
+ *
+ * MUTATE+ bands without budget or revocation_ref: WARNING (do not hard-break legacy).
+ * Hard MALFORMED shapes (negative numbers, non-string ref): REJECT.
+ *
+ * Pure function — no I/O. Callers wire the result into verdict chains.
+ */
+export interface EnvelopeValidationResult {
+  valid: boolean;          // false ⇒ reject (malformed shapes)
+  reason?: string;         // human-readable reason when !valid
+  warnings: string[];      // non-blocking advisories (e.g. legacy token at MUTATE)
+  budget?: EnvelopeBudget; // echoes the (possibly trimmed) budget
+  revocation_ref?: string; // echoes the (possibly trimmed) ref
+}
+
+const MUTATE_BANDS = new Set(["FULL", "SOVEREIGN", "LIMITED_MUTATE"]);
+// "OPERATOR" is intentionally NOT in MUTATE_BANDS — it sits below MUTATE per
+// the F13 2026-09-25 ranking (OBSERVE_ONLY → OPERATOR → LIMITED_MUTATE → FULL → SOVEREIGN).
+
+export function validateEnvelope(claims: ActClaims): EnvelopeValidationResult {
+  const warnings: string[] = [];
+  const budget = claims.budget;
+  const revocationRef = claims.revocation_ref;
+
+  // ── Malformed shapes (hard reject) ─────────────────────────────────────
+  if (budget !== undefined) {
+    if (typeof budget !== "object" || budget === null || Array.isArray(budget)) {
+      return { valid: false, reason: "ENVELOPE_MALFORMED: budget must be an object", warnings };
+    }
+    for (const [k, v] of Object.entries(budget)) {
+      if (!["max_seconds", "max_organ_calls", "cost_units"].includes(k)) {
+        return {
+          valid: false,
+          reason: `ENVELOPE_MALFORMED: budget has unknown key "${k}"`,
+          warnings,
+        };
+      }
+      if (typeof v !== "number" || !Number.isFinite(v) || v < 0 || !Number.isInteger(v)) {
+        return {
+          valid: false,
+          reason: `ENVELOPE_MALFORMED: budget.${k} must be a non-negative integer (got ${JSON.stringify(v)})`,
+          warnings,
+        };
+      }
+    }
+    // Must declare at least one ceiling — an empty budget object is meaningless.
+    if (Object.keys(budget).length === 0) {
+      return {
+        valid: false,
+        reason: "ENVELOPE_MALFORMED: budget object must declare at least one of max_seconds|max_organ_calls|cost_units",
+        warnings,
+      };
+    }
+  }
+
+  if (revocationRef !== undefined) {
+    if (typeof revocationRef !== "string") {
+      return {
+        valid: false,
+        reason: `ENVELOPE_MALFORMED: revocation_ref must be a string (got ${typeof revocationRef})`,
+        warnings,
+      };
+    }
+    // Opaque token: must be >= 8 chars to be useful as a propagation ref.
+    if (revocationRef.length < 8) {
+      return {
+        valid: false,
+        reason: `ENVELOPE_MALFORMED: revocation_ref must be >= 8 chars (got ${revocationRef.length})`,
+        warnings,
+      };
+    }
+  }
+
+  // ── Missing-field policy for MUTATE+ bands (warning, not reject) ────────
+  const auth = String(claims.auth || "OBSERVE_ONLY").toUpperCase();
+  if (MUTATE_BANDS.has(auth)) {
+    if (budget === undefined) {
+      warnings.push(
+        `ENVELOPE_WARNING: MUTATE+ band "${auth}" without budget (legacy token accepted; NEW mints must include budget)`,
+      );
+    }
+    if (revocationRef === undefined) {
+      warnings.push(
+        `ENVELOPE_WARNING: MUTATE+ band "${auth}" without revocation_ref (legacy token accepted; NEW mints must include revocation_ref)`,
+      );
+    }
+  }
+
+  return {
+    valid: true,
+    warnings,
+    budget,
+    revocation_ref: revocationRef,
+  };
 }
 
 /** True while legacy prefixes are in the migration window. */
