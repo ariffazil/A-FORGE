@@ -33,13 +33,13 @@ G='\033[1;32m'; Y='\033[1;33m'; R='\033[1;31m'; C='\033[1;36m'; D='\033[2;37m'; 
 BLOCKED=0
 for file in $(git diff --cached --name-only --diff-filter=ACM 2>/dev/null); do
   if echo "$file" | grep -qE "(vault\.flat\.env|vault\.env|\.secrets/|secrets\.env|credentials\.json)"; then
-    echo -e "${R}BLOCKED${NC}: Secret file staged: $file"
+    echo -e "${R}BLOCKED${X}: Secret file staged: $file"
     BLOCKED=1
   fi
 done
 if command -v gitleaks >/dev/null 2>&1; then
   if ! gitleaks protect --staged >/dev/null 2>&1; then
-    echo -e "${R}BLOCKED${NC}: Gitleaks detected potential secrets in staged files."
+    echo -e "${R}BLOCKED${X}: Gitleaks detected potential secrets in staged files."
     echo "Run 'gitleaks protect --staged --verbose' to inspect."
     BLOCKED=1
   fi
@@ -47,14 +47,14 @@ else
   for file in $(git diff --cached --name-only --diff-filter=ACM 2>/dev/null); do
     file "$file" 2>/dev/null | grep -q "text" || continue
     if git show ":$file" 2>/dev/null | grep -qE "(sk-[a-zA-Z0-9_-]{20,}|AKIA[0-9A-Z]{16}|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-9]{36})"; then
-      echo -e "${R}BLOCKED${NC}: Potential secret in $file"
+      echo -e "${R}BLOCKED${X}: Potential secret in $file"
       BLOCKED=1
     fi
   done
 fi
 if [ $BLOCKED -eq 1 ]; then
   echo ""
-  echo -e "${Y}COMMIT BLOCKED${NC} — Potential secrets detected."
+  echo -e "${Y}COMMIT BLOCKED${X} — Potential secrets detected."
   echo "If this is a false positive, use: git commit --no-verify"
   exit 1
 fi
