@@ -2262,3 +2262,15 @@ tools:
   min_mode: THINK
   risk_label: R2
 
+- name: forge_canon_recall
+  purpose: 'ACTUATOR [probe/OBSERVE] Semantic recall over the federation canon corpus (instruction/canon/eureka/governance/scar/session_closure) with 3-lane embedding fallback: qwen3.7-text-embedding -> bge-m3 -> substring. Returns top-K with provenance and lane used.'
+  affordance_class: memory
+  capability_surface: aforge.canon.recall
+  kernel_verb: MEMORY
+  mutation_class: OBSERVE
+  reads:
+  - canon_corpus
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
