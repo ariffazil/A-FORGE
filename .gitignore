@@ -27,6 +27,8 @@ dist/
 metrics/
 !src/metrics/
 !src/metrics/*.ts
+!src/infrastructure/metrics/
+!src/infrastructure/metrics/*.ts
 scoreboard.json
 
 # Backup files (any pattern)
