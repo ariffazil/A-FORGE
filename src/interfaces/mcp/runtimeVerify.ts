@@ -18,6 +18,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 
 interface RuntimeVerifyResult {
   status: "MATCH" | "DRIFT" | "UNKNOWN";
@@ -275,8 +276,18 @@ export function registerRuntimeVerifyTool(server: McpServer): void {
             sourceVsWheel = "DRIFT";
             evidence.push("Source-vs-wheel: DRIFT (wheel is in the repo tree, not an installed package)");
           } else {
-            if (wheel.version && wheel.version.includes(git.commit?.slice(0, 7) ?? "")) {
+            const pyprojectPath = join(ws, "pyproject.toml");
+            const pyprojectMatch =
+              existsSync(pyprojectPath) &&
+              Boolean(wheel.version) &&
+              readFileSync(pyprojectPath, "utf8").includes(`version = "${wheel.version}"`);
+            const commitMatch = Boolean(wheel.version && wheel.version.includes(git.commit?.slice(0, 7) ?? ""));
+
+            if (commitMatch || pyprojectMatch) {
               sourceVsWheel = "MATCH";
+              evidence.push(
+                `Source-vs-wheel: MATCH (${pyprojectMatch ? `pyproject version ${wheel.version}` : `commit ${git.commit?.slice(0, 7)}`})`
+              );
             } else {
               sourceVsWheel = "DRIFT";
               evidence.push(`Source-vs-wheel: DRIFT (commit ${git.commit?.slice(0, 7)} vs version ${wheel.version})`);
