@@ -448,6 +448,19 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (["list", "history", "verify"].includes(mode)) return "OBSERVE";
     if (["score", "evaluate"].includes(mode)) return "EXECUTE_REVERSIBLE";
   }
+  // H4 (2026-09-27, name-drift fix — RE-APPLIED after concurrent-writer race
+  // clobbered the first application in commit 99232241's file-level write):
+  // forge_compose is LIVE-registered (forgeComposeTools.ts:70) but was
+  // unclassified → fail-closed IRREVERSIBLE fallback 888-gated even status
+  // reads. Mode-aware: status/analyze=OBSERVE, execute/cancel=EXECUTE_REVERSIBLE.
+  // Irreversible compositions carry hold_id and are gated INTERNALLY by F13
+  // (composition bus refuses irreversible steps without hold) — same
+  // delegation pattern as forge_ephemeral's sandbox gate.
+  if (toolName === "forge_compose") {
+    if (!mode) return "OBSERVE"; // default: status query
+    if (["status", "analyze"].includes(mode)) return "OBSERVE";
+    if (["execute", "cancel"].includes(mode)) return "EXECUTE_REVERSIBLE";
+  }
 
   // ── Name-only classification (existing sets) ──
   if (IRREVERSIBLE_TOOLS.has(toolName)) return "IRREVERSIBLE";

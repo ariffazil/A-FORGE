@@ -505,6 +505,19 @@ export function verifyLocalAct(
 }
 
 /**
+ * T-06 helper (restored 2026-09-27 by 333-AGI audit — referenced at the
+ * ARIFOS_ENFORCE_FLOORS gate below but never defined in 99232241, leaving
+ * HEAD with a red tsc build). True when the required authority is at
+ * MUTATE level or above; read-only lanes (OBSERVE_ONLY, OPERATOR) are
+ * NEVER floor-blocked, per the T-06 Option A contract.
+ */
+function isMutateOrAbove(requiredAuthority: string): boolean {
+  const RANK = ["OBSERVE_ONLY", "OPERATOR", "LIMITED_MUTATE", "FULL", "SOVEREIGN"];
+  const i = RANK.indexOf(requiredAuthority);
+  return i >= RANK.indexOf("LIMITED_MUTATE");
+}
+
+/**
  * Verify ACT — local decode first, arifOS roundtrip as fallback.
  * P2.1 fix (2026-07-28): primary path is local. arifOS has no "validate"
  * init mode; calling arif_init(mode="validate") falls through to mode="init"
