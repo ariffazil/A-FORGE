@@ -31,7 +31,7 @@ LeCun's 6 modules for autonomous intelligence:
 | Module | Status | Implementation |
 |--------|--------|---------------|
 | Perception | ✅ | Organs (GEOX, WELL, WEALTH) |
-| Cost | ✅ | APEX: G = A·P·E·X·Φ |
+| Cost | ✅ | APEX: G = (A·P·E·X)^(1/4) (V3 canonical) |
 | Actor | ✅ | forge_execute |
 | Memory | ✅ | VAULT999 + seal chain |
 | **World Model** | ❌→✅ | **THIS: wire organ predictions to actor** |

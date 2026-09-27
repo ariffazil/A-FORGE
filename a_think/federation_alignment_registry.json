@@ -603,9 +603,9 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 333_THINK. APEX v36Ω evaluation gate. Computes G = A·P·E·X·Φ (Nash bargaining product) and C_dark = A·(1-P)·(1-",
-      "description_live": "APEX v36Ω evaluation gate. Computes G = A·P·E·X·Φ (Nash bargaining product) and C_dark = A·(1-P)·(1-X) for a candidate tool spec. Returns SEAL/REVIEW/VOID verdict. Does NOT generate code — evaluates o",
-      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 333_THINK (arif_think). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. APEX v36Ω evaluation gate. Computes G = A·P·E·X·Φ (Nash bargaining product) and C_dark = A·(1-P)·(1-X) for a candidate tool spec. Returns SEAL/REVIEW/VOID verdi",
+      "purpose": "ACTUATOR [governance/OBSERVE] supervised by kernel 333_THINK. APEX v36Ω evaluation gate (V3 canonical). Computes G = (A·P·E·X)^(1/4) — 4-term geometric mean; Φ is scar pressure, not a 5th dial. C_dark = A·(1-P)·(1-X). Returns SEAL/REVIEW/VOID.",
+      "description_live": "APEX v36Ω evaluation gate (G-SPACE CANONICAL). Computes G = (A·P·E·X)^(1/4) with is_canonical_g=true; C_dark = A·(1-P)·(1-X). P=Physics, not Purpose. Φ is scar pressure, not a 5th dial. Returns SEAL/REVIEW/VOID. Does NOT generate code.",
+      "description_canonical": "ACTUATOR · governance · OBSERVE · kernel-supervised by 333_THINK (arif_think). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. APEX v36Ω evaluation gate (V3 canonical): G = (A·P·E·X)^(1/4); Φ is scar pressure, not a 5th dial. Returns SEAL/REVIEW/VOID.",
       "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
       "federation_agents": [
         "AAA",

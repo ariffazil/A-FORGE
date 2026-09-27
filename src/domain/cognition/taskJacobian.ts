@@ -287,11 +287,11 @@ export function needsRecompute(
  * multiplicative 5th dial. Older five-factor descriptions (G = A·P·E·X·Φ)
  * are stale and must not be re-introduced.
  *
- * Local-estimator divergence: arifOS apex_canonical.py was last updated
- * 2026-07-13 (pre-V3) and STILL computes G = A·P·E·X·Φ. This is a known
- * cross-organ drift awaiting sovereign ratification. P0.1 fix confines
- * this local estimate to the V3 four-dial geometric mean; constitutional
- * G stays in arifOS where the V3 seal belongs.
+ * Cross-organ drift CLOSED (verified 2026-09-27): arifOS apex_canonical.py
+ * now computes G = (A·P·E·X)^(1/4) (compute_apex, line 469; W-12 fix
+ * 2026-08-05; commits 58f192112, 438b022fe). The earlier "STILL computes
+ * A·P·E·X·Φ" note was stale history. Constitutional G stays in arifOS
+ * where the V3 seal belongs.
  *
  * Canonical tool evaluation G = (A·P·E·X)^(1/4) lives ONLY in:
  *   - src/domain/governance/gAuthority.ts (A-FORGE canonical labels)

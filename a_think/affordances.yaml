@@ -247,8 +247,7 @@ tools:
   min_mode: THINK
   risk_label: R0
 - name: forge_evaluate
-  purpose: ACTUATOR [governance/OBSERVE] supervised by kernel 333_THINK. APEX v36Ω evaluation gate. Computes G = A·P·E·X·Φ
-    (Nash bargaining product) and C_dark = A·(1-P)·(1-
+  purpose: ACTUATOR [governance/OBSERVE] supervised by kernel 333_THINK. APEX v36Ω evaluation gate (V3 canonical). Computes G = (A·P·E·X)^(1/4) — 4-term geometric mean; Φ is scar pressure, not a 5th dial. Returns SEAL/REVIEW/VOID.
   affordance_class: governance
   capability_surface: aforge.governance.evaluate
   kernel_verb: 333_THINK
@@ -264,7 +263,7 @@ tools:
   min_mode: THINK
   risk_label: R0
   grounding: [control_theory, information_theory, moral_philosophy]
-  reference: "G = A·P·E·X·Φ — Nash bargaining product"
+  reference: "G = (A·P·E·X)^(1/4) — canonical V3 geometric mean (pre-V3 A·P·E·X·Φ retired 2026-07-28, F13)"
 - name: forge_execute
   purpose: ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Execution and motor cortex (Stage 777 FORGE). Use this
     to execute an action plan. Requires cc_id for
