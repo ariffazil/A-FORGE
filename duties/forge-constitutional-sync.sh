@@ -7,6 +7,79 @@
 
 set -euo pipefail
 
+# ── SYNC_VALIDATION_HEADER (P0.4 Observer Repair) ──────────────────────
+# Emitted BEFORE any counting so every report carries the same provenance:
+# script identity + run-time env + filesystem state at scan start.
+# Marked so automated parsers can grep the block without false positives.
+SELF_SHA=$(sha256sum -- "$0" 2>/dev/null | awk '{print $1}')
+[ -z "$SELF_SHA" ] && SELF_SHA="UNKNOWN"
+RUN_TS="$(date '+%Y-%m-%d %H:%M %Z')"
+SKILLS_DIR="/root/.agents/skills"
+SKILLS_DIR_RESOLVED="$(readlink -f -- "$SKILLS_DIR" 2>/dev/null || echo "$SKILLS_DIR (readlink-failed)")"
+
+# First 10 skill directory names from the count loop (snapshot @ header time)
+SAMPLE_SKILL_DIRS=""
+SAMPLE_COUNT=0
+if [ -d "$SKILLS_DIR" ]; then
+  for skill_dir in "$SKILLS_DIR"/*/; do
+    skill_file="${skill_dir}SKILL.md"
+    [ ! -f "$skill_file" ] && continue
+    if [ "$SAMPLE_COUNT" -lt 10 ]; then
+      SAMPLE_SKILL_DIRS="${SAMPLE_SKILL_DIRS}$(basename "$skill_dir")"$'\n'"  - "
+      SAMPLE_COUNT=$((SAMPLE_COUNT + 1))
+    fi
+  done
+fi
+
+# Total count BEFORE running the full scan (matches what main loop will produce
+# — separate pass so a regression in the main loop is observable).
+PRE_TOTAL_SKILLS=0
+if [ -d "$SKILLS_DIR" ]; then
+  for skill_dir in "$SKILLS_DIR"/*/; do
+    [ -f "${skill_dir}SKILL.md" ] && PRE_TOTAL_SKILLS=$((PRE_TOTAL_SKILLS + 1))
+  done
+fi
+
+# Seal chain raw line count + parsed JSON line count + last_seq
+SEAL_CHAIN_HEADER="/root/.local/share/arifos/vault999/seal_chain.jsonl"
+SEAL_CHAIN_RAW_LINES=0
+SEAL_CHAIN_JSON_LINES=0
+SEAL_CHAIN_LAST_SEQ="?"
+if [ -f "$SEAL_CHAIN_HEADER" ]; then
+  SEAL_CHAIN_RAW_LINES=$(wc -l < "$SEAL_CHAIN_HEADER" 2>/dev/null || echo "0")
+  SEAL_CHAIN_JSON_LINES=$(grep -c '^{' "$SEAL_CHAIN_HEADER" 2>/dev/null || echo "0")
+  SEAL_CHAIN_LAST_SEQ=$(grep '^{' "$SEAL_CHAIN_HEADER" 2>/dev/null | tail -1 | \
+    python3 -c "import json,sys; d=sys.stdin.readline().strip(); print(json.loads(d).get('seq','?') if d else '?')" 2>/dev/null || echo "?")
+fi
+
+# jitu-guard invocation detection: did the cron wrapper call us?
+# Use PPID chain — if any ancestor command is jitu-guard, name it.
+GUARD_CHAIN=""
+if command -v ps >/dev/null 2>&1; then
+  GUARD_CHAIN=$(ps -o comm= -p "$PPID" 2>/dev/null | head -1 || echo "unknown")
+fi
+GUARD_NOTE="jitu-guard: ${GUARD_CHAIN:-unknown}; ppid_command=${GUARD_CHAIN:-unknown}"
+
+# Emit the header block. Marker line lets future parsers slice it reliably.
+echo "=== SYNC_VALIDATION_HEADER ==="
+echo "script_sha256: ${SELF_SHA}"
+echo "run_timestamp: ${RUN_TS}"
+echo "pwd: $(pwd)"
+echo "home: ${HOME:-unset}"
+echo "user: ${USER:-unset}"
+echo "skills_dir: ${SKILLS_DIR}"
+echo "skills_dir_resolved: ${SKILLS_DIR_RESOLVED}"
+echo "pre_count_total_skills: ${PRE_TOTAL_SKILLS}"
+echo "first_10_skill_dirs:"
+echo "  - ${SAMPLE_SKILL_DIRS%$'\n  - '}"
+echo "seal_chain_path: ${SEAL_CHAIN_HEADER}"
+echo "seal_chain_raw_lines: ${SEAL_CHAIN_RAW_LINES}"
+echo "seal_chain_json_lines: ${SEAL_CHAIN_JSON_LINES}"
+echo "seal_chain_last_seq: ${SEAL_CHAIN_LAST_SEQ}"
+echo "${GUARD_NOTE}"
+echo "=== END_SYNC_VALIDATION_HEADER ==="
+echo ""
+
 TODAY=$(date +%Y-%m-%d)
 LOG_DIR="/root/A-FORGE/duties/logs/${TODAY}"
 REPORT="${LOG_DIR}/constitutional-sync-$(date +%H%M).md"
@@ -121,7 +194,7 @@ CHAIN_LINES=0
 LAST_SEQ="?"
 if [ -f "$SEAL_CHAIN" ]; then
   CHAIN_LINES=$(wc -l < "$SEAL_CHAIN")
-  LAST_SEQ=$(tail -1 "$SEAL_CHAIN" | python3 -c "import json,sys; print(json.loads(sys.stdin.readline()).get('seq','?'))" 2>/dev/null || echo "?")
+  LAST_SEQ=$(grep -v '^#' "$SEAL_CHAIN" | tail -1 | python3 -c "import json,sys; print(json.loads(sys.stdin.readline()).get('seq','?'))" 2>/dev/null || echo "?")
   FINDINGS="${FINDINGS}  🔗 Seal chain: ${CHAIN_LINES} entries, last seq=${LAST_SEQ}
 "
 else
