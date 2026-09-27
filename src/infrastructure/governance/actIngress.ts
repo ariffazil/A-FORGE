@@ -515,6 +515,10 @@ export async function verifyFederationAct(
   opts: {
     expectedActor?: string | null;
     requiredAuthority?: string;
+    /** T-06 (F2 receipt 2026-09-27): apex scalars passed by caller for
+     *  fail-closed gate enforcement. When provided AND ARIFOS_ENFORCE_FLOORS=1,
+     *  MUTATE+ tokens are hard-rejected if any threshold is breached. */
+    apex?: { G?: number; W3?: number; [k: string]: number | undefined };
   } = {},
 ): Promise<ActGateResult> {
   const requiredAuthority = opts.requiredAuthority || "OBSERVE_ONLY";
@@ -531,7 +535,38 @@ export async function verifyFederationAct(
 
   // P2.1: Local decode is the primary path (no arifOS roundtrip needed)
   const local = verifyLocalAct(act, opts);
-  if (local) return local;
+  if (local) {
+    // T-06 (F2 receipt 2026-09-27): floor enforcement at ACT gate (Option A).
+    // After local crypto+claims pass, check replicated apex scalars against
+    // canonical thresholds. Only enforced when:
+    //   (1) caller provided apex scalars (verified measurement), AND
+    //   (2) token authority is MUTATE or higher (read-only never blocked), AND
+    //   (3) ARIFOS_ENFORCE_FLOORS=1 (opt-in until AGY/ASI ratification).
+    const T06_ENABLED = process.env.ARIFOS_ENFORCE_FLOORS === "1";
+    if (T06_ENABLED && opts.apex && local.ok && isMutateOrAbove(requiredAuthority)) {
+      const breaches: string[] = [];
+      const G = opts.apex.G;
+      const W3 = opts.apex.W3;
+      const G_THRESHOLD = 0.80;
+      const W3_THRESHOLD = 0.75;
+      if (typeof G === "number" && G < G_THRESHOLD) {
+        breaches.push(`G=${G}<${G_THRESHOLD}`);
+      }
+      if (typeof W3 === "number" && W3 < W3_THRESHOLD) {
+        breaches.push(`W3=${W3}<${W3_THRESHOLD}`);
+      }
+      if (breaches.length > 0) {
+        return {
+          ok: false,
+          error: "ERR_ACT_FLOOR_HOLD",
+          message:
+            `ACT_MUTATE blocked by floor breach (T-06 Option A). Breaches: ${breaches.join(", ")}. ` +
+            `Source apex scalars caller-attested; arifOS kernel holds verdict_floor_guard.`,
+        };
+      }
+    }
+    return local;
+  }
 
   // ── arifOS fallback (for legacy tokens or format drift) ────────────
   try {

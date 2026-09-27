@@ -88,6 +88,15 @@ const HIGH_IMPACT_TOOLS = new Set([
   "forge_github_pr",
   "forge_vault_write",
   "forge_github_create_issue",
+  // ── H1 HARDENING (2026-09-27, sovereign directive, 333-AGI audit):
+  // The P0.2 block below once said "moved to HIGH_IMPACT" for these three
+  // but the move was never executed — code silently disagreed with its own
+  // documented intent (CSA "safety co-option" class: lenient drift at the
+  // classification layer). Raised here; elicitation/F13 defenses unchanged.
+  // Tightening-only ratchet. ──
+  "forge_execute_sealed",   // sealed execution — EXECUTE_HIGH_IMPACT (H1)
+  "forge_transfer_confirm", // money transfer — EXECUTE_HIGH_IMPACT (H1)
+  "forge_send_confirm",     // outbound send with confirmation — EXECUTE_HIGH_IMPACT (H1)
 ]);
 
 // Tools that execute reversible operations
@@ -125,11 +134,11 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_parallel_cancel",  // cancel running parallel agents — EXECUTE_REVERSIBLE
   "forge_kernel",           // constitutional kernel proxy to arifOS — EXECUTE_REVERSIBLE
   // ── P0.2 FIX: newly-classified mutation tools ──
-  "forge_execute_sealed",      // execute with VAULT999 seal — EXECUTE_HIGH_IMPACT (moved below)
-  "forge_transfer_confirm",    // transfer with human confirmation — EXECUTE_HIGH_IMPACT
-  "forge_send_confirm",        // send with human confirmation — EXECUTE_HIGH_IMPACT
-  "forge_github_create_or_update_file", // GitHub file write — EXECUTE_REVERSIBLE
-  "forge_github_create_issue", // GitHub issue create — EXECUTE_REVERSIBLE
+  // H1 (2026-09-27): forge_execute_sealed / forge_transfer_confirm / forge_send_confirm
+  //   MOVED to HIGH_IMPACT_TOOLS — the "moved below" intent is now executed.
+  // H2 (2026-09-27): ghost dual-entries REMOVED — forge_github_create_or_update_file
+  //   lives in IRREVERSIBLE_TOOLS; forge_github_create_issue lives in HIGH_IMPACT_TOOLS.
+  //   (first-match-wins made these dead code; F10 ghost cleanup, no behaviour change.)
   "forge_skill",               // dynamic tool generation — EXECUTE_REVERSIBLE
   "forge_skillstore_write",    // artifact store write — EXECUTE_REVERSIBLE
   "forge_register",            // APEX-gated tool registration — EXECUTE_REVERSIBLE
@@ -141,8 +150,9 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "forge_lock",                // amanah lock acquire/release — EXECUTE_REVERSIBLE
   "forge_pipeline_run",        // autonomous intelligence pipeline — EXECUTE_REVERSIBLE
   "forge_abort",               // safe stop + rollback — EXECUTE_REVERSIBLE
-  "forge_parallel",            // spawn N concurrent tasks — EXECUTE_REVERSIBLE
-  "forge_parallel_cancel",     // cancel parallel agents — EXECUTE_REVERSIBLE
+  // H4-dedup (2026-09-27): forge_parallel / forge_parallel_cancel duplicate
+  // entries removed (already listed above in this set — Set-dedup made them
+  // harmless but the file lied about its own contents).
   // ── Sandbox Lifecycle Operations ──
   "forge_sandbox_pause",       // pause sandbox upperdir — EXECUTE_REVERSIBLE
   "forge_sandbox_resume",      // resume sandbox overlay — EXECUTE_REVERSIBLE
