@@ -329,6 +329,11 @@ const OBSERVE_TOOLS = new Set([
   "forge_rsi_dual_rate_fq",    // RSI dual rate FQ signal — read-only, OBSERVE
   "forge_rsi_state_vector",    // RSI state vector snapshot — read-only, OBSERVE
   "auth_pipeline",             // Auth pipeline status & verification — read-only, OBSERVE
+  "forge_cool",                // H4 (2026-09-27, name-drift fix): live cooling verb
+                               // (coolingVerbs.ts:189) was unclassified → fail-closed HOLD.
+                               // Tool contract declares INV-C1 OBSERVE-only; VAULT999
+                               // cooling appends are audit-witness writes, not state
+                               // mutation — consistent with forge_cool_drift/pattern above.
   // ── MuleRouter Multimodal (2026-07-30) ──
   // "forge_ephemeral" — REMOVED (now mode-aware in classifyTool, see line ~355)
 ]);
@@ -489,6 +494,7 @@ export function isClassifiedTool(toolName: string): boolean {
     "forge_sheets",
     "forge_gmail",
     "forge_trust_score",
+    "forge_compose", // H4 2026-09-27: mode-aware compose bus
   ];
   if (modeAware.includes(toolName)) return true;
   return false;
