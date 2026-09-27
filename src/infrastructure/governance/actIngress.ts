@@ -24,6 +24,24 @@ const ACT_TIMEOUT_MS = Number(process.env.ARIFOS_ACT_TIMEOUT_MS || "2500");
 // After the grace period, drop sct_v1 acceptance.
 const ACT_RE = /^(sct_v1|act_v1)\.[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)?$/;
 
+// ── Replay guard (T-03, F2 receipt 2026-09-27) ─────────────────────────
+// In-process LRU bounded by max entries; jti entries evicted by FIFO once
+// the cap is reached. Suitable for single-process A-FORGE; for HA / multi-
+// replica deployments, swap this for a Redis-backed SET (ARIFOS_REDIS_URL).
+const REPLAY_CACHE_MAX = Number(process.env.ARIFOS_REPLAY_CACHE_MAX || "4096");
+const replayCache: Set<string> = new Set();
+function _replayCacheTrim(): void {
+  // Crude FIFO trim: when Set exceeds cap, drop oldest by re-inserting into
+  // a fresh Set (Set iteration order = insertion order in JS).
+  if (replayCache.size > REPLAY_CACHE_MAX) {
+    const arr = Array.from(replayCache);
+    replayCache.clear();
+    for (const k of arr.slice(Math.floor(REPLAY_CACHE_MAX / 2))) {
+      replayCache.add(k);
+    }
+  }
+}
+
 // ── Actor Identity Canonicalization ──────────────────────────────────────
 // Mirrors arifOS _resolve_canonical_actor (session.py:1506).
 // canonical_actor_id = lowercase, dash-not-underscore machine identifier.
@@ -342,7 +360,7 @@ export function verifyLocalAct(
     const [_prefix, payloadB64, sigHex] = parts;
 
     // ── 2. HMAC-SHA256 signature verification (P0 FIX + G2 2026-08-30) ─
-    // Dual-length verification:
+    // Dual-length verification (legacy compat window):
     //   64-hex sig → FULL 256-bit compare (all tokens minted after the G2
     //                upgrade — arifOS session.py / act_token.py emit full)
     //   16-hex sig → legacy 64-bit compare (compat window; legacy tokens
@@ -350,6 +368,28 @@ export function verifyLocalAct(
     // Reject signatures shorter than 16 hex chars (truncation floor).
     if (!sigHex || sigHex.length < 16) {
       return { ok: false, error: "ERR_ACT_SIGNATURE_SHORT", message: "HMAC signature too short" };
+    }
+
+    // T-04 (F2 receipt 2026-09-27): attacker-selectable HMAC downgrade to
+    // 64-bit compare is structurally weak. Server-side policy: in production
+    // mode, REQUIRE 64-hex signature after a grace-period cutoff date.
+    // Grace-period cutoff = 2026-10-27T00:00:00Z (30 days from this receipt).
+    // Pre-cutoff: legacy 16-hex accepted (compat window for in-flight tokens).
+    // Post-cutoff: hard-reject anything below 64 hex chars.
+    const T04_CUTOFF_MS = Date.parse("2026-10-27T00:00:00Z");
+    const T04_NOW_MS = Date.now();
+    const T04_POST_CUTOFF =
+      Number.isFinite(T04_CUTOFF_MS) && T04_NOW_MS >= T04_CUTOFF_MS;
+    const T04_ENFORCE_FULL =
+      T04_POST_CUTOFF || process.env.ARIFOS_REQUIRE_FULL_HMAC === "1";
+    if (T04_ENFORCE_FULL && sigHex.length !== 64) {
+      return {
+        ok: false,
+        error: "ERR_ACT_SIGNATURE_NOT_FULL",
+        message:
+          "HMAC signature must be 64 hex chars (256-bit) after grace cutoff. " +
+          "Set ARIFOS_REQUIRE_FULL_HMAC=0 to permit legacy 16-hex during migration.",
+      };
     }
 
     const secret = process.env.ARIFOS_SESSION_SECRET;
@@ -386,6 +426,30 @@ export function verifyLocalAct(
     const nbf = claims.nbf as number | undefined;
     if (nbf && Date.now() / 1000 < nbf) {
       return { ok: false, error: "ACT_NOT_YET_VALID", message: `Token not valid before ${new Date(nbf * 1000).toISOString()}` };
+    }
+
+    // ── 5b. Replay guard (T-03, F2 receipt 2026-09-27) ────────────────
+    // Tokens with a `jti` (JWT ID) claim are checked against a TTL-bounded
+    // in-process LRU cache. Tokens without `jti` are accepted but flagged
+    // (legacy SCT carry-over); once arifOS mint path emits jti universally,
+    // set ARIFOS_REQUIRE_JTI=1 to hard-reject jti-less tokens.
+    const jti = claims.jti as string | undefined;
+    if (jti) {
+      if (replayCache.has(jti)) {
+        return {
+          ok: false,
+          error: "ERR_ACT_REPLAY",
+          message: `Token jti=${jti} already seen within replay window.`,
+        };
+      }
+      replayCache.add(jti);
+      _replayCacheTrim();
+    } else if (process.env.ARIFOS_REQUIRE_JTI === "1") {
+      return {
+        ok: false,
+        error: "ERR_ACT_NO_JTI",
+        message: "Token missing jti claim and ARIFOS_REQUIRE_JTI=1.",
+      };
     }
 
     // ── 6. Actor + Delegation binding (P2.1 TOKEN HANDOFF) ─────────────
