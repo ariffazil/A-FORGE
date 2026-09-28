@@ -17,7 +17,7 @@ import * as path from "path";
 const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
 const ACT_DECISION_EVENT_DIR =
   process.env.ACT_DECISION_EVENT_DIR ||
-  "/root/A-FORGE/forge_work/2026-07-17/act_decision_events";
+  `/root/A-FORGE/forge_work/${new Date().toISOString().slice(0, 10)}/act_decision_events`;
 const ACT_TIMEOUT_MS = Number(process.env.ARIFOS_ACT_TIMEOUT_MS || "2500");
 // P2.1 DUAL-ACCEPT (2026-08-07): Transition from SCT to ACT.
 // Accepts both sct_v1.* (legacy) and act_v1.* (new) for one TTL cycle (~8h).
