@@ -14,15 +14,16 @@
 model_list:
 - model_name: apex-888
   litellm_params:
-    model: openai/deepseek-chat
+    model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 8
   model_info:
-    max_input_tokens: 65536
-    max_output_tokens: 8192
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
     mode: chat
-    notes: "apex-888 P8 (DeepSeek-V3 Direct PAYG): demoted 2026-09-21 F13 FI-008 — 65K cap makes it unusable for constitutional judging of >65K evidence. Last-resort fallback only."
+    supports_vision: true
+    notes: "apex-888 P8 (DeepSeek V4.1-Flash Direct PAYG): UPDATED 2026-09-28 — retired name deepseek-chat (discontinued 2026-07-24) replaced with canonical deepseek-flash. V4.1 native multimodal, 1M ctx. Last-resort fallback rung."
 - model_name: apex-888
   litellm_params:
     model: openai/MiniMax-M3
@@ -563,7 +564,7 @@ model_list:
     notes: 'forge-scout-pro P1 (MiMo V2.5 Pro 1T/42B MoE): heavy multimodal synthesis — design review, architecture diff, multimodal contract analysis. Token Plan Max. PONG 1840ms.'
 - model_name: forge-builder
   litellm_params:
-    model: openai/deepseek-v4-flash
+    model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
@@ -572,7 +573,7 @@ model_list:
     max_output_tokens: 32768
     mode: chat
     supports_function_calling: true
-    notes: 'forge-builder P1 (DeepSeek V4 Flash-0731) — TEMP PROMOTION 2026-09-15 13:40 MYT: ZAI Coding Plan Pro quota exhausted until 16:13 MYT. Demoted glm-5.3-flash to order=2 fallback. DeepSeek V4 Flash: 79% SWE-bench Verified at $0.14/$0.28 per MTok. Best cost-frontier for high-volume builder loops.'
+    notes: 'forge-builder P1 (DeepSeek V4.1-Flash) — canonical name updated 2026-09-28 (v4-flash retired upstream 2026-09-10). Cost-frontier for high-volume builder loops. ZAI glm-5.3-flash remains P2.'
 - model_name: forge-builder
   litellm_params:
     model: openai/glm-5.3-flash
@@ -588,7 +589,7 @@ model_list:
     notes: 'forge-builder P2 (ZAI GLM-5.3-Flash): QUOTA EXHAUSTED until 2026-09-15 16:13 MYT. Order demoted 1→2 behind DeepSeek V4 Flash. Restore probe required before re-promotion.'
 - model_name: forge-economy
   litellm_params:
-    model: openai/deepseek-v4-flash
+    model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
@@ -597,7 +598,7 @@ model_list:
     max_output_tokens: 32768
     mode: chat
     supports_function_calling: true
-    notes: 'forge-economy P1 (DeepSeek V4 Flash-0731): $0.14/$0.28 per MTok, 79% SWE-bench Verified. COST-FRONTIER default for high-volume inner loops. Post-topup 2026-09-13 verify PENDING.'
+    notes: 'forge-economy P1 (DeepSeek V4.1-Flash) — canonical name updated 2026-09-28. $0.15/$0.60 off-peak ($0.30/$1.20 peak) per MTok. COST-FRONTIER default for high-volume inner loops.'
 - model_name: forge-economy
   litellm_params:
     model: openai/qwen3.8-max
@@ -776,7 +777,7 @@ model_list:
     notes: 'forge-777 P4 (ZAI GLM-5.3): standard coding plan fallback.'
 - model_name: forge-777
   litellm_params:
-    model: openai/deepseek-v4-flash
+    model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 6
@@ -785,7 +786,7 @@ model_list:
     max_output_tokens: 32768
     mode: chat
     supports_function_calling: true
-    notes: 'forge-777 P5 (DeepSeek V4 Flash-0731): COST-FRONTIER default for high-volume inner loops. $0.14/$0.28 per MTok, 79% SWE-bench Verified. Post-topup 2026-09-13 — VERIFIED LIVE.'
+    notes: 'forge-777 P5 (DeepSeek V4.1-Flash): canonical name updated 2026-09-28. Cost-frontier default for high-volume inner loops. VERIFIED LIVE 2026-09-28 (direct chat canary 200, balance $19.99).'
 - model_name: forge-777
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
@@ -828,7 +829,7 @@ model_list:
 # Single-deployment aliases = effective chain share with forge-777.
 - model_name: opencode
   litellm_params:
-    model: openai/deepseek-v4-flash
+    model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
@@ -836,10 +837,10 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
-    notes: 'opencode alias compressed -> forge-777 chain via deepseek-v4-flash-0731.'
+    notes: 'opencode alias compressed -> forge-777 chain via deepseek-flash (V4.1 canonical, updated 2026-09-28).'
 - model_name: hermes-asi
   litellm_params:
-    model: openai/deepseek-v4-flash
+    model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 8
@@ -847,7 +848,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
-    notes: 'hermes-asi alias-compressed fast-path to deepseek-v4-flash — demoted 2026-09-21 F13 FI-008 from order=1 to break race with hermes-asi Block-2 qwen3.8-max (both were at order=1). Kept as last-resort-first before kimi-k3.'
+    notes: 'hermes-asi alias-compressed fast-path to deepseek-flash — demoted 2026-09-21 F13 FI-008 from order=1 to break race with hermes-asi Block-2 qwen3.8-max (both were at order=1). Name canonicalized 2026-09-28. Kept as last-resort-first before kimi-k3.'
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.8-max
@@ -1241,6 +1242,19 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
+- model_name: deepseek-flash
+  litellm_params:
+    model: openai/deepseek-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 0
+    mode: chat
+    notes: 'CANONICAL DeepSeek V4.1-Flash group (added 2026-09-28). Resolves the i-arif fallback-chain reference that previously returned "Invalid model name" (group was missing). V4.1 native multimodal, 1M ctx.'
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
 - model_name: MiniMax-M3.1-Flash-Preview
   litellm_params:
     model: openai/MiniMax-M3.1-Flash-Preview
@@ -1422,7 +1436,7 @@ model_list:
     max_output_tokens: 131072
   model_name: hermes-asi-vision
 - litellm_params:
-    model: deepseek/deepseek-v4-flash-vision-exp
+    model: deepseek/deepseek-flash
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 2
     max_input_tokens: 1048576
@@ -1432,7 +1446,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P2: DeepSeek V4 Flash Vision. Dedicated vision model, no content moderation.'
+    notes: 'P2: DeepSeek V4.1-Flash (canonical deepseek-flash; retired vision-exp alias replaced 2026-09-28). Native multimodal, no content moderation.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
@@ -2022,6 +2036,10 @@ router_settings:
     transcribe: fed/audio-asr
     fed/audio: fed/audio-tts
     sealion: fed/sealion
+    # 2026-09-28 deepseek canonicalization (migrated from the dead top-level block):
+    # legacy DeepSeek names are resolved here so internal callers never hard-fail.
+    deepseek-v4-flash-vision-exp: deepseek-v4-flash-vision
+    deepseek-v3.2: agi-333
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
@@ -2060,7 +2078,9 @@ general_settings:
       headers:
         Authorization: "Bearer os.environ/MIMO_TOKEN_PLAN_API_KEY"
 model_group_alias:
-  deepseek-v3.2: agi-333
+  # ⚠️ DEAD LOCATION (litellm 1.102): top-level model_group_alias is NOT loaded.
+  # Working map = router_settings.model_group_alias (above). Deepseek entries were
+  # migrated there 2026-09-28; remaining entries below are legacy, unmigrated.
   qwen3.8-27b: agi-333
   qwen3.8-2.4t-a95b: agi-333
   qwen-plus-latest: agi-333
