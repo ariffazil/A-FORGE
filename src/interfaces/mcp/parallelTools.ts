@@ -71,10 +71,11 @@ export const taskGroups = new Map<string, TaskGroup>();
 
 const A2A_BASE = process.env.AAA_A2A_URL || "http://127.0.0.1:3001";
 
-async function a2aCall(
+export async function a2aCall(
   method: string,
   params: Record<string, unknown>,
   timeoutMs: number = 10000,
+  baseUrl: string = A2A_BASE,
 ): Promise<{ ok: boolean; result?: unknown; error?: string }> {
   const payload = JSON.stringify({
     jsonrpc: "2.0",
@@ -87,11 +88,14 @@ async function a2aCall(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const res = await fetch(`${A2A_BASE}/a2a`, {
+    const res = await fetch(`${baseUrl}/a2a`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        // The AAA gateway fails closed without this: -32600 "A2A-Version header
+        // is required". An absent header is otherwise read as protocol 0.3.
+        "A2A-Version": "1.0",
       },
       body: payload,
       signal: controller.signal,
