@@ -1,3 +1,19 @@
+/**
+ * A2A non-ownership guard.
+ *
+ * History: this file used to assert the opposite — that A-FORGE served an A2A
+ * agent card, handled SendMessage and ran a task lifecycle. Those three tests
+ * went red in the June hexagonal reorg (f24b81cc) when the A2A surface moved to
+ * AAA as the sole gateway, and nobody noticed because the file is not in the
+ * `npm test` list. The tests were not the bug. The bug was that /contract and the
+ * startup banner kept advertising GET /.well-known/agent-card.json while the
+ * router had already removed it — a machine-readable bridge contract pointing at
+ * an endpoint that cannot answer.
+ *
+ * So these tests pin the boundary instead of the old behaviour: A-FORGE must not
+ * serve A2A, and must not claim to.
+ */
+
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
@@ -5,8 +21,9 @@ import type express from "express";
 import { createApp } from "../src/interfaces/server.js";
 import { shutdownPersonalOS } from "../src/application/personal-v2/index.js";
 
-
-function listenOnce(app: express.Express): Promise<{ url: string; close: () => Promise<void> }> {
+function listenOnce(
+  app: express.Express,
+): Promise<{ url: string; close: () => Promise<void> }> {
   return new Promise((resolve, reject) => {
     const server = createServer(app);
     server.on("error", reject);
@@ -15,180 +32,55 @@ function listenOnce(app: express.Express): Promise<{ url: string; close: () => P
       const port = typeof addr === "object" && addr ? addr.port : 0;
       resolve({
         url: `http://127.0.0.1:${port}`,
-        close: () => new Promise<void>((res) => {
-          if (typeof server.closeAllConnections === "function") {
-            server.closeAllConnections();
-          }
-          server.close(() => res());
-        }),
+        close: () =>
+          new Promise<void>((res) => {
+            if (typeof server.closeAllConnections === "function") {
+              server.closeAllConnections();
+            }
+            server.close(() => res());
+          }),
       });
     });
   });
 }
 
-test("A2A agent card exposes official 1.0 JSON-RPC interface", async () => {
+test("A-FORGE does not serve an A2A surface", async () => {
   const { url, close } = await listenOnce(createApp());
   try {
-    const response = await fetch(`${url}/.well-known/agent-card.json`);
-    assert.equal(response.status, 200);
-    const body = await response.json() as {
-      name: string;
-      supportedInterfaces: Array<{ url: string; protocolBinding: string; protocolVersion: string }>;
-      capabilities: { streaming?: boolean; pushNotifications?: boolean };
-    };
+    const card = await fetch(`${url}/.well-known/agent-card.json`);
+    assert.equal(card.status, 404, "card route must not exist — AAA :3001 is the sole gateway");
 
-    assert.equal(body.name, "arifOS Personal");
-    assert.equal(body.supportedInterfaces[0]?.protocolBinding, "JSONRPC");
-    assert.equal(body.supportedInterfaces[0]?.protocolVersion, "1.0");
-    assert.equal(body.supportedInterfaces[0]?.url, `${url}/a2a`);
-    assert.equal(body.capabilities.streaming, false);
-    assert.equal(body.capabilities.pushNotifications, false);
+    const a2a = await fetch(`${url}/a2a`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "A2A-Version": "1.0" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: "x", method: "SendMessage", params: {} }),
+    });
+    assert.equal(a2a.status, 404, "no A2A RPC host here");
   } finally {
     await close();
     await shutdownPersonalOS();
   }
 });
 
-test("A2A SendMessage returns a completed task and GetTask can retrieve it", async () => {
+test("the published bridge contract does not advertise an A2A card route", async () => {
   const { url, close } = await listenOnce(createApp());
   try {
-    const sendResponse = await fetch(`${url}/a2a`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "A2A-Version": "1.0",
-      },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: "send-1",
-        method: "SendMessage",
-        params: {
-          message: {
-            messageId: "msg-1",
-            role: "ROLE_USER",
-            parts: [
-              {
-                data: {
-                  command: "remember",
-                  what: "I prefer dark mode in all apps",
-                },
-                mediaType: "application/json",
-              },
-            ],
-          },
-          configuration: {
-            historyLength: 2,
-          },
-        },
-      }),
-    });
+    const res = await fetch(`${url}/contract`);
+    assert.equal(res.status, 200);
+    const body = (await res.json()) as { endpoints?: Record<string, string> };
+    assert.ok(body.endpoints, "/contract must still publish its endpoint map");
 
-    assert.equal(sendResponse.status, 200);
-    const sendBody = await sendResponse.json() as {
-      jsonrpc: string;
-      id: string;
-      result: {
-        id: string;
-        status: { state: string };
-        history?: Array<{ role: string }>;
-        artifacts?: Array<{ parts: Array<{ text?: string; data?: unknown }> }>;
-      };
-    };
-
-    assert.equal(sendBody.jsonrpc, "2.0");
-    assert.equal(sendBody.id, "send-1");
-    assert.equal(sendBody.result.status.state, "TASK_STATE_COMPLETED");
-    assert.equal(sendBody.result.history?.length, 2);
-    assert.ok(sendBody.result.artifacts?.[0]?.parts.some((part) => typeof part.text === "string"));
-
-    const getResponse = await fetch(`${url}/a2a`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "A2A-Version": "1.0",
-      },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: "get-1",
-        method: "GetTask",
-        params: {
-          id: sendBody.result.id,
-          historyLength: 1,
-        },
-      }),
-    });
-
-    assert.equal(getResponse.status, 200);
-    const getBody = await getResponse.json() as {
-      result: {
-        id: string;
-        history?: Array<{ role: string }>;
-      };
-    };
-    assert.equal(getBody.result.id, sendBody.result.id);
-    assert.equal(getBody.result.history?.length, 1);
-    assert.equal(getBody.result.history?.[0]?.role, "ROLE_AGENT");
-  } finally {
-    await close();
-    await shutdownPersonalOS();
-  }
-});
-
-test("A2A text requests default to think and completed tasks are not cancelable", async () => {
-  const { url, close } = await listenOnce(createApp());
-  try {
-    const sendResponse = await fetch(`${url}/a2a`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "A2A-Version": "1.0",
-      },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: "send-2",
-        method: "SendMessage",
-        params: {
-          message: {
-            messageId: "msg-2",
-            role: "ROLE_USER",
-            parts: [
-              {
-                text: "Compare React vs Vue for this project",
-                mediaType: "text/plain",
-              },
-            ],
-          },
-        },
-      }),
-    });
-
-    const sendBody = await sendResponse.json() as {
-      result: { id: string; metadata?: { arifos?: { command?: string } } };
-    };
-
-    assert.equal(sendBody.result.metadata?.arifos?.command, "think");
-
-    const cancelResponse = await fetch(`${url}/a2a`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "A2A-Version": "1.0",
-      },
-      body: JSON.stringify({
-        jsonrpc: "2.0",
-        id: "cancel-1",
-        method: "CancelTask",
-        params: {
-          id: sendBody.result.id,
-        },
-      }),
-    });
-
-    assert.equal(cancelResponse.status, 400);
-    const cancelBody = await cancelResponse.json() as {
-      error: { data?: { code?: string } };
-    };
-    assert.equal(cancelBody.error.data?.code, "TaskNotCancelableError");
+    // A listing that 404s is worse than no listing: a bridge reading this would
+    // negotiate an A2A handshake with us and time out.
+    const advertised = JSON.stringify(body.endpoints).toLowerCase();
+    assert.ok(
+      !advertised.includes("agent-card"),
+      `/contract still advertises an agent-card route: ${JSON.stringify(body.endpoints)}`,
+    );
+    assert.ok(
+      !/"[^"]*\/a2a/.test(advertised),
+      `/contract still advertises an /a2a path: ${JSON.stringify(body.endpoints)}`,
+    );
   } finally {
     await close();
     await shutdownPersonalOS();

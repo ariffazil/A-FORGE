@@ -896,8 +896,9 @@ app.get("/contract", (_req: Request, res: Response) => {
     endpoints: {
       GEOX_log_interpreter: "POST /GEOX/log_interpreter",
       GEOX_contract: "GET /GEOX/contract",
-      // a2a removed — AAA is sole A2A gateway,
-      a2a_agent_card: "GET /.well-known/agent-card.json",
+      // No A2A surface here: AAA is the sole A2A gateway (:3001). Listing a card
+      // route on /contract that the router answers 404 makes bridges negotiate
+      // against an endpoint that cannot exist.
       python_mcp: "GEOX-mcp:8081",
       bridge: "A-FORGE-bridge:7071",
       federation_probe: "GET /api/federation-probe",
@@ -1436,7 +1437,6 @@ export async function startServer(): Promise<void> {
     console.error(`    // /a2a removed — AAA is sole A2A gateway`);
     console.error(`    GET  /health         - Health check`);
     console.error(`    GET  /ready          - Readiness probe`);
-    console.error(`    GET  /.well-known/agent-card.json - A2A Agent Card`);
     console.error(`    GET  /operator/approvals - List approval tickets`);
     console.error(`    GET  /operator/vault      - Search vault seals`);
     console.error(`    GET  /jobs               - List all jobs 🆕`);
