@@ -1241,6 +1241,24 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
+- model_name: MiniMax-M3.1-Flash-Preview
+  litellm_params:
+    model: openai/MiniMax-M3.1-Flash-Preview
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_API_KEY
+    order: 0
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'Token Plan refresh 2026-09-28 (F13 Arif): MiniMax-M3.1-Flash-Preview — Token
+      Plan/MiniMax Code EXCLUSIVE. 1M ctx, multimodal in (text/image/video), agentic reasoning
+      + tool use. Thinking ALWAYS ON, default effort=max; tune via reasoning_effort=low|medium|high|xhigh|max
+      (OpenAI-compat) or output_config.effort (/anthropic wire); thinking returns in reasoning_content.
+      Verified live 2026-09-28 (333-AGI): HTTP 200 /v1/chat/completions + /anthropic/v1/messages
+      with sk-cp Token Plan key. Judge P1 seats remain MiniMax-M3 (F13-promoted 2026-09-21).'
 - model_name: MiniMax-M3
   litellm_params:
     model: openai/MiniMax-M3
@@ -1797,11 +1815,13 @@ router_settings:
   - i-arif:
     - deepseek-flash
     - mimo-v2.5
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - gemini-3.6-flash
     - glm-5.3-flash
   - agi-333:
     - deepseek-v4-flash
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - mimo-v2.5
     - glm-5.3-flash
@@ -1809,18 +1829,21 @@ router_settings:
     - gemini-3.6-flash
   - asi-555:
     - deepseek-v4-flash
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - mimo-v2.5
     - glm-5.3-flash
     - gemini-3.6-flash
   - apex-888:
     - deepseek-v4-flash
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - gemini-3.6-flash
     - glm-5.3-flash
     - qwen3.8-max
   - forge-777:
     - deepseek-v4-flash
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - mimo-v2.5
     - glm-5.3-flash
@@ -1830,19 +1853,23 @@ router_settings:
   # the forge-777 fallback graph. Each lane is a typed evidence-packet dispatch.
   - forge-scout:
     - mimo-v2.5-pro
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - gemini-3.6-flash
   - forge-scout-pro:
     - mimo-v2.5
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - gemini-3.6-flash
   - forge-builder:
     - glm-5.3
     - deepseek-v4-pro
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
   - forge-economy:
     - glm-5.3-flash
     - deepseek-v4-pro
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - mimo-v2.5
   - forge-judge:
@@ -1850,11 +1877,13 @@ router_settings:
     - gemini-3.6-flash
     - glm-5.3
   - forge-planner:
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - glm-5.3-flash
     - mimo-v2.5
   - openclaw:
     - deepseek-v4-flash
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - mimo-v2.5
     - glm-5.3-flash
@@ -1862,25 +1891,30 @@ router_settings:
   - opencode:
     - forge-777
     - deepseek-v4-flash
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - glm-5.3-flash
   - hermes-asi:
     - deepseek-v4-flash
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - mimo-v2.5
     - glm-5.3-flash
     - gemini-3.6-flash
   - qwen3.8-max:
     - mimo-v2.5
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - deepseek-v4-flash
     - gemini-3.6-flash
   - qwen3.6-plus:
     - mimo-v2.5
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - deepseek-v4-flash
   - mimo-v2.5-pro:
     - mimo-v2.5
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - gemini-3.6-flash
   # Added 2026-09-22: the v2.6 token-plan lanes had NO fallback group, so a TP 429
@@ -1888,9 +1922,11 @@ router_settings:
   # Repoint at the live PAYG lanes.
   - mimo-v2.6-pro:
     - mimo-v2.6-pro-payg
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
   - mimo-v2.6-flash:
     - mimo-v2.6-flash-payg
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
   # Added 2026-09-22 stabilization (FI-008): terminal groups for the PAYG lanes +
   # ultraspeed. mimo-platform balance telemetry read $0 / UltraSpeed fell off top-3;
@@ -1898,12 +1934,16 @@ router_settings:
   # the token-plan 429 above). Cascade: ultraspeed -> pro-payg -> MiniMax-M3.
   - mimo-v2.6-pro-ultraspeed:
     - mimo-v2.6-pro-payg
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
   - mimo-v2.6-pro-payg:
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
   - mimo-v2.6-flash-payg:
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
   - mimo-v2.5:
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - gemini-3.6-flash
     - glm-5.3
@@ -1917,9 +1957,15 @@ router_settings:
     - gemini-3.6-flash
   - glm-5.3:
     - mimo-v2.5
+    - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - gemini-3.6-flash
   - MiniMax-M3:
+    - mimo-v2.5
+    - gemini-3.6-flash
+    - deepseek-v4-flash
+  - MiniMax-M3.1-Flash-Preview:
+    - MiniMax-M3
     - mimo-v2.5
     - gemini-3.6-flash
     - deepseek-v4-flash
