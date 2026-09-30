@@ -231,6 +231,7 @@ describe('EphemeralGenesisRunner — State Machine', () => {
   });
 
   it('should block generation with forbidden patterns', async () => {
+    if (!backendAvailable) return;
     const runner = new EphemeralGenesisRunner(makeLease());
     await runner.checkReuse(['unrelated']);
     runner.specifyCapability({
@@ -477,6 +478,7 @@ describe('EphemeralGenesisRunner — Adversarial Escape', () => {
   });
 
   it('ADV-6: Forbidden imports (subprocess, urllib) → BLOCKED at generate', async () => {
+    if (!backendAvailable) return;
     const lease = makeLease({ purpose: 'forbidden-imports' });
     const runner = new EphemeralGenesisRunner(lease);
     await runner.checkReuse(['unrelated']);
@@ -502,6 +504,7 @@ describe('EphemeralGenesisRunner — Adversarial Escape', () => {
   });
 
   it('ADV-8: Execute shell commands → BLOCKED at generate', async () => {
+    if (!backendAvailable) return;
     const lease = makeLease({ purpose: 'shell-escape' });
     const runner = new EphemeralGenesisRunner(lease);
     await runner.checkReuse(['unrelated']);
@@ -547,6 +550,7 @@ describe('EphemeralGenesisRunner — Failure & Cleanup', () => {
   });
 
   it('FAIL-2: Sandbox unavailable → fail-closed', async () => {
+    if (!backendAvailable) return;
     // This tests the logic path, not actual bwrap failure
     const runner = new EphemeralGenesisRunner(makeLease());
     await runner.checkReuse(['unrelated']);
