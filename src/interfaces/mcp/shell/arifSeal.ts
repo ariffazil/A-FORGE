@@ -401,3 +401,32 @@ export function getDefaultArifSeal(): ArifSeal {
 export function setDefaultArifSeal(instance: ArifSeal): void {
   _defaultInstance = instance;
 }
+
+/**
+ * AUDIT FIX 2026-09-28 — pure, testable page reader for forge_shell_ledger.
+ * The live MCP path can deliver undefined for omitted optionals (zod
+ * .default() not applied pre-handler) — slice(undefined, NaN) silently
+ * returned ZERO entries while total_records reported 73. Offset is
+ * normalized here; malformed lines are skipped and counted instead of
+ * blanking the page (same family as the 2026-09-28 observer T0 fix).
+ */
+export function ledgerPageFromContent(
+  content: string,
+  offset: unknown,
+  limit: unknown,
+): { page: any[]; total: number; safeOffset: number; safeLimit: number; malformed: number[] } {
+  const safeLimit = Math.max(1, Math.min(Number.isFinite(limit as number) ? Math.floor(limit as number) : 10, 100));
+  const safeOffset = Number.isFinite(offset as number) && (offset as number) > 0 ? Math.floor(offset as number) : 0;
+  const lines = content.trim().split("\n").filter(Boolean).reverse();
+  const total = lines.length;
+  const malformed: number[] = [];
+  const page: any[] = [];
+  lines.slice(safeOffset, safeOffset + safeLimit).forEach((l, i) => {
+    try {
+      page.push(JSON.parse(l));
+    } catch {
+      malformed.push(safeOffset + i);
+    }
+  });
+  return { page, total, safeOffset, safeLimit, malformed };
+}

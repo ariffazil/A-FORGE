@@ -27,6 +27,13 @@
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { classifyCommand } from "./shell/arifJudge.js";
+// AUDIT FIX 2026-09-28: check mode must PREDICT the runtime, not an alternative
+// reality. mode=check previously returned only the policy-layer ALLOW, so an
+// unauthenticated simulation of a MUTATE-class call reported ALLOW while the
+// real pipeline answers SESSION_REQUIRED/HOLD — a false green light at plan time.
+// The composite now mirrors the serve.ts session gate for MUTATE-class tools.
+import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
+import { sessionExists } from "../../domain/session/sessionGate.js";
 
 import {
   getMcpPolicyGate,
@@ -90,8 +97,40 @@ export function registerPolicyTools(server: McpServer): void {
           tool_name,
           arguments: plannedArgs ?? {},
         });
+        // AUDIT FIX 2026-09-28 — composite runtime projection: the policy layer's
+        // ALLOW alone was a false green light for MUTATE-class tools, because the
+        // serve.ts session gate answers SESSION_REQUIRED/HOLD at execution for
+        // callers without a live session. check now predicts that too.
+        // Conservative by design: may HOLD where runtime would exempt via
+        // STATELESS_TOOLS — an agent retries with a session, never plans against
+        // an unpredicted block.
+        const composite: any = { ...verdict };
+        if (composite.verdict === "ALLOW") {
+          const modeHint = typeof (plannedArgs as any)?.mode === "string" ? (plannedArgs as any).mode : undefined;
+          const actionClass = classifyTool(tool_name, modeHint);
+          if (requiresGovernance(actionClass)) {
+            const sid = typeof (plannedArgs as any)?.session_id === "string" ? (plannedArgs as any).session_id : undefined;
+            const hasAct = !!(plannedArgs as any)?.session_token || !!(plannedArgs as any)?.sct || !!(plannedArgs as any)?.act;
+            const sessionKnown = sid ? sessionExists(sid) : false;
+            if (!sid || !sessionKnown) {
+              composite.policy_verdict = "ALLOW";
+              composite.verdict = "HOLD";
+              composite.reasons = [...(composite.reasons ?? []),
+                `RUNTIME_PROJECTION: ${actionClass} tool requires a live kernel session — execution would answer SESSION_REQUIRED`,
+              ];
+              composite.runtime_projection = {
+                runtime_verdict: "HOLD",
+                gate: "SESSION_REQUIRED",
+                action_class: actionClass,
+                session_supplied: !!sid,
+                session_known_locally: sessionKnown,
+                act_supplied: hasAct,
+              };
+            }
+          }
+        }
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(verdict, null, 2) }],
+          content: [{ type: "text" as const, text: JSON.stringify(composite, null, 2) }],
         };
       }
 

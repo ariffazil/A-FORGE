@@ -27,7 +27,7 @@ import { createHash } from "node:crypto";
 import { readFileSync, existsSync } from "node:fs";
 import { appendFile, mkdir } from "node:fs/promises";
 import { classifyCommand, type JudgeResult } from "./arifJudge.js";
-import { getDefaultArifSeal } from "./arifSeal.js";
+import { getDefaultArifSeal, ledgerPageFromContent } from "./arifSeal.js";
 import { emitFlowReceipt } from "../../../infrastructure/bridges/arifFlowBridge.js";
 import { checkModificationIntent, isGodelLocked } from "./godelLock.js";
 import { classifyShellCommand, type ActionClass } from "../../../domain/governance/execution-authority.js";
@@ -1469,14 +1469,14 @@ export function registerShellTools(server: McpServer): void {
     async ({ limit, offset, verify_chain }) => {
       const sealer = getDefaultArifSeal();
       const { readFile } = await import("node:fs/promises");
-      const safeLimit = Math.max(1, Math.min(limit, 100));
 
       try {
         await sealer.open();
         const content = await readFile(sealer["config"].ledgerPath, "utf-8").catch(() => "");
-        const lines = content.trim().split("\n").filter(Boolean).reverse();
-        const total = lines.length;
-        const page = lines.slice(offset, offset + safeLimit).map(l => JSON.parse(l));
+        // AUDIT FIX 2026-09-28: pure tested reader — omitted offset previously
+        // reached the handler as undefined and slice(undefined, NaN) returned
+        // ZERO entries while total_records showed the true count.
+        const { page, total, safeOffset, safeLimit, malformed } = ledgerPageFromContent(content, offset, limit);
 
         let chainStatus = { valid: true, errors: [] as string[], records: 0 };
         if (verify_chain) {
@@ -1492,8 +1492,9 @@ export function registerShellTools(server: McpServer): void {
               ledger_path: sealer["config"].ledgerPath,
               total_records: total,
               returned: page.length,
-              offset,
+              offset: safeOffset,
               limit: safeLimit,
+              malformed_lines_skipped: malformed.length,
               chain: {
                 valid: chainStatus.valid,
                 records: chainStatus.records,

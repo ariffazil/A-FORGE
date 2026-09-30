@@ -369,12 +369,21 @@ export function registerRuntimeVerifyTool(server: McpServer): void {
         block_execution: blockExecution,
       };
 
+      // AUDIT FIX 2026-09-28: isError:true on a correct DRIFT detection made the
+      // verdict-interceptor wrap the SUCCESSFUL detection as
+      // "forge_runtime_verify failed" (ERROR envelope) — indistinguishable from
+      // a crash, exactly the bug family the interceptor docs call out ("a
+      // refusal is not a fault"). Emit the domain status verbatim plus an
+      // envelope verdict the interceptor preserves; fail-closed semantics live
+      // in block_execution + HOLD, never in transport error.
+      const envelopeVerdict = blockExecution ? "HOLD" : (status === "MATCH" ? "SEAL" : "SABAR");
+
       return {
         content: [{
           type: "text" as const,
-          text: JSON.stringify(result, null, 2),
+          text: JSON.stringify({ ...result, verdict: envelopeVerdict }, null, 2),
         }],
-        isError: status === "DRIFT" && blockExecution,
+        isError: false,
       };
     }
   );

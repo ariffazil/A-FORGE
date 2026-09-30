@@ -91,7 +91,7 @@ def _synthesize(text: str) -> tuple[str, int]:
     t0 = time.monotonic()
     payload = json.dumps(
         {
-            "model": "i-arif",
+            "model": os.environ.get("FED_MODEL", "hermes-default"),
             "max_tokens": 2048,
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},

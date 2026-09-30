@@ -61,29 +61,19 @@ def action_send_file(p):
     result = resp.json()
     return {"message_id": result.get("result", {}).get("message_id"), "sent": result.get("ok", False)}
 
-def action_get_updates(p):
-    result = api_call("getUpdates", {
-        "limit": p.get("limit", 10),
-        "offset": p.get("offset"),
-    })
-    updates = result.get("result", [])
-    return {"count": len(updates), "updates": [
-        {"update_id": u["update_id"],
-         "message": u.get("message", {}).get("text", "")[:200]}
-        for u in updates
-    ]}
-
 def action_get_me(p):
     result = api_call("getMe", {})
     bot = result.get("result", {})
     return {"username": bot.get("username"), "id": bot.get("id"), "name": bot.get("first_name")}
 
+# H3 fix 2026-09-28 (telegram-hardening-audit): get_updates REMOVED — this bridge shares
+# @arifOS_bot token with forge-bot.service (sole legitimate poller). Any getUpdates call here
+# advances the shared offset and steals/drops forge-bot updates. Bridge is send-only by doctrine.
 ACTIONS = {
     "send_message": action_send_message,
     "edit_message": action_edit_message,
     "delete_message": action_delete_message,
     "send_file": action_send_file,
-    "get_updates": action_get_updates,
     "get_me": action_get_me,
 }
 

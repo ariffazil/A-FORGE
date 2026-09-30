@@ -262,6 +262,14 @@ const READONLY_GIT_MODES = new Set([
   "ls-files", "ls-remote", "reflog", "stash list",
 ]);
 
+// AUDIT FIX 2026-09-28 (D-06): read-only forge_docker observation modes.
+// Before this, forge_docker mode=ps was HELD because the whole tool card is
+// destructive=true — mode-blind gating, the same defect family as the
+// 2026-09-03 arif_seal four-layer mode-blindness scar. exec stays gated.
+const READONLY_DOCKER_MODES = new Set([
+  "ps", "logs", "images", "stats",
+]);
+
 /**
  * D-1 FIX (2026-08-15): Pure OBSERVE tool set — these tools NEVER mutate
  * state and consume no budget. The policy gate skips them entirely.
@@ -586,6 +594,24 @@ export class AThinkGuard {
             allowed: false,
             status: "HOLD",
             reason: "GOVERN mode: forge_git mutate mode requires human approval",
+            mode,
+            tool_name: toolName,
+            risk_label: card.risk_label,
+            requires_human_approval: true,
+          };
+        }
+      } else if (toolName === "forge_docker") {
+        // AUDIT FIX 2026-09-28 (D-06): ps/logs/images/stats are observation,
+        // not destruction. exec and unknown modes stay HOLD (container escape
+        // surface — inner classifier + session gate still apply).
+        const dockerMode = (userInput ?? "").trim().toLowerCase();
+        if (READONLY_DOCKER_MODES.has(dockerMode)) {
+          // Allow through — inner classifier handles container scope.
+        } else {
+          return {
+            allowed: false,
+            status: "HOLD",
+            reason: "GOVERN mode: forge_docker mutate mode requires human approval",
             mode,
             tool_name: toolName,
             risk_label: card.risk_label,

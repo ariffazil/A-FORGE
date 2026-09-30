@@ -2101,6 +2101,9 @@ tools:
 # Live on MCP wire + in live registry, missing from this catalogue. Rollback: git revert.
 
 - name: forge_cool_pattern
+  deprecated: true
+  retirement_reason: "Registration COMMENTED OUT in coolingVerbs.ts:294; merged direction: forge_cool verbs."
+  retirement_measured: "2026-09-28 FI-003 surface audit — /root/forge_work/2026-09-28-FI-003-aforge-surface-audit.md"
   purpose: "COOLING_RECEIPT verb=pattern — observed failure recurrence signal. Routes through seal_chain validateCooling to VAULT999. OBSERVE-only."
   affordance_class: probe
   capability_surface: aforge.vault.cool_pattern
@@ -2116,6 +2119,9 @@ tools:
   risk_label: R0
 
 - name: forge_docs_lookup
+  deprecated: true
+  retirement_reason: "Registration COMMENTED OUT in gatewayTools.ts:1680. Absent from live tools/list (2026-09-28)."
+  retirement_measured: "2026-09-28 FI-003 surface audit — /root/forge_work/2026-09-28-FI-003-aforge-surface-audit.md"
   purpose: "Context7 documentation lookup — governed library docs query. OBSERVE-only."
   affordance_class: probe
   capability_surface: aforge.research.docs_lookup
@@ -2131,6 +2137,9 @@ tools:
   risk_label: R0
 
 - name: forge_minimax_search
+  deprecated: true
+  retirement_reason: "REMOVED 2026-07-31 (serve.ts STATELESS_TOOLS note); registration commented out gatewayTools.ts:1802. Covered by Brave via forge_search."
+  retirement_measured: "2026-09-28 FI-003 surface audit — /root/forge_work/2026-09-28-FI-003-aforge-surface-audit.md"
   purpose: "MiniMax web search — governed external search lane. OBSERVE-only."
   affordance_class: probe
   capability_surface: aforge.research.minimax_search
@@ -2146,6 +2155,9 @@ tools:
   risk_label: R0
 
 - name: forge_proxy_call
+  deprecated: true
+  retirement_reason: "Registered ONLY in serveModern.ts — legacy twin module NOT imported by live serve chain (measured 2026-09-28)."
+  retirement_measured: "2026-09-28 FI-003 surface audit — /root/forge_work/2026-09-28-FI-003-aforge-surface-audit.md"
   purpose: "Governed proxy forwarder — future proxy actuator surface (mubeng/corp-proxy/tor lanes). Currently returns BLOCKED with reason. OBSERVE-only."
   affordance_class: probe
   capability_surface: aforge.research.proxy_call
@@ -2161,6 +2173,9 @@ tools:
   risk_label: R0
 
 - name: forge_research
+  deprecated: true
+  retirement_reason: "Registration COMMENTED OUT in src/interfaces/mcp/gatewayTools.ts:1657; line 687 note says REMOVED 2026-09-16 (redundant: forge_search source=research). Absent from live tools/list (measured 2026-09-28, 122)."
+  retirement_measured: "2026-09-28 FI-003 surface audit — /root/forge_work/2026-09-28-FI-003-aforge-surface-audit.md"
   purpose: "Unified governed research — Brave web + Context7 docs + deep synthesis with provenance and epistemic labels. OBSERVE-only."
   affordance_class: probe
   capability_surface: aforge.research.research
@@ -2176,6 +2191,9 @@ tools:
   risk_label: R0
 
 - name: forge_whoami
+  deprecated: true
+  retirement_reason: "Registered ONLY in serveModern.ts — legacy twin module NOT imported by live serve chain (measured 2026-09-28)."
+  retirement_measured: "2026-09-28 FI-003 surface audit — /root/forge_work/2026-09-28-FI-003-aforge-surface-audit.md"
   purpose: "Actor identity introspection — returns current ACT-bound actor, authority band, session. OBSERVE-only."
   affordance_class: probe
   capability_surface: aforge.identity.whoami
@@ -2202,6 +2220,9 @@ tools:
 #   - Irreversible (gmail send): ACK + WITNESS + capability membrane
 
 - name: forge_gmail
+  deprecated: true
+  retirement_reason: "Google-workspace module — implemented but unwired into live serve chain (measured 2026-09-28)."
+  retirement_measured: "2026-09-28 FI-003 surface audit — /root/forge_work/2026-09-28-FI-003-aforge-surface-audit.md"
   purpose: "Gmail read/search/label — read paths OBSERVE, send requires ACK + WITNESS + capability membrane."
   affordance_class: gated_io
   capability_surface: aforge.google_workspace.gmail
@@ -2217,6 +2238,9 @@ tools:
   risk_label: R3
 
 - name: forge_drive
+  deprecated: true
+  retirement_reason: "Google-workspace module — implemented but unwired into live serve chain (measured 2026-09-28)."
+  retirement_measured: "2026-09-28 FI-003 surface audit — /root/forge_work/2026-09-28-FI-003-aforge-surface-audit.md"
   purpose: "Google Drive list/read/upload — reads OBSERVE, uploads require lease + arif_judge SEAL."
   affordance_class: gated_io
   capability_surface: aforge.google_workspace.drive
@@ -2232,6 +2256,9 @@ tools:
   risk_label: R2
 
 - name: forge_sheets
+  deprecated: true
+  retirement_reason: "Google-workspace module — implemented but unwired into live serve chain (measured 2026-09-28)."
+  retirement_measured: "2026-09-28 FI-003 surface audit — /root/forge_work/2026-09-28-FI-003-aforge-surface-audit.md"
   purpose: "Google Sheets read/write — reads OBSERVE, writes require lease."
   affordance_class: gated_io
   capability_surface: aforge.google_workspace.sheets
@@ -2247,6 +2274,9 @@ tools:
   risk_label: R2
 
 - name: forge_calendar
+  deprecated: true
+  retirement_reason: "Implemented in capabilities/google-workspace registerGoogleWorkspaceTools() but NOT wired into live serve chain (no call site in serve.ts; measured absent from tools/list 2026-09-28)."
+  retirement_measured: "2026-09-28 FI-003 surface audit — /root/forge_work/2026-09-28-FI-003-aforge-surface-audit.md"
   purpose: "Google Calendar list/read/create events — reads OBSERVE, event create requires lease."
   affordance_class: gated_io
   capability_surface: aforge.google_workspace.calendar

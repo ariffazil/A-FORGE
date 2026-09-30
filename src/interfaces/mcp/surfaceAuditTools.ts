@@ -96,7 +96,7 @@ type AffordanceEntry = {
 };
 
 type DriftFinding = {
-  type: "PHANTOM" | "MISSING" | "DESCRIPTION_DRIFT" | "RISK_DRIFT" | "ALIAS_GHOST" | "DEPRECATED_DOC";
+  type: "PHANTOM" | "MISSING" | "DESCRIPTION_DRIFT" | "RISK_DRIFT" | "ALIAS_GHOST" | "DEPRECATED_DOC" | "UNVERIFIABLE";
   severity: "LOW" | "MEDIUM" | "HIGH";
   tool_name: string;
   detail: string;
@@ -112,6 +112,10 @@ type DriftReport = {
   findings: DriftFinding[];
   is_clean: boolean;
   recommendation: string;
+  // AUDIT FIX 2026-09-28 (D-01): name the SOURCE of the registry side so a
+  // report can never again imply "live" where the truth is "declared self".
+  registry_source?: "live_mcp_registry" | "dist_text_scan_fallback" | "declared_self";
+  verification_level?: "LIVE" | "DECLARED_SELF_ONLY";
 };
 
 /**
@@ -127,7 +131,7 @@ async function parseAffordances(path: string): Promise<AffordanceEntry[]> {
 /**
  * Compute the drift report between the registry and affordances.
  */
-async function auditSurface(
+export async function auditSurface(
   affordancePath: string,
   registryTools: string[],
   organ: string,
@@ -136,6 +140,30 @@ async function auditSurface(
   const affordanceTools = await parseAffordances(affordancePath);
   const affordanceNames = new Set(affordanceTools.map((t) => t.name));
   const registrySet = new Set(registryTools);
+
+  // AUDIT FIX 2026-09-28 (D-01) — VOID-GUARD / epistemic breach.
+  // "Evidence absent" was being rendered as "CLEAN". If BOTH sides of the
+  // comparison are empty (e.g. the organ's SOT uses a schema this parser
+  // cannot read, and the live-surface fallback glob failed), 0==0 produced
+  // a false PASS. No-data must classify as UNVERIFIABLE, never as integrity.
+  if (affordanceTools.length === 0 && registryTools.length === 0) {
+    return {
+      organ,
+      affordance_path: affordancePath,
+      registry_tools: 0,
+      affordance_tools: 0,
+      drift_count: 1,
+      findings: [{
+        type: "UNVERIFIABLE",
+        severity: "HIGH",
+        tool_name: "(whole surface)",
+        detail: `Both sides parsed to 0 tools — affordance parse yielded no 'tools:' entries and the registry side is empty. This is a measurement gap (likely schema mismatch: expected top-level 'tools:' list), NOT evidence of a clean surface.`,
+        suggestion: `Check whether ${affordancePath} uses a different top-level key than 'tools:'. Extend parseAffordances for this organ's schema, or wire the live MCP tools/list for ${organ}.`,
+      }],
+      is_clean: false,
+      recommendation: `UNVERIFIABLE — ${organ}: cannot certify integrity from absent evidence. Treat as UNKNOWN, not PASS.`,
+    };
+  }
 
   // PHANTOM entries: in affordance but NOT in registry
   for (const aff of affordanceTools) {
@@ -287,25 +315,43 @@ export function registerSurfaceAuditTools(server: McpServer): void {
         }
 
         let allRegistryTools: string[];
+        let registrySource: "live_mcp_registry" | "dist_text_scan_fallback" | "declared_self";
         if (org === "aforge") {
-          // Get registry tools from the live forge_registry
-          const registry = await queryRegistry();
-          const registryToolNames = registry.tools
-            .filter((t) => t.status === "REGISTERED" || t.status === "PENDING_REVIEW")
-            .map((t) => t.tool_name);
-
-          // B3 FIX: Aggregate from LIVE MCP module surface (per Representation
-          // Layer Integrity doctrine). Replaces the stale hardcoded knownForgeTools
-          // list that was producing 50+ phantom false positives.
-          const liveSurfaceTools = await scanLiveMcpSurface();
-          allRegistryTools = [...new Set([...registryToolNames, ...liveSurfaceTools])].sort();
+          // AUDIT FIX 2026-09-28 (D-01): the TRUTH of the surface is the live
+          // in-process MCP registry, not a text scan of dist/. The old union
+          // counted commented-out server.tool() lines and dead modules
+          // (serveModern, unwired google-workspace) as "registry" — so
+          // affordances-vs-that-union compared declared against declared and
+          // reported phantom entries as clean. _registeredTools is the same
+          // handle the verdict-interceptor installs on.
+          const liveRegistry: string[] = Object.keys(((server as any)?._registeredTools as object) ?? {});
+          if (liveRegistry.length > 0) {
+            allRegistryTools = [...new Set(liveRegistry)].sort();
+            registrySource = "live_mcp_registry";
+          } else {
+            // Fallback for contexts without an attached server (unit tests):
+            // keep the previous registry-query ∪ dist-scan union, labelled honestly.
+            const registry = await queryRegistry();
+            const registryToolNames = registry.tools
+              .filter((t) => t.status === "REGISTERED" || t.status === "PENDING_REVIEW")
+              .map((t) => t.tool_name);
+            const liveSurfaceTools = await scanLiveMcpSurface();
+            allRegistryTools = [...new Set([...registryToolNames, ...liveSurfaceTools])].sort();
+            registrySource = "dist_text_scan_fallback";
+          }
         } else {
           // For federation organs, parse tools from the canonical tools_sot.yaml manifest
           const organAffordances = await parseAffordances(affPath);
           allRegistryTools = organAffordances.map((t) => t.name).sort();
+          registrySource = "declared_self";
         }
 
         const report = await auditSurface(affPath, allRegistryTools, org);
+        report.registry_source = registrySource;
+        report.verification_level = registrySource === "declared_self" ? "DECLARED_SELF_ONLY" : "LIVE";
+        if (registrySource === "declared_self") {
+          report.recommendation = `DECLARED-SELF: ${org} audit compared its SOT file against itself — internal consistency only, live MCP surface parity NOT verified. ` + report.recommendation;
+        }
         results.push(report);
       }
 

@@ -219,7 +219,7 @@ for t in state["transitions"]:
                 "http://127.0.0.1:4000/v1/chat/completions",
                 mk,
                 {
-                    "model": "i-arif",
+                    "model": os.environ.get("FED_MODEL", "hermes-default"),
                     "messages": [{"role": "user", "content": "Reply with exactly: OK"}],
                     "max_tokens": 8,
                 },

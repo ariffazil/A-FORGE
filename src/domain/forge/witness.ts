@@ -211,7 +211,13 @@ export async function evaluateWitness(opts: WitnessOptions): Promise<WitnessVerd
 
   // Step 3: Check for synthetic human attestation
   // F6 MARUAH: Human channel requires explicit human attestation
-  if (bundle.human.source.match(/^(ai|llm|model|agent|bot|synthetic|auto)/i)) {
+  // AUDIT FIX 2026-09-28: the live MCP path can deliver source=undefined for
+  // omitted optionals (zod .default() not applied pre-handler) — crashed with
+  // "Cannot read properties of undefined (reading 'match')". Absent provenance
+  // is already flagged by validateChannel; guard the regex, never invent a
+  // default source.
+  const humanSource = bundle.human.source ?? "";
+  if (humanSource.match(/^(ai|llm|model|agent|bot|synthetic|auto)/i)) {
     rationale.push("⚠️ F6 MARUAH: Human channel source appears synthetic — cannot proxy human attestation");
     hConf = Math.min(hConf, 0.3); // cap synthetic human confidence
   }

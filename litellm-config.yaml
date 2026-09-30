@@ -171,7 +171,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     notes: "apex-888 P97 (legacy qwen3.7-max ariffazil Standard seat): documented 2026-09-21 F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover."
-- model_name: i-arif
+- model_name: hermes-default
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
@@ -189,7 +189,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-- model_name: i-arif
+- model_name: hermes-default
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
@@ -205,7 +205,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-- model_name: i-arif
+- model_name: hermes-default
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://opencode.ai/zen/go/v1
@@ -223,7 +223,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-- model_name: i-arif
+- model_name: hermes-default
   litellm_params:
     model: gemini/gemini-3.6-flash
     api_key: os.environ/GEMINI_API_KEY
@@ -246,7 +246,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 65536
     mode: chat
-- model_name: i-arif
+- model_name: hermes-default
   litellm_params:
     model: openai/mimo-v2.5
     api_base: os.environ/MIMO_BASE_URL
@@ -262,7 +262,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-- model_name: i-arif
+- model_name: hermes-default
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
@@ -278,7 +278,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-- model_name: i-arif
+- model_name: hermes-default
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
@@ -299,7 +299,7 @@ model_list:
 # Evidence: HTTP 200 on live probe, tool_calls verified (finish=tool_calls, args correct),
 # vision verified (image_tokens=9, correct colour). Token-plan lane is 429-dead incl. its
 # 0-credit TTS path => PAYG (sk- platform key) is the only live MiMo lane today.
-- model_name: i-arif
+- model_name: hermes-default
   litellm_params:
     model: openai/mimo-v2.6-pro-payg
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
@@ -2040,6 +2040,8 @@ router_settings:
     # legacy DeepSeek names are resolved here so internal callers never hard-fail.
     deepseek-v4-flash-vision-exp: deepseek-v4-flash-vision
     deepseek-v3.2: agi-333
+    # 2026-09-29 kimi-code/FI-008: qwen-coder alias to restore _llm_available for arif_think
+    qwen-coder: qwen3.6-plus
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
@@ -2119,3 +2121,7 @@ model_group_alias:
   transcribe: fed/audio-asr
   fed/audio: fed/audio-tts
   sealion: fed/sealion
+  # === 2026-09-29 kimi-code/FI-008 — added for hermes-asi / arif_think ===
+  # Q-A path: qwen-coder alias to restore _llm_available for arif_think
+  # Was missing in model_list, blocking reasoning from cascading
+  qwen-coder: qwen3.6-plus
