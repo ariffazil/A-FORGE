@@ -80,6 +80,10 @@ jobs:
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
         with:
+          # Bundle all dist files into a single attestation subject — dist/
+          # exceeds the 1024-subject-per-attestation limit set by
+          # actions/attest-build-provenance@v4 (>1092 files).
+          subject-name: "${{ inputs.organ }}-dist"
           subject-path: ${{ inputs.artifact_path }}
 
       - name: Attest SBOM
