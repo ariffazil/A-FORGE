@@ -10,6 +10,11 @@
 
 A-FORGE is the **Execution Plane** of the arifOS federation. It governs mutation after authorization. It never adjudicates, never self-authorizes, never witnesses.
 
+```yaml
+role: EXECUTIVE
+layer: L2
+```
+
 For the full federation architecture, planes, organ taxonomy, and boundary classification, see the canonical source above.
 
 ---
