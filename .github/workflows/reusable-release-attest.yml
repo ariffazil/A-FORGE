@@ -76,15 +76,32 @@ jobs:
           path: sbom-${{ inputs.organ }}.spdx.json
           retention-days: 90
 
+      # ═══ BUNDLE DIST INTO SINGLE TARBALL ═══
+      # A-FORGE's dist/ contains ~1092 files; the action limit is 1024
+      # subjects per attestation. Package to a single tar.gz so we attest
+      # one artifact, not 1092 individual files.
+      - name: Bundle dist into single artifact
+        run: |
+          set -euo pipefail
+          tar czf "${{ inputs.organ }}-dist.tar.gz" ${{ inputs.artifact_path }}
+          ls -la "${{ inputs.organ }}-dist.tar.gz"
+
+      - name: Upload dist tarball
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-${{ inputs.organ }}-${{ github.sha }}
+          path: ${{ inputs.organ }}-dist.tar.gz
+          retention-days: 90
+
       # ═══ ARTIFACT ATTESTATION ═══
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
         with:
-          # Bundle all dist files into a single attestation subject — dist/
+          # Attest to the bundled tarball as a single subject — dist/
           # exceeds the 1024-subject-per-attestation limit set by
           # actions/attest-build-provenance@v4 (>1092 files).
           subject-name: "${{ inputs.organ }}-dist"
-          subject-path: ${{ inputs.artifact_path }}
+          subject-path: ${{ inputs.organ }}-dist.tar.gz
 
       - name: Attest SBOM
         uses: actions/attest-sbom@v4
