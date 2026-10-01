@@ -273,29 +273,30 @@ const ELICITATION_GATE_TOOLS = new Set([
   "forge_vault",          // write/seal modes
   "forge_postgres",       // mutate mode
   "forge_docker",         // destructive container ops
-  "forge_lease",          // lease changes
-  "forge_git",            // push/commit/mutate
-  "forge_github_create",  // PR/issue/file creation
+  "forge_lease",          // lease changes (mode-aware: status/list stay ungated)
+  "forge_git",            // push/commit/mutate (mode-aware: status/diff/log stay ungated)
   "forge_ephemeral",      // P0.6 — capability metabolism (generate/invoke/retire)
+  // 2026-10-01 ABI fix: was "forge_github_create" — a name that exists on no
+  // live surface, so the Set lookup never matched and GitHub writes skipped
+  // this gate entirely. The two real write tools are named explicitly;
+  // forge_github_get_file stays ungated (OBSERVE).
+  "forge_github_create_issue",
+  "forge_github_create_or_update_file",
 ]);
 
 /** UUID v4 generator for elicitation IDs */
 function genElicitationId(): string {
-  const hex = "0123456789abcdef";
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = Math.random() * 16 | 0;
     return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
   });
 }
 
-/** Tool names that ALWAYS get bypass regardless of caller (OBSERVE tools) */
-const ELICITATION_BYPASS_READ = new Set([
-  "forge_filesystem",  // has read/write modes — checked at mode level
-  "forge_postgres",    // has read/write modes — checked at mode level
-  "forge_vault",       // has read/write modes — checked at mode level
-  "forge_shell",       // has read/write — checked via ArifJudge classifyCommand
-  "forge_docker",      // has read/write modes — ps/logs/images=read, exec=mutate
-]);
+// NOTE: ELICITATION_BYPASS_READ was removed 2026-10-01. It was declared but
+// never read by any code path — a second, hand-maintained read/mode table
+// duplicating what isMutateOperation() now takes from the single mode-aware
+// source of truth, classifyTool(). A governance table with no consumer is
+// entropy, not governance.
 
 /**
  * Check if a tool call is coming from an "external client" that needs elicitation.
@@ -338,50 +339,36 @@ function isExternalClient(args: any, extra?: any): { external: boolean; reason?:
  * Some tools have both read and write modes (forge_filesystem, forge_postgres).
  */
 function isMutateOperation(toolName: string, args: any): boolean {
-  // Tools that are always MUTATE
-  if (toolName !== "forge_filesystem" && toolName !== "forge_postgres" &&
-      toolName !== "forge_vault" && toolName !== "forge_docker" &&
-      toolName !== "forge_shell" && toolName !== "forge_ephemeral") {
-    return true;
-  }
+  const mode = typeof args?.mode === "string" ? args.mode : undefined;
 
-  // Mode-based MUTATE detection
-  const mode = args?.mode;
-  if (toolName === "forge_filesystem" && (mode === "write" || mode === "delete" || mode === "remove")) {
-    return true;
-  }
-  if (toolName === "forge_postgres" && args?.mutate === true) {
-    return true;
-  }
-  if (toolName === "forge_vault" && (mode === "write" || mode === "receipt" || mode === "seal" || mode === "delete")) {
-    return true;
-  }
-  if (toolName === "forge_docker") {
-    // forge_docker mode enum: ps|logs|exec|images
-    // exec runs arbitrary commands inside containers — always MUTATE
-    // ps, logs, images — read-only observation
-    if (mode === "exec") return true;
-    return false;
-  }
-  // forge_ephemeral: inspect_gap/list_templates/list_active = OBSERVE; generate/invoke/retire etc = MUTATE
-  if (toolName === "forge_ephemeral") {
-    if (mode && ["inspect_gap", "list_templates", "list_active"].includes(mode)) return false;
-    return true;
-  }
+  // ── Arg-level exceptions the mode-aware classifier cannot see ──────────
+  // forge_postgres: mode=query classifies OBSERVE, but mutate=true escalates.
+  if (toolName === "forge_postgres" && args?.mutate === true) return true;
 
-  // forge_shell: check actual command via ArifJudge
-  // Read-only commands (echo, cat, ps, free, df, etc.) are NOT mutate
+  // forge_shell: risk lives in the command string, not in a mode.
   if (toolName === "forge_shell" && args?.command) {
-    const judge = classifyCommand(args.command);
-    // ALLOW with OBSERVE or EXECUTE_REVERSIBLE = read-only safe command
-    if (judge.decision === "allow") {
-      return false;
-    }
+    // ALLOW = read-only safe command (echo, cat, ps, free, df, …)
     // GATE or DENY = risky command, needs elicitation
-    return true;
+    return classifyCommand(args.command).decision !== "allow";
   }
 
-  return false;
+  // ── Single source of truth ──────────────────────────────────────────────
+  // classifyTool() is already mode-aware and already owns this decision:
+  //   forge_lease    status/list=OBSERVE   request/revoke=EXECUTE_REVERSIBLE
+  //   forge_git      status/diff/log=OBSERVE  commit=EXECUTE_REVERSIBLE
+  //   forge_docker   ps/logs/images=OBSERVE   exec=EXECUTE_REVERSIBLE
+  //   forge_vault    read/list=OBSERVE        write/seal=EXECUTE_REVERSIBLE
+  //   forge_compose  status/analyze=OBSERVE   execute/cancel=EXECUTE_REVERSIBLE
+  //   forge_ephemeral inspect_gap/list_*=OBSERVE  generate/invoke/retire=EXEC
+  // It also fails CLOSED: an unclassified tool returns IRREVERSIBLE, so an
+  // unknown gated tool still demands confirmation.
+  //
+  // This replaces a second, hand-maintained name allowlist that had to be
+  // extended every time a union tool was added to ELICITATION_GATE_TOOLS.
+  // That list lagged the live surface, so read-only modes of forge_lease and
+  // forge_git were gated on human confirmation while the writes they guard
+  // were classified correctly elsewhere. One table, not two.
+  return requiresGovernance(classifyTool(toolName, mode));
 }
 
 /**

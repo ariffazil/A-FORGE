@@ -329,7 +329,11 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     }
   }
   
-  const body = transformArgs(toolName, argsRecord);
+  // Keyed on canonicalTool, not toolName: a legacy verb that TOOL_NAME_MAP
+  // resolves to arif_judge must still receive arif_judge's argument envelope.
+  // Keying on the raw name silently skipped the transform for every mapped
+  // verb, so the callee existed but was handed the wrong shape.
+  const body = transformArgs(canonicalTool, argsRecord);
 
   // Wrap in JSON-RPC 2.0 envelope for MCP protocol compliance
   const jsonRpcPayload = {
@@ -416,10 +420,24 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     let parsed: Record<string, unknown>;
     try { parsed = JSON.parse(errorText); } catch { parsed = { error: errorText }; }
     const errorMsg = (parsed.error as string) ?? (parsed.message as string) ?? errorText.slice(0, 300);
+    // ── ABI drift ≠ organ outage ───────────────────────────────────────────
+    // "Unknown tool" proves the organ ANSWERED — it is reachable — but this
+    // build called a verb that is not on its live surface. Labelling that
+    // ORGAN_UNREACHABLE sends the next agent to restart a healthy kernel
+    // instead of fixing one string. Measured 2026-10-01: arif_heart_critique
+    // reported "Cannot reach arifOS … Ensure arifOS kernel is running on port
+    // 8088" while :8088 was serving all 8 canonical verbs.
+    const isAbiDrift = /unknown tool|no such tool|tool not found|not a valid tool|invalid tool/i.test(errorMsg);
+    const renamed = toolName !== canonicalTool ? ` (mapped from legacy "${toolName}")` : "";
     const err = new Error(
-      `MCP Bridge: Kernel error for ${canonicalTool}. ${errorMsg}`,
+      isAbiDrift
+        ? `MCP Bridge: ABI_DRIFT — "${namespace}.${canonicalTool}"${renamed} is not on the live ` +
+          `${namespace} surface. The organ responded, so it is REACHABLE; the callee renamed or ` +
+          `retired this verb. Fix: add the canonical target to TOOL_NAME_MAP in ` +
+          `src/domain/types/mcp-bridge.ts, or update the call site. Downstream: ${errorMsg}`
+        : `MCP Bridge: Kernel error for ${canonicalTool}. ${errorMsg}`,
     ) as Error & { error_code: string; source_layer: string; downstream_error: string; payload: Record<string, unknown> };
-    err.error_code = (parsed.error_code as string) ?? "TOOL_ERROR";
+    err.error_code = isAbiDrift ? "ABI_DRIFT" : ((parsed.error_code as string) ?? "TOOL_ERROR");
     err.source_layer = `A-FORGE::BRIDGE::${namespace.toUpperCase()}`;
     err.downstream_error = errorMsg;
     err.payload = parsed;
@@ -462,5 +480,5 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     throw err;
   }
 
-  return transformResponse(toolName, resultObj);
+  return transformResponse(canonicalTool, resultObj);
 }

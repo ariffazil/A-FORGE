@@ -1671,17 +1671,30 @@ const heartHandler = async ({ task }: { task: string }) => {
     await telemetrySuccess("forge_heart_critique", startedAt);
     return result;
   } catch (err) {
-    // arifOS unreachable — refuse to adjudicate locally.
-    // A-FORGE is an execution shell, not a constitutional judge.
+    // Refuse to adjudicate locally — A-FORGE is an execution shell, not a
+    // constitutional judge. Fail-closed verdict is unchanged; only the
+    // ATTRIBUTION is corrected. Hardcoding ARIFOS_UNREACHABLE here told every
+    // caller to restart a kernel that had in fact answered (measured
+    // 2026-10-01: arif_judge returned a pydantic validation error and the
+    // envelope still said "Ensure arifOS kernel is running on port 8088").
+    const code = (err as { error_code?: string })?.error_code;
+    const gate =
+      code === "ABI_DRIFT" ? "ABI_DRIFT"
+      : code === "SESSION_REQUIRED" ? "SESSION_REQUIRED"
+      : code === "KERNEL_HOLD" ? "KERNEL_HOLD"
+      : code === "TOOL_ERROR" ? "KERNEL_REJECTED_CALL"
+      : "ARIFOS_UNREACHABLE";
     const result = {
       content: [{
         type: "text" as const,
         text: JSON.stringify({
           overall: "HOLD",
           blocked: true,
-          gate: "ARIFOS_UNREACHABLE",
+          gate,
           error: err instanceof Error ? err.message : String(err),
-          message: "Cannot reach arifOS 666 HEART pipeline. A-FORGE refuses to adjudicate constitutional floors locally. Ensure arifOS kernel is running on port 8088.",
+          message: gate === "ARIFOS_UNREACHABLE"
+            ? "Cannot reach arifOS 666 HEART pipeline. A-FORGE refuses to adjudicate constitutional floors locally. Ensure arifOS kernel is running on port 8088."
+            : `arifOS ANSWERED — this is not a kernel outage, do not restart it. The 666 HEART delegation was refused at ${gate}. A-FORGE refuses to adjudicate constitutional floors locally.`,
         }, null, 2),
       }],
       isError: true,
@@ -2516,7 +2529,14 @@ server.tool("forge_wealth", "Route to WEALTH capital intelligence organ. Modes: 
   toolArgs.actor_id = inboundActorId;
   if (inboundSessionId) toolArgs.session_id = inboundSessionId;
   if (inboundTraceId) toolArgs.trace_id = inboundTraceId;
-  toolArgs.caller_service = inboundCallerService;
+  // caller_service is NOT mirrored into tool args. WEALTH's FastMCP tools
+  // declare strict pydantic schemas, so an undeclared kwarg fails the whole
+  // call: capital_primitive rejected caller_service='aforge' with
+  // "Unexpected keyword argument" — every forge_wealth mode died at argument
+  // validation before any computation. The dual-identity intent is preserved
+  // by the X-ArifOS-Caller-Service header below, which is the channel WEALTH's
+  // stateful_middleware actually extracts. Header carries identity; args carry
+  // only what the callee's schema declares.
 
   // Build bridge HTTP headers so WEALTH stateful_middleware can extract the
   // envelope and authorize() can validate the bearer.
