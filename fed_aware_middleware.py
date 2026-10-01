@@ -324,14 +324,14 @@ def _fed_413_guard(body: dict[str, Any], body_bytes_len: int, model: str) -> boo
         return False  # nothing droppable (single mega-message: agent-side duty)
     dropped = len(msgs) - len(system_msgs) - len(tail)
     note = {
-        "role": "system",
+        "role": "user",
         "content": (
-            f"[fed-guard] {dropped} older messages truncated to fit provider "
-            f"request cap (scar 6eaeb7e1 — unbounded accumulation). "
+            f"[fed-guard-note] {dropped} older messages truncated to fit "
+            f"provider request cap (scar 6eaeb7e1 — unbounded accumulation). "
             f"Session memory preserved; no reset."
         ),
     }
-    body["messages"] = system_msgs + [note] + tail
+    body["messages"] = system_msgs + tail + [note]
     sys.stderr.write(
         f"[fed-aware-middleware] 413-guard: model={model} bytes={body_bytes_len} "
         f"dropped={dropped} kept_sys={len(system_msgs)} "
