@@ -7,12 +7,13 @@
  * DITEMPA BUKAN DIBERI — Forged, Not Given
  */
 
-export type MCPNamespace = "arifos" | "wealth" | "geox";
+export type MCPNamespace = "arifos" | "wealth" | "geox" | "well";
 
 export interface MCPBridgeConfig {
   arifos: string;
   wealth: string;
   geox: string;
+  well?: string;
 }
 
 export interface MCPBridgeResponse {
@@ -67,6 +68,12 @@ export const NAMESPACE_DEFAULTS: Record<MCPNamespace, { env: string; default: st
   arifos: { env: "ARIFOS_MCP_URL", default: "http://localhost:8088" },
   wealth: { env: "WEALTH_MCP_URL", default: "http://localhost:18082" },
   geox: { env: "GEOX_MCP_URL", default: "http://localhost:8081" },
+  // S6 (2026-10-01): WELL was called as "well_mcp.well_assess_homeostasis"
+  // (core.ts) and via callOrganAdapter's well_mcp branch (forgeTools.ts:2201),
+  // but no namespace entry existed — parseToolName() threw "Unknown namespace"
+  // before any request was sent, so the call could never succeed. WELL is live
+  // on :18083 and exposes well_assess_homeostasis (verified: 40 tools).
+  well: { env: "WELL_MCP_URL", default: "http://localhost:18083" },
 };
 
 /**

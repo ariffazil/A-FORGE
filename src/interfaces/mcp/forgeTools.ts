@@ -2240,19 +2240,49 @@ export function registerPredictTools(server: McpServer): void {
 
       let result: any;
       try {
+        // ── Canonical organ surface (S6, F13 order 2026-10-01) ───────────────
+        // Measured live: WEALTH exposes capital_* / wealth_* only. The verbs
+        // this block called (wealth_monte_carlo_simulate, wealth_compute_emv,
+        // wealth_wisdom_evaluate, geox_bridge) exist on no live surface, so
+        // every forge_predict path died with "Unknown tool" and was reported as
+        // an organ outage. Replacements are probe-verified, not guessed:
+        //   capital_primitive mode enum, returned by WEALTH itself:
+        //     npv|irr|emv|evoi|mc|kelly|markowitz|robust|chance_constrained|
+        //     two_stage|reward_design   ← monte-carlo is "mc"
+        //   verified compute: emv([100,50,-20]@[.3,.5,.2]) = 51;
+        //     mc(100,.05,.2,5 periods,200 sims) → p10..p90, reliable=true
+        //   wisdom → wealth_judge_handoff(mode="prepare"), the same canonical
+        //     target forge_wealth already uses (core.ts toolMap).
+        // GEOX enforces Federation Contract §7: JUDGMENT-lane tools reject
+        // direct calls (LANE_ENFORCEMENT verdict=HOLD), so GEOX is reached via
+        // the kernel bridge — arif_route(mode="bridge", organ, organ_tool,
+        // arguments), verified live: status=routed, port 8081. arif_route
+        // declares additionalProperties:false, so it receives ONLY its own
+        // declared params — no trace_id, no governance fields.
         if (domain === "geox") {
           const m = mode || "prospect_evaluate";
-          result = await callMCP("geox_mcp.geox_bridge", { mode: m, arguments: { proposed_action, ...(params as any) }, ...callBase });
+          result = await callMCP("arifos.arif_route", {
+            mode: "bridge",
+            organ: "geox",
+            organ_tool: "geox_prospect",
+            arguments: {
+              mode: m === "prospect_evaluate" ? "evaluate" : m,
+              proposed_action,
+              ...(params as any),
+            },
+            actor_id: actor_id ?? "forge_predict",
+            ...(session_id ? { session_id } : {}),
+          });
         } else {
           const m = (mode || "wisdom").toLowerCase();
           if (m.includes("monte")) {
             const p = params as any;
-            result = await callMCP("wealth_mcp.wealth_monte_carlo_simulate", { initial_value: p.initial_value ?? 100, growth_rate: p.growth_rate ?? 0.05, volatility: p.volatility ?? 0.2, ...callBase });
+            result = await callMCP("wealth.capital_primitive", { mode: "mc", initial_value: p.initial_value ?? 100, growth_rate: p.growth_rate ?? 0.05, volatility: p.volatility ?? 0.2, periods: p.periods ?? 5, simulations: p.simulations ?? 200, ...callBase });
           } else if (m === "emv") {
             const p = params as any;
-            result = await callMCP("wealth_mcp.wealth_compute_emv", { outcomes: p.outcomes ?? [100,50,-20], probabilities: p.probabilities ?? [0.3,0.5,0.2], ...callBase });
+            result = await callMCP("wealth.capital_primitive", { mode: "emv", outcomes: p.outcomes ?? [100,50,-20], probabilities: p.probabilities ?? [0.3,0.5,0.2], ...callBase });
           } else {
-            result = await callMCP("wealth_mcp.wealth_wisdom_evaluate", { proposal: proposed_action, ...callBase });
+            result = await callMCP("wealth.wealth_judge_handoff", { mode: "prepare", intent: proposed_action, reversibility: "REVERSIBLE", blast_radius: "low", ...callBase });
           }
         }
 

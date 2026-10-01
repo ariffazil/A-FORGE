@@ -96,7 +96,7 @@ type AffordanceEntry = {
 };
 
 type DriftFinding = {
-  type: "PHANTOM" | "MISSING" | "DESCRIPTION_DRIFT" | "RISK_DRIFT" | "ALIAS_GHOST" | "DEPRECATED_DOC" | "UNVERIFIABLE";
+  type: "PHANTOM" | "MISSING" | "DESCRIPTION_DRIFT" | "RISK_DRIFT" | "ALIAS_GHOST" | "DEPRECATED_DOC" | "UNVERIFIABLE" | "OUTBOUND_ABI_DRIFT";
   severity: "LOW" | "MEDIUM" | "HIGH";
   tool_name: string;
   detail: string;
@@ -116,6 +116,14 @@ type DriftReport = {
   // report can never again imply "live" where the truth is "declared self".
   registry_source?: "live_mcp_registry" | "dist_text_scan_fallback" | "declared_self";
   verification_level?: "LIVE" | "DECLARED_SELF_ONLY";
+  // S2 (2026-10-01): outbound ABI conformance — do this organ's internal
+  // callMCP targets exist on the callee's live surface? `surfaces[ns] === null`
+  // means that organ did not answer tools/list, so its verdict is UNKNOWN.
+  outbound_abi?: {
+    checked: number;
+    drift: number;
+    surfaces: Record<string, string[] | null>;
+  };
 };
 
 /**
@@ -234,6 +242,170 @@ export async function auditSurface(
 }
 
 /**
+ * S2 (F13 order 2026-10-01) — OUTBOUND ABI conformance.
+ *
+ * auditSurface() answers "does the declared affordance plane match the
+ * registered tool plane?" It could not answer "does tool A's internal call to
+ * organ B name a verb that B actually exposes?" That blind spot let 21 dead
+ * cross-organ call targets survive in A-FORGE while forge_surface_audit reported
+ * the surface as effectively clean — including arif_heart_critique, which made
+ * forge_check_governance report a healthy kernel as unreachable.
+ *
+ * Every target is resolved through TOOL_NAME_MAP first, so a mapped legacy verb
+ * is judged by the name that actually goes on the wire.
+ *
+ * VOID GUARD: an organ that cannot be reached yields `null` for its surface and
+ * an UNVERIFIABLE finding. Absence of evidence is never rendered as conformance.
+ */
+export async function auditOutboundAbi(
+  repoRoot: string,
+): Promise<{ surfaces: Record<string, string[] | null>; checked: number; findings: DriftFinding[]; unresolved_dynamic: string[] }> {
+  const fsp = await import("node:fs/promises");
+  const nodePath = await import("node:path");
+  const { TOOL_NAME_MAP, NAMESPACE_DEFAULTS } = await import("../../domain/types/mcp-bridge.js");
+
+  // ── 1. collect callMCP("<ns>.<verb>") literals with file:line ──────────
+  const srcDir = nodePath.join(repoRoot, "src");
+  const files: string[] = [];
+  const walk = async (dir: string): Promise<void> => {
+    let entries;
+    try { entries = await fsp.readdir(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (e.name === "node_modules" || e.name === "dist") continue;
+      const p = nodePath.join(dir, e.name);
+      if (e.isDirectory()) await walk(p);
+      else if (e.name.endsWith(".ts")) files.push(p);
+    }
+  };
+  await walk(srcDir);
+
+  const CALL_RE = /callMCP\(\s*"([A-Za-z0-9_]+)(?:\.([A-Za-z0-9_]+))?"/g;
+  // S2b: a second bridge exists — callOrgan("<ns>", "<verb>", args) — used by
+  // preActionSimulation.ts. A literal-only callMCP scan missed it entirely and
+  // therefore under-reported drift, which is worse than no axis at all.
+  const ORGAN_RE = /callOrgan\(\s*"([A-Za-z0-9_]+)"\s*,\s*"([A-Za-z0-9_]+)"/g;
+  // Template-literal construction (callMCP(`${ns}.${tool}`) in callOrganAdapter)
+  // cannot be resolved statically. Counted and reported, never silently ignored.
+  const DYN_RE = /call(?:MCP|Organ)\(\s*`/g;
+  const targets = new Map<string, { ns: string; verb: string; sites: string[] }>();
+  const dynamicSites: string[] = [];
+  for (const f of files) {
+    const text = await fsp.readFile(f, "utf-8");
+    const rel = nodePath.relative(repoRoot, f);
+    const lines = text.split("\n");
+    lines.forEach((line, i) => {
+      const site = `${rel}:${i + 1}`;
+      const add = (ns0: string, verb0: string) => {
+        const ns = ns0.replace(/_mcp$/, "");
+        const key = `${ns}.${verb0}`;
+        if (!targets.has(key)) targets.set(key, { ns, verb: verb0, sites: [] });
+        targets.get(key)!.sites.push(site);
+      };
+      for (const m of line.matchAll(CALL_RE)) {
+        add(m[2] ? m[1] : "arifos", m[2] ?? m[1]);
+      }
+      for (const m of line.matchAll(ORGAN_RE)) {
+        add(m[1], m[2]);
+      }
+      if (DYN_RE.test(line)) dynamicSites.push(site);
+    });
+  }
+
+  // ── 2. live tools/list per namespace ───────────────────────────────────
+  const surfaces: Record<string, string[] | null> = {};
+  const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
+  const { StreamableHTTPClientTransport } = await import("@modelcontextprotocol/sdk/client/streamableHttp.js");
+  for (const ns of Object.keys(NAMESPACE_DEFAULTS)) {
+    const cfg = NAMESPACE_DEFAULTS[ns as keyof typeof NAMESPACE_DEFAULTS];
+    const base =
+      (ns === "arifos" && process.env["ARIFOS_KERNEL_URL"]) ||
+      process.env[cfg.env] ||
+      cfg.default;
+    try {
+      const client = new Client({ name: "surface-audit-abi", version: "1.0.0" });
+      await client.connect(new StreamableHTTPClientTransport(new URL(`${base.replace(/\/$/, "")}/mcp`)));
+      const r = await client.listTools();
+      surfaces[ns] = r.tools.map((t) => t.name).sort();
+      await client.close();
+    } catch {
+      surfaces[ns] = null;   // UNVERIFIABLE, never "clean"
+    }
+  }
+
+  // ── 3. judge each target against the live surface ──────────────────────
+  const findings: DriftFinding[] = [];
+  const routable = new Set(Object.keys(NAMESPACE_DEFAULTS));
+  let checked = 0;
+  for (const { ns, verb, sites } of targets.values()) {
+    checked++;
+    // A namespace with no NAMESPACE_DEFAULTS entry cannot be called at all:
+    // parseToolName() throws "Unknown namespace" before any request is made.
+    // Found live 2026-10-01: well.well_assess_homeostasis.
+    if (!routable.has(ns)) {
+      findings.push({
+        type: "OUTBOUND_ABI_DRIFT",
+        severity: "HIGH",
+        tool_name: `${ns}.${verb}`,
+        detail:
+          `A-FORGE calls namespace "${ns}", which NAMESPACE_DEFAULTS does not declare ` +
+          `(routable: ${[...routable].join(", ")}). callMCP() throws "Unknown namespace" before ` +
+          `any request is sent, so this call can never succeed. Call site(s): ${sites.join(", ")}.`,
+        suggestion:
+          `Add "${ns}" to MCPNamespace + NAMESPACE_DEFAULTS in src/domain/types/mcp-bridge.ts ` +
+          `(env var + default URL), or remove the call site.`,
+      });
+      continue;
+    }
+    const surface = surfaces[ns];
+    if (surface === null || surface === undefined) {
+      findings.push({
+        type: "UNVERIFIABLE",
+        severity: "MEDIUM",
+        tool_name: `${ns}.${verb}`,
+        detail: `Organ "${ns}" did not answer tools/list, so conformance of this outbound call is UNKNOWN. Called from ${sites.join(", ")}.`,
+        suggestion: `Restore ${ns} reachability, then re-run. Absence of evidence is not conformance.`,
+      });
+      continue;
+    }
+    const resolved = TOOL_NAME_MAP[verb] ?? verb;
+    if (surface.includes(resolved)) continue;
+    findings.push({
+      type: "OUTBOUND_ABI_DRIFT",
+      severity: "HIGH",
+      tool_name: `${ns}.${verb}`,
+      detail:
+        `A-FORGE calls "${ns}.${verb}"` +
+        (resolved !== verb ? ` (resolves to "${resolved}")` : "") +
+        ` but the live ${ns} surface does not expose it. Call site(s): ${sites.join(", ")}. ` +
+        `The organ is REACHABLE — it answered tools/list with ${surface.length} tools — so this is a ` +
+        `renamed or retired verb, NOT an outage. At runtime this surfaces as "Unknown tool" and is ` +
+        `easily misread as the organ being down.`,
+      suggestion:
+        `Map "${verb}" to a live ${ns} verb in TOOL_NAME_MAP (src/domain/types/mcp-bridge.ts) ` +
+        `only if the argument shape is verified to match; otherwise update the call site. ` +
+        `Live ${ns} surface: ${surface.slice(0, 40).join(", ")}.`,
+    });
+  }
+
+  // Statically unresolvable targets are reported as a coverage gap. An axis
+  // that silently skips them would report CLEAN over calls it never judged.
+  if (dynamicSites.length > 0) {
+    findings.push({
+      type: "UNVERIFIABLE",
+      severity: "MEDIUM",
+      tool_name: "(dynamically constructed target)",
+      detail:
+        `${dynamicSites.length} call site(s) build the organ target name at runtime, so static ` +
+        `conformance cannot judge them: ${dynamicSites.join(", ")}.`,
+      suggestion:
+        "Pass a literal verb name, or enumerate the constructed names so this axis can check them.",
+    });
+  }
+
+  return { surfaces, checked, findings, unresolved_dynamic: dynamicSites };
+}
+
+/**
  * Known affordance paths per organ.
  * WEALTH and WELL use tools_sot.yaml (not affordances.yaml).
  * GEOX uses organ.yaml + tools_sot.yaml.
@@ -349,6 +521,38 @@ export function registerSurfaceAuditTools(server: McpServer): void {
         const report = await auditSurface(affPath, allRegistryTools, org);
         report.registry_source = registrySource;
         report.verification_level = registrySource === "declared_self" ? "DECLARED_SELF_ONLY" : "LIVE";
+
+        // S2 (F13 order 2026-10-01): outbound ABI conformance. Merged into the
+        // same findings list so drift_count / is_clean / mode=scan all reflect
+        // it — an axis that reports separately is an axis nobody reads.
+        if (org === "aforge") {
+          const repoRoot = (affPath || "").split("/").slice(0, -2).join("/") || "/root/A-FORGE";
+          try {
+            const abi = await auditOutboundAbi(repoRoot);
+            const dead = abi.findings.filter((f) => f.type === "OUTBOUND_ABI_DRIFT").length;
+            report.outbound_abi = { checked: abi.checked, drift: dead, surfaces: abi.surfaces };
+            report.findings.push(...abi.findings);
+            const realDrift = report.findings.filter((f) => f.type !== "DEPRECATED_DOC");
+            report.drift_count = realDrift.length;
+            report.is_clean = realDrift.length === 0;
+            if (abi.findings.length > 0) {
+              report.recommendation =
+                `OUTBOUND_ABI: ${dead} dead cross-organ verb(s) among ${abi.checked} callMCP target(s). ` +
+                report.recommendation;
+            }
+          } catch (e) {
+            // VOID GUARD: a failed axis is UNKNOWN, never a clean verdict.
+            report.findings.push({
+              type: "UNVERIFIABLE",
+              severity: "MEDIUM",
+              tool_name: "(outbound ABI axis)",
+              detail: `Outbound ABI conformance could not run: ${e instanceof Error ? e.message : String(e)}`,
+              suggestion: "Repair the axis before trusting any clean verdict from this organ.",
+            });
+            report.drift_count = report.findings.filter((f) => f.type !== "DEPRECATED_DOC").length;
+            report.is_clean = false;
+          }
+        }
         if (registrySource === "declared_self") {
           report.recommendation = `DECLARED-SELF: ${org} audit compared its SOT file against itself — internal consistency only, live MCP surface parity NOT verified. ` + report.recommendation;
         }

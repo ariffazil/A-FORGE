@@ -1,8 +1,10 @@
-# A-FORGE MCP Tool Catalog — 78 Tools by Cognitive Function
+# A-FORGE MCP Tool Catalog — 122 live tools
 
-> **Purpose:** Give agents (and humans) a single-page map of the A-FORGE MCP surface so the right tool is chosen for the right intent.  
-> **Canonical source:** `A-FORGE/src/interfaces/mcp/core.ts` + `proxyTools.ts` + `forgeTools.ts` + `gatewayTools.ts`.  
-> **Last audited:** 2026-06-23 by Kimi Code for F13 SOVEREIGN.
+> **GENERATED — do not edit by hand.** `node scripts/generate-tool-catalog.mjs`
+> **Generated:** 2026-10-01 12:33Z · **Source of truth:** live `tools/list` from `dist/src/interfaces/mcp/cli.js`
+> **Class / Lease columns:** derived from `classifyTool()` + `requiresGovernance()` — the same
+> component the runtime elicitation and policy gates consult, so this table cannot disagree with the gate.
+> **Surface:** 122 tools = 40 union (mode-dispatched) + 82 atomic · 42 require governance for at least one mode.
 
 ---
 
@@ -14,277 +16,273 @@ A-FORGE is **the hands** of the federation. It does not make constitutional law;
 |---|---|---|
 | **Role** | Constitutional kernel / sovereign governor / judge | Governed execution shell / actuator / forger |
 | **Owns** | Law (F1–F13), truth, judgment, memory routing, VAULT999 seals | Build, deploy, run, shell, browser, orchestration, artifacts, leases |
-| **Target naming** | **2-term dot** (`arif.judge`) — one name = one constitutional axis | **3-term underscore** (`forge_filesystem_read`) — one name = one operational capability |
-| **Verdict authority** | Issues final verdicts: SEAL, SABAR, HOLD_888, VOID | Never issues final constitutional verdicts; routes judgment to arifOS |
-| **Governance model** | Floor enforcer + INIT → JUDGE → SEAL contract | FloorEnforcer + lease gates + session gates; must obtain authorization from arifOS |
+| **Naming** | 8 canonical verbs: `arif_init`, `arif_observe`, `arif_think`, `arif_route`, `arif_memory`, `arif_judge`, `arif_forge`, `arif_seal` — capability selected by `mode` | `forge_<domain>` tools, most of them **union tools** — capability selected by `mode` |
+| **Verdict authority** | Issues final verdicts: SEAL, SABAR, HOLD, VOID | Never issues final constitutional verdicts; routes judgment to arifOS |
 | **Transport** | streamable-http (`127.0.0.1:8088/mcp`) | stdio (preferred for agents) + streamable-http (`127.0.0.1:7072/mcp`) |
 
-### Typical agent flow
+> **CALLABLE SYNTAX — read this before calling anything.** Most A-FORGE tools are
+> **union tools**: one registered name plus a `mode` discriminator. There is no
+> `forge_git_status`, no `forge_filesystem_read`, no `forge_lease_request`, no `forge_run`.
+> Those names appear in older prose and in no live registry. The correct forms are
+> `forge_git(mode="status")`, `forge_filesystem(mode="read")`, `forge_lease(mode="request")`.
+> Every example in this file is emitted from the live schema, so every example is callable.
+
+### Typical agent flow (all names verified live)
 
 1. **Bootstrap identity** — `arif_init` (arifOS)
-2. **Think / observe / critique** — `arif_think`, `arif_observe`, `arif_critique` (arifOS)
-3. **Get authority** — `forge_lease_request` + `forge_judge_proxy` / `arif_judge` (arifOS)
-4. **Execute** — `forge_run`, `forge_filesystem_write`, `forge_git_commit`, `forge_browser_navigate` (A-FORGE)
+2. **Observe / think** — `arif_observe()`, `arif_think(mode="critique")` (arifOS)
+3. **Get authority** — `forge_lease(mode="request")` + `arif_judge` (arifOS)
+4. **Execute** — `forge_filesystem(mode="write")`, `forge_shell(command=…)`, `forge_git(mode="commit")`, `forge_browser_navigate()`
 5. **Seal the record** — `arif_seal` (arifOS)
 
-> **One-line rule:** arifOS decides what is lawful. A-FORGE forges what is permitted under law. They are separated so governance cannot be bypassed by execution power.
+> **One-line rule:** arifOS decides what is lawful. A-FORGE forges what is permitted under law.
 
 ---
 
-## How to Read This Catalog
+## How to read this catalog
 
 | Column | Meaning |
-|--------|---------|
-| **Tool** | Exact MCP tool name. |
-| **Class** | Authority class: `OBSERVE` (read-only), `EXECUTE_REVERSIBLE` (mutates but undoable), `EXECUTE_HIGH_IMPACT` (deploy/billing), `IRREVERSIBLE` (vault seal, deletes). |
-| **Lease?** | Does the tool require a valid kernel lease for non-observe calls? |
-| **Use When** | Agent-level intent → tool mapping. |
+|---|---|
+| **Tool** | Exact registered name. Union tools show their `mode` values. |
+| **Class** | From `classifyTool()`: `OBSERVE`, `SUGGEST`, `SIMULATE`, `DRAFT`, `QUEUE`, `EXECUTE_REVERSIBLE`, `EXECUTE_HIGH_IMPACT`, `IRREVERSIBLE`. Unknown tools fail closed to `IRREVERSIBLE`. |
+| **Gov?** | `requiresGovernance(class)` — anything other than `OBSERVE`/`SUGGEST` needs a session + lease, and external callers face the `-32042` elicitation gate. |
+| **Use when** | The description's own trigger clause. **Blank = the tool ships no discriminator** — a known gap, not an omission by this generator. |
 
-**Iron rules:**
-- `IRREVERSIBLE` and `EXECUTE_HIGH_IMPACT` tools require an `arif_judge` SEAL + kernel lease.
-- `EXECUTE_REVERSIBLE` tools require a kernel lease (issued via `forge_lease_request`).
-- `OBSERVE` tools may run without a lease unless they touch sensitive surfaces.
-- Always start a session with `arif_init` before lease-gated work.
-
----
-
-## 1. Constitutional Kernel & Judgment (7 tools)
-
-The arifOS bridge inside A-FORGE. Use these when the task is about governance, session bootstrap, risk review, or asking the kernel for a SEAL/HOLD verdict.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `arif_init` | `EXECUTE_REVERSIBLE` | No | Start any governed session. Returns `session_id`. |
-| `arif_health_check` | `OBSERVE` | No | Ping A-FORGE / check constitutional genome status. |
-| `arif_observe` | `OBSERVE` | No | Ground a query in reality before acting. |
-| `arif_think` | `SUGGEST` | No | Synthesize grounded facts into a reasoning path. |
-| `arif_critique` | `OBSERVE` | No | Run F3/F6/F9/W0 risk critique on a proposed task. |
-| `forge_check_governance` | `OBSERVE` | No | Alias for `arif_critique`; use either. |
-| `forge_judge_proxy` | `EXECUTE_HIGH_IMPACT` | Yes | Forward a candidate action to arifOS `arif_judge`. |
+**Iron rules**
+- `IRREVERSIBLE` and `EXECUTE_HIGH_IMPACT` require an `arif_judge` SEAL + kernel lease.
+- `EXECUTE_REVERSIBLE` requires a kernel lease — `forge_lease(mode="request")`.
+- `OBSERVE` needs no lease. Read modes of union tools are `OBSERVE` and are **not** confirmation-gated.
+- Trust is verified, not asserted: a self-declared `session_id`, `lease_id` or acknowledgement
+  boolean does not grant trust (S1, 2026-10-01). Only `validateSession()` — registry or HMAC ACT — does.
 
 ---
 
-## 2. Execution & Motor Cortex (4 tools)
+## browser — 6 tools
 
-Use these when you actually want A-FORGE to *do* something autonomously.
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_browser_click()` | OBSERVE | no | Click a browser element. OBSERVE-class. |
+| `forge_browser_evaluate_js()` | OBSERVE | no | — |
+| `forge_browser_extract_text()` | OBSERVE | no | — |
+| `forge_browser_navigate()` | OBSERVE | no | — |
+| `forge_browser_screenshot()` | OBSERVE | no | Take a browser screenshot. OBSERVE-class. |
+| `forge_browser_type()` | OBSERVE | no | — |
 
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `arif_forge` | `EXECUTE_HIGH_IMPACT` | Yes + JUDGE SEAL | Execute an action plan via AgentEngine. |
-| `forge_run` | `EXECUTE_HIGH_IMPACT` | Yes + JUDGE SEAL | Full agent run with governance floors. |
-| `forge_pipeline` | `EXECUTE_REVERSIBLE`/`HIGH_IMPACT` | Yes (mode-dependent) | One-call 000→999 autonomous pipeline (SENSE → ROUTE → FORGE → JUDGE → VAULT). |
-| `forge_approve` | `IRREVERSIBLE` | Yes | **Deprecated proxy.** Always returns `SELF_AUTHORIZE_REFUSED`; route to `forge_judge_proxy` instead. |
+## confirm — 2 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_send_confirm()` | EXECUTE_HIGH_IMPACT | yes | — |
+| `forge_transfer_confirm()` | EXECUTE_HIGH_IMPACT | yes | — |
+
+## db — 1 tool
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_postgres()`<br>modes: `query` `schema` | OBSERVE | no | Canonical Postgres primitive. Modes: query, schema. Writes require mutate=true and remain floor-gate. Use when: Canonical Postgres primitive. Modes: query, schema. Writes require mutate=true and remain floor-gate. |
+
+## docker — 1 tool
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_docker()`<br>modes: `ps` `logs` `exec` `images` | `ps`→OBSERVE<br>`logs`→OBSERVE<br>`exec`→EXECUTE_REVERSIBLE<br>`images`→OBSERVE | yes | Canonical Docker primitive. Modes: ps, logs, exec, images. Destructive operations stay out of this r. Use when: Canonical Docker primitive. Modes: ps, logs, exec, images. Destructive operations stay out of this r. |
+
+## execute — 6 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_abort()` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_compose()`<br>modes: `execute` `status` `cancel` `analyze` | `execute`→EXECUTE_REVERSIBLE<br>`status`→OBSERVE<br>`cancel`→EXECUTE_REVERSIBLE<br>`analyze`→OBSERVE | yes | ACTUATOR [execute/MUTATE] Composition Bus — orchestrate multi-tool execution across MCP servers. 4 patterns: sequential, parallel, conditional, loop. Each step produces a receipt. DAG-based resolution with cycle detection. Modes: execute, status, cancel, analyze. Constitutional: F1 AMANAH, F2 TRUTH, F4 CLARITY, F11 AUDIT. |
+| `forge_execute()`<br>modes: `internal_mode` `external_safe_mode` | EXECUTE_HIGH_IMPACT | yes | — |
+| `forge_execute_sealed()` | EXECUTE_HIGH_IMPACT | yes | Execute with VAULT999 seal. FAILS HARD without valid seal — no self-authorization possible. |
+| `forge_pipeline_run()`<br>modes: `observe` `forge` `full` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_sandbox_run()` | EXECUTE_REVERSIBLE | yes | — |
+
+## fs — 1 tool
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_filesystem()`<br>modes: `read` `write` `patch` `glob` `grep` `stat` `tree` `move` `delete` `restore` | `read`→OBSERVE<br>`write`→EXECUTE_REVERSIBLE<br>`patch`→EXECUTE_REVERSIBLE<br>`glob`→OBSERVE<br>`grep`→OBSERVE<br>`stat`→OBSERVE<br>`tree`→OBSERVE<br>`move`→EXECUTE_REVERSIBLE<br>`delete`→EXECUTE_HIGH_IMPACT<br>`restore`→EXECUTE_REVERSIBLE | yes | — |
+
+## git — 6 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_git()`<br>modes: `status` `diff` `log` `commit` | `status`→OBSERVE<br>`diff`→OBSERVE<br>`log`→OBSERVE<br>`commit`→EXECUTE_REVERSIBLE | yes | Canonical git primitive. Modes: status, diff, log, commit. Mutating modes are floor-gated by A-FORGE. Use when: Canonical git primitive. Modes: status, diff, log, commit. Mutating modes are floor-gated by A-FORGE. |
+| `forge_github()`<br>modes: `search` `pr` | OBSERVE | no | Canonical GitHub primitive. Modes: search, pr. Use type for search variants instead of separate tool. Use when: Canonical GitHub primitive. Modes: search, pr. Use type for search variants instead of separate tool. |
+| `forge_github_create_issue()` | EXECUTE_HIGH_IMPACT | yes | Create a GitHub issue. MUTATE — lease required. |
+| `forge_github_create_or_update_file()` | IRREVERSIBLE | yes | — |
+| `forge_github_get_file()` | OBSERVE | no | Read a file from GitHub. OBSERVE-class. |
+| `forge_worktree()` | OBSERVE | no | Local git physics sensor. Returns branch, dirty state, stash, conflicts, in-progress ops, blast radi. |
+
+## governance — 9 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_check_governance()` | OBSERVE | no | — |
+| `forge_evaluate()` | OBSERVE | no | APEX v36Ω evaluation gate (V3 canonical). Computes G = (A·P·E·X)^(1/4) — 4-term geometric mean; Φ is scar pressure, not a 5th dial. C_dark = A·(1-P)·(1-X). Returns SEAL/REVIEW/VOID. |
+| `forge_heart_critique()` | OBSERVE | no | — |
+| `forge_judge_proxy()` | OBSERVE | no | — |
+| `forge_predict()` | OBSERVE | no | — |
+| `forge_reality_loop()`<br>modes: `start` `advance` `record` `seal` `report` `metrics` `list` `destroy` | `start`→OBSERVE<br>`advance`→EXECUTE_REVERSIBLE<br>`record`→EXECUTE_REVERSIBLE<br>`seal`→EXECUTE_REVERSIBLE<br>`report`→OBSERVE<br>`metrics`→OBSERVE<br>`list`→OBSERVE<br>`destroy`→EXECUTE_REVERSIBLE | yes | — |
+| `forge_session_init()`<br>modes: `internal` `external` | OBSERVE | no | — |
+| `forge_trust_score()`<br>modes: `score` `evaluate` `list` `history` `verify` | `score`→EXECUTE_REVERSIBLE<br>`evaluate`→EXECUTE_REVERSIBLE<br>`list`→OBSERVE<br>`history`→OBSERVE<br>`verify`→OBSERVE | yes | ACTUATOR [governance/OBSERVE] Trust scoring engine for external MCP servers. Scores on 5 dimensions (identity, uptime, auditability, mutation_risk, witnessability), maps to bands (ALLOW/LIMITED/HOLD/DENY), and gates access. Modes: score, evaluate, list, history, verify. Constitutional: F2 TRUTH, F7 HUMILITY, F11 AUDIT, F13 SOVEREIGN. |
+| `forge_witness()` | OBSERVE | no | — |
+
+## health — 3 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_health_check()` | OBSERVE | no | — |
+| `forge_netdata_alarms()` | OBSERVE | no | Read Netdata alarms. OBSERVE-class. |
+| `forge_netdata_metrics()` | OBSERVE | no | Read Netdata chart data. OBSERVE-class. |
+
+## job — 1 tool
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_job()`<br>modes: `submit` `status` | OBSERVE | no | — |
+
+## memory — 1 tool
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_memory()`<br>modes: `recall` | OBSERVE | no | Canonical memory primitive. Modes: recall. Reads VAULT999 local files, then vault999-api fallback. Use when: Canonical memory primitive. Modes: recall. Reads VAULT999 local files, then vault999-api fallback. |
+
+## meta — 45 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `auth_pipeline()` | OBSERVE | no | — |
+| `forge_apex_emd()` | OBSERVE | no | — |
+| `forge_apex_encode()` | OBSERVE | no | — |
+| `forge_apex_goal_status()` | OBSERVE | no | — |
+| `forge_apex_metabolize()` | OBSERVE | no | — |
+| `forge_apex_recompute()` | OBSERVE | no | — |
+| `forge_canon_recall()` | OBSERVE | no | — |
+| `forge_canonize()` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_chart()` | OBSERVE | no | — |
+| `forge_collect_evidence()` | IRREVERSIBLE | yes | — |
+| `forge_compile_task()` | IRREVERSIBLE | yes | — |
+| `forge_cool()` | OBSERVE | no | — |
+| `forge_dispatch_lane()` | IRREVERSIBLE | yes | — |
+| `forge_docket_prep()` | OBSERVE | no | — |
+| `forge_docsgpt()`<br>modes: `query` `native` | OBSERVE | no | — |
+| `forge_document_ingest()`<br>modes: `analyze` `extract` `chunk` `compare` | OBSERVE | no | — |
+| `forge_entropy_sweep()` | OBSERVE | no | — |
+| `forge_ephemeral()`<br>modes: `inspect_gap` `generate` `sandbox_test` `invoke` `verify` `retire` `list_templates` `list_active` `propose_promotion` | `inspect_gap`→OBSERVE<br>`generate`→EXECUTE_REVERSIBLE<br>`sandbox_test`→EXECUTE_REVERSIBLE<br>`invoke`→EXECUTE_REVERSIBLE<br>`verify`→EXECUTE_REVERSIBLE<br>`retire`→EXECUTE_REVERSIBLE<br>`list_templates`→OBSERVE<br>`list_active`→OBSERVE<br>`propose_promotion`→EXECUTE_REVERSIBLE | yes | — |
+| `forge_experience_query()` | OBSERVE | no | — |
+| `forge_experience_trace()` | OBSERVE | no | — |
+| `forge_gemini()` | OBSERVE | no | — |
+| `forge_git_commit()` | EXECUTE_HIGH_IMPACT | yes | — |
+| `forge_hf_import()`<br>modes: `import_model` `import_dataset` `preflight` `batch_screen` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_kernel()`<br>modes: `init` `observe` `think` `route` `memory` `judge` `forge` `seal` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_parallel()`<br>modes: `parallel` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_parallel_cancel()` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_parallel_list()` | OBSERVE | no | — |
+| `forge_parallel_status()` | OBSERVE | no | — |
+| `forge_rsi_dual_rate_fq()` | OBSERVE | no | 'FQ governance', 'dual rate', 'aliased FQ', '7-day FQ', 'governance signal'. |
+| `forge_rsi_impulse_response()` | OBSERVE | no | 'impulse response', 'HOLD influence', 'how long does a HOLD last', 'causal half-life', 'h(t)', 'RSI measurement'. |
+| `forge_rsi_state_vector()` | OBSERVE | no | 'state vector', 'RSI snapshot', 's_t', 'controller state', 'Imp state'. |
+| `forge_runtime_verify()` | OBSERVE | no | — |
+| `forge_sandbox_auto_evict()` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_sandbox_list_paused()` | OBSERVE | no | — |
+| `forge_sandbox_pause()` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_sandbox_resume()` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_seal_run()` | IRREVERSIBLE | yes | — |
+| `forge_skill_select_query()` | OBSERVE | no | — |
+| `forge_visual_qa()`<br>modes: `validate_only` `iterate_and_fix` `full_loop` | OBSERVE | no | — |
+| `forge_visual_seal()` | IRREVERSIBLE | yes | — |
+| `forge_web_extract()` | OBSERVE | no | — |
+| `forge_web_zen()`<br>modes: `sense` `verify` `orphan` `ephemeral` `doctor` `caddy-reload-hint` | OBSERVE | no | site audit, missions 404, vitals proxies, SPA deploy check, ephemeral site parser. |
+| `forge_wm_gaps()` | OBSERVE | no | — |
+| `forge_wm_quality()` | OBSERVE | no | — |
+| `forge_wm_stats()` | OBSERVE | no | — |
+
+## org_bridge — 2 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_wealth()`<br>modes: `emv` `conservation` `flow` `runway` `wisdom` | OBSERVE | no | — |
+| `forge_well()`<br>modes: `state` `readiness` `floors` `anchor` `machine_intelligence` | OBSERVE | no | WELL human readiness primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors,. Use when: WELL human readiness primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors,. |
+
+## probe — 9 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_fingerprint_check()` | OBSERVE | no | — |
+| `forge_isomorphism_check()` | OBSERVE | no | — |
+| `forge_probe()` | OBSERVE | no | — |
+| `forge_probe_site()` | OBSERVE | no | — |
+| `forge_scan()` | OBSERVE | no | — |
+| `forge_security_drift_scan()` | OBSERVE | no | Production security telemetry (renamed from forge_boundaries_assert). |
+| `forge_surface_audit()`<br>modes: `audit` `scan` `fix` | OBSERVE | no | — |
+| `forge_surface_guard()`<br>modes: `check` `status` `pin` `config` | OBSERVE | no | — |
+| `forge_verify_timeline()`<br>modes: `verify` `audit` `suggest_sources` | OBSERVE | no | — |
+
+## registry — 9 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_agent()`<br>modes: `register` `status` `list` `kill` | `register`→EXECUTE_REVERSIBLE<br>`status`→OBSERVE<br>`list`→OBSERVE<br>`kill`→IRREVERSIBLE | yes | — |
+| `forge_lease()`<br>modes: `request` `status` `revoke` | `request`→EXECUTE_REVERSIBLE<br>`status`→OBSERVE<br>`revoke`→EXECUTE_REVERSIBLE | yes | — |
+| `forge_lock()`<br>modes: `acquire` `release` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_policy()`<br>modes: `check` `set` `remove` `list` `save` | OBSERVE | no | — |
+| `forge_register()` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_registry()`<br>modes: `status` `list` `get` `scars` `fingerprint` `scan` | OBSERVE | no | Dynamic skill registry. Modes: list (all generated tools + Decision Field), get (one tool manifest),. |
+| `forge_registry_status()` | OBSERVE | no | — |
+| `forge_status()`<br>modes: `overview` `jobs` `leases` `agents` | OBSERVE | no | — |
+| `forge_tier_bind()` | EXECUTE_REVERSIBLE | yes | — |
+
+## research — 2 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_fetch()`<br>modes: `html` `markdown` `text` `json` `readable` `metadata` `links` `search` | OBSERVE | no | Governed URL evidence intake + self-hosted web search. Modes: html, markdown, text, json, readable,. Use when: Governed URL evidence intake + self-hosted web search. Modes: html, markdown, text, json, readable,. |
+| `forge_search()` | OBSERVE | no | Governed web search via Brave. OBSERVE-class. |
+
+## shell — 5 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_shell()` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_shell_alert_history()` | OBSERVE | no | — |
+| `forge_shell_dryrun()` | OBSERVE | no | — |
+| `forge_shell_ledger()` | OBSERVE | no | — |
+| `forge_shell_status()` | OBSERVE | no | — |
+
+## skill — 4 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_skill()` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_skillstore_read()` | OBSERVE | no | — |
+| `forge_skillstore_write()` | EXECUTE_REVERSIBLE | yes | — |
+| `forge_synthesize()` | EXECUTE_REVERSIBLE | yes | — |
+
+## vault — 5 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_receipt_draft()` | OBSERVE | no | — |
+| `forge_scar()`<br>modes: `seal` `list` `consult` | OBSERVE | no | — |
+| `forge_seal()` | IRREVERSIBLE | yes | — |
+| `forge_stage()`<br>modes: `artifact` `governance` | EXECUTE_REVERSIBLE | yes | Move artifact to quarantine staging. Spec becomes IMMUTABLE after staging. |
+| `forge_vault()`<br>modes: `read` `list` `write` `receipt` | `read`→OBSERVE<br>`list`→OBSERVE<br>`write`→EXECUTE_REVERSIBLE<br>`receipt`→IRREVERSIBLE | yes | VAULT999 primitive. Modes: read, list, write, seal. Use when: VAULT999 primitive. Modes: read, list, write, seal. |
+
+## vps — 4 tools
+
+| Tool | Class | Gov? | Use when |
+|---|---|---|---|
+| `forge_journalctl()`<br>modes: `logs` `errors` `tail` `grep` | OBSERVE | no | — |
+| `forge_vps_cron()`<br>modes: `scan` `registry` `assert` | OBSERVE | no | — |
+| `forge_vps_ports()`<br>modes: `scan` `registry` `assert` | OBSERVE | no | — |
+| `forge_vps_services()`<br>modes: `scan` `registry` `assert` | OBSERVE | no | — |
 
 ---
 
-## 3. Vault & Memory Stewardship (9 tools)
+## Known gaps (measured, not editorialised)
 
-Use these to read/write the federation memory graph and VAULT999 ledger.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `arif_seal` | `IRREVERSIBLE` | Yes | Seal a terminal verdict to VAULT999. |
-| `forge_vault_seal` | `IRREVERSIBLE` | Yes | Lower-level VAULT999 seal with full telemetry. |
-| `forge_remember` | `EXECUTE_REVERSIBLE` | Yes | Store a memory entry. |
-| `forge_memory_store` | `EXECUTE_REVERSIBLE` | Yes | Store value in federation memory (arifOS + VAULT999 fallback). |
-| `forge_memory_recall` | `OBSERVE` | No | Search past sessions / sealed events / codebase context. |
-| `forge_vault_read` | `OBSERVE` | No | Read a vault record by name. |
-| `forge_vault_list` | `OBSERVE` | No | List vault records by category. |
-| `forge_vault_write` | `EXECUTE_REVERSIBLE` | Yes | Write a vault record. |
-| `forge_vault_delete` | `IRREVERSIBLE` | Yes | Delete a vault record. |
-
----
-
-## 4. Identity, Authority & Lease (8 tools)
-
-F11 AUTH surface. Use these to register agents, mint/inspect/revoke leases, and acquire Amanah locks before irreversible mutations.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_agent_register` | `EXECUTE_REVERSIBLE` | Yes | Register a new agent identity + authority profile. |
-| `forge_agent_status` | `OBSERVE` | No | Query one agent's identity and active leases. |
-| `forge_agent_list` | `OBSERVE` | No | List all registered agents. |
-| `forge_lease_request` | `EXECUTE_REVERSIBLE` | Yes | Request a bounded authority lease from arifOS. |
-| `forge_lease_status` | `OBSERVE` | No | Inspect a lease (TTL, scope, revoked). |
-| `forge_lease_revoke` | `EXECUTE_REVERSIBLE` | Yes | Revoke a lease early. |
-| `request_amanah_lock` | `EXECUTE_REVERSIBLE` | Yes | Acquire an F1 Amanah lock on a resource. |
-| `release_amanah_lock` | `EXECUTE_REVERSIBLE` | Yes | Release an Amanah lock you own. |
-
----
-
-## 5. Local Filesystem Workspace (5 tools)
-
-Tier 1 coder gateway. Scoped to `/root`, `/tmp`, `/data`, `/var/log` (F8 LAW).
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_filesystem_read` | `OBSERVE` | No | Read a file or directory listing. |
-| `forge_filesystem_write` | `EXECUTE_REVERSIBLE` | Yes | Write a file; `overwrite=true` required for existing files. |
-| `forge_filesystem_glob` | `OBSERVE` | No | Find files by glob pattern. |
-| `forge_filesystem_grep` | `OBSERVE` | No | Search file contents with regex. |
-| `forge_filesystem_stat` | `OBSERVE` | No | Get file/directory metadata. |
-
----
-
-## 6. Database & Persistence (2 tools)
-
-Direct Postgres access to the local vault999 database.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_postgres_query` | `EXECUTE_REVERSIBLE` | Yes (`mutate=true`) | Execute raw SQL; read-only by default. |
-| `forge_postgres_schema` | `OBSERVE` | No | List tables / columns. |
-
----
-
-## 7. Git — Local Repo Operations (5 tools)
-
-Read + commit git state in allowed repo roots (`/root/arifOS`, `/root/A-FORGE`, `/root/AAA`, `/root/geox`, `/root/WEALTH`, `/root/WELL`, `/root/APEX`).
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_git_status` | `OBSERVE` | No | Working tree status + branch + ahead count. |
-| `forge_git_diff` | `OBSERVE` | No | Uncommitted diff (optionally staged). |
-| `forge_git_log` | `OBSERVE` | No | Recent commit history. |
-| `forge_git_commit` | `EXECUTE_REVERSIBLE` | Yes | Stage and commit; `push=true` requires 888_HOLD. |
-| `forge_worktree` | `OBSERVE` | No | Git physics sensor — branch, dirty state, stash, conflicts, in-progress ops, blast radius, recommendations. |
-
----
-
-## 8. GitHub — Read-Only Proxy (2 tools)
-
-Lightweight curl-based GitHub search / PR queries. No official SDK dependency.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_github_search` | `OBSERVE` | No | Search repos, code, issues, or PRs. |
-| `forge_github_pr` | `OBSERVE` | No | List/get/create PRs (create is mutating). |
-
----
-
-## 9. GitHub — Full Gateway (6 tools)
-
-Full REST gateway with receipt logging. Mutating actions are lease-gated and should prefer draft PRs.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_github_search_code` | `OBSERVE` | No | GitHub code search. |
-| `forge_github_search_repos` | `OBSERVE` | No | GitHub repository search. |
-| `forge_github_get_file` | `OBSERVE` | No | Read a file from a GitHub repo. |
-| `forge_github_create_or_update_file` | `EXECUTE_REVERSIBLE` | Yes | Commit a file; optionally auto-create a draft PR. |
-| `forge_github_create_issue` | `EXECUTE_REVERSIBLE` | Yes | Open a GitHub issue. |
-| `forge_github_create_pull_request` | `EXECUTE_REVERSIBLE` | Yes | Create a PR. |
-
----
-
-## 10. Docker & Infrastructure (4 tools)
-
-Inspect and interact with local containers. Destructive ops require 888_HOLD.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_docker_ps` | `OBSERVE` | No | List running / all containers. |
-| `forge_docker_logs` | `OBSERVE` | No | Tail container logs. |
-| `forge_docker_exec` | `EXECUTE_REVERSIBLE` | Yes | Run a command inside a container (read-only policy enforced). |
-| `forge_docker_images` | `OBSERVE` | No | List Docker images. |
-
----
-
-## 11. Research, Search & Browser (12 tools)
-
-Web grounding and browser automation. All browser actions require task_context + page_context and pass through the browser injection sentinel.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_research` | `OBSERVE` | No | Governed research across web sources (Brave fallback). |
-| `forge_search` | `OBSERVE` | No | Governed web search via Brave. |
-| `forge_minimax_search` | `OBSERVE` | No | Search via local MiniMax MCP. |
-| `minimax_web_search` | `OBSERVE` | No | Direct MiniMax web search. |
-| `minimax_understand_image` | `OBSERVE` | No | MiniMax vision analysis of an image. |
-| `forge_docs_lookup` | `OBSERVE` | No | Context7 docs lookup across federation corpora. |
-| `forge_browser_navigate` | `EXECUTE_REVERSIBLE` | Yes | Navigate browser to URL. |
-| `forge_browser_click` | `EXECUTE_REVERSIBLE` | Yes | Click an element. |
-| `forge_browser_type` | `EXECUTE_REVERSIBLE` | Yes | Type into an element. |
-| `forge_browser_screenshot` | `OBSERVE` | No | Take a screenshot. |
-| `forge_browser_extract_text` | `OBSERVE` | No | Extract visible text from page/element. |
-| `forge_browser_evaluate_js` | `EXECUTE_REVERSIBLE` | Yes | Evaluate JS in browser context. |
-
----
-
-## 12. Monitoring & Telemetry (3 tools)
-
-Read federation health, logs, and Netdata metrics.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_log_tail` | `OBSERVE` | No | Tail systemd logs for any federation organ. |
-| `forge_netdata_alarms` | `OBSERVE` | No | Read Netdata alarms. |
-| `forge_netdata_metrics` | `OBSERVE` | No | Read Netdata chart data. |
-
----
-
-## 12.5. Visualization & Agentic Data Analysis (1 tool)
-
-Shared surface for all domain organs. Agentic charts + automatic "eureka margin" detection (turning points, high deviation, curvature). Enables GEOX crossplots, WEALTH time-series + distributions, WELL vitality trends, and quantum discovery pattern finding without each organ owning viz code.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_chart` | `OBSERVE` | No | Generate SVG chart from data + receive eureka_candidates (reversals/outliers/curvature as discovery margins). Types: line, bar, scatter, pie, area, histogram. |
-
-**Pattern:** query data (forge_postgres / forge_wealth / raw series) → forge_chart → agent sees SVG + margins → iterate / eureka.
-
-**Upstream reference:** antvis/mcp-server-chart (25+ @antv charts) — this is the A-FORGE canonical always-on subset for federation unity.
-
----
-
-## 13. Domain Organs — WEALTH & WELL (7 tools)
-
-A-FORGE's native wrappers for capital and human-readiness evidence.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `wealth_evaluate_ROI` | `OBSERVE` | No | Evaluate investment ROI scenarios. |
-| `wealth_compute_EMV` | `OBSERVE` | No | Compute Expected Monetary Value. |
-| `wealth_thermodynamic_scan` | `OBSERVE` | No | Landauer-cost scan of actions. |
-| `forge_well_state_read` | `OBSERVE` | No | Read WELL telemetry snapshot. |
-| `forge_well_readiness_check` | `OBSERVE` | No | WELL readiness verdict. |
-| `forge_well_floor_scan` | `OBSERVE` | No | Scan all 13 W-floors. |
-| `forge_well_anchor` | `EXECUTE_REVERSIBLE` | Yes | Anchor WELL state to VAULT999. |
-
----
-
-## 14. Utilities & Meta (4 tools)
-
-Diagnostics, dry-run, and background job plumbing.
-
-| Tool | Class | Lease? | Use When |
-|------|-------|--------|----------|
-| `forge_registry_status` | `OBSERVE` | No | List A-FORGE tool registry truth state. |
-| `forge_shell_dryrun` | `SIMULATE` | No | Preview what a shell command *would* do without executing. |
-| `forge_job_submit` | `EXECUTE_REVERSIBLE` | Yes | Submit an async background job. |
-| `forge_job_status` | `OBSERVE` | No | Poll job status/result. |
-
----
-
-## Quick Decision Map
-
-| I want to... | Start here |
-|--------------|------------|
-| Begin a governed session | `arif_init` |
-| Check if an action is safe | `arif_critique` → `forge_judge_proxy` |
-| Read code/files | `forge_filesystem_read` / `forge_filesystem_grep` |
-| Edit code/files | `forge_filesystem_write` (lease) |
-| Search the web | `forge_search` or `forge_research` |
-| Open a browser | `forge_browser_navigate` (lease) |
-| Commit changes | `forge_git_commit` (lease) |
-| Open a GitHub issue/PR | `forge_github_create_issue` / `forge_github_create_pull_request` (lease) |
-| Run shell commands safely | `forge_shell_dryrun` first, then `arif_forge` with SEAL |
-| Store a memory | `forge_remember` or `forge_memory_store` (lease) |
-| Seal a final verdict | `arif_seal` (lease + JUDGE SEAL) |
-| Check system health | `arif_health_check`, `forge_log_tail`, `forge_netdata_alarms` |
-
----
-
-## Governance Reminder for Agents
-
-> **A-FORGE is not a free-for-all.** Every `EXECUTE_*` call leaves a receipt. Every lease is minted by arifOS, not by A-FORGE. When in doubt, run `arif_critique` first, then request a lease scoped to exactly the tools you need.
+- **95 of 122 tools give a router no usable trigger clause.** Of those, **1 append a `Use when:` that merely repeats their own description** — noise, not a discriminator. Fixing this means editing each tool's description at its registration site, not this file.
+- The 8 governance parameters (`session_id`, `actor_id`, `lease_id`, `session_token`, `sct`, `act`, `justification`, `claim_class`) are injected into every tool from `GOVERNANCE_FIELDS` in `src/interfaces/mcp/core.ts`. `session_token`, `sct` and `act` alias one token; `act` is preferred.
+- Outbound cross-organ conformance is audited by `forge_surface_audit` (axis `OUTBOUND_ABI_DRIFT`), not by this file.

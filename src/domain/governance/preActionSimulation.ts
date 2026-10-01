@@ -186,9 +186,19 @@ async function predictCapitalConsequences(
   try {
     const meta = request.metadata ?? {};
     // Prefer EVOI when prior/posterior/cost/value provided (per pre-action-prediction skill)
+    //
+    // S6 (F13 order 2026-10-01): the verbs used here — wealth_compute_evoi and
+    // wealth_monte_carlo_simulate — exist on NO live WEALTH surface, so every
+    // pre-action simulation died with "Unknown tool" and was reported as a
+    // WEALTH outage. WEALTH was probed directly: capital_primitive is the live
+    // primitive and its own error enumerates the valid modes
+    //   npv|irr|emv|evoi|mc|kelly|markowitz|robust|chance_constrained|two_stage|reward_design
+    // Every argument name below is already declared by capital_primitive, so the
+    // mapping is exact rather than approximate. monte-carlo is "mc".
     let result: Record<string, unknown>;
     if (meta.prior_pos !== undefined && meta.posterior_pos !== undefined && meta.well_cost_musd !== undefined && meta.p50_value_musd !== undefined) {
-      result = await callOrgan("wealth", "wealth_compute_evoi", {
+      result = await callOrgan("wealth", "capital_primitive", {
+        mode: "evoi",
         prior_pos: meta.prior_pos,
         posterior_pos: meta.posterior_pos,
         well_cost_musd: meta.well_cost_musd,
@@ -196,7 +206,8 @@ async function predictCapitalConsequences(
         discount_rate: meta.discount_rate ?? 0.1,
       }) as Record<string, unknown>;
     } else {
-      result = await callOrgan("wealth", "wealth_monte_carlo_simulate", {
+      result = await callOrgan("wealth", "capital_primitive", {
+        mode: "mc",
         initial_value: typeof meta.value === "number" ? meta.value : 100,
         growth_rate: typeof meta.growth === "number" ? meta.growth : 0.05,
         volatility: typeof meta.volatility === "number" ? meta.volatility : 0.15,
@@ -205,14 +216,26 @@ async function predictCapitalConsequences(
       }) as Record<string, unknown>;
     }
 
-    const prediction = result ?? {};
+    // WEALTH returns an envelope { tool_name, tool_version, domain, result:{…} }.
+    // Reading percentiles off the envelope always yielded undefined, so a
+    // successful computation still produced an empty consequence list. Unwrap.
+    const envelope = (result ?? {}) as Record<string, unknown>;
+    const prediction = ((envelope.result as Record<string, unknown>) ?? envelope) as Record<string, unknown>;
     const consequences: string[] = [];
     const risks: string[] = [];
 
-    // Extract Monte Carlo results
+    // Extract Monte Carlo results — capital_primitive(mode=mc) returns flat
+    // p10/p25/p50/p75/p90 + mean, not a nested `percentiles` object. Both
+    // shapes are honoured so the older contract still works.
     if (prediction.percentiles) {
       const p = prediction.percentiles as Record<string, number>;
       consequences.push(`P10: ${p.p10 ?? "N/A"}, P50: ${p.p50 ?? "N/A"}, P90: ${p.p90 ?? "N/A"}`);
+    } else if (typeof prediction.p50 === "number") {
+      consequences.push(
+        `P10: ${prediction.p10 ?? "N/A"}, P50: ${prediction.p50}, P90: ${prediction.p90 ?? "N/A"}` +
+        `${typeof prediction.mean === "number" ? `, mean: ${prediction.mean}` : ""}` +
+        `${prediction.distribution_reliable === false ? " (distribution_reliable=false)" : ""}`,
+      );
     }
     if (prediction.probability_of_loss) {
       const pol = prediction.probability_of_loss as number;
@@ -223,7 +246,7 @@ async function predictCapitalConsequences(
 
     return {
       ...base,
-      tool: "wealth_monte_carlo_simulate",
+      tool: "capital_primitive(mode=mc)",
       prediction,
       epistemic: "DER",
       confidence,
@@ -234,7 +257,7 @@ async function predictCapitalConsequences(
   } catch (err: any) {
     return {
       ...base,
-      tool: "wealth_monte_carlo_simulate",
+      tool: "capital_primitive(mode=mc)",
       prediction: null,
       epistemic: "UNKNOWN",
       confidence: 0,
