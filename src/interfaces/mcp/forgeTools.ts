@@ -106,17 +106,75 @@ export type LeaseRecord = {
   verdict_geometry?: VerdictGeometry;
   session_geometry?: VerdictGeometry;
   restraint_flags?: string[];
+  /** Provenance of the lease. "kernel" = minted by arifOS; "local" = self-registered fallback. */
+  source?: string;
+  /** True when this lease was narrowed at registration because its authority source was absent. */
+  degraded?: boolean;
+  /** Why it was narrowed. Present whenever degraded is true — a narrowing must never be silent. */
+  degraded_reason?: string;
 };
 
 const activeLeases = new Map<string, LeaseRecord>();
 
 /**
+ * The ONLY tools a locally-minted lease may carry. Mirrors the OBSERVE_SCOPE the
+ * forge_session_init fallback already uses for its observe-only branch, declared here
+ * because this function — not the call sites — is the enforcement point.
+ */
+const LOCAL_LEASE_OBSERVE_SCOPE: readonly string[] = [
+  "forge_filesystem",
+  "forge_vault",
+  "forge_session_init",
+  "forge_health_check",
+];
+
+/**
  * P1.3: Register a locally-minted lease in the active lease cache.
  * Used by forge_session_init when kernel lease minting fails.
- * Local leases are tamper-evident (source=local) and enable autonomous seals.
+ *
+ * A local lease exists BECAUSE the constitutional authority source could not mint one.
+ * Absence of that source is a reason to NARROW authority, never to widen it:
+ *   - A2A constitutional law 6 — DelegatedAuthority_n+1 ⊆ DelegatedAuthority_n
+ *   - APEX invariant 4/5 — capability ≠ authority; declared ≠ working
+ *   - authority-related uncertainty fails closed
+ * Before this cap the function stored whatever the caller passed, and the fallback passed
+ * max_action_class "MUTATE" with forge_seal / arif_seal / forge_ephemeral in scope — i.e.
+ * the actuator granted itself IRREVERSIBLE-class seal authority (CLASS_RANK rates vault
+ * seal IRREVERSIBLE, 888_HOLD required) at exactly the moment the organ that governs
+ * seals was unreachable. The previous docstring called that "enable autonomous seals".
+ * It now narrows to OBSERVE and says so out loud.
  */
-export function registerLocalLease(lease: LeaseRecord): void {
-  activeLeases.set(lease.lease_id, lease);
+export function registerLocalLease(lease: LeaseRecord): LeaseRecord {
+  const requestedClass = lease.max_action_class;
+  const requestedScope = [...lease.scope];
+  const grantedScope = requestedScope.filter((tool) =>
+    LOCAL_LEASE_OBSERVE_SCOPE.includes(tool),
+  );
+  const narrowed =
+    requestedClass !== "OBSERVE" || grantedScope.length !== requestedScope.length;
+
+  const governed: LeaseRecord = {
+    ...lease,
+    scope: grantedScope,
+    max_action_class: "OBSERVE",
+    source: "local",
+    degraded: narrowed,
+    degraded_reason: narrowed
+      ? `locally-minted lease narrowed to OBSERVE: requested class=${requestedClass} ` +
+        `scope=[${requestedScope.join(",")}]; kernel lease minting failed, so authority is ` +
+        `capped rather than self-granted (A2A law 6)`
+      : undefined,
+  };
+
+  activeLeases.set(governed.lease_id, governed);
+  if (narrowed) {
+    console.warn(
+      `[A-FORGE] registerLocalLease NARROWED ${governed.lease_id} agent=${governed.agent_id}: ` +
+        `${requestedClass}->OBSERVE, scope ${requestedScope.length}->${grantedScope.length} tools ` +
+        `(kernel lease unavailable — seal/mutate authority NOT self-granted)`,
+    );
+  }
+  return governed;
 }
 
 // ── Action Class Priority ─────────────────────────────────────────────────────
