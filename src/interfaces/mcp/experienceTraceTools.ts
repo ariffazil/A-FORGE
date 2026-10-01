@@ -652,6 +652,11 @@ export function registerExperienceTraceTools(server: McpServer): void {
       const byMethod = new Map<string, number>();
       let successes = 0;
       let knownOutcomes = 0;
+      let totalRTotal = 0;
+      let totalRSel = 0;
+      let totalRExe = 0;
+      let totalRVer = 0;
+      let rewardedCount = 0;
 
       for (const e of events) {
         const skill = String(e["skill_name"] ?? "unknown");
@@ -661,6 +666,13 @@ export function registerExperienceTraceTools(server: McpServer): void {
         if (e["outcome_success"] !== null && e["outcome_success"] !== undefined) {
           knownOutcomes++;
           if (e["outcome_success"]) successes++;
+        }
+        if (typeof e["r_total"] === "number") {
+          rewardedCount++;
+          totalRTotal += Number(e["r_total"]);
+          totalRSel += typeof e["r_selection"] === "number" ? Number(e["r_selection"]) : 0;
+          totalRExe += typeof e["r_execution"] === "number" ? Number(e["r_execution"]) : 0;
+          totalRVer += typeof e["r_verification"] === "number" ? Number(e["r_verification"]) : 0;
         }
       }
 
@@ -680,6 +692,14 @@ export function registerExperienceTraceTools(server: McpServer): void {
               by_method: Object.fromEntries(byMethod),
               success_rate: knownOutcomes > 0 ? Math.round((successes / knownOutcomes) * 1000) / 1000 : null,
               known_outcomes: knownOutcomes,
+              credit_separation: rewardedCount > 0 ? {
+                reward_formula: "R_total = R_selection + R_execution + R_verification",
+                rewarded_events: rewardedCount,
+                avg_r_total: Math.round((totalRTotal / rewardedCount) * 1000) / 1000,
+                avg_r_selection: Math.round((totalRSel / rewardedCount) * 1000) / 1000,
+                avg_r_execution: Math.round((totalRExe / rewardedCount) * 1000) / 1000,
+                avg_r_verification: Math.round((totalRVer / rewardedCount) * 1000) / 1000,
+              } : null,
             },
             events: events.map((e) => ({
               ts: e["ts"],
@@ -688,13 +708,19 @@ export function registerExperienceTraceTools(server: McpServer): void {
               agent_id: e["agent_id"],
               outcome_success: e["outcome_success"],
               outcome_summary: e["outcome_summary"],
+              rewards: typeof e["r_total"] === "number" ? {
+                r_selection: e["r_selection"],
+                r_execution: e["r_execution"],
+                r_verification: e["r_verification"],
+                r_total: e["r_total"],
+              } : undefined,
               alternative_skills: e["alternative_skills"],
             })),
             _epistemic: {
               evidence_layer: "OBS",
               confidence: 0.90,
               source: "forge_skill_select_query",
-              note: "Skill selection tracking = SkillGate Phase 1 observation. Credit separation in Phase 2.",
+              note: "Skill selection tracking = SkillGate Phase 2 credit separation (R_total = R_selection + R_execution + R_verification).",
             },
           }, null, 2),
         }],

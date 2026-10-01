@@ -253,6 +253,10 @@ class SkillSelectionEvent:
     outcome_success: bool | None = None  # None = not yet known
     outcome_summary: str | None = None
     alternative_skills: list[str] | None = None  # what else was considered
+    r_selection: float | None = None
+    r_execution: float | None = None
+    r_verification: float | None = None
+    r_total: float | None = None
 
     def to_dict(self) -> dict:
         return {
@@ -265,6 +269,10 @@ class SkillSelectionEvent:
             "outcome_success": self.outcome_success,
             "outcome_summary": self.outcome_summary,
             "alternative_skills": self.alternative_skills,
+            "r_selection": self.r_selection,
+            "r_execution": self.r_execution,
+            "r_verification": self.r_verification,
+            "r_total": self.r_total,
         }
 
 
@@ -276,7 +284,8 @@ class SkillSelectionTracker:
     Append-only JSONL ledger. Observation only — does not influence selection.
 
     Phase 1: record events.
-    Phase 2: compute selection credit vs execution credit separation.
+    Phase 2: compute selection credit vs execution credit separation:
+             R_total = R_selection + R_execution + R_verification
     """
 
     def __init__(self, log_path: str = "/root/.local/share/arifos/skill-selection/selections.jsonl"):
@@ -297,6 +306,10 @@ class SkillSelectionTracker:
         outcome_success: bool | None = None,
         outcome_summary: str | None = None,
         alternative_skills: list[str] | None = None,
+        r_selection: float | None = None,
+        r_execution: float | None = None,
+        r_verification: float | None = None,
+        r_total: float | None = None,
     ) -> SkillSelectionEvent:
         """Record a skill selection event. Append-only."""
         import json
@@ -304,6 +317,10 @@ class SkillSelectionTracker:
 
         if isinstance(selection_method, str):
             selection_method = SelectionMethod(selection_method)
+
+        if r_total is None and any(r is not None for r in (r_selection, r_execution, r_verification)):
+            components = [r for r in (r_selection, r_execution, r_verification) if r is not None]
+            r_total = round(sum(components), 3)
 
         event = SkillSelectionEvent(
             ts=datetime.now(timezone.utc).isoformat(),
@@ -315,12 +332,142 @@ class SkillSelectionTracker:
             outcome_success=outcome_success,
             outcome_summary=outcome_summary,
             alternative_skills=alternative_skills,
+            r_selection=r_selection,
+            r_execution=r_execution,
+            r_verification=r_verification,
+            r_total=r_total,
         )
 
         with open(self._log_path, "a") as f:
             f.write(json.dumps(event.to_dict()) + "\n")
 
         return event
+
+    def record_outcome(
+        self,
+        session_id: str,
+        skill_name: str | None = None,
+        outcome_success: bool = True,
+        outcome_summary: str | None = None,
+        r_selection: float = 0.35,
+        r_execution: float = 0.45,
+        r_verification: float = 0.20,
+    ) -> int:
+        """Update pending skill selection event(s) with verified outcome and credit separation."""
+        import json
+        import os
+
+        try:
+            with open(self._log_path) as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            return 0
+
+        updated_count = 0
+        new_lines = []
+        r_total = round(r_selection + r_execution + r_verification, 3)
+
+        for line in lines:
+            line_str = line.strip()
+            if not line_str:
+                continue
+            try:
+                ev = json.loads(line_str)
+            except json.JSONDecodeError:
+                new_lines.append(line)
+                continue
+
+            matches_session = (ev.get("session_id") == session_id or
+                               ev.get("session_id", "").replace("session_", "") == session_id.replace("session_", ""))
+            matches_skill = skill_name is None or ev.get("skill_name") == skill_name
+
+            if matches_session and matches_skill and ev.get("outcome_success") is None:
+                ev["outcome_success"] = outcome_success
+                ev["outcome_summary"] = outcome_summary or ("Execution verified" if outcome_success else "Execution failed")
+                ev["r_selection"] = r_selection
+                ev["r_execution"] = r_execution
+                ev["r_verification"] = r_verification
+                ev["r_total"] = r_total
+                updated_count += 1
+
+            new_lines.append(json.dumps(ev) + "\n")
+
+        if updated_count > 0:
+            tmp_path = self._log_path + ".tmp"
+            with open(tmp_path, "w") as f:
+                f.writelines(new_lines)
+            os.replace(tmp_path, self._log_path)
+
+        return updated_count
+
+    def reconcile_outcomes(self) -> int:
+        """
+        Reconcile pending skill selection outcomes from session state and experience traces.
+        Computes credit separation: R_total = R_selection + R_execution + R_verification.
+        """
+        import json
+        import glob
+        import os
+
+        try:
+            with open(self._log_path) as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            return 0
+
+        reconciled = 0
+        new_lines = []
+
+        for line in lines:
+            line_str = line.strip()
+            if not line_str:
+                continue
+            try:
+                ev = json.loads(line_str)
+            except json.JSONDecodeError:
+                new_lines.append(line)
+                continue
+
+            if ev.get("outcome_success") is None:
+                sid = ev.get("session_id", "")
+                raw_sid = sid.replace("session_", "")
+                # Search kimi session states
+                session_files = glob.glob(f"/root/.kimi-code/sessions/*/{sid}/state.json")
+                if not session_files and raw_sid:
+                    session_files = glob.glob(f"/root/.kimi-code/sessions/*/*{raw_sid}*/state.json")
+
+                if session_files:
+                    try:
+                        with open(session_files[0]) as sf:
+                            st = json.load(sf)
+                        last_turn_reason = st.get("lastTurnReason", "")
+                        archived = st.get("archived", False)
+                        is_success = last_turn_reason in ("completed", "done") or archived or not st.get("error")
+
+                        r_sel = 0.35 if is_success else 0.10
+                        r_exe = 0.45 if is_success else 0.05
+                        r_ver = 0.20 if is_success else 0.00
+                        r_tot = round(r_sel + r_exe + r_ver, 3)
+
+                        ev["outcome_success"] = is_success
+                        ev["outcome_summary"] = f"Session completed ({last_turn_reason or 'archived'})" if is_success else "Session incomplete/errored"
+                        ev["r_selection"] = r_sel
+                        ev["r_execution"] = r_exe
+                        ev["r_verification"] = r_ver
+                        ev["r_total"] = r_tot
+                        reconciled += 1
+                    except Exception:
+                        pass
+
+            new_lines.append(json.dumps(ev) + "\n")
+
+        if reconciled > 0:
+            tmp_path = self._log_path + ".tmp"
+            with open(tmp_path, "w") as f:
+                f.writelines(new_lines)
+            os.replace(tmp_path, self._log_path)
+
+        return reconciled
 
     def query(
         self,
@@ -386,6 +533,8 @@ class SkillSelectionTracker:
         by_method: Counter = Counter()
         successes = 0
         known_outcomes = 0
+        total_r = 0.0
+        r_count = 0
 
         for e in events:
             by_skill[e.get("skill_name", "unknown")] += 1
@@ -394,6 +543,9 @@ class SkillSelectionTracker:
                 known_outcomes += 1
                 if e["outcome_success"]:
                     successes += 1
+            if isinstance(e.get("r_total"), (int, float)):
+                total_r += float(e["r_total"])
+                r_count += 1
 
         return {
             "total": len(events),
@@ -401,6 +553,8 @@ class SkillSelectionTracker:
             "by_method": dict(by_method.most_common()),
             "success_rate": round(successes / known_outcomes, 3) if known_outcomes > 0 else None,
             "known_outcomes": known_outcomes,
+            "avg_r_total": round(total_r / r_count, 3) if r_count > 0 else None,
+            "rewarded_events": r_count,
         }
 
 

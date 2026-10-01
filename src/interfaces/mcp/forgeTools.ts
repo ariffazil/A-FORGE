@@ -2199,8 +2199,9 @@ export function registerPredictTools(server: McpServer): void {
       // Use the canonical preActionSimulation module when possible (Tier 2 wiring)
       try {
         const callOrganAdapter = async (organ: string, tool: string, callArgs: Record<string, unknown>) => {
-          const ns = organ === "geox" ? "geox_mcp" : organ === "wealth" ? "wealth_mcp" : organ === "well" ? "well_mcp" : "arifos";
-          return await callMCP(`${ns}.${tool}`, { ...callArgs, actor_id: actor_id ?? "forge_predict", session_id });
+          const ns = organ === "geox" ? "geox" : organ === "wealth" ? "wealth" : organ === "well" ? "well" : "arifos";
+          const target = `${ns}.${tool}`;
+          return await callMCP(target as any, { ...callArgs, actor_id: actor_id ?? "forge_predict", session_id });
         };
 
         const predResult = await predictConsequences(simReq, callOrganAdapter);

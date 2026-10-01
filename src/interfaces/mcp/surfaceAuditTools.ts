@@ -133,7 +133,7 @@ async function parseAffordances(path: string): Promise<AffordanceEntry[]> {
   if (!existsSync(path)) return [];
   const content = await readFile(path, "utf-8");
   const parsed = parseYaml(content);
-  return (parsed?.tools ?? []) as AffordanceEntry[];
+  return (parsed?.tools ?? parsed?.public_tools ?? []) as AffordanceEntry[];
 }
 
 /**
@@ -225,6 +225,7 @@ export async function auditSurface(
 
   // B3 v6: is_clean ignores DEPRECATED_DOC — those are intentional state, not drift.
   const realDrift = findings.filter((f) => f.type !== "DEPRECATED_DOC");
+  const deprecatedCount = findings.length - realDrift.length;
   const isClean = realDrift.length === 0;
 
   return {
@@ -235,9 +236,11 @@ export async function auditSurface(
     drift_count: findings.length,
     findings,
     is_clean: isClean,
-    recommendation: isClean
-      ? "No drift detected. Surface is clean."
-      : `${findings.length} drift(s) found. Severity: ${findings.some(f => f.severity === "HIGH") ? "HIGH — action recommended" : "LOW/MEDIUM — monitor"}`,
+    recommendation: realDrift.length === 0
+      ? deprecatedCount > 0
+        ? `Surface clean of new drift. ${deprecatedCount} documented DEPRECATED_DOC entries present (B3 v6: intentional).`
+        : "No drift detected. Surface is clean."
+      : `${realDrift.length} drift(s) found. Severity: ${realDrift.some(f => f.severity === "HIGH") ? "HIGH — action recommended" : "LOW/MEDIUM — monitor"}`,
   };
 }
 
@@ -290,10 +293,13 @@ export async function auditOutboundAbi(
   const targets = new Map<string, { ns: string; verb: string; sites: string[] }>();
   const dynamicSites: string[] = [];
   for (const f of files) {
-    const text = await fsp.readFile(f, "utf-8");
     const rel = nodePath.relative(repoRoot, f);
+    if (rel === "src/interfaces/mcp/surfaceAuditTools.ts") continue;
+    const text = await fsp.readFile(f, "utf-8");
     const lines = text.split("\n");
     lines.forEach((line, i) => {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("//") || trimmed.startsWith("*") || trimmed.startsWith("/*")) return;
       const site = `${rel}:${i + 1}`;
       const add = (ns0: string, verb0: string) => {
         const ns = ns0.replace(/_mcp$/, "");
@@ -549,6 +555,7 @@ export function registerSurfaceAuditTools(server: McpServer): void {
             const typeSummary = Object.entries(byType)
               .map(([k, v]) => `${k}:${v}`)
               .join(" ");
+            const hasPhantomOrMissing = report.findings.some((f) => f.type === "PHANTOM" || f.type === "MISSING");
             report.recommendation = report.is_clean
               ? `No drift detected across ${report.registry_tools} registered tools and ${abi.checked} outbound call target(s). Surface is clean.`
               : `${realDrift.length} drift(s) found [${typeSummary}]` +
@@ -557,7 +564,7 @@ export function registerSurfaceAuditTools(server: McpServer): void {
                 (dead
                   ? "Repair each dead verb (TOOL_NAME_MAP or call site) before trusting any cross-organ path. "
                   : "") +
-                "Run forge_surface_audit mode=fix for corrected drafts.";
+                (hasPhantomOrMissing ? "Run forge_surface_audit mode=fix for corrected drafts." : "Check findings above.");
           } catch (e) {
             // VOID GUARD: a failed axis is UNKNOWN, never a clean verdict.
             report.findings.push({
@@ -569,6 +576,7 @@ export function registerSurfaceAuditTools(server: McpServer): void {
             });
             report.drift_count = report.findings.filter((f) => f.type !== "DEPRECATED_DOC").length;
             report.is_clean = false;
+            report.recommendation = `Outbound ABI conformance could not run: ${e instanceof Error ? e.message : String(e)}. Surface is UNVERIFIABLE.`;
           }
         }
         if (registrySource === "declared_self") {
@@ -615,17 +623,40 @@ export function registerSurfaceAuditTools(server: McpServer): void {
       }
 
       // mode === "audit" — full report
+      const allClean = results.every((r) => r.is_clean);
+      const anyDeadAbi = results.some((r) => (r.outbound_abi?.drift ?? 0) > 0);
+      const anyPhantomOrMissing = results.some((r) => r.findings.some((f) => f.type === "PHANTOM" || f.type === "MISSING"));
+      // S2b HARD INVARIANT (F13-class layer 2026-10-01): machine fields derive
+      // human-summary text, never the reverse. If any realDrift (non-deprecated)
+      // is present OR anyDeadAbi > 0, the recommendation MUST NOT contain "clean".
+      // Earlier the audit could simultaneously say drift_count=10 + "No drift
+      // detected. Surface is clean." — evidence ≠ summary failure.
+      const totalRealDrift = results.reduce((n, r) => {
+        const realDrifts = (r.findings ?? []).filter((f: { type: string }) => f.type !== "DEPRECATED_DOC");
+        return n + realDrifts.length;
+      }, 0);
+      const totalDeprecated = results.reduce((n, r) => {
+        const dep = (r.findings ?? []).filter((f: { type: string }) => f.type === "DEPRECATED_DOC");
+        return n + dep.length;
+      }, 0);
+      const realCleanAndNoAbi = allClean && !anyDeadAbi && totalRealDrift === 0;
       return {
         content: [{
           type: "text" as const,
           text: JSON.stringify({
-            status: results.every((r) => r.is_clean) ? "CLEAN" : "DRIFT_DETECTED",
+            status: allClean && !anyDeadAbi && totalRealDrift === 0 ? "CLEAN" : "DRIFT_DETECTED",
             scanned_organs: organsToScan,
             reports: results,
             timestamp: new Date().toISOString(),
-            recommendation: results.some((r) => !r.is_clean)
-              ? "Run forge_surface_audit mode=fix to generate corrected drafts, or manually edit affordances.yaml."
-              : "All surfaces clean. No action needed.",
+            recommendation: !realCleanAndNoAbi
+              ? anyDeadAbi
+                ? `Outbound ABI drift detected (${results.reduce((n, r) => n + (r.outbound_abi?.drift ?? 0), 0)} dead cross-organ verbs across organs). Repair dead verbs in TOOL_NAME_MAP or call sites.`
+                : anyPhantomOrMissing
+                    ? "Run forge_surface_audit mode=fix to generate corrected drafts, or manually edit affordances.yaml."
+                    : `${totalRealDrift} real drift(s) found${totalDeprecated > 0 ? `, plus ${totalDeprecated} documented DEPRECATED_DOC entries (intentional).` : "."} Address findings above.`
+              : totalDeprecated > 0
+                ? `All surfaces clean of new drift. ${totalDeprecated} documented DEPRECATED_DOC entries present (intentional). No action required.`
+                : "All surfaces clean. No action needed.",
           }, null, 2),
         }],
       };

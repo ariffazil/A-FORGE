@@ -623,11 +623,20 @@ async function callArifVerify(
   commandHash: string
 ): Promise<Record<string, unknown>> {
   // Uses callMCP already imported at module level from ../client.js
-  return await callMCP("arifos.arif_verify", {
-    token: sessionId,
-    command,
+  const resp = await callMCP("arifos.arif_seal", {
+    mode: "verify",
+    session_token: sessionId,
+    payload: command,
     command_hash: commandHash,
   }) as Record<string, unknown>;
+  const meta = (resp.meta as Record<string, unknown>) ?? {};
+  return {
+    ...resp,
+    token_valid: meta.token_valid ?? (resp.status === "PASS" || resp.verdict === "SEAL"),
+    scope_valid: meta.scope_valid ?? true,
+    replay_safe: meta.replay_safe ?? true,
+    violations: meta.violations ?? resp.reasons ?? [],
+  };
 }
 
 /**

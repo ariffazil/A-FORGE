@@ -810,10 +810,11 @@ app.post("/execute", async (req: Request, res: Response) => {
     // ── ADAT AGENTIC: Auto-seal governance-required actions ──
     if (requiresGovernance(actionClass)) {
       try {
-        const sealResult = await callMCP("arif_vault_seal", {
-          content: JSON.stringify({ tool, actionClass, session_id, timestamp: new Date().toISOString() }),
+        const sealResult = await callMCP("arifos.arif_seal", {
+          mode: "receipt",
+          payload: JSON.stringify({ tool, actionClass, session_id, timestamp: new Date().toISOString() }),
           reason: `auto-seal: ${tool}`,
-          tier: requires888Hold(actionClass) ? "CRITICAL" : "STANDARD",
+          blast_radius: requires888Hold(actionClass) ? "L3_CRITICAL" : "L2_SYSTEM",
           actor_id,
           session_id,
         });

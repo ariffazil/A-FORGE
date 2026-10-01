@@ -1871,8 +1871,9 @@ const forgeHandler = async (args: any, toolName: string) => {
       if (needs) {
         try {
           const callOrganAdapter = async (organ: string, tool: string, callArgs: Record<string, unknown>) => {
-            const ns = organ === "geox" ? "geox_mcp" : organ === "wealth" ? "wealth_mcp" : organ === "well" ? "well_mcp" : "arifos";
-            return await callMCP(`${ns}.${tool}`, callArgs);
+            const ns = organ === "geox" ? "geox" : organ === "wealth" ? "wealth" : organ === "well" ? "well" : "arifos";
+            const target = `${ns}.${tool}`;
+            return await callMCP(target as any, callArgs);
           };
 
           const predResult: PredictionResult = await predictConsequences(simReq, callOrganAdapter);
