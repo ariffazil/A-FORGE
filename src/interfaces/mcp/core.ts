@@ -1219,7 +1219,7 @@ function computeEurekaCandidates(xs: any[], ys: number[], topK = 5): EurekaCandi
   return candidates.slice(0, topK);
 }
 
-function generateSvgChart(type: ChartType, data: any[], opts: ChartOptions = {}): { svg: string; summary: Record<string, unknown>; eureka_candidates: EurekaCandidate[] } {
+function generateSvgChart(type: ChartType, data: any[], opts: ChartOptions = {}): { svg: string; summary: Record<string, unknown>; anomaly_candidates: EurekaCandidate[]; eureka_candidates: EurekaCandidate[] } {
   const { xs, ys, labels } = normalizeSeries(data, opts.x_field, opts.y_field);
   const W = opts.width || 640;
   const H = opts.height || 380;
@@ -1229,7 +1229,7 @@ function generateSvgChart(type: ChartType, data: any[], opts: ChartOptions = {})
   const title = opts.title || `${type.toUpperCase()} Chart`;
   const n = ys.length;
   if (n === 0) {
-    return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><text x="20" y="20">No data</text></svg>`, summary: { n: 0 }, eureka_candidates: [] };
+    return { svg: `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><text x="20" y="20">No data</text></svg>`, summary: { n: 0 }, anomaly_candidates: [], eureka_candidates: [] };
   }
   const yMin = Math.min(...ys);
   const yMax = Math.max(...ys);
@@ -1312,9 +1312,10 @@ function generateSvgChart(type: ChartType, data: any[], opts: ChartOptions = {})
   const summary = {
     n, type, title, y_min: Number(yMin.toFixed(4)), y_max: Number(yMax.toFixed(4)),
     y_mean: Number((ys.reduce((a,b)=>a+b,0)/n).toFixed(4)),
+    anomaly_count: eureka.length,
     eureka_count: eureka.length,
   };
-  return { svg, summary, eureka_candidates: eureka };
+  return { svg, summary, anomaly_candidates: eureka, eureka_candidates: eureka };
 }
 
 // ── Tier 00 Identity ─────────────────────────────────────────────────────────
@@ -3007,7 +3008,7 @@ server.tool(
 // OBSERVE class. No lease required. Native (no external MCP dep for core types).
 server.tool(
   "forge_chart",
-  "Agentic charting + quantum eureka discovery margin patterns. Input data series or records; returns SVG + summary + eureka_candidates (reversals, high-z, curvature). Types support line/bar/scatter/pie/area/histogram. Use after postgres/wealth/well queries for visualization and pattern discovery. All organs share this surface.",
+  "Agentic charting and statistical anomaly discovery. Input data series or records; returns SVG + summary + anomaly_candidates (reversals, high-z, curvature). Types support line/bar/scatter/pie/area/histogram. Use after postgres/wealth/well queries for visualization and pattern discovery.",
   {
     type: z.enum(["line", "bar", "scatter", "pie", "area", "histogram"]).default("line"),
     data: z.array(z.any()).describe("Array of numbers, [x,y] pairs, or objects {x,y} / {label,value} or use x_field/y_field"),
@@ -3022,7 +3023,7 @@ server.tool(
     const startedAt = Date.now();
     await telemetryInvoke("forge_chart");
     try {
-      const { svg, summary, eureka_candidates } = generateSvgChart(args.type as ChartType, args.data, {
+      const { svg, summary, anomaly_candidates, eureka_candidates } = generateSvgChart(args.type as ChartType, args.data, {
         title: args.title,
         width: args.width,
         height: args.height,
@@ -3031,7 +3032,7 @@ server.tool(
       });
       const payload: any = args.return_format === "svg"
         ? { svg }
-        : { svg, summary, eureka_candidates, note: "Paste SVG into .svg file or render in browser. Red rings mark eureka margins (discovery frontiers)." };
+        : { svg, summary, anomaly_candidates, eureka_candidates, note: "Paste SVG into .svg file or render in browser. Red rings mark detected anomalies (turning points / deviation margins)." };
       await telemetrySuccess("forge_chart", startedAt);
       return { content: [{ type: "text" as const, text: resultAsJson(payload) }] };
     } catch (err: any) {

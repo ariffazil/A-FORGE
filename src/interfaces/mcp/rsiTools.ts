@@ -104,6 +104,20 @@ export function registerRSITools(server: McpServer): void {
       try {
         const fq = await computeDualRateFQ(min_governance_samples);
 
+        // Control contract calculation
+        const baseline = 1.0;
+        const trendPct = Math.round(((fq.governance_fq - baseline) / baseline) * 1000) / 10;
+        let interpretation = "Healthy verify:execute ratio — verification pace matches or exceeds execution.";
+        let controllerImplication = "No intervention required. Autonomous promotion permitted.";
+
+        if (fq.governance_fq < 0.7) {
+          interpretation = "Low verification ratio (FQ < 0.7) — execution significantly outpaces verification.";
+          controllerImplication = "HOLD: Enforce mandatory verification before promoting new autonomous tasks.";
+        } else if (fq.governance_fq < 1.0) {
+          interpretation = "Moderate verification coverage (0.7 ≤ FQ < 1.0) — acceptable for reversible actions.";
+          controllerImplication = "Observe next cycle. Defer irreversible autonomous promotion.";
+        }
+
         return {
           content: [
             {
@@ -111,6 +125,13 @@ export function registerRSITools(server: McpServer): void {
               text: JSON.stringify(
                 {
                   ...fq,
+                  control_contract: {
+                    baseline_fq: baseline,
+                    trend_vs_baseline_pct: trendPct,
+                    confidence: fq.governance_window_sufficient ? "HIGH" : "LOW_SAMPLES",
+                    interpretation,
+                    controller_implication: controllerImplication,
+                  },
                   epistemic_labels: {
                     daily_fq: "OBS",
                     governance_fq: "DER",

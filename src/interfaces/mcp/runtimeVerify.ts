@@ -300,9 +300,11 @@ export function registerRuntimeVerifyTool(server: McpServer): void {
           const wheelNorm = wheel.location.replace(/\/+$/, "");
           const impNorm = imp.path.replace(/\/+$/, "");
           const impDir = impNorm.replace(/__init__\.py$/, "").replace(/\/+$/, "");
-          if (wheelNorm === impDir || wheelNorm.endsWith(impDir.split("/").pop() ?? "")) {
+          const impParent = impDir.substring(0, impDir.lastIndexOf("/"));
+          const isContained = impDir.startsWith(wheelNorm) || impParent === wheelNorm || wheelNorm === impDir || wheelNorm.endsWith(impDir.split("/").pop() ?? "");
+          if (isContained) {
             wheelVsImport = "MATCH";
-            evidence.push("Wheel-vs-import: MATCH");
+            evidence.push(`Wheel-vs-import: MATCH (imported from installed location: ${impDir})`);
           } else {
             wheelVsImport = "DRIFT";
             evidence.push(`Wheel-vs-import: DRIFT (${wheel.location} != ${imp.path})`);

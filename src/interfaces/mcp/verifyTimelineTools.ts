@@ -11,6 +11,9 @@ const SourceSchema = z.object({
   source_type: z.enum(["publication", "report", "dataset", "interview", "archive", "correspondence", "other"]).describe("Category of source"),
   reliability: z.number().min(0).max(1).describe("Reliability score 0–1"),
   organization: z.string().optional().describe("Publishing organization (used for independence check)"),
+  source_uri: z.string().optional().describe("Retrievable URI/URL for source evidence"),
+  content_hash: z.string().optional().describe("Content hash of the cited artifact"),
+  observed_claim: z.string().optional().describe("Exact quote or observed claim in the source"),
 });
 
 const TimelineItemSchema = z.object({
@@ -23,7 +26,7 @@ const TimelineItemSchema = z.object({
 export function registerVerifyTimelineTools(server: McpServer): void {
   server.tool(
     "forge_verify_timeline",
-    "Verify timeline claims require minimum 2 independent sources.\nTIMELINE_MIN_SOURCES invariant: No timeline claim with fewer than 2 sources passes.\nReturns verification verdict, source count, source quality assessment, and gaps.",
+    "Verify timeline claims meet the minimum 2 independent sources requirement.\nTIMELINE_MIN_SOURCES invariant: Verifies source cardinality and declared independence envelope.\nReturns SOURCE_REQUIREMENTS_PASS / HOLD / FAIL, source quality assessment, and gaps.",
     {
       timeline_items: z.array(TimelineItemSchema).min(1).describe("Timeline items to verify"),
       min_sources: z.number().int().min(1).max(10).default(2).describe("Minimum sources required per item"),
@@ -41,7 +44,7 @@ export function registerVerifyTimelineTools(server: McpServer): void {
           event: item.event,
           date: item.date,
           source_count: item.sources.length,
-          verdict: "PASS",
+          verdict: "SOURCE_REQUIREMENTS_PASS",
           issues: [] as string[],
         };
 
@@ -61,7 +64,7 @@ export function registerVerifyTimelineTools(server: McpServer): void {
           const orgs = item.sources.map(s => s.organization ?? s.source_type).filter(Boolean);
           const uniqueOrgs = new Set(orgs);
           if (uniqueOrgs.size < 2) {
-            itemResult.verdict = itemResult.verdict === "PASS" ? "HOLD" : itemResult.verdict;
+            itemResult.verdict = itemResult.verdict === "SOURCE_REQUIREMENTS_PASS" ? "HOLD" : itemResult.verdict;
             itemResult.issues.push("Sources may not be independent — same org/type detected");
             violations.push({
               item: item.event,
@@ -94,6 +97,8 @@ export function registerVerifyTimelineTools(server: McpServer): void {
             source_type: s.source_type,
             reliability: s.reliability,
             organization: s.organization ?? "unknown",
+            source_uri: s.source_uri,
+            content_hash: s.content_hash,
           }));
         }
 
@@ -106,15 +111,16 @@ export function registerVerifyTimelineTools(server: McpServer): void {
         }
 
         total_sources += item.sources.length;
-        if (itemResult.verdict === "PASS") total_items_pass++;
+        if (itemResult.verdict === "SOURCE_REQUIREMENTS_PASS") total_items_pass++;
+        results.push(itemResult);
       }
 
-      const overall_verdict = violations.length === 0 ? "PASS" : violations.length <= timeline_items.length / 2 ? "HOLD" : "FAIL";
+      const overall_verdict = violations.length === 0 ? "SOURCE_REQUIREMENTS_PASS" : violations.length <= timeline_items.length / 2 ? "HOLD" : "FAIL";
       const source_quality_summary = {
         total_sources,
         average_per_item: Math.round((total_sources / timeline_items.length) * 100) / 100,
         items_verified: timeline_items.length,
-        items_passing: total_items_pass,
+        items_meeting_source_requirements: total_items_pass,
         items_failing_or_held: timeline_items.length - total_items_pass,
       };
 
@@ -127,6 +133,7 @@ export function registerVerifyTimelineTools(server: McpServer): void {
         source_quality_summary,
         invariant: "TIMELINE_MIN_SOURCES",
         invariant_status: violations.some(v => v.invariant === "TIMELINE_MIN_SOURCES") ? "VIOLATED" : "COMPLIANT",
+        note: "SOURCE_REQUIREMENTS_PASS certifies source cardinality and declared independence envelope. It does not certify underlying historical truth without primary artifact retrieval.",
         timestamp: new Date().toISOString(),
       });
     }

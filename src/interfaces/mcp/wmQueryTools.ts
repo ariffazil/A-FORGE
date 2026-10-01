@@ -181,13 +181,29 @@ export function registerWMTools(server: McpServer): void {
         meta = JSON.parse(await readFile(META_FILE, "utf-8"));
       } catch { /* ok */ }
 
+      const eligibleCount = filtered.filter((r) => r.wm_eligible).length;
+
       return {
         content: [{
           type: "text" as const,
           text: JSON.stringify({
             status: "SEAL",
+            trajectory_dataset: {
+              total_trajectories: records.length,
+              eligible_trajectories: eligibleCount,
+              filtered_by: tool_filter ?? "all",
+            },
+            chain_ledger: {
+              chain_total_records: chainHead.total_records,
+              last_hash: chainHead.last_hash,
+              last_timestamp: chainHead.last_timestamp,
+            },
+            priority_metadata: {
+              records_eligible: meta.records_eligible,
+              records_by_priority: meta.records_by_priority,
+            },
+            // Legacy aliases preserved for backward compatibility
             total_records: records.length,
-            filtered_by: tool_filter ?? "all",
             chain: chainHead,
             metadata: meta,
             tools,
@@ -195,6 +211,7 @@ export function registerWMTools(server: McpServer): void {
               evidence_layer: "OBS",
               confidence: 0.90,
               source: "forge_wm_stats",
+              note: "Populations disambiguated: trajectory_dataset (learnable execution paths) vs chain_ledger (hash-chained records) vs priority_metadata (priority buckets).",
             },
           }, null, 2),
         }],
