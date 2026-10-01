@@ -913,7 +913,19 @@ const ForgeSandboxListPausedRequestSchema = z.object({
   actorId: z.string().optional().describe("Filter by actor ID"),
 });
 
-const ForgeSandboxAutoEvictRequestSchema = z.object({});
+const ForgeSandboxAutoEvictRequestSchema = z.object({
+  // S7 (F13 SAH 2026-10-01): this tool purged cold-storage snapshots while
+  // accepting ZERO arguments, so a curiosity-driven call ("what does this do?")
+  // deleted data. Its name reads like a report. Preview is now the default and
+  // purging requires an explicit confirm.
+  dry_run: z.boolean().default(true).describe(
+    "Default true: list eviction candidates and purge nothing. Set false AND confirm=true to actually purge.",
+  ),
+  confirm: z.boolean().optional().describe(
+    "Required together with dry_run=false. Without it the call previews and mutates nothing.",
+  ),
+  actorId: z.string().optional().describe("Restrict the preview to one actor's paused sandboxes"),
+});
 
 async function forgeSandboxPauseHandler(args: z.infer<typeof ForgeSandboxPauseRequestSchema>) {
   const session = getSession(args.sandboxId);
@@ -986,7 +998,37 @@ async function forgeSandboxListPausedHandler(args: z.infer<typeof ForgeSandboxLi
   };
 }
 
-async function forgeSandboxAutoEvictHandler(_args: z.infer<typeof ForgeSandboxAutoEvictRequestSchema>) {
+async function forgeSandboxAutoEvictHandler(args: z.infer<typeof ForgeSandboxAutoEvictRequestSchema>) {
+  // S7 (F13 SAH 2026-10-01): preview unless the caller explicitly opts into
+  // purging. Both conditions are required, so no accidental argument can delete.
+  if (args.dry_run !== false || args.confirm !== true) {
+    const paused = listPaused(args.actorId || "any");
+    const candidates = paused.map((s) => ({
+      sandboxId: s.sandboxId,
+      actorId: s.actorId,
+      pausedAt: s.pausedAt,
+      tarballSizeBytes: s.tarballSizeBytes,
+      ageHours: +((Date.now() - new Date(s.pausedAt).getTime()) / 3600000).toFixed(1),
+    }));
+    return {
+      content: [{
+        type: "text" as const,
+        text: JSON.stringify({
+          mode: "PREVIEW",
+          purged: 0,
+          note:
+            "Nothing was deleted. autoEvict() purges paused snapshots older than " +
+            "MAX_PAUSE_AGE_HOURS; the list below is ALL paused snapshots, so the real " +
+            "purge set is the subset past that threshold. Re-call with dry_run=false " +
+            "AND confirm=true to purge.",
+          pausedCount: candidates.length,
+          candidates,
+          _epistemic: epistemicTag("forge_sandbox_auto_evict"),
+        }, null, 2),
+      }],
+    };
+  }
+
   const result = autoEvict();
 
   return {

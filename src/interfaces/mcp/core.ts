@@ -513,30 +513,25 @@ function injectEpistemic(
 // New tools added later are automatically wrapped — no bypass possible.
 // This is the F1–F13 enforcement chokepoint for MCP ingress.
 
+// S5 stage 1 (F13 SAH 2026-10-01): descriptions compressed at this single
+// injection point. These 8 fields are added to all 122 tools, so they were
+// 103,456 of 193,660 schema bytes — 53.4 % of everything an agent must read to
+// use A-FORGE. Every field is still DECLARED, so no caller's acceptance
+// changes; only the prose shrank. Stage 2 (retiring the session_token/sct
+// aliases) needs a deprecation window: schemas are built .strict(), so removing
+// a declared field makes the server reject callers who still send it.
 const GOVERNANCE_FIELDS = {
-  session_id: z.string().optional().describe("Kernel-born session ID (FORGE 2-B)"),
-  actor_id: z.string().optional().describe("Actor ID (FORGE 2-B)"),
-  lease_id: z.string().optional().describe("Governed lease ID (FORGE 2-B)"),
-  session_token: z
-    .string()
-    .optional()
-    .describe("arifOS Arif's Capability Token act_v1.* (federation ACT gate; legacy sct_v1 accepted)"),
-  sct: z.string().optional().describe("Alias for session_token (legacy, use 'act')"),
-  act: z.string().optional().describe("Arif's Capability Token (ACT) — preferred alias for session_token"),
-  // ── CLAIM-CLASS justification (claim_kernel gate) ──
-  // Any ingress caller may attach the justification for a governed
-  // (mutation/execution) call. Stated claims are judged by the canonical
-  // claim_kernel: MEASURED | MECHANISM | PATTERN pass, NARRATIVE and
-  // UNCLASSIFIED are refused before the handler runs. Omit both fields and
-  // the gate is not applicable (existing behaviour).
-  justification: z
-    .string()
-    .optional()
-    .describe("Why this action is being taken (judged by the claim-class gate)"),
+  session_id: z.string().optional().describe("Kernel session id (arif_init)"),
+  actor_id: z.string().optional().describe("Actor id"),
+  lease_id: z.string().optional().describe("Lease id"),
+  session_token: z.string().optional().describe("DEPRECATED alias of act"),
+  sct: z.string().optional().describe("DEPRECATED alias of act"),
+  act: z.string().optional().describe("arifOS ACT (act_v1.*) — preferred credential"),
+  justification: z.string().optional().describe("Why (claim-class gate judges it)"),
   claim_class: z
     .enum(["MEASURED", "MECHANISM", "PATTERN", "NARRATIVE", "UNCLASSIFIED"])
     .optional()
-    .describe("Declared class of the justification claim (claim_kernel/v1)"),
+    .describe("Claim class (claim_kernel/v1)"),
 };
 
 function extendZodSchema(schema: any): any {
@@ -577,23 +572,17 @@ function extendInputSchema(schema: any): any {
       additionalProperties: false,
       properties: {
         ...(schema.properties || {}),
-        session_id: { type: "string", description: "Kernel-born session ID (FORGE 2-B)" },
-        actor_id: { type: "string", description: "Actor ID (FORGE 2-B)" },
-        lease_id: { type: "string", description: "Governed lease ID (FORGE 2-B)" },
-        session_token: {
-          type: "string",
-          description: "arifOS ACT act_v1.* (federation gate; legacy sct_v1 accepted)",
-        },
-        sct: { type: "string", description: "Alias for session_token (legacy, use 'act')" },
-        act: { type: "string", description: "Arif's Capability Token (ACT) — preferred alias" },
-        justification: {
-          type: "string",
-          description: "Why this action is being taken (judged by the claim-class gate)",
-        },
+        session_id: { type: "string", description: "Kernel session id (arif_init)" },
+        actor_id: { type: "string", description: "Actor id" },
+        lease_id: { type: "string", description: "Lease id" },
+        session_token: { type: "string", description: "DEPRECATED alias of act" },
+        sct: { type: "string", description: "DEPRECATED alias of act" },
+        act: { type: "string", description: "arifOS ACT (act_v1.*) — preferred credential" },
+        justification: { type: "string", description: "Why (claim-class gate judges it)" },
         claim_class: {
           type: "string",
           enum: ["MEASURED", "MECHANISM", "PATTERN", "NARRATIVE", "UNCLASSIFIED"],
-          description: "Declared class of the justification claim (claim_kernel/v1)",
+          description: "Claim class (claim_kernel/v1)",
         },
       },
     };
@@ -1365,8 +1354,8 @@ server.tool(
           });
         } catch (primaryErr) {
           console.error(`[forge_session_init] primary arif_init failed:`, primaryErr instanceof Error ? primaryErr.message : primaryErr);
-          // Backward-compat fallback for older kernels still exposing session_init only
-          kernelResponse = await callMCP("arifos.arif_session_init", {
+          // Retry canonical arif_init once
+          kernelResponse = await callMCP("arifos.arif_init", {
             actor_id,
             intent: intent ?? "aforge session",
             mode: "light",

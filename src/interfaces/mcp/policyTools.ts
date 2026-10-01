@@ -33,7 +33,7 @@ import { classifyCommand } from "./shell/arifJudge.js";
 // real pipeline answers SESSION_REQUIRED/HOLD — a false green light at plan time.
 // The composite now mirrors the serve.ts session gate for MUTATE-class tools.
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
-import { sessionExists } from "../../domain/session/sessionGate.js";
+import { sessionExists, parseActClaims } from "../../domain/session/sessionGate.js";
 
 import {
   getMcpPolicyGate,
@@ -55,7 +55,14 @@ const SOVEREIGN_ACTORS = new Set([
 function isSovereign(actorId?: string): boolean {
   if (!actorId) return false;
   if (SOVEREIGN_ACTORS.has(actorId)) return true;
-  if (SOVEREIGN_ACTORS.has(actorId.toLowerCase())) return true;
+  // S1b (F13 SAH 2026-10-01): the fold was ASYMMETRIC — it lowercased the input
+  // while the set stores "F13"/"888" uppercase, so "ARIF" matched and "f13" did
+  // not. Authority that depends on capitalisation is itself a defect; fold both
+  // sides so the match is total and predictable.
+  const folded = actorId.toLowerCase();
+  for (const s of SOVEREIGN_ACTORS) {
+    if (s.toLowerCase() === folded) return true;
+  }
   return false;
 }
 
@@ -341,10 +348,30 @@ export function isExternalClient(args: any, extra?: any): { external: boolean; r
     reasons.push("lease_id alone no longer grants trust — issuer unverifiable");
   }
 
-  // ── Sovereign actor → trusted (unchanged) ───────────────────────────────
+  // ── Sovereign actor ─────────────────────────────────────────────────────
+  // S1b (F13 SAH 2026-10-01): a sovereign NAME is not sovereign PROOF. Before
+  // this, an anonymous caller asserting actor_id:"F13" (or "arif", "sovereign",
+  // "ariffazil", …) was trusted with nothing else — the last remaining
+  // name-based bypass of the elicitation gate. A sovereign claim must now carry
+  // a parseable ACT whose auth claim is not OBSERVE_ONLY.
+  // This CORROBORATES the claim; it is not full cryptographic binding. The
+  // kernel already does that properly — arif_init binds the ACT to the transport
+  // identity and rejects a mismatched actor_id with ERR_ACT_BINDING_INVALID
+  // (observed live 2026-10-01). Full parity here needs an HMAC verifier exported
+  // from sessionGate; staged as S1c.
   const actorId = args?.actor_id ?? args?.actorId ?? args?.actor ?? extra?.actor_id;
   if (actorId && isSovereign(actorId)) {
-    return { external: false };
+    if (token) {
+      const claims = parseActClaims(token);
+      if (claims && claims.auth !== "OBSERVE_ONLY") {
+        return { external: false };
+      }
+      reasons.push(
+        `sovereign actor_id "${actorId}" asserted, but its ACT is absent, unparseable, or OBSERVE_ONLY`,
+      );
+    } else {
+      reasons.push(`sovereign actor_id "${actorId}" asserted with no ACT — a name is not proof`);
+    }
   }
 
   return {

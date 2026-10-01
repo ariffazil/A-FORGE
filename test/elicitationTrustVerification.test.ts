@@ -62,31 +62,41 @@ test("S1 POSITIVE CONTROL: a kernel-registered session IS trusted", () => {
   assert.equal(r.external, false, `registered session must stay trusted: ${r.reason ?? ""}`);
 });
 
-test("S1 POSITIVE CONTROL: sovereign actor_id IS trusted (unchanged behaviour)", () => {
-  assert.equal(isExternalClient({ actor_id: "F13" }).external, false);
+test("S1b: a sovereign NAME alone is no longer trusted (flips the S1 characterization)", () => {
+  // S1 pinned this hole as a characterization test so that closing it would have
+  // to deliberately flip the assertion. This is that flip. Before S1b an
+  // anonymous caller asserting actor_id:"F13" was trusted with no credential at
+  // all — the last name-based bypass of the elicitation gate.
+  for (const actor_id of ["F13", "f13", "arif", "ARIF", "sovereign", "ariffazil", "888"]) {
+    const r = isExternalClient({ actor_id });
+    assert.equal(r.external, true, `bare sovereign name "${actor_id}" must not grant trust`);
+    assert.match(r.reason ?? "", /name is not proof|ACT/i);
+  }
 });
 
-test("S1 RESIDUAL (characterization, NOT endorsement): sovereign trust is a NAME match", () => {
-  // isSovereign() tests membership in SOVEREIGN_ACTORS by string, so an
-  // anonymous caller asserting a sovereign actor_id is still trusted with no
-  // signature. S1 did NOT close this — it is staged as S1b: require a verified
-  // sovereign signature; the Ed25519 signer already exists in
-  // interfaces/mcp/client.ts (injectSovereignSignature) with sovereign_verify.py
-  // on the kernel side. Pinned here so the residual hole is executable and
-  // visible rather than implicit, and so closing it later must deliberately
-  // flip this test.
-  assert.equal(isExternalClient({ actor_id: "F13" }).external, false);
-  assert.equal(isExternalClient({ actor_id: "arif" }).external, false);
+test("S1b: the sovereign name fold is now symmetric", () => {
+  // Was asymmetric: isSovereign lowercased the input while the set stored "F13"
+  // uppercase, so "ARIF" matched and "f13" did not — authority that depended on
+  // capitalisation. Both now behave identically (both refused without an ACT,
+  // which is the point: the matcher is total, the credential decides).
+  const upper = isExternalClient({ actor_id: "F13" });
+  const lower = isExternalClient({ actor_id: "f13" });
+  assert.equal(upper.external, lower.external);
+  assert.equal(upper.external, true);
+});
 
-  // The case fold is ASYMMETRIC: isSovereign lowercases the input but the set
-  // stores "F13" uppercase, so "ARIF" matches (folds to "arif", which is in the
-  // set) while "f13" does not (folds to "f13", which is not). Authority that
-  // depends on the capitalisation of a name is itself a defect — recorded here
-  // so S1b fixes the matcher rather than inheriting it.
-  assert.equal(isExternalClient({ actor_id: "ARIF" }).external, false);
-  assert.equal(
-    isExternalClient({ actor_id: "f13" }).external,
-    true,
-    "lowercase f13 is NOT sovereign — the fold only rescues names already lowercase in the set",
-  );
+test("S1b: a sovereign name with an unparseable or OBSERVE_ONLY ACT is still refused", () => {
+  assert.equal(isExternalClient({ actor_id: "F13", act: "not-a-token" }).external, true);
+  assert.equal(isExternalClient({ actor_id: "F13", act: "" }).external, true);
+});
+
+test("S1b LIMIT (recorded, not hidden): no signed-ACT positive control here", () => {
+  // Constructing a valid act_v1.* requires the HMAC secret sessionGate signs
+  // with, so the positive direction — sovereign name PLUS a valid non-OBSERVE
+  // ACT is trusted — is not covered by this file. It is exercised live instead
+  // (arif_init binds the ACT to the transport identity and rejects a mismatched
+  // actor_id with ERR_ACT_BINDING_INVALID). Full cryptographic parity inside
+  // isExternalClient needs an HMAC verifier exported from sessionGate: staged
+  // S1c. Recorded so the gap is visible rather than implied by a green suite.
+  assert.ok(true);
 });
