@@ -322,6 +322,16 @@ export function registerRuntimeVerifyTool(server: McpServer): void {
           if (imp.path.startsWith(ws)) {
             sourceVsImport = "MATCH";
             evidence.push("Source-vs-import: MATCH (import from workspace)");
+          } else if (wheelVsImport === "MATCH" && sourceVsWheel === "MATCH") {
+            // Wheel-deployed topology: a healthy deployment imports from
+            // site-packages, NOT the workspace — the old check called that
+            // DRIFT forever, making strict_mode HOLD permanent noise
+            // (2026-10-02, root-caused from live CONVERGED-vs-DRIFT dispute).
+            // Chain source↔wheel↔import is closed: derive MATCH transitively.
+            sourceVsImport = "MATCH";
+            evidence.push(
+              "Source-vs-import: MATCH (derived via closed chain source↔wheel↔import)"
+            );
           } else {
             sourceVsImport = "DRIFT";
             evidence.push(`Source-vs-import: DRIFT (commit ${git.commit?.slice(0, 7)} resolves elsewhere)`);
