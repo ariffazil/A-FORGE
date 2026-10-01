@@ -350,13 +350,46 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
   try {
     // P0.9: Propagate arifOS session via Mcp-Session-Id header.
     // Without this, proxied calls arrive ::anonymous at the kernel.
+    //
+    // S6b (F13 order 2026-10-01): this was arifos-ONLY, so every wealth/geox/well
+    // call arrived anonymous and WEALTH answered
+    //   SESSION_MISSING: Mcp-Session-Id header required
+    // forge_wealth had already solved exactly this for itself with explicit
+    // X-ArifOS-* headers (core.ts:~2527); the generic bridge never got the same
+    // treatment, so the fix lived in one tool instead of in the transport. The
+    // header set below mirrors the proven forge_wealth one.
+    // Per-call args win over the module-level session: the callee must see the
+    // identity of whoever actually made this call, not whatever A-FORGE bound
+    // last. This adds evidence only — it never widens what a caller may do.
+    const callSessionId =
+      (typeof argsRecord.session_id === "string" && argsRecord.session_id) ||
+      _arifOsSessionId ||
+      undefined;
+    const callActorId =
+      typeof argsRecord.actor_id === "string" && argsRecord.actor_id
+        ? argsRecord.actor_id
+        : undefined;
+    const callToken =
+      (typeof argsRecord.act === "string" && argsRecord.act) ||
+      (typeof argsRecord.session_token === "string" && argsRecord.session_token) ||
+      (typeof argsRecord.sct === "string" && argsRecord.sct) ||
+      undefined;
+    const callTraceId =
+      typeof argsRecord.trace_id === "string" && argsRecord.trace_id
+        ? argsRecord.trace_id
+        : undefined;
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       "Accept": "application/json",
     };
-    if (namespace === "arifos" && _arifOsSessionId) {
-      headers["Mcp-Session-Id"] = _arifOsSessionId;
+    if (callSessionId) {
+      headers["Mcp-Session-Id"] = callSessionId;
+      headers["X-ArifOS-Session-ID"] = callSessionId;
     }
+    if (callActorId) headers["X-ArifOS-Actor-ID"] = callActorId;
+    if (callTraceId) headers["X-ArifOS-Trace-ID"] = callTraceId;
+    if (callToken) headers["Authorization"] = `Bearer ${callToken}`;
     response = await fetch(url, {
       method: "POST",
       headers,
