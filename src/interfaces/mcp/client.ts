@@ -19,6 +19,9 @@ import {
   transformArgs,
   transformResponse,
 } from "../../domain/types/mcp-bridge.js";
+// S6c: real MCP client so the bridge performs an `initialize` handshake.
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import {
   checkVerdictPrecondition,
   requiresVerdictCheck,
@@ -346,7 +349,9 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     id: Date.now(),
   };
 
-  let response: Response;
+  let jsonRpcResponse: Record<string, unknown>;
+  let httpOk = true;
+  let httpStatus = 200;
   try {
     // P0.9: Propagate arifOS session via Mcp-Session-Id header.
     // Without this, proxied calls arrive ::anonymous at the kernel.
@@ -384,38 +389,59 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
       "Accept": "application/json",
     };
     if (callSessionId) {
-      headers["Mcp-Session-Id"] = callSessionId;
+      // Do NOT set Mcp-Session-Id here. With a real handshake the SDK owns that
+      // header — it assigns the value from the initialize response and echoes it
+      // on every request. Setting it manually made WEALTH see an unknown session
+      // and answer HTTP 404 / JSON-RPC -32000. The arifOS session identity still
+      // travels, on the envelope header WEALTH's stateful_middleware reads —
+      // the same choice forge_wealth makes.
       headers["X-ArifOS-Session-ID"] = callSessionId;
     }
     if (callActorId) headers["X-ArifOS-Actor-ID"] = callActorId;
     if (callTraceId) headers["X-ArifOS-Trace-ID"] = callTraceId;
     if (callToken) headers["Authorization"] = `Bearer ${callToken}`;
-    response = await fetch(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(jsonRpcPayload),
+    // ── S6c (F13 order 2026-10-01): real MCP handshake ─────────────────────
+    // This used to POST bare JSON-RPC with no `initialize`. A stateful organ
+    // therefore had no MCP session to bind, so WEALTH answered
+    // SESSION_MISSING and then SESSION_INVALID no matter which session id was
+    // forwarded — its store never held arifOS-minted SEAL-* ids. forge_wealth
+    // already worked because it uses a real StreamableHTTPClientTransport; this
+    // brings the generic bridge onto the same proven pattern. Identity rides in
+    // requestInit.headers exactly as forge_wealth does.
+    const client = new Client(
+      { name: `A-FORGE-bridge-${namespace}`, version: "0.1.0" },
+      { capabilities: {} },
+    );
+    const transport = new StreamableHTTPClientTransport(new URL(url), {
+      requestInit: { headers },
     });
+    try {
+      await client.connect(transport);
+      const res = await client.callTool({ name: canonicalTool, arguments: body });
+      // Normalise into the JSON-RPC envelope shape the unwrap logic below
+      // already handles, so error classification and attribution are unchanged.
+      jsonRpcResponse = {
+        jsonrpc: "2.0",
+        id: jsonRpcPayload.id,
+        result: (res ?? {}) as Record<string, unknown>,
+      };
+    } finally {
+      await transport.close().catch(() => { /* best effort */ });
+    }
   } catch (networkErr) {
     const msg = networkErr instanceof Error ? networkErr.message : String(networkErr);
+    // A protocol-level rejection (McpError carries .code) is NOT an outage.
+    const code = (networkErr as { code?: number })?.code;
     const netErr = new Error(
-      `MCP Bridge: Network error calling ${namespace} kernel at ${url}. ` +
-        `888_HOLD: Kernel unreachable. Detail: ${msg}`,
+      typeof code === "number"
+        ? `MCP Bridge: Protocol error (${code}) calling ${namespace}.${canonicalTool} at ${url}. Detail: ${msg}`
+        : `MCP Bridge: Network error calling ${namespace} kernel at ${url}. ` +
+          `888_HOLD: Kernel unreachable. Detail: ${msg}`,
     ) as Error & { error_code: string; source_layer: string; downstream_error: string };
-    netErr.error_code = "NETWORK_ERROR";
+    netErr.error_code = typeof code === "number" ? "PROTOCOL_ERROR" : "NETWORK_ERROR";
     netErr.source_layer = `A-FORGE::BRIDGE::${namespace.toUpperCase()}`;
     netErr.downstream_error = msg;
     throw netErr;
-  }
-
-  let jsonRpcResponse: Record<string, unknown>;
-  try {
-    jsonRpcResponse = (await response.json()) as Record<string, unknown>;
-  } catch (parseErr) {
-    const text = await response.text().catch(() => "<unreadable>");
-    throw new Error(
-      `MCP Bridge: Non-JSON response from ${url} (HTTP ${response.status}). ` +
-        `Body: ${text.slice(0, 500)}`,
-    );
   }
 
   // ── JSON-RPC 2.0 error handling ──────────────────────────────────────────
@@ -494,12 +520,12 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
 
   // Kernel-level error handling — structured rejection envelope within tool result
   const resultObj = (typeof rawResult === "object" && rawResult !== null ? rawResult : { _raw: rawResult }) as Record<string, unknown>;
-  console.log(`[callMCP] ${canonicalTool} — resultObj.status=${resultObj.status}, verdict=${resultObj.verdict}, httpOk=${response.ok}`);
-  if (!response.ok || resultObj.status === "error" || resultObj.verdict === "HOLD") {
+  console.log(`[callMCP] ${canonicalTool} — resultObj.status=${resultObj.status}, verdict=${resultObj.verdict}, httpOk=${httpOk}`);
+  if (!httpOk || resultObj.status === "error" || resultObj.verdict === "HOLD") {
     const errorMsg =
       (resultObj.error as string) ??
       (resultObj.reason as string) ??
-      `Kernel returned HTTP ${response.status}`;
+      `Kernel returned HTTP ${httpStatus}`;
     const floor = (resultObj.failed_floor as string) ?? (resultObj.floor as string) ?? "F13";
     const verdict = (resultObj.verdict as string) ?? "HOLD";
     const err = new Error(

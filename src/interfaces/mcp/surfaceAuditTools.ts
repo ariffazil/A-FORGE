@@ -535,11 +535,29 @@ export function registerSurfaceAuditTools(server: McpServer): void {
             const realDrift = report.findings.filter((f) => f.type !== "DEPRECATED_DOC");
             report.drift_count = realDrift.length;
             report.is_clean = realDrift.length === 0;
-            if (abi.findings.length > 0) {
-              report.recommendation =
-                `OUTBOUND_ABI: ${dead} dead cross-organ verb(s) among ${abi.checked} callMCP target(s). ` +
-                report.recommendation;
-            }
+            // S2b: RECOMPUTE the prose from the merged machine fields. It was
+            // previously built inside auditSurface() before this axis merged its
+            // findings, so one report could carry is_clean=false, drift_count=7
+            // and the sentence "No drift detected. Surface is clean." at the same
+            // time. Evidence must never be contradicted by its own summary — the
+            // structured fields derive the prose, never the reverse.
+            const high = realDrift.filter((f) => f.severity === "HIGH").length;
+            const byType = realDrift.reduce<Record<string, number>>((m, f) => {
+              m[f.type] = (m[f.type] ?? 0) + 1;
+              return m;
+            }, {});
+            const typeSummary = Object.entries(byType)
+              .map(([k, v]) => `${k}:${v}`)
+              .join(" ");
+            report.recommendation = report.is_clean
+              ? `No drift detected across ${report.registry_tools} registered tools and ${abi.checked} outbound call target(s). Surface is clean.`
+              : `${realDrift.length} drift(s) found [${typeSummary}]` +
+                `${high ? `, ${high} HIGH severity` : ""}. ` +
+                `Outbound ABI: ${dead} dead cross-organ verb(s) among ${abi.checked} checked. ` +
+                (dead
+                  ? "Repair each dead verb (TOOL_NAME_MAP or call site) before trusting any cross-organ path. "
+                  : "") +
+                "Run forge_surface_audit mode=fix for corrected drafts.";
           } catch (e) {
             // VOID GUARD: a failed axis is UNKNOWN, never a clean verdict.
             report.findings.push({
