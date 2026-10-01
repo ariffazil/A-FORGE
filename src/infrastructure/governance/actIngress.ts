@@ -79,7 +79,17 @@ const ACTOR_ALIAS_MAP: Record<string, string> = {
 export function canonicalizeActor(raw: string | null | undefined): string {
   const s = (raw || "").trim();
   if (!s) return "anonymous";
-  const normalized = s.toLowerCase().replace(/_/g, "-");
+  // Lane-prefixed forms: "kimi-code/FI-008" → "FI-008". 2026-10-02: kernel mints
+  // ACT actor="FI-008" (short canonical) while harnesses pass "lane/FI-008";
+  // the slash form fell through the alias map and hard-failed ACT binding
+  // (ERR_ACT_BINDING_INVALID) despite a VALID signature — proven by zero-
+  // transcription programmatic round-trip. Stripping runs AFTER the HMAC
+  // signature gate (verification order: format→prefix→signature→expiry→actor),
+  // so this loosens nothing cryptographically: identity is only ever matched
+  // against a kernel-signed claim.
+  const lastSlash = s.lastIndexOf("/");
+  const stripped = lastSlash >= 0 ? s.slice(lastSlash + 1) : s;
+  const normalized = stripped.toLowerCase().replace(/_/g, "-");
   if (SOVEREIGN_IDENTITY_MAP[normalized]) return SOVEREIGN_IDENTITY_MAP[normalized];
   if (ACTOR_ALIAS_MAP[normalized]) return ACTOR_ALIAS_MAP[normalized];
   return normalized;
