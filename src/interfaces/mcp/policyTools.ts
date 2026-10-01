@@ -300,38 +300,59 @@ function genElicitationId(): string {
 
 /**
  * Check if a tool call is coming from an "external client" that needs elicitation.
- * External = no valid session_id, no lease_id, actor not sovereign, no F13 ack.
+ *
+ * S1 (F13 SAH 2026-10-01): trust now requires a VERIFIED credential, not an
+ * asserted string. This function previously accepted any session_id longer than
+ * 8 chars, any lease_id longer than 4 chars, and the caller-supplied booleans
+ * ack_irreducible / ack_irreversible / _constitution_gate as proof of trust.
+ * A length test verifies nothing, nothing in the codebase ever mints the three
+ * booleans, and a fabricated lease_id was demonstrated to suppress the
+ * confirmation gate on 2026-10-01. An acknowledgement a caller writes about
+ * itself is not a witness.
  */
-function isExternalClient(args: any, extra?: any): { external: boolean; reason?: string } {
-  // Has active session_id → trusted (session was verified by arifOS)
-  if (args?.session_id && typeof args.session_id === "string" && args.session_id.length > 8) {
-    return { external: false };
+export function isExternalClient(args: any, extra?: any): { external: boolean; reason?: string } {
+  const reasons: string[] = [];
+
+  // ── Verified session (ACT-first) ────────────────────────────────────────
+  // validateSession() is the federation's own verifier: kernel-born registry
+  // lookup, forged SEAL-* rejection, TTL enforcement, and HMAC-SHA256
+  // verification of an act_v1.* token whose sid claim matches. Synchronous and
+  // local — no network dependency, so an arifOS outage cannot mass-gate callers.
+  const sid = typeof args?.session_id === "string" && args.session_id ? args.session_id : undefined;
+  const token =
+    (typeof args?.session_token === "string" && args.session_token) ||
+    (typeof args?.act === "string" && args.act) ||
+    (typeof args?.sct === "string" && args.sct) ||
+    undefined;
+  if (sid) {
+    const v = validateSession(sid, token);
+    if (v.valid) return { external: false };
+    reasons.push(`session_id failed verification (${v.reason})`);
+  } else if (token) {
+    reasons.push("ACT supplied without session_id — token cannot be bound to a session");
   }
 
-  // Has active lease_id → trusted (lease was issued by arifOS)
-  if (args?.lease_id && typeof args.lease_id === "string" && args.lease_id.length > 4) {
-    return { external: false };
+  // ── lease_id is NOT an independent trust grant ──────────────────────────
+  // Its issuer path (arifos.arif_lease_inspect) is one of the dead verbs
+  // measured 2026-10-01, so a lease cannot be verified over MCP today. An
+  // unverifiable credential must not grant trust; reinstate with real
+  // verification once the lease ABI is restored (staged S6).
+  if (typeof args?.lease_id === "string" && args.lease_id) {
+    reasons.push("lease_id alone no longer grants trust — issuer unverifiable");
   }
 
-  // Sovereign actor → trusted
+  // ── Sovereign actor → trusted (unchanged) ───────────────────────────────
   const actorId = args?.actor_id ?? args?.actorId ?? args?.actor ?? extra?.actor_id;
   if (actorId && isSovereign(actorId)) {
     return { external: false };
   }
 
-  // F13 ack present → trusted
-  if (args?.ack_irreducible || args?.ack_irreversible) {
-    return { external: false };
-  }
-
-  // Decoupled from human approval. All gates now route through arif_judge(888)
-  // at arifOS:8088 for constitution-enforced verdict. F1 AMANAH: humans don't read.
-  // Check for constitution gate acknowledgment
-  if (args?._constitution_gate === true || args?._constitution_gate === "true") {
-    return { external: false };
-  }
-
-  return { external: true, reason: "No session, lease, or sovereign actor_id found" };
+  return {
+    external: true,
+    reason: reasons.length
+      ? reasons.join("; ")
+      : "No verified session, sovereign actor_id, or bound ACT found",
+  };
 }
 
 /**
