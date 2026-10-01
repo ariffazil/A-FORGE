@@ -33,7 +33,7 @@ import { classifyCommand } from "./shell/arifJudge.js";
 // real pipeline answers SESSION_REQUIRED/HOLD — a false green light at plan time.
 // The composite now mirrors the serve.ts session gate for MUTATE-class tools.
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
-import { sessionExists, parseActClaims } from "../../domain/session/sessionGate.js";
+import { sessionExists, verifyActToken } from "../../domain/session/sessionGate.js";
 
 import {
   getMcpPolicyGate,
@@ -362,13 +362,27 @@ export function isExternalClient(args: any, extra?: any): { external: boolean; r
   const actorId = args?.actor_id ?? args?.actorId ?? args?.actor ?? extra?.actor_id;
   if (actorId && isSovereign(actorId)) {
     if (token) {
-      const claims = parseActClaims(token);
-      if (claims && claims.auth !== "OBSERVE_ONLY") {
+      // S1c (F13 SAH 2026-10-01): HMAC-VERIFIED, not merely parsed. S1b used
+      // parseActClaims(), which its own doc says decodes "WITHOUT verifying
+      // HMAC" — so a caller could forge the payload of a well-formed-looking
+      // token and be trusted. verifyActToken() checks the signature and expiry.
+      const v = verifyActToken(token);
+      if (!v.valid) {
+        reasons.push(
+          `sovereign actor_id "${actorId}" presented an ACT that failed verification (${v.reason})`,
+        );
+      } else if (v.auth === "OBSERVE_ONLY") {
+        reasons.push(`sovereign actor_id "${actorId}" presented an OBSERVE_ONLY ACT`);
+      } else if (v.actor && v.actor.toLowerCase() !== String(actorId).toLowerCase()) {
+        // Bind the claim to the credential, exactly as the kernel does when it
+        // raises ERR_ACT_BINDING_INVALID. A sovereign name must be the name the
+        // token was actually minted for.
+        reasons.push(
+          `sovereign actor_id "${actorId}" does not match its ACT-bound actor "${v.actor}"`,
+        );
+      } else {
         return { external: false };
       }
-      reasons.push(
-        `sovereign actor_id "${actorId}" asserted, but its ACT is absent, unparseable, or OBSERVE_ONLY`,
-      );
     } else {
       reasons.push(`sovereign actor_id "${actorId}" asserted with no ACT — a name is not proof`);
     }

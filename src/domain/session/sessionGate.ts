@@ -373,6 +373,54 @@ export function getSessionAct(session_id: string): string | null {
 }
 
 /**
+ * S1c (F13 SAH 2026-10-01): verify an ACT using the token's OWN claims, for
+ * callers that present a token without a session_id.
+ *
+ * verifyActLocally() requires the expected session id up front; the elicitation
+ * gate has only the token and an asserted actor name. Same HMAC construction as
+ * verifyActLocally — sha256(secret, payloadB64) hex digest truncated to 16,
+ * mirroring arifOS act_token.py _sign — plus expiry.
+ *
+ * This exists because parseActClaims() below decodes WITHOUT verifying the
+ * signature, so a caller could forge the payload of a well-formed-looking token.
+ * S1b used parseActClaims and was therefore structural, not cryptographic; this
+ * closes that.
+ *
+ * Returns the ACT-bound actor so a caller can be held to the identity it
+ * actually proved — the binding the kernel already enforces (arif_init binds the
+ * ACT to the transport identity and rejects a mismatched actor_id with
+ * ERR_ACT_BINDING_INVALID, observed live 2026-10-01). Without it, "sovereign"
+ * was a name any caller could type.
+ */
+export function verifyActToken(
+  token: string,
+): { valid: true; actor: string; sid: string; auth: string } | { valid: false; reason: string } {
+  try {
+    const secret = process.env.ARIFOS_SESSION_SECRET;
+    if (!secret) return { valid: false, reason: "ARIFOS_SESSION_SECRET not set" };
+    const parts = token.split(".");
+    if (parts.length !== 3 || parts[0] !== "act_v1") return { valid: false, reason: "not an act_v1 token" };
+    const [, payloadB64, sigHex] = parts;
+    if (!payloadB64 || !sigHex || sigHex.length < 16) return { valid: false, reason: "malformed token" };
+    const expected = createHmac("sha256", secret).update(payloadB64, "ascii").digest("hex").slice(0, 16);
+    const a = Buffer.from(expected, "ascii");
+    const b = Buffer.from(sigHex.slice(0, 16), "ascii");
+    if (a.length !== b.length || !timingSafeEqual(a, b)) return { valid: false, reason: "signature mismatch" };
+    const claims = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf-8")) as Record<string, unknown>;
+    const exp = typeof claims.exp === "number" ? claims.exp : 0;
+    if (exp && Date.now() / 1000 > exp) return { valid: false, reason: "expired" };
+    return {
+      valid: true,
+      actor: String(claims.actor ?? claims.actor_id ?? ""),
+      sid: String(claims.sid ?? claims.session_id ?? ""),
+      auth: typeof claims.auth === "string" ? claims.auth : "OBSERVE_ONLY",
+    };
+  } catch (e) {
+    return { valid: false, reason: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
  * P0 ACT SCOPE: Extract auth band and allowed verbs from an ACT token payload.
  * Decodes the base64url payload WITHOUT verifying HMAC (caller already validated).
  * Returns null if the token is malformed or has no parseable claims.

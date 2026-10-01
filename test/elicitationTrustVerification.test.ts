@@ -16,6 +16,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
 import { isExternalClient } from "../src/interfaces/mcp/policyTools.js";
 import { registerSession } from "../src/domain/session/sessionGate.js";
 
@@ -90,13 +91,83 @@ test("S1b: a sovereign name with an unparseable or OBSERVE_ONLY ACT is still ref
   assert.equal(isExternalClient({ actor_id: "F13", act: "" }).external, true);
 });
 
-test("S1b LIMIT (recorded, not hidden): no signed-ACT positive control here", () => {
-  // Constructing a valid act_v1.* requires the HMAC secret sessionGate signs
-  // with, so the positive direction — sovereign name PLUS a valid non-OBSERVE
-  // ACT is trusted — is not covered by this file. It is exercised live instead
-  // (arif_init binds the ACT to the transport identity and rejects a mismatched
-  // actor_id with ERR_ACT_BINDING_INVALID). Full cryptographic parity inside
-  // isExternalClient needs an HMAC verifier exported from sessionGate: staged
-  // S1c. Recorded so the gap is visible rather than implied by a green suite.
-  assert.ok(true);
+// ── S1c (F13 SAH 2026-10-01): cryptographic sovereign binding ──────────────
+// S1b recorded a LIMIT here: it could only test refusal, because checking the
+// positive direction needs a validly signed act_v1.* token. S1c exports
+// verifyActToken() from sessionGate, so these tests mint real tokens with the
+// same HMAC construction the gate verifies (sha256(secret, payloadB64).hex[:16]).
+const S1C_SECRET = "s1c-test-secret-0123456789ab";
+function mintAct(claims: Record<string, unknown>, secret = S1C_SECRET, sigOverride?: string): string {
+  const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
+  const sig =
+    sigOverride ??
+    createHmac("sha256", secret).update(payload, "ascii").digest("hex").slice(0, 16);
+  return `act_v1.${payload}.${sig}`;
+}
+
+test("S1c POSITIVE CONTROL: sovereign name + validly signed ACT IS trusted", () => {
+  process.env.ARIFOS_SESSION_SECRET = S1C_SECRET;
+  const act = mintAct({
+    actor: "F13",
+    sid: "SEAL-s1ccontrol01",
+    auth: "MUTATE",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  });
+  const r = isExternalClient({ actor_id: "F13", act });
+  assert.equal(r.external, false, `a correctly signed sovereign ACT must be trusted: ${r.reason ?? ""}`);
+});
+
+test("S1c: a FORGED signature is refused (this is what S1b could not catch)", () => {
+  process.env.ARIFOS_SESSION_SECRET = S1C_SECRET;
+  // Well-formed shape, claims say sovereign, but signed with the wrong secret.
+  // parseActClaims() would have accepted this; verifyActToken() must not.
+  const forged = mintAct(
+    { actor: "F13", sid: "SEAL-forged00001", auth: "MUTATE", exp: Math.floor(Date.now() / 1000) + 3600 },
+    "attacker-does-not-know-the-real-secret",
+  );
+  const r = isExternalClient({ actor_id: "F13", act: forged });
+  assert.equal(r.external, true, "a forged ACT must not grant sovereign trust");
+  assert.match(r.reason ?? "", /failed verification|signature mismatch/i);
+});
+
+test("S1c: a valid ACT bound to a DIFFERENT actor is refused (binding, not possession)", () => {
+  process.env.ARIFOS_SESSION_SECRET = S1C_SECRET;
+  // Correctly signed, but minted for "arif" while the caller asserts "F13".
+  // Possessing a valid token is not the same as being the name you type. Both
+  // names are in SOVEREIGN_ACTORS, so this isolates the BINDING check rather
+  // than the name check.
+  const act = mintAct({
+    actor: "arif",
+    sid: "SEAL-s1cbind0001",
+    auth: "MUTATE",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  });
+  const r = isExternalClient({ actor_id: "F13", act });
+  assert.equal(r.external, true, "actor binding must be enforced");
+  assert.match(r.reason ?? "", /does not match its ACT-bound actor/i);
+  // The same token IS accepted for the actor it was actually minted for.
+  assert.equal(
+    isExternalClient({ actor_id: "arif", act }).external,
+    false,
+    "the correctly bound sovereign identity must still pass",
+  );
+});
+
+test("S1c: an expired ACT is refused", () => {
+  process.env.ARIFOS_SESSION_SECRET = S1C_SECRET;
+  const act = mintAct({ actor: "F13", sid: "SEAL-s1cexpired1", auth: "MUTATE", exp: 1 });
+  assert.equal(isExternalClient({ actor_id: "F13", act }).external, true);
+});
+
+test("S1c: an OBSERVE_ONLY ACT does not confer sovereign trust", () => {
+  process.env.ARIFOS_SESSION_SECRET = S1C_SECRET;
+  const act = mintAct({
+    actor: "F13",
+    sid: "SEAL-s1cobserve1",
+    auth: "OBSERVE_ONLY",
+    exp: Math.floor(Date.now() / 1000) + 3600,
+  });
+  const r = isExternalClient({ actor_id: "F13", act });
+  assert.equal(r.external, true);
+  assert.match(r.reason ?? "", /OBSERVE_ONLY/i);
 });
