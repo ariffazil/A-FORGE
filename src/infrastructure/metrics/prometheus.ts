@@ -79,7 +79,19 @@ const mesaProbabilityCurrent = new Gauge({
 export async function runStage<T>(stage: MetabolicStage, fn: () => Promise<T>): Promise<T> {
   const end = metabolicStageDuration.startTimer({ stage });
   try {
-    return await fn();
+    const result = await fn();
+    // ── 777 Verification Obligation (F13 ruling 2026-10-02, build order #1) ──
+    // Every consequential 777 execution mints a future verification
+    // obligation into the Lane-B metabolic ledger. Receipt ≠ Outcome.
+    // Fire-and-forget: metabolism lane failure never blocks execution.
+    if (String(stage).startsWith("777")) {
+      const { mintVerificationObligation, emitObligation } = await import(
+        "../../domain/forge/verificationObligation.js"
+      );
+      const ob = mintVerificationObligation(String(stage), result);
+      void emitObligation(ob).catch(() => {});
+    }
+    return result;
   } finally {
     end();
   }

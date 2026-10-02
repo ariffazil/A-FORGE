@@ -1409,7 +1409,7 @@ export function registerGovernedTools(server: McpServer): void {
   // ── forge_evaluate — standalone G = (A·P·E·X)^(1/4) gate ──────────────────
   server.tool(
     "forge_evaluate",
-    "APEX v36Ω evaluation gate (G-SPACE CANONICAL). Computes G = (A·P·E·X)^(1/4) with is_canonical_g=true. P=Physics (not Purpose). Φ is scar pressure, not a 5th dial. Returns SEAL/REVIEW/VOID. Does NOT generate code. HARAM: do not confuse with forge_apex_encode Jacobian G_local (is_canonical_g=false).",
+    "APEX v36Ω evaluation gate (G-SPACE CANONICAL). Computes G = (A·P·E·X)^(1/4) with is_canonical_g=true. P=Present Authority (T-000 canonical; not Purpose, not Physics — F13 ruling 2026-10-02). Φ is scar pressure, not a 5th dial. Returns SEAL/REVIEW/VOID. Does NOT generate code. HARAM: do not confuse with forge_apex_encode Jacobian G_local (is_canonical_g=false).",
     {
       tool_name: z.string().describe("Proposed tool name (forge_* convention)"),
       description: z.string().min(10).max(2000).describe("Natural-language description"),
@@ -1425,7 +1425,7 @@ export function registerGovernedTools(server: McpServer): void {
       session_id: z.string().optional(),
       seal_verdict_id: z.string().optional().describe("Prior arifOS seal verdict (required for arifos domain)"),
       // ATP Pass 2: Tri-Witness W3 scalar from forge_witness
-      w3: z.number().min(0).max(1).optional().describe("W3 tri-witness consensus ∛(Human×AI×Earth) from forge_witness. When provided, enables full QDF computation."),
+      w3: z.number().min(0).max(1).optional().describe("W3 tri-witness consensus ∛(Human×AI×Earth) from forge_witness."),
       // ATP Pass 3 (888-APEX hardening): W3 provenance required
       tri_witness_evidence: z.string().optional().describe("Tri-witness evidence hash from forge_witness call. Required when W3 is provided (Q9 anti-self-seal pattern)."),
       constitutional_chain_id: z.string().optional().describe("Constitutional chain ID from forge_witness. Alternative provenance for W3."),
@@ -1459,7 +1459,7 @@ export function registerGovernedTools(server: McpServer): void {
                 space: "G-space",
                 mode: "dry_run",
                 note: "Implementation empty — dry run only. Full evaluation requires implementation code for HARAM scan + scar consultation.",
-                doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). P=Physics. Φ is separate scar gate. C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G. taskJacobian G_local is NOT this G.",
+                doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). P=Present Authority (F1,F5,F11,F13). Φ is separate scar gate. C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G. taskJacobian G_local is NOT this G.",
               }, null, 2),
             }],
           };
@@ -1497,7 +1497,7 @@ export function registerGovernedTools(server: McpServer): void {
                 is_canonical_g: true,
                 is_canonical_qdf: decision.is_canonical_qdf ?? false,
                 space: "G-space + QDF (ATP Pass 3 — 888-APEX hardened)",
-                doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). P=Physics. Φ is separate scar gate. C_dark = A·(1-P)·(1-X). QDF = G×(1−C_dark)×W3×κ_r×ψ_le (ATP Pass 2). Multiplicative veto: zero in any factor collapses G. Forged, Not Given. HARAM: using taskJacobian G_local as this G → VOID.",
+                doctrine: "G = (A·P·E·X)^(1/4) (4-term geometric mean, Nash 1950). P=Present Authority (F1,F5,F11,F13). Φ is separate scar gate. C_dark = A·(1-P)·(1-X). Multiplicative veto: zero in any factor collapses G. Forged, Not Given. HARAM: using taskJacobian G_local as this G → VOID.",
                 v36_status: "MEASUREMENT_INSTRUMENT — thresholds must be calibrated on held-out data via ROC analysis. ATP Pass 2: QDF wired from forge_witness + arifOS kernel.",
               }, null, 2),
           }],
