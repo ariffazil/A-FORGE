@@ -56,7 +56,7 @@ model_list:
     max_output_tokens: 65536
     mode: chat
     supports_vision: true
-    notes: "apex-888 → Gemini 2.5 Pro — fallback constitutional judge."
+    notes: "apex-888 → Gemini 2.5 Pro — fallback constitutional judge. || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'apex-888': served openai/MiniMax-M3 (in-group latency routing; attempted_fallbacks=0). The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
 - model_name: apex-888
   litellm_params:
     model: gemini/gemini-3.6-flash
@@ -76,7 +76,7 @@ model_list:
     max_output_tokens: 65536
     mode: chat
     supports_vision: true
-    notes: "apex-888 Gemini 3.6 Flash — fast multimodal fallback judge. Safety: BLOCK_NONE."
+    notes: "apex-888 Gemini 3.6 Flash — fast multimodal fallback judge. Safety: BLOCK_NONE. || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'apex-888': served openai/MiniMax-M3 (in-group latency routing; attempted_fallbacks=0). The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
 - model_name: apex-888
   litellm_params:
     model: openai/glm-5.3-flash
@@ -243,6 +243,7 @@ model_list:
       threshold: BLOCK_NONE
     notes: 'i-arif Gemini 3.6 Flash. Upstream: Google. Vision. Safety: BLOCK_NONE.'
   model_info:
+    notes: "W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'hermes-default': served openai/MiniMax-M3 (attempted_fallbacks=1). The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
     mode: chat
@@ -1335,8 +1336,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P1 PRIMARY: Gemini 2.5 Flash. Sub-second multimodal vision, OCR, document
-      reading.'
+    notes: "P1 PRIMARY: Gemini 2.5 Flash. Sub-second multimodal vision, OCR, document reading. || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'fed/vision-parked': served openai/qwen3.8-max (attempted_fallbacks=1). The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
   model_name: fed/vision-parked
@@ -1388,7 +1388,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P4: Gemini 2.5 Pro. Deep multimodal reasoning.'
+    notes: "P4: Gemini 2.5 Pro. Deep multimodal reasoning. || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'fed/vision-parked': served openai/qwen3.8-max (attempted_fallbacks=1). The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
   model_name: fed/vision-parked
@@ -1399,7 +1399,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P5: Gemini 3.6 Flash fallback.'
+    notes: "P5: Gemini 3.6 Flash fallback. || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'fed/vision-parked': served openai/qwen3.8-max (attempted_fallbacks=1). The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
   model_name: fed/vision-parked
@@ -1546,7 +1546,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P10: Gemini 2.5 Flash. Last resort — Google server-side content moderation may block images.'
+    notes: "P10: Gemini 2.5 Flash. Last resort — Google server-side content moderation may block images. || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'hermes-asi-vision': served deepseek/deepseek-flash (attempted_fallbacks=1). The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
   model_name: hermes-asi-vision
@@ -1566,7 +1566,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P9: Gemini 2.5 Pro. Deep reasoning last resort.'
+    notes: "P9: Gemini 2.5 Pro. Deep reasoning last resort. || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'hermes-asi-vision': served deepseek/deepseek-flash (attempted_fallbacks=1). The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
   model_name: hermes-asi-vision
@@ -1577,7 +1577,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P10: Gemini 3.6 Flash. Final fallback.'
+    notes: "P10: Gemini 3.6 Flash. Final fallback. || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'hermes-asi-vision': served deepseek/deepseek-flash (attempted_fallbacks=1). The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
   model_name: hermes-asi-vision
@@ -1589,7 +1589,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: Gemini 2.5 Flash standalone
+    notes: "Gemini 2.5 Flash standalone || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'gemini-2.5-flash': served openai/qwen3.8-max (attempted_fallbacks=2; response group became qwen3.8-max). The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
 - model_name: gemini-2.5-pro
@@ -1600,7 +1600,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: Gemini 2.5 Pro standalone
+    notes: "Gemini 2.5 Pro standalone || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'gemini-2.5-pro': HTTP 402 hard fail, no fallback chain configured. The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
 - model_name: gemini-3.6-flash
@@ -1611,7 +1611,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: Gemini 3.6 Flash standalone
+    notes: "Gemini 3.6 Flash standalone || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'gemini-3.6-flash': HTTP 402 hard fail, no fallback chain configured. The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
 - model_name: gemini-3.5-transcribe
@@ -1622,7 +1622,7 @@ model_list:
   model_info:
     mode: chat
     supports_audio_input: true
-    notes: Gemini 3.5 Transcribe standalone
+    notes: "Gemini 3.5 Transcribe standalone || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'gemini-3.5-transcribe': HTTP 402 hard fail, no fallback chain configured. The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
 - model_name: fed/audio-tts
@@ -1633,7 +1633,7 @@ model_list:
   model_info:
     mode: chat
     supports_audio_output: true
-    notes: 'P1 TTS: Gemini 2.5 Flash Preview TTS'
+    notes: "P1 TTS: Gemini 2.5 Flash Preview TTS || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'fed/audio-tts': HTTP 402 hard fail, no fallback chain configured. The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
     supports_vision: true
@@ -1645,7 +1645,7 @@ model_list:
   model_info:
     mode: chat
     supports_audio_input: true
-    notes: 'P1 ASR: Gemini 2.5 Flash Native Audio Perception'
+    notes: "P1 ASR: Gemini 2.5 Flash Native Audio Perception || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'fed/audio-asr': served openai/qwen3.8-max (attempted_fallbacks=1) - ASR alias answered by a text LLM. The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
     supports_vision: true
@@ -1657,7 +1657,7 @@ model_list:
   model_info:
     mode: chat
     supports_audio_input: true
-    notes: 'P2 ASR: Gemini 3.5 Transcribe'
+    notes: "P2 ASR: Gemini 3.5 Transcribe || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'fed/audio-asr': served openai/qwen3.8-max (attempted_fallbacks=1) - ASR alias answered by a text LLM. The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
 - model_name: fed/audio-voiceclone-restricted
@@ -1760,7 +1760,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: Gemini 3.8 Flash standalone - added 2026-09-12 by retirement-watch.
+    notes: "Gemini 3.8 Flash standalone - added 2026-09-12 by retirement-watch. || W1-DRIFT measured 2026-10-02 by qwen-code/FI-003: the Gemini primary on this deployment returns HTTP 402 'Your prepayment credits are depleted', so it is NOT the model that answers. Probe result for alias 'gemini-3.8-flash': HTTP 402 hard fail, no fallback chain configured. The name declares one model; a different one is served (BL11 / Proxy-Reality drift). Inert metadata - routing unchanged pending F13 decision (pay Gemini vs repoint primaries). Evidence: /root/forge_work/2026-10-02-backlog-compile/W1-judge-lane-substitution-attestation.md"
     max_input_tokens: 1048576
     max_output_tokens: 65536
 - model_name: qwen3.8-max-0902

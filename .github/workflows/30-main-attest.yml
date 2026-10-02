@@ -89,6 +89,15 @@ jobs:
       - name: Resolve release tag
         id: tag
         run: |
+          # `git tag -a` writes an ANNOTATED tag, which needs a tagger identity.
+          # The runner image has none, so this step died with:
+          #   fatal: empty ident name (for <runner@runnervm...>) not allowed
+          # (measured: run 36947168924, 2026-10-02, exit 128).
+          # --local writes only this job's workspace .git/config, never the runner
+          # image. Neutral bot identity, not the sovereign's personal one.
+          # Identity-only fix: no attestation input, digest, or gate is touched.
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           TODAY="v$(date -u +'%Y.%m.%d')"
           if git rev-parse "$TODAY" >/dev/null 2>&1; then
             echo "tag=${TODAY}" >> "$GITHUB_OUTPUT"
