@@ -1761,6 +1761,7 @@ model_list:
 litellm_settings:
   callbacks:
   - fed_spend_callback.proxy_handler_instance
+  - data.pii_redact_callback.proxy_handler_instance
   num_retries: 2
   request_timeout: 60
   allowed_fails: 2
