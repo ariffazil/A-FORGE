@@ -1226,6 +1226,24 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
+- model_name: fed/vision
+  litellm_params:
+    model: openai/deepseek-flash
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 1
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'P0 2026-10-03: deepseek-flash promoted to fed/vision primary — 5s strict-JSON
+      on real 1600px outcrop vs qwen3.8-max >180s timeout. Interactive vision lane.'
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+  model_name: fed/vision
 - model_name: deepseek-flash
   litellm_params:
     model: openai/deepseek-flash
@@ -1310,7 +1328,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 1
+    order: 3  # 2026-10-03 demoted: deepseek-flash primary (5s vs >180s on real photos)
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
