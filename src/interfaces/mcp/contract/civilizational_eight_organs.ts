@@ -395,10 +395,10 @@ export const DOMAIN_SPECIALIZATION_EXAMPLES = {
  */
 export const SENSE_ORGAN_TOOLS = {
   GEOX: [
-    "geox_basin_resolve",      // Resolve basin information
-    "geox_seismic_process",    // Process seismic data
-    "geox_petrophysics_analyze", // Analyze rock properties
-    "geox_prospect_evaluate",  // Evaluate prospect potential
+    "geox_basin",      // Resolve basin information
+    "geox_seismic_ingest",    // Process seismic data
+    "geox_petrophysics", // Analyze rock properties
+    "geox_prospect",  // Evaluate prospect potential
     // ... 30+ more GEOX tools
   ],
   WEALTH: [

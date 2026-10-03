@@ -165,14 +165,14 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
 // Tools that should always be simulated first
 const SIMULATE_FIRST_TOOLS = new Set([
   "forge_dry_run",
-  "geox_prospect_evaluate",
+  "geox_prospect",
   "geox_seismic_compute",
 ]);
 const SUGGEST_TOOLS = new Set([
   "arif_suggest",
   "forge_suggest",
   "wealth_suggest_allocation",
-  "geox_suggest_prospect",
+  "geox_prospect",
 ]);
 
 // Queued / scheduled tools

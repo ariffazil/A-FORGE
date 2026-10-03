@@ -93,7 +93,6 @@ import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThink
 import { assertActMutationGateOrExit } from "../../infrastructure/governance/actIngress.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { validateSession, validateSessionAsync } from "../../domain/session/sessionGate.js";
-import { runP0GateMiddleware, formatGateRejection } from "./p0GateMiddleware.js";
 
 /** Rewrite advisory completions that still say SEAL. Kernel owns that word. */
 function stripAdvisorySealWord(result: any, toolName: string): void {
@@ -1297,34 +1296,12 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 return;
               }
 
-              // ── P0 Deterministic Pre-Execution Gates (2026-08-03) ────────
-              // Runs AFTER session gate, BEFORE tool dispatch + BIJAKSANA.
-              // Pure deterministic functions — no LLM calls, no network, no writes.
-              // Based on Reddy et al. (2026) arXiv:2607.07405.
-              const p0Result = runP0GateMiddleware({
-                toolName,
-                args: toolArgs,
-                sessionId: callerSession ?? "",
-                actorId: callerActor ?? "",
-                act: callerSct,
-              });
-              if (!p0Result.passed) {
-                const rejection = formatGateRejection(p0Result);
-                process.stderr.write(`[A-FORGE-MCP] P0_GATE blocked ${toolName}: ${rejection.gate} — ${rejection.reason}\n`);
-                res.writeHead(200, {
-                  "Content-Type": "application/json",
-                  "X-AForge-Gate": `P0_${rejection.gate}`,
-                });
-                res.end(toolIsErrorResult(msgId, `P0_GATE: ${rejection.reason}`, {
-                  error_class: "P0_GATE_BLOCKED",
-                  recoverability: rejection.recoverability,
-                  action_class: actionClass,
-                  tool: toolName,
-                  gate: rejection.gate,
-                  p0_evaluations: p0Result.evaluations.length,
-                }));
-                return;
-              }
+              // P0 pre-execution gate REMOVED 2026-10-03 on F13 order.
+              // runP0GateMiddleware was a stub that returned passed:true
+              // unconditionally, so this call site implied a constitutional gate
+              // that never gated anything. Real pre-execution enforcement lives in
+              // arifJudge (forgeShell Step 1) and the session gate above.
+              // Evidence: ADK-DOSSIER-20261003.md §4.1.
             }
 
             // Dispatch whitelisted tool

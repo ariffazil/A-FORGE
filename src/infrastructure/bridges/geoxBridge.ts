@@ -6,7 +6,7 @@
  *   LAW_001: GEOX owns geoscience computation.
  *   LAW_004: courier delivers, organ thinks.
  *
- * v2026.06.14 — All tool names aligned to canonical 37-tool surface.
+ * v2026.06.14 — All tool names aligned to canonical surface (27 tools).
  *   well_compute_petrophysics → geox_subsurface_generate_candidates(target_class="petrophysics")
  *   prospect_evaluate kept as-is (canonical).
  */
@@ -39,7 +39,7 @@ export class GEOXLogInterpreterBridge extends BaseTool {
   async run(args: Record<string, unknown>, _context: ToolExecutionContext): Promise<ToolResult> {
     // S6 (F13 order 2026-10-01): was geox_mcp.geox_subsurface_generate_candidates,
     // a name that exists on no live GEOX surface (GEOX was probed: 26 live tools).
-    // The header comment claimed alignment to a "canonical 37-tool surface" — that
+    // The header comment claimed alignment to a "canonical surface (27 tools)" — that
     // generation has since been consolidated into union tools, so the alignment
     // rotted. Canonical target is geox_petrophysics, which declares exactly the
     // two params this bridge already passes (target_class, evidence_refs).
@@ -63,7 +63,7 @@ export class GEOXLogInterpreterBridge extends BaseTool {
 }
 
 /**
- * S6 (F13 order 2026-10-01): was geox_mcp.geox_prospect_evaluate — not a live
+ * S6 (F13 order 2026-10-01): was geox_mcp.geox_prospect — not a live
  * verb. Deliberately NOT remapped: this returns GEOXScenarioContract[] for the
  * AgentEngine/PipelineCoordinator scenario loader, and no live GEOX tool was
  * verified to produce scenario contracts. geox_prospect(mode=screen|evaluate)
@@ -75,7 +75,7 @@ export class GEOXLogInterpreterBridge extends BaseTool {
 export async function getScenarios(mode: "primary" | "secondary"): Promise<unknown[]> {
   const err = new Error(
     `CAPABILITY_GAP: GEOX exposes no scenario-contract primitive for mode="${mode}". ` +
-    `The previously called verb (geox_prospect_evaluate) is not on the live 26-tool GEOX ` +
+    `The previously called verb (geox_prospect) is not on the live 27-tool GEOX ` +
     `surface. Nearest live tool is geox_prospect(mode=screen|evaluate), which evaluates a ` +
     `prospect rather than emitting scenario contracts, so it must not be substituted ` +
     `silently. This is a missing capability, NOT a GEOX outage.`,
