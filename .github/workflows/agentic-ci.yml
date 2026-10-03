@@ -99,6 +99,19 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci --legacy-peer-deps
+
+      # CI parity with the VPS: sandbox backends (bwrap/firejail) for ephemeral
+      # containment tests + writable /root state dirs the runtime expects
+      # (world-model telemetry, skill registry, data). Without these, 10 tests
+      # fail on environment grounds only (observed 2026-10-03, run 37114013824).
+      - name: Environment parity (sandbox backends + /root state dirs)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq bubblewrap firejail >/dev/null
+          sudo mkdir -p /root/.local/share/arifos /root/A-FORGE/.runtime/skills /root/A-FORGE/data
+          sudo chown -R "$(id -u):$(id -g)" /root/.local/share/arifos /root/A-FORGE/.runtime /root/A-FORGE/data
+          bwrap --version && firejail --version | head -1
+
       - name: Build
         run: npm run build
       - name: Test

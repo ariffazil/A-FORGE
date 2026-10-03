@@ -91,8 +91,12 @@ jobs:
 
       - name: Summary
         if: always()
+        env:
+          # Env indirection — PR titles are untrusted input; never template them
+          # into shell directly (script injection, remediated 2026-10-04).
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          echo "## Dependabot CI — ${{ github.event.pull_request.title }}"
+          echo "## Dependabot CI — $PR_TITLE"
           echo ""
           echo "- Head SHA: \`${{ github.event.pull_request.head.sha }}\`"
           echo "- Lockfile SHA-256: \`${{ steps.lockhash.outputs.lock_sha256 }}\`"

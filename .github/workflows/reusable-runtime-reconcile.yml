@@ -42,13 +42,27 @@ jobs:
           - { name: aaa, port: 3001, repo: ariffazil/AAA }
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      # Private/renamed repos (e.g. ariffazil/well is PRIVATE — 404 to the
+      # default token) must degrade to N/A, not fail the 6-hourly reconcile.
+      # Leg becomes: source UNAVAILABLE — needs a PAT secret for real coverage.
+      - name: "Checkout organ source"
+        id: co
+        continue-on-error: true
+        uses: actions/checkout@v7
         with:
           repository: ${{ matrix.organ.repo }}
           path: ${{ matrix.organ.name }}
 
+      - name: "Source unavailable (private / renamed / no token access)"
+        if: steps.co.outcome == 'failure'
+        run: |
+          echo "⚠ ${{ matrix.organ.name }}: cannot checkout ${{ matrix.organ.repo }} — repo is private, renamed, or the default token lacks access."
+          echo "This reconcile leg is N/A until a read-scoped PAT secret is provided."
+          echo "skipped=true" >> "$GITHUB_OUTPUT"
+
       - name: "Get source commit"
         id: source
+        if: steps.co.outcome == 'success'
         run: |
           cd ${{ matrix.organ.name }}
           SHA=$(git rev-parse --short=7 HEAD)
@@ -58,6 +72,7 @@ jobs:
 
       - name: "Check runtime health"
         id: health
+        if: steps.co.outcome == 'success'
         run: |
           # Attempt health probe — expected to fail from GitHub runner
           # This tells us the organ pattern, not live state
@@ -72,6 +87,7 @@ jobs:
           fi
 
       - name: "Compare source vs runtime"
+        if: steps.co.outcome == 'success'
         run: |
           echo "## ${{ matrix.organ.name }} Runtime Reconciliation"
           echo ""

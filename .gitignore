@@ -176,3 +176,6 @@ litellm-config.order-snapshot.json
 # Surface Guard baseline is runtime state, not source
 config/surface-snapshots.json
 data/token_bank.db
+
+# git credential store — NEVER commit (leaked in history once, rotation pending)
+.git-credentials

@@ -153,9 +153,13 @@ jobs:
 
       - name: Audit receipt
         if: success()
+        env:
+          # Env indirection — PR titles are untrusted input; never template them
+          # into shell directly (script injection, remediated 2026-10-04).
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           echo "## External Witness Attestation (Gödel Lock · SHA-bound)"
-          echo "- PR: #${{ github.event.pull_request.number }} — ${{ github.event.pull_request.title }}"
+          echo "- PR: #${{ github.event.pull_request.number }} — $PR_TITLE"
           echo "- Author: @${{ github.event.pull_request.user.login }}"
           echo "- Head SHA: ${{ github.event.pull_request.head.sha }}"
           echo "- Witness: @${{ steps.attest.outputs.witness_user }}"
