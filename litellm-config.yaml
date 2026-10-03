@@ -1789,7 +1789,18 @@ litellm_settings:
 router_settings:
   routing_strategy: latency-based-routing
   enable_pre_call_checks: true
-  num_retries: 1
+  # 2026-10-03 (333-AGI SEAL-1233ff7266744510): num_retries 1→3 + explicit retry_policy —
+  # aligns runtime with declared fallback discipline ("retry 3x backoff", arifos-governance.md).
+  # Distilled from litellm OSS docs (FED-OSS-DISTILLATION-2026-10-03.md §3).
+  num_retries: 3
+  retry_policy:
+    TimeoutErrorRetries: 3
+    RateLimitErrorRetries: 3
+    AuthenticationErrorRetries: 1
+    NotFoundErrorRetries: 0
+    ContentPolicyViolationErrorRetries: 2
+    InternalServerErrorRetries: 3
+    DefaultRetries: 2
   allowed_fails: 2
   cooldown_time: 30
   fallbacks:
