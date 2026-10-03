@@ -93,6 +93,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
+        with:
+          repository: ariffazil/arifOS
+          path: arifos-sot
       - uses: actions/setup-node@v7
         with:
           node-version: "22"
@@ -100,17 +104,23 @@ jobs:
       - name: Install
         run: npm ci --legacy-peer-deps
 
-      # CI parity with the VPS: sandbox backends (bwrap/firejail) for ephemeral
-      # containment tests + writable /root state dirs the runtime expects
-      # (world-model telemetry, skill registry, data). Without these, 10 tests
-      # fail on environment grounds only (observed 2026-10-03, run 37114013824).
-      - name: Environment parity (sandbox backends + /root state dirs)
+      # CI parity with the VPS: some tests assert on absolute VPS paths
+      # (/root/A-FORGE/src wiring, /root/arifOS/config SOT, /root/.local/share
+      # telemetry) and the sandbox tests need bwrap/firejail. Mirror the
+      # checkouts into the VPS layout + grant the runner traverse on /root
+      # (mode 700 → 711; leaf dirs are runner-owned).
+      # (remediation of run 37114013824 + 37154547286 failures)
+      - name: Environment parity (VPS layout + sandbox backends)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq bubblewrap firejail >/dev/null
-          sudo mkdir -p /root/.local/share/arifos /root/A-FORGE/.runtime/skills /root/A-FORGE/data
-          sudo chown -R "$(id -u):$(id -g)" /root/.local/share/arifos /root/A-FORGE/.runtime /root/A-FORGE/data
-          bwrap --version && firejail --version | head -1
+          sudo apt-get install -y -qq bubblewrap firejail rsync >/dev/null
+          sudo chmod 711 /root
+          sudo mkdir -p /root/A-FORGE /root/arifOS /root/.local/share/arifos
+          sudo chown -R "$(id -u):$(id -g)" /root/A-FORGE /root/arifOS /root/.local/share/arifos
+          rsync -a --exclude node_modules "$GITHUB_WORKSPACE/" /root/A-FORGE/
+          rsync -a "$GITHUB_WORKSPACE/arifos-sot/" /root/arifOS/
+          bwrap --version >/dev/null && firejail --version >/dev/null
+          echo "parity: /root/A-FORGE + /root/arifOS + telemetry dir ready"
 
       - name: Build
         run: npm run build
