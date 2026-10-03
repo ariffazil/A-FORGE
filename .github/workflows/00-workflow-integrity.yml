@@ -141,8 +141,15 @@ jobs:
               errors=$((errors + 1))
             fi
 
-            # Reject shell injection patterns
-            if grep -qE '\$\{\{\s*(github\.event\.(issue_title|comment\.body|pull_request\.(title|body)))\s*\}\}' "$f" 2>/dev/null; then
+            # Reject shell injection patterns.
+            # Safe pattern (GitHub hardening docs): untrusted values routed
+            # through an `env:` KEY (ENV_VAR: ${{ ... }}) — the shell must
+            # then opt in via "$ENV_VAR", which is quoted, non-interpolated.
+            # Only interpolation on NON-env-key lines (i.e. inside run:
+            # scripts) is banned. False-positive fix 2026-10-04: the previous
+            # whole-file grep flagged the safe env-indirection pattern itself.
+            if grep -E '\$\{\{\s*(github\.event\.(issue_title|comment\.body|pull_request\.(title|body)))\s*\}\}' "$f" 2>/dev/null \
+              | grep -qvE '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:[[:space:]]'; then
               echo "❌ $bn: potential script injection via untrusted input"
               errors=$((errors + 1))
             fi
