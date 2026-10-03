@@ -1571,13 +1571,42 @@ server.tool(
         return result;
       } catch (err) {
         await telemetryFailure("forge_session_init", startedAt, err);
+        // Same attribution rule as the 666 HEART handler: the bridge already
+        // classifies the failure, so the envelope must carry that class.
+        // Hardcoding "Kernel unreachable" reported a constitutional HOLD as an
+        // outage and told the operator to restart a kernel that had answered
+        // HTTP 200 — measured 2026-10-01 through the public federation gateway:
+        // forge_session_init -> "Kernel unreachable: ... F13 | HOLD | Kernel
+        // returned HTTP 200" / "Ensure arifOS kernel is running on port 8088".
+        const code = (err as { error_code?: string })?.error_code;
+        const raw = err instanceof Error ? err.message : String(err);
+        const gate =
+          code === "ABI_DRIFT" ? "ABI_DRIFT"
+          : code === "SESSION_REQUIRED" || /ARIF_SESSION_NOT_FOUND/.test(raw) ? "SESSION_REQUIRED"
+          : code === "KERNEL_HOLD" ? "KERNEL_HOLD"
+          : code === "TOOL_ERROR" || code === "JSONRPC_ERROR" ? "KERNEL_REJECTED_CALL"
+          : code === "NETWORK_ERROR" || code === "PROTOCOL_ERROR" ? "ARIFOS_UNREACHABLE"
+          : "UNCLASSIFIED";
+        const suggestion =
+          gate === "ARIFOS_UNREACHABLE"
+            ? "Cannot reach the arifOS kernel. Ensure it is running on port 8088 and reachable at ARIFOS_MCP_URL."
+            : gate === "KERNEL_HOLD"
+              ? "arifOS ANSWERED with a constitutional HOLD — this is not an outage, do not restart it. Ignition was refused for this actor: bind an identity (actor_id) or present a valid ACT for this lane."
+              : gate === "ABI_DRIFT"
+                ? "arifOS ANSWERED — this verb is not on its live surface. Fix TOOL_NAME_MAP or the call site; do not restart the kernel."
+                : gate === "SESSION_REQUIRED"
+                  ? "arifOS ANSWERED — it requires a bound session for this call. Complete the initialize handshake and propagate the session id; do not restart the kernel."
+                  : gate === "UNCLASSIFIED"
+                    ? "Unclassified bridge failure. Read the downstream error before assuming an outage."
+                    : `arifOS ANSWERED — ignition was refused at ${gate}. Do not restart the kernel.`;
         return {
           content: [{
             type: "text" as const,
             text: JSON.stringify({
-              status: "ERROR",
-              error: `Kernel unreachable: ${err instanceof Error ? err.message : String(err)}`,
-              suggestion: "Ensure arifOS kernel is running on port 8088 and reachable at ARIFOS_MCP_URL",
+              status: gate === "ARIFOS_UNREACHABLE" ? "ERROR" : gate,
+              gate,
+              error: raw,
+              suggestion,
             }, null, 2),
           }],
           isError: true,

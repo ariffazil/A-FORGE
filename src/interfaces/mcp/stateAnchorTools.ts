@@ -354,7 +354,7 @@ export function registerStateAnchorTools(server: McpServer): void {
       try {
         await writeFile(PORTS_REGISTRY, JSON.stringify(live, null, 2));
       } catch (err: any) {
-        return text({ ...live, registry_write_error: err.message }, true);
+        return text({ ...live, registry_write_ok: false, registry_write_error: err.message });
       }
       return text(live);
     }
@@ -396,7 +396,7 @@ export function registerStateAnchorTools(server: McpServer): void {
       try {
         await writeFile(SERVICES_REGISTRY, JSON.stringify(live, null, 2));
       } catch (err: any) {
-        return text({ ...live, registry_write_error: err.message }, true);
+        return text({ ...live, registry_write_ok: false, registry_write_error: err.message });
       }
       return text(live);
     }
@@ -438,7 +438,7 @@ export function registerStateAnchorTools(server: McpServer): void {
       try {
         await writeFile(CRON_REGISTRY, JSON.stringify(live, null, 2));
       } catch (err: any) {
-        return text({ ...live, registry_write_error: err.message }, true);
+        return text({ ...live, registry_write_ok: false, registry_write_error: err.message });
       }
       return text(live);
     }

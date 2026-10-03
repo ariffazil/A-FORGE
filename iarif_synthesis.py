@@ -195,8 +195,10 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    srv = ThreadingHTTPServer(("127.0.0.1", 18095), Handler)
-    sys.stderr.write("[iarif-synthesis] Seal B engine live on 127.0.0.1:18095\n")
+    # 18095 is held by apa-github-bridge (GITHUB_BRIDGE_PORT); Seal B must not collide with it.
+    port = int(os.environ.get("IARIF_PORT", "18095"))
+    srv = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    sys.stderr.write("[iarif-synthesis] Seal B engine live on 127.0.0.1:%d\n" % port)
     srv.serve_forever()
 
 
