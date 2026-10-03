@@ -143,11 +143,16 @@ jobs:
 
             # Reject shell injection patterns.
             # Safe pattern (GitHub hardening docs): untrusted values routed
-            # through an `env:` KEY (ENV_VAR: ${{ ... }}) — the shell must
-            # then opt in via "$ENV_VAR", which is quoted, non-interpolated.
-            # Only interpolation on NON-env-key lines (i.e. inside run:
-            # scripts) is banned. False-positive fix 2026-10-04: the previous
-            # whole-file grep flagged the safe env-indirection pattern itself.
+            # through an env KEY (e.g. PR_TITLE set from the untrusted value)
+            # — the shell must then opt in via the quoted variable, which is
+            # never template-expanded. Only interpolation on NON-env-key
+            # lines (i.e. inside run: scripts) is banned. False-positive fix
+            # 2026-10-04: the previous whole-file grep flagged the safe
+            # env-indirection pattern itself.
+            # NOTE: this comment deliberately avoids writing a literal
+            # template-expression example — GitHub's parser tokenizes those
+            # sequences even inside run-block comments (startup_failure,
+            # measured 2026-10-03, runs 37155803220+).
             if grep -E '\$\{\{\s*(github\.event\.(issue_title|comment\.body|pull_request\.(title|body)))\s*\}\}' "$f" 2>/dev/null \
               | grep -qvE '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:[[:space:]]'; then
               echo "❌ $bn: potential script injection via untrusted input"
