@@ -99,12 +99,13 @@ export interface HealthResponse {
 }
 
 // ── Defaults ──────────────────────────────────────────────────────────────
-
-const DEFAULT_TRI_WITNESS: TriWitnessVotes = {
-  human: 0.42,
-  ai: 0.32,
-  earth: 0.26,
-};
+// DEFAULT_TRI_WITNESS = {human:0.42, ai:0.32, earth:0.26} was REMOVED here on
+// 2026-10-03 (SCAR-TRI-WITNESS-CONSTANT). It was a fabricated tri-witness
+// stamped onto every receipt A-FORGE emitted, because A-FORGE never observes a
+// witness. The values are kept in this comment and in the commit message so the
+// triple is not silently resurrected by whoever next finds it in old ledger rows
+// — 13,863 rows in /var/lib/arifflow/receipts.jsonl still carry it.
+// See emitReceipt() for the replacement behaviour.
 
 // ── Client ────────────────────────────────────────────────────────────────
 
@@ -201,7 +202,20 @@ export async function emitReceipt(
     epistemic_label: EPISTEMIC_TO_RUST[params.epistemic_label || 'OBS'] || 'Observation',
     floor_verdict: FLOOR_TO_RUST[params.floor_verdict || 'PASS'] || 'Pass',
     cooling_decision: COOLING_TO_RUST[params.cooling_decision || 'NONE'] || 'None',
-    tri_witness_votes: params.tri_witness_votes || DEFAULT_TRI_WITNESS,
+    // SCAR-TRI-WITNESS-CONSTANT (2026-10-03, FI-003): was
+    //   params.tri_witness_votes || DEFAULT_TRI_WITNESS
+    // with DEFAULT_TRI_WITNESS = {human:0.42, ai:0.32, earth:0.26}. A-FORGE never
+    // observes a witness, so the fallback fired on essentially every receipt —
+    // 13,863 of 13,864 populated tri_witness_votes tuples in
+    // /var/lib/arifflow/receipts.jsonl were byte-identical, one real variation.
+    // The same triple is what let arifOS F3 TRI-WITNESS publish 0.9299 on the
+    // public observatory, since 3*(0.42*0.99*0.99)**(1/3)/2.40 = 0.929858.
+    // A self-stamped witness is not a witness. The local type is
+    // `TriWitnessVotes | null` and the Rust field is Option<..>, so null is the
+    // honest value: "no witness observed". Downstream must render that as
+    // unmeasured, never average it into a score. Callers that DO hold a real
+    // witness still pass it and are unaffected.
+    tri_witness_votes: params.tri_witness_votes ?? null,
     merkle_root: null, merkle_inclusion_proof: null,
     payload,
   };
