@@ -1296,13 +1296,13 @@ model_list:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     api_key: os.environ/ZAI_API_KEY
-    order: 1
+    order: 2
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P1 2026-09-13: ZAI coding plan glm-5.3-flash native multimodal (image/video/file,
-      1M ctx, 3x quota). Verified live: 1px image OK on paid plan. Debt settled per
-      probe-before-panic.'
+    notes: 'P1 2026-09-13: ZAI coding plan glm-5.3-flash native multimodal. DEMOTED
+      to order=2 2026-10-03 (F13 sovereign: update with working api key) — zai
+      upstream hit 402 credit exhaustion, hung Earth Witness 30-47s. Qwen primary now.'
     max_input_tokens: 1000000
     max_output_tokens: 128000
   model_name: fed/vision
@@ -1310,7 +1310,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 2
+    order: 1
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1318,10 +1318,12 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P2: Qwen 3.8 Max (Individual Plan 75% runway, 1M ctx visual reasoning).'
+    notes: 'P2 2026-10-03: PROMOTED from fed/vision-parked to fed/vision order=1
+      (F13 sovereign: update with working api key) — Individual Plan 75% runway,
+      1M ctx visual reasoning. Now the Earth Witness primary.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
-  model_name: fed/vision-parked
+  model_name: fed/vision
 - litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
