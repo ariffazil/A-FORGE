@@ -203,6 +203,20 @@ if [ -f "/root/AAA/scripts/musyawarah_gate.py" ]; then
     fi
 fi
 
+# ── LITELLM DANGLING GUARD (FI-001 spec 2026-10-03; built FI-008, session SEAL-ddf5fe51f3cf465b) ──
+# Group refs in router_settings.fallbacks/context_window_fallbacks must exist
+# in model_list; model_name count delta >2 without flag = BLOCK.
+# Failure class: bc98843d i-arif drop + deepseek-v4-pro dangling (2 incidents).
+# Guard SOURCE (tracked in repo): scripts/hooks/pre-commit/litellm_dangling_guard.py
+# Reinstalled by scripts/hooks/install_hooks.sh (idempotent).
+if [ -f "/root/A-FORGE/scripts/hooks/pre-commit/litellm_dangling_guard.py" ]; then
+    GUARD_OUT=$(python3 /root/A-FORGE/scripts/hooks/pre-commit/litellm_dangling_guard.py 2>&1) && GUARD_RC=0 || GUARD_RC=$?
+    echo "$GUARD_OUT" | sed 's/^/  /'
+    if [ "$GUARD_RC" -ne 0 ]; then
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
+
 # ── Verdict ──────────────────────────────────────────────────
 echo ""
 TOTAL=$((ERRORS + WARNINGS + CLEAN))
