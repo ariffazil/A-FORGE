@@ -93,20 +93,26 @@ jobs:
           # The runner image has none, so this step died with:
           #   fatal: empty ident name (for <runner@runnervm...>) not allowed
           # (measured: run 36947168924, 2026-10-02, exit 128).
-          # --local writes only this job's workspace .git/config, never the runner
-          # image. Neutral bot identity, not the sovereign's personal one.
+          # --local writes only this job's workspace .git/config, never the
+          # runner image. Neutral bot identity, not the sovereign's personal.
           # Identity-only fix: no attestation input, digest, or gate is touched.
           git config --local user.name "github-actions[bot]"
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Shallow checkout cannot see remote tags — two concurrent attest runs
+          # both computed vYYYY.MM.DD-attest.1 and the loser's push was rejected
+          # "(already exists)" (measured: run 37155131886, 2026-10-03).
+          # Fetch tags, and race-guard creation with ls-remote against origin.
+          git fetch --tags --force --quiet origin
           TODAY="v$(date -u +'%Y.%m.%d')"
-          if git rev-parse "$TODAY" >/dev/null 2>&1; then
+          exists_remote() { git ls-remote --tags origin "refs/tags/$1" | grep -q .; }
+          if git rev-parse "$TODAY" >/dev/null 2>&1 || exists_remote "$TODAY"; then
             echo "tag=${TODAY}" >> "$GITHUB_OUTPUT"
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             # Create an attest-specific tag: vYYYY.MM.DD-attest.N
             BASE="${TODAY}-attest"
             N=1
-            while git rev-parse "${BASE}.${N}" >/dev/null 2>&1; do
+            while git rev-parse "${BASE}.${N}" >/dev/null 2>&1 || exists_remote "${BASE}.${N}"; do
               N=$((N + 1))
             done
             TAG="${BASE}.${N}"
