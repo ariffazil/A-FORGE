@@ -1743,6 +1743,21 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
+# ── ADDED 2026-10-03 (333-AGI, SEAL-1233ff7266744510): canonical deepseek-v4-pro group ──
+# Repairs dangling fallback refs: forge-builder/forge-economy → deepseek-v4-pro (target
+# group never existed on KVM8). DeepSeek direct LIVE (canary PONG 2026-09-28, balance
+# per FED :7074). Fallback-only rung; not a cascade-order change. STAGED (next restart).
+- model_name: deepseek-v4-pro
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://api.deepseek.com/v1
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 0
+    mode: chat
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 384000
+    mode: chat
 litellm_settings:
   callbacks:
   - fed_spend_callback.proxy_handler_instance
