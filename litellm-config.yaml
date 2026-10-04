@@ -6,6 +6,9 @@ model_list:
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 8
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -212,6 +215,9 @@ model_list:
     supports_function_calling: true
     notes: 'HERMES P4: DeepSeek-v4-Pro DIRECT (api.deepseek.com). LIVE PROBED 2026-10-02. Cheap direct lane.'
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-v4-pro PEAK rates, api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 1.32e-06
+    output_cost_per_token: 3.96e-06
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
@@ -261,6 +267,9 @@ model_list:
     supports_function_calling: true
     notes: 'HERMES P7: deepseek-flash DIRECT (cheap quick lane).'
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
@@ -527,6 +536,9 @@ model_list:
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
@@ -556,6 +568,9 @@ model_list:
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
@@ -755,6 +770,9 @@ model_list:
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 6
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
@@ -797,6 +815,9 @@ model_list:
     mode: chat
     supports_function_calling: true
   model_info:
+    # cost-seed 2026-10-04 FED-T026: Alibaba Model Studio intl list, 2 sources agree (llmhosting+mytokentracker) 2026-10-04
+    input_cost_per_token: 1.50e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 131072
     notes: FREE QUOTA — qwen3-next-80b-a3b, expires 2026-09-29.
@@ -808,6 +829,9 @@ model_list:
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
@@ -820,6 +844,9 @@ model_list:
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 8
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
@@ -1205,6 +1232,9 @@ model_list:
       (canonical name deepseek-flash, released 2026-09-10). Direct PAYG last-resort
       rung. Live-verified 2026-09-13.'
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1222,6 +1252,9 @@ model_list:
       served by deepseek-flash native multimodal. i-arif sovereign vision rung, DeepSeek
       direct PAYG.'
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1237,6 +1270,9 @@ model_list:
     mode: chat
     supports_vision: true
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     mode: chat
     supports_vision: true
     notes: 'P0 2026-10-03: deepseek-flash promoted to fed/vision primary — 5s strict-JSON
@@ -1255,6 +1291,9 @@ model_list:
       fallback-chain reference that previously returned "Invalid model name" (group
       was missing). V4.1 native multimodal, 1M ctx.
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1630,6 +1669,9 @@ model_list:
       (V4.1 native multimodal). Upstream: api.deepseek.com. Direct PAYG. PRIMARY.
       min_tokens=200 for reasoning headroom.'
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 3.00e-07
+    output_cost_per_token: 1.20e-06
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1775,6 +1817,9 @@ model_list:
     order: 0
     mode: chat
   model_info:
+    # cost-seed 2026-10-04 FED-T026: deepseek-v4-pro PEAK rates, api-docs.deepseek.com scraped 2026-10-04
+    input_cost_per_token: 1.32e-06
+    output_cost_per_token: 3.96e-06
     max_input_tokens: 1048576
     max_output_tokens: 384000
     mode: chat
