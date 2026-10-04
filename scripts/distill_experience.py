@@ -28,6 +28,38 @@ def to_float(val, fallback=0.0) -> float:
     except (ValueError, TypeError):
         return fallback
 
+def verify_outcome(obs: dict, fb: dict) -> tuple[str, bool, int]:
+    """
+    Evaluates outcome strictly without assuming success.
+    Returns (outcome_str, wm_eligible, exit_code).
+    outcome_str: 'SUCCESS', 'FAILURE', 'HOLD', or 'UNKNOWN'.
+    wm_eligible: bool (True ONLY for verified outcomes, never UNKNOWN).
+    exit_code: int (0 for SUCCESS, 1 for FAILURE/UNKNOWN, 2 for HOLD).
+    """
+    raw_success = obs.get("success")
+    explicit_exit = obs.get("exit_code")
+    error = obs.get("error") or obs.get("stderr")
+    
+    # Check constitutional feedback for failure signals
+    const_fb = str(fb.get("constitutional", "")).upper()
+    has_rejection = any(w in const_fb for w in ("FAIL", "REJECT", "VIOLATION", "DENIED", "HARAM"))
+    has_hold = any(w in const_fb for w in ("HOLD", "888_HOLD", "SABAR", "TAHAN"))
+
+    # Explicit failure conditions
+    if raw_success is False or str(raw_success).lower() in ("false", "0") or (explicit_exit is not None and explicit_exit != 0) or error or has_rejection:
+        return "FAILURE", False, (explicit_exit if explicit_exit is not None else 1)
+
+    # Valid HOLD / safety cases
+    if has_hold:
+        return "HOLD", True, 2
+
+    # Explicit verified success (requires explicit boolean True or string 'true' and clean execution)
+    if (raw_success is True or str(raw_success).lower() in ("true", "1")) and not error and (explicit_exit in (0, None)):
+        return "SUCCESS", True, 0
+
+    # Missing or ambiguous outcome -> UNKNOWN, never eligible as positive training example
+    return "UNKNOWN", False, 1
+
 def distill() -> dict:
     if not os.path.exists(EXP_FILE):
         return {"error": "Experience traces log not found"}
@@ -60,6 +92,7 @@ def distill() -> dict:
 
     # 2. Read raw experience traces
     raw_traces = []
+    malformed_traces = 0
     with open(EXP_FILE, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -67,7 +100,7 @@ def distill() -> dict:
                 try:
                     raw_traces.append(json.loads(line))
                 except Exception:
-                    pass
+                    malformed_traces += 1
 
     # Filter out pure session traces and RSI loop heartbeats
     causal_traces = [
@@ -76,6 +109,7 @@ def distill() -> dict:
     ]
 
     new_trajectories = []
+    outcome_counts = {"SUCCESS": 0, "FAILURE": 0, "HOLD": 0, "UNKNOWN": 0}
     for t in causal_traces:
         trace_id = t.get("trace_id", "")
         if trace_id in distilled_ids:
@@ -89,7 +123,10 @@ def distill() -> dict:
         tool = str(action.get("tool", "unknown")).strip()
         input_hash = str(action.get("input_hash", ""))
         output_hash = str(obs.get("output_hash", ""))
-        success = bool(obs.get("success", True))
+
+        outcome_status, eligible, exit_code = verify_outcome(obs, fb)
+        outcome_counts[outcome_status] = outcome_counts.get(outcome_status, 0) + 1
+        success = (outcome_status == "SUCCESS")
 
         if tool in ("forge_execute", "forge_shell", "mesh_sync", "chain_recovery"):
             priority = "P0"
@@ -106,7 +143,6 @@ def distill() -> dict:
         feedback_text = str(fb.get("self", "")) + str(fb.get("environmental", "")) + str(fb.get("constitutional", ""))
         entropy = round(len(feedback_text) / 20.0, 2)
         prediction_gap = round(abs(confidence - (1.0 if success else 0.0)), 3)
-        eligible = True
 
         seq += 1
         ts = t.get("ts") or datetime.now(timezone.utc).isoformat()
@@ -122,11 +158,12 @@ def distill() -> dict:
             "tool": tool,
             "wm_priority": priority,
             "wm_eligible": eligible,
+            "outcome_status": outcome_status,
             "agent_confidence": confidence,
             "surprise_score": round(surprise, 3),
             "observation_entropy": entropy,
             "prediction_gap": prediction_gap,
-            "exit_code": 0 if success else 1,
+            "exit_code": exit_code,
             "distilled_from_trace": trace_id,
             "prev_hash": prev_hash,
             "hash": rec_hash
@@ -168,6 +205,8 @@ def distill() -> dict:
         "records_by_priority": p_counts,
         "records_eligible": eligible_count,
         "distilled_from_experience_traces": len(causal_traces),
+        "malformed_traces_count": malformed_traces,
+        "outcome_breakdown_new": outcome_counts,
     }
     with open(META_FILE, "w", encoding="utf-8") as f:
         json.dump(meta_data, f, indent=2)
@@ -186,8 +225,10 @@ def distill() -> dict:
     return {
         "status": "PASS",
         "raw_traces": len(raw_traces),
+        "malformed_traces": malformed_traces,
         "causal_traces_found": len(causal_traces),
         "newly_distilled": len(new_trajectories),
+        "outcome_breakdown_new": outcome_counts,
         "total_trajectories": total,
         "eligible_trajectories": eligible_count,
         "reconciled_skill_outcomes": reconciled_skills,
