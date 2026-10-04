@@ -70,6 +70,38 @@ if [ -f "/root/AAA/scripts/doctrine_status_gate.py" ]; then
     fi
 fi
 
+# ── PERSON-DATA GATE (2026-10-04, F13 directive) ──
+# Blocks Malaysian NRIC-shaped values, Telegram bot tokens, and person-registry paths from
+# being staged. Rationale and the audit that motivated it live in the AAA repo (private)
+# and in scripts/person_data_gate.py's module docstring; this hook is shared with public
+# repos, so it deliberately carries no findings.
+#
+# PLACED BEFORE THE CODE-FILE EARLY-EXIT, like the doctrine gate above, and for the same
+# reason: the payload this gate exists to catch is .md / .yaml / .json / .html. A first
+# version sat after the early-exit, beside supply_chain_gate — so a docs-only commit
+# skipped it entirely and the gate never fired in the hook path, while its own 9-scenario
+# test suite passed. A gate positioned where its own subject matter cannot reach it is a
+# guard-shaped comment. Verified live after the move: a staged .md carrying an NRIC and a
+# staged person-registry edit both block the commit; a clean docs commit still passes.
+#
+# Runs in --staged mode, NOT --all: only ADDED lines block, so pre-existing content in
+# already-committed files does not turn every edit of those files into an obstruction —
+# obstructions get --no-verify'd. Use `person_data_gate.py --all HEAD` to audit a tree.
+#
+# Precision is the point: a naive [0-9]{6}-[0-9]{2}-[0-9]{4} scan of a large repo returns
+# tens of thousands of matches, almost all binary coincidences. Validating the embedded
+# birth date and place-of-birth code is what makes the signal usable.
+#
+# No-op in the other repos sharing this hook (64-83ms each, verified).
+# Tests: python3 /root/AAA/scripts/test_person_data_gate.py  (9 scenarios)
+# Note: ERRORS/WARNINGS/CLEAN are initialised below, so this gate exits directly.
+if [ -f "/root/AAA/scripts/person_data_gate.py" ]; then
+    if ! python3 /root/AAA/scripts/person_data_gate.py; then
+        echo -e "${R}PERSON-DATA GATE: commit blocked — a plausible NRIC, bot token, or person-registry path is staged. Redact it, or replace a test fixture with a synthetic number (see registries/person_data_allowlist.json).${X}" >&2
+        exit 1
+    fi
+fi
+
 # ── Find staged code files ──────────────────────────────────
 STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E "\.(${GATED_EXTENSIONS})$" 2>/dev/null || true)
 
