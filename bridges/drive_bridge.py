@@ -2,7 +2,7 @@
 """
 drive_bridge.py — APA Drive Connector (Google API OAuth, READ-ONLY).
 Manifest: /root/A-FORGE/apa/manifests/drive.yaml
-Port: 18095 (127.0.0.1)
+Listens on DRIVE_BRIDGE_PORT (this unit: 18099). Class default 18095 collides with the GitHub bridge.
 
 DITEMPA BUKAN DIBERI — Document sovereignty is forged.
 """
@@ -23,8 +23,9 @@ except ImportError:
 
 
 CONN = "drive"
-SCOPES = ["https://www.googleapis.com/auth/drive"]
-DEFAULT_PORT = 18095
+# Read-only proof scope. The bridge has no write verb. Full drive scope is not requested.
+SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+DEFAULT_PORT = 18099  # systemd DRIVE_BRIDGE_PORT=18099 overrides at runtime; aligned 2026-10-04
 
 
 def _service_factory(creds):

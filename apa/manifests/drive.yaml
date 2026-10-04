@@ -9,10 +9,10 @@ connector:
   provider: google
   auth:
     method: oauth_refresh
-    token_file: /root/HERMES/google_token.json
+    token_file: /root/.secrets/google_token.json  # matches systemd GOOGLE_TOKEN_PATH (override at runtime); aligned 2026-10-04
     client_secret_file: /root/HERMES/google_client_secret.json
   scopes:
-    - https://www.googleapis.com/auth/drive
+    - https://www.googleapis.com/auth/drive.readonly
 
 verbs:
   - name: list_files
