@@ -129,7 +129,7 @@ export function buildAPEXReceipt(input: APEXReceiptInput): APEXReceipt {
   if (x < 0.10) verdict = "FAIL";              // Ethics floor violation
   else if (G < 0.10) verdict = "FAIL";         // Any dimension collapsed
   else if (C_dark > 0.50) verdict = "HOLD";    // High misalignment risk (before G threshold check)
-  else if (G < 0.25) verdict = "HOLD";         // Insufficient energy
+  else if (G < 0.50) verdict = "HOLD";         // G deploy floor (APEX canon): PASS requires G ≥ 0.50; band [0.10, 0.50) = HOLD
   else if (input.tri_witness_consensus === "FAIL") verdict = "FAIL";
   else if (input.tri_witness_consensus === "HOLD") verdict = "HOLD";
   else verdict = "PASS";
