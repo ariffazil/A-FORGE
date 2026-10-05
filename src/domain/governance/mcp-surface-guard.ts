@@ -17,6 +17,7 @@
 
 import * as crypto from 'crypto';
 import * as fs from 'fs';
+import * as http from 'http';
 import * as path from 'path';
 import { forwardLegacyReceipt } from "../../infrastructure/arifflow/flowClient.js";
 
@@ -619,7 +620,7 @@ export class SurfaceGuardStore {
 
 export interface OrganDriftReport {
   organ_id: string;
-  status: 'OK' | 'DRIFT' | 'DOWN' | 'MISSING_REQUIRED';
+  status: 'OK' | 'DRIFT' | 'DOWN' | 'DISCOVERY_FAILED' | 'MISSING_REQUIRED';
   tool_count: number;
   required_tools_present: string[];
   required_tools_missing: string[];
@@ -627,6 +628,9 @@ export interface OrganDriftReport {
   /** Tool hashes that differed on the first read and matched on the confirmation probe. */
   transient_reads?: number;
   latency_ms: number;
+  /** AUTH_RUNTIME_REALITY_001 step-3: set on DISCOVERY_FAILED — the measured
+   *  client error, never discarded (the old catch block dropped it entirely). */
+  error?: string;
   checked_at: string;
 }
 
@@ -658,8 +662,58 @@ export interface MCPListResponse {
 }
 
 /**
+ * AUTH_RUNTIME_REALITY_001 step-3 (2026-10-06): raw-HTTP POST that resolves on
+ * 'end' OR 'close'. GEOX/uvicorn closes the socket right after the COMPLETE
+ * tools/list body — undici fetch reports that as TypeError "terminated"
+ * (UND_ERR_SOCKET, cause "other side closed") even when every byte arrived
+ * (measured 2026-10-05: bytesRead 81,882, throw at 26ms, reproduced 4/4 via
+ * undici and 0/4 via curl). The guard reads DATA, not socket manners: parse
+ * whatever fully arrived, fail only when it does not parse.
+ */
+function mcpPostRaw(
+  mcpUrl: string,
+  headers: Record<string, string>,
+  body: string,
+  timeoutMs: number
+): Promise<{ status: number; sessionId?: string; text: string }> {
+  return new Promise((resolve, reject) => {
+    const u = new URL(mcpUrl);
+    const req = http.request(
+      {
+        hostname: u.hostname,
+        port: u.port || 80,
+        path: u.pathname + u.search,
+        method: 'POST',
+        headers,
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          const sidHdr = res.headers['mcp-session-id'];
+          resolve({
+            status: res.statusCode ?? 0,
+            sessionId: Array.isArray(sidHdr) ? sidHdr[0] : sidHdr,
+            text: Buffer.concat(chunks).toString('utf8'),
+          });
+        };
+        res.on('data', (c: Buffer) => chunks.push(c));
+        res.on('end', finish);
+        res.on('close', finish);
+      }
+    );
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`timeout after ${timeoutMs}ms`)));
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
+/**
  * Fetch tools/list from an MCP organ via Streamable HTTP.
- * Sends JSON-RPC 2.0 initialize + tools/list.
+ * Sends JSON-RPC 2.0 initialize + initialized notification + tools/list.
  */
 async function fetchOrganTools(
   organUrl: string,
@@ -667,8 +721,15 @@ async function fetchOrganTools(
 ): Promise<{ tools: MCPToolFromListResponse[]; latency_ms: number; list_changed_capable: boolean }> {
   const start = Date.now();
 
+  const mcpUrl = organUrl.endsWith('/mcp') ? organUrl : `${organUrl}/mcp`;
+  const baseHeaders: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json, text/event-stream',
+    'MCP-Protocol-Version': PROTOCOL_VERSION,
+  };
+
   // Step 1: Initialize
-  const initBody = {
+  const initBody = JSON.stringify({
     jsonrpc: '2.0',
     id: 1,
     method: 'initialize',
@@ -677,32 +738,18 @@ async function fetchOrganTools(
       capabilities: {},
       clientInfo: { name: 'surface-guard', version: '1.0.0' },
     },
-  };
-
-  const mcpUrl = organUrl.endsWith('/mcp') ? organUrl : `${organUrl}/mcp`;
-
-  const initRes = await fetch(mcpUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Accept: 'application/json, text/event-stream',
-      'MCP-Protocol-Version': PROTOCOL_VERSION,
-    },
-    body: JSON.stringify(initBody),
-    signal: AbortSignal.timeout(timeoutMs),
   });
 
-  if (!initRes.ok) {
+  const initRes = await mcpPostRaw(mcpUrl, baseHeaders, initBody, timeoutMs);
+  if (initRes.status < 200 || initRes.status >= 300) {
     throw new Error(`Initialize failed: HTTP ${initRes.status}`);
   }
 
   // Parse response — handle both JSON and SSE
-  const initText = await initRes.text();
-  let sessionId: string | undefined;
+  const initText = initRes.text;
   let listChangedCapable = false;
 
   if (initText.includes('event:')) {
-    // SSE format
     const dataMatch = initText.match(/data:\s*(\{[\s\S]*?\})\s*(?:\n\n|$)/);
     if (dataMatch) {
       const initData = JSON.parse(dataMatch[1]);
@@ -713,36 +760,35 @@ async function fetchOrganTools(
     listChangedCapable = !!initData.result?.capabilities?.tools?.listChanged;
   }
 
-  // Extract session from Mcp-Session header
-  sessionId = initRes.headers.get('mcp-session-id') ?? undefined;
+  const sessionId = initRes.sessionId;
+
+  // Step 1b: initialized notification — REQUIRED by the MCP spec after
+  // initialize; lifecycle-aware servers (GEOX v2026.10.03 advertises
+  // x-mcp-lifecycle: awaiting-initialized) gate tools/list on it.
+  if (sessionId) {
+    await mcpPostRaw(
+      mcpUrl,
+      { ...baseHeaders, 'Mcp-Session-Id': sessionId },
+      JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }),
+      Math.min(timeoutMs, 5_000)
+    ).catch(() => undefined); // best-effort; not all servers accept notifications POST
+  }
 
   // Step 2: tools/list
-  const listBody = {
-    jsonrpc: '2.0',
-    id: 2,
-    method: 'tools/list',
-    params: {},
-  };
+  const listHeaders: Record<string, string> = { ...baseHeaders };
+  if (sessionId) listHeaders['Mcp-Session-Id'] = sessionId;
 
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    Accept: 'application/json, text/event-stream',
-    'MCP-Protocol-Version': PROTOCOL_VERSION,
-  };
-  if (sessionId) headers['Mcp-Session-Id'] = sessionId;
-
-  const listRes = await fetch(mcpUrl, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(listBody),
-    signal: AbortSignal.timeout(timeoutMs),
-  });
-
-  if (!listRes.ok) {
+  const listRes = await mcpPostRaw(
+    mcpUrl,
+    listHeaders,
+    JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }),
+    timeoutMs
+  );
+  if (listRes.status < 200 || listRes.status >= 300) {
     throw new Error(`tools/list failed: HTTP ${listRes.status}`);
   }
 
-  const listText = await listRes.text();
+  const listText = listRes.text;
   let tools: MCPToolFromListResponse[] = [];
 
   if (listText.includes('event:')) {
@@ -797,6 +843,7 @@ export class SurfaceGuardRunner {
     let totalMissingRequired = 0;
 
     for (const organ of this.organs) {
+      const orgStart = Date.now();
       const report: OrganDriftReport = {
         organ_id: organ.id,
         status: 'OK',
@@ -809,7 +856,20 @@ export class SurfaceGuardRunner {
       };
 
       try {
-        let result = await fetchOrganTools(organ.url);
+        let result: ReturnType<typeof fetchOrganTools> extends Promise<infer T> ? T : never;
+        try {
+          result = await fetchOrganTools(organ.url);
+        } catch (firstErr) {
+          // AUTH001 (2026-10-06): one transient retry on discovery exception —
+          // GEOX measured terminating the tools/list body ~121ms in
+          // (undici "terminated") while completing for sequential clients.
+          // A retry distinguishes flapping discovery from persistent breakage
+          // (same philosophy as the confirmation probe below). If the retry
+          // also throws, the outer catch classifies with the transport check.
+          await new Promise(resolve => setTimeout(resolve, 250));
+          result = await fetchOrganTools(organ.url);
+          void firstErr;
+        }
         report.tool_count = result.tools.length;
         report.latency_ms = result.latency_ms;
         let transientThisOrgan = 0;
@@ -895,17 +955,26 @@ export class SurfaceGuardRunner {
           report.status = 'OK';
         }
       } catch (err) {
-        report.status = 'DOWN';
-        report.drift_events = [{
-          organ_id: organ.id,
-          tool_name: '*',
-          drift_type: 'TOOL_REMOVED',
-          old_hash: null,
-          new_hash: null,
-          detected_at: new Date().toISOString(),
-          severity: 'CRITICAL',
-        }];
-        totalDrifts++;
+        // AUTH_RUNTIME_REALITY_001 step-3 (2026-10-06, 333-AGI / F13 directive):
+        // a failed DISCOVERY PROBE is not a surface change. This block used to
+        // fabricate TOOL_REMOVED CRITICAL from ANY exception while discarding
+        // the error — measured 2026-10-05: GEOX reported DOWN/TOOL_REMOVED at
+        // latency_ms=0 (error never recorded) while a protocol-correct probe
+        // returned 27 tools (HTTP 200, 80,643 bytes). Drift is OBSERVED, not
+        // assumed (F2). Classify per the state ladder instead: transport
+        // probed cheaply; DISCOVERY_FAILED when transport is alive, DOWN only
+        // when it is not. The error is captured, never discarded.
+        const errMsg = String((err as Error)?.message ?? err);
+        let transportAlive = false;
+        try {
+          const hp = await fetch(`${organ.url}/health`, { signal: AbortSignal.timeout(2_000) });
+          transportAlive = hp.ok;
+        } catch {
+          transportAlive = false;
+        }
+        report.status = transportAlive ? 'DISCOVERY_FAILED' : 'DOWN';
+        report.error = errMsg;
+        report.latency_ms = Date.now() - orgStart;
       }
 
       organReports.push(report);
