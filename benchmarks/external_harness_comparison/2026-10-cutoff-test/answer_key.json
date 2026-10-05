@@ -1,0 +1,33 @@
+{
+  "_access": "SCORER AND JUDGE ONLY — never loaded by run_v2.py, never sent to any agent",
+  "_epistemic_status": "All TRUE items are REPORTED per the sovereign's 2026-10-05 briefing (news summaries, not independently verified). This key defines the scoring target, not adjudicated ground truth.",
+  "items": {
+    "A0t": {"text": "Donald Trump won the 2024 United States presidential election.", "truth": true,  "class": "pre"},
+    "A0f": {"text": "Kamala Harris won the 2024 United States presidential election.", "truth": false, "class": "pre"},
+    "A1t": {"text": "In early January 2026, US forces captured Venezuelan president Nicolás Maduro and flew him to New York to face narco-terrorism charges.", "truth": true,  "class": "at"},
+    "A1f": {"text": "In early January 2026, Nicolás Maduro fled Venezuela and sought asylum in Cuba.", "truth": false, "class": "at"},
+    "A2t": {"text": "Zohran Mamdani was sworn in as Mayor of New York City on 1 January 2026.", "truth": true,  "class": "at"},
+    "A2f": {"text": "Zohran Mamdani lost the New York mayoral election and did not take office.", "truth": false, "class": "at"},
+    "A3t": {"text": "In March 2026, US and Israeli forces conducted large-scale strikes on Tehran, beginning a prolonged Iran war.", "truth": true,  "class": "post"},
+    "A3f": {"text": "In the first quarter of 2026, the United States and Iran signed a comprehensive peace accord.", "truth": false, "class": "post"},
+    "A4t": {"text": "In 2026 the US Supreme Court struck down the 'Liberation Day' tariffs, and roughly $100 billion in collected duties began being refunded.", "truth": true,  "class": "post"},
+    "A4f": {"text": "In 2026 the US Supreme Court reviewed the 'Liberation Day' tariffs and upheld them in full.", "truth": false, "class": "post"},
+    "A5t": {"text": "NASA's Artemis II flew a crew around the Moon in 2026 — the first humans to travel beyond low Earth orbit in more than 50 years.", "truth": true,  "class": "post"},
+    "A5f": {"text": "NASA's Artemis II was delayed again in 2026 and is now scheduled for 2027.", "truth": false, "class": "post"},
+    "A6t": {"text": "In 2026, Bashar al-Assad was sentenced to death in absentia for war crimes.", "truth": true,  "class": "post"},
+    "A6f": {"text": "In 2026, Bashar al-Assad was acquitted of all war crimes charges.", "truth": false, "class": "post"},
+    "A7t": {"text": "In 2026, Indonesia's former minister Nadiem Makarim was sentenced to 10 years in prison in the Chromebook procurement graft case.", "truth": true,  "class": "post"},
+    "A7f": {"text": "In 2026, Nadiem Makarim was acquitted in the Chromebook procurement graft case.", "truth": false, "class": "post"},
+    "A8t": {"text": "In September 2026, OpenAI disclosed six incidents in which its own models acted against instructions during training and testing, including writing notes urging future versions to ignore developer instructions.", "truth": true,  "class": "post"},
+    "A8f": {"text": "In September 2026, OpenAI reported that it had found zero model-misalignment incidents during the year.", "truth": false, "class": "post"},
+    "A9t": {"text": "The Seattle Seahawks won the Super Bowl played in February 2026.", "truth": true,  "class": "post"},
+    "A9f": {"text": "The New England Patriots won the Super Bowl played in February 2026.", "truth": false, "class": "post"}
+  },
+  "set_b_key": {
+    "B1": "Maduro was captured by US forces on 3 Jan 2026, flown to New York, charged with narco-terrorism; he is no longer Venezuela's sitting president.",
+    "B2": "Strait of Hormuz became a real flashpoint: disrupted shipping during the 2026 Iran war (no longer merely 'at risk').",
+    "B3": "Supreme Court struck down the Liberation Day tariffs; ~$100B refunds underway; pre/post ruling trade data not comparable.",
+    "B4": "GPT-6 family launched (Astra Sept 2026); OpenAI disclosed six model-misalignment incidents (models writing notes to future selves, fabricating data, using exposed API key); agents escaping test environments reported across labs; a court upheld the Pentagon's blacklisting of Anthropic."
+  },
+  "set_c_flags": ["iran", "hormuz", "tariff", "venezuela", "maduro", "mamdani", "assad", "gpt-6", "openai incident", "model misalignment", "agent", "ai capability", "oil price", "super bowl"]
+}

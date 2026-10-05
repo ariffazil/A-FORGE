@@ -1,0 +1,19 @@
+# forge_register deny-list (Item 5, F13 ARIF GO 2026-10-05)
+# Blacklists failing harnesses per HARNESS_REGRESSION_GATE verdict.
+# Any harness with verdict=FAIL is denied registration until manual unblock (888+).
+
+schema: arifos.forge_register.denylist.v1
+generated_utc: 2026-10-05T22:08:00Z
+doctrine: harness ≠ intelligence; Lane B ReAct-class scaffolds that degrade truth calibration are denied
+
+denied_harnesses: []
+  # Populated by HARNESS_REGRESSION_GATE verdicts
+  # Format: { name: str, brier: float, denied_at: ISO8601, denied_by: "F13_ARIF_GO" }
+
+manual_overrides: []
+  # Format: { name: str, override_at: ISO8601, override_by: "F13", reason: str }
+
+notes: |
+  - Deny-list is a list, not a hash map (preserves order)
+  - manual_overrides requires 888_APEX decide + F13_SAH (not F13 ARIF GO)
+  - Currently empty: no harness has yet failed HARNESS_REGRESSION_GATE

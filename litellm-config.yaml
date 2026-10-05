@@ -1823,6 +1823,40 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 384000
     mode: chat
+
+- model_name: mistral-large-latest
+  litellm_params:
+    model: openai/mistral/mistral-large-latest
+    api_base: https://api.mistral.ai/v1
+    api_key: os.environ/MISTRAL_API_KEY
+    order: 0
+    mode: chat
+  model_info:
+    max_input_tokens: 128000
+    max_output_tokens: 128000
+
+- model_name: codestral-latest
+  litellm_params:
+    model: openai/mistral/codestral-latest
+    api_base: https://api.mistral.ai/v1
+    api_key: os.environ/MISTRAL_API_KEY
+    order: 0
+    mode: chat
+  model_info:
+    max_input_tokens: 32000
+    max_output_tokens: 32000
+
+- model_name: mistral-small-latest
+  litellm_params:
+    model: openai/mistral/mistral-small-latest
+    api_base: https://api.mistral.ai/v1
+    api_key: os.environ/MISTRAL_API_KEY
+    order: 0
+    mode: chat
+  model_info:
+    max_input_tokens: 32000
+    max_output_tokens: 32000
+
 litellm_settings:
   callbacks:
   - fed_spend_callback.proxy_handler_instance
