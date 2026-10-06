@@ -189,6 +189,45 @@ function matchScarsByKeywords(command: string): ScarHit[] {
   }
 }
 
+// ── Scar Reflex Firing Telemetry (F13 SAH 2026-10-06 · AAA-EMERGENCE loop closure) ──
+// Every scar-reflex firing is appended to the Arrow-1 event bus so that
+// "scar consulted before selection" (AT-002) and "same signature →
+// different selection" (AT-001) become provable from the log alone.
+// Unknown event_kind values are skipped safely by arifOS replay_scar_events
+// (verified in source 2026-10-06) — these events witness, they do not queue.
+// F1 AMANAH: telemetry failure must NEVER block shell work — fail open, warn.
+const SCAR_REFLEX_EVENT_LOG = "/root/.local/share/arifos/scar_events.jsonl";
+
+async function emitScarReflexFiring(
+  surface: string,
+  command: string,
+  preScarDecision: string,
+  postDecision: string,
+  hits: ScarHit[],
+  sessionId: string,
+): Promise<void> {
+  try {
+    const top = hits[0];
+    const event = {
+      event_kind: "scar_reflex_fired",
+      event_id: `scarreflex_${Date.now()}_${Math.random().toString(16).slice(2, 8)}`,
+      emitted_at: new Date().toISOString(),
+      surface,
+      command: command.slice(0, 200),
+      selection_before: preScarDecision,
+      selection_after: postDecision,
+      top_scar_id: top.scar_id,
+      top_severity: top.severity,
+      top_scar_pressure: top.scar_pressure,
+      matched_scars: hits.slice(0, 3).map(h => ({ scar_id: h.scar_id, severity: h.severity })),
+      session_id: sessionId,
+    };
+    await appendFile(SCAR_REFLEX_EVENT_LOG, JSON.stringify(event) + "\n", "utf-8");
+  } catch (err) {
+    console.warn("[forge_shell] scar reflex telemetry failed (non-fatal):", err);
+  }
+}
+
 // ── SAFE FILESYSTEM ZONES ─────────────────────────────────────────────────
 // Paths where filesystem mutations (mv, rm, cp, touch, mkdir, chmod)
 // are permitted with standard EXECUTE authority — no R3 GOVERN required.
@@ -1050,6 +1089,7 @@ export function registerShellTools(server: McpServer): void {
       // already paid for this lesson.
       const scarHits = matchScarsByKeywords(command);
       const scarAnnotated = scarHits.length > 0;
+      const preScarDecision = judge.decision; // AT-001 witness: selection BEFORE scar
       if (scarAnnotated && judge.decision === "allow") {
         const top = scarHits[0];
         judge.decision = "gate";
@@ -1059,6 +1099,10 @@ export function registerShellTools(server: McpServer): void {
           `Constraint: ${top.constraint_imposed.slice(0, 200)}`;
         judge.matchedPattern = `scar_reflex:${top.scar_id}`;
         judge.actionClass = "EXECUTE_HIGH_IMPACT";
+      }
+      if (scarAnnotated) {
+        // AT-002 witness: durable proof that scar was consulted before selection
+        void emitScarReflexFiring("forge_shell", command, preScarDecision, judge.decision, scarHits, session_id ?? "unknown");
       }
 
       if (judge.decision === "deny") {
@@ -1319,6 +1363,7 @@ export function registerShellTools(server: McpServer): void {
 
       // Step 1.5: Scar Reflex Gate in dry-run
       const scarHits = matchScarsByKeywords(command);
+      const preScarDecisionDry = judge.decision; // AT-001 witness: selection BEFORE scar
       let scarNotice: string | null = null;
       if (scarHits.length > 0) {
         const top = scarHits[0];
@@ -1332,6 +1377,10 @@ export function registerShellTools(server: McpServer): void {
           judge.matchedPattern = `scar_reflex:${top.scar_id}`;
           judge.actionClass = "EXECUTE_HIGH_IMPACT";
         }
+      }
+      if (scarHits.length > 0) {
+        // AT-002 witness: durable proof of scar consultation in preview lane too
+        void emitScarReflexFiring("forge_shell_dryrun", command, preScarDecisionDry, judge.decision, scarHits, "unknown");
       }
 
       if (judge.decision === "deny") {

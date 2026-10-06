@@ -23,7 +23,11 @@ ProtectSystem=full
 ProtectHome=read-only
 PrivateTmp=true
 NoNewPrivileges=true
-ReadWritePaths=/root/A-FORGE/data
+ReadWritePaths=/root/A-FORGE
+ReadWritePaths=/root/forge-downloads
+ReadWritePaths=/root/.local/share/arifos/world-model
+ReadWritePaths=/root/.local/share/arifos/skill-selection
+ReadWritePaths=/root/.local/share/arifos/scar_events.jsonl
 
 [Install]
 WantedBy=multi-user.target
