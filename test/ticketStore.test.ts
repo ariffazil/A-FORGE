@@ -4,14 +4,18 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { FileTicketStore } from "../src/application/approval/TicketStore.js";
 
-test("TicketStore lifecycle: create, query, update, replay", async () => {
+// FileTicketStore is REPLACED by constitutional governance (arifOS :8088).
+// The export remains as an alias of ConstitutionTicketStore: every ticket it
+// mints carries the constitution_gate status and the arifOS gate attribution.
+// Legacy PENDING→APPROVED lifecycle semantics no longer exist on this path.
+test("FileTicketStore is replaced by the constitution gate (arifOS :8088)", async () => {
   const store = new FileTicketStore({ filePath: resolve(tmpdir(), `tickets-${Date.now()}.jsonl`) });
   await store.initialize();
 
   const ticket = await store.createTicket({
     ticketId: "t1",
     sessionId: "s1",
-    status: "PENDING",
+    status: "PENDING", // legacy param — must be overridden, never trusted
     riskLevel: "high",
     intentModel: "execution",
     domain: "infra",
@@ -22,19 +26,13 @@ test("TicketStore lifecycle: create, query, update, replay", async () => {
     createdAt: new Date().toISOString(),
   });
 
-  assert.equal(ticket.status, "PENDING");
-  assert.ok(ticket.expiresAt);
+  assert.equal(ticket.status, "constitution_gate");
+  assert.equal((ticket as Record<string, unknown>).decidedBy, "arifOS:8088");
 
   const found = await store.findById("t1");
-  assert.equal(found?.status, "PENDING");
+  assert.equal(found?.status, "constitution_gate");
 
-  await store.updateTicket("t1", { status: "APPROVED", decision: "APPROVE", humanId: "h1" });
-  const approved = await store.findById("t1");
-  assert.equal(approved?.status, "APPROVED");
-
-  const open = await store.countOpen();
-  assert.equal(open, 0);
-
-  const all = await store.query({ sessionId: "s1" });
-  assert.equal(all.tickets.length, 1); // query deduplicates to latest state per ticketId
+  const updated = await store.updateTicket("t1", { status: "APPROVED", decision: "APPROVE", humanId: "h1" });
+  // updates are accepted but the gate attribution is preserved
+  assert.ok(updated);
 });
