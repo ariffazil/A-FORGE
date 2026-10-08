@@ -13,6 +13,8 @@ import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { fileURLToPath } from "node:url";
 import { readFileSync } from "fs";
+import { execFileSync } from "node:child_process";
+import { computeDeploymentDrift } from "../infrastructure/attestation/deploymentDrift.js";
 import * as http from "http";
 import { createHash } from "crypto";
 import { modelGateway } from "../infrastructure/llm/ModelGateway.js";
@@ -1067,7 +1069,15 @@ app.get("/health", async (_req: Request, res: Response) => {
   };
   deployedCommit = readCommitStamp(`${DEPLOY_ROOT}/.git_commit`);
   sourceCommit = readCommitStamp("/root/A-FORGE/.git_commit");
-  const deploymentDrift = deployedCommit !== "UNAVAILABLE" && sourceCommit !== "UNAVAILABLE" && deployedCommit !== sourceCommit;
+  // E1b (fedstab-2026-10-08, F13-approved): compare deploy stamp against LIVE
+  // git HEAD — two stale markers used to hide repo-vs-runtime drift (F-01).
+  let headCommit = "UNAVAILABLE";
+  try {
+    headCommit = execFileSync("git", ["rev-parse", "--short=7", "HEAD"], { cwd: "/root/A-FORGE" }).toString().trim() || "UNAVAILABLE";
+  } catch {
+    /* git unavailable → legacy marker-pair fallback inside computeDeploymentDrift */
+  }
+  const deploymentDrift = computeDeploymentDrift(deployedCommit, sourceCommit, headCommit);
 
   const now = new Date().toISOString();
 
@@ -1164,6 +1174,7 @@ app.get("/health", async (_req: Request, res: Response) => {
     deployed_commit: deployedCommit,
     source_commit: sourceCommit,
     deployment_drift: deploymentDrift,
+    head_commit: headCommit,
     status: isDegradedMode || deploymentDrift ? "degraded" : "healthy",
     apex_scalars: apexScalars,
     // F2-fidelity fix (MCP-PROBE-2026-08-08): UNMEASURED is by-design delegation
