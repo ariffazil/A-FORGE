@@ -30,7 +30,7 @@ import { classifyCommand, type JudgeResult } from "./arifJudge.js";
 import { getDefaultArifSeal, ledgerPageFromContent } from "./arifSeal.js";
 import { emitFlowReceipt } from "../../../infrastructure/bridges/arifFlowBridge.js";
 import { checkModificationIntent, isGodelLocked } from "./godelLock.js";
-import { classifyShellCommand, type ActionClass } from "../../../domain/governance/execution-authority.js";
+import { classifyShellCommand, type ActionClass, isQa2rCollapse } from "../../../domain/governance/execution-authority.js";
 import { classifyUnknown, isStructuredError } from "../../../domain/governance/error-classifier.js";
 import { buildWmMetadata, hashAction, NO_PREDICTION_SENTINEL, normalizePrediction, type WmMetadata } from "../../../domain/governance/worldModel.js";
 import { logPrediction, logTrajectory } from "../../../domain/governance/worldModelLogger.js";
@@ -58,6 +58,7 @@ function checkAuthorityFromActionClass(actionClass: ActionClass): {
     'EXECUTE_REVERSIBLE': 'ORGAN',
     'EXECUTE_HIGH_IMPACT': 'FEDERATION',
     'IRREVERSIBLE': 'IRREVERSIBLE',
+    'QA2R_COLLAPSE': 'REALITY',  // 2026-10-08 — last step before reality-side irreversible
   };
   return {
     allowed: true, // forge_shell already passed ArifJudge gate
@@ -98,6 +99,11 @@ export interface SealEnvelope {
   issued_at: string;
   expires_at: string;
   actor_id: string;
+  // Optional QA2R (F13 2026-10-08) — defaults to 'agent' if absent.
+  // Only 'human' (F13) may bypass QA2R detector. Anything else routes to F13 HOLD.
+  actor_type?: 'agent' | 'human' | 'kernel';
+  // Optional JITU brake state — true = tripped, absolute block at QA2R gate.
+  jitu_tripped?: boolean;
 }
 
 // ── SHA256 Helper ────────────────────────────────────────────────────────────
@@ -374,8 +380,8 @@ function parseShellCommand(command: string): ParsedCommand {
   return { operators, segments };
 }
 
-// ── 4-Tier Risk Classifier ───────────────────────────────────────────────────
-type RiskLevel = "SAFE" | "MUTATION" | "MUTATION_SAFE_ZONE" | "MUTATION_GOVERN" | "IRREVERSIBLE" | "GODEL_LOCKED";
+// ── 4-Tier Risk Classifier (amended 2026-10-08 with QA2R_COLLAPSE) ─────────
+type RiskLevel = "SAFE" | "MUTATION" | "MUTATION_SAFE_ZONE" | "MUTATION_GOVERN" | "IRREVERSIBLE" | "GODEL_LOCKED" | "QA2R_COLLAPSE";
 
 function classifyShellCommandRisk(command: string): RiskLevel {
   const trimmed = command.trim();
@@ -392,6 +398,13 @@ function classifyShellCommandRisk(command: string): RiskLevel {
   for (const p of HARD_DENY_PATTERNS) {
     if (p.test(trimmed)) return "GODEL_LOCKED";
   }
+
+  // QA2R_COLLAPSE (F13 2026-10-08) — last step before money/hardware/medical/legal
+  // reality changes. Detected via isQa2rCollapse() helper. Takes precedence over
+  // IRREVERSIBLE so a money/brokerage/etc command surfaces as a Wave-Collapse to F13
+  // rather than a generic IRREVERSIBLE SEAL-required command.
+  const qa2rCheck = isQa2rCollapse(trimmed, { actor_type: "agent" });
+  if (qa2rCheck.is_qa2r) return "QA2R_COLLAPSE";
 
   // IRREVERSIBLE — requires SEAL envelope from arifOS
   const tokens = trimmed.split(/\s+/);
@@ -442,7 +455,8 @@ interface GatedResult {
     | "EXECUTE_VALID"
     | "HOLD_IRREVERSIBLE"
     | "SEAL_VALID"
-    | "HARD_DENY";
+    | "HARD_DENY"
+    | "HOLD_QA2R_F13";  // 2026-10-08 — Quantum Wave-Collapse gate to F13
   reason?: string;
   gate?: string;
   required_action?: string;
@@ -450,6 +464,8 @@ interface GatedResult {
   got?: string;
   violations?: string[];
   verified?: Record<string, unknown>;
+  matched_pattern?: string;  // 2026-10-08 — pattern that matched QA2R detector
+  constitutional_floor?: string;  // 2026-10-08 — F1/F2 etc floor for AUDIT
 }
 
 // ── ArifSeal audit helper ────────────────────────────────────────────────────
@@ -528,6 +544,37 @@ async function preExecutionGate(
   if (risk === "GODEL_LOCKED") {
     await arifSealAudit({ type: "GODEL_LOCKED", command });
     return { status: "HARD_DENY", reason: "GODEL_LOCKED: cannot authorize" };
+  }
+
+  // QA2R_COLLAPSE gate (F13 2026-10-08) — Quantum Wave-Collapse Protocol.
+  // Detected commands that are the LAST step before money/hardware/medical/legal
+  // reality changes. Agent caller CANNOT auto-collapse. Route to F13 HOLD unless
+  // JITU brake is tripped (absolute block).
+  if (risk === "QA2R_COLLAPSE") {
+    const qa2rVerdict = isQa2rCollapse(command, {
+      actor_type: envelope?.actor_type ?? "agent",
+      jitu_tripped: envelope?.jitu_tripped ?? false,
+    });
+    if (qa2rVerdict.required_route === "BLOCKED_BY_JITU") {
+      await arifSealAudit({ type: "QA2R_BLOCKED_BY_JITU", command });
+      return {
+        status: "HARD_DENY",
+        gate: "JITU_BRAKE",
+        reason: qa2rVerdict.reason,
+        constitutional_floor: "F1_AMANAH / Quantum Wave-Collapse Protocol",
+        required_action: "Wait for F13 to release JITU brake",
+      };
+    }
+    // HOLD_QA2R_F13: pause and present to sovereign — agent cannot auto-collapse
+    await arifSealAudit({ type: "QA2R_HOLD_F13", command, reason: qa2rVerdict.reason });
+    return {
+      status: "HOLD_QA2R_F13",
+      gate: "QA2R_DETECTOR",
+      reason: qa2rVerdict.reason,
+      matched_pattern: qa2rVerdict.matched_pattern ?? undefined,
+      constitutional_floor: "F1_AMANAH / F2_TRUTH / Quantum Wave-Collapse Protocol",
+      required_action: "Present command + risks to F13 (888) for sovereign collapse decision",
+    };
   }
 
   if (risk === "IRREVERSIBLE") {

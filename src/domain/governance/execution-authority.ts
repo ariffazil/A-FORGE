@@ -1,6 +1,6 @@
 /**
- * Execution Authority Ladder — Discovery 6
- * 
+ * Action Classes (amended 2026-10-08 with QA2R_COLLAPSE)
+ *
  * A-FORGE must know the difference between:
  *   draft patch → safe (observe)
  *   run test → safe (observe)
@@ -9,10 +9,38 @@
  *   push → digital normal (mubah per Digital Ops Policy 2026-06-30)
  *   deploy → requires lease + judge
  *   delete → requires 888_HOLD
+ *   qa2r_collapse → MUST NOT auto-execute; route to F13 or block JITU
  * 
  * Real agency = "knows when not to execute."
  * 
  * FORGED: 2026-07-03
+ * AMENDED: 2026-10-08 — added QA2R_COLLAPSE (F13 2026-10-08, agent-compartment.md §Quantum
+ * Wave-Collapse Protocol). QA2R_COLLAPSE is the class for things where *digital*
+ * execution is the LAST STEP before irreversible reality impact (money, hardware,
+ * medical, legal commit). Agents cannot auto-collapse QA2R — must pause, present
+ * risk+probabilities, route to F13 or be blocked by JITU.
+ * 
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │ QA2R cross-link (F13 2026-10-08, agent-compartment.md §Quantum  │
+ * │ Wave-Collapse Protocol)                                          │
+ * ├─────────────────────────────────────────────────────────────────┤
+ * │ IRREVERSIBLE-class commands in this ladder are *digital* —      │
+ * │ they mutate state inside the federation. They are NOT the same  │
+ * │ as QA2R (Quantum Agent ↔ Reality) — the irreversible collapse   │
+ * │ into physical, financial, or legal consequence in the world.     │
+ * │                                                                  │
+ * │ If a forge_* call is the LAST step before money moves, hardware │
+ * │ fires, legal docs are sent, or medical instructions execute,    │
+ * │ this is a QA2R wave and:                                         │
+ * │   1. CANNOT be auto-collapsed by an agent.                       │
+ * │   2. MUST pause and present risks + probabilities to F13 (888).  │
+ * │   3. MAY be blocked by JITU circuit brake (jitu.py).            │
+ * │                                                                  │
+ * │ Continuous Wave-Collapse: this ladder routes A2M (machine).    │
+ * │ Reality overrides it when F2 truth contradicts A2A consensus.   │
+ * │ Canonical ref: /root/AAA/instructions/agent-compartment.md     │
+ * └─────────────────────────────────────────────────────────────────┘
+ * 
  * DITEMPA BUKAN DIBERI
  */
 
@@ -24,7 +52,9 @@ export type ActionClass =
   | 'MUTATE'              // Write to local filesystem
   | 'EXECUTE_REVERSIBLE'  // Run tests, build, restart services
   | 'EXECUTE_HIGH_IMPACT' // Commit, push, deploy (digital normal)
-  | 'IRREVERSIBLE';       // Delete, force-push, DROP, vault seal
+  | 'IRREVERSIBLE'        // Delete, force-push, DROP, vault seal
+  | 'QA2R_COLLAPSE';      // 2026-10-08 — last step before reality-side irreversible
+                      //          (money, hardware, medical, legal). Agent MUST NOT auto-collapse.
 
 // ─── Action Registry ───────────────────────────────────────────────
 
@@ -364,6 +394,136 @@ export function classifyShellCommand(command: string): ActionClass {
   if (/^(docker\s+ps|systemctl\s+(status|list))/.test(cmd)) return 'OBSERVE';
   if (/^curl\s.*-sf\s/.test(cmd) && !/>/.test(cmd)) return 'OBSERVE';
 
+  // QA2R_COLLAPSE patterns (F13 2026-10-08) — last step before reality-side irreversible
+  // Money: bank transfer, broker order, crypto send, bill payment
+  if (/\b(transfer|wire|send\s+funds|wire_to)\s+(\$|usd|myr|rm|rmb|sgd|satoshi|btc|eth)\b/i.test(cmd)) return 'QA2R_COLLAPSE';
+  // Verb + number + currency code (no $ sign needed for wire 10000 SGD)
+  if (/\b(wire|transfer|pay|send)\b.*?\b\d+\s*(usd|myr|sgd|rm|btc|eth)\b/i.test(cmd)) return 'QA2R_COLLAPSE';
+  if (/\bsend\s+\d+(\.\d+)?\s*(btc|eth|satoshi|usd|myr|sgd)\b/i.test(cmd)) return 'QA2R_COLLAPSE';
+  if (/\b(bni|maybank|cimb|public\s+bank|rahlia|cash|atm|fpv|fpx|duitsnow)\s+(transfer|send)/i.test(cmd)) return 'QA2R_COLLAPSE';
+  // Brokerage
+  if (/\b(bursa|cgs-cimb|kaf-securities|rakuten\s+trade|interactive\s+brokers)\s+(buy|sell|order|market)/i.test(cmd)) return 'QA2R_COLLAPSE';
+  // Generic buy/sell/order + quantity + security-type keyword (number optional for "buy stock at market")
+  if (/\b(buy|sell|order)\b.*?\b(stock|share|equity|option|future|crypto|coin)s?\b/i.test(cmd)) return 'QA2R_COLLAPSE';
+  // Order + quantity + units-of-securities ("order 100 options", "buy 50 contracts")
+  if (/\b(buy|sell|order)\b[\s\S]*?\b\d+\s+(stock|share|equity|option|future|crypto|coin|contract|unit|lot)s?\b/i.test(cmd)) return 'QA2R_COLLAPSE';
+  // Hardware / physical
+  if (/\b(send\s+to\s+printer|3d\s+print\s+start|mint|cutting\s+start|manufacture|ship\s+to)\b/i.test(cmd)) return 'QA2R_COLLAPSE';
+  // Medical
+  if (/\b(prescribe|administer\s+medication|start\s+iv|order\s+surgery|schedule\s+surgery)\b/i.test(cmd)) return 'QA2R_COLLAPSE';
+  // Legal commit
+  if (/\b(sign|submit|file)\s+(contract|agreement|legal|tender|court\s+filing|tax\s+return|will|trust)\b/i.test(cmd)) return 'QA2R_COLLAPSE';
+
   // Default: MUTATE (conservative — treat unknown writes as mutations)
   return 'MUTATE';
 }
+
+// ─── QA2R Detector (F13 2026-10-08) ────────────────────────────────────
+//
+// `isQa2rCollapse` is a structural helper that any A-FORGE tool may call
+// before executing. It returns true when a command/intent matches the
+// QA2R keyword pattern AND the caller indicates the call is the LAST step
+// before a reality-side collapse (not a secondary read/probe).
+//
+// Per Quantum Wave-Collapse Protocol (agent-compartment.md):
+//   - If true and agent caller: MUST NOT auto-execute. Route to F13 or
+//     block JITU. Return HOLD_QA2R with explicit owner_of_risk field.
+//   - If true and human caller (actor_type === 'human'): sovereign override.
+//     F13 is the only actor that may collapse a QA2R wave.
+
+export interface Qa2rDetectorContext {
+  /** Caller identity. ONLY 'human' may bypass QA2R gate (F13 sovereign). */
+  actor_type?: 'agent' | 'human' | 'kernel';
+  /** True if this call is the LAST step before the reality-side effect. */
+  is_terminal_step?: boolean;
+  /** Optional explicit JItu brake state (true = tripped, blocks everything). */
+  jitu_tripped?: boolean;
+}
+
+export interface Qa2rVerdict {
+  is_qa2r: boolean;
+  reason: string;
+  matched_pattern: string | null;
+  required_route: 'AUTO_COLLAPSE' | 'HOLD_QA2R_F13' | 'BLOCKED_BY_JITU';
+  owner_of_risk: 'F13_SOVEREIGN' | 'JITU_KERNEL' | 'AGENT_LAMP';
+}
+
+// QA2R pattern registry — keep in sync with classifyShellCommand above.
+const QA2R_PATTERNS = [
+    { regex: /\b(transfer|wire|send\s+funds|wire_to)\s+(\$|usd|myr|rm|rmb|sgd|satoshi|btc|eth)\b/i,
+        reason: 'Money transfer / payment' },
+    { regex: /\b(wire|transfer|pay|send)\b.*?\b\d+\s*(usd|myr|sgd|rm|btc|eth)\b/i,
+        reason: 'Money transfer / payment (verb+noun+amount)' },
+    { regex: /\bsend\s+\d+(\.\d+)?\s*(btc|eth|satoshi|usd|myr|sgd)\b/i,
+        reason: 'Crypto send with amount' },
+    { regex: /\b(bni|maybank|cimb|public\s+bank|rahat|atm|fpv|fpx|duitsnow)\s+(transfer|send)/i,
+        reason: 'Bank transfer (MY)' },
+    { regex: /\b(bursa|cgs-cimb|kaf-securities|rakuten\s+trade|interactive\s+brokers)\s+(buy|sell|order|market)/i,
+        reason: 'Brokerage order' },
+    { regex: /\b(buy|sell|order)\b.*?\b(stock|share|equity|option|future|crypto|coin)\b/i,
+        reason: 'Securities order' },
+    // Order + quantity + units-of-securities ("order 100 options", "buy 50 contracts")
+    { regex: /\b(buy|sell|order)\b[\s\S]*?\b\d+\s+(stock|share|equity|option|future|crypto|coin|contract|unit|lot)s?\b/i,
+        reason: 'Securities order (qty+units)' },
+    { regex: /\b(send\s+to\s+printer|3d\s+print\s+start|manufacture|ship\s+to)\b/i,
+        reason: 'Physical fabrication / shipping' },
+    { regex: /\b(prescribe|administer\s+medication|start\s+iv|order\s+surgery|schedule\s+surgery)\b/i,
+        reason: 'Medical instruction' },
+    { regex: /\b(sign|submit|file)\s+(contract|agreement|legal|tender|court\s+filing|tax\s+return|will|trust)\b/i,
+        reason: 'Legal commitment' },
+];
+
+export function isQa2rCollapse(
+  command: string,
+  context: Qa2rDetectorContext = {}
+): Qa2rVerdict {
+  // JITU trip = absolute block (sabrernel brake)
+  if (context.jitu_tripped === true) {
+    return {
+      is_qa2r: true,
+      reason: 'JITU circuit brake tripped — all QA2R waves blocked at actuator',
+      matched_pattern: null,
+      required_route: 'BLOCKED_BY_JITU',
+      owner_of_risk: 'JITU_KERNEL',
+    };
+  }
+
+  for (const { regex, reason } of QA2R_PATTERNS) {
+    if (regex.test(command)) {
+      // Sovereign override: only human/F13 may collapse a QA2R wave
+      if (context.actor_type === 'human') {
+        return {
+          is_qa2r: true,
+          reason: `${reason} — sovereign collapse (F13)`,
+          matched_pattern: regex.source,
+          required_route: 'AUTO_COLLAPSE',
+          owner_of_risk: 'F13_SOVEREIGN',
+        };
+      }
+      // Agent caller + QA2R pattern = HOLD route to F13 (or JITU if trip armed)
+      return {
+        is_qa2r: true,
+        reason: `${reason} — agent CANNOT auto-collapse. Quantum Wave-Collapse Protocol: pause + present to F13 (888)`,
+        matched_pattern: regex.source,
+        required_route: 'HOLD_QA2R_F13',
+        owner_of_risk: 'AGENT_LAMP',
+      };
+    }
+  }
+
+  return {
+    is_qa2r: false,
+    reason: 'Command does not match QA2R pattern set',
+    matched_pattern: null,
+    required_route: 'AUTO_COLLAPSE',
+    owner_of_risk: 'F13_SOVEREIGN',
+  };
+}
+
+// ─── Warning: QA2R detector coverage is a denylist, not a golden list. ──
+// Detected patterns are NECESSARY not SUFFICIENT for the gate. Per Quantum
+// Wave-Collapse Protocol invariant 1 (Continuous Wave-Collapse), an agent MUST
+// probe reality (A-FORGE/GEOX) before any action that COULD reach QA2R —
+// because a missing pattern here does NOT mean the action is safe. F2 truth
+// requires the agent to ask "is this the LAST step before reality collapses?"
+// before every high-impact call.
