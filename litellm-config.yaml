@@ -1097,6 +1097,71 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+- model_name: qwen3.7-max
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    notes: 'FI-003 2026-10-06: verified WORKS on owner seat (individual seat quota-dead).'
+- model_name: qwen3.7-max
+  litellm_params:
+    model: openai/qwen3.7-max
+    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+- model_name: qwen3.7-plus
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: 'FI-003 2026-10-06: verified WORKS on owner seat.'
+- model_name: qwen3.7-plus
+  litellm_params:
+    model: openai/qwen3.7-plus
+    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
+    mode: chat
+- model_name: qwen3.6-flash
+  litellm_params:
+    model: openai/qwen3.6-flash
+    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: 'FI-003 2026-10-06: verified WORKS on owner seat.'
+- model_name: qwen3.6-flash
+  litellm_params:
+    model: openai/qwen3.6-flash
+    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    order: 99
+  model_info:
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
+    mode: chat
 - model_name: kimi-k3
   litellm_params:
     model: openai/kimi-k3
@@ -1888,7 +1953,7 @@ litellm_settings:
     - embedding
 router_settings:
   routing_strategy: latency-based-routing
-  enable_pre_call_checks: true
+  enable_pre_call_checks: false  # 333-AGI 2026-10-08: pre-call token check KeyError(KeyError) "items" (bug litellm) = 3,364 ralat/48j, sifar nilai; fallback+retry_policy kekal aktif. Undo: .bak-20261008
   # 2026-10-03 (333-AGI SEAL-1233ff7266744510): num_retries 1→3 + explicit retry_policy —
   # aligns runtime with declared fallback discipline ("retry 3x backoff", arifos-governance.md).
   # Distilled from litellm OSS docs (FED-OSS-DISTILLATION-2026-10-03.md §3).
