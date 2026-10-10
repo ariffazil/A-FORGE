@@ -50,6 +50,11 @@ const PATH_ENV = "AFORGE_INVOCATION_LOG_PATH";
 /** Organ identity as the federation readback counts it. */
 export const ORGAN = "A-FORGE";
 
+// F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.7.
+// Added: verdict, gate, can_claim_success. Default for ok is now false when
+// a HOLD/VOID verdict is present — invocationLog MUST NOT persist a kernel
+// refusal as execution success. Python readback contract
+// /root/AAA/lib/invocation_log.py accepts new fields as additive.
 export interface InvocationOptions {
   actorId?: string | null;
   ok?: boolean;
@@ -57,6 +62,9 @@ export interface InvocationOptions {
   sessionId?: string | null;
   error?: string | null;
   extra?: Record<string, number | string | boolean> | null;
+  verdict?: "SEAL" | "HOLD" | "VOID" | "SABAR" | "PASS" | null;
+  gate?: string | null;
+  can_claim_success?: boolean;
 }
 
 let _host: string | null = null;
@@ -105,7 +113,13 @@ export function buildInvocationRecord(tool: string, opts: InvocationOptions = {}
     organ: ORGAN,
     tool,
     actor_id: opts.actorId ?? null,
-    ok: opts.ok !== false,
+    // F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.7.
+    // Default ok:false when a HOLD/VOID verdict is present — invocationLog
+    // MUST NOT persist a kernel refusal as execution success.
+    ok: opts.ok !== false && opts.verdict !== "HOLD" && opts.verdict !== "VOID",
+    can_claim_success: opts.can_claim_success ?? (opts.verdict !== "HOLD" && opts.verdict !== "VOID"),
+    verdict: opts.verdict ?? null,
+    gate: opts.gate ?? null,
     duration_ms: opts.durationMs === null || opts.durationMs === undefined ? null : round3(opts.durationMs),
     session_id: opts.sessionId ?? null,
     epoch: now / 1000,

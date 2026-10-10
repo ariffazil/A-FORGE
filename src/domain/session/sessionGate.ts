@@ -312,8 +312,15 @@ async function verifySessionTokenWithKernel(
     }
 
     const result = typeof resultText === "string" ? JSON.parse(resultText) : resultText;
-    const verified = result?.actor?.actor_verified === true || result?.status === "resumed" || result?.verdict === "SEAL";
-    const resolvedActor = result?.actor?.actor_id || actor_id || "opencode";
+    // F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.5.
+// REMOVED: `result?.status === "resumed"` and `result?.verdict === "SEAL"`.
+// These are NOT identity evidence — a verdict string on an arifOS payload
+// is just a string. Only cryptographic actor_verified binds identity.
+    const verified = result?.actor?.actor_verified === true;
+    // F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.6.
+// Caller-supplied actor_id (from forge_session init) is the binding field;
+// arifOS response actor_id is secondary (response can be shaped by caller).
+    const resolvedActor = actor_id || result?.actor?.actor_id || "opencode";
 
     if (verified) {
       return { verified: true, actor_id: resolvedActor };

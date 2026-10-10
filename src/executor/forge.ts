@@ -411,7 +411,15 @@ export async function forgeExecute(
     input_summary: `forgeExecute actions=[${actions.join(",")}] blastRadius=${receipt.bounds?.blastRadius ?? "?"} reversible=${receipt.bounds?.reversible ?? "?"}`,
     output_summary: `verdict=${summaryVerdict} succeeded=${succeeded} failed=${failed} duration_ms=${totalDuration}`,
     success: failed === 0,
-    feedback_constitutional: receipt.verdict === "SEAL" || receipt.verdict === "SABAR" ? `PASS (kernel verdict ${receipt.verdict})` : "UNKNOWN",
+    // F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.8.
+// Explicit 5-arm mapping: SEAL→PASS, SABAR→SABAR, HOLD→FAIL (kernel refused),
+// VOID→FAIL (constitutional violation), anything else→UNKNOWN.
+    feedback_constitutional:
+      receipt.verdict === "SEAL" ? "PASS"
+      : receipt.verdict === "SABAR" ? "SABAR (sub-threshold honest)"
+      : receipt.verdict === "HOLD" ? "FAIL (kernel HOLD)"
+      : receipt.verdict === "VOID" ? "FAIL (kernel VOID)"
+      : "UNKNOWN",
     feedback_environmental: `actions=${actions.length}/${receipt.bounds?.maxTools ?? "?"} | diffs=[${diffs.join("; ")}]`,
   }).catch((err: unknown) => {
     // Fail-soft: log but never break forgeExecute.

@@ -41,7 +41,13 @@ export class ShortTermMemory {
     this.onEvict = options?.onEvict;
     this.archivePath = options?.archivePath;
     this.defaultActor = options?.actorId ?? "a-forge::short-term-memory";
-    this.defaultSession = options?.sessionId ?? "SEAL-5eed5eed5eed5eed";
+    // F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.4.
+    // The previous default "SEAL-5eed5eed5eed5eed" matched forgeShell's
+    // SEAL_SESSION_PATTERN (/^SEAL-[a-f0-9]{16}$/) at L77 and would have
+    // admitted a no-session-id caller as authority under the regex-only check.
+    // Replaced with a non-SEAL-prefixed sentinel so downstream consumers
+    // (forgeShell L744, sessionGate L315) reject it on format match.
+    this.defaultSession = options?.sessionId ?? "aforge-anonymous";
   }
 
   /**
