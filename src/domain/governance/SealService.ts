@@ -4,6 +4,56 @@ import { PlanValidator } from '../planner/PlanValidator.js';
 
 export type SealStatus = 'PASS' | 'HOLD' | 'VOID' | 'SABAR';
 
+/**
+ * Negative SEAL-prefixed verdict vocabulary present in this codebase
+ * (ForgeSealService SealStatus, ForgeVisualQA error fallback). Any of these
+ * must NEVER map to PASS. Reject-direction prefix matching is intentional
+ * and fail-closed: it can only make the verdict stricter.
+ */
+export const NEGATIVE_SEAL_VERDICTS: readonly string[] = [
+  'SEAL_REJECTED',
+  'SELF_SEAL_REJECTED',
+  'SELF_SEAL_VALIDATION_FAILED',
+];
+
+/**
+ * Map arifOS verdict text to SealStatus — EXACT-MATCH parser (WO-1, risk R18).
+ *
+ * Law: lexical resemblance must not confer semantic authority
+ * (E-TRANSLATION-WITNESS-2026-10-11, F13-ratified 2026-10-11). The previous
+ * `startsWith('SEAL') -> PASS` mapping would classify negative verdicts such
+ * as SEAL_REJECTED as PASS with risk 0.1.
+ *
+ * Acceptance boundary (audit 2026-10-11):
+ *   SEAL                          -> PASS  (risk 0.1)
+ *   SABAR                         -> SABAR (risk 0.6)
+ *   HOLD | 888_HOLD               -> HOLD  (risk 0.85)
+ *   VOID | isError                -> VOID  (risk 1.0)
+ *   SEAL_REJECTED family          -> VOID  (risk 1.0)  [explicit rejection]
+ *   unknown (incl. any other SEAL*) -> HOLD (risk 0.85) [fail-closed, never PASS]
+ */
+export function mapArifOSVerdictText(rawText: string, isError: boolean): { status: SealStatus; riskScore: number } {
+  const normalized = rawText.toUpperCase().trim();
+
+  if (isError) return { status: 'VOID', riskScore: 1.0 };
+  if (normalized === 'SEAL') return { status: 'PASS', riskScore: 0.1 };
+  if (normalized === 'SABAR') return { status: 'SABAR', riskScore: 0.6 };
+  if (normalized === 'HOLD' || normalized === '888_HOLD') return { status: 'HOLD', riskScore: 0.85 };
+  if (normalized === 'VOID') return { status: 'VOID', riskScore: 1.0 };
+  if (NEGATIVE_SEAL_VERDICTS.some(v => normalized.startsWith(v))) {
+    console.warn(`[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "${normalized.slice(0, 100)}"`);
+    return { status: 'VOID', riskScore: 1.0 };
+  }
+  if (normalized.startsWith('SEAL')) {
+    // Unknown SEAL-family string: never infer PASS from a prefix (R18).
+    console.warn(`[A-FORGE] Unknown SEAL-family verdict — fail-closed HOLD (no prefix->PASS inference): "${normalized.slice(0, 100)}"`);
+    return { status: 'HOLD', riskScore: 0.85 };
+  }
+  // Unexpected format — treat as HOLD, not as PASS
+  console.warn(`[A-FORGE] Unexpected arifOS verdict format: "${rawText.slice(0, 100)}"`);
+  return { status: 'HOLD', riskScore: 0.85 };
+}
+
 export interface SealContext {
   goalId: string;
   dag: PlanDAG;
@@ -164,30 +214,9 @@ export class SealService {
       const rawText = result?.content?.[0]?.text ?? '';
       const isError = result?.isError ?? false;
 
-      // Map arifOS verdict text to SealStatus
-      // Expected text patterns: "SEAL", "SABAR", "HOLD", "VOID"
-      const normalized = rawText.toUpperCase().trim();
-      let status: SealStatus;
-      let riskScore = 0.5;
-
-      if (normalized.startsWith('SEAL')) {
-        status = 'PASS';
-        riskScore = 0.1;
-      } else if (normalized.startsWith('SABAR')) {
-        status = 'SABAR';
-        riskScore = 0.6;
-      } else if (normalized.startsWith('HOLD') || normalized.startsWith('888_HOLD')) {
-        status = 'HOLD';
-        riskScore = 0.85;
-      } else if (normalized.startsWith('VOID') || isError) {
-        status = 'VOID';
-        riskScore = 1.0;
-      } else {
-        // Unexpected format — treat as HOLD, not as PASS
-        status = 'HOLD';
-        riskScore = 0.85;
-        console.warn(`[A-FORGE] Unexpected arifOS verdict format: "${rawText.slice(0, 100)}"`);
-      }
+      // Map arifOS verdict text to SealStatus — exact-match parser (WO-1 / R18).
+      // Lexical resemblance must not confer semantic authority.
+      const { status, riskScore } = mapArifOSVerdictText(rawText, isError);
 
       arifOSVerdict = { status, message: rawText || 'arifOS Kernel adjudicated', riskScore };
 

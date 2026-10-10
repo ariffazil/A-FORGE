@@ -98,7 +98,12 @@ const AAA_AGENTS: Readonly<Record<AaaAgentId, AaaAgent>> = {
  *   "session::<session_id>"    → session-bound actor
  *   "human::<name>"            → human operator
  *   "kernel::<component>"      → arifOS kernel component
- *   "SEAL-<hex>"               → kernel-sealed session
+ *
+ * Raw "SEAL-<hex>" session identifiers are NOT actor identities and no longer
+ * resolve here (WO-2 / R18, F13-ratified 2026-10-11): lexical resemblance must
+ * not confer semantic authority. Kernel sessions bind through the
+ * "session::<session_id>" namespace or the caller's authoritative session
+ * record (AaaMemoryLinkage Gate 2, validateSession).
  */
 export type ActorBinding = {
   actorId: string;
@@ -114,22 +119,15 @@ export type ActorBinding = {
  *
  * Resolution order:
  *   1. Exact match in registry
- *   2. Prefix match (e.g., "session::*" → 333-AGI + 555-ASI)
- *   3. SEAL token pattern → kernel-sealed authority
- *   4. Unknown → null (caller must HOLD — never default to privileged)
+ *   2. Prefix match on the documented namespaces (session::, a-forge::, human::)
+ *   3. Unknown → null (caller must HOLD — never default to privileged)
+ *
+ * REMOVED 2026-10-11 (WO-2 / R18): the former `/^SEAL-[a-f0-9]{16}$/` shortcut
+ * granted an 888-APEX-oriented binding to any SEAL-shaped string — privilege
+ * from string shape. Measured caller chain: AaaMemoryLinkage.ts Gate 3→4;
+ * the null path below is fail-closed (caller returns HOLD).
  */
 export function resolveActor(actorId: string): ActorBinding | null {
-  // SEAL tokens get kernel authority
-  if (/^SEAL-[a-f0-9]{16}$/.test(actorId)) {
-    return {
-      actorId,
-      primaryAgent: "888-APEX",
-      delegateAgents: ["555-ASI", "333-AGI"],
-      // A-AUDIT + A-ARCHIVE removed 2026-07-17 — collapsed, functions absorbed into arifOS kernel
-      humanOverride: false,
-    };
-  }
-
   // Exact matches
   const exact: Record<string, ActorBinding> = {
     "arif-fazil": {
