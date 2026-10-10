@@ -17,7 +17,7 @@ last_verified: 2026-09-16T16:35:00Z
 live_commit: cbc25cb4 (runtime-reported via :7072/health)
 sense_port: 7071 (healthy)
 forge_port: 7072 (healthy)
-tools_live: 122 (tools_listed via :7072/health · re-probed 2026-10-11, was 121) · 87 stateless
+tools_live: 122 (tools_listed via :7072/health · re-probed 2026-10-11) · 87 stateless
 authority_ceiling: 777_FORGE (execution only — never adjudicate)
 apex_zen: A2A delegates ⊥ MCP equips ⊥ ACT mutates ⊥ arifOS governs ⊥ F13 decides
 act_ingress: HMAC-SHA256 verified, FI alias map complete
@@ -40,7 +40,7 @@ public_a2a_card: none by default — A-FORGE is actuator, not a public A2A mind
 
 > **DITEMPA BUKAN DIBERI** — *Forged, Not Given.*
 
-A-FORGE is the **EXECUTION** engine of the arifOS Federation (plane: EXECUTION, never governance). It exposes **121 live tools (87 stateless)** across five operational domains — code, infrastructure, security, web intelligence, and orchestration — all operating under the arifOS constitutional kernel (`:8088 JUDGE_ONLY`) that ensures every mutation is authorized, witnessed, and immutably recorded. **A-FORGE never adjudicates.**
+A-FORGE is the **EXECUTION** engine of the arifOS Federation (plane: EXECUTION, never governance). It exposes **122 live tools (87 stateless)** across five operational domains — code, infrastructure, security, web intelligence, and orchestration — all operating under the arifOS constitutional kernel (`:8088 JUDGE_ONLY`) that ensures every mutation is authorized, witnessed, and immutably recorded. **A-FORGE never adjudicates.**
 
 ---
 
