@@ -1,0 +1,15 @@
+handle: "syed_khairuddin"
+full_name: "Syed Khairuddin Morktarudin"
+biometric_ref:
+  embedding_file: "/root/VAULT999/biometric/syed_khairuddin/embed_T1.npy"
+  purpose_bound: "stage_visualization_mrkl2026"
+  created_at_utc: "2026-09-08T01:07:00Z"
+  expires_at_utc: "2026-12-08T01:07:00Z"
+  receipt_hash: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+anatomy_profile:
+  height_cm: 175
+  weight_kg: 82
+  category: "Mr KL 2026 Master Open / Bodybuilding"
+  physique_notes: "Lean, highly muscular, vascular, defined abs, dark tan/body oil for competition stage"
+memory_refs:
+  - "L6:syed_khairuddin:mrkl2026_pilot"

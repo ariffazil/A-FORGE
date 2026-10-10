@@ -1,0 +1,16 @@
+{
+  "primitive": "identity_support",
+  "version": "1.0.0",
+  "status": "RATIFIED",
+  "governance_principles": [
+    "24h_inbox_auto_quarantine",
+    "90d_purpose_bound_ttl",
+    "vault999_receipt_only",
+    "tombstone_on_expiry"
+  ],
+  "routing_rules": {
+    "self_reference_trigger": ["aku", "me", "syed", "my_photo"],
+    "routing_target": "I2I_subject_reference",
+    "required_capability": "identity_support"
+  }
+}

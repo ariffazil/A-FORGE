@@ -88,7 +88,7 @@ const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;    // hard max 24h regardless of
 // All other tools require session ownership (first client via SDK transport).
 // MUTATE tools (forge_execute, forge_filesystem write, forge_git commit, etc.)
 // are NEVER in this list and always require session ownership.
-const STATELESS_TOOLS = new Set([
+export const STATELESS_TOOLS = new Set([
   "forge_session_init",
   "forge_health_check",
   "forge_probe",

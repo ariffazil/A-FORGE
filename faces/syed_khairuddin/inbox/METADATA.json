@@ -1,0 +1,15 @@
+{
+  "subject": "syed_khairuddin",
+  "received_at_utc": "2026-09-08T01:06:00Z",
+  "inbox_ttl_hours": 24,
+  "source": "telegram_inbound",
+  "files": [
+    {"name": "ref_01_youtube.jpg", "type": "video_frame_stage", "sha256": "bd7fd9091a3648e285fc246344f4474f"},
+    {"name": "ref_02_tegaptv.jpg", "type": "competition_stage_close", "sha256": "9f16d379d26841f0ae0d6db83e0ef1cc"},
+    {"name": "ref_03_jersey.jpg", "type": "casual_indoor_full", "sha256": "52f72b78881d464d-81cc-e050d25ca4f3"},
+    {"name": "ref_04_genting.jpg", "type": "casual_outdoor_full", "sha256": "495a8cf380ad4b1e-b428-bd5d56859ace"},
+    {"name": "ref_05_lantern.jpg", "type": "night_portrait", "sha256": "aace0dec-c5f9-453f-80a1-8ab74d8b8e0f"},
+    {"name": "ref_06_bw.jpg", "type": "physique_studio_bw", "sha256": "6301a17384ad4303-9eab-771195efd178"}
+  ],
+  "status": "QUARANTINED_PENDING_EMBEDDING"
+}

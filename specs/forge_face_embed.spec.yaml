@@ -1,0 +1,28 @@
+tool_name: forge_face_embed
+domain: biometric
+version: 1.0.0
+description: "Extract purpose-bound 512-d normalized face embedding from inbox references. Enforces 90-day TTL and receipt-only VAULT999 logging."
+governance:
+  f13_consent_scope: "biometric.full"
+  purpose: "stage_visualization_mrkl2026"
+  ttl_days: 90
+  inbox_quarantine_path: "/root/A-FORGE/faces/syed_khairuddin/inbox/"
+  storage_path: "/root/VAULT999/biometric/syed_khairuddin/embed_T1.npy"
+  storage_mode: "0600"
+  vault999_policy: "RECEIPT_ONLY"
+input_schema:
+  type: object
+  properties:
+    subject_id: { type: string, example: "syed_khairuddin" }
+    purpose: { type: string, example: "stage_visualization_mrkl2026" }
+    inbox_dir: { type: string }
+    ttl_days: { type: integer, default: 90 }
+  required: ["subject_id", "purpose", "inbox_dir"]
+output_schema:
+  type: object
+  properties:
+    embedding_ref: { type: string }
+    embedding_sha256: { type: string }
+    vector_dim: { type: integer, value: 512 }
+    expires_at_utc: { type: string }
+    receipt_hash: { type: string }

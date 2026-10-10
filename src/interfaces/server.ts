@@ -54,6 +54,7 @@ import { createRepoStewardRouter } from "./routes/repoStewardRoutes.js";
 import { callMCP } from "./mcp/client.js";
 import { server as mcpServer } from "./mcp/core.js";
 import { validateLeaseForTool } from "./mcp/forgeTools.js";
+import { STATELESS_TOOLS } from "./mcp/serve.js";
 import {
   assertActMutationGateOrExit,
   actMutationGateHealth,
@@ -260,8 +261,8 @@ export function createApp(): express.Express {
       health_endpoint: "/health",
       contract_url: "/contract",
       tool_count: getRegisteredMcpToolCount(),
-      stateless_http_tool_count: 22,
-      session_required_tool_count: Math.max(0, getRegisteredMcpToolCount() - 22),
+      stateless_http_tool_count: STATELESS_TOOLS.size,
+      session_required_tool_count: Math.max(0, getRegisteredMcpToolCount() - STATELESS_TOOLS.size),
     });
   });
 
