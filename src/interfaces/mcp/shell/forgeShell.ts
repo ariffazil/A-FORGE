@@ -741,24 +741,72 @@ async function callArifVerify(
  * TTL (1h default via sessionGate.ts), ArifJudge classification, ArifSeal audit.
  */
 async function verifyArifOSSession(session_id: string): Promise<AuthorityEnvelope> {
-  if (SEAL_SESSION_PATTERN.test(session_id)) {
+  // F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.3.
+  // The previous regex-only check at L744 admitted any string matching
+  // /SEAL-[a-f0-9]{16}/ as authority WITHOUT verifying arifOS minted it.
+  // Default sentinel "SEAL-5eed5eed5eed5eed" (ShortTermMemory.ts:44 prior)
+  // also passed this check. Now: regex match is the FIRST gate, then a
+  // roundtrip to :8088 confirms actor identity is verified.
+  if (!SEAL_SESSION_PATTERN.test(session_id)) {
     return {
-      valid: true,
+      valid: false,
       session_id,
-      actor_id: "kernel-sealed",
-      authority_mode: "EXECUTE",  // SEAL tokens permit EXECUTE_REVERSIBLE
-      verdict: "SEAL",
+      actor_id: "",
+      authority_mode: "NONE",
+      verdict: "SESSION_FORMAT_INVALID",
     };
   }
-
-  // Non-SEAL format → not kernel-authoritative
+  // Roundtrip to arifOS :8088 to verify SEAL is live (not forged).
+  const live = await arifVerifySealLive(session_id);
+  if (!live) {
+    return {
+      valid: false,
+      session_id,
+      actor_id: "",
+      authority_mode: "NONE",
+      verdict: "HOLD",
+    };
+  }
   return {
-    valid: false,
+    valid: true,
     session_id,
-    actor_id: "",
-    authority_mode: "NONE",
-    verdict: "SESSION_FORMAT_INVALID",
+    actor_id: "kernel-sealed",
+    authority_mode: "EXECUTE",
+    verdict: "SEAL",
   };
+}
+
+/**
+ * Roundtrip to arifOS :8088/mcp to verify a SEAL session id is live.
+ * Returns true only when arifOS confirms actor_verified=true AND verdict=SEAL.
+ * F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.3.
+ */
+async function arifVerifySealLive(session_id: string): Promise<boolean> {
+  try {
+    const resp = await fetch("http://127.0.0.1:8088/mcp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "arif_observe",
+          arguments: { mode: "vitals", session_id },
+        },
+      }),
+    });
+    if (!resp.ok) return false;
+    const data = (await resp.json()) as {
+      result?: { actor?: { actor_verified?: boolean }; verdict?: string };
+    };
+    return data?.result?.actor?.actor_verified === true && data?.result?.verdict === "SEAL";
+  } catch {
+    return false;
+  }
 }
 
 /**

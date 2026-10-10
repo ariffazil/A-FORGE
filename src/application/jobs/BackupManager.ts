@@ -176,11 +176,18 @@ export class BackupManager {
   private async logBackupEvent(result: BackupResult): Promise<void> {
     try {
       const vault = getPostgresVaultClient();
+      // F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.3b.
+      // Old code ASSIGNED verdict from result.ok (no arifOS roundtrip — implicit
+      // lease). New: require explicit lease_id from caller; reject if absent.
+      const leaseId = (this as unknown as { lease_id?: string }).lease_id;
+      if (!leaseId) {
+        process.stderr.write(`[BackupManager] BLOCKED: logBackupEvent requires explicit lease_id (audit chain trace_id=plan-2026-10-11-0742 F.3b)\n`);
+        return;
+      }
       const verdict: VaultVerdict = result.ok ? "SEAL" : result.verified ? "HOLD" : "VOID";
       await vault.seal({
         sealId: `BACKUP-${Date.now()}`,
-        sessionId: "BACKUP-MANAGER",
-        verdict,
+        sessionId: leaseId,
         hashofinput: "",
         telemetrysnapshot: {
           dS: result.ok ? 0 : 0.3,
