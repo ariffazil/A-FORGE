@@ -77,3 +77,18 @@ curl -s http://127.0.0.1:7072/health | jq .
 # Verify ACT bridge status
 curl -s http://127.0.0.1:7071/health | jq .
 ```
+
+---
+
+## 6. Prompt Inheritance Model (F13-ruled 2026-10-10 — OPTION A)
+
+A-FORGE has **no independent 000–999 governance prompt**. It inherits the canonical
+`777 🔥 FORGE` kernel hook (arifOS `:8088`, `CANONICAL_PROMPTS`) as its sole execution
+prompt surface. Authority still flows: **ACT token / session lease / F13 order → arif_judge
+SEAL → 777 FORGE**. No projection, no second kernel, no drift surface.
+
+- **Numbering:** inherited from the live arifOS hook registry only. A-FORGE must not mint
+  its own numbered phases.
+- **Citizen Contract** (`/root/AAA/instructions/aforge-citizen-contract.md`) remains
+  `DRAFT_AWAITING_F13`; when ratified it becomes a *projection* of the FORGE hook, not a
+  replacement (Option B — revisit only at ratification).
