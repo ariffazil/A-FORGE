@@ -1,10 +1,23 @@
+<!-- CURRENT-VERIFIED-STATE :: re-probed 2026-10-10/11 UTC · do not delete -->
+> ### ⚠️ Current verified state (2026-10-11) — measured, not intended
+>
+> Re-probed live by FI-008 on this date. This block states only what was observed; it does not replace the hand-audited manifest below, and it deliberately does **not** advance `last_verified`.
+>
+> **A-FORGE refuses.** A MUTATE-class call without presented authority was stopped by `A_THINK_GUARD` (`BUDGET: max_tools=0`). Tool count re-probed this date: **122 listed, 122 unique fingerprints** (`forge_registry_status`, 2026-10-10T18:26:35Z).
+>
+> **Open defects, measured on this host:** the invocation-telemetry writer's interface does not accept a governance outcome — a call whose kernel verdict was `HOLD` (`can_claim_success:false`) was persisted as `ok:true` · the refusal *cause* (`A_THINK_GUARD`) appears 0× in the ledger · `sessionGate.ts:315` infers `verified` from `verdict === "SEAL"` (a verdict string is not identity evidence) · default session ids are manufactured with a `SEAL-` prefix when none is supplied.
+>
+> The executor is gated by **action class and budget**, not by a `SEAL` verdict. A `SEAL` label collision exists in this codebase and is an open defect.
+>
+> Current revenue value attributable to this component: USD 0.
+
 <!-- SOT-MANIFEST
 federation_release: v2026.09.17
 last_verified: 2026-09-16T16:35:00Z
 live_commit: cbc25cb4 (runtime-reported via :7072/health)
 sense_port: 7071 (healthy)
 forge_port: 7072 (healthy)
-tools_live: 121 (tools_listed via :7072/health) · 87 stateless
+tools_live: 122 (tools_listed via :7072/health · re-probed 2026-10-11, was 121) · 87 stateless
 authority_ceiling: 777_FORGE (execution only — never adjudicate)
 apex_zen: A2A delegates ⊥ MCP equips ⊥ ACT mutates ⊥ arifOS governs ⊥ F13 decides
 act_ingress: HMAC-SHA256 verified, FI alias map complete
