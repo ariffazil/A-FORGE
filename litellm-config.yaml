@@ -1957,17 +1957,20 @@ router_settings:
   # 2026-10-03 (333-AGI SEAL-1233ff7266744510): num_retries 1→3 + explicit retry_policy —
   # aligns runtime with declared fallback discipline ("retry 3x backoff", arifos-governance.md).
   # Distilled from litellm OSS docs (FED-OSS-DISTILLATION-2026-10-03.md §3).
+  # ⚠️ 2026-10-10 (FI-003): FAIL INI BUKAN CONFIG LIVE. Live = /docker/litellm/config.yaml di KVM4
+  # (fed-litellm.service, md5 8c479060…) dengan num_retries:2 + cooldown:60 + TIADA retry_policy.
+  # Sebarang angka "retry 3x" daripada fail ini TIDAK menggambarkan runtime. Reconcile SOT↔live = DEFERRED (keputusan F13 berasingan).
   num_retries: 3
   retry_policy:
     TimeoutErrorRetries: 3
-    RateLimitErrorRetries: 3
+    RateLimitErrorRetries: 1  # 2026-10-10 F13 "Sah jalan Fasa A versi ditala" (FI-003): 3->1 — buang amplifikasi 429 sahaja
     AuthenticationErrorRetries: 1
     NotFoundErrorRetries: 0
     ContentPolicyViolationErrorRetries: 2
     InternalServerErrorRetries: 3
     DefaultRetries: 2
   allowed_fails: 2
-  cooldown_time: 30
+  cooldown_time: 60  # 2026-10-10 tala: 30->60 — provider berdena lebih lama selepas gagal (SEAL-1233ff7266744510 kekal untuk num_retries umum)
   fallbacks:
   - i-arif:
     - deepseek-flash
