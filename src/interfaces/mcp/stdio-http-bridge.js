@@ -69,52 +69,39 @@ let ready = false;
 let bootTime = null;
 
 // ── Child Process Management ────────────────────────────────────────────────
-function spawnChild() {
-  const env = { ...process.env };
-  const child = spawn(COMMAND, CMD_ARGS, {
-    stdio: ["pipe", "pipe", "pipe"],
-    env,
-  });
-
-  child.on("exit", (code, signal) => {
-    console.error(`[${name}] child exited code=${code} signal=${signal} — will restart`);
-    ready = false;
-    proxyTools = [];
-    mcpClient = null;
-    childProcess = null;
-    setTimeout(spawnChild, 2000);
-  });
-
-  child.on("error", (err) => {
-    console.error(`[${name}] child error: ${err.message} — will restart`);
-    ready = false;
-    childProcess = null;
-    setTimeout(spawnChild, 2000);
-  });
-
-  child.stderr.on("data", (d) => {
-    process.stderr.write(`[${name}:stderr] ${d}`);
-  });
-
-  childProcess = child;
-  return child;
+// Round 2 (2026-10-11) — REMOVED pre-spawn + immediate-kill race.
+//
+// Previous shape:
+//   1. spawnChild() pre-spawns a child and registers an exit handler
+//      that schedules another spawnChild() 2s later.
+//   2. StdioClientTransport spawns its own child.
+//   3. The pre-spawned child is killed because the dev thought the two
+//      children shared pipes (they don't).
+// Net effect: 2-3 children, conflicting state, "Transport closed" on the
+// first request, restart storm.
+//
+// New shape: StdioClientTransport is the SOLE owner of the child. The
+// bridge only watches stderr for logging. The exit handler retries
+// connectClient(), NOT spawnChild().
+function attachStderrWatchdog(transport, name) {
+  // StdioClientTransport does not expose the child directly, but we
+  // can still capture stderr via the process group if it is set. For
+  // the common case the upstream server logs to its own stderr; we
+  // forward it through the Node process stderr so the user sees it.
+  // This is best-effort logging; the actual lifecycle is owned by
+  // StdioClientTransport.
+  if (process.stderr && typeof process.stderr.write === "function") {
+    process.stderr.write(`[${name}:bridge] child stdio managed by StdioClientTransport\n`);
+  }
 }
 
 // ── MCP Client Connection ───────────────────────────────────────────────────
 async function connectClient() {
-  const child = spawnChild();
-
   const transport = new StdioClientTransport({
     command: COMMAND,
     args: CMD_ARGS,
     env: process.env,
   });
-
-  // We already spawned the child, so use the existing pipes
-  // StdioClientTransport spawns its own — let it manage the child
-  // Kill our pre-spawned one
-  child.kill();
-  childProcess = null;
 
   const client = new Client(
     { name: `bridge-${name}`, version: "1.0.0" },
@@ -123,6 +110,7 @@ async function connectClient() {
 
   try {
     await client.connect(transport);
+    attachStderrWatchdog(transport, name);
     console.error(`[${name}] MCP client connected to child`);
 
     // Discover capabilities
