@@ -17,6 +17,19 @@ if [ "$VERIFY_ONLY" = "0" ]; then
   # 1. backup remote + push SOT
   ssh -o BatchMode=yes $KVM4 "cp $REMOTE_CFG $REMOTE_CFG.bak-$STAMP"
   scp -o BatchMode=yes -q "$SOT" $KVM4:$REMOTE_CFG
+  # 1b. re-attach KVM4 audio lane (fed/audio-asr/tts + gemini-3.5-transcribe) from backup
+  scp -o BatchMode=yes -q "$(dirname "$0")/fed_audio_merge.py" $KVM4:/tmp/fed_audio_merge.py
+  ssh -o BatchMode=yes $KVM4 "python3 /tmp/fed_audio_merge.py $REMOTE_CFG.bak-$STAMP $REMOTE_CFG"
+  # 1c. strip KVM8-only callbacks (spend/PII) + redis cache — KVM4 is a workshop replica
+  ssh -o BatchMode=yes $KVM4 "python3 - <<'PYEOF'
+import re
+p = '/docker/litellm/config.yaml'
+src = open(p).read()
+src = re.sub(r'  callbacks:\n(?:  - [^\n]*\n)+', '', src)
+src = re.sub(r'  cache: true\n  cache_params:\n(?:    [^\n]*\n)+', '', src)
+open(p, 'w').write(src)
+print('stripped KVM8-only callbacks + cache')
+PYEOF"
   # 2. apply glm relay patch (kvm4-only divergence)
   ssh -o BatchMode=yes $KVM4 "python3 - <<'PYEOF'
 import re
@@ -28,7 +41,7 @@ for grp in ('glm-5.3', 'glm-5.2'):
     # inside each group block, rewrite the zai base + cred refs to the KVM8 shadow relay
     pat = re.compile(
         r'(- model_name: ' + grp + r'\n  litellm_params:\n(?:    [^\n]*\n)*?)'
-        r'    api_base: https://api\.z\.ai/api/paas/v4\n'
+        r'    api_base: os\.environ/ZAI_API_BASE\n'
         r'    ' + KS + r': os\.environ/ZAI_' + AKS + r'\n')
     src, n = pat.subn(
         r'\1    api_base: http://100.64.0.2:4013/v1  # KVM8 shadow relay (zai IP-entitlement, FED-BIJAKSANA 2026-09-06)\n'

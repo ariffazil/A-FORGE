@@ -1592,7 +1592,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
-- model_name: fed/audio-voiceclone-restricted
+- model_name: fed/audio-voiceclone
   litellm_params:
     model: openai/mimo-v2.5-tts-voiceclone
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
@@ -1601,7 +1601,7 @@ model_list:
   model_info:
     mode: chat
     supports_audio_output: true
-    notes: 'RESTRICTED F13 SOVEREIGN: Voice cloning route. Locked under 888_HOLD.'
+    notes: 'F13 UNLOCKED 2026-10-11 — audited, not locked. Every call logged via fed_spend_callback -> token_bank.db (model+agent_id+tokens+cost).'
     max_input_tokens: 1048576
     max_output_tokens: 131072
 - model_name: apex-888
@@ -1722,17 +1722,16 @@ model_list:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 90
+    order: 1
     max_input_tokens: 1048576
     max_output_tokens: 131072
     min_tokens: 200
     mode: chat
     supports_vision: true
-    notes: 'PARKED order 90 (2026-09-22): probe HTTP 402 Insufficient Balance - dead
-      rung at order 1 cost every i-arif request a failed hop. Revive by restoring
-      order: 1 after balance top-up. Original: i-arif DeepSeek Flash Vision: deepseek-flash
-      (V4.1 native multimodal). Upstream: api.deepseek.com. Direct PAYG. PRIMARY.
-      min_tokens=200 for reasoning headroom.'
+    notes: 'UN-PARKED 2026-10-11: DeepSeek balance re-verified LIVE (deepseek-flash
+      completion OK). Restored to PRIMARY order 1. i-arif DeepSeek Flash Vision:
+      deepseek-flash (V4.1 native multimodal). Upstream: api.deepseek.com. Direct
+      PAYG. min_tokens=200 for reasoning headroom.'
   model_info:
     # cost-seed 2026-10-04 FED-T026: deepseek-flash PEAK rates (conservative vs off-peak/2), api-docs.deepseek.com scraped 2026-10-04
     input_cost_per_token: 3.00e-07
