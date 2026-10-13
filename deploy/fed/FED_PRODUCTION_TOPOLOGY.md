@@ -97,3 +97,8 @@ Key detail: HAProxy **injects the master key** for all :4000 requests. Clients d
 
 - Pre-2026-09-15: KVM4 was primary (:4000 → KVM4). i-arif had9 entries, 4 sharing Qwen Token Plan upstream. 429 cascade = 9-28s latency.
 - 2026-09-15: Swapped HAProxy primary to KVM8 :4013. Rebuilt i-arif chain to7 unique upstreams with DeepSeek Flash primary. Latency: 0.47s median.
+
+## NOTE 2026-10-14 (Kimi FI-008 finding, confirmed): litellm master_key
+`master_key` no longer lives in litellm-config.yaml — it migrated to env
+`LITELLM_MASTER_KEY` (container env via kunci flat file). Any runbook/script
+extracting master_key from the YAML will 401 silently. Auth path: env only.
