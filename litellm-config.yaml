@@ -85,7 +85,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_ARIFOS_API_KEY
-    order: 99
+    order: 999
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -96,7 +96,7 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_ARIFOS_API_KEY
-    order: 97
+    order: 997
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -108,7 +108,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 99
+    order: 999
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -119,7 +119,7 @@ model_list:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 97
+    order: 997
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -164,10 +164,10 @@ model_list:
     mode: chat
 - model_name: hermes-default
   litellm_params:
-    model: openai/mimo-v2.5-pro
+    model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
     api_key: os.environ/MIMO_PLATFORM_API_KEY
-    order: 91
+    order: 991
     max_input_tokens: 1048576
     max_output_tokens: 131072
     min_tokens: 200
@@ -224,8 +224,8 @@ model_list:
 - model_name: hermes-default
   litellm_params:
     model: openai/qwen3.8-max
-    api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 1
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -273,6 +273,62 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
+
+# ── OpenCode Go rungs (F13 directive 2026-10-14, 333-AGI; wire-proven 04:1xZ) ──
+# Lane-bearing go-* aliases: named lane = attributable actor; bare alias = UNKNOWN (W1 doctrine).
+# Endpoint chat/completions + Bearer; UA + stable x-opencode-session headers set.
+# Wire evidence: GO-CANARY-OK (glm-5.3-flash), minimax-m3/kimi-k2.7-code/qwen3.8-max all 200.
+# Plan: $10/mo Go — per-model monthly caps ($60 flash-class / $15 pro-class); 5h=20%, wk=50%.
+- model_name: go-glm-5.3-flash
+  litellm_params:
+    model: openai/glm-5.3-flash
+    api_base: https://opencode.ai/inference/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 1
+    extra_headers: {"User-Agent": "arifos-fed/1.0", "x-opencode-session": "fed-opencode-go"}
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: OpenCode Go lane - cheap flash fallback, FED-independent. GO-CANARY-OK 2026-10-14.
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
+- model_name: go-kimi-k2.7-code
+  litellm_params:
+    model: openai/kimi-k2.7-code
+    api_base: https://opencode.ai/inference/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 1
+    extra_headers: {"User-Agent": "arifos-fed/1.0", "x-opencode-session": "fed-opencode-go"}
+  model_info:
+    mode: chat
+    notes: OpenCode Go lane - coding. Wire 200 2026-10-14.
+    max_input_tokens: 262144
+    max_output_tokens: 131072
+- model_name: go-deepseek-v4-pro
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://opencode.ai/inference/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 1
+    extra_headers: {"User-Agent": "arifos-fed/1.0", "x-opencode-session": "fed-opencode-go"}
+  model_info:
+    mode: chat
+    notes: OpenCode Go lane - heavy reasoning. Off-peak 50% cheaper (peak 01-04,06-10 UTC wkdays).
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+- model_name: go-minimax-m3
+  litellm_params:
+    model: openai/minimax-m3
+    api_base: https://opencode.ai/inference/go/v1
+    api_key: os.environ/OPENCODE_GO_API_KEY
+    order: 1
+    extra_headers: {"User-Agent": "arifos-fed/1.0", "x-opencode-session": "fed-opencode-go"}
+  model_info:
+    mode: chat
+    notes: OpenCode Go lane - judge-deputy diversity (provider-distinct from MiniMax direct). Wire 200 2026-10-14.
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
+
 # DEAD/PARKED RUNGS (2026-10-02):
 #   Qwen TEAM (opencode.zen/go) seat: expired Oct 1 — API key invalid (distinct from Qwen Token Plan which is REINSTATED LIVE 2026-10-02).
 #   deepseek-flash: PARKED order 90 (402) — topup needed (F13).
@@ -310,7 +366,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
-    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 1
   model_info:
     max_input_tokens: 1048576
@@ -379,7 +435,7 @@ model_list:
     notes: 'asi-555 P2 (OpenCode Go): 1M context, paid resubscribed.'
 - model_name: asi-555
   litellm_params:
-    model: openai/mimo-v2.5-pro
+    model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
     order: 3
@@ -501,7 +557,7 @@ model_list:
       requires max_tokens>=200, min content budget]'
 - model_name: forge-scout
   litellm_params:
-    model: openai/mimo-v2.5
+    model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
     order: 1
@@ -516,7 +572,7 @@ model_list:
       Max 82B credits fresh 2026-09-13. PONG 1500ms.'
 - model_name: forge-scout-pro
   litellm_params:
-    model: openai/mimo-v2.5-pro
+    model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
     order: 1
@@ -596,7 +652,7 @@ model_list:
       deepseek-v4-flash 429/quota.'
 - model_name: forge-economy
   litellm_params:
-    model: openai/mimo-v2.5
+    model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
     order: 3
@@ -637,7 +693,7 @@ model_list:
       #1 fallback when MiniMax-M3 busy.'
 - model_name: forge-planner
   litellm_params:
-    model: openai/mimo-v2.5
+    model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
     order: 3
@@ -710,7 +766,7 @@ model_list:
     model: openai/mimo-v2.6-pro-payg
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
     api_key: os.environ/MIMO_PLATFORM_API_KEY
-    order: 1
+    order: 901
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -737,10 +793,10 @@ model_list:
       if PAYG exhausts.'
 - model_name: forge-777
   litellm_params:
-    model: openai/mimo-v2.5
+    model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
-    order: 91
+    order: 991
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1180,7 +1236,7 @@ model_list:
     mode: chat
 - model_name: mimo-v2.5-pro
   litellm_params:
-    model: openai/mimo-v2.5-pro
+    model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
     order: 4
@@ -1193,7 +1249,7 @@ model_list:
     notes: 'F13 2026-09-14: supports_vision enabled for image input.'
 - model_name: mimo-v2.5
   litellm_params:
-    model: openai/mimo-v2.5
+    model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
     order: 4
@@ -1275,13 +1331,16 @@ model_list:
       list ultraspeed). Vendor-claimed 20x speed; pending live latency probe.
 - model_name: glm-5.2
   litellm_params:
-    model: openai/glm-5.2
+    model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
     order: 0
     mode: chat
-    notes: 'REPOINTED 2026-09-06: Z.ai coding-plan subscription (was dead team token-plan
-      pin).'
+    notes: 'NORMALIZED 2026-10-14 (333-AGI, F13 zai-devpack-align order): upstream set
+      to glm-5.3 explicitly — z.ai silently redirects glm-5.2->glm-5.3 on the coding
+      endpoint (live-probed 2026-10-14: requested 5.2, served model=glm-5.3). Alias name
+      glm-5.2 KEPT for HERMES picker compat; wire behavior identical. Prev: REPOINTED
+      2026-09-06 coding-plan pin.'
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1512,7 +1571,7 @@ model_list:
     max_output_tokens: 131072
   model_name: hermes-asi-vision
 - litellm_params:
-    model: openai/mimo-v2.5
+    model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
     order: 3
@@ -1644,7 +1703,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
-    api_key: os.environ/QWEN_ARIFOS_API_KEY
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 98
   model_info:
     max_input_tokens: 131072
@@ -1799,7 +1858,7 @@ model_list:
     mode: chat
 - model_name: i-arif
   litellm_params:
-    model: openai/mimo-v2.5
+    model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
     order: 91
@@ -1973,7 +2032,7 @@ router_settings:
   fallbacks:
   - i-arif:
     - deepseek-flash
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - glm-5.3-flash
@@ -1981,14 +2040,14 @@ router_settings:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - glm-5.3-flash
     - qwen3.8-max
   - asi-555:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - glm-5.3-flash
   - apex-888:
     - deepseek-v4-flash
@@ -2000,7 +2059,7 @@ router_settings:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - glm-5.3-flash
     - qwen3.8-max
   - forge-scout:
@@ -2008,7 +2067,7 @@ router_settings:
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
   - forge-scout-pro:
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
   - forge-builder:
@@ -2021,20 +2080,20 @@ router_settings:
     - deepseek-v4-pro
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
   - forge-judge:
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - glm-5.3
   - forge-planner:
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - glm-5.3-flash
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
   - openclaw:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - glm-5.3-flash
   - opencode:
     - forge-777
@@ -2046,20 +2105,20 @@ router_settings:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - glm-5.3-flash
   - qwen3.8-max:
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - deepseek-v4-flash
   - qwen3.6-plus:
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - deepseek-v4-flash
   - mimo-v2.5-pro:
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
   - mimo-v2.6-pro:
@@ -2085,21 +2144,21 @@ router_settings:
     - MiniMax-M3
     - glm-5.3
   - kimi-k3:
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - glm-5.3
   - glm-5.2:
     - glm-5.3
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
   - glm-5.3:
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
   - MiniMax-M3:
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - deepseek-v4-flash
   - MiniMax-M3.1-Flash-Preview:
     - MiniMax-M3
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
     - deepseek-v4-flash
   - fed/vision:
     - deepseek-v4-flash-vision
@@ -2111,7 +2170,7 @@ router_settings:
     - qwen3.8-max
   - fed/sealion:
     - qwen3.8-max
-    - mimo-v2.5
+    - mimo-v2.6-flash  # [P4 2026-10-14] explicit id, was alias mimo-v2.5
   context_window_fallbacks:
   - agi-333:
     - apex-888
