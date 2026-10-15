@@ -52,12 +52,26 @@ export interface AuditEvent {
     transport?: string;
     agent_type?: string;
   };
+  // Item 4 (round 2, 2026-10-11): separate transport_ok from
+  // governance_verdict. Run 2 reproduced the "HOLD stored as
+  // ok:true" defect — forge_check_governance returned a HOLD verdict
+  // but was counted as a success because the wrapper only checks
+  // "did the handler return without throwing". With this split, a
+  // downstream consumer can see "the call reached the server" vs
+  // "the governance approved it" as two distinct facts.
+  transport_ok?: boolean;
+  governance_verdict?: "SEAL" | "HOLD" | "VOID" | "SABAR" | "UNKNOWN";
 }
 
 export interface TelemetrySummary {
   since: string;
   invocations: Record<string, number>;
   successes: Record<string, number>;
+  // transport-OK + governance-not-SEAL. Distinct from `failures`
+  // (which is "the call did not reach the server / threw"). A HOLD
+  // verdict is a CORRECT safety action; dashboards must surface it
+  // as such, not as an outage.
+  blocked: Record<string, number>;
   failures: Record<string, number>;
   providerUsage: Record<string, number>;
   totalEvents: number;
@@ -70,6 +84,7 @@ class McpTelemetry {
   private startTime = new Date().toISOString();
   private invocations: Record<string, number> = {};
   private successes: Record<string, number> = {};
+  private blocked: Record<string, number> = {};
   private failures: Record<string, number> = {};
   private providerUsage: Record<string, number> = {};
   private totalEvents = 0;
@@ -105,6 +120,16 @@ class McpTelemetry {
     if (provider) {
       this.providerUsage[provider] = (this.providerUsage[provider] ?? 0) + 1;
     }
+  }
+
+  recordBlocked(tool: string): void {
+    // Item 4 (round 2, 2026-10-11): a tool that returned without throwing
+    // but whose governance verdict was not SEAL. Counted SEPARATELY
+    // from successes so dashboards surface "the system held correctly"
+    // as a positive signal, not an outage. Also counts toward invocations
+    // so the invariant invocations == successes + blocked + failures holds.
+    this.invocations[tool] = (this.invocations[tool] ?? 0) + 1;
+    this.blocked[tool] = (this.blocked[tool] ?? 0) + 1;
   }
 
   recordFailure(tool: string): void {
@@ -297,6 +322,7 @@ class McpTelemetry {
       since: this.startTime,
       invocations: { ...this.invocations },
       successes: { ...this.successes },
+      blocked: { ...this.blocked },
       failures: { ...this.failures },
       providerUsage: { ...this.providerUsage },
       totalEvents: this.totalEvents,
@@ -329,25 +355,66 @@ export function withTelemetry<T extends Record<string, unknown>>(
   handler: (args: T) => Promise<{ content: Array<{ type: string; text: string }> }>
 ): (args: T) => Promise<{ content: Array<{ type: string; text: string }> }> {
   return async (args: T) => {
-    telemetry.recordInvocation(toolName);
     const startedAt = Date.now();
+    // Item 4 (round 2, 2026-10-11): gate recordSuccess on a real
+    // governance verdict of SEAL. The old shape counted every
+    // non-throwing return as a success, which conflated "the call
+    // reached the server" with "the governance approved it". The
+    // fix:
+    //   - extract a verdict from the handler's content[0].text JSON
+    //   - if verdict === "SEAL" → recordSuccess
+    //   - if verdict is HOLD/VOID/SABAR → recordBlocked
+    //   - if no verdict present (legacy tool) → recordSuccess for
+    //     backward compatibility, but the audit event still carries
+    //     transport_ok=true and governance_verdict=UNKNOWN.
+    let governanceVerdict: "SEAL" | "HOLD" | "VOID" | "SABAR" | "UNKNOWN" = "UNKNOWN";
+    let transportOk = true;
     try {
       const result = await handler(args);
-      telemetry.recordSuccess(toolName);
+      // Best-effort verdict extraction. The handler's payload is the
+      // MCP content array; the first item's text is JSON with a
+      // top-level `verdict` field on the governance tools.
+      try {
+        const first = result.content?.[0];
+        if (first && typeof first.text === "string") {
+          const inner = JSON.parse(first.text);
+          const v = inner?.verdict ?? inner?.effective_verdict;
+          if (v === "SEAL" || v === "HOLD" || v === "VOID" || v === "SABAR") {
+            governanceVerdict = v;
+          }
+        }
+      } catch {
+        // Not JSON or no verdict field — leave UNKNOWN.
+      }
+      if (governanceVerdict === "SEAL") {
+        telemetry.recordSuccess(toolName);
+      } else if (governanceVerdict === "HOLD" || governanceVerdict === "VOID" || governanceVerdict === "SABAR") {
+        telemetry.recordBlocked(toolName);
+      } else {
+        // UNKNOWN — legacy tool or non-governance tool. Count as
+        // success for backward compatibility, but mark the audit
+        // event so consumers can see we did not actually verify SEAL.
+        telemetry.recordSuccess(toolName);
+      }
       await telemetry.logEvent({
         epoch: new Date().toISOString(),
         tool: toolName,
-        action: "success",
+        action: governanceVerdict === "SEAL" || governanceVerdict === "UNKNOWN" ? "success" : "hold_created",
+        transport_ok: transportOk,
+        governance_verdict: governanceVerdict,
         metadata: { durationMs: Date.now() - startedAt },
       });
       return result;
     } catch (error) {
+      transportOk = false;
       telemetry.recordFailure(toolName);
       const message = error instanceof Error ? error.message : String(error);
       await telemetry.logEvent({
         epoch: new Date().toISOString(),
         tool: toolName,
         action: "failure",
+        transport_ok: transportOk,
+        governance_verdict: governanceVerdict,
         outcome: message,
         metadata: { durationMs: Date.now() - startedAt },
       });

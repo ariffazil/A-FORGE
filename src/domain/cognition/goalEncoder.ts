@@ -153,38 +153,60 @@ function estimateSensitivity(
  *
  * Returns an array of subtask descriptions.
  */
-export function splitGoalIntoPhrases(goal: string): string[] {
-  // First, try splitting on numbered items: "1. Foo 2. Bar 3. Baz"
+export interface PhraseChip {
+  text: string;
+  /** start = no predecessor; sequence = edge from the previous group; parallel = same deps as the sibling. */
+  link: "start" | "sequence" | "parallel";
+}
+
+const CHIP_SPLIT = /(\s*,\s*|\s*;\s*|\s+then\s+|\s+followed by\s+|\s+after that\s+|\s+and\s+|\s+also\s+|\s+plus\s+)/i;
+
+function connectorLink(part: string): "sequence" | "parallel" | null {
+  const token = part.trim().toLowerCase();
+  if (token === "and" || token === "also" || token === "plus") return "parallel";
+  if (token === "," || token === ";" || token === "then" || token === "followed by" || token === "after that") {
+    return "sequence";
+  }
+  return null;
+}
+
+/**
+ * Split a goal and remember which separator joined each chip.
+ * "and / also / plus" are parallel. "then / after that / followed by" and commas are edges.
+ * A bare verb is not a separator — that fallback minted orphan chips.
+ */
+export function splitGoalChips(goal: string): PhraseChip[] {
   const numbered = goal.match(/\d+\.\s*([^0-9]+)(?=\d+\.|$)/g);
   if (numbered && numbered.length >= 2) {
-    return numbered.map((p) => p.replace(/^\d+\.\s*/, "").trim()).filter((p) => p.length > 0);
+    return numbered
+      .map((p, i) => ({
+        text: p.replace(/^\d+\.\s*/, "").trim(),
+        link: (i === 0 ? "start" : "sequence") as PhraseChip["link"],
+      }))
+      .filter((chip) => chip.text.length > 0);
   }
 
-  // Then try splitting on explicit separators
-  const parts = goal
-    .split(/,|\band\b|;\s*|then\s+|also\s+|plus\s+|followed by\s+|after that\s+/i)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 3);
-
-  if (parts.length >= 2) return parts;
-
-  // Fallback: split on key verbs
-  const verbSplit = goal.split(/\b(?:and\s+)?(compile|run|compute|analyze|produce|generate|build|test|deploy|check)\b/i);
-  if (verbSplit.length >= 3) {
-    const result: string[] = [];
-    for (let i = 0; i < verbSplit.length - 1; i += 2) {
-      result.push((verbSplit[i] + (verbSplit[i + 1] || "")).trim());
+  const parts = goal.split(CHIP_SPLIT);
+  const chips: PhraseChip[] = [];
+  let pending: PhraseChip["link"] = "start";
+  for (const part of parts) {
+    const link = connectorLink(part);
+    if (link) {
+      pending = link;
+      continue;
     }
-    // Add any remaining text
-    if (verbSplit.length % 2 === 1) {
-      const last = verbSplit[verbSplit.length - 1].trim();
-      if (last) result.push(last);
+    const text = part.trim();
+    if (text.length > 3) {
+      chips.push({ text, link: chips.length === 0 ? "start" : pending });
+      pending = "sequence";
     }
-    return result.filter((p) => p.length > 3);
   }
+  if (chips.length === 0) return [{ text: goal.trim(), link: "start" }];
+  return chips;
+}
 
-  // Single phrase — return as one task
-  return [goal];
+export function splitGoalIntoPhrases(goal: string): string[] {
+  return splitGoalChips(goal).map((chip) => chip.text);
 }
 
 // ── Main encoder ─────────────────────────────────────────────────────────────
@@ -217,19 +239,31 @@ export function encodeGoal(
   const goalId = generateGoalId();
   const goalHash = hashGoal(goalText);
   const humilityCap = opts.humilityCap ?? 0.04; // F7 default within [0.03, 0.05]
-  const phrases = splitGoalIntoPhrases(goalText);
+  const chips = splitGoalChips(goalText);
 
   const entries: TaskVectorEntry[] = [];
-  const dependencyChain: string[] = [];
+  let group: string[] = [];
+  let groupDeps: string[] = [];
 
-  for (let i = 0; i < phrases.length; i++) {
-    const phrase = phrases[i];
+  for (const chip of chips) {
+    const phrase = chip.text;
     const classification = classifyDomain(phrase);
     const riskTier = classifyRisk(phrase);
     const reversibility = classifyReversibility(phrase);
     const sensitivity = estimateSensitivity(phrase, classification.domain, riskTier, reversibility);
 
-    const dependsOn = i > 0 ? [dependencyChain[dependencyChain.length - 1]] : [];
+    let dependsOn: string[];
+    if (chip.link === "parallel" && group.length > 0) {
+      dependsOn = [...groupDeps];
+    } else if (chip.link === "sequence" && group.length > 0) {
+      dependsOn = [...group];
+      group = [];
+      groupDeps = dependsOn;
+    } else {
+      dependsOn = [];
+      group = [];
+      groupDeps = dependsOn;
+    }
 
     const entry: TaskVectorEntry = {
       task_id: generateTaskId(),
@@ -260,7 +294,7 @@ export function encodeGoal(
     };
 
     entries.push(entry);
-    dependencyChain.push(entry.task_id);
+    group.push(entry.task_id);
   }
 
   // Build Jacobian matrix

@@ -252,7 +252,7 @@ async function braveWebSearch(query: string, count: number, freshness: string, s
 async function searxngWebSearch(
   query: string,
   count: number,
-): Promise<{ ok: boolean; results: BraveResult[]; error?: string }> {
+): Promise<{ ok: boolean; results: BraveResult[]; error?: string; deadEngines?: string[] }> {
   try {
     const params = new URLSearchParams({ q: query, format: "json", pageno: "1" });
     const resp = await fetch(`${SEARXNG_URL}/search?${params.toString()}`, {
@@ -264,15 +264,30 @@ async function searxngWebSearch(
     }
     const data = (await resp.json()) as {
       results?: Array<{ title?: string; url?: string; content?: string; publishedDate?: string }>;
-      unresponsive_engines?: unknown;
+      unresponsive_engines?: Array<[string, string] | string> | unknown;
     };
+    // Engine-level deaths (CAPTCHA / 429 / timeout / blocked) must never be
+    // laundered into an empty success. Scar:EMPTY-SUCCESS-SENSOR-LIE (2026-10-12).
+    const deadEngines = Array.isArray(data.unresponsive_engines)
+      ? data.unresponsive_engines.map((u: unknown) =>
+          Array.isArray(u) ? `${u[0]} (${(u as [string, string])[1] ?? "unresponsive"})` : String(u),
+        )
+      : [];
     const results = (data.results ?? []).slice(0, Math.max(1, count)).map((r) => ({
       title: r.title ?? "",
       url: r.url ?? "",
       description: r.content ?? "",
       age: r.publishedDate,
     }));
-    return { ok: true, results };
+    if (results.length === 0 && deadEngines.length > 0) {
+      return {
+        ok: false,
+        results: [],
+        error: `SearXNG returned 0 results; engines dead: ${deadEngines.join(", ")}`,
+        deadEngines,
+      };
+    }
+    return { ok: true, results, deadEngines };
   } catch (err: any) {
     return { ok: false, results: [], error: `SearXNG failed: ${err?.message ?? String(err)}` };
   }
@@ -283,21 +298,25 @@ async function webSearchWithFallback(
   count: number,
   freshness: string,
   safesearch: string,
-): Promise<{ ok: boolean; results: BraveResult[]; error?: string; provider: string; evidence?: EvidenceItem[] }> {
+): Promise<{ ok: boolean; results: BraveResult[]; error?: string; provider: string; evidence?: EvidenceItem[]; warnings?: string[] }> {
   // Score providers by intent (default: discovery for generic search)
   const allProviders = ["brave", "searxng"];
   const scored = scoreProviders("discovery", allProviders);
 
   const errors: string[] = [];
   const evidence: EvidenceItem[] = [];
+  const warnings: string[] = [];
 
   for (const { provider } of scored) {
-    let attempt: { ok: boolean; results: BraveResult[]; error?: string };
+    let attempt: { ok: boolean; results: BraveResult[]; error?: string; deadEngines?: string[] };
 
     if (provider === "brave") {
       attempt = await braveWebSearch(query, count, freshness, safesearch);
     } else if (provider === "searxng") {
       attempt = await searxngWebSearch(query, count);
+      if (attempt.deadEngines && attempt.deadEngines.length > 0) {
+        warnings.push(`searxng dead engines: ${attempt.deadEngines.join(", ")}`);
+      }
     } else {
       continue; // Unknown provider in scored list
     }
@@ -308,7 +327,7 @@ async function webSearchWithFallback(
       attempt.results.forEach((r, i) => {
         evidence.push(normalizeEvidenceItem(r, provider, i + 1));
       });
-      return { ...attempt, provider, evidence };
+      return { ok: true, results: attempt.results, provider, evidence, warnings };
     }
 
     circuitRecordFailure(provider);
@@ -321,6 +340,7 @@ async function webSearchWithFallback(
     provider: "none",
     error: errors.join("; ") || "All providers failed",
     evidence,
+    warnings,
   };
 }
 
@@ -547,6 +567,7 @@ export async function handleForgeSearch(args: any) {
     result_count: results.length,
     evidence_count: evidence.length,
     providers_considered: ["brave", "searxng"],
+    warnings: search.warnings ?? [],
   });
 
   // FLAME synthesis (optional)
@@ -568,6 +589,7 @@ export async function handleForgeSearch(args: any) {
         source: "web",
         results,
         provider: search.provider,
+        warnings: search.warnings ?? [],
         receipt_id,
         evidence,
         _epistemic: {
