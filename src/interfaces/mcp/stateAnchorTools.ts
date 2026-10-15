@@ -49,8 +49,8 @@ async function readJsonRegistry<T>(path: string): Promise<T | null> {
 }
 
 // ── forge_vps_ports ───────────────────────────────────────────────────────────
-// Scan live listening ports and classify them as public, internal, or unknown.
-// Uses ss + docker + external probe. Does NOT trust UFW alone (Docker bypass).
+// Scan live listening ports and classify them as public, internal, tailnet, or unknown.
+// Uses ss + docker + UFW. Does NOT trust UFW alone (Docker bypass).
 
 interface PortEntry {
   port: number;
@@ -58,24 +58,77 @@ interface PortEntry {
   process?: string;
   pid?: number;
   interface: string;
-  classification: "public" | "internal" | "unknown";
+  classification: "public" | "internal" | "tailnet" | "unknown";
   reason: string;
 }
 
-function classifyPort(port: number, iface: string, externalProbe: Set<number>): PortEntry["classification"] {
+function parseUfwRules(): { allowedPublic: Set<number>; tailnetAllowed: Set<number>; restricted: Map<number, string> } {
+  const allowedPublic = new Set<number>();
+  const tailnetAllowed = new Set<number>();
+  const restricted = new Map<number, string>();
+  try {
+    const ufwRaw = execFileSync("ufw", ["status"], { encoding: "utf-8", timeout: 5000 });
+    for (let line of ufwRaw.split("\n")) {
+      line = line.trim();
+      if (!line || line.startsWith("Status:") || line.startsWith("To ") || line.startsWith("--")) continue;
+      if (line.includes("#")) line = line.split("#")[0].trim();
+      const m = line.match(/^([\d,]+)(?:\/tcp|\/udp)?(?:\s+\(v6\))?\s+(ALLOW(?: FWD)?|DENY(?: FWD)?|LIMIT)\s+(.+)$/);
+      if (m) {
+        const ports = m[1].split(",").map(p => parseInt(p, 10)).filter(p => !isNaN(p));
+        const action = m[2];
+        const target = m[3].trim();
+        for (const port of ports) {
+          if (action.includes("DENY") || action.includes("LIMIT")) {
+            restricted.set(port, target);
+          } else if (action.includes("ALLOW")) {
+            if (target.includes("Anywhere")) {
+              allowedPublic.add(port);
+            } else if (target.includes("100.64.") || target.includes("fd7a:115c")) {
+              tailnetAllowed.add(port);
+            }
+          }
+        }
+      }
+    }
+  } catch { /* ufw not available */ }
+  return { allowedPublic, tailnetAllowed, restricted };
+}
+
+function classifyPort(
+  port: number,
+  iface: string,
+  externalProbe: Set<number>,
+  ufwRules: { allowedPublic: Set<number>; tailnetAllowed: Set<number>; restricted: Map<number, string> }
+): PortEntry["classification"] {
   // Strip IPv6 brackets if present
   const cleanIface = iface.replace(/^\[|\]$/g, "");
   // Loopback-only = internal
   if (cleanIface === "127.0.0.1" || cleanIface === "::1" || cleanIface.startsWith("127.")) return "internal";
-  // Wildcard = potentially public
-  if (cleanIface === "0.0.0.0" || cleanIface === "::" || cleanIface === "*" || cleanIface === "") {
-    return externalProbe.has(port) ? "public" : "unknown";
+  // Tailscale CGNAT (100.64.0.0/10) — all modern Tailscale nodes, NOT internet-public
+  if (cleanIface.startsWith("100.")) {
+    const octets = cleanIface.split(".").map(o => parseInt(o, 10));
+    if (octets.length === 4 && octets[0] === 100 && octets[1] >= 64 && octets[1] <= 127) return "tailnet";
   }
-  // Specific non-loopback interface — unknown until proven public
+  // Tailscale IPv6 ULA (fd7a:115c:a1e0::/48)
+  if (cleanIface.startsWith("fd7a:115c:a1e0")) return "tailnet";
+  // UFW explicitly restricts to Tailnet
+  if (ufwRules.tailnetAllowed.has(port) && !ufwRules.allowedPublic.has(port)) {
+    return "tailnet";
+  }
+  // UFW explicitly denies or rate-limits this port — blocked at firewall, treat as internal
+  if (ufwRules.restricted.has(port)) {
+    return "internal";
+  }
+  // Wildcard listener
+  if (cleanIface === "0.0.0.0" || cleanIface === "::" || cleanIface === "*" || cleanIface === "") {
+    if (ufwRules.allowedPublic.has(port)) return "public";
+    return externalProbe.has(port) ? "unknown" : "unknown";
+  }
+  // Specific non-loopback interface
   return externalProbe.has(port) ? "public" : "unknown";
 }
 
-function parseSsOutput(ssOutput: string, externalProbe: Set<number>): PortEntry[] {
+function parseSsOutput(ssOutput: string, externalProbe: Set<number>, ufwRules: { allowedPublic: Set<number>; tailnetAllowed: Set<number>; restricted: Map<number, string> }): PortEntry[] {
   const entries: PortEntry[] = [];
   const lines = ssOutput.split("\n").filter(Boolean);
   for (const line of lines) {
@@ -93,7 +146,7 @@ function parseSsOutput(ssOutput: string, externalProbe: Set<number>): PortEntry[
     const port = parseInt(match[2], 10);
     if (isNaN(port) || port === 0) continue;
     const procMatch = processPart.match(/\("([^"]+)".*pid=(\d+)/);
-    const classification = classifyPort(port, iface, externalProbe);
+    const classification = classifyPort(port, iface, externalProbe, ufwRules);
     entries.push({
       port,
       protocol: netid,
@@ -102,7 +155,8 @@ function parseSsOutput(ssOutput: string, externalProbe: Set<number>): PortEntry[
       interface: iface,
       classification,
       reason: classification === "public" ? "reachable on 0.0.0.0/:: and confirmed by external socket probe" :
-               classification === "internal" ? "bound to loopback only" :
+               classification === "internal" ? "bound to loopback only (or blocked by UFW firewall)" :
+               classification === "tailnet" ? "bound to Tailscale interface only (not internet-public)" :
                "bound to interface but external reachability unconfirmed",
     });
   }
@@ -129,15 +183,17 @@ async function scanPorts(): Promise<{
   ports: PortEntry[];
   public_ports: number[];
   internal_ports: number[];
+  tailnet_ports: number[];
   unknown_ports: number[];
   docker_ports: Array<{ container: string; ports: string }>;
   timestamp: string;
 }> {
   const ssOutput = execFileSync("ss", ["-tlnp"], { encoding: "utf-8", timeout: 10000 });
-  const allPorts = parseSsOutput(ssOutput, new Set());
+  const ufwRules = parseUfwRules();
+  const allPorts = parseSsOutput(ssOutput, new Set(), ufwRules);
   const uniquePorts = Array.from(new Set(allPorts.map(p => p.port)));
   const externalProbe = probeExternalPorts(uniquePorts);
-  const ports = parseSsOutput(ssOutput, externalProbe);
+  const ports = parseSsOutput(ssOutput, externalProbe, ufwRules);
 
   let dockerPorts: Array<{ container: string; ports: string }> = [];
   try {
@@ -154,6 +210,7 @@ async function scanPorts(): Promise<{
     ports,
     public_ports: [...new Set(ports.filter(p => p.classification === "public").map(p => p.port))].sort((a, b) => a - b),
     internal_ports: [...new Set(ports.filter(p => p.classification === "internal").map(p => p.port))].sort((a, b) => a - b),
+    tailnet_ports: [...new Set(ports.filter(p => p.classification === "tailnet").map(p => p.port))].sort((a, b) => a - b),
     unknown_ports: [...new Set(ports.filter(p => p.classification === "unknown").map(p => p.port))].sort((a, b) => a - b),
     docker_ports: dockerPorts,
     timestamp: nowIso(),
@@ -315,7 +372,7 @@ export function registerStateAnchorTools(server: McpServer): void {
   // ═══════════════════════════════════════════════════════════════════════════
   server.tool(
     "forge_vps_ports",
-    "Machine Constitution port registry. Scans listening ports and classifies each as public, internal, or unknown. OBSERVE-class; does not mutate. Does not trust UFW alone because Docker can bypass it.",
+    "Machine Constitution port registry. Scans listening ports and classifies each as public, internal, tailnet, or unknown. OBSERVE-class; does not mutate. UFW-aware: a port on 0.0.0.0 is only called public if UFW explicitly allows it from Anywhere.",
     {
       mode: z.enum(["scan", "registry", "assert"]).default("scan").describe("scan=live state only; registry=return last saved registry; assert=compare live vs registry"),
     },
@@ -345,6 +402,7 @@ export function registerStateAnchorTools(server: McpServer): void {
           live_summary: {
             public: live.public_ports,
             internal: live.internal_ports,
+            tailnet: live.tailnet_ports,
             unknown: live.unknown_ports,
           },
         });
@@ -494,10 +552,13 @@ export function registerStateAnchorTools(server: McpServer): void {
         };
       }
 
-      // Unknown public ports: listening on wildcard interface but not in saved public set
+      // Unknown public ports: only flag truly-public wildcard or unknown-wildcard listeners;
+      // tailnet (100.64.x.x) and UFW-blocked internal ports are excluded.
       const savedPublic = new Set((savedPorts?.ports ?? []).filter(p => p.classification === "public").map(p => p.port));
       report.unknown_public_ports = portScan.ports
-        .filter(p => (p.interface === "0.0.0.0" || p.interface === "::" || p.interface === "*" || p.interface === "") && !savedPublic.has(p.port))
+        .filter(p => (p.classification === "public" || p.interface === "0.0.0.0" || p.interface === "::" || p.interface === "*" || p.interface === "") &&
+                    p.classification !== "tailnet" &&
+                    !savedPublic.has(p.port))
         .map(p => p.port);
 
       // Rogue containers: Docker containers not in saved service registry

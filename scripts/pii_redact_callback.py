@@ -60,8 +60,11 @@ EMAIL_OBF = re.compile(
     r"(?:\[dot\]|\(dot\)|\bdot\b)\s*[A-Za-z]{2,}\b",
     re.IGNORECASE,
 )
-# Malaysian mobile: 01X-XXXXXXX(X) or +601X...
-MY_PHONE = re.compile(r"(?<!\d)(?:\+?60[\s\-]?1|01)\d[\s\-]?\d{3,4}[\s\-]?\d{4}(?!\d)")
+# Phone redaction REMOVED (F13 2026-10-12): Malaysian mobile numbers are NOT
+# secrets in the same class as email/IC/card/API-keys. Public business numbers
+# (technicians, shops) must reach the agent so it can relay them. Arif's rule
+# "never share Arif/Syed's OWN numbers to THIRD PARTIES" is enforced at the
+# HERMES OUTPUT layer, not model-egress. Do NOT re-add MY_PHONE without F13 OK.
 # MyKad/NRIC: YYMMDD-PB-SSSG, date-plausible gate cuts FPs (FI-008 local delta)
 MYKAD = re.compile(
     r"(?<!\d)(\d{2})(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])[\-](\d{2})[\-](\d{4})(?!\d)"
@@ -132,7 +135,6 @@ def redact_text(text: str):
     text = _sub(EMAIL_OBF, "EMAIL_OBF", text)
     text = _sub(EMAIL, "EMAIL", text)
     text = _sub(MYKAD, "MYKAD", text, validator=lambda m: True)  # date gate is in-regex
-    text = _sub(MY_PHONE, "MY_PHONE", text)
     text = _sub(US_SSN, "SSN", text)
 
     def _card(m):
@@ -219,7 +221,6 @@ def _selftest():
     pos = [
         ("email jane.doe@example.com here", ["EMAIL"]),
         ("obfu jane [at] example [dot] com ok", ["EMAIL_OBF"]),
-        ("call 012-3456789 or +6019-888 7777", ["MY_PHONE"]),
         ("MyKad 900101-10-5678 recorded", ["MYKAD"]),
         ("card 4111 1111 1111 1111 charged", ["CARD"]),
         ("ssn 123-45-6789 leaked", ["SSN"]),
@@ -238,6 +239,7 @@ def _selftest():
         "api_key: os.environ/DEEPSEEK_API_KEY",
         "card 4111111111111112 fails luhn",
         "date 2026-10-03 week 40",
+        "call 012-3456789 now",  # phone must NOT redact (MY_PHONE removed)
     ]
     fails = 0
     for text, want in pos:

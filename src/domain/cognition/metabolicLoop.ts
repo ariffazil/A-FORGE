@@ -83,6 +83,13 @@ export interface MetabolicSummary {
   C_dark: number;
   /** Any tasks approaching HOLD threshold */
   warnings: string[];
+  /** Failed node plus the nodes that depend on it. Not a full replan. */
+  repair_scope: {
+    failed_task_ids: string[];
+    dependent_task_ids: string[];
+    policy: "local";
+    rung: "retry" | "local_patch" | "replan";
+  };
 }
 
 // ── Per-task metabolism ──────────────────────────────────────────────────────
@@ -222,6 +229,30 @@ export function metabolicCycle(input: MetabolicInput): {
     results.push(result);
   }
 
+  const failedIds = results.filter((r) => !r.success).map((r) => r.task_id);
+  const dependentIds: string[] = [];
+  const closed = new Set(failedIds);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const task of goal.tasks) {
+      if (closed.has(task.task_id)) continue;
+      if ((task.depends_on ?? []).some((dep) => closed.has(dep))) {
+        closed.add(task.task_id);
+        dependentIds.push(task.task_id);
+        grew = true;
+      }
+    }
+  }
+  const deepest = Math.max(
+    0,
+    ...goal.tasks
+      .filter((task) => failedIds.includes(task.task_id))
+      .map((task) => task.provenance.metabolism_count),
+  );
+  const rung: MetabolicSummary["repair_scope"]["rung"] =
+    deepest >= MAX_METABOLISM_CYCLES ? "replan" : deepest >= 2 ? "local_patch" : "retry";
+
   // Recompute G from adjusted Jacobian
   const G = computeGFromJacobian(goal.tasks, humilityCap);
 
@@ -243,6 +274,12 @@ export function metabolicCycle(input: MetabolicInput): {
       G,
       C_dark: totalCDark,
       warnings,
+      repair_scope: {
+        failed_task_ids: failedIds,
+        dependent_task_ids: dependentIds,
+        policy: "local",
+        rung,
+      },
     },
   };
 }

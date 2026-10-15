@@ -167,6 +167,11 @@ describe("goalEncoder — splitGoalIntoPhrases", () => {
     const parts = splitGoalIntoPhrases("search web and fetch results");
     assert.ok(parts.length >= 2);
   });
+
+  it("does not verb-split one clause into orphan chips", () => {
+    const parts = splitGoalIntoPhrases("compile the basin brief");
+    assert.deepEqual(parts, ["compile the basin brief"]);
+  });
 });
 
 describe("goalEncoder — encodeGoal", () => {
@@ -209,6 +214,15 @@ describe("goalEncoder — encodeGoal", () => {
     const gv = encodeGoal("analyze seismic basin, run petrophysics", opts);
     const geoxTasks = gv.tasks.filter((t: TaskVectorEntry) => t.organ === "geox");
     assert.ok(geoxTasks.length >= 1, `Expected geox tasks, got: ${gv.tasks.map((t: TaskVectorEntry) => `${t.organ}:${t.domain}`)}`);
+  });
+
+  it("keeps and-siblings parallel and then as a join", () => {
+    const gv = encodeGoal("fetch the log and read the config then patch the handler", opts);
+    assert.equal(gv.tasks.length, 3);
+    assert.deepEqual(gv.tasks[0].depends_on, []);
+    assert.deepEqual(gv.tasks[1].depends_on, []);
+    assert.deepEqual(gv.tasks[2].depends_on, [gv.tasks[0].task_id, gv.tasks[1].task_id]);
+    assert.equal(gv.tasks[0].provenance.goal_intent, "fetch the log and read the config then patch the handler");
   });
 
   it("classifies capital tasks to wealth organ", () => {
@@ -404,6 +418,16 @@ describe("metabolicLoop — metabolicCycle", () => {
     assert.ok(summary.G >= 0);
     // Version should be incremented by metabolicCycle
     assert.ok(updated.version >= prevVersion, `version: ${prevVersion} → ${updated.version}`);
+    assert.equal(summary.repair_scope.policy, "local");
+    assert.ok(summary.repair_scope.failed_task_ids.includes(tids[1]));
+    const failed = gv.tasks.find((t: TaskVectorEntry) => t.task_id === tids[1]);
+    const dependents = gv.tasks
+      .filter((t: TaskVectorEntry) => (t.depends_on ?? []).includes(tids[1]))
+      .map((t: TaskVectorEntry) => t.task_id);
+    for (const dep of dependents) {
+      assert.ok(summary.repair_scope.dependent_task_ids.includes(dep));
+    }
+    assert.ok(failed);
   });
 
   it("updates task states after cycle", () => {

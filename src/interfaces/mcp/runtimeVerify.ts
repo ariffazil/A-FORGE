@@ -283,10 +283,35 @@ export function registerRuntimeVerifyTool(server: McpServer): void {
               readFileSync(pyprojectPath, "utf8").includes(`version = "${wheel.version}"`);
             const commitMatch = Boolean(wheel.version && wheel.version.includes(git.commit?.slice(0, 7) ?? ""));
 
-            if (commitMatch || pyprojectMatch) {
+            // Check if installed wheel contains build_info.py or build-info.json with commit
+            let deployedCommit: string | null = null;
+            try {
+              const venvPy = "/opt/arifos/current/venv/bin/python";
+              const pyCmd = existsSync(venvPy) ? venvPy : "python3";
+              deployedCommit = safeExec(`${pyCmd} -c "try:\n import arifosmcp.runtime.build_info as b\n print(getattr(b, 'BUILD_COMMIT', ''))\nexcept:\n pass" 2>/dev/null`);
+            } catch {
+              deployedCommit = null;
+            }
+
+            const commitVerified = Boolean(
+              deployedCommit && git.commit && deployedCommit.trim().slice(0, 7) === git.commit.trim().slice(0, 7)
+            );
+
+            if (commitMatch || commitVerified) {
               sourceVsWheel = "MATCH";
               evidence.push(
-                `Source-vs-wheel: MATCH (${pyprojectMatch ? `pyproject version ${wheel.version}` : `commit ${git.commit?.slice(0, 7)}`})`
+                `Source-vs-wheel: MATCH (commit ${git.commit?.slice(0, 7)} verified)`
+              );
+            } else if (deployedCommit && git.commit && deployedCommit.trim().slice(0, 7) !== git.commit.trim().slice(0, 7)) {
+              sourceVsWheel = "DRIFT";
+              evidence.push(
+                `Source-vs-wheel: DRIFT (source commit ${git.commit?.slice(0, 7)} != deployed commit ${deployedCommit.trim().slice(0, 7)})`
+              );
+            } else if (pyprojectMatch) {
+              // Version matches, but commit cannot be verified
+              sourceVsWheel = "MATCH";
+              evidence.push(
+                `Source-vs-wheel: MATCH (pyproject version ${wheel.version}; unverified commit stamp)`
               );
             } else {
               sourceVsWheel = "DRIFT";

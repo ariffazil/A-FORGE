@@ -632,7 +632,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
       if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
       // Rate limiting
-      if (req.method !== "GET" || (req.url !== "/health" && req.url !== "/")) {
+      if (req.method !== "GET" || (req.url !== "/health" && req.url !== "/" && req.url !== "/health/seal-status" && req.url !== "/seal-status")) {
         const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim()
           || req.socket?.remoteAddress
           || "unknown";
@@ -647,6 +647,56 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           return;
         }
         res.setHeader("X-RateLimit-Remaining", rateCheck.remaining.toString());
+      }
+
+      // Seal-status endpoint (WAVE6 P9 — B.9 contract)
+      // Reserved-label registry: SEAL|HOLD|VOID|SABAR are arif_judge-only.
+      // A-FORGE health must not emit them at the top level. Instead, expose
+      // seal_present_count + seal_chain_head here, with chain_status enum
+      // {OK|DEGRADED|UNKNOWN|STALE}.
+      if (req.url === "/health/seal-status" || req.url === "/seal-status") {
+        const now = Date.now();
+        // Read VAULT999 chain head (probe-only — no writes).
+        let sealPresentCount = 0;
+        let sealChainHead = "";
+        let chainStatus: "OK" | "DEGRADED" | "UNKNOWN" | "STALE" = "UNKNOWN";
+        try {
+          const fs = await import("fs");
+          const path = await import("path");
+          // WAVE6 P9 — canonical vault path (overrides env).
+          // The canonical chain lives in /root/.local/share/arifos/vault999/.
+          // ARIFOS_VAULT_DIR is /root/.secrets (older flat-env); we prefer
+          // the canonical path so the public /health/seal-status reflects
+          // the canonical VAULT999 chain, not the older /root/.secrets one.
+          const vaultPath = "/root/.local/share/arifos/vault999";
+          const headPath = path.join(vaultPath, "seal_chain_head.json");
+          if (fs.existsSync(headPath)) {
+            const head = JSON.parse(fs.readFileSync(headPath, "utf-8"));
+            sealChainHead = String(head.hash || head.receipt_hash || "");
+            chainStatus = "OK";
+          }
+          const chainPath = path.join(vaultPath, "seal_chain.jsonl");
+          if (fs.existsSync(chainPath)) {
+            sealPresentCount = fs.readFileSync(chainPath, "utf-8")
+              .split("\n").filter((l: string) => l.trim()).length;
+          }
+        } catch {
+          // Probe-only; fall through with UNKNOWN.
+        }
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+          "MCP-Protocol-Version": PROTOCOL_VERSION,
+        });
+        res.end(JSON.stringify({
+          service: "A-FORGE-MCP",
+          endpoint: "/health/seal-status",
+          chain_status: chainStatus,
+          seal_present_count: sealPresentCount,
+          seal_chain_head: sealChainHead,
+          observed_at: new Date(now).toISOString(),
+          note: "Probe-only; A-FORGE never issues SEAL verdicts.",
+        }));
+        return;
       }
 
       // Health endpoint

@@ -33,7 +33,7 @@ public_a2a_card: none by default — A-FORGE is actuator, not a public A2A mind
 [![Agentic CI](https://github.com/ariffazil/A-FORGE/actions/workflows/agentic-ci.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions)
 [![Boundary Guard](https://github.com/ariffazil/A-FORGE/actions/workflows/a-forge-boundary-guard.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions)
 [![Governance Gate](https://github.com/ariffazil/A-FORGE/actions/workflows/governance-gate.yml/badge.svg?branch=main)](https://github.com/ariffazil/A-FORGE/actions)
-[![🔥 FORGE](https://img.shields.io/badge/%F0%9F%94%A5%20FORGE-121%20Live%20Tools-orange)](https://forge.arif-fazil.com/mcp)
+[![🔥 FORGE](https://img.shields.io/badge/%F0%9F%94%A5%20FORGE-122%20Live%20Tools-orange)](https://forge.arif-fazil.com/mcp)
 [![MCP 2026-07-28](https://img.shields.io/badge/MCP-stateless%202026--07--28-6750a0)](https://modelcontextprotocol.io)
 [![ACT Bridge](https://img.shields.io/badge/ACT%20Bridge-HMAC%20verified%20%C2%B7%20FI%20aliases%20PASS-brightgreen)](#architecture)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](./LICENSE)
@@ -48,7 +48,7 @@ A-FORGE is the **EXECUTION** engine of the arifOS Federation (plane: EXECUTION, 
 
 | Capability | Details |
 |---|---|
-| **Task Execution** | Filesystem mutations, shell operations, and workflow automation under constitutional authority — every action classified, leased, and receipted |
+| **Task Execution** | Filesystem mutations, shell operations, and workflow automation. In the observed test, action class and budget gate execution. **Lease / receipt coverage:** leases and receipts are observed for many actions; the receipt-fidelity gap leaves some receipts not faithful (`HOLD` persisted as `ok:true`); the verified-actor path is not end-to-end. See CURRENT_VERIFIED_STATE.md. |
 | **CI/CD Pipelines** | GitHub Actions workflows for agentic CI, boundary-guard enforcement, governance gates, Dependabot orchestration, and multi-language lock-invariant checks |
 | **Docker Orchestration** | Container fleet management, Compose orchestration, image builds, multi-stage pipelines, and runtime health probes |
 | **MCP Server Lifecycle** | Build, test, deploy, and conformance-validate Model Context Protocol servers with full stateless HTTP transport |
@@ -149,7 +149,7 @@ curl -sf http://localhost:7072/tools/list | jq '.[].name' | head -20
 
 ## Key Capabilities
 
-A-FORGE exposes **121 live tools (87 stateless)** organized into operational domains:
+A-FORGE exposes **122 live tools (87 stateless)** organized into operational domains:
 
 ### 🔧 Code & Development
 - Safe file edits with LSP pre-gate validation (`forge_filesystem`)
@@ -312,3 +312,18 @@ Sovereign: **Muhammad Arif bin Fazil** (F13)
 > *The hands never judge. The forge never self-authorizes.*
 >
 > **DITEMPA BUKAN DIBERI** — *Forged, Not Given.*
+
+<!-- FEDERATION-STANDARD v2026-10-15 START :: 333-AGI audit :: source: organs.yaml + git + live probes :: regenerate: re-run audit -->
+## 🔗 Federation Identity (auto-audit 2026-10-15)
+| Field | Value |
+|---|---|
+| Organ | `a-forge` · CORE · execution_actuator |
+| Ports | API 7071 · MCP 7072 |
+| Unit | aforge units |
+| Authority ceiling | EXECUTE_AFTER_SEAL |
+| Live (SOT probe @audit) | UP |
+| Repo HEAD @audit | `4872deef 2026-10-14` |
+| Public MCP | https://mcp.arif-fazil.com/mcp |
+| Rollback | — |
+| Flow graph | [FEDERATION-FLOW-GRAPH.md](../FEDERATION-FLOW-GRAPH.md) — peta semua organ + repo |
+<!-- FEDERATION-STANDARD v2026-10-15 END -->

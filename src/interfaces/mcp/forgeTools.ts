@@ -2485,15 +2485,19 @@ export function registerCognitionTools(server: McpServer): void {
             C_dark: result.C_dark,
             W3: result.W3,
             task_count: result.tasks.length,
+            goal_text: result.goal_text,
             tasks: result.tasks.map((t) => ({
               task_id: t.task_id,
               label: t.label,
               organ: t.organ,
               domain: t.domain,
               risk_tier: t.risk_tier,
+              depends_on: t.depends_on,
+              reversibility: t.reversibility,
               sensitivity: t.sensitivity,
               high_sensitivity: Object.values(t.sensitivity).some((v) => typeof v === "number" && v > 0.6),
               provenance: {
+                goal_intent: t.provenance.goal_intent,
                 metabolism_count: t.provenance.metabolism_count,
                 risk_weight: t.provenance.risk_weight_multiplier,
                 constraint_weight: t.provenance.constraint_weight_multiplier,
@@ -2547,6 +2551,7 @@ export function registerCognitionTools(server: McpServer): void {
             successes: summary.successes,
             failures: summary.failures,
             warnings: summary.warnings,
+            repair_scope: summary.repair_scope,
             results: summary.results.map((r) => ({
               task_id: r.task_id,
               success: r.success,
