@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SpendMandate",
+  "description": "One bounded spend mandate: who, for what, up to how much, at which merchants, until when. Integer minor units (sen for MYR) only — no floats for money.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mandate_id", "version", "principal", "agent", "purpose",
+    "merchant_allowlist", "currency", "total_cap_minor",
+    "per_action_cap_minor", "expiry_epoch", "revocation_version", "status"
+  ],
+  "properties": {
+    "mandate_id": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "principal": { "type": "string", "description": "human principal id (F13 sovereign)" },
+    "agent": { "type": "string", "description": "verified agent identity bound to this mandate" },
+    "purpose": { "type": "string" },
+    "merchant_allowlist": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "currency": { "type": "string" },
+    "total_cap_minor": { "type": "integer", "minimum": 0 },
+    "per_action_cap_minor": { "type": "integer", "minimum": 0 },
+    "expiry_epoch": { "type": "number" },
+    "revocation_version": { "type": "integer", "minimum": 0 },
+    "status": { "enum": ["ACTIVE", "REVOKED", "EXPIRED"] }
+  }
+}
