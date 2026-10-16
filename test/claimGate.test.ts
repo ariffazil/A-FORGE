@@ -276,8 +276,17 @@ describe("claimGate - action-eligible claims pass", () => {
 
 describe("claimGate - ingress wiring", () => {
   it("is called at both MCP dispatcher wrappers and at POST /execute", () => {
-    const core = fs.readFileSync("/root/A-FORGE/src/interfaces/mcp/core.ts", "utf-8");
-    const server = fs.readFileSync("/root/A-FORGE/src/interfaces/server.ts", "utf-8");
+    // Repo-relative: compiled runs live at dist/test/, direct-TS runs at
+    // test/ — walk up to the checkout root so any layout resolves.
+    const resolve = (rel: string): URL => {
+      for (const base of ["../../", "../"]) {
+        const u = new URL(base + rel, import.meta.url);
+        if (fs.existsSync(u)) return u;
+      }
+      throw new Error(`repo source not found: ${rel} (from ${import.meta.url})`);
+    };
+    const core = fs.readFileSync(resolve("src/interfaces/mcp/core.ts"), "utf-8");
+    const server = fs.readFileSync(resolve("src/interfaces/server.ts"), "utf-8");
     const coreHits = core.split("await gateToolClaim(").length - 1;
     const serverHits = server.split("await gateToolClaim(").length - 1;
     assert.equal(coreHits, 2, "dispatcher chokepoints wired");
