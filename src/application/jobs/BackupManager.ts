@@ -188,6 +188,7 @@ export class BackupManager {
       await vault.seal({
         sealId: `BACKUP-${Date.now()}`,
         sessionId: leaseId,
+        verdict,
         hashofinput: "",
         telemetrysnapshot: {
           dS: result.ok ? 0 : 0.3,
