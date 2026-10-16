@@ -1,0 +1,34 @@
+{
+  "observed_at": "2026-10-16T09:05:54Z",
+  "self_measurement": {
+    "status": "healthy",
+    "service": "A-FORGE-MCP",
+    "commit": "adb09ef3",
+    "tools_listed": 122,
+    "stateless_tools": 87,
+    "authority_ceiling": "777_FORGE",
+    "transport": "streamable-http",
+    "probe": "http://127.0.0.1:7072/health @2026-10-16T09:05:54Z"
+  },
+  "enforcement_model": {
+    "gate": "action_class_and_budget",
+    "verdict_binding": "not_proven",
+    "identity_binding": "defect_open",
+    "receipt_fidelity": "defect_open"
+  },
+  "independent_audit": {
+    "date": "2026-10-11",
+    "method": "live re-probe by FI-008 (forge_registry_status + observed MUTATE-class call)",
+    "refusal": "a MUTATE-class call without presented authority was stopped by A_THINK_GUARD (BUDGET: max_tools=0)",
+    "tools_listed": 122,
+    "unique_fingerprints": 122,
+    "observed_at_detail": "2026-10-10T18:26:35Z",
+    "enforcement": "action class + budget \u2014 NOT a SEAL verdict binding",
+    "open_defects": [
+      "invocation-telemetry writer has no governance-outcome field: a kernel HOLD (can_claim_success:false) persisted as ok:true",
+      "refusal cause (A_THINK_GUARD) appears 0x in the ledger",
+      "sessionGate.ts:315 infers verified from verdict == SEAL (a verdict string is not identity evidence)",
+      "default session ids are manufactured with a SEAL- prefix when none is supplied"
+    ]
+  }
+}
