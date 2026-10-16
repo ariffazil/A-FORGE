@@ -95,4 +95,5 @@ except OSError:
 
 print()
 print("RESULT:", "attribution names each agent" if ok else "ATTRIBUTION INCOMPLETE")
-sys.exit(0 if ok else 1)
+import sys as _sys_attribution_exit
+_sys_attribution_exit.exit(0 if ok else 1)

@@ -120,4 +120,5 @@ for name, ok, detail in RESULTS:
     print(f"[{ok}] {name}  {detail}")
 print("=" * 64)
 print(f"TOTAL: {PASS} pass, {FAIL} fail")
-raise SystemExit(1 if FAIL else 0)
+import sys as _sys_spend_exit
+_sys_spend_exit.exit(0 if FAIL == 0 else 1)

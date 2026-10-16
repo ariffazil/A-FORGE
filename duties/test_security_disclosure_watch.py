@@ -240,4 +240,5 @@ failed = [l for l, ok in RESULTS if not ok]
 print(f"{len(RESULTS) - len(failed)}/{len(RESULTS)} passed")
 if failed:
     print("FAILED: " + "; ".join(failed))
-sys.exit(1 if failed else 0)
+import sys as _sys_disclosure_exit
+_sys_disclosure_exit.exit(1 if failed else 0)
