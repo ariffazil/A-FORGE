@@ -1239,7 +1239,11 @@ export function registerSkillTools(server: McpServer): void {
             content: [{
               type: "text" as const,
               text: JSON.stringify({
-                status: "SEAL",
+                // F2 TRUTH fix 2026-10-16: top-level "status" describes operation
+                // outcome, never institutional seal. Registry integrity moves to
+                // domain_check.registry_truth + fingerprint.passed below.
+                // Audit ticket: forge_registry_response_wrapper.
+                status: "OK",
                 mode: "status",
                 service: "A-FORGE MCP",
                 version: "0.1.0",
@@ -1273,7 +1277,8 @@ export function registerSkillTools(server: McpServer): void {
             content: [{
               type: "text" as const,
               text: JSON.stringify({
-                status: "SEAL",
+                // F2 TRUTH fix 2026-10-16: operation outcome ≠ institutional seal.
+                status: "OK",
                 mode: "list",
                 registry_fingerprint: fp,
                 total: result.total,
@@ -1303,7 +1308,8 @@ export function registerSkillTools(server: McpServer): void {
             content: [{
               type: "text" as const,
               text: JSON.stringify({
-                status: "SEAL",
+                // F2 TRUTH fix 2026-10-16: operation outcome ≠ institutional seal.
+                status: "OK",
                 mode: "get",
                 tool,
                 theta_trajectory: traj,
@@ -1318,7 +1324,8 @@ export function registerSkillTools(server: McpServer): void {
             content: [{
               type: "text" as const,
               text: JSON.stringify({
-                status: "SEAL",
+                // F2 TRUTH fix 2026-10-16: operation outcome ≠ institutional seal.
+                status: "OK",
                 mode: "scars",
                 total: scars.length,
                 scars,
@@ -1334,7 +1341,8 @@ export function registerSkillTools(server: McpServer): void {
             content: [{
               type: "text" as const,
               text: JSON.stringify({
-                status: "SEAL",
+                // F2 TRUTH fix 2026-10-16: operation outcome ≠ institutional seal.
+                status: "OK",
                 mode: "fingerprint",
                 registry_fingerprint: fp,
                 doctrine: "Same fingerprint on two registries = same constitution. Drift = different federation.",
@@ -1355,7 +1363,8 @@ export function registerSkillTools(server: McpServer): void {
             content: [{
               type: "text" as const,
               text: JSON.stringify({
-                status: "SEAL",
+                // F2 TRUTH fix 2026-10-16: operation outcome ≠ institutional seal.
+                status: "OK",
                 mode: "scan",
                 haram_findings: scan.findings,
                 haram_names: scan.names,
