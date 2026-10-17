@@ -186,7 +186,7 @@ export interface RegisterOptions {
  * that forge_skill uses.
  */
 export async function registerTool(opts: RegisterOptions): Promise<{
-  status: "SEAL" | "HOLD";
+  status: "REGISTERED" | "HOLD";
   record?: SealRecord;
   gateCheck: GateCheckResult;
   message: string;
@@ -288,10 +288,10 @@ export async function registerTool(opts: RegisterOptions): Promise<{
   await persist();
 
   return {
-    status: "SEAL",
+    status: "REGISTERED",
     record,
     gateCheck,
-    message: `Tool '${opts.tool_name}' registered with SEAL — expires ${expiresAt}`,
+    message: `Tool '${opts.tool_name}' registered — expires ${expiresAt}`,
   };
 }
 
