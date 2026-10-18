@@ -37,6 +37,8 @@ const NETDATA_URL = process.env.NETDATA_URL ?? "http://localhost:19999";
 const CONTEXT7_MCP_URL = process.env.CONTEXT7_MCP_URL ?? "https://mcp.context7.com/mcp";
 const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY ?? process.env.BRAVE_API_KEY ?? "";
 const SEARXNG_URL = (process.env.SEARXNG_URL ?? "http://127.0.0.1:8080").replace(/\/+$/, "");
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY ?? "";
+const DEEPSEEK_TOOLS_URL = (process.env.DEEPSEEK_TOOLS_URL ?? "https://api.deepseek.com/v1/tools").replace(/\/+$/, "");
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? "";
 
 const RECEIPT_LOG = "/root/A-FORGE/data/gateway_receipts.jsonl";
@@ -95,10 +97,10 @@ function scoreProviders(
 ): ProviderScore[] {
   // Base capability match per intent
   const capabilityMatrix: Record<string, Record<string, number>> = {
-    discovery: { brave: 0.9, searxng: 0.7, ddgs: 0.6, minimax: 0.7, context7: 0.3 },
-    verification: { brave: 0.7, searxng: 0.8, context7: 0.5, minimax: 0.5 },
-    extraction: { brave: 0.3, searxng: 0.2, context7: 0.8, minimax: 0.3 },
-    research: { brave: 0.7, searxng: 0.6, context7: 0.9, minimax: 0.6 },
+    discovery: { brave: 0.9, searxng: 0.7, ddgs: 0.6, minimax: 0.7, context7: 0.3, deepseek: 0.65 },
+    verification: { brave: 0.7, searxng: 0.8, context7: 0.5, minimax: 0.5, deepseek: 0.7 },
+    extraction: { brave: 0.3, searxng: 0.2, context7: 0.8, minimax: 0.3, deepseek: 0.3 },
+    research: { brave: 0.7, searxng: 0.6, context7: 0.9, minimax: 0.6, deepseek: 0.8 },
   };
 
   const caps = capabilityMatrix[intent] || capabilityMatrix.discovery;
@@ -278,6 +280,46 @@ async function searxngWebSearch(
   }
 }
 
+// DeepSeek Search & Fetch (standalone tool APIs — https://api-docs.deepseek.com/guides/search).
+// Billing: $0.75 per 1,000 SUCCESSFUL requests (200 + non-empty results); failures/empties free.
+// Server-side tool calls via DeepSeek Harness/Claude Code/Codex bill from 2026-11-01 00:00 Beijing.
+// Fallback rung only (Brave 402 + SearXNG thin engines); circuit-breaker shared with other providers.
+async function deepseekWebSearch(
+  query: string,
+  count: number,
+): Promise<{ ok: boolean; results: BraveResult[]; error?: string }> {
+  if (!DEEPSEEK_API_KEY) {
+    return { ok: false, results: [], error: "DeepSeek Search: DEEPSEEK_API_KEY not set" };
+  }
+  try {
+    const resp = await fetch(`${DEEPSEEK_TOOLS_URL}/search`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, count: Math.min(Math.max(1, count), 50), need_content: false }),
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!resp.ok) {
+      return { ok: false, results: [], error: `DeepSeek Search HTTP ${resp.status}` };
+    }
+    const data = (await resp.json()) as {
+      results?: Array<{ title?: string; url?: string; summary?: string; snippet?: string; date?: string }>;
+    };
+    const results = (data.results ?? []).slice(0, Math.max(1, count)).map((r) => ({
+      title: r.title ?? "",
+      url: r.url ?? "",
+      description: r.summary ?? r.snippet ?? "",
+      age: r.date,
+    }));
+    // Billable only on 200 + non-empty results; empty = free, treated as failure for fallback.
+    return { ok: results.length > 0, results, error: results.length > 0 ? undefined : "DeepSeek Search: empty results" };
+  } catch (err: any) {
+    return { ok: false, results: [], error: `DeepSeek Search failed: ${err?.message ?? String(err)}` };
+  }
+}
+
 async function webSearchWithFallback(
   query: string,
   count: number,
@@ -285,7 +327,8 @@ async function webSearchWithFallback(
   safesearch: string,
 ): Promise<{ ok: boolean; results: BraveResult[]; error?: string; provider: string; evidence?: EvidenceItem[] }> {
   // Score providers by intent (default: discovery for generic search)
-  const allProviders = ["brave", "searxng"];
+  // Order: free lanes first (searxng local bonus wins), paid DeepSeek last as fallback rung.
+  const allProviders = ["brave", "searxng", "deepseek"];
   const scored = scoreProviders("discovery", allProviders);
 
   const errors: string[] = [];
@@ -298,6 +341,8 @@ async function webSearchWithFallback(
       attempt = await braveWebSearch(query, count, freshness, safesearch);
     } else if (provider === "searxng") {
       attempt = await searxngWebSearch(query, count);
+    } else if (provider === "deepseek") {
+      attempt = await deepseekWebSearch(query, count);
     } else {
       continue; // Unknown provider in scored list
     }
@@ -1694,45 +1739,13 @@ export function registerGatewayTools(server: McpServer): void {
     page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
   }, handleForgeBrowserNavigate);
 
-  server.tool("forge_browser_click", "Click a browser element.", {
-    selector: z.string().describe("Element selector"),
-    button: z.enum(["left", "right", "middle"]).default("left").describe("Mouse button"),
-    request_id: z.string().describe("Caller request ID"),
-    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
-    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, handleForgeBrowserClick);
-
-  server.tool("forge_browser_type", "Type text into a browser element.", {
-    selector: z.string().describe("Element selector"),
-    text: z.string().max(1000).describe("Text to type"),
-    submit: z.boolean().default(false).describe("Submit after typing"),
-    request_id: z.string().describe("Caller request ID"),
-    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
-    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, handleForgeBrowserType);
-
-  server.tool("forge_browser_screenshot", "Take a browser screenshot.", {
-    selector: z.string().optional().describe("Element selector (omit for full page)"),
-    full_page: z.boolean().default(false).describe("Full page screenshot"),
-    request_id: z.string().describe("Caller request ID"),
-    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
-    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, handleForgeBrowserScreenshot);
-
-  server.tool("forge_browser_extract_text", "Extract text from browser page.", {
-    selector: z.string().optional().describe("Element selector (omit for body)"),
-    max_chars: z.number().default(50000).describe("Max characters"),
-    request_id: z.string().describe("Caller request ID"),
-    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
-    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, handleForgeBrowserExtractText);
-
-  server.tool("forge_browser_evaluate_js", "Evaluate JS in browser context.", {
-    script: z.string().max(2000).describe("JavaScript to evaluate"),
-    request_id: z.string().describe("Caller request ID"),
-    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
-    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, handleForgeBrowserEvaluateJs);
+  // Browser action tools — RETIRED 2026-10-18 (Tugas 1.4 / C-06 Capability-Entropy Pruning).
+  // forge_browser_navigate and forge_browser_screenshot retained for read/inspection.
+  // Handlers retained for backwards compatibility; unregistered from live MCP surface.
+  // server.tool("forge_browser_click", "Click a browser element.", { ... }, handleForgeBrowserClick);
+  // server.tool("forge_browser_type", "Type text into a browser element.", { ... }, handleForgeBrowserType);
+  // server.tool("forge_browser_extract_text", "Extract text from browser page.", { ... }, handleForgeBrowserExtractText);
+  // server.tool("forge_browser_evaluate_js", "Evaluate JS in browser context.", { ... }, handleForgeBrowserEvaluateJs);
 
   // ── GitHub — search/repos collapsed into forge_github(mode='search', type='code'|'repositories') — 2026-07-31 entropy sweep ──
   // forge_github_search_code + forge_github_search_repos were thin wrappers.
