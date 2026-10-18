@@ -152,7 +152,7 @@ model_list:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     api_key: os.environ/ZAI_API_KEY
-    order: 2
+    order: 3
     max_input_tokens: 1000000
     max_output_tokens: 128000
     mode: chat
@@ -230,7 +230,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 1
+    order: 2
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -264,12 +264,13 @@ model_list:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 7
+    order: 1
     max_input_tokens: 131072
     max_output_tokens: 131072
+    min_tokens: 200
     mode: chat
     supports_function_calling: true
-    notes: 'HERMES P7: deepseek-flash DIRECT (cheap quick lane).'
+    notes: 'HERMES P7->P2 (2026-10-19 888-override): deepseek-flash DIRECT raised 7->2 (cost-frontier secondary), min_tokens=200 thinking headroom. Balance-gated.'
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -452,7 +453,7 @@ model_list:
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-agi-333-lane-001
-    order: 90
+    order: 999
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -465,7 +466,7 @@ model_list:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     api_key: os.environ/ZAI_API_KEY
-    order: 3
+    order: 999
   model_info:
     max_input_tokens: 1000000
     max_output_tokens: 128000
@@ -478,7 +479,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 1
+    order: 999
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -491,7 +492,7 @@ model_list:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 4
+    order: 999
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -501,7 +502,7 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 2
+    order: 999
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -511,7 +512,7 @@ model_list:
     model: openai/kimi-k3
     api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/DASHSCOPE_API_KEY
-    order: 99
+    order: 999
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -823,7 +824,7 @@ model_list:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     api_key: os.environ/ZAI_API_KEY
-    order: 2
+    order: 4
   model_info:
     max_input_tokens: 1000000
     max_output_tokens: 128000
@@ -836,7 +837,7 @@ model_list:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 3
+    order: 5
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -851,7 +852,7 @@ model_list:
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-forge-777-lane-001
-    order: 4
+    order: 6
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -922,7 +923,8 @@ model_list:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 6
+    order: 1
+    min_tokens: 200
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -936,7 +938,7 @@ model_list:
     model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
     api_base: https://api.sea-lion.ai/v1
     api_key: os.environ/SEA_LION_API_KEY
-    order: 97
+    order: 98
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 8192
@@ -1448,7 +1450,7 @@ model_list:
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 0
     mode: chat
-    notes: 'UPDATED 2026-09-13: alias compat-routes server-side to DeepSeek-V4.1-Flash (canonical name deepseek-flash, released 2026-09-10). Direct PAYG last-resort rung. Live-verified 2026-09-13.'
+    notes: 'UPDATED 2026-09-13: alias compat-routes server-side to DeepSeek-V4.1-Flash (canonical name deepseek-flash, released 2026-09-10). Direct PAYG last-resort rung. Live-verified 2026-09-13. 2026-10-17: server now serves V4.1-Flash-1017 checkpoint (weights-only; same id).'
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -1465,7 +1467,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-    notes: 'UPDATED 2026-09-13: legacy vision-exp retired in V4.1-Flash release (2026-09-10); served by deepseek-flash native multimodal. i-arif sovereign vision rung, DeepSeek direct PAYG.'
+    notes: 'UPDATED 2026-09-13: legacy vision-exp retired in V4.1-Flash release (2026-09-10); served by deepseek-flash native multimodal. i-arif sovereign vision rung, DeepSeek direct PAYG. Serves V4.1-Flash-1017 checkpoint (2026-10-17).'
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -1478,7 +1480,7 @@ model_list:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 2
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1491,6 +1493,23 @@ model_list:
     notes: 'P0 2026-10-03: deepseek-flash promoted to fed/vision primary — 5s strict-JSON on real 1600px outcrop vs qwen3.8-max >180s timeout. Interactive vision lane.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
+- model_name: fed/vision
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_BASE_URL
+    api_key: os.environ/MIMO_API_KEY
+    order: 1
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    notes: 'VISION PRIMARY (2026-10-19 888, real-image-verified): mimo-v2.6-flash answered Red on 64x64 PNG. MiniMax-M3 insufficient-balance(1008); deepseek-flash returns EMPTY on images.'
 - model_name: deepseek-flash
   litellm_params:
     model: openai/deepseek-flash
@@ -1499,7 +1518,7 @@ model_list:
     order: 0
     mode: chat
     notes: CANONICAL DeepSeek V4.1-Flash group (added 2026-09-28). Resolves the i-arif fallback-chain reference that previously returned "Invalid model name" (group was missing). V4.1 native multimodal,
-      1M ctx.
+      1M ctx. CHECKPOINT 2026-10-17 (V4.1-Flash-1017) — weights-only update, same id auto-served. RL-with-self-feedback tuning, Terminal-Bench 4.0 31.2->42.3, HLE w/o-tools 36.8->42.6, shorter outputs (cost-down for builder loops). Thinking ON by default — small max_tokens returns empty content (finish_reason=length), pin thinking=disabled or give budget room in tool loops.
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -1558,7 +1577,7 @@ model_list:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     api_key: os.environ/ZAI_API_KEY
-    order: 2
+    order: 3
   model_info:
     mode: chat
     supports_vision: true
@@ -1571,7 +1590,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 3
+    order: 4
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1620,7 +1639,7 @@ model_list:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/anthropic/v1
     api_key: os.environ/MINIMAX_API_KEY
-    order: 1
+    order: 4
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1651,7 +1670,7 @@ model_list:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     api_key: os.environ/MIMO_API_KEY
-    order: 3
+    order: 1
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1667,7 +1686,7 @@ model_list:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     api_key: os.environ/ZAI_API_KEY
-    order: 4
+    order: 5
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1683,7 +1702,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
-    order: 5
+    order: 3
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1795,7 +1814,7 @@ model_list:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 98
+    order: 3
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -1806,7 +1825,7 @@ model_list:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 8
+    order: 2
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1900,7 +1919,7 @@ model_list:
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-i-arif-lane-001
-    order: 3
+    order: 4
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1915,7 +1934,7 @@ model_list:
   litellm_params:
     model: gemini/gemini-3.6-flash
     api_key: os.environ/GEMINI_API_KEY
-    order: 4
+    order: 5
     max_input_tokens: 1048576
     max_output_tokens: 65536
     mode: chat
@@ -1990,7 +2009,7 @@ model_list:
     model: openai/mimo-v2.6-pro-payg
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
     api_key: os.environ/MIMO_PLATFORM_API_KEY
-    order: 2
+    order: 3
     max_input_tokens: 1048576
     max_output_tokens: 131072
     min_tokens: 200
@@ -2079,7 +2098,6 @@ litellm_settings:
     - completion
     - embedding
 router_settings:
-  routing_strategy: latency-based-routing
   enable_pre_call_checks: false
   num_retries: 3
   retry_policy:
@@ -2245,7 +2263,7 @@ router_settings:
     - qwen3.8-max
     - MiniMax-M3
   - forge-777:
-    - qwen3-coder-plus
+    - qwen3.8-max
     - deepseek-v4-pro
   - i-arif:
     - deepseek-flash
@@ -2263,6 +2281,28 @@ router_settings:
     deepseek-v4-flash-vision-exp: deepseek-v4-flash-vision
     deepseek-v3.2: agi-333
     qwen-coder: qwen3.6-plus
+    qwen3.8-27b: agi-333
+    qwen3.8-2.4t-a95b: agi-333
+    qwen-plus-latest: agi-333
+    qwen3-max-preview: agi-333
+    opencode: forge-777
+    openclaw: forge-777
+    hermes-asi: forge-777
+    agi-333: forge-777
+    qwen3-coder-plus: forge-777
+    qwen3-coder-flash: forge-777
+    qwen3-coder-next: forge-777
+    qwen3-coder-30b-a3b-instruct: forge-777
+    qwen3-coder-480b-a35b-instruct: forge-777
+    qwen3-vl-235b-a22b-instruct: fed/vision
+    qwen3-vl-235b-a22b-thinking: fed/vision
+    qwen3-vl-32b-instruct: fed/vision
+    qwen3-vl-32b-thinking: fed/vision
+    qwen3-vl-30b-a3b-instruct: fed/vision
+    qwen3-vl-30b-a3b-thinking: fed/vision
+    qwen3-vl-8b-instruct: fed/vision
+    qwen3-vl-8b-thinking: fed/vision
+    qwen3-next-80b-a3b-instruct: asi-555
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
@@ -2297,30 +2337,3 @@ general_settings:
     timeout: 60
     headers:
       Authorization: Bearer os.environ/MINIMAX_API_KEY
-model_group_alias:
-  qwen3.8-27b: agi-333
-  qwen3.8-2.4t-a95b: agi-333
-  qwen-plus-latest: agi-333
-  qwen3-max-preview: agi-333
-  opencode: forge-777
-  openclaw: forge-777
-  hermes-asi: forge-777
-  qwen3-coder-plus: forge-777
-  qwen3-coder-flash: forge-777
-  qwen3-coder-next: forge-777
-  qwen3-coder-30b-a3b-instruct: forge-777
-  qwen3-coder-480b-a35b-instruct: forge-777
-  qwen3-vl-235b-a22b-instruct: fed/vision
-  qwen3-vl-235b-a22b-thinking: fed/vision
-  qwen3-vl-32b-instruct: fed/vision
-  qwen3-vl-32b-thinking: fed/vision
-  qwen3-vl-30b-a3b-instruct: fed/vision
-  qwen3-vl-30b-a3b-thinking: fed/vision
-  qwen3-vl-8b-instruct: fed/vision
-  qwen3-vl-8b-thinking: fed/vision
-  qwen3-next-80b-a3b-instruct: asi-555
-  vision: fed/vision
-  gemini-vision: fed/vision
-  qwen-vision: fed/vision
-  sealion: fed/sealion
-  qwen-coder: qwen3.6-plus
