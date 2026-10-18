@@ -21,7 +21,7 @@ public_a2a_card: none by default — A-FORGE is actuator, not a public A2A mind
 >
 > **Runtime self-measurement** (`http://127.0.0.1:7072/health @2026-10-16T09:05:54Z`): **healthy** · commit `adb09ef3` · tools listed **122** (87 stateless) · authority ceiling `777_FORGE` · transport streamable-http.
 >
-> **Independent/hand audit** (2026-10-11, live re-probe by FI-008 (forge_registry_status + observed MUTATE-class call)): a MUTATE-class call without presented authority was stopped by A_THINK_GUARD (BUDGET: max_tools=0). Enforcement is **action class + budget — NOT a SEAL verdict binding**. Open defects: invocation-telemetry writer has no governance-outcome field: a kernel HOLD (can_claim_success:false) persisted as ok:true · refusal cause (A_THINK_GUARD) appears 0x in the ledger · sessionGate.ts:315 infers verified from verdict == SEAL (a verdict string is not identity evidence) · default session ids are manufactured with a SEAL- prefix when none is supplied.
+> **Independent/hand audit** (2026-10-11, live re-probe by FI-008 (forge_registry_status + observed MUTATE-class call)): a MUTATE-class call without presented authority was stopped by A_THINK_GUARD (BUDGET: max_tools=0). Enforcement is **action class + budget — NOT a SEAL verdict binding**. **Audit follow-up (2026-10-19, code re-read):** two defects from that audit are already fixed in code — `invocationLog.ts` now writes `verdict`, `gate`, `can_claim_success` and defaults `ok:false` on HOLD/VOID; `sessionGate.ts` now verifies only `actor.actor_verified === true` (the `status=="resumed"` / `verdict=="SEAL"` inference is removed). **Still open:** `forgeShell.ts` and `mcp-bridge.ts` infer `token_valid` / `scope_valid` / `replay_safe` from `status=="PASS" || verdict=="SEAL"` when `meta.*` is absent; default session ids still use a `SEAL-` prefix; refusal-cause coverage in the ledger is not proven.
 >
 > **Self-measurement ≠ independent audit.** A tested unauthorised MUTATE-class request was
 > refused; universal SEAL-verdict binding is the **target architecture, not the measured
@@ -103,7 +103,7 @@ Request
 
 **What is not measured:** that every execution is bound to a genuine `SEAL` verdict, a verified human or agent identity, and a faithful, independently reconstructable receipt.
 
-The intended 4-layer gate model and the Gödel Lock (A-FORGE cannot reach judge `888` or seal `999` — the executor never certifies its own output): [`docs/GATE_MODEL.md`](./docs/GATE_MODEL.md).
+The intended 4-layer gate model and the Gödel Lock (A-FORGE cannot reach judge `666` or seal `999` — the executor never certifies its own output; `888` is the retired judge label): [`docs/GATE_MODEL.md`](./docs/GATE_MODEL.md).
 
 ## Target constitutional architecture (TARGET — not currently proven)
 
@@ -170,8 +170,10 @@ A-FORGE occupies **station 777** in the federation's canonical ladder (000–999
 |---|---|---|---|
 | 000–666 | arifOS (cognition) | Route, sense, reason, direct | Provides evidence — never direct commands |
 | **777** | **A-FORGE** | **Execute only** | **The only mutation station — lease + session + gates** |
-| 888 | arifOS (judge) | SEAL / HOLD / VOID | A-FORGE cannot reach this station — no self-adjudication |
+| **666** | arifOS (judge) | SEAL / HOLD / VOID | A-FORGE cannot reach this station — no self-adjudication |
 | 999 | VAULT999 | Immutable seal chain | A-FORGE writes receipts; kernel seals them |
+
+> **Stage-map note:** the canonical live wire is `666 JUDGE → 777 FORGE → 999 SEAL`. `888` is the retired judge label and survives only in historical mirrors. See arifOS `README.md` §Stage numbering.
 
 ```
 ARIF (Sovereign) → arifOS (Judge) → AAA (Router) → A-FORGE (Executor) → VAULT999 (Seal)
