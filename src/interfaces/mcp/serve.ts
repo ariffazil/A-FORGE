@@ -377,7 +377,7 @@ function checkRateLimit(clientIp: string): { allowed: boolean; remaining: number
   }
   bucket.count++;
   return {
-    allowed: bucket.count <= RATE_LIMIT_MAX,
+    allowed: bucket.count < RATE_LIMIT_MAX,
     remaining: Math.max(0, RATE_LIMIT_MAX - bucket.count),
     resetAt: bucket.resetAt,
   };
@@ -628,15 +628,19 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
       // CORS
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Mcp-Session-Id");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Mcp-Method, Mcp-Name, X-ArifOS-Actor, Authorization");
       if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
-      // Rate limiting
-      if (req.method !== "GET" || (req.url !== "/health" && req.url !== "/")) {
-        const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim()
-          || req.socket?.remoteAddress
-          || "unknown";
-        const rateCheck = checkRateLimit(clientIp);
+      // Rate limiting — keyed by session identity, never by source IP.
+      // 2026-10-18 (root-cause fix): every loopback client shares 127.0.0.1,
+      // so one IP bucket 429'd unrelated agents mid-handshake (opencode and
+      // Kimi both failed at POST /mcp while :7072 was healthy). Handshake and
+      // stateless discovery are now unmetered; established sessions are metered
+      // per Mcp-Session-Id (falling back to the declared actor header).
+      const rateKey = req.headers["mcp-session-id"]?.toString()
+        || req.headers["x-arifos-actor"]?.toString();
+      if (rateKey) {
+        const rateCheck = checkRateLimit(rateKey);
         if (!rateCheck.allowed) {
           res.writeHead(429, {
             "Content-Type": "application/json",
