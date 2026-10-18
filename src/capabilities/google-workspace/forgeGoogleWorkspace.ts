@@ -36,17 +36,16 @@ const sessionFields = {
  * Execute Python bridge and return structured result.
  */
 async function bridgeCall(service: string, verb: string, args: Record<string, unknown> = {}): Promise<Record<string, unknown>> {
-  const { execSync } = await import("child_process");
-  const cmdParts = [PYTHON, GWS_BRIDGE, service, verb];
+  const { execFileSync } = await import("child_process");
+  const argList: string[] = [GWS_BRIDGE, service, verb];
   for (const [k, v] of Object.entries(args)) {
     if (v !== undefined && v !== null && v !== "") {
-      cmdParts.push(`--${k.replace(/_/g, "-")}`);
-      cmdParts.push(typeof v === "object" ? JSON.stringify(v) : String(v));
+      argList.push(`--${k.replace(/_/g, "-")}`);
+      argList.push(typeof v === "object" ? JSON.stringify(v) : String(v));
     }
   }
-  const cmd = cmdParts.join(" ");
   try {
-    const stdout = execSync(cmd, { timeout: 30000, encoding: "utf-8", maxBuffer: 1024 * 1024 });
+    const stdout = execFileSync(PYTHON, argList, { timeout: 30000, encoding: "utf-8", maxBuffer: 1024 * 1024 });
     return JSON.parse(stdout);
   } catch (err: any) {
     const stderr = err.stderr?.toString() || err.message;

@@ -99,9 +99,9 @@ def _parse_args(argv: list[str]) -> dict:
 
 
 def _handle_gmail(verb: str, args: dict) -> dict:
-    if verb == "read-unread":
+    if verb in ("read-unread", "read_unread", "search", "read"):
         return google_gmail_read_unread(
-            max_results=int(args.get("max", 10)),
+            max_results=int(args.get("max", args.get("limit", 10))),
             query=str(args.get("query", "is:unread")),
             actor_id=args.get("actor_id"),
         )

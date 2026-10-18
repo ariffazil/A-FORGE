@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 # ─── Token resolution ────────────────────────────────────────────────────────
 _TOKEN_PATHS = [
+    Path("/root/.secrets/google_token.json"),  # LIVE token (verified 2026-10-18)
     Path("/run/secrets/google_workspace/token.json"),
     Path("/app/google_workspace/token.json"),
     Path("/root/HERMES/google_token.json"),  # ZEN-MIGRATED: primary token for A-FORGE
