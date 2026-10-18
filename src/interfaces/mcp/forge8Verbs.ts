@@ -1048,25 +1048,26 @@ async function forgeSandboxAutoEvictHandler(args: z.infer<typeof ForgeSandboxAut
 // ── Tool Registration ──────────────────────────────────────────────────────
 
 export function registerForge8Verbs(server: McpServer) {
-  // VERB 1: forge_synthesize
-  server.tool(
-    "forge_synthesize",
-    "Create artifact from intent. Code goes to temporary buffer ONLY — never touches filesystem.",
-    ForgeSynthesizeRequestSchema.shape,
-    forgeSynthesizeHandler
-  );
+  // VERB 1: forge_synthesize — RETIRED 2026-10-18 (Tugas 1.4 / C-06 Capability-Entropy Pruning).
+  // Handler forgeSynthesizeHandler retained for internal invocation; unregistered from live MCP surface.
+  // server.tool(
+  //   "forge_synthesize",
+  //   "Create artifact from intent. Code goes to temporary buffer ONLY — never touches filesystem.",
+  //   ForgeSynthesizeRequestSchema.shape,
+  //   forgeSynthesizeHandler
+  // );
 
-  // VERB 2: forge_stage
-  // Extract inner shape from refined Zod schema (mode discriminator uses .refine())
-  const forgeStageShape = "shape" in ForgeStageRequestSchema
-    ? ForgeStageRequestSchema.shape
-    : (ForgeStageRequestSchema as any)._def.schema.shape;
-  server.tool(
-    "forge_stage",
-    "Stage an artifact (mode=artifact) or governance preview (mode=governance). Governance mode returns ui://aforge/preview/<stage_id> for human review.",
-    forgeStageShape,
-    forgeStageHandler
-  );
+  // VERB 2: forge_stage — RETIRED 2026-10-18 (Tugas 1.4 / C-06 Capability-Entropy Pruning).
+  // Handler forgeStageHandler retained; unregistered from live MCP surface.
+  // const forgeStageShape = "shape" in ForgeStageRequestSchema
+  //   ? ForgeStageRequestSchema.shape
+  //   : (ForgeStageRequestSchema as any)._def.schema.shape;
+  // server.tool(
+  //   "forge_stage",
+  //   "Stage an artifact (mode=artifact) or governance preview (mode=governance). Governance mode returns ui://aforge/preview/<stage_id> for human review.",
+  //   forgeStageShape,
+  //   forgeStageHandler
+  // );
 
   // VERB 3: forge_sandbox_run
   server.tool(

@@ -618,6 +618,9 @@ export class AThinkGuard {
             requires_human_approval: true,
           };
         }
+      } else if (toolName === "forge_gmail") {
+        // F13 authorization 2026-10-18: email send is a sovereign-authorized
+        // capability lane. Allow through — inner gateMutate records the receipt.
       } else {
         return {
           allowed: false,

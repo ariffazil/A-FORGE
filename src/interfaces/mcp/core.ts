@@ -1421,7 +1421,10 @@ server.tool(
             try {
               const resp = await fetch(`${ARIFOS_BASE}/mcp`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                // 2026-10-18 (333-AGI): streamable-HTTP /mcp requires BOTH media types;
+                // Accept: application/json alone gets 406 and the session verifier
+                // reports KERNEL_UNREACHABLE.
+                headers: { "Content-Type": "application/json", "Accept": "application/json, text/event-stream" },
                 body: JSON.stringify({
                   jsonrpc: "2.0", id: 1, method: "tools/call",
                   params: {
@@ -1429,10 +1432,20 @@ server.tool(
                     arguments: { mode: "validate", session_id: sid, actor_id: aid ?? "opencode" },
                   },
                 }),
-                signal: AbortSignal.timeout(3000),
+                // 2026-10-18 (333-AGI): 3s was too tight — under ambient multi-harness load
+                // (load avg 12) arif_init exceeds 3s and forge_session_init dies
+                // ARIFOS_UNREACHABLE. 30s matches the MCP call budget elsewhere.
+                signal: AbortSignal.timeout(30000),
               });
               if (resp.ok) {
-                const body = await resp.json() as any;
+                // 2026-10-18 (333-AGI): SSE-tolerant parse (see dist note).
+                const _raw = await resp.text();
+                let body: any;
+                try { body = JSON.parse(_raw); }
+                catch {
+                  const _line = _raw.split("\n").find((l) => l.startsWith("data: "));
+                  body = JSON.parse(_line ? _line.slice(6) : "{}");
+                }
                 const text = body?.result?.content?.[0]?.text;
                 if (text) {
                   const result = typeof text === "string" ? JSON.parse(text) : text;
@@ -3324,8 +3337,11 @@ registerPolicyTools(server);
 registerSurfaceGuardTools(server);
 registerSurfaceAuditTools(server);
 
-  // ── Google Workspace removed from active MCP surface per Phase 2 ZEN Sweep ──
-  // registerGoogleWorkspaceTools(server);
+  // ── Google Workspace: F13 re-authorization 2026-10-18 ──────────────────
+  // Was removed from active MCP surface per Phase 2 ZEN Sweep. F13 directive
+  // 2026-10-18: "agent boleh hantar email" — email send is a sovereign-authorized
+  // capability lane. Re-enabled; send/draft_send gated in handler (F13-authorized).
+  registerGoogleWorkspaceTools(server);
 
   // ── Gemini (forge-777 2026-08-25 F13 directive — independent of Workspace ZEN Sweep) ──
   registerGeminiTools(server);
@@ -3515,37 +3531,9 @@ server.tool(
 // NOTE: forge_lock_acquire + forge_lock_release REMOVED — collapsed into forge_lock with mode=acquire|release.
 
 // ── Autonomous Pipeline Tool ───────────────────────────────────────────────────
-// Canonical: forge_pipeline_run. forge_pipeline alias REMOVED.
-server.tool(
-  "forge_pipeline_run",
-  "Autonomous intelligence pipeline (canonical). Routes organs, evidence→compute→(optional judge+seal). Requires cc_id/hold for mutate.",
-  {
-    task: z.string().describe("The task to execute"),
-    mode: z.enum(["observe", "forge", "full"]).default("observe")
-      .describe("observe = route + witness only. forge = route + witness + compute. full = route + witness + forge + judge + seal"),
-    hold_id: z.string().optional().describe("cc_id / hold from arif_judge (required for MUTATE)"),
-    constitutional_chain_id: z.string().optional().describe("Stable cc_id from arif_judge SEAL"),
-    session_id: z.string().optional(),
-    actor_id: z.string().optional(),
-  },
-  async (args) => {
-    const { task, mode, hold_id, constitutional_chain_id, session_id, actor_id } = args as any;
-    const startedAt = Date.now();
-    await telemetryInvoke("forge_pipeline_run");
-    // ── STRUCTURAL AUTHORIZATION GATE: no cc_id → no forge/full pipeline mutation ──
-    if ((mode === "forge" || mode === "full") && !(hold_id || constitutional_chain_id)) {
-      return { content: [{ type: "text" as const, text: JSON.stringify({ verdict: "VOID", reason: "cc_id/hold required for mutate pipeline. No authorization chain, no mutation.", gate: "STRUCTURAL_AUTHORIZATION_GATE" }) }], isError: true };
-    }
-    // delegate to shared impl below (original body uses similar)
-    // delegate to the (original) pipeline body that follows for the alias path; keep simple for reversible edit
-    // (in practice the body below executes similar stages)
-    const pStarted = Date.now();
-    await telemetryInvoke("forge_pipeline");
-    // re-use the mutation of the following closure by falling to alias handler logic (body kept for compat)
-    // For this stub: call a minimal path and note full impl lives in the alias block.
-    return { content: [{ type: "text" as const, text: JSON.stringify({ status: "DELEGATED_TO_ALIAS_LOGIC", canonical: "forge_pipeline_run", note: "See forge_pipeline impl below for full stages; cc gate stub applied above." }) }] };
-  }
-);
+// forge_pipeline_run — RETIRED 2026-10-18 (Tugas 1.4 / C-06 Capability-Entropy Pruning).
+// Implementation retained for internal dispatch; unregistered from live MCP surface.
+// server.tool("forge_pipeline_run", ...);
 
 // NOTE: forge_pipeline deprecated alias implementation REMOVED. Use forge_pipeline_run.
 
@@ -3563,134 +3551,8 @@ import {
 } from "../../infrastructure/tools/ForgeVisualQA.js";
 import { createHash } from "node:crypto";
 
-server.tool(
-  "forge_visual_qa",
-  "Constitutional visual QA: W³ tri-witness (vision+linter+sovereign), scar consultation, entropy gate. PASS does not exist — only PASS_CANDIDATE + 888_HOLD → SEALED_DEPLOY. F1/F2/F3/F4/F7.",
-  {
-    mode: z.enum(["validate_only", "iterate_and_fix", "full_loop"]).default("iterate_and_fix")
-      .describe("validate_only = W1+W2 check only. iterate_and_fix = loop until clean. full_loop = loop + 888 gate."),
-    screenshot_path: z.string().describe("Absolute path to screenshot for W₁ vision analysis"),
-    dom_payload: z.string().describe("HTML/DOM payload for W₂ structural linter"),
-    constraints: z.object({
-      max_nav_links: z.number().optional(),
-      min_contrast_ratio: z.number().optional(),
-      required_elements: z.array(z.string()).optional(),
-      max_deviation_score: z.number().default(0.1),
-      custom_rules: z.record(z.unknown()).optional(),
-    }).describe("Visual/structural constraints to validate against"),
-    max_iterations: z.number().default(5).describe("Maximum iterations before HARD_FAULT"),
-    session_id: z.string().optional(),
-    actor_id: z.string().optional(),
-  },
-  async (args) => {
-    const startedAt = Date.now();
-    await telemetryInvoke("forge_visual_qa");
-    try {
-      // SHA-256 hash of screenshot for VAULT999 chain
-      const screenshotHash = createHash("sha256")
-        .update(args.screenshot_path)
-        .digest("hex");
-
-      // Dependency injection — real implementations come from the agent's tool surface
-      const result = await runForgeVisualQA(
-        {
-          mode: args.mode,
-          screenshot_path: args.screenshot_path,
-          dom_payload: args.dom_payload,
-          constraints: args.constraints,
-          max_iterations: args.max_iterations,
-          prev_deviation_count: 0,
-        },
-        {
-          // W₁: Vision analysis — deterministic pixelmatch (real implementation)
-          visionAnalyze: async (path: string, constraints: unknown) => {
-            const result = await visionAnalyze(path, constraints as any);
-            return { deviations: result.deviations, confidence: result.confidence };
-          },
-          // W₂: DOM linter — deterministic HTML/AST parsing (real implementation)
-          domLinter: async (payload: string, required: string[]) => {
-            const result = await domLinter(payload, { required_elements: required });
-            return { deviations: result.deviations, confidence: result.confidence };
-          },
-          // Scar consultation — stub (real implementation via agent tool surface)
-          scarQuery: async (_type: string) => null,
-          // Fix generation (stub — agent provides real implementation)
-          generateFix: async (payload: string) => payload,
-          // 888 gate — route to arifOS kernel
-          request888Hold: async (context: unknown) => {
-            try {
-              const judgeResult = await callMCP("arifos.arif_judge", {
-                intent: "visual_qa_pass_candidate",
-                domain: "visual_governance",
-                reversibility_level: "reversible",
-                blast_radius: "low",
-                evidence: [context],
-              });
-              const jr = judgeResult as Record<string, unknown>;
-              return {
-                approved: jr?.verdict === "SEAL",
-                receipt_id: typeof jr?.receipt_id === "string" ? jr.receipt_id : `judge-${Date.now()}`,
-              };
-            } catch {
-              return { approved: false, receipt_id: `judge-fallback-${Date.now()}` };
-            }
-          },
-          // VAULT999 seal — DAG Bridge L1→L2 (FORGED 2026-07-20)
-          sealToVault: async (data: unknown, evidenceSha?: string) => {
-            try {
-              const sealParams: Record<string, unknown> = {
-                mode: "seal",
-                payload: JSON.stringify(data),
-              };
-              if (evidenceSha) {
-                sealParams.evidence_sha = evidenceSha;
-              }
-              const sealResult = await callMCP("arifos.arif_seal", sealParams);
-              const sr = sealResult as Record<string, unknown>;
-              return {
-                receipt_id: typeof sr?.receipt_id === "string" ? sr.receipt_id : `vault-${Date.now()}`,
-              };
-            } catch {
-              return { receipt_id: `vault-fallback-${Date.now()}` };
-            }
-          },
-          // WELL notification
-          notifyWell: async (signal: unknown) => {
-            try {
-              await callMCP("well.well_assess_homeostasis", {
-                mode: "sleep",
-                subject: "operator",
-              });
-            } catch { /* best effort */ }
-            return { receipt_id: `well-${Date.now()}` };
-          },
-        },
-      );
-
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({
-            ...result,
-            screenshot_hash: screenshotHash,
-          }, null, 2),
-        }],
-      };
-    } catch (err) {
-      await telemetryFailure("forge_visual_qa", startedAt, err);
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({
-            verdict: "HARD_FAULT",
-            error: err instanceof Error ? err.message : String(err),
-          }, null, 2),
-        }],
-        isError: true,
-      };
-    }
-  }
-);
+// forge_visual_qa — RETIRED 2026-10-18 (Tugas 1.4 / C-06 Capability-Entropy Pruning).
+// Implementation runForgeVisualQA retained; unregistered from live MCP surface.
 
 // ── Visual QA Seal Tool (VAULT999 Composite) ─────────────────────────────────
 // forge_visual_seal: Validate tri-witness composite hash and seal into VAULT999.
@@ -3702,112 +3564,8 @@ import {
   routingGuardPreSeal,
 } from "../../infrastructure/tools/ForgeVisualQASeal.js";
 
-server.tool(
-  "forge_visual_seal",
-  "VAULT999 composite seal: validates W³ tri-witness hash and seals. I1-I5 invariants. Routing guard blocks premature seals. F1/F2/F3/F11.",
-  {
-    tri_witness_ledger: z.object({
-      w1: z.object({
-        verdict: z.enum(["PASS", "HOLD", "FAIL"]),
-        hash: z.string().describe("SHA-256 hex of W₁ evidence"),
-        score: z.number().optional(),
-      }),
-      w2: z.object({
-        verdict: z.enum(["PASS", "HOLD", "FAIL"]),
-        hash: z.string().describe("SHA-256 hex of W₂ evidence"),
-      }),
-      w3: z.object({
-        verdict: z.enum(["PASS", "HOLD", "FAIL"]),
-        hash: z.string().describe("SHA-256 hex of W₃ evidence"),
-        actor_id: z.string().optional(),
-        timestamp: z.string().optional(),
-      }),
-      composite_hash: z.string().describe("SHA256(w1.hash ‖ w2.hash ‖ w3.hash ‖ verdict)"),
-    }),
-    verdict: z.enum(["PASS_CANDIDATE", "SEALED_DEPLOY"]),
-    entropy_gate_passed: z.boolean().default(false).describe("Must be true — ΔS gate must pass before seal"),
-    session_id: z.string().optional(),
-    actor_id: z.string().optional(),
-  },
-  async (args) => {
-    const startedAt = Date.now();
-    await telemetryInvoke("forge_visual_seal");
-    try {
-      // ROUTING GUARD: Block premature seals
-      const guard = routingGuardPreSeal({
-        tri_witness_ledger: args.tri_witness_ledger,
-        entropy_gate_passed: args.entropy_gate_passed,
-        verdict: args.verdict,
-      });
-
-      if (guard.kind === "blocked") {
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              verdict: "REJECTED",
-              sealed: false,
-              vault_seq: -1,
-              error: guard.reason,
-              routing_guard: "BLOCKED",
-            }, null, 2),
-          }],
-          isError: true,
-        };
-      }
-
-      // SEAL EXECUTION
-      const result = await runSealVisual(
-        {
-          tri_witness_ledger: args.tri_witness_ledger,
-          verdict: args.verdict,
-        },
-        {
-          vaultAppend: async (record: unknown, evidenceSha?: string) => {
-            try {
-              const sealParams: Record<string, unknown> = {
-                mode: "seal",
-                payload: JSON.stringify(record),
-              };
-              if (evidenceSha) {
-                sealParams.evidence_sha = evidenceSha;
-              }
-              const sealResult = await callMCP("arifos.arif_seal", sealParams);
-              const sr = sealResult as Record<string, unknown>;
-              return {
-                seq: typeof sr?.seq === "number" ? sr.seq : Date.now(),
-                receipt_id: typeof sr?.receipt_id === "string" ? sr.receipt_id : `seal-${Date.now()}`,
-              };
-            } catch {
-              return { seq: Date.now(), receipt_id: `seal-fallback-${Date.now()}` };
-            }
-          },
-        },
-      );
-
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify(result, null, 2),
-        }],
-      };
-    } catch (err) {
-      await telemetryFailure("forge_visual_seal", startedAt, err);
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({
-            verdict: "REJECTED",
-            sealed: false,
-            vault_seq: -1,
-            error: err instanceof Error ? err.message : String(err),
-          }, null, 2),
-        }],
-        isError: true,
-      };
-    }
-  }
-);
+// forge_visual_seal — RETIRED 2026-10-18 (Tugas 1.4 / C-06 Capability-Entropy Pruning).
+// Implementation runSealVisual retained; unregistered from live MCP surface.
 
 // ── VAULT999 Resources ─────────────────────────────────────────────────────────
 server.resource("forge://vault/records", "forge://vault/records", { description: "VAULT999 records — last 50 sealed entries", mimeType: "application/json" }, async () => {

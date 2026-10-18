@@ -177,7 +177,7 @@ class CalendarBridge(GoogleBridge):
     CONNECTOR_NAME = CONN
     SCOPES = SCOPES
     DEFAULT_PORT = DEFAULT_PORT
-    SERVICE_FN = staticmethod(_service_factory) if False else _service_factory  # type: ignore
+    SERVICE_FN = staticmethod(_service_factory)
     ACTIONS = ACTIONS
 
 

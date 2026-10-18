@@ -122,6 +122,156 @@ export interface FqGateResult {
 }
 
 /**
+ * Actor-level metabolic gate — checks per-actor HELD/THROTTLED state
+ * from arifFlow's invariant enforcer. Closes the gap where system FQ
+ * passes but individual actors are held (FQ per-actor != FQ system).
+ *
+ * Scar: scar-2026-10-06-001 ("witness-without-governance-change-is-bangang")
+ * Detection: arifFlow records 27,419 holds, 0 throttles. Per-actor holds
+ * don't gate execution because nobody reads them before acting.
+ *
+ * This function bridges arifFlow's per-actor enforcement to A-FORGE's
+ * execution gate. Same pattern as checkFqGate — probe, cache, fail-closed.
+ */
+const ACTOR_GATE_CACHE_TTL_MS = 10_000; // 10s cache for per-actor state
+
+interface ActorGateState {
+  held: boolean;
+  throttled: boolean;
+  verdict: string;
+  fq: number | null;
+  reason: string;
+  timestamp: number;
+}
+
+let _actorGateCache: Map<string, ActorGateState> = new Map();
+
+async function probeActorState(actorId: string): Promise<ActorGateState> {
+  const cached = _actorGateCache.get(actorId);
+  if (cached && (Date.now() - cached.timestamp) < ACTOR_GATE_CACHE_TTL_MS) {
+    return cached;
+  }
+
+  try {
+    const resp = await fetch(`${ARIFLOW_URL}/health`, { signal: AbortSignal.timeout(2000) });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const actorData = data.fq?.per_actor?.[actorId];
+
+    const state: ActorGateState = actorData ? {
+      held: actorData.held ?? false,
+      throttled: actorData.throttled ?? false,
+      verdict: actorData.verdict ?? 'UNKNOWN',
+      fq: typeof actorData.quotient === 'number' ? actorData.quotient : null,
+      reason: actorData.diagnosis ?? 'no diagnosis',
+      timestamp: Date.now(),
+    } : {
+      held: false,
+      throttled: false,
+      verdict: 'UNKNOWN',
+      fq: null,
+      reason: `actor '${actorId}' not tracked by arifFlow`,
+      timestamp: Date.now(),
+    };
+
+    _actorGateCache.set(actorId, state);
+    return state;
+  } catch {
+    // arifFlow unreachable — fail closed for HELD actors
+    return {
+      held: true,
+      throttled: false,
+      verdict: 'UNREACHABLE',
+      fq: null,
+      reason: 'arifFlow unreachable — cannot verify actor state. HOLD (fail-closed).',
+      timestamp: Date.now(),
+    };
+  }
+}
+
+export interface ActorGateResult {
+  permitted: boolean;
+  actorId: string;
+  held: boolean;
+  throttled: boolean;
+  verdict: string;
+  fq: number | null;
+  reason: string;
+}
+
+/**
+ * Actor-level metabolic gate. For MUTATE/ATOMIC actions, checks whether
+ * the actor is HELD or THROTTLED by arifFlow's invariant enforcer.
+ *
+ * OBSERVE/DERIVE are exempt — same as FQ gate.
+ * Fail-closed: if arifFlow unreachable, actor is HELD.
+ */
+export async function checkActorGate(
+  actionClass: ActionClass,
+  actorId?: string,
+): Promise<ActorGateResult> {
+  if (actionClass !== 'MUTATE' && actionClass !== 'ATOMIC') {
+    return {
+      permitted: true,
+      actorId: actorId ?? 'unknown',
+      held: false,
+      throttled: false,
+      verdict: 'EXEMPT',
+      fq: null,
+      reason: `${actionClass} exempt from actor gate`,
+    };
+  }
+
+  if (!actorId) {
+    return {
+      permitted: false,
+      actorId: 'unknown',
+      held: true,
+      throttled: false,
+      verdict: 'NO_ACTOR',
+      fq: null,
+      reason: 'No actor ID provided. MUTATE/ATOMIC requires actor identification. HOLD.',
+    };
+  }
+
+  const state = await probeActorState(actorId);
+
+  if (state.held) {
+    return {
+      permitted: false,
+      actorId,
+      held: true,
+      throttled: state.throttled,
+      verdict: state.verdict,
+      fq: state.fq,
+      reason: `Actor '${actorId}' is HELD by arifFlow. ${state.reason}. Verify before executing.`,
+    };
+  }
+
+  if (state.throttled) {
+    return {
+      permitted: false,
+      actorId,
+      held: false,
+      throttled: true,
+      verdict: state.verdict,
+      fq: state.fq,
+      reason: `Actor '${actorId}' is THROTTLED by arifFlow. Cooldown active.`,
+    };
+  }
+
+  return {
+    permitted: true,
+    actorId,
+    held: false,
+    throttled: false,
+    verdict: state.verdict,
+    fq: state.fq,
+    reason: `Actor '${actorId}' — ${state.verdict}. Gate passed.`,
+  };
+}
+
+/**
  * FQ Metabolic Gate — the inclusive institution that prevents
  * the execute gradient from capturing the verify feedback loop.
  *
@@ -178,6 +328,8 @@ export function getRequiredVerdict(actionClass: ActionClass): 'SEAL' | 'SABAR' |
 export interface FullVerdictPrecondition extends VerdictPrecondition {
   fqGate?: FqGateResult;
   fqChecked: boolean;
+  actorGate?: ActorGateResult;
+  actorGateChecked: boolean;
 }
 
 /**
@@ -198,12 +350,34 @@ export interface FullVerdictPrecondition extends VerdictPrecondition {
 export async function checkVerdictPrecondition(
   actionClass: ActionClass,
   sessionState: SessionVerdictState | null,
+  actorId?: string,
 ): Promise<FullVerdictPrecondition> {
   const requiredVerdict = VERDICT_REQUIREMENTS[actionClass];
   const acThreshold = AC_RISK_THRESHOLDS[actionClass];
   const activeBreakers = sessionState?.circuitBreakers ?? [];
   const acRisk = sessionState?.acRisk ?? 0.50;
   const simIndex = sessionState?.simulationIndex ?? 0.0;
+
+  // ── GATE 0: Actor-Level Metabolic Gate (per-actor HELD/THROTTLED) ──
+  // Closes scar-2026-10-06-001: witness → stored but no routing change.
+  // arifFlow's check_actor() is now wired into the execution gate.
+  const actorGate = await checkActorGate(actionClass, actorId);
+  if (!actorGate.permitted) {
+    return {
+      permitted: false,
+      actionClass,
+      requiredVerdict,
+      currentVerdict: sessionState?.verdict ?? null,
+      acRisk,
+      simulationIndex: simIndex,
+      circuitBreakersActive: activeBreakers,
+      reason: `Actor Gate HOLD: ${actorGate.reason}`,
+      fqGate: undefined,
+      fqChecked: false,
+      actorGate,
+      actorGateChecked: true,
+    };
+  }
 
   // ── GATE 1: FQ Metabolic Gate (inclusive — cannot be bypassed) ──
   const fqGate = await checkFqGate(actionClass);
@@ -219,6 +393,8 @@ export async function checkVerdictPrecondition(
       reason: `FQ Metabolic Gate HOLD: ${fqGate.reason}`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -235,6 +411,8 @@ export async function checkVerdictPrecondition(
       reason: `${actionClass} actions do not require a precondition verdict. Proceed.`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -251,6 +429,8 @@ export async function checkVerdictPrecondition(
       reason: `No verdict state for session. ${actionClass} requires ${requiredVerdict} before execution. Run deliberate() first.`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -267,6 +447,8 @@ export async function checkVerdictPrecondition(
       reason: `Circuit breakers active: [${activeBreakers.join(', ')}]. ${actionClass} blocked — paradox state must clear before execution.`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -283,6 +465,8 @@ export async function checkVerdictPrecondition(
       reason: `AC_Risk ${acRisk.toFixed(2)} exceeds ${actionClass} threshold ${acThreshold}. Anomalous contrast too high for safe execution.`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -300,6 +484,8 @@ export async function checkVerdictPrecondition(
       reason: `Session verdict is "${sessionState.verdict}" but ${actionClass} requires "${requiredVerdict}". Obtain ${actionName} before execution.`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -315,6 +501,8 @@ export async function checkVerdictPrecondition(
     reason: `Verdict precondition satisfied. ${sessionState.verdict} permits ${actionClass} execution.`,
     fqGate,
     fqChecked: true,
+    actorGate,
+    actorGateChecked: true,
   };
 }
 
