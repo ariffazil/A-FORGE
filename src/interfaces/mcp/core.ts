@@ -1421,7 +1421,10 @@ server.tool(
             try {
               const resp = await fetch(`${ARIFOS_BASE}/mcp`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                // 2026-10-18 (333-AGI): streamable-HTTP /mcp requires BOTH media types;
+                // Accept: application/json alone gets 406 and the session verifier
+                // reports KERNEL_UNREACHABLE.
+                headers: { "Content-Type": "application/json", "Accept": "application/json, text/event-stream" },
                 body: JSON.stringify({
                   jsonrpc: "2.0", id: 1, method: "tools/call",
                   params: {
@@ -1429,10 +1432,20 @@ server.tool(
                     arguments: { mode: "validate", session_id: sid, actor_id: aid ?? "opencode" },
                   },
                 }),
-                signal: AbortSignal.timeout(3000),
+                // 2026-10-18 (333-AGI): 3s was too tight — under ambient multi-harness load
+                // (load avg 12) arif_init exceeds 3s and forge_session_init dies
+                // ARIFOS_UNREACHABLE. 30s matches the MCP call budget elsewhere.
+                signal: AbortSignal.timeout(30000),
               });
               if (resp.ok) {
-                const body = await resp.json() as any;
+                // 2026-10-18 (333-AGI): SSE-tolerant parse (see dist note).
+                const _raw = await resp.text();
+                let body: any;
+                try { body = JSON.parse(_raw); }
+                catch {
+                  const _line = _raw.split("\n").find((l) => l.startsWith("data: "));
+                  body = JSON.parse(_line ? _line.slice(6) : "{}");
+                }
                 const text = body?.result?.content?.[0]?.text;
                 if (text) {
                   const result = typeof text === "string" ? JSON.parse(text) : text;

@@ -18,7 +18,9 @@ const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
 const ACT_DECISION_EVENT_DIR =
   process.env.ACT_DECISION_EVENT_DIR ||
   `/root/A-FORGE/forge_work/${new Date().toISOString().slice(0, 10)}/act_decision_events`;
-const ACT_TIMEOUT_MS = Number(process.env.ARIFOS_ACT_TIMEOUT_MS || "2500");
+// 2026-10-18 (333-AGI): 2500ms aborted under ambient load (load avg 12) and
+// surfaced as ARIFOS_UNREACHABLE even though the kernel answered in ms.
+const ACT_TIMEOUT_MS = Number(process.env.ARIFOS_ACT_TIMEOUT_MS || "30000");
 // P2.1 DUAL-ACCEPT (2026-08-07): Transition from SCT to ACT.
 // Accepts both sct_v1.* (legacy) and act_v1.* (new) for one TTL cycle (~8h).
 // After the grace period, drop sct_v1 acceptance.
@@ -608,8 +610,12 @@ export async function verifyFederationAct(
         params: {
           name: "arif_init",
           arguments: {
-            mode: "init",
+            // 2026-10-18 (333-AGI): was mode="init" with no `intent`, which the
+            // kernel HOLDs (MISSING_REQUIRED_INPUT). Verification is `validate`.
+            mode: "validate",
             session_token: act,
+            session_id: act,
+            intent: "A-FORGE ACT verification (bridge fallback)",
             actor_id: opts.expectedActor || undefined,
           },
         },

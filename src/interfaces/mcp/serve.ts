@@ -642,6 +642,9 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
       if (rateKey) {
         const rateCheck = checkRateLimit(rateKey);
         if (!rateCheck.allowed) {
+          process.stderr.write(
+            `[A-FORGE-MCP] RATE_LIMIT_429 key=${rateKey} count=${RATE_LIMIT_MAX} path=${req.url}\n`,
+          );
           res.writeHead(429, {
             "Content-Type": "application/json",
             "Retry-After": Math.ceil((rateCheck.resetAt - Date.now()) / 1000).toString(),
