@@ -3337,8 +3337,11 @@ registerPolicyTools(server);
 registerSurfaceGuardTools(server);
 registerSurfaceAuditTools(server);
 
-  // ── Google Workspace removed from active MCP surface per Phase 2 ZEN Sweep ──
-  // registerGoogleWorkspaceTools(server);
+  // ── Google Workspace: F13 re-authorization 2026-10-18 ──────────────────
+  // Was removed from active MCP surface per Phase 2 ZEN Sweep. F13 directive
+  // 2026-10-18: "agent boleh hantar email" — email send is a sovereign-authorized
+  // capability lane. Re-enabled; send/draft_send gated in handler (F13-authorized).
+  registerGoogleWorkspaceTools(server);
 
   // ── Gemini (forge-777 2026-08-25 F13 directive — independent of Workspace ZEN Sweep) ──
   registerGeminiTools(server);
