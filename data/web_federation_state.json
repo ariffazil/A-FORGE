@@ -1,0 +1,65 @@
+{
+  "providers": {
+    "brave": {
+      "circuit": {
+        "failures": 2,
+        "lastFailure": 1792321396669,
+        "openUntil": 1792321456669
+      },
+      "lastSuccessAt": 0,
+      "successCount": 0,
+      "failureCount": 24
+    },
+    "searxng": {
+      "circuit": {
+        "failures": 0,
+        "lastFailure": 0,
+        "openUntil": 0
+      },
+      "lastSuccessAt": 1792321396992,
+      "successCount": 32,
+      "failureCount": 1
+    },
+    "deepseek": {
+      "circuit": {
+        "failures": 0,
+        "lastFailure": 0,
+        "openUntil": 0
+      },
+      "lastSuccessAt": 1792316886523,
+      "successCount": 1,
+      "failureCount": 0
+    },
+    "exa": {
+      "circuit": {
+        "failures": 0,
+        "lastFailure": 0,
+        "openUntil": 0
+      },
+      "lastSuccessAt": 1792324402374,
+      "successCount": 13,
+      "failureCount": 0
+    }
+  },
+  "lfd": {
+    "exa": {
+      "weights": {
+        "easy": 3,
+        "medium": 1.2214027581601699,
+        "hard": 1
+      },
+      "wins": {
+        "easy": 12,
+        "medium": 1,
+        "hard": 0
+      },
+      "losses": {
+        "easy": 0,
+        "medium": 0,
+        "hard": 0
+      }
+    }
+  },
+  "updatedAt": "2026-10-18T11:53:22.374Z",
+  "restartCount": 8
+}
