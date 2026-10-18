@@ -26,7 +26,7 @@ sys.path.insert(0, str(BRIDGES))
 BRIDGE_PORTS = {
     "calendar_bridge": 18094,
     "drive_bridge": 18099,
-    "sheets_bridge": 18096,
+    "sheets_bridge": 18075,
     "gmail_bridge": 18097,
     "gemini_bridge": 18092,
     "gws_bridge": 18098,
