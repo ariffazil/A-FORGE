@@ -1761,16 +1761,11 @@ export function registerGatewayTools(server: McpServer): void {
     lease_id: z.string().describe("Kernel-issued lease ID"),
   }, handleForgeGitHubCreateOrUpdateFile);
 
-  server.tool("forge_github_create_issue", "Create a GitHub issue.", {
-    owner: z.string().describe("Repository owner"),
-    repo: z.string().describe("Repository name"),
-    title: z.string().describe("Issue title"),
-    body: z.string().describe("Issue body"),
-    labels: z.array(z.string()).optional().describe("Labels"),
-    assignees: z.array(z.string()).optional().describe("Assignees"),
-    request_id: z.string().describe("Caller request ID"),
-    lease_id: z.string().describe("Kernel-issued lease ID"),
-  }, handleForgeGitHubCreateIssue);
+  // ── forge_github_create_issue RETIRED 2026-10-18 (Arif T4, RECEIPT-T4) ──
+  // Zero runtime callers; remaining hits were classifier/policy maps, registries,
+  // docs, and 2 skill examples. Registration preserved verbatim at
+  //   src/interfaces/mcp/retired/forge_github_create_issue.registration.ts.retired
+  // Handler handleForgeGitHubCreateIssue stays in-file but is unreachable (F1: not deleted).
 
   // ── forge_github_create_pull_request collapsed into forge_github(mode='pr',action='create') — 2026-07-31 ──
   // Reduction: 1 tool → 0. ΔS = −1.
