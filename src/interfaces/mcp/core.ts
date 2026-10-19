@@ -1449,7 +1449,9 @@ server.tool(
                 const text = body?.result?.content?.[0]?.text;
                 if (text) {
                   const result = typeof text === "string" ? JSON.parse(text) : text;
-                  if (result?.actor?.actor_verified || result?.status === "resumed" || result?.verdict === "SEAL") {
+                  // E4 (FEDERATION_REALITY_DISTILLATION 2026-10-19): verdict/status is NOT
+                  // identity evidence. Only an explicit actor_verified === true binds identity.
+                  if (result?.actor?.actor_verified === true) {
                     const actor = result?.actor?.actor_id || aid || "opencode";
                     return { verified: true, actor_id: actor };
                   }

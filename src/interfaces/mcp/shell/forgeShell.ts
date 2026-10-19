@@ -742,9 +742,11 @@ async function callArifVerify(
   const meta = (resp.meta as Record<string, unknown>) ?? {};
   return {
     ...resp,
-    token_valid: Boolean(meta.token_valid ?? (resp.status === "PASS" || resp.verdict === "SEAL")),
-    scope_valid: Boolean(meta.scope_valid ?? (resp.status === "PASS" || resp.verdict === "SEAL")),
-    replay_safe: Boolean(meta.replay_safe ?? (resp.status === "PASS" || resp.verdict === "SEAL")),
+    // E4 (FEDERATION_REALITY_DISTILLATION 2026-10-19): fail closed. Identity and
+    // scope validity must come from explicit meta, never from status/verdict text.
+    token_valid: meta.token_valid === true,
+    scope_valid: meta.scope_valid === true,
+    replay_safe: meta.replay_safe === true,
     violations: meta.violations ?? resp.reasons ?? [],
   };
 }
