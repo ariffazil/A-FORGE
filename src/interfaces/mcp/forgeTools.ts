@@ -559,25 +559,43 @@ export async function validateLeaseForTool(
     const inspect = await inspectLeaseViaKernel(lease_id);
     const kernelLease = inspect?.lease ?? inspect?.result?.lease;
     if (!kernelLease || !kernelLease.lease_id) {
-      const fail = { ok: false as const, gate: "LEASE_KERNEL_UNKNOWN", reason: `arifOS does not recognise lease '${lease_id}'` };
-      logLeaseDecision(lease_id, tool, actionClass, fail);
-      return fail;
-    }
-    if (kernelLease.revoked === true) {
+      // P-3 (2026-10-20): the kernel has no lease store — arif_lease_inspect maps to
+      // arif_judge(validate) and structurally cannot know locally-registered leases.
+      // A locally registered lease (registerLocalLease — source=local, sha256
+      // tamper-evident, scope derived from the kernel-issued ACT auth band) is
+      // honoured here under the SAME conditions as the kernel-unreachable fallback
+      // (P1.3). Authority comes from the ACT band + registered record, never from
+      // the id string alone; scope/class checks still run below.
+      const localFallback = lease_id ? activeLeases.get(lease_id) : undefined;
+      if (localFallback && !localFallback.revoked && localFallback.expires_at > Date.now()) {
+        lease = localFallback;
+        process.stderr.write(
+          `[LEASE_GATE] kernel holds no lease record for ${lease_id}; honouring registered local lease (source=local, scope from ACT band)\n`,
+        );
+      } else {
+        const fail = {
+          ok: false as const,
+          gate: "LEASE_KERNEL_UNKNOWN",
+          reason: `arifOS holds no lease record for '${lease_id}' and no valid local lease is registered (kernel lease store not implemented — arif_lease_inspect maps to arif_judge validate)`,
+        };
+        logLeaseDecision(lease_id, tool, actionClass, fail);
+        return fail;
+      }
+    } else if (kernelLease.revoked === true) {
       const fail = { ok: false as const, gate: "LEASE_REVOKED", reason: "Lease revoked by kernel" };
       logLeaseDecision(lease_id, tool, actionClass, fail);
       return fail;
+    } else {
+      const expiresAt = new Date(kernelLease.expires_at).getTime();
+      if (Date.now() > expiresAt) {
+        const fail = { ok: false as const, gate: "LEASE_EXPIRED", reason: "Lease expired according to kernel" };
+        logLeaseDecision(lease_id, tool, actionClass, fail);
+        return fail;
+      }
+      lease = arifosLeaseToLocal(kernelLease);
+      // Kernel-confirmed lease: keep local cache in sync as a read-only diagnostic.
+      activeLeases.set(lease_id, lease);
     }
-    const expiresAt = new Date(kernelLease.expires_at).getTime();
-    if (Date.now() > expiresAt) {
-      const fail = { ok: false as const, gate: "LEASE_EXPIRED", reason: "Lease expired according to kernel" };
-      logLeaseDecision(lease_id, tool, actionClass, fail);
-      return fail;
-    }
-    lease = arifosLeaseToLocal(kernelLease);
-    // Keep local cache in sync as a read-only diagnostic cache only.
-    // Authorization never comes from this cache.
-    activeLeases.set(lease_id, lease);
   } catch (err: any) {
     // P1.3: Check local cache for locally-minted fallback leases before failing.
     // When kernel is unreachable, a locally-registered lease (via registerLocalLease)

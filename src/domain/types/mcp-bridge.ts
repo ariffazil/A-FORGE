@@ -206,10 +206,14 @@ export function transformResponse(tool: string, result: Record<string, unknown>)
     const meta = (result.meta as Record<string, unknown>) ?? {};
     const valid =
       meta.lease_active === true || meta.active === true || meta.token_valid === true;
+    // P-3 (2026-10-20): never fabricate a lease id. "LEASE-VERIFIED" was invented when
+    // the kernel returned no chain id — a verification claim that never happened.
+    // No id => leave it empty so the gate reports the real state (kernel holds no
+    // record) and falls back to any registered local lease or fails closed.
     return {
       ...result,
       lease: {
-        lease_id: result.constitutional_chain_id ?? result.entry_id ?? "LEASE-VERIFIED",
+        lease_id: (result.constitutional_chain_id as string) ?? (result.entry_id as string) ?? "",
         active: valid,
         revoked: result.verdict === "VOID" || result.verdict === "HOLD",
         expires_at: new Date(Date.now() + 1800_000).toISOString(),
