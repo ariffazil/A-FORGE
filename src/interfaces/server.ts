@@ -16,6 +16,9 @@ import { readFileSync } from "fs";
 import { execFileSync } from "node:child_process";
 import { computeDeploymentDrift } from "../infrastructure/attestation/deploymentDrift.js";
 import * as http from "http";
+
+const _pkg = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8"));
+const FORGE_VERSION = `v${_pkg.version}`;
 import { createHash } from "crypto";
 import { modelGateway } from "../infrastructure/llm/ModelGateway.js";
 import { runSense } from "../domain/policy/sense.js";
@@ -260,7 +263,7 @@ export function createApp(): express.Express {
     // OpenCode compat: static server info
     res.json({
       service: "A-FORGE",
-      version: "v2026.07.24",
+      version: FORGE_VERSION,
       protocol_version: "2025-03-26",
       mcp_endpoint: "/mcp",
       health_endpoint: "/health",
@@ -475,7 +478,7 @@ app.post("/sense", async (req: Request, res: Response) => {
       },
       context: {
         source: "A-FORGE",
-        version: "v2026.07.24",
+        version: FORGE_VERSION,
         epoch: "2026-04-08",
         received_context: context,
         peer_contract_id,
@@ -1161,7 +1164,7 @@ app.get("/health", async (_req: Request, res: Response) => {
     ok: !isDegradedMode && !deploymentDrift, // legacy alias — prefer status
     degraded_mode: isDegradedMode || deploymentDrift,
     service: "A-FORGE-sense",
-    version: "v2026.07.24",
+    version: FORGE_VERSION,
     federation_schema_version: "2.0.0",
     tool_count: liveToolCount,
     tools_loaded: liveToolCount,
