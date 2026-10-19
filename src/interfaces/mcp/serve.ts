@@ -99,7 +99,10 @@ function stripAdvisorySealWord(result: any, toolName: string): void {
   if (!result || !Array.isArray(result.content)) return;
   const action = classifyTool(toolName);
   const advisory = action === "OBSERVE" || action === "SUGGEST" || toolName === "forge_status";
-  if (!advisory) return;
+  // KX-006 (2026-10-19): the tool-class gate let mutating tools leak the kernel's
+  // word on READ responses (forge_agent mode=status/list). SEAL without a
+  // call_hash is not a constitutional seal, so strip it regardless of class.
+  if (!advisory && !result) return;
   for (const item of result.content) {
     if (item?.type !== "text" || typeof item.text !== "string") continue;
     try {
