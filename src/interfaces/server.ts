@@ -1053,7 +1053,7 @@ app.post("/GEOX/log_interpreter", async (req: Request, res: Response) => {
  * Service health check
  */
 app.get("/health", async (_req: Request, res: Response) => {
-  const DEPLOY_ROOT = "/opt/a-forge/app";
+  const DEPLOY_ROOT = process.env.AF_FORGE_DEPLOY_ROOT || "/root/A-FORGE";
   let identityHash = "UNAVAILABLE";
   let deployedCommit = "UNAVAILABLE";
   let sourceCommit = "UNAVAILABLE";

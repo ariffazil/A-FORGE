@@ -94,6 +94,9 @@ import { assertActMutationGateOrExit } from "../../infrastructure/governance/act
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { validateSession, validateSessionAsync } from "../../domain/session/sessionGate.js";
 
+const _mcpPkg = JSON.parse(fs.readFileSync(new URL("../../../../package.json", import.meta.url), "utf8"));
+const MCP_VERSION = `v${_mcpPkg.version}`;
+
 /** Rewrite advisory completions that still say SEAL. Kernel owns that word. */
 function stripAdvisorySealWord(result: any, toolName: string): void {
   if (!result || !Array.isArray(result.content)) return;
@@ -670,7 +673,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           ok: true,
           service: "A-FORGE-MCP",
           status: "healthy",
-          version: "0.1.0",
+          version: MCP_VERSION,
           commit: BUILD_COMMIT,
           transport: "streamable-http",
           // F2-fidelity fix (MCP-PROBE-2026-08-08): bridge shares organ identity
@@ -698,7 +701,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           });
           res.end(JSON.stringify({
             name: "A-FORGE-MCP",
-            version: "0.1.0",
+            version: MCP_VERSION,
             protocolVersion: PROTOCOL_VERSION,
             transport: "streamable-http",
             authentication: "none",
@@ -812,7 +815,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 // stderr observability via journald (StandardError=journal).
                 registration: { mode: "explicit", tool: "forge_agent" },
               },
-              serverInfo: { name: "A-FORGE-MCP", version: "0.1.0" },
+              serverInfo: { name: "A-FORGE-MCP", version: MCP_VERSION },
             }));
             return;
           }
@@ -942,7 +945,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               _meta: {
                 "io.modelcontextprotocol/serverInfo": {
                   name: "A-FORGE-MCP",
-                  version: "0.1.0",
+                  version: MCP_VERSION,
                 },
               },
             }));
@@ -1113,7 +1116,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 content = JSON.stringify({
                   status: "healthy",
                   port: 7072,
-                  version: "0.1.0",
+                  version: MCP_VERSION,
                   tools_count: getServerTools().length,
                   timestamp: new Date().toISOString(),
                 });
