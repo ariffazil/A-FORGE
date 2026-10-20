@@ -1,6 +1,7 @@
 # OWNER: AAA INFRA STATE (F13 SOVEREIGN decree 2026-10-18) — perintah Arif: 'fix that litellm FED it under AAA infra state'.
 # Bump log: 2026-10-18 333-AGI — owner declared; routing content NOT modified.
 # Bump log: 2026-10-18 333-AGI — reconciled 9 unlogged upstream entries (8x go-* + fed/minimax-tts); NOT deployed (incarnation verify pending).
+# Bump log: 2026-10-20 claude-code-kvm8 (FI-002) — added sovereign-west last-resort rung to all seat ladders + fixed mistral double-prefix; reason: 100% Chinese-origin single-point dependency (live probe evidence in script header).
 # WRITER-OF-RECORD: 333-AGI (accountable), F13 SOVEREIGN (owner). 
 # Concurrency rule: one writer at a time — when editing, bump this line with
 # your actor id + date. Unowned concurrent writes = drift generator (danger list 2026-10-18).
@@ -2068,7 +2069,7 @@ model_list:
     mode: chat
 - model_name: mistral-large-latest
   litellm_params:
-    model: openai/mistral/mistral-large-latest
+    model: openai/mistral-large-latest
     api_base: https://api.mistral.ai/v1
     api_key: os.environ/MISTRAL_API_KEY
     order: 0
@@ -2078,7 +2079,7 @@ model_list:
     max_output_tokens: 128000
 - model_name: codestral-latest
   litellm_params:
-    model: openai/mistral/codestral-latest
+    model: openai/codestral-latest
     api_base: https://api.mistral.ai/v1
     api_key: os.environ/MISTRAL_API_KEY
     order: 0
@@ -2088,7 +2089,7 @@ model_list:
     max_output_tokens: 32000
 - model_name: mistral-small-latest
   litellm_params:
-    model: openai/mistral/mistral-small-latest
+    model: openai/mistral-small-latest
     api_base: https://api.mistral.ai/v1
     api_key: os.environ/MISTRAL_API_KEY
     order: 0
@@ -2096,6 +2097,41 @@ model_list:
   model_info:
     max_input_tokens: 32000
     max_output_tokens: 32000
+# ============================================================
+# SOVEREIGN-WEST — origin-diversified LAST-RESORT rung
+# Added 2026-10-20 by claude-code-kvm8 (FI-002). Work-path probe evidence:
+#   GROQ gpt-oss-120b        -> 200 (W1, deployed here)
+#   GEMINI 3.6-flash/2.5-flash -> 402 prepayment depleted (NOT deployed)
+#   OPENCODE_GO rungs        -> Insufficient account funds (NOT deployed)
+#   OPENROUTER               -> Insufficient credits (NOT deployed)
+#   MISTRAL                  -> billing_payment_failure (prefix bug fixed anyway)
+# CN providers stay primary (cost/capability). This rung exists so a
+# single-origin cut-off degrades the federation instead of stopping it.
+# Caveat: Groq free tier is rate-limited — emergency rung, not production.
+# ============================================================
+- model_name: sovereign-west
+  litellm_params:
+    model: openai/openai/gpt-oss-120b
+    api_base: https://api.groq.com/openai/v1
+    api_key: os.environ/GROQ_API_KEY
+    order: 0
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 32768
+    mode: chat
+    notes: 'sovereign-west W1 — Groq gpt-oss-120b, verified 200 on work path 2026-10-20.'
+- model_name: sovereign-west
+  litellm_params:
+    model: openai/openai/gpt-oss-20b
+    api_base: https://api.groq.com/openai/v1
+    api_key: os.environ/GROQ_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 32768
+    mode: chat
+    notes: 'sovereign-west W2 — Groq gpt-oss-20b, same key.'
+
 litellm_settings:
   callbacks:
   - fed_spend_callback.proxy_handler_instance
@@ -2145,6 +2181,7 @@ router_settings:
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - glm-5.3-flash
+    - sovereign-west
   - agi-333:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
@@ -2152,18 +2189,21 @@ router_settings:
     - mimo-v2.6-flash
     - glm-5.3-flash
     - qwen3.8-max
+    - sovereign-west
   - asi-555:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - mimo-v2.6-flash
     - glm-5.3-flash
+    - sovereign-west
   - apex-888:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - glm-5.3-flash
     - qwen3.8-max
+    - sovereign-west
   - forge-777:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
@@ -2171,121 +2211,150 @@ router_settings:
     - mimo-v2.6-flash
     - glm-5.3-flash
     - qwen3.8-max
+    - sovereign-west
   - forge-scout:
     - mimo-v2.5-pro
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
+    - sovereign-west
   - forge-scout-pro:
     - mimo-v2.6-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
+    - sovereign-west
   - forge-builder:
     - glm-5.3
     - deepseek-v4-pro
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
+    - sovereign-west
   - forge-economy:
     - glm-5.3-flash
     - deepseek-v4-pro
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - mimo-v2.6-flash
+    - sovereign-west
   - forge-judge:
     - mimo-v2.6-flash
     - glm-5.3
+    - sovereign-west
   - forge-planner:
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - glm-5.3-flash
     - mimo-v2.6-flash
+    - sovereign-west
   - openclaw:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - mimo-v2.6-flash
     - glm-5.3-flash
+    - sovereign-west
   - opencode:
     - forge-777
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - glm-5.3-flash
+    - sovereign-west
   - hermes-asi:
     - deepseek-v4-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - mimo-v2.6-flash
     - glm-5.3-flash
+    - sovereign-west
   - qwen3.8-max:
     - mimo-v2.6-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - deepseek-v4-flash
+    - sovereign-west
   - qwen3.6-plus:
     - mimo-v2.6-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - deepseek-v4-flash
+    - sovereign-west
   - mimo-v2.5-pro:
     - mimo-v2.6-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
+    - sovereign-west
   - mimo-v2.6-pro:
     - mimo-v2.6-pro-payg
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
+    - sovereign-west
   - mimo-v2.6-flash:
     - mimo-v2.6-flash-payg
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
+    - sovereign-west
   - mimo-v2.6-pro-ultraspeed:
     - mimo-v2.6-pro-payg
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
+    - sovereign-west
   - mimo-v2.6-pro-payg:
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
+    - sovereign-west
   - mimo-v2.6-flash-payg:
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
+    - sovereign-west
   - mimo-v2.5:
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - glm-5.3
+    - sovereign-west
   - kimi-k3:
     - mimo-v2.6-flash
     - glm-5.3
+    - sovereign-west
   - glm-5.2:
     - glm-5.3
     - mimo-v2.6-flash
+    - sovereign-west
   - glm-5.3:
     - mimo-v2.6-flash
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
+    - sovereign-west
   - MiniMax-M3:
     - mimo-v2.6-flash
     - deepseek-v4-flash
+    - sovereign-west
   - MiniMax-M3.1-Flash-Preview:
     - MiniMax-M3
     - mimo-v2.6-flash
     - deepseek-v4-flash
+    - sovereign-west
   - fed/vision:
     - deepseek-v4-flash-vision
     - qwen3.8-max
+    - sovereign-west
   - hermes-asi-vision:
     - deepseek-v4-flash-vision
     - qwen3.8-max
+    - sovereign-west
   - gemini-2.5-flash:
     - qwen3.8-max
+    - sovereign-west
   - fed/sealion:
     - qwen3.8-max
     - mimo-v2.6-flash
+    - sovereign-west
   - hermes-default:
     - mimo-v2.6-flash
     - mimo-v2.6-pro
     - agi-333
     - go-beam-free
     - go-glm-5.3-flash
+    - sovereign-west
   context_window_fallbacks:
   - agi-333:
     - qwen3.8-max

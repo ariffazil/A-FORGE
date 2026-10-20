@@ -402,10 +402,21 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (["ps", "images", "logs"].includes(mode ?? "")) return "OBSERVE";
     if (mode === "exec") return "EXECUTE_REVERSIBLE";
   }
-  // forge_lease: status/list=OBSERVE, request/revoke=EXECUTE_REVERSIBLE
+  // forge_lease: status/list=OBSERVE, request=OBSERVE, revoke=EXECUTE_REVERSIBLE
+  //
+  // WHY request is OBSERVE (333-AGI 2026-10-20, bootstrap-circularity fix):
+  // it was EXECUTE_REVERSIBLE, and the lease gate ranked it against the caller's
+  // CURRENT lease class. So raising a lease required already holding the class it
+  // grants — nobody could bootstrap out of OBSERVE, and the autonomous-receipt
+  // path (forge_vault) was unreachable for every agent, silently.
+  // Requesting authority is not an action: A-FORGE does not self-issue
+  // ("arifOS mints them"), so the call is a forward of a request and the DECISION
+  // stays with arifOS. It remains session-gated — an unbound caller still fails.
+  // `revoke` stays EXECUTE_REVERSIBLE: that IS a mutation of live authority.
   if (toolName === "forge_lease") {
     if (["status", "list"].includes(mode ?? "")) return "OBSERVE";
-    if (["request", "revoke"].includes(mode ?? "")) return "EXECUTE_REVERSIBLE";
+    if (mode === "request") return "OBSERVE";
+    if (["revoke"].includes(mode ?? "")) return "EXECUTE_REVERSIBLE";
   }
   // forge_postgres: query/schema=OBSERVE (read), query with mutate=true=EXECUTE_HIGH_IMPACT
   if (toolName === "forge_postgres") {
