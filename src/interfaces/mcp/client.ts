@@ -301,7 +301,13 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
         timestamp: Date.now(),
       };
 
-      const precondition = await checkVerdictPrecondition(actionClass, sessionState);
+      // Thread the caller's actor identity into the metabolic gate (888 D2b:
+      // this path previously arrived actor-blind, so GATE 0 held everything
+      // on NO_ACTOR). Args carry actor_id across the federation tool surface.
+      const actorIdFromArgs = (typeof argsRecord.actor_id === "string")
+        ? (argsRecord.actor_id as string)
+        : undefined;
+      const precondition = await checkVerdictPrecondition(actionClass, sessionState, actorIdFromArgs);
       if (!precondition.permitted) {
         const err = new Error(
           `MCP Bridge: Verdict precondition failed for "${canonicalTool}". ` +
