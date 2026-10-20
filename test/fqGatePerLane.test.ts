@@ -70,3 +70,21 @@ test('OBSERVE-class exempt from metabolic gating', async () => {
   const r = await gateToolByFq('OBSERVE', 'forge_observe', 'lane-any');
   assert.equal(r.allowed, true);
 });
+
+test('case/whitespace variance cannot escape a held lane (888 D1)', async () => {
+  mockArifFlow({
+    'lane-held': { held: true, throttled: false, quotient: 0.0, verdict: 'UNKNOWN', diagnosis: 'EXECUTION DOMINANCE' },
+  });
+  const r = await gateToolByFq('MUTATE', 'forge_shell', '  Lane-HELD ');
+  assert.equal(r.allowed, false, 'canonicalization must defeat case-variance evasion of a held lane');
+});
+
+test('unmeasured lane falls back to the global gate and says so (888 D3)', async () => {
+  mockArifFlow({
+    'lane-ghost': { held: false, throttled: false, quotient: null, verdict: 'UNKNOWN', diagnosis: 'no data' },
+  });
+  const r = await gateToolByFq('MUTATE', 'forge_shell', 'lane-ghost');
+  assert.equal(r.allowed, false, 'global fallback (0.2) must hold an unmeasured lane');
+  assert.equal(r.fq!.lane_measured, false, 'receipt must not launder the rollup as a lane measurement');
+  assert.match(r.fq!.reason, /UNMEASURED/);
+});
