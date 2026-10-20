@@ -54,6 +54,7 @@ A-FORGE is the **execution plane** of the arifOS federation. It exposes bounded 
 [![Current gate](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ariffazil/A-FORGE/main/docs/state/badges/gate.json&style=flat-square)](#current-enforcement-model-measured)
 [![Tool registry](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ariffazil/A-FORGE/main/docs/state/badges/tool-registry.json&style=flat-square)](#tool-discovery)
 [![Governance fidelity](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ariffazil/A-FORGE/main/docs/state/badges/fidelity.json&style=flat-square)](#known-defects)
+[![Awesome AI Governance](https://img.shields.io/badge/Awesome-AI_Agent_Governance-orange?style=flat-square)](https://github.com/agentrust-io/awesome-ai-governance#governance-frameworks)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](./LICENSE)
 
 ---
