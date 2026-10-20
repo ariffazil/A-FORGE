@@ -568,8 +568,8 @@ app.post("/execute", async (req: Request, res: Response) => {
     // ── ADAT AGENTIC: Classify action before execution ──
     const actionClass = classifyTool(tool);
 
-    // FQ Metabolic Gate (P0.1)
-    const fqBlock = await gateToolByFq(actionClass, tool);
+    // FQ Metabolic Gate (P0.1) — per-lane when actor is known (doctrine 2026-10-18)
+    const fqBlock = await gateToolByFq(actionClass, tool, actor_id);
     if (!fqBlock.allowed && fqBlock.fq) {
       return res.status(423).json({
         error: 'FQ_GATE', type: 'governance_hold',

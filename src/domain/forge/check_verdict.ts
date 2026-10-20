@@ -520,7 +520,8 @@ export function requiresVerdictCheck(simulationIndex: number): boolean {
 
 export async function gateToolByFq(
   actionClass: string,
-  toolName?: string
+  toolName?: string,
+  actorId?: string,
 ): Promise<{
   allowed: boolean;
   fq?: Awaited<ReturnType<typeof checkFqGate>>;
@@ -539,6 +540,46 @@ export async function gateToolByFq(
   const legacyClass = (actionClass === "IRREVERSIBLE" || actionClass === "EXECUTE_HIGH_IMPACT")
     ? "ATOMIC" : "MUTATE";
 
+  // ── PER-LANE metabolic gate (doctrine dipinda 2026-10-18, selari enjin):
+  //    "Lane FQ sendiri < 0.5 atau held=true → LANE ITU sahaja HOLD;
+  //     lane lain terus jalan. Rollup = pemantauan, bukan gerbang."
+  //    The global rollup below is MONITORING ONLY for attributed mutations;
+  //    it gates only mutations that arrive with NO actor identity (fail-safe
+  //    fallback — unattributed MUTATE path is NOT widened, per the
+  //    2026-08-13 revert lesson: MUTATE path widening requires F13).
+  if (actorId) {
+    const actorGate = await checkActorGate(legacyClass as "MUTATE" | "ATOMIC", actorId);
+    const global = await probeFq(); // monitoring only — never gates an attributed healthy lane
+    const laneQuotient = actorGate.fq;
+    const laneBelowDoctrine = typeof laneQuotient === "number" && laneQuotient < FQ_GATE_THRESHOLD;
+    const laneBlocked = !actorGate.permitted || laneBelowDoctrine;
+
+    if (laneBlocked) {
+      return {
+        allowed: false,
+        fq: {
+          permitted: false,
+          fq: laneQuotient ?? 0,
+          verdict: actorGate.verdict,
+          reason: `FQ_GATE[actor=${actorId}]: ${actorGate.reason}` +
+            (laneBelowDoctrine ? ` Lane FQ=${laneQuotient!.toFixed(3)} < ${FQ_GATE_THRESHOLD}.` : "") +
+            ` Global rollup FQ=${global.quotient.toFixed(3)} [${global.verdict}] = monitoring only.`,
+        },
+      };
+    }
+    return {
+      allowed: true,
+      fq: {
+        permitted: true,
+        fq: laneQuotient ?? global.quotient,
+        verdict: actorGate.verdict,
+        reason: `FQ_GATE[actor=${actorId}]: lane healthy — ${actorGate.reason}` +
+          ` Global rollup FQ=${global.quotient.toFixed(3)} [${global.verdict}] = monitoring only.`,
+      },
+    };
+  }
+
+  // No actor identity → conservative legacy global gate (unchanged behavior).
   const fq = await checkFqGate(legacyClass as "MUTATE" | "ATOMIC");
 
   return { allowed: fq.permitted, fq };

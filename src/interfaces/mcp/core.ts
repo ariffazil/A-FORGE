@@ -608,8 +608,10 @@ const _originalTool = server.tool.bind(server);
     const actionClass = classifyTool(name, toolMode); // runtime classification with mode
 
     // ── FQ Metabolic Gate (P0.1, 2026-08-05) ──
-    // Constitutional HOLD at FQ < 0.50 — FAILS CLOSED on unreachable arifFlow
-    const fqGate = await gateToolByFq(actionClass, name);
+    // Per-lane when actor is known (doctrine 2026-10-18: lane holds alone);
+    // FAILS CLOSED on unreachable arifFlow
+    const fqActor = (typeof argsObj.actor_id === "string") ? argsObj.actor_id : undefined;
+    const fqGate = await gateToolByFq(actionClass, name, fqActor);
     if (!fqGate.allowed && fqGate.fq) {
       return {
         content: [{
@@ -817,8 +819,10 @@ const _originalRegisterTool = server.registerTool.bind(server);
     const actionClass = classifyTool(name, toolMode);
 
     // ── FQ Metabolic Gate (P0.1, 2026-08-05) ──
-    // Constitutional HOLD at FQ < 0.50 — FAILS CLOSED on unreachable arifFlow
-    const fqGateReg = await gateToolByFq(actionClass, name);
+    // Per-lane when actor is known (doctrine 2026-10-18: lane holds alone);
+    // FAILS CLOSED on unreachable arifFlow
+    const fqActorReg = (typeof argsObj.actor_id === "string") ? argsObj.actor_id : undefined;
+    const fqGateReg = await gateToolByFq(actionClass, name, fqActorReg);
     if (!fqGateReg.allowed && fqGateReg.fq) {
       return {
         content: [{
