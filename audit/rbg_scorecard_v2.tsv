@@ -1,0 +1,135 @@
+name	live	f_v1	fiqh_v1	usage_window	usage_count	reg_file	reg_file_date	tests_evidence	family	verdict
+auth_pipeline	true		?	2026-10-16..2026-10-22 journalctl string-mentions	0	src/domain/auth_protocol/pipeline.ts	2026-09-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_abort	true	0.1538	makruh	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts (registration commented out RBG-T3)	2026-10-22	handler-verified-2026-10-21	n/a	REVIEW-COLD
+forge_agent	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	14	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_apex_emd	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_apex_encode	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_apex_goal_status	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_apex_metabolize	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_apex_recompute	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_browser_click	false	0.1894	makruh	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	n/a	RETIRED-2026-10-18 (3f4dd9a1)
+forge_browser_evaluate_js	false	0.2273	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	n/a	RETIRED-2026-10-18 (3f4dd9a1)
+forge_browser_extract_text	false	0.303	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	n/a	RETIRED-2026-10-18 (3f4dd9a1)
+forge_browser_navigate	true	0.2755	harus	2026-10-16..2026-10-22 journalctl string-mentions	1	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_browser_screenshot	false	0.303	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts (handler-retained; registration removed)	2026-10-18	handler-verified-2026-10-21	n/a	RETIRED-2026-10-18 (3f4dd9a1)
+forge_browser_type	false	0.1894	makruh	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	n/a	RETIRED-2026-10-18 (3f4dd9a1)
+forge_calendar	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	1	src/capabilities/google-workspace/forgeGoogleWorkspace.ts	2026-10-18		n/a	FIT-WARM
+forge_canon_recall	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	2	src/interfaces/mcp/proxyTools.ts	2026-09-23		n/a	FIT-WARM
+forge_canonize	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeGitEntropyCanonize.ts	2026-07-31	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_chart	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_check_governance	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	4	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_collect_evidence	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeCompilerTools.ts	2026-09-15		n/a	KEEP-COLD-STANDBY
+forge_compile_task	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	1	src/interfaces/mcp/forgeCompilerTools.ts	2026-09-15		n/a	FIT-WARM
+forge_compose	true	0.2219	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeComposeTools.ts	2026-08-20	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_cool	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/coolingVerbs.ts	2026-09-16		n/a	KEEP-COLD-STANDBY
+forge_cool_drift	false	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/serve.ts (handler-retained; registration removed)	2026-10-20	handler-verified-2026-10-21	n/a	RETIRED-2026-09-16 (cbc25cb4 merge)
+forge_cool_pattern	false	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/coolingVerbs.ts	2026-09-16	handler-verified-2026-10-21	cooling-duo	RETIRED-2026-09-16 (cbc25cb4 merge)
+forge_dispatch_lane	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeCompilerTools.ts	2026-09-15		n/a	KEEP-COLD-STANDBY
+forge_docker	true	0.1538	wajib*	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/proxyTools.ts	2026-09-23	handler-verified-2026-10-21	n/a	WAJIB-PINNED
+forge_docket_prep	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_docs_lookup	false	0.4242	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	research-stack	RETIRED-2026-09-16 (2d4d1646)
+forge_docsgpt	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	research-stack	MERGE
+forge_document_ingest	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	4	src/interfaces/mcp/documentIngest.ts	2026-07-09	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_drive	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	1	src/capabilities/google-workspace/forgeGoogleWorkspace.ts	2026-10-18		n/a	FIT-WARM
+forge_entropy_sweep	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	2	src/interfaces/mcp/forgeGitEntropyCanonize.ts	2026-07-31	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_ephemeral	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/ephemeralTools.ts	2026-08-02	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_evaluate	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_execute	true	0.1538	wajib*	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	WAJIB-PINNED
+forge_execute_sealed	true	0.2051	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_experience_query	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/experienceTraceTools.ts	2026-10-01	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_experience_trace	true	0.303	harus	2026-10-16..2026-10-22 journalctl string-mentions	8	src/interfaces/mcp/experienceTraceTools.ts	2026-10-01	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_fetch	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	4	src/interfaces/mcp/proxyTools.ts	2026-09-23	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_filesystem	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	150	src/interfaces/mcp/proxyTools.ts	2026-09-23	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_fingerprint_check	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	2	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_gemini	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/capabilities/gemini/forgeGemini.ts	2026-08-30	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_git	true	0.322	wajib*	2026-10-16..2026-10-22 journalctl string-mentions	2	src/interfaces/mcp/proxyTools.ts	2026-09-23	handler-verified-2026-10-21	n/a	WAJIB-PINNED
+forge_git_commit	true	0.4722	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeGitEntropyCanonize.ts	2026-07-31	handler-verified-2026-10-21	git-commit-wrapper	MERGE
+forge_github	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/proxyTools.ts	2026-09-23	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_github_create_issue	false	0.322	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts (handler-retained; registration removed)	2026-10-18	handler-verified-2026-10-21	github-granular	RETIRED-2026-10-18 (2ac548ab)
+forge_github_create_or_update_file	true	0.322	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	github-granular	MERGE
+forge_github_get_file	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	github-granular	MERGE
+forge_gmail	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	35	src/capabilities/google-workspace/forgeGoogleWorkspace.ts	2026-10-18		n/a	FIT-HOT
+forge_health_check	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	65	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_heart_critique	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	2	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_hf_import	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_isomorphism_check	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_job	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_journalctl	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	7	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_judge_proxy	true	0.5333	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_kernel	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	1	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_lease	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	33	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_lock	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_memory	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	2	src/interfaces/mcp/proxyTools.ts	2026-09-23	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_minimax_search	false	0.4242	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	research-stack	RETIRED-2026-09-16 (2d4d1646)
+forge_netdata_alarms	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_netdata_metrics	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_parallel	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/parallelTools.ts	2026-09-28	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_parallel_cancel	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/parallelTools.ts	2026-09-28	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_parallel_list	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/parallelTools.ts	2026-09-28	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_parallel_status	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/parallelTools.ts	2026-09-28	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_pipeline_run	false	0.1538	makruh	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts (handler-retained; registration removed)	2026-10-22	handler-verified-2026-10-21	n/a	RETIRED-2026-10-18 (3f4dd9a1)
+forge_policy	true	0.2667	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/policyTools.ts	2026-10-01	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_postgres	true	0.2273	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/proxyTools.ts	2026-09-23	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_predict	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_probe	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	6	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_probe_site	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	10	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_proxy_call	false	0.2622	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/serveModern.ts (deleted 2026-10-22 RECEIPT-A 0e895dae)	2026-10-22	handler-verified-2026-10-21	n/a	DEAD-CODE
+forge_reality_loop	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	95	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_receipt_draft	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	10	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_register	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_registry	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	42	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_registry_status	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	24	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_research	false	0.4242	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	n/a	DEAD-CODE
+forge_rsi_dual_rate_fq	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	46	src/interfaces/mcp/rsiTools.ts	2026-10-01		n/a	FIT-HOT
+forge_rsi_impulse_response	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	44	src/interfaces/mcp/rsiTools.ts	2026-10-01		n/a	FIT-HOT
+forge_rsi_state_vector	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/rsiTools.ts	2026-10-01		n/a	KEEP-COLD-STANDBY
+forge_runtime_verify	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/runtimeVerify.ts	2026-10-02	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_sandbox_auto_evict	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts	2026-10-18	handler-verified-2026-10-21	sandbox-evict	ROUTE
+forge_sandbox_list_paused	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_sandbox_pause	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_sandbox_resume	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_sandbox_run	true	0.2273	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_scan	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_scar	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_scar_scan	false	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	n/a (no src registration found)	n/a	handler-verified-2026-10-21	n/a	RETIRED-2026-09-16 (2d4d1646)
+forge_seal	true	0.2051	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_seal_run	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeCompilerTools.ts	2026-09-15		n/a	KEEP-COLD-STANDBY
+forge_search	true	0.4242	sunat	2026-10-16..2026-10-22 journalctl string-mentions	3446	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_security_drift_scan	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/stateAnchorTools.ts	2026-10-03	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_send_confirm	true	0.1538	makruh	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts (registration commented out RBG-T3)	2026-10-22	handler-verified-2026-10-21	n/a	REVIEW-COLD
+forge_session_init	true	0.6333	wajib	2026-10-16..2026-10-22 journalctl string-mentions	229	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_sheets	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	1	src/capabilities/google-workspace/forgeGoogleWorkspace.ts	2026-10-18		n/a	FIT-WARM
+forge_shell	true	0.2179	wajib*	2026-10-16..2026-10-22 journalctl string-mentions	40	src/interfaces/mcp/shell/forgeShell.ts	2026-10-19	handler-verified-2026-10-21	n/a	WAJIB-PINNED
+forge_shell_alert_history	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/shell/forgeShell.ts	2026-10-19	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_shell_dryrun	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	14	src/interfaces/mcp/shell/forgeShell.ts	2026-10-19	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_shell_ledger	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	66	src/interfaces/mcp/shell/forgeShell.ts	2026-10-19	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_shell_status	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/shell/forgeShell.ts	2026-10-19	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_skill	true	0.2273	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_skill_select_query	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/experienceTraceTools.ts	2026-10-01	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_skillstore_read	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_skillstore_write	true	0.2273	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_stage	false	0.2273	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts (handler-retained; registration removed)	2026-10-18	handler-verified-2026-10-21	n/a	RETIRED-2026-10-18 (3f4dd9a1)
+forge_status	true	0.5667	sunat	2026-10-16..2026-10-22 journalctl string-mentions	13	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_surface_audit	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	51	src/interfaces/mcp/surfaceAuditTools.ts	2026-10-01	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_surface_guard	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	66	src/interfaces/mcp/surfaceGuardTools.ts	2026-08-19	handler-verified-2026-10-21	registry-drift-quintet	FIT-HOT
+forge_synthesize	false	0.2273	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts (handler-retained; registration removed)	2026-10-18	handler-verified-2026-10-21	n/a	RETIRED-2026-10-18 (3f4dd9a1)
+forge_tier_bind	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forge8Verbs.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_transfer_confirm	true	0.1538	makruh	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts (registration commented out RBG-T3)	2026-10-22	handler-verified-2026-10-21	n/a	REVIEW-COLD
+forge_trust_score	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTrustTools.ts	2026-08-20	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_vault	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	495	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_verify_timeline	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/verifyTimelineTools.ts	2026-10-01	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_visual_qa	false	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	3	src/interfaces/mcp/core.ts (handler-retained; registration removed)	2026-10-22	handler-verified-2026-10-21	n/a	RETIRED-2026-10-18 (3f4dd9a1)
+forge_visual_seal	false	0.5333	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts (handler-retained; registration removed)	2026-10-22	handler-verified-2026-10-21	witness-seal-family	RETIRED-2026-10-18 (3f4dd9a1)
+forge_vps_cron	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	2	src/interfaces/mcp/stateAnchorTools.ts	2026-10-03	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_vps_ports	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/stateAnchorTools.ts	2026-10-03	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_vps_services	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	6	src/interfaces/mcp/stateAnchorTools.ts	2026-10-03	handler-verified-2026-10-21	n/a	FIT-HOT
+forge_wealth	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	organ-bridges	ROUTE
+forge_web_extract	true	n/a	n/a	2026-10-16..2026-10-22 journalctl string-mentions	1077	src/interfaces/mcp/gatewayTools.ts	2026-10-18		n/a	FIT-HOT
+forge_web_zen	true	0.3333	harus	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/webZenTools.ts	2026-07-30	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_well	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/core.ts	2026-10-22	handler-verified-2026-10-21	organ-bridges	ROUTE
+forge_whoami	false	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/serveModern.ts (deleted 2026-10-22 RECEIPT-A 0e895dae)	2026-10-22	handler-verified-2026-10-21	n/a	DEAD-CODE
+forge_witness	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/forgeTools.ts	2026-10-22	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_wm_gaps	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	2	src/interfaces/mcp/wmQueryTools.ts	2026-10-01	handler-verified-2026-10-21	n/a	FIT-WARM
+forge_wm_quality	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/wmQueryTools.ts	2026-10-01	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_wm_stats	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/wmQueryTools.ts	2026-10-01	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
+forge_worktree	true	0.4	sunat	2026-10-16..2026-10-22 journalctl string-mentions	0	src/interfaces/mcp/gatewayTools.ts	2026-10-18	handler-verified-2026-10-21	n/a	KEEP-COLD-STANDBY
