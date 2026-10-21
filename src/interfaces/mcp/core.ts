@@ -2275,149 +2275,151 @@ import {
   sensitiveOperationURL,
 } from "./elicitation.js";
 
-server.tool(
-  "forge_transfer_confirm",
-  "Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until user accept/decline/cancel.",
-  {
-    amount: z.number().describe("Transfer amount"),
-    recipient: z.string().describe("Recipient identifier"),
-    currency: z.string().default("USD").describe("Currency code"),
-    memo: z.string().optional().describe("Transfer memo"),
-    session_id: z.string().optional(),
-    actor_id: z.string().optional(),
-    lease_id: z.string().optional(),
-  },
-  async ({ amount, recipient, currency, memo }) => {
-    const startedAt = Date.now();
-    await telemetryInvoke("forge_transfer_confirm");
-    try {
-      const elicitReq = tradeConfirmationSchema(
-        `Transfer ${amount.toLocaleString()} ${currency} to ${recipient}` +
-        (memo ? `\nMemo: ${memo}` : "") +
-        `\n\nThis transfer requires explicit human authorization.`,
-      );
-      const result = await elicitUser(server.server, elicitReq);
-      const auth = isGenuineAuthorization(result);
-      const txId = `TX-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+// RETIRED 2026-10-22 (RBG-T3): registration removed; handler retained for potential restore. Ref: /root/work/rbg-scorecard-testreport-2026-10-21.md
+// server.tool(
+//   "forge_transfer_confirm",
+//   "Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until user accept/decline/cancel.",
+//   {
+//     amount: z.number().describe("Transfer amount"),
+//     recipient: z.string().describe("Recipient identifier"),
+//     currency: z.string().default("USD").describe("Currency code"),
+//     memo: z.string().optional().describe("Transfer memo"),
+//     session_id: z.string().optional(),
+//     actor_id: z.string().optional(),
+//     lease_id: z.string().optional(),
+//   },
+//   async ({ amount, recipient, currency, memo }) => {
+//     const startedAt = Date.now();
+//     await telemetryInvoke("forge_transfer_confirm");
+//     try {
+//       const elicitReq = tradeConfirmationSchema(
+//         `Transfer ${amount.toLocaleString()} ${currency} to ${recipient}` +
+//         (memo ? `\nMemo: ${memo}` : "") +
+//         `\n\nThis transfer requires explicit human authorization.`,
+//       );
+//       const result = await elicitUser(server.server, elicitReq);
+//       const auth = isGenuineAuthorization(result);
+//       const txId = `TX-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+//
+//       if (auth.authorized) {
+//         await telemetrySuccess("forge_transfer_confirm", startedAt, undefined, { action: "authorized" });
+//         return {
+//           content: [{
+//             type: "text" as const,
+//             text: JSON.stringify({
+//               status: "AUTHORIZED",
+//               tx_id: txId,
+//               amount,
+//               currency,
+//               recipient,
+//               memo: memo ?? null,
+//               authorization: {
+//                 method: "form_mode_elicitation",
+//                 action: result.action,
+//                 notes: result.content?.notes ?? null,
+//                 timestamp: new Date().toISOString(),
+//               },
+//               _epistemic: { output_class: "GOVERNANCE_TEMPLATE", authority_claim: "EXECUTIVE" },
+//             }, null, 2),
+//           }],
+//         };
+//       }
+//
+//       await telemetrySuccess("forge_transfer_confirm", startedAt, undefined, { action: "blocked" });
+//       return {
+//         content: [{
+//           type: "text" as const,
+//           text: JSON.stringify({
+//             status: "BLOCKED",
+//             gate: "ELICITATION_DECLINED",
+//             reason: auth.reason,
+//             amount,
+//             currency,
+//             recipient,
+//             elicit_action: result.action,
+//           }, null, 2),
+//         }],
+//         isError: true,
+//       };
+//     } catch (err) {
+//       await telemetryFailure("forge_transfer_confirm", startedAt, err);
+//       throw err;
+//     }
+//   }
+// );
 
-      if (auth.authorized) {
-        await telemetrySuccess("forge_transfer_confirm", startedAt, undefined, { action: "authorized" });
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              status: "AUTHORIZED",
-              tx_id: txId,
-              amount,
-              currency,
-              recipient,
-              memo: memo ?? null,
-              authorization: {
-                method: "form_mode_elicitation",
-                action: result.action,
-                notes: result.content?.notes ?? null,
-                timestamp: new Date().toISOString(),
-              },
-              _epistemic: { output_class: "GOVERNANCE_TEMPLATE", authority_claim: "EXECUTIVE" },
-            }, null, 2),
-          }],
-        };
-      }
-
-      await telemetrySuccess("forge_transfer_confirm", startedAt, undefined, { action: "blocked" });
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({
-            status: "BLOCKED",
-            gate: "ELICITATION_DECLINED",
-            reason: auth.reason,
-            amount,
-            currency,
-            recipient,
-            elicit_action: result.action,
-          }, null, 2),
-        }],
-        isError: true,
-      };
-    } catch (err) {
-      await telemetryFailure("forge_transfer_confirm", startedAt, err);
-      throw err;
-    }
-  }
-);
-
-server.tool(
-  "forge_send_confirm",
-  "Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensitive credentials). F13 consent gate.",
-  {
-    destination: z.string().describe("Destination identifier (URL, email, API endpoint)"),
-    payload_summary: z.string().default("").describe("Summary of payload being sent (never send raw secrets here)"),
-    sensitive: z.boolean().default(false).describe("If true, uses URL-mode elicitation for out-of-band auth"),
-    session_id: z.string().optional(),
-    actor_id: z.string().optional(),
-    lease_id: z.string().optional(),
-  },
-  async ({ destination, payload_summary, sensitive }) => {
-    const startedAt = Date.now();
-    await telemetryInvoke("forge_send_confirm");
-    try {
-      if (sensitive) {
-        // URL mode — for credentials, API keys, tokens
-        // Returns -32042 if client doesn't support URL elicitation
-        const elicitId = `send-${Date.now().toString(36)}`;
-        const urlReq = sensitiveOperationURL(
-          elicitId,
-          `Sensitive data transmission to: ${destination}\nPayload: ${payload_summary}`,
-          `https://mcp.arif-fazil.com/elicit/${elicitId}`,
-        );
-        const result = await elicitUser(server.server, urlReq);
-        const auth = isGenuineAuthorization(result);
-
-        await telemetrySuccess("forge_send_confirm", startedAt, undefined, { action: result.action, mode: "url" });
-        return {
-          content: [{
-            type: "text" as const,
-            text: JSON.stringify({
-              status: auth.authorized ? "AUTHORIZED" : "BLOCKED",
-              gate: auth.authorized ? "URL_ELICITATION_PASSED" : "URL_ELICITATION_DECLINED",
-              destination,
-              sensitive: true,
-              method: "url_mode_elicitation",
-              reason: auth.reason,
-            }, null, 2),
-          }],
-          isError: !auth.authorized,
-        };
-      }
-
-      // Form mode — standard confirmation
-      const elicitReq = sendConfirmationSchema(destination, payload_summary || "(no summary)");
-      const result = await elicitUser(server.server, elicitReq);
-      const auth = isGenuineAuthorization(result);
-
-      await telemetrySuccess("forge_send_confirm", startedAt, undefined, { action: result.action, mode: "form" });
-      return {
-        content: [{
-          type: "text" as const,
-          text: JSON.stringify({
-            status: auth.authorized ? "AUTHORIZED" : "BLOCKED",
-            gate: auth.authorized ? "FORM_ELICITATION_PASSED" : "FORM_ELICITATION_DECLINED",
-            destination,
-            sensitive: false,
-            method: "form_mode_elicitation",
-            reason: auth.reason,
-            notes: result.content?.notes ?? null,
-          }, null, 2),
-        }],
-        isError: !auth.authorized,
-      };
-    } catch (err) {
-      await telemetryFailure("forge_send_confirm", startedAt, err);
-      throw err;
-    }
-  }
-);
+// RETIRED 2026-10-22 (RBG-T3): registration removed; handler retained for potential restore. Ref: /root/work/rbg-scorecard-testreport-2026-10-21.md
+// server.tool(
+//   "forge_send_confirm",
+//   "Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensitive credentials). F13 consent gate.",
+//   {
+//     destination: z.string().describe("Destination identifier (URL, email, API endpoint)"),
+//     payload_summary: z.string().default("").describe("Summary of payload being sent (never send raw secrets here)"),
+//     sensitive: z.boolean().default(false).describe("If true, uses URL-mode elicitation for out-of-band auth"),
+//     session_id: z.string().optional(),
+//     actor_id: z.string().optional(),
+//     lease_id: z.string().optional(),
+//   },
+//   async ({ destination, payload_summary, sensitive }) => {
+//     const startedAt = Date.now();
+//     await telemetryInvoke("forge_send_confirm");
+//     try {
+//       if (sensitive) {
+//         // URL mode — for credentials, API keys, tokens
+//         // Returns -32042 if client doesn't support URL elicitation
+//         const elicitId = `send-${Date.now().toString(36)}`;
+//         const urlReq = sensitiveOperationURL(
+//           elicitId,
+//           `Sensitive data transmission to: ${destination}\nPayload: ${payload_summary}`,
+//           `https://mcp.arif-fazil.com/elicit/${elicitId}`,
+//         );
+//         const result = await elicitUser(server.server, urlReq);
+//         const auth = isGenuineAuthorization(result);
+//
+//         await telemetrySuccess("forge_send_confirm", startedAt, undefined, { action: result.action, mode: "url" });
+//         return {
+//           content: [{
+//             type: "text" as const,
+//             text: JSON.stringify({
+//               status: auth.authorized ? "AUTHORIZED" : "BLOCKED",
+//               gate: auth.authorized ? "URL_ELICITATION_PASSED" : "URL_ELICITATION_DECLINED",
+//               destination,
+//               sensitive: true,
+//               method: "url_mode_elicitation",
+//               reason: auth.reason,
+//             }, null, 2),
+//           }],
+//           isError: !auth.authorized,
+//         };
+//       }
+//
+//       // Form mode — standard confirmation
+//       const elicitReq = sendConfirmationSchema(destination, payload_summary || "(no summary)");
+//       const result = await elicitUser(server.server, elicitReq);
+//       const auth = isGenuineAuthorization(result);
+//
+//       await telemetrySuccess("forge_send_confirm", startedAt, undefined, { action: result.action, mode: "form" });
+//       return {
+//         content: [{
+//           type: "text" as const,
+//           text: JSON.stringify({
+//             status: auth.authorized ? "AUTHORIZED" : "BLOCKED",
+//             gate: auth.authorized ? "FORM_ELICITATION_PASSED" : "FORM_ELICITATION_DECLINED",
+//             destination,
+//             sensitive: false,
+//             method: "form_mode_elicitation",
+//             reason: auth.reason,
+//             notes: result.content?.notes ?? null,
+//           }, null, 2),
+//         }],
+//         isError: !auth.authorized,
+//       };
+//     } catch (err) {
+//       await telemetryFailure("forge_send_confirm", startedAt, err);
+//       throw err;
+//     }
+//   }
+// );
 
 // ── Tier 06 Stewardship (Vault) ──────────────────────────────────────────────
 

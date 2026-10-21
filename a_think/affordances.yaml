@@ -2,6 +2,9 @@
 _comment: A-FORGE Affordance Cards — federation align v2. Actuators not plugins. Deny via gate/lease/SEAL only.
 tools:
 - name: forge_abort
+  deprecated: true
+  retirement_reason: "forge_abort registration removed from live MCP surface 2026-10-22 (REVIEW-COLD, 0 usage both journal windows); handler retained in src for potential restore. RBG-T3."
+  retirement_measured: "2026-10-22 rbg-scorecard-testreport-2026-10-21.md T2 + RECEIPT-B"
   purpose: ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Safe stop + rollback for running execution. Requires lease or session auth. P2.3 canonical gap fill.
   affordance_class: execute
   capability_surface: aforge.execute.abort
@@ -1427,6 +1430,9 @@ tools:
   min_mode: THINK
   risk_label: R0
 - name: forge_send_confirm
+  deprecated: true
+  retirement_reason: "forge_send_confirm registration removed from live MCP surface 2026-10-22 (REVIEW-COLD, 0 usage both journal windows); handler retained in src for potential restore. RBG-T3."
+  retirement_measured: "2026-10-22 rbg-scorecard-testreport-2026-10-21.md T2 + RECEIPT-B"
   purpose: ACTUATOR · confirm · MUTATE. Send data with human confirmation via elicitation. Supports form mode (standard) and URL mode (sensitive credentials). F13 consent gate.
   affordance_class: confirm
   capability_surface: aforge.confirm.send_confirm
@@ -1465,6 +1471,9 @@ tools:
   min_mode: GOVERN
   risk_label: R3
 - name: forge_transfer_confirm
+  deprecated: true
+  retirement_reason: "forge_transfer_confirm registration removed from live MCP surface 2026-10-22 (REVIEW-COLD, 0 usage both journal windows); handler retained in src for potential restore. RBG-T3."
+  retirement_measured: "2026-10-22 rbg-scorecard-testreport-2026-10-21.md T2 + RECEIPT-B"
   purpose: ACTUATOR · confirm · MUTATE. Transfer funds with human confirmation via form-mode elicitation. F13 consent gate. Blocks until user accept/decline/cancel.
   affordance_class: confirm
   capability_surface: aforge.confirm.transfer_confirm

@@ -990,37 +990,38 @@ export function registerStatusTools(server: McpServer): void {
   );
 
   // ── P2.3: forge_abort — Safe stop + rollback ──────────────────────────────
-  server.tool(
-    "forge_abort",
-    "Safe stop + rollback for running execution. Requires lease or session auth. P2.3 canonical gap fill.",
-    {
-      target: z.enum(["job", "lease", "pipeline"]).describe("What to abort"),
-      target_id: z.string().describe("ID of the target to abort"),
-      reason: z.string().describe("Why this abort is happening"),
-      rollback: z.boolean().default(true).describe("Attempt rollback if applicable"),
-    },
-    async ({ target, target_id, reason, rollback }: { target: string; target_id: string; reason: string; rollback: boolean }) => {
-      const log: string[] = [];
-      if (target === "job") {
-        const job = jobStore.get(target_id);
-        if (!job) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Job '${target_id}' not found` }, null, 2) }], isError: true };
-        job.status = "failed";
-        job.error = `Aborted: ${reason}`;
-        job.completed_at = new Date().toISOString();
-        log.push(`Job ${target_id} set to failed`);
-      }
-      if (target === "lease") {
-        const lease = activeLeases.get(target_id);
-        if (!lease) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Lease '${target_id}' not found` }, null, 2) }], isError: true };
-        lease.revoked = true;
-        log.push(`Lease ${target_id} revoked`);
-      }
-      if (target === "pipeline") {
-        log.push(`Pipeline ${target_id} abort requested. Manual verification required.`);
-      }
-      return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", target, target_id, reason, rollback, actions: log }, null, 2) }] };
-    }
-  );
+  // RETIRED 2026-10-22 (RBG-T3): registration removed; handler retained for potential restore. Ref: /root/work/rbg-scorecard-testreport-2026-10-21.md
+//     server.tool(
+//       "forge_abort",
+//       "Safe stop + rollback for running execution. Requires lease or session auth. P2.3 canonical gap fill.",
+//       {
+//         target: z.enum(["job", "lease", "pipeline"]).describe("What to abort"),
+//         target_id: z.string().describe("ID of the target to abort"),
+//         reason: z.string().describe("Why this abort is happening"),
+//         rollback: z.boolean().default(true).describe("Attempt rollback if applicable"),
+//       },
+//       async ({ target, target_id, reason, rollback }: { target: string; target_id: string; reason: string; rollback: boolean }) => {
+//         const log: string[] = [];
+//         if (target === "job") {
+//           const job = jobStore.get(target_id);
+//           if (!job) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Job '${target_id}' not found` }, null, 2) }], isError: true };
+//           job.status = "failed";
+//           job.error = `Aborted: ${reason}`;
+//           job.completed_at = new Date().toISOString();
+//           log.push(`Job ${target_id} set to failed`);
+//         }
+//         if (target === "lease") {
+//           const lease = activeLeases.get(target_id);
+//           if (!lease) return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Lease '${target_id}' not found` }, null, 2) }], isError: true };
+//           lease.revoked = true;
+//           log.push(`Lease ${target_id} revoked`);
+//         }
+//         if (target === "pipeline") {
+//           log.push(`Pipeline ${target_id} abort requested. Manual verification required.`);
+//         }
+//         return { content: [{ type: "text" as const, text: JSON.stringify({ status: "SEAL", target, target_id, reason, rollback, actions: log }, null, 2) }] };
+//       }
+//     );
 }
 
 // ── Initialize ────────────────────────────────────────────────────────────────
