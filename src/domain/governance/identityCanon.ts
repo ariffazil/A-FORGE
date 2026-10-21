@@ -85,6 +85,15 @@ const REGISTRY: ReadonlyArray<readonly [string, string]> = [
 
 const REGISTRY_MAP: ReadonlyMap<string, string> = new Map(REGISTRY);
 
+// F13 2026-10-22: role/power strings are not names — they resolve to nothing
+// in every lane (mirror of contracts/identity_canon.py ROLE_STRING_BLOCKLIST).
+const ROLE_STRING_BLOCKLIST: ReadonlySet<string> = new Set([
+  "f13",
+  "sovereign",
+  "888",
+  "arif-fazil.com",
+]);
+
 function mechanical(raw: string): string {
   return raw
     .trim()
@@ -93,11 +102,12 @@ function mechanical(raw: string): string {
     .replace(/-{2,}/g, "-");
 }
 
-/** Resolve a raw handle to its canonical form (registry first, slash head/tail, mechanical fallback). */
+/** Resolve a raw handle to its canonical form (blocklist, registry, slash head/tail, mechanical fallback). */
 export function canonicalActorId(raw: string | null | undefined): string | null {
   if (raw === null || raw === undefined) return null;
   const text = String(raw).trim();
   if (!text) return null;
+  if (ROLE_STRING_BLOCKLIST.has(text.toLowerCase())) return null;
   const hit = REGISTRY_MAP.get(text.toLowerCase());
   if (hit) return hit;
   // Slash path (mirrors contracts/identity.py): `claude/opus-5.5` resolves

@@ -81,3 +81,20 @@ test("Amanah release semantics: same principal different case releases", () => {
   assert.ok(samePrincipal("ARIF_FAZIL", "arif-fazil"));
   assert.ok(!samePrincipal("arif", "333-agi"));
 });
+
+test("F13 2026-10-22: role strings resolve to nothing — never to a principal", () => {
+  // 'f13'/'sovereign'/'888' are power names, not person names. Resolving them
+  // to ARIF would let anyone claim sovereignty with a string.
+  for (const raw of ["f13", "sovereign", "888", "arif-fazil.com"]) {
+    assert.strictEqual(canonicalActorId(raw), null, `${raw} must resolve to nothing`);
+    assert.strictEqual(comparisonKey(raw), null, `${raw} must have no comparison key`);
+    assert.ok(!samePrincipal(raw, "arif"), `${raw} must not be the sovereign principal`);
+  }
+});
+
+test("F13-approved person-name aliases resolve to the sovereign principal", () => {
+  for (const alias of ["arif_fazil", "muhammad arif"]) {
+    assert.strictEqual(canonicalActorId(alias), "ARIF");
+    assert.ok(samePrincipal(alias, "arif-fazil"));
+  }
+});
