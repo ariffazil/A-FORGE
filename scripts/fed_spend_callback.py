@@ -11,13 +11,20 @@ tokens_out, estimated_cost_usd, called_at.
 Failures are silently caught so the proxy never crashes on a callback error
 (F1: witness, not act; per-call accounting must never block the lane).
 """
+
 import os
 import sqlite3
 import datetime
+import sys
 
 from litellm.integrations.custom_logger import CustomLogger
 
 DB = "/app/data/token_bank.db"
+
+# 2026-10-21 ACAH2 — silent `except Exception: pass` hid spend-callback
+# breakage for weeks (token_bank staleness was the exact symptom). Bounded
+# visibility: first 5 failures + every 100th go to stderr, never crash proxy.
+_FAIL_COUNT = [0]
 
 
 class FedSpendCallback(CustomLogger):
@@ -36,22 +43,24 @@ class FedSpendCallback(CustomLogger):
                 or "unknown"
             )
             agent_id = (
-                kwargs.get("user_api_key_user_id")
-                or kwargs.get("user_id")
-                or "unknown"
+                kwargs.get("user_api_key_user_id") or kwargs.get("user_id") or "unknown"
             )
 
             usage = getattr(response_obj, "usage", None)
             tokens_in = int(getattr(usage, "prompt_tokens", 0) or 0) if usage else 0
-            tokens_out = int(getattr(usage, "completion_tokens", 0) or 0) if usage else 0
+            tokens_out = (
+                int(getattr(usage, "completion_tokens", 0) or 0) if usage else 0
+            )
 
             cost = float(hidden.get("response_cost", 0.0) or 0.0)
 
-            called_at = datetime.datetime.utcnow().strftime(
-                "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
+            called_at = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
-            con = sqlite3.connect(DB, timeout=2.0)
+            con = sqlite3.connect(DB, timeout=5.0)
+            # WAL + busy_timeout: spend writes must not starve under the
+            # proxy's read load (timeout=2.0 alone lost the race).
+            con.execute("PRAGMA journal_mode=WAL")
+            con.execute("PRAGMA busy_timeout=5000")
             con.execute(
                 "INSERT INTO token_bank_spend "
                 "(provider_name, model_id, agent_id, tokens_in, tokens_out, "
@@ -69,17 +78,21 @@ class FedSpendCallback(CustomLogger):
             )
             con.commit()
             con.close()
-        except Exception:
-            # Never crash the proxy on callback error (F1 witness, not act).
-            pass
+        except Exception as e:
+            # Never crash the proxy on callback error (F1 witness, not act) —
+            # but never hide it either. Bounded stderr visibility.
+            _FAIL_COUNT[0] += 1
+            n = _FAIL_COUNT[0]
+            if n <= 5 or n % 100 == 0:
+                print(
+                    f"[fed_spend_callback] write failed x{n}: {e}",
+                    file=sys.stderr,
+                    flush=True,
+                )
 
-    async def async_log_success_event(
-        self, kwargs, response_obj, start_time, end_time
-    ):
+    async def async_log_success_event(self, kwargs, response_obj, start_time, end_time):
         # Async wrapper — proxy may call this for streaming responses.
-        return self.log_success_event(
-            kwargs, response_obj, start_time, end_time
-        )
+        return self.log_success_event(kwargs, response_obj, start_time, end_time)
 
 
 # LiteLLM callback loader requires an INSTANCE, not a class.
