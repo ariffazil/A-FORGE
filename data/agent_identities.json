@@ -658,10 +658,11 @@
     "description": "333-AGI bound to opencode",
     "identity_proof": {
       "type": "ed25519",
-      "public_key_b64": "y3R6wR6GmYoIEsSQlEuvwQoY7Mq/1p+Vxk0/rfgHeUs=",
-      "public_key_hex": "cb747ac11e86998a0812c490944bafc10a18eccabfd69f95c64d3fadf807794b",
-      "verified_at": "2026-08-12T22:00:00Z",
-      "method": "ed25519_seed_rotation"
+      "public_key_b64": "tNw2giSs+BuT59z+vzQeNfZrkcg5ipWnlle+18upGwM=",
+      "public_key_hex": "b4dc368224acf81b93e7dcfebf341e35f66b91c8398a95a79657bed7cba91b03",
+      "verified_at": "2026-10-20T12:00:00Z",
+      "method": "reconcile_to_held_key_20261020",
+      "_reconcile_note": "previous public_key_b64=y3R6wR6GmYoIEsSQlEuvwQoY7Mq/1p+Vxk0/rfgHeUs= had NO private key on this host (scanned all *.pem + identity.key). Resolver reads /root/AAA/IDENTITY/keys/*_public.pem FIRST, so the stale value was inert-but-misleading. Aligned to the held PEM pair."
     },
     "parent_agent": null
   }
