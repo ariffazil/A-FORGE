@@ -56,6 +56,16 @@ GUARD_ON = os.environ.get("ARIF_CONTEXT_GUARD", "on").lower() not in (
     "off",
 )
 
+# Dedicated kill switch & target for authorized production canary (2026-10-21)
+BUDGET_GATE_ON = os.environ.get("ARIF_FALLBACK_BUDGET_GATE", "on").lower() not in (
+    "",
+    "0",
+    "false",
+    "off",
+)
+BUDGET_GATE_ROUTE = "go-gpt-6-luna"
+BUDGET_PER_CALL_CAP_USD = float(os.environ.get("ARIF_BUDGET_PER_CALL_CAP_USD", "0.25"))
+
 _FAIL_COUNT = [0]
 _LOOP_WIN = {}  # (key_alias:body_hash) -> [count, window_start_ts]
 
@@ -200,6 +210,37 @@ def _audit(event: dict) -> None:
         pass
 
 
+def _check_route_budget(model: str, messages, tools) -> tuple[bool, dict]:
+    """Pre-dispatch budget check for authorized canary route only."""
+    import time
+    # Approximate pricing: $10/M input tokens for go-gpt-6-luna
+    est_tokens = _estimate(model, messages, tools)
+    est_cost = est_tokens * (10.0 / 1_000_000.0)
+    allowed = est_cost <= BUDGET_PER_CALL_CAP_USD
+    decision = "ALLOW" if allowed else "HOLD"
+    reason = (
+        "Within budget envelope"
+        if allowed
+        else f"Estimated call cost ${est_cost:.4f} exceeds per-call ceiling ${BUDGET_PER_CALL_CAP_USD:.2f}"
+    )
+    raw = f"{model}:{est_tokens}:{est_cost}:{decision}:{reason}"
+    receipt_hash = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    receipt = {
+        "event": "budget_gate_decision",
+        "receipt_id": f"rcpt-bgt-{receipt_hash[:12]}",
+        "receipt_hash": f"sha256:{receipt_hash}",
+        "model": model,
+        "decision": decision,
+        "allowed": allowed,
+        "est_tokens": est_tokens,
+        "est_cost_usd": round(est_cost, 6),
+        "per_call_cap_usd": BUDGET_PER_CALL_CAP_USD,
+        "reason": reason,
+        "timestamp": time.time(),
+    }
+    return allowed, receipt
+
+
 class FedContextGuard(CustomGuardrail):
     """Pre-call context guardrail. Raises HTTPException to reject."""
 
@@ -214,6 +255,35 @@ class FedContextGuard(CustomGuardrail):
                 return data
             messages = data.get("messages") or []
             tools = data.get("tools")
+
+            # CANARY: Pre-dispatch budget gate for authorized route (go-gpt-6-luna)
+            if BUDGET_GATE_ON and model == BUDGET_GATE_ROUTE:
+                ok, bgt_receipt = _check_route_budget(model, messages, tools)
+                _audit(bgt_receipt)
+                if not ok:
+                    hdrs = _request_headers(data)
+                    key_alias = _key_suffix(user_api_key_dict)
+                    if _override_valid(hdrs):
+                        _audit({
+                            "event": "budget_override",
+                            "receipt_id": bgt_receipt["receipt_id"],
+                            "model": model,
+                            "key": key_alias,
+                        })
+                    else:
+                        raise HTTPException(
+                            status_code=413,
+                            detail={
+                                "error": "budget_gate",
+                                "kind": "hold",
+                                "receipt_id": bgt_receipt["receipt_id"],
+                                "receipt_hash": bgt_receipt["receipt_hash"],
+                                "reason": bgt_receipt["reason"],
+                                "est_cost_usd": bgt_receipt["est_cost_usd"],
+                                "limit_usd": BUDGET_PER_CALL_CAP_USD,
+                                "model": model,
+                            },
+                        )
             chars = _char_len(messages, tools)
             if chars <= 0:
                 return data
@@ -314,6 +384,8 @@ print(
     f"[fed_context_guard] loaded warn={WARN} hold={HOLD} "
     f"loop_max={LOOP_MAX} loop_window_s={LOOP_WINDOW_S} "
     f"guard_on={GUARD_ON} override={'on' if OVERRIDE_SECRET else 'off'} "
+    f"budget_gate={'on' if BUDGET_GATE_ON else 'off'} "
+    f"budget_route={BUDGET_GATE_ROUTE} cap=${BUDGET_PER_CALL_CAP_USD} "
     f"models={MODELS or 'ALL'}",
     file=sys.stderr,
     flush=True,

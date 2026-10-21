@@ -12,11 +12,18 @@ S={k:{os.path.basename(dp):hashlib.sha256(open(os.path.join(dp,'SKILL.md'),'rb')
       for dp,dn,fn in os.walk(v) if 'SKILL.md' in fn} for k,v in stores.items()}
 parts=[]
 for a,b in [('kimi','aaa'),('aaa','hermes'),('kimi','hermes')]:
-    i=set(S[a])&set(S[b]); s=sum(1 for n in i if S[a][n]==S[b][n])
+    i=set(S[a])&set(S[b])
+    if not i:
+        parts.append(f"{a}<->{b}=NO-OVERLAP({len(S[a])}v{len(S[b])})")
+        continue
+    s=sum(1 for n in i if S[a][n]==S[b][n])
     parts.append(f"{a}<->{b}={s/len(i)*100:.1f}%")
 i3=set(S['kimi'])&set(S['aaa'])&set(S['hermes'])
-s3=sum(1 for n in i3 if len({S[x][n] for x in stores})==1)
-parts.append(f"triple={s3/len(i3)*100:.1f}%")
+if i3:
+    s3=sum(1 for n in i3 if len({S[x][n] for x in stores})==1)
+    parts.append(f"triple={s3/len(i3)*100:.1f}%")
+else:
+    parts.append("triple=NO-OVERLAP")
 print("mesh_fidelity:", " | ".join(parts))
 EOF
 
@@ -25,7 +32,7 @@ LINKS=$(timeout 90 bash /root/AAA/skills/scripts/skill-mesh-sync.sh --check 2>/d
 echo "mesh_links: ${LINKS:-UNAVAILABLE}"
 
 # 3) VAULT999 chain verdict (official verifier, read-only)
-VAULT=$(timeout 90 python3 /root/arifOS/scripts/verify_vault_chain.py 2>/dev/null | grep -o '"overall": *"[A-Z]*"' | head -1 | grep -o '[A-Z]*"$' | tr -d '"')
+VAULT=$(timeout 90 python3 /root/arifOS/scripts/verify_vault_chain.py 2>/dev/null | grep -o '"overall": *"[A-Z_]*"' | head -1 | sed 's/.*"\([A-Z_]*\)"$/\1/')
 echo "vault_chain: ${VAULT:-UNAVAILABLE}"
 
 # 4) Metabolism (arifFlow vector diagnosis + FQ)

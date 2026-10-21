@@ -36,8 +36,8 @@
         "lastFailure": 0,
         "openUntil": 0
       },
-      "lastSuccessAt": 1792491975630,
-      "successCount": 868,
+      "lastSuccessAt": 1792579906273,
+      "successCount": 877,
       "failureCount": 6
     },
     "serpapi": {
@@ -59,8 +59,8 @@
         "hard": 3
       },
       "wins": {
-        "easy": 363,
-        "medium": 295,
+        "easy": 368,
+        "medium": 299,
         "hard": 210
       },
       "losses": {
@@ -87,6 +87,6 @@
       }
     }
   },
-  "updatedAt": "2026-10-20T10:26:15.630Z",
-  "restartCount": 15
+  "updatedAt": "2026-10-21T10:51:46.274Z",
+  "restartCount": 17
 }
