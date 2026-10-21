@@ -12,6 +12,12 @@
 import { createHash, randomBytes } from "node:crypto";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
+import { createRequire } from "node:module";
+import { samePrincipal } from "./identityCanon.js";
+
+// SCAR-001 ESM binding (2026-10-22): lazy require("pg") needs a createRequire
+// binding in this ESM package — preserves the optional-dependency semantics.
+const require = createRequire(import.meta.url);
 
 export interface AmanahLockRecord {
   lock_id: string;
@@ -126,8 +132,11 @@ export class AmanahLockManager {
     // 1. Check existing active lock
     const existing = await this.getActiveLock(resourceId);
     if (existing) {
-      // P0 BOUNDARY FIX (2026-07-29): case-insensitive actor matching
-      if (String(existing.actor_id).trim().toLowerCase() === String(actorId).trim().toLowerCase()
+      // IDENTITY_CANON v1 (2026-10-22): same-principal comparison per
+      // contracts/IDENTITY_CANON.md — replaces the bare case-fold so
+      // claude/opus-5.5 vs CLAUDE, mesa-test-agent vs mesa_test_agent and
+      // ARIF_FAZIL vs arif all resolve to one principal.
+      if (samePrincipal(existing.actor_id, actorId)
           && existing.session_id === sessionId) {
         return {
           granted: true,
@@ -181,8 +190,8 @@ export class AmanahLockManager {
     if (!record) {
       return { released: false, verdict: "VOID", message: `Lock ${lockId} not found` };
     }
-    // P0 BOUNDARY FIX (2026-07-29): case-insensitive actor matching
-    if (String(record.actor_id).trim().toLowerCase() !== String(actorId).trim().toLowerCase()) {
+    // IDENTITY_CANON v1 (2026-10-22): same-principal comparison (see acquireLock).
+    if (!samePrincipal(record.actor_id, actorId)) {
       return {
         released: false,
         verdict: "VOID",

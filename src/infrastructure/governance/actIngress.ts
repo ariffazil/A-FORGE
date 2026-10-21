@@ -13,6 +13,7 @@
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
+import { samePrincipal } from "../../domain/governance/identityCanon.js";
 
 const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
 const ACT_DECISION_EVENT_DIR =
@@ -480,10 +481,19 @@ export function verifyLocalAct(
         ? canonicalizeActor(String(claims.delegated_from))
         : null;
 
+      // IDENTITY_CANON v1 (2026-10-22): same-principal check FIRST — one rule
+      // for every surface (contracts/IDENTITY_CANON.md). The scattered
+      // SOVEREIGN_IDENTITY_MAP / ACTOR_ALIAS_MAP scar patches above are
+      // demoted to legacy fallback; `claude/opus-5.5` vs `CLAUDE`,
+      // `arif-fazil` vs `arif`, `ARIF_FAZIL` vs `ariffazil` all resolve.
+      const samePrin = samePrincipal(rawActor, String(opts.expectedActor));
+
       // Path (a): Direct actor match
-      const directMatch = actor === expected;
+      const directMatch = actor === expected || samePrin;
       // Path (b): Delegation — the ACT's delegator matches the caller
-      const delegationMatch = delegatedFrom !== null && delegatedFrom === expected;
+      const delegationMatch =
+        (delegatedFrom !== null && delegatedFrom === expected) ||
+        (claims.delegated_from ? samePrincipal(String(claims.delegated_from), String(opts.expectedActor)) : false);
       // Path (c): Audience — ACT was minted for a specific domain
       const audienceMatch = false; // Reserved for aud claim check (Phase 2)
 
