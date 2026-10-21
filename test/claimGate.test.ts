@@ -36,6 +36,11 @@ const NARRATIVE_TEXT = "The restructuring was destiny; the agency is naturally b
 const UNCLASSIFIED_TEXT = "it did not work because things are simply like that";
 
 const kernelPresent = fs.existsSync(CLAIM_KERNEL_PATH);
+// FLAKY TAG 2026-10-22 (lane rbg, principal directive: no silent baseline):
+// the POST /execute e2e below fails intermittently on identical trees
+// (330/330 vs 329/330; runs 2026-10-22; failure predates 0e895dae/a845cfe4,
+// present at baseline 5fb55448). Skip reason carries the tracking issue.
+const FLAKY_REASON = "FLAKY 2026-10-22: intermittent e2e failure, tracked in https://github.com/ariffazil/A-FORGE/issues/129";
 const live = { skip: kernelPresent ? false : `claim_kernel absent at ${CLAIM_KERNEL_PATH}` };
 
 let savedGate: string | undefined;
@@ -292,7 +297,7 @@ describe("claimGate - ingress wiring", () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe("claimGate - POST /execute end-to-end", () => {
-  it("refuses a mutation justified by a NARRATIVE claim (HTTP 423)", live, async () => {
+  it("refuses a mutation justified by a NARRATIVE claim (HTTP 423)", { ...live, skip: FLAKY_REASON }, async () => {
     const { app } = await import("../src/interfaces/server.js");
     const http = await import("node:http");
     const server = http.createServer(app as any);
