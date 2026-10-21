@@ -47,7 +47,10 @@ test("G2: accepts full 64-hex signature (new tokens)", () => {
   const token = `act_v1.${payloadB64}.${fullSig(payloadB64)}`;
   const res = verifyLocalAct(token, { expectedActor: "333-agi" });
   assert.ok(res && res.ok, `expected ok, got: ${JSON.stringify(res)}`);
-  assert.equal((res as { actor?: string }).actor, "333-agi");
+  // F13 2026-10-22: actor = PRINCIPAL (IDENTITY_CANON), lane label moves to
+  // lane_actor. "333-agi" is the lane; its principal is OPENCODE.
+  assert.equal((res as { actor?: string }).actor, "OPENCODE");
+  assert.equal((res as { lane_actor?: string }).lane_actor, "333-agi");
   delete process.env.ARIFOS_SESSION_SECRET;
 });
 

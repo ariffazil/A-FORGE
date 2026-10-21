@@ -13,7 +13,7 @@
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
-import { samePrincipal } from "../../domain/governance/identityCanon.js";
+import { canonicalActorId, samePrincipal } from "../../domain/governance/identityCanon.js";
 
 const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
 const ACT_DECISION_EVENT_DIR =
@@ -97,7 +97,7 @@ export function canonicalizeActor(raw: string | null | undefined): string {
 }
 
 export type ActGateResult =
-  | { ok: true; actor?: string; authority?: string; claims?: Record<string, unknown> }
+  | { ok: true; actor?: string; lane_actor?: string; authority?: string; claims?: Record<string, unknown> }
   | {
       ok: false;
       error: string;
@@ -510,6 +510,12 @@ export function verifyLocalAct(
     }
 
     // ── 7. Authority rank check ────────────────────────────────────────
+    // F13 ruling 2026-10-22: PRINCIPAL ≠ LANE. `actor` is the principal per
+    // IDENTITY_CANON (claude/opus-5.5 → CLAUDE); `lane_actor` is the FATWA-K1
+    // lane label (→ 333-agi) kept for lane routing only. The principal never
+    // follows the lane map.
+    const principal = canonicalActorId(rawActor) ?? actor;
+
     const RANK = ["OBSERVE_ONLY", "OPERATOR", "LIMITED_MUTATE", "FULL", "SOVEREIGN"];
     if (!RANK.includes(requiredAuthority) || !RANK.includes(authority)) {
       return { ok: false, error: "UNKNOWN_AUTHORITY", message: `${authority} / required ${requiredAuthority}` };
@@ -518,7 +524,7 @@ export function verifyLocalAct(
       return { ok: false, error: "INSUFFICIENT_AUTHORITY", message: `ACT ${authority} < required ${requiredAuthority}` };
     }
 
-    return { ok: true, actor, authority, claims };
+    return { ok: true, actor: principal, lane_actor: actor, authority, claims };
   } catch {
     return null; // Can't decode — fall through to arifOS
   }
