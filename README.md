@@ -243,3 +243,4 @@ CI gates on every merge: **agentic-ci** (build/test/conformance) · **a-forge-bo
 | Public MCP | https://mcp.arif-fazil.com/mcp |
 | Flow graph | [FEDERATION.md](https://github.com/ariffazil/AAA/blob/main/FEDERATION.md) — peta semua organ + repo |
 <!-- FEDERATION-STANDARD v2026-10-15 END -->
+t
