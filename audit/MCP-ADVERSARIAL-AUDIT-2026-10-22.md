@@ -159,3 +159,27 @@ Concrete instances this session: `forge_surface_audit` reported CLEAN while 8 A-
 3. **WELL protocol dead** — 5/5 tools unusable; needs schema fix (add `resultType`).
 
 *Everything else in this session was read-only. No files touched except this report + lesson. Commit local only — NOT pushed.*
+
+
+---
+
+## 11 · ROUND 6 — POST-COMMIT RE-PROBE (2026-10-22T06:20-06:26Z)
+
+Re-ran after commit 772a8d29 to separate permanent findings from session artifacts.
+
+| # | Finding | Before | Now | Verdict |
+|---|---|---|---|---|
+| R6-1 | A-FORGE surface availability | 8× absent (r3-5) | **5/5 absent** (`forge_probe`, `forge_registry_status`, `forge_git`, `forge_github`, `forge_health_check`) | **PERMANENT-ish, not a transient** |
+| R6-2 | WELL failure mode | "missing resultType" | **TWO LAYERS**: no-session → `SESSION_MISSING` (gate CORRECT); with-session → `missing required resultType` | prior single-cause attribution was INCOMPLETE |
+| R6-3 | CHRON void path | "no visible void" | **CONFIRMED absent as a callable agent tool**: `chron_resolve_unverifiable` returns `ALREADY_VERIFIED`; only `chron_verified_predictions(include_void)` READS voids. No agent-callable retract exists. | P0 stands |
+| R6-4 | GitHub lane dead | external report: 401 | `forge_github` **not offered at all** here → cannot even reach the 401 | P1; second-order failure |
+| R6-5 | F1 AMANAH hook efficacy | — | PreToolUse hook **BLOCKED** a shell command containing a destructive pattern (T3 match) | **control WORKS** — contrast with §4B scanner no-op |
+
+### R6-6 · Executable-CHRON finding (expanded)
+`chron_resolve_unverifiable(prediction_id, reason)` refuses already-verified rows.
+`chron_record_verification` writes with NO session/lease/identity check, and computes Brier + syncs calibration.
+⇒ The only agent-reachable write mutates calibration; the only agent-reachable "close" cannot close a scored row.
+Correction requires F13. **Agent cannot self-remediate.** This is the correct governance posture — but the WRITE side being open while the CLOSE side is shut is asymmetric and unsafe.
+
+### R6-7 · Duplicate confirmation
+`arif_init` allowed_next_verbs = [arif_init, arif_observe, arif_think, arif_route, arif_memory, arif_judge] — note **arif_route present, arif_report NOT present** yet arif_report executed anonymously earlier. Gate scope ≠ declared scope.
