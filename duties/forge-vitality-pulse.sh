@@ -20,14 +20,25 @@ ORGAN_TABLE=""
 for svc in "arifos:8088" "aforge:7071" "aaa:3001" "geox:8081" "wealth:18082" "well:18083"; do
   name="${svc%%:*}"; port="${svc##*:}"
   start_ns=$(date +%s%N)
+  # A single-shot probe of a just-restarted service reports DOWN for the 2-4s
+  # before uvicorn binds, which fires a false CRITICAL at a human. Probe, and on
+  # failure distinguish "not healthy" from "still binding": retry once after 3s,
+  # and consult systemd. UP + slow is a latency finding, not an outage.
   if curl -sf "http://127.0.0.1:${port}/health" >/dev/null 2>&1; then
     end_ns=$(date +%s%N)
     latency=$(( (end_ns - start_ns) / 1000000 ))
     ORGAN_TABLE="${ORGAN_TABLE}| ${name} | ✅ UP | ${latency}ms |
 "
     ALIVE=$((ALIVE + 1))
+  elif sleep 3 && curl -sf "http://127.0.0.1:${port}/health" >/dev/null 2>&1; then
+    end_ns=$(date +%s%N)
+    latency=$(( (end_ns - start_ns) / 1000000 ))
+    ORGAN_TABLE="${ORGAN_TABLE}| ${name} | ✅ UP (2nd probe, was binding) | ${latency}ms |
+"
+    ALIVE=$((ALIVE + 1))
   else
-    ORGAN_TABLE="${ORGAN_TABLE}| ${name} | ❌ DOWN | — |
+    unit_state=$(systemctl is-active "${name}.service" 2>/dev/null || echo unknown)
+    ORGAN_TABLE="${ORGAN_TABLE}| ${name} | ❌ DOWN (systemd=${unit_state}) | — |
 "
   fi
 done

@@ -16,6 +16,9 @@ import { readFileSync } from "fs";
 import { execFileSync } from "node:child_process";
 import { computeDeploymentDrift } from "../infrastructure/attestation/deploymentDrift.js";
 import * as http from "http";
+
+const _pkg = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8"));
+const FORGE_VERSION = `v${_pkg.version}`;
 import { createHash } from "crypto";
 import { modelGateway } from "../infrastructure/llm/ModelGateway.js";
 import { runSense } from "../domain/policy/sense.js";
@@ -260,7 +263,7 @@ export function createApp(): express.Express {
     // OpenCode compat: static server info
     res.json({
       service: "A-FORGE",
-      version: "v2026.07.24",
+      version: FORGE_VERSION,
       protocol_version: "2025-03-26",
       mcp_endpoint: "/mcp",
       health_endpoint: "/health",
@@ -475,7 +478,7 @@ app.post("/sense", async (req: Request, res: Response) => {
       },
       context: {
         source: "A-FORGE",
-        version: "v2026.07.24",
+        version: FORGE_VERSION,
         epoch: "2026-04-08",
         received_context: context,
         peer_contract_id,
@@ -565,8 +568,8 @@ app.post("/execute", async (req: Request, res: Response) => {
     // ── ADAT AGENTIC: Classify action before execution ──
     const actionClass = classifyTool(tool);
 
-    // FQ Metabolic Gate (P0.1)
-    const fqBlock = await gateToolByFq(actionClass, tool);
+    // FQ Metabolic Gate (P0.1) — per-lane when actor is known (doctrine 2026-10-18)
+    const fqBlock = await gateToolByFq(actionClass, tool, actor_id);
     if (!fqBlock.allowed && fqBlock.fq) {
       return res.status(423).json({
         error: 'FQ_GATE', type: 'governance_hold',
@@ -1050,7 +1053,7 @@ app.post("/GEOX/log_interpreter", async (req: Request, res: Response) => {
  * Service health check
  */
 app.get("/health", async (_req: Request, res: Response) => {
-  const DEPLOY_ROOT = "/opt/a-forge/app";
+  const DEPLOY_ROOT = process.env.AF_FORGE_DEPLOY_ROOT || "/root/A-FORGE";
   let identityHash = "UNAVAILABLE";
   let deployedCommit = "UNAVAILABLE";
   let sourceCommit = "UNAVAILABLE";
@@ -1161,7 +1164,7 @@ app.get("/health", async (_req: Request, res: Response) => {
     ok: !isDegradedMode && !deploymentDrift, // legacy alias — prefer status
     degraded_mode: isDegradedMode || deploymentDrift,
     service: "A-FORGE-sense",
-    version: "v2026.07.24",
+    version: FORGE_VERSION,
     federation_schema_version: "2.0.0",
     tool_count: liveToolCount,
     tools_loaded: liveToolCount,

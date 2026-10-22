@@ -131,8 +131,17 @@ export function installVerdictInterceptor(srv: any): void {
       try {
         const result = await original(args, extra);
         const envelope = wrapVerdict(result, toolName, actorId, Date.now() - startTime);
+        // KX-006 (2026-10-19): "SEAL" is kernel vocabulary. An envelope without a
+        // call_hash is not a constitutional seal, so the word must not reach the
+        // wire on any read. Outward copy only — internal verdict semantics and the
+        // forwarded legacy receipt are untouched.
+        const outward = JSON.parse(JSON.stringify(envelope));
+        if (!outward.call_hash) {
+          if (outward.status === "SEAL") outward.status = "OK";
+          if (outward.verdict === "SEAL") outward.verdict = "OK";
+        }
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(envelope, null, 2) }],
+          content: [{ type: "text" as const, text: JSON.stringify(outward, null, 2) }],
         };
       } catch (err: any) {
         const envelope = errorVerdict(err.message ?? "Unknown error", {

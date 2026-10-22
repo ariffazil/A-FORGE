@@ -109,3 +109,21 @@ test("severity ordering: IRREVERSIBLE outranks every class", () => {
   assert.equal(requires888Hold("EXECUTE_REVERSIBLE"), false);
   assert.equal(requires888Hold("OBSERVE"), false);
 });
+
+test("P7: forge_lease request is a REQUEST, not an action (bootstrap-circularity fix 2026-10-20)", () => {
+  // Failure class: authority-request paths were ranked against the very
+  // authority they ask for. forge_lease request was EXECUTE_REVERSIBLE, so
+  // raising a lease required already holding the class it grants. Nobody could
+  // bootstrap out of OBSERVE and the autonomous receipt path (forge_vault,
+  // IRREVERSIBLE) was silently unreachable for every agent — the lane existed
+  // on paper and dead-ended in LEASE_CLASS_EXCEEDED.
+  //
+  // A-FORGE does not self-issue leases ("arifOS mints them"), so `request` is a
+  // forward of a request and the DECISION stays with the kernel. It stays
+  // session-gated: an unbound caller still fails. `revoke` is unchanged —
+  // revoking live authority IS a mutation.
+  assert.equal(classifyTool("forge_lease", "request"), "OBSERVE");
+  assert.equal(classifyTool("forge_lease", "status"), "OBSERVE");
+  assert.equal(classifyTool("forge_lease", "list"), "OBSERVE");
+  assert.equal(classifyTool("forge_lease", "revoke"), "EXECUTE_REVERSIBLE");
+});
