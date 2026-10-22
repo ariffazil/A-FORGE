@@ -883,6 +883,13 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               const required: string[] = [];
               if (schemaShape) {
                 for (const [k, v] of Object.entries(schemaShape) as [string, any][]) {
+                  // S5 stage 2 (F13 word 2026-10-22): the deprecated credential
+                  // aliases stay DECLARED in the parse schema (core.ts
+                  // GOVERNANCE_FIELDS) so legacy callers keep authenticating,
+                  // but they are never ADVERTISED here — agents stop paying
+                  // the per-tool bytes. Stage 3 deletes them from both once the
+                  // caller sweep shows zero alias use on the wire.
+                  if (k === "session_token" || k === "sct") continue;
                   const isOpt = isZodOptional(v);
                   if (!isOpt) required.push(k);
                   if (compactLevel >= 1) {

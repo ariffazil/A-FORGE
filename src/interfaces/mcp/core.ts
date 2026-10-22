@@ -517,9 +517,12 @@ function injectEpistemic(
 // injection point. These 8 fields are added to all 122 tools, so they were
 // 103,456 of 193,660 schema bytes — 53.4 % of everything an agent must read to
 // use A-FORGE. Every field is still DECLARED, so no caller's acceptance
-// changes; only the prose shrank. Stage 2 (retiring the session_token/sct
-// aliases) needs a deprecation window: schemas are built .strict(), so removing
-// a declared field makes the server reject callers who still send it.
+// changes; only the prose shrank.
+// S5 stage 2 (F13 word 2026-10-22): the session_token/sct aliases are retired
+// from the ADVERTISED schema only (serve.ts tools/list filter) — parse still
+// declares them, so legacy callers keep authenticating through the strict
+// gate (deprecation epoch: accept-but-unadvertised). Stage 3 removes the
+// fields here entirely once the caller sweep shows zero alias use on the wire.
 const GOVERNANCE_FIELDS = {
   session_id: z.string().optional().describe("Kernel session id (arif_init)"),
   actor_id: z.string().optional().describe("Actor id"),
