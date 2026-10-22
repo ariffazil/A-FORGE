@@ -17,6 +17,7 @@ import {
   type VerdictEnvelope,
   type VerdictStatus,
 } from "./verdict-envelope.js";
+import { resolveCanonicalVerdict, type CanonicalVerdict } from "./canonical-verdict.js";
 
 const WRAPPED = Symbol.for("aforge.verdict.intercepted");
 
@@ -64,19 +65,27 @@ function extractData(raw: any): Record<string, unknown> | string | null {
  */
 function determineStatus(raw: any): VerdictStatus {
   if (!raw) return "ERROR";
-  if (raw.isError === true) return "ERROR";
-  if (raw.error) return "ERROR";
-  // Verdict-status field wins. Preserve it verbatim — do not flatten.
-  const s = raw.status;
-  if (s === "SEAL" || s === "HOLD" || s === "SABAR" || s === "VOID" || s === "ERROR") {
-    return s;
+
+  // R5 (2026-10-22): delegate to THE canonical verdict computer. This function
+  // used to be a second verdict computer: it read `status` first, so a response
+  // carrying both a success receipt and a top-level refusal (CON-14) resolved
+  // to the success side, and it ignored the kernel reconciliation block
+  // (CON-15) entirely. There is now exactly one place that decides a verdict.
+  //
+  // The canonical computer applies strictest-wins (VOID > HOLD > SABAR > SEAL,
+  // fault dominates), preserves SABAR≠HOLD, and folds every foreign token into
+  // one vocabulary. Divergence is reported, not averaged.
+  const resolved = resolveCanonicalVerdict(raw);
+
+  // GHOST-HEARTBEAT GUARD: a divergent source is a finding, not noise. Emit it
+  // so downstream witnesses can audit the disagreement (F11). Never silent.
+  if (resolved.divergent) {
+    process.stderr.write(
+      `[VerdictInterceptor] VERDICT_FIELD_DIVERGENCE — ${resolved.reason}\n`,
+    );
   }
-  // Explicit constitutional refusal signals, checked before the default pass.
-  if (raw.verdict === "HOLD" || raw.verdict === "VOID" || raw.verdict === "SABAR") {
-    return raw.verdict;
-  }
-  if (raw.blocked === true || raw.allowed === false) return "HOLD";
-  return "SEAL";
+
+  return resolved.verdict as VerdictStatus;
 }
 
 /**
@@ -93,12 +102,31 @@ export function wrapVerdict(
 
   const status = determineStatus(raw);
   const data = extractData(raw);
-  const message = status === "SEAL" ? `${toolName} completed` : `${toolName} failed`;
+  // R5: SABAR is "proceed with caution" — not a failure. The old binary
+  // message ("completed" vs "failed") mislabeled every constitutional refusal
+  // as a crash. Message must match the verdict class.
+  const message =
+    status === "SEAL" ? `${toolName} completed`
+    : status === "SABAR" ? `${toolName} completed with caution (SABAR)`
+    : `${toolName} ${status === "ERROR" ? "failed" : `blocked (${status})`}`;
 
   if (status === "SEAL") {
     return sealVerdict(data ?? {}, message, { tool: toolName, actor, duration_ms });
   }
-  return errorVerdict(message, { tool: toolName, actor, data: data as Record<string, unknown> ?? { raw } });
+  // R5: HOLD/SABAR/VOID are constitutional outcomes, not transport faults.
+  // Preserve the verdict class in the envelope instead of collapsing every
+  // non-SEAL into ERROR (the CON-14/15 collapse that made a refusal
+  // indistinguishable from a crash).
+  return verdict(status as CanonicalVerdict, data as Record<string, unknown> ?? { raw }, message, {
+    tool: toolName,
+    actor,
+    epistemic: {
+      output_class: status === "SABAR" ? "DOMAIN_COMPUTATION" : "GOVERNANCE_DECISION",
+      ai_involvement: "NONE",
+      authority_claim: status === "SABAR" ? "ADVISORY" : "EXECUTIVE",
+      evidence_source: "COMPUTED",
+    },
+  });
 }
 
 /**
