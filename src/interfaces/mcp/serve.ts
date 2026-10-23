@@ -94,32 +94,45 @@ import { assertActMutationGateOrExit } from "../../infrastructure/governance/act
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { validateSession, validateSessionAsync } from "../../domain/session/sessionGate.js";
 
-/** Rewrite advisory completions that still say SEAL. Kernel owns that word. */
-function stripAdvisorySealWord(result: any, toolName: string): void {
+const _mcpPkg = JSON.parse(fs.readFileSync(new URL("../../../../package.json", import.meta.url), "utf8"));
+const MCP_VERSION = `v${_mcpPkg.version}`;
+
+/**
+ * Rewrite completions that say SEAL without kernel evidence. Kernel owns that word.
+ *
+ * KX-006 (2026-10-19): the old tool-class gate let mutating tools leak the
+ * kernel's word on READ responses (forge_agent mode=status/list). SEAL without
+ * a call_hash is not a constitutional seal, so it is stripped regardless of
+ * class; a legitimate kernel SEAL (payload carries call_hash) is preserved.
+ */
+export function stripAdvisorySealWord(result: any, _toolName?: string): void {
   if (!result || !Array.isArray(result.content)) return;
-  const action = classifyTool(toolName);
-  const advisory = action === "OBSERVE" || action === "SUGGEST" || toolName === "forge_status";
-  if (!advisory) return;
   for (const item of result.content) {
     if (item?.type !== "text" || typeof item.text !== "string") continue;
     try {
       const payload = JSON.parse(item.text);
       if (!payload || typeof payload !== "object") continue;
-      if (payload.status === "SEAL" && payload.data && typeof payload.data === "object" && !payload.call_hash) {
-        const inner = payload.data;
-        item.text = JSON.stringify(inner.status ? inner : { status: "OK", ...inner }, null, 2);
-        continue;
-      }
+      // Kernel evidence at top level → never touch a legitimate SEAL.
+      if (payload.call_hash) continue;
+
+      let out: any = payload;
       let changed = false;
-      if (payload.status === "SEAL" && !payload.call_hash) {
-        payload.status = "OK";
+      // Legacy envelope {status:"SEAL", data:{...}} → unwrap to the inner body.
+      if (payload.status === "SEAL" && payload.data && typeof payload.data === "object") {
+        if (payload.data.call_hash) continue; // seal lives inside the envelope
+        out = payload.data.status ? payload.data : { status: "OK", ...payload.data };
         changed = true;
       }
-      if (payload.verdict === "SEAL" && !payload.call_hash) {
-        payload.verdict = "OK";
+      // No kernel call_hash anywhere → this is advisory vocabulary, not a seal.
+      if (out.status === "SEAL") {
+        out.status = "OK";
         changed = true;
       }
-      if (changed) item.text = JSON.stringify(payload, null, 2);
+      if (out.verdict === "SEAL") {
+        out.verdict = "OK";
+        changed = true;
+      }
+      if (changed) item.text = JSON.stringify(out, null, 2);
     } catch {
       /* leave non-JSON */
     }
@@ -377,7 +390,7 @@ function checkRateLimit(clientIp: string): { allowed: boolean; remaining: number
   }
   bucket.count++;
   return {
-    allowed: bucket.count <= RATE_LIMIT_MAX,
+    allowed: bucket.count < RATE_LIMIT_MAX,
     remaining: Math.max(0, RATE_LIMIT_MAX - bucket.count),
     resetAt: bucket.resetAt,
   };
@@ -628,16 +641,23 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
       // CORS
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Mcp-Session-Id");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept, Mcp-Session-Id, MCP-Protocol-Version, Mcp-Method, Mcp-Name, X-ArifOS-Actor, Authorization");
       if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
-      // Rate limiting
-      if (req.method !== "GET" || (req.url !== "/health" && req.url !== "/")) {
-        const clientIp = req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim()
-          || req.socket?.remoteAddress
-          || "unknown";
-        const rateCheck = checkRateLimit(clientIp);
+      // Rate limiting — keyed by session identity, never by source IP.
+      // 2026-10-18 (root-cause fix): every loopback client shares 127.0.0.1,
+      // so one IP bucket 429'd unrelated agents mid-handshake (opencode and
+      // Kimi both failed at POST /mcp while :7072 was healthy). Handshake and
+      // stateless discovery are now unmetered; established sessions are metered
+      // per Mcp-Session-Id (falling back to the declared actor header).
+      const rateKey = req.headers["mcp-session-id"]?.toString()
+        || req.headers["x-arifos-actor"]?.toString();
+      if (rateKey) {
+        const rateCheck = checkRateLimit(rateKey);
         if (!rateCheck.allowed) {
+          process.stderr.write(
+            `[A-FORGE-MCP] RATE_LIMIT_429 key=${rateKey} count=${RATE_LIMIT_MAX} path=${req.url}\n`,
+          );
           res.writeHead(429, {
             "Content-Type": "application/json",
             "Retry-After": Math.ceil((rateCheck.resetAt - Date.now()) / 1000).toString(),
@@ -660,7 +680,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           ok: true,
           service: "A-FORGE-MCP",
           status: "healthy",
-          version: "0.1.0",
+          version: MCP_VERSION,
           commit: BUILD_COMMIT,
           transport: "streamable-http",
           // F2-fidelity fix (MCP-PROBE-2026-08-08): bridge shares organ identity
@@ -688,7 +708,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
           });
           res.end(JSON.stringify({
             name: "A-FORGE-MCP",
-            version: "0.1.0",
+            version: MCP_VERSION,
             protocolVersion: PROTOCOL_VERSION,
             transport: "streamable-http",
             authentication: "none",
@@ -802,7 +822,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 // stderr observability via journald (StandardError=journal).
                 registration: { mode: "explicit", tool: "forge_agent" },
               },
-              serverInfo: { name: "A-FORGE-MCP", version: "0.1.0" },
+              serverInfo: { name: "A-FORGE-MCP", version: MCP_VERSION },
             }));
             return;
           }
@@ -939,7 +959,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               _meta: {
                 "io.modelcontextprotocol/serverInfo": {
                   name: "A-FORGE-MCP",
-                  version: "0.1.0",
+                  version: MCP_VERSION,
                 },
               },
             }));
@@ -1110,7 +1130,7 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 content = JSON.stringify({
                   status: "healthy",
                   port: 7072,
-                  version: "0.1.0",
+                  version: MCP_VERSION,
                   tools_count: getServerTools().length,
                   timestamp: new Date().toISOString(),
                 });
