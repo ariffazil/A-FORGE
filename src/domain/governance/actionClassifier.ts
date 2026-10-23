@@ -450,6 +450,13 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (!mode || mode === "read-unread") return "OBSERVE";
     if (mode === "send") return "EXECUTE_REVERSIBLE";
   }
+  // forge_telegram: get_me/default=OBSERVE, send=EXECUTE_REVERSIBLE
+  if (toolName === "forge_telegram") {
+    if (!mode || mode === "get_me") return "OBSERVE";
+    if (mode === "send") return "EXECUTE_REVERSIBLE";
+  }
+  // forge_drive_create: always a reversible external write
+  if (toolName === "forge_drive_create") return "EXECUTE_REVERSIBLE";
   // forge_trust_score: list/history/verify=OBSERVE (read-only trust ledger queries),
   // score/evaluate=EXECUTE_REVERSIBLE (persist to Postgres trust_scores + trust_history).
   // Without mode-aware override, the tool falls through to IRREVERSIBLE_TOOLS and
@@ -517,6 +524,8 @@ export function isClassifiedTool(toolName: string): boolean {
     "forge_calendar",
     "forge_sheets",
     "forge_gmail",
+    "forge_telegram",
+    "forge_drive_create",
     "forge_trust_score",
     "forge_compose", // H4 2026-09-27: mode-aware compose bus
   ];

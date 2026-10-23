@@ -19,7 +19,9 @@ DITEMPA BUKAN DIBERI — Forged, Not Given
 from __future__ import annotations
 
 import base64
+import json
 import logging
+import os
 from datetime import UTC
 from email.mime.text import MIMEText
 from pathlib import Path
@@ -59,8 +61,33 @@ def _load_creds() -> Any:
     return Credentials.from_authorized_user_file(str(p))
 
 
+def _apa_revoked(service: str):
+    """Return the APA revocation entry for this service, or None. Fail-closed."""
+    state_dir = os.environ.get("APA_STATE_DIR", "/var/lib/a-forge/apa")
+    path = os.path.join(state_dir, "revocations.json")
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        revoked = data.get("revoked") or {}
+        entry = revoked.get(service) or revoked.get("*")
+        if not entry:
+            return None
+        return entry if isinstance(entry, dict) else {"reason": str(entry)}
+    except FileNotFoundError:
+        return None
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "reason": f"REVOCATION_STATE_UNREADABLE: {exc}",
+            "by": "apa-cli-fail-closed",
+        }
+
+
 def _service(name: str, version: str) -> Any:
     """Build a Google API service client."""
+    revoked = _apa_revoked(name)
+    if revoked:
+        reason = revoked.get("reason", "revoked")
+        raise RuntimeError(f"APA_REVOKED: {reason}")
     from googleapiclient.discovery import build
 
     creds = _load_creds()

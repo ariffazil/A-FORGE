@@ -83,6 +83,8 @@ import {
   startupFingerprintCheck,
 } from "./forgeTools.js";
 import { registerGatewayTools } from "./gatewayTools.js";
+import { apaPreflight, apaPostflight, apaFail } from "./apaCustody.js";
+import { registerApaConnectors } from "./forgeApaConnectors.js";
 import { startupIsomorphismCheck } from "../../domain/isomorphism/isomorphism-check.js";
 import { registerForge8Verbs } from "./forge8Verbs.js";
 import { registerForgeCompilerTools } from "./forgeCompilerTools.js";
@@ -610,6 +612,12 @@ const _originalTool = server.tool.bind(server);
     const toolMode = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
     const actionClass = classifyTool(name, toolMode); // runtime classification with mode
 
+    // ── APA CUSTODY PREFLIGHT (kill switch + idempotency) ────────────────
+    // Runs before FQ/ACT/claim/lease. Revocation is absolute: a valid lease
+    // cannot execute a revoked app.
+    const apaPre = await apaPreflight(name, argsObj);
+    if (!apaPre.ok) return apaPre.response;
+
     // ── FQ Metabolic Gate (P0.1, 2026-08-05) ──
     // Per-lane when actor is known (doctrine 2026-10-18: lane holds alone);
     // FAILS CLOSED on unreachable arifFlow
@@ -787,7 +795,14 @@ const _originalTool = server.tool.bind(server);
       return floorErrorResponse(verdict);
     }
     // FloorEnforcer approved (SEAL or CAUTION): call the original handler
-    const result = await withHandlerTelemetry(name, () => handler(args, ctx));
+    let result: any;
+    try {
+      result = await withHandlerTelemetry(name, () => handler(args, ctx));
+      result = await apaPostflight(apaPre, argsObj, result);
+    } catch (err) {
+      await apaFail(apaPre, err);
+      throw err;
+    }
     return injectEpistemic(result, name) as any;
   });
   // Federation alignment: ACTUATOR header on server.tool() path too
@@ -820,6 +835,12 @@ const _originalRegisterTool = server.registerTool.bind(server);
     const argsObj = (args && typeof args === "object") ? args : {};
     const toolMode = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
     const actionClass = classifyTool(name, toolMode);
+
+    // ── APA CUSTODY PREFLIGHT (kill switch + idempotency) ────────────────
+    // Runs before FQ/ACT/claim/lease. Revocation is absolute: a valid lease
+    // cannot execute a revoked app.
+    const apaPre = await apaPreflight(name, argsObj);
+    if (!apaPre.ok) return apaPre.response;
 
     // ── FQ Metabolic Gate (P0.1, 2026-08-05) ──
     // Per-lane when actor is known (doctrine 2026-10-18: lane holds alone);
@@ -987,7 +1008,14 @@ const _originalRegisterTool = server.registerTool.bind(server);
     if (!verdict.allowed) {
       return injectEpistemic(floorErrorResponse(verdict), name) as any;
     }
-    const result = await withHandlerTelemetry(name, () => handler(args, ctx));
+    let result: any;
+    try {
+      result = await withHandlerTelemetry(name, () => handler(args, ctx));
+      result = await apaPostflight(apaPre, argsObj, result);
+    } catch (err) {
+      await apaFail(apaPre, err);
+      throw err;
+    }
     return injectEpistemic(result, name) as any;
   });
   return _originalRegisterTool(name, gatedOptions, wrappedHandler as any);
@@ -3351,6 +3379,9 @@ registerSurfaceAuditTools(server);
   // 2026-10-18: "agent boleh hantar email" — email send is a sovereign-authorized
   // capability lane. Re-enabled; send/draft_send gated in handler (F13-authorized).
   registerGoogleWorkspaceTools(server);
+
+  // ── APA connectors: telegram send + drive create (custody-complete) ─────
+  registerApaConnectors(server);
 
   // ── Gemini (forge-777 2026-08-25 F13 directive — independent of Workspace ZEN Sweep) ──
   registerGeminiTools(server);
