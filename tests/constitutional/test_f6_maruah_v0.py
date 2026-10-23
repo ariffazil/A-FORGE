@@ -1,7 +1,10 @@
 """F6 acceptance tests — bounded, synthetic-only, no real external actions.
 
-Order §6: each acceptance criterion maps to one test. Synthetic canaries are
-separate from production records (tmp ledger paths). Run:
+Each mandatory acceptance criterion from the F6 v0 directive maps to explicit
+tests in this suite. Synthetic canaries use temporary paths and never touch
+production ledgers.
+
+Run:
     /usr/bin/python3 tests/constitutional/test_f6_maruah_v0.py
 """
 
@@ -19,33 +22,60 @@ FORGE_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(FORGE_ROOT))
 
 from apa.core.f6.authority_binding import (  # noqa: E402
-    AuthorityBinding,
     ActionRequest,
+    AuthorityBinding,
     BindingStore,
     BindingVerdict,
     check_binding,
+    execute_bound,
 )
 from apa.core.f6.correction_effect import (  # noqa: E402
     CorrectionStatus,
-    record_correction,
-    verify_effect,
+    apply_correction,
+    challenge_record,
     load_corrections,
+    propagate_correction_across_layers,
+    record_correction,
+    resolve_dissent_at_decision_gate,
+    supersede,
+    verify_effect,
 )
 from apa.core.f6.consent_scope import (  # noqa: E402
+    ConsentDecision,
     ConsentScope,
     ConsentSource,
-    ConsentDecision,
     check_consent,
 )
-from apa.core.f6.meters import evaluate_all, evaluate_meter_5_false_urgency_flattery  # noqa: E402
+from apa.core.f6.meters import (  # noqa: E402
+    Axis,
+    MeterAssessment,
+    evaluate_all,
+    evaluate_comprehension_ceremony,
+    evaluate_manipulation_detector,
+    evaluate_meter_1_authority_bypass,
+    evaluate_meter_2_unreceipted_claims,
+    evaluate_meter_3_comprehension,
+    evaluate_meter_4_false_urgency_flattery,
+    evaluate_meter_5_correction_acceptance,
+    evaluate_meter_5_false_urgency_flattery,
+    evaluate_meter_6_consent_scope,
+    verify_claim_receipt_relevance,
+)
+from apa.core.f6.privacy_and_redress import (  # noqa: E402
+    RollbackClassification,
+    classify_rollback_outcome,
+    enforce_private_file_mode,
+    validate_no_human_scoring,
+    verify_analytics_authority_separation,
+)
 from apa.core.f6 import pending_policies  # noqa: E402
 
 
-def _iso(dt):
+def _iso(dt: datetime) -> str:
     return dt.isoformat(timespec="seconds")
 
 
-def _binding(**kw) -> AuthorityBinding:
+def _binding(**kw: Any) -> AuthorityBinding:
     now = datetime.now(timezone.utc)
     defaults: dict[str, Any] = dict(
         binding_id="b-test",
@@ -63,15 +93,15 @@ def _binding(**kw) -> AuthorityBinding:
 
 
 class F6AuthorityTests(unittest.TestCase):
-    """P0: authority boundary to the last tool."""
+    """P0: authority boundary to the last tool (Criteria 1, 2, 3, 11)."""
 
-    def _store(self, binding, tmp):
+    def _store(self, binding: AuthorityBinding, tmp: str) -> BindingStore:
         store = BindingStore(db_path=Path(tmp) / "bind.db")
         store.save(binding)
         return store
 
-    def test_01_subagent_widening_rejected_at_execution_boundary(self):
-        """Sub-agent tries to escalate authority via delegation -> REJECT."""
+    def test_01_subagent_widening_rejected_at_execution_boundary(self) -> None:
+        """Sub-agent tries to escalate authority via delegation -> REJECT before effect."""
         with tempfile.TemporaryDirectory() as tmp:
             parent = _binding(binding_id="parent", authority="OBSERVE_ONLY")
             child = _binding(
@@ -82,15 +112,66 @@ class F6AuthorityTests(unittest.TestCase):
             )
             store = self._store(parent, tmp)
             store.save(child)
-            out = check_binding(
+            side_effects: list[str] = []
+            res = execute_bound(
                 ActionRequest("child", "agent-x", "write:issues", "repo/A-FORGE#1"),
+                store,
+                lambda _req: side_effects.append("mutated"),
+                state_guard=lambda r, b: (True, ""),
+            )
+            self.assertFalse(res["executed"])
+            self.assertEqual(side_effects, [])
+            self.assertEqual(res["decision"], BindingVerdict.REJECT_DELEGATION)
+            self.assertIn("widen", res["reason"].lower())
+
+    def test_01b_subagent_multi_hop_scope_action_resource_param_widening_rejected(self) -> None:
+        """Multi-hop delegation (root -> mid -> child) rejects resource/param/window widening."""
+        with tempfile.TemporaryDirectory() as tmp:
+            now = datetime.now(timezone.utc)
+            root = _binding(
+                binding_id="root",
+                authority="LIMITED_MUTATE",
+                scope="github:issues",
+                allowed_actions=["write:issues"],
+                resource_patterns=["repo/A-FORGE#*"],
+                param_constraints={"title": {"max_len": 40}},
+                not_after=_iso(now + timedelta(minutes=30)),
+            )
+            mid = _binding(
+                binding_id="mid",
+                parent_binding_id="root",
+                authority="LIMITED_MUTATE",
+                scope="github:issues",
+                allowed_actions=["write:issues"],
+                resource_patterns=["repo/A-FORGE#1*"],
+                param_constraints={"title": {"max_len": 30}},
+                not_after=_iso(now + timedelta(minutes=20)),
+            )
+            child_wide_res = _binding(
+                binding_id="child-res",
+                parent_binding_id="mid",
+                scope="github:issues",
+                allowed_actions=["write:issues"],
+                resource_patterns=["repo/*"],  # wider than mid & root
+                param_constraints={"title": {"max_len": 30}},
+                not_after=_iso(now + timedelta(minutes=15)),
+            )
+            store = self._store(root, tmp)
+            store.save(mid)
+            store.save(child_wide_res)
+            # Requesting repo/OTHER#9 matches child's repo/* but violates mid/root
+            out = check_binding(
+                ActionRequest(
+                    "child-res", "agent-x", "write:issues", "repo/OTHER#9",
+                    params={"title": "ok"},
+                ),
                 store,
                 state_guard=lambda r, b: (True, ""),
             )
             self.assertEqual(out["decision"], BindingVerdict.REJECT_DELEGATION)
-            self.assertIn("widen", out["reason"].lower())
+            self.assertIn("outside ancestor", out["reason"])
 
-    def test_02a_revoked_binding_rejected(self):
+    def test_02a_revoked_binding_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             b = _binding()
             store = self._store(b, tmp)
@@ -102,7 +183,7 @@ class F6AuthorityTests(unittest.TestCase):
             )
             self.assertEqual(out["decision"], BindingVerdict.REJECT_REVOKED)
 
-    def test_02b_expired_binding_rejected(self):
+    def test_02b_expired_binding_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             now = datetime.now(timezone.utc)
             b = _binding(not_after=_iso(now - timedelta(minutes=1)))
@@ -114,32 +195,69 @@ class F6AuthorityTests(unittest.TestCase):
             )
             self.assertEqual(out["decision"], BindingVerdict.REJECT_EXPIRED)
 
-    def test_02c_replayed_nonce_rejected(self):
+    def test_02c_replayed_nonce_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             b = _binding(nonce="n-123")
             store = self._store(b, tmp)
-            req = ActionRequest("b-test", "agent-x", "write:issues", "repo/A-FORGE#1")
+            req = ActionRequest(
+                "b-test", "agent-x", "write:issues", "repo/A-FORGE#1",
+                params={"title": "hello"},
+            )
             first = check_binding(req, store, state_guard=lambda r, b: (True, ""))
             self.assertEqual(first["decision"], BindingVerdict.ALLOW)
             second = check_binding(req, store, state_guard=lambda r, b: (True, ""))
             self.assertEqual(second["decision"], BindingVerdict.REJECT_REPLAY)
 
-    def test_03_params_changed_after_approval_not_misused(self):
-        """Approved with title len<=50; request carries a 200-char title -> REJECT."""
+    def test_03_params_changed_after_approval_not_misused(self) -> None:
+        """Approved with title len<=50 and approved_params snapshot; mutation -> REJECT."""
         with tempfile.TemporaryDirectory() as tmp:
-            b = _binding()
+            b = _binding(
+                param_constraints={"title": {"max_len": 50}, "env": {"const": "staging"}},
+                approved_params={"title": "initial title", "env": "staging"},
+                allow_extra_params=False,
+            )
             store = self._store(b, tmp)
-            out = check_binding(
+            # 1) Exceed max_len
+            out_len = check_binding(
                 ActionRequest(
                     "b-test", "agent-x", "write:issues", "repo/A-FORGE#1",
-                    params={"title": "x" * 200},
+                    params={"title": "x" * 200, "env": "staging"},
                 ),
                 store,
                 state_guard=lambda r, b: (True, ""),
             )
-            self.assertEqual(out["decision"], BindingVerdict.REJECT_PARAM)
+            self.assertEqual(out_len["decision"], BindingVerdict.REJECT_PARAM)
 
-    def test_03b_state_changed_since_approval_rejected(self):
+            # 2) Mutate approved_params value
+            out_mut = check_binding(
+                ActionRequest(
+                    "b-test", "agent-x", "write:issues", "repo/A-FORGE#1",
+                    params={"title": "different title", "env": "staging"},
+                ),
+                store,
+                state_guard=lambda r, b: (True, ""),
+            )
+            self.assertEqual(out_mut["decision"], BindingVerdict.REJECT_PARAM)
+            self.assertIn("approved_params", out_mut["reason"])
+
+            # 3) Omit required constrained parameter
+            b2 = _binding(
+                binding_id="b-omit",
+                param_constraints={"env": {"const": "staging"}},
+            )
+            store.save(b2)
+            out_omit = check_binding(
+                ActionRequest(
+                    "b-omit", "agent-x", "write:issues", "repo/A-FORGE#1",
+                    params={},
+                ),
+                store,
+                state_guard=lambda r, b: (True, ""),
+            )
+            self.assertEqual(out_omit["decision"], BindingVerdict.REJECT_PARAM)
+            self.assertIn("missing at execution time", out_omit["reason"])
+
+    def test_03b_state_changed_since_approval_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             b = _binding()
             store = self._store(b, tmp)
@@ -151,7 +269,7 @@ class F6AuthorityTests(unittest.TestCase):
             )
             self.assertEqual(out["decision"], BindingVerdict.REJECT_STATE)
 
-    def test_03c_missing_state_guard_is_unknown_not_pass(self):
+    def test_03c_missing_state_guard_is_unknown_not_pass(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             b = _binding()
             store = self._store(b, tmp)
@@ -162,15 +280,15 @@ class F6AuthorityTests(unittest.TestCase):
 
 
 class F6CorrectionTests(unittest.TestCase):
-    """P1: meter 6 — correction effect."""
+    """P1: Meter 5 — correction effect & grounded dissent (Criteria 4, 5, 10)."""
 
-    def test_04_correction_applied_text_without_change_not_verified(self):
+    def test_04_correction_applied_text_without_change_not_verified(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             led = Path(tmp) / "corr.jsonl"
             rec = record_correction("d1", "agent-v1", "claim", "fix", ledger_path=led)
             out = verify_effect(
                 rec.correction_id,
-                before_evidence={},   # no evidence at all
+                before_evidence={},
                 after_evidence={},
                 effect_ref="",
                 ledger_path=led,
@@ -178,7 +296,18 @@ class F6CorrectionTests(unittest.TestCase):
             self.assertFalse(out["effect_verified"])
             self.assertIn("never verifies", out["reason"])
 
-    def test_04b_correction_with_zero_downstream_change_not_verified(self):
+            # Cosmetic "correction applied" text inside evidence also rejected
+            out_cosmetic = verify_effect(
+                rec.correction_id,
+                before_evidence={"status": "pending"},
+                after_evidence={"text": "correction applied"},
+                effect_ref="ref-1",
+                ledger_path=led,
+            )
+            self.assertFalse(out_cosmetic["effect_verified"])
+            self.assertIn("cosmetic", out_cosmetic["reason"])
+
+    def test_04b_correction_with_zero_downstream_change_not_verified(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             led = Path(tmp) / "corr.jsonl"
             rec = record_correction("d1", "agent-v1", "claim", "fix", ledger_path=led)
@@ -187,13 +316,23 @@ class F6CorrectionTests(unittest.TestCase):
             self.assertFalse(out["effect_verified"])
             self.assertIn("NO downstream change", out["reason"])
 
-    def test_05_correction_changes_state_and_action_before_after_evidence(self):
+    def test_05_correction_changes_state_and_action_before_after_evidence(self) -> None:
+        """Traces ACCEPTED -> APPLIED -> EFFECT_VERIFIED with before/after evidence."""
         with tempfile.TemporaryDirectory() as tmp:
             led = Path(tmp) / "corr.jsonl"
-            rec = record_correction("d1", "agent-v1", "claim X", "X is wrong, it is Y", ledger_path=led)
-            consumed = {}
+            rec = record_correction(
+                "d1", "agent-v1", "claim X", "X is wrong, it is Y", ledger_path=led
+            )
+            self.assertEqual(rec.status, CorrectionStatus.ACCEPTED.value)
 
-            def apply_to_decision(payload):
+            applied = apply_correction(
+                rec.correction_id, "d1", "agent-v1", {"state": "claim=Y"}, ledger_path=led
+            )
+            self.assertEqual(applied.status, CorrectionStatus.APPLIED.value)
+
+            consumed: dict[str, Any] = {}
+
+            def apply_to_decision(payload: dict[str, Any]) -> bool:
                 consumed.update(payload)
                 return True
 
@@ -208,78 +347,303 @@ class F6CorrectionTests(unittest.TestCase):
             self.assertTrue(out["effect_verified"])
             self.assertEqual(consumed["after"]["state"], "claim=Y")
             rows = load_corrections(led)
-            self.assertTrue(
-                any(r["status"] == CorrectionStatus.EFFECT_VERIFIED.value for r in rows)
+            statuses = [r["status"] for r in rows]
+            self.assertEqual(
+                statuses,
+                [
+                    CorrectionStatus.ACCEPTED.value,
+                    CorrectionStatus.APPLIED.value,
+                    CorrectionStatus.EFFECT_VERIFIED.value,
+                ],
             )
 
-    def test_05b_grounded_dissent_is_disputed_not_disrespect(self):
-        """Well-grounded factual dissent must not auto-count as disrespect."""
+    def test_05b_grounded_dissent_reaches_decision_gate_and_changes_action(self) -> None:
+        """Criterion 10: Grounded dissent is not disrespect, reaches final decision,
+        and changes downstream action when accepted."""
         with tempfile.TemporaryDirectory() as tmp:
             led = Path(tmp) / "corr.jsonl"
             rec = record_correction(
-                "d2", "agent-v1", "source says 42", "source is misquoted, actual is 24",
-                disputed=True, dispute_reason="verified against primary source line 3",
+                "d2",
+                "agent-v1",
+                "source says 42",
+                "source is misquoted, actual is 24",
+                disputed=True,
+                dispute_reason="verified against primary source line 3",
                 ledger_path=led,
             )
             self.assertEqual(rec.status, CorrectionStatus.DISPUTED_WITH_REASON.value)
-            # and with no reason -> rejected at construction
+            # Without reason -> rejected at construction
             with self.assertRaises(ValueError):
                 record_correction("d3", "a", "c", "k", disputed=True, ledger_path=led)
 
+            # When dissent is accepted at the final decision gate, it must change the action
+            no_change = resolve_dissent_at_decision_gate(
+                rec,
+                before_decision_state={"action": "publish_42"},
+                accepted=True,
+                updated_decision_state={"action": "publish_42"},  # unchanged!
+                resolution_reason="accepted in prose only",
+                ledger_path=led,
+            )
+            self.assertFalse(no_change["effect_verified"])
 
-class F6ConsentTests(unittest.TestCase):
-    """P2: meter 4 — consent scope."""
+            changed = resolve_dissent_at_decision_gate(
+                rec,
+                before_decision_state={"action": "publish_42"},
+                accepted=True,
+                updated_decision_state={"action": "publish_24"},
+                resolution_reason="primary source verified at gate",
+                ledger_path=led,
+            )
+            self.assertTrue(changed["reached_final_decision"])
+            self.assertFalse(changed["counted_as_disrespect"])
+            self.assertTrue(changed["effect_verified"])
 
-    def test_06_fresh_but_irrelevant_evidence_no_pass(self):
-        """Fresh consent for system A does not authorize access to system B."""
+            m5 = evaluate_meter_5_correction_acceptance(ledger_path=led)
+            self.assertEqual(m5.result, "PASS")
+
+
+class F6ConsentAndRelevanceTests(unittest.TestCase):
+    """P2: Meter 6 consent scope + Meter 2 relevance + Meter 3/4 contracts (Criteria 6, 7)."""
+
+    def test_06_fresh_but_irrelevant_evidence_no_pass(self) -> None:
+        """Criterion 6: Fresh evidence/consent that is irrelevant to outcome never yields PASS."""
         now = datetime.now(timezone.utc)
         scope = ConsentScope(
-            scope_id="s1", subject="system-A", source=ConsentSource.OPERATOR_DECLARATION,
-            can_access=True, can_use=True, can_disclose=False,
+            scope_id="s1",
+            subject="system-A",
+            source=ConsentSource.OPERATOR_DECLARATION,
+            can_access=True,
+            can_use=True,
+            can_disclose=False,
             not_after=_iso(now + timedelta(days=1)),
         )
-        # request is about system-B (irrelevant scope) — modeled as no matching grant
-        out = check_consent(None, want_access=True)  # no matching source for B
-        self.assertEqual(out["decision"], ConsentDecision.UNKNOWN)
-        self.assertIn("DEPENDENCY REPORTED", out["reason"])
+        # 1) Consent for system-A presented for system-B -> DENY_OUT_OF_SCOPE
+        out_consent = check_consent(
+            scope,
+            want_access=True,
+            source_verified=True,
+            requested_subject="system-B",
+        )
+        self.assertEqual(out_consent["decision"], ConsentDecision.DENY_OUT_OF_SCOPE)
 
-    def test_06b_missing_consent_source_never_fake(self):
-        out = check_consent(None, want_access=True)
-        self.assertEqual(out["decision"], ConsentDecision.UNKNOWN)
-        self.assertNotEqual(out["decision"], ConsentDecision.ALLOW)
+        # 2) Fresh receipt for repo-A presented for claim on repo-B -> FAIL
+        rel = verify_claim_receipt_relevance(
+            claim_id="cl-1",
+            claimed_outcome="deployed",
+            claimed_target="repo/B#issue-9",
+            receipt={
+                "observed_at": _iso(now),
+                "sha256": "abc123",
+                "probe_output": "ok",
+                "target": "repo/A#issue-1",
+                "outcome": "deployed",
+            },
+        )
+        self.assertFalse(rel["relevant"])
+        self.assertEqual(rel["result"], "FAIL")
 
-    def test_07_producer_missing_or_error_is_unknown_not_pass(self):
-        meters = evaluate_all()
-        for m in meters["meters"]:
-            if m["producer"] == "NONE":
-                self.assertEqual(m["result"], "UNKNOWN", m["meter_id"])
-        m5 = evaluate_meter_5_false_urgency_flattery()
-        self.assertEqual(m5.result, "UNKNOWN")
-        self.assertEqual(m5.producer, "NONE")
+    def test_06b_consent_access_use_disclose_delegation_expiry_revocation_inference(self) -> None:
+        """Meter 6: distinguishes access/use/disclose, delegation narrowing, expiry, revocation, and rejects model inference."""
+        now = datetime.now(timezone.utc)
+        parent = ConsentScope(
+            scope_id="c-parent",
+            subject="medical-record",
+            source=ConsentSource.OPERATOR_DECLARATION,
+            can_access=True,
+            can_use=True,
+            can_disclose=False,
+            allowed_recipients=["doctor-a"],
+            not_before=_iso(now - timedelta(hours=1)),
+            not_after=_iso(now + timedelta(hours=1)),
+        )
+        # Disclose denied when only access+use granted
+        out_disc = check_consent(
+            parent,
+            want_disclose=True,
+            source_verified=True,
+            requested_subject="medical-record",
+            requested_recipient="doctor-a",
+        )
+        self.assertEqual(out_disc["decision"], ConsentDecision.DENY_USE_NOT_GRANTED)
 
-    def test_07b_ledger_empty_is_unknown(self):
-        """Meter 6 with empty production ledger -> UNKNOWN, never PASS."""
-        meters = evaluate_all()
-        m6 = [m for m in meters["meters"] if m["meter_id"] == "M6_correction_acceptance"][0]
-        self.assertEqual(m6["result"], "UNKNOWN")
-        self.assertIn("empty", m6["result_reason"].lower() + m6["result_reason"])
+        # Delegated child trying to widen can_disclose=True -> DENY_DELEGATION_WIDENED
+        child_wide = ConsentScope(
+            scope_id="c-child",
+            subject="medical-record",
+            source=ConsentSource.OPERATOR_DECLARATION,
+            can_access=True,
+            can_use=True,
+            can_disclose=True,  # widened!
+            parent_scope=parent,
+            not_after=_iso(now + timedelta(minutes=30)),
+        )
+        out_wide = check_consent(
+            child_wide,
+            want_access=True,
+            source_verified=True,
+            requested_subject="medical-record",
+        )
+        self.assertEqual(out_wide["decision"], ConsentDecision.DENY_DELEGATION_WIDENED)
+
+        # Model confidence inference rejected
+        out_inf = check_consent(
+            None,
+            want_access=True,
+            model_confidence=0.99,
+        )
+        self.assertEqual(out_inf["decision"], ConsentDecision.UNKNOWN)
+        self.assertIn("DEPENDENCY REPORTED", out_inf["reason"])
+
+        inf_scope = ConsentScope(
+            scope_id="c-inf",
+            subject="medical-record",
+            source=ConsentSource.INFERENCE,
+            can_access=True,
+            can_use=True,
+            can_disclose=False,
+            not_after=_iso(now + timedelta(hours=1)),
+        )
+        self.assertEqual(
+            check_consent(inf_scope, want_access=True, source_verified=True)["decision"],
+            ConsentDecision.UNKNOWN,
+        )
+
+        # Revocation honored
+        revoked_scope = ConsentScope(
+            scope_id="c-rev",
+            subject="medical-record",
+            source=ConsentSource.OPERATOR_DECLARATION,
+            can_access=True,
+            can_use=True,
+            can_disclose=False,
+            revoked=True,
+            not_after=_iso(now + timedelta(hours=1)),
+        )
+        out_rev = check_consent(
+            revoked_scope,
+            want_access=True,
+            source_verified=True,
+            requested_subject="medical-record",
+        )
+        self.assertEqual(out_rev["decision"], ConsentDecision.DENY_REVOKED)
+
+    def test_07_producer_missing_ledger_empty_or_exception_is_unknown_not_pass(self) -> None:
+        """Criterion 7: Missing producer, empty ledger, and evaluator exception -> UNKNOWN."""
+        with tempfile.TemporaryDirectory() as tmp:
+            empty_corr = Path(tmp) / "missing_corr.jsonl"
+
+            # Empty correction ledger -> UNKNOWN
+            m5_empty = evaluate_meter_5_correction_acceptance(ledger_path=empty_corr)
+            self.assertEqual(m5_empty.result, "UNKNOWN")
+
+            # Missing producers (M3, M4 default) -> UNKNOWN
+            m3_none = evaluate_meter_3_comprehension()
+            self.assertEqual(m3_none.result, "UNKNOWN")
+            m4_none = evaluate_meter_4_false_urgency_flattery()
+            self.assertEqual(m4_none.result, "UNKNOWN")
+            self.assertEqual(evaluate_meter_5_false_urgency_flattery().result, "UNKNOWN")
+
+            # Corrupted correction ledger -> UNKNOWN (never PASS)
+            bad_corr = Path(tmp) / "bad_corr.jsonl"
+            bad_corr.mkdir()  # directory instead of file -> read error
+            m5_exc = evaluate_meter_5_correction_acceptance(ledger_path=bad_corr)
+            self.assertEqual(m5_exc.result, "UNKNOWN")
+            self.assertEqual(m5_exc.measurement, Axis.ERROR)
+
+            # NOT_APPLICABLE without reason is forced to UNKNOWN
+            na_no_reason = MeterAssessment(
+                meter_id="M_TEST",
+                behavior_examined="test",
+                result="NOT_APPLICABLE",
+                result_reason="",
+                measurement=Axis.MEASURED,
+                witness="UNWITNESSED",
+                producer="test",
+                pass_does_not_imply="test",
+            )
+            self.assertEqual(na_no_reason.result, "UNKNOWN")
 
 
-class F6WitnessAndPolicyTests(unittest.TestCase):
-    """§2/§5: witness axis + undecided policies stay inactive."""
+class F6WitnessCeremonyAndPolicyTests(unittest.TestCase):
+    """Criteria 8, 9, 11: witness staleness, low-ceremony mode, comprehension/manipulation, pending policies, privacy & redress."""
 
-    def test_08_witness_not_answering_is_stale_not_pass(self):
-        """human_witness.jsonl last row 2026-10-05 -> STALE witness axis."""
-        meters = evaluate_all()
-        for m in meters["meters"]:
-            self.assertIn(m["witness"], ("STALE", "UNWITNESSED", "REVIEWED"))
-        # today, the ledger is 17+ days stale, so every meter must show non-REVIEWED
-        non_reviewed = [m for m in meters["meters"] if m["witness"] != "REVIEWED"]
-        self.assertTrue(len(non_reviewed) >= 5,
-                        "witness staleness must be visible, not hidden")
+    def test_08_witness_not_answering_is_stale_and_blocks_overall_pass(self) -> None:
+        """Criterion 8: Silent/stale witness never produces PASS."""
+        with tempfile.TemporaryDirectory() as tmp:
+            stale_witness = Path(tmp) / "witness.jsonl"
+            stale_witness.write_text(
+                json.dumps({"ts": "2026-01-01T00:00:00+00:00"}) + "\n",
+                encoding="utf-8",
+            )
+            meters = evaluate_all(witness_path=stale_witness)
+            for m in meters["meters"]:
+                self.assertEqual(m["witness"], "STALE")
+            self.assertIn("UNPROVEN", meters["f6_overall"])
 
-    def test_09_low_ceremony_mode_does_not_bypass_authority(self):
-        """Low-ceremony: no ledger events, no witness — authority checks still bind."""
+    def test_09_low_ceremony_comprehension_and_manipulation_detector(self) -> None:
+        """Criterion 9: Low-ceremony mode does not bypass authority/privacy or high-consequence checks;
+        comprehension scales by consequence/reversibility (never mandatory quiz);
+        manipulation detector reports FP/FN bounds."""
+        # 1) Mandatory quiz is always FAIL
+        quiz = evaluate_comprehension_ceremony(
+            decision_id="d-quiz",
+            consequence_tier=3,
+            reversible=False,
+            restatement_provided=True,
+            mandatory_quiz=True,
+        )
+        self.assertEqual(quiz["result"], "FAIL")
+
+        # 2) Irreversible Tier-3 without restatement is FAIL
+        irrev_missing = evaluate_comprehension_ceremony(
+            decision_id="d-irrev",
+            consequence_tier=3,
+            reversible=False,
+            restatement_provided=False,
+        )
+        self.assertEqual(irrev_missing["result"], "FAIL")
+
+        # 3) Right to delegate and right to rest are honored (NOT_APPLICABLE with reason, never interrupted)
+        delegated = evaluate_comprehension_ceremony(
+            decision_id="d-del",
+            consequence_tier=1,
+            reversible=True,
+            human_delegated=True,
+            interrupted_human=False,
+        )
+        self.assertEqual(delegated["result"], "NOT_APPLICABLE")
+        self.assertTrue(len(delegated["reason"]) > 0)
+
+        rested_interrupted = evaluate_comprehension_ceremony(
+            decision_id="d-rest",
+            consequence_tier=1,
+            reversible=True,
+            human_resting=True,
+            interrupted_human=True,
+        )
+        self.assertEqual(rested_interrupted["result"], "FAIL")
+
+        # 4) Manipulation detector requires FP/FN bounds and out-of-band execution
+        manip_uncal = evaluate_manipulation_detector(
+            flagged_count=0,
+            sample_size=10,
+            false_positive_rate=None,
+            false_negative_rate=None,
+        )
+        self.assertEqual(manip_uncal["result"], "UNKNOWN")
+
+        manip_flagged = evaluate_manipulation_detector(
+            flagged_count=2,
+            sample_size=20,
+            false_positive_rate=0.05,
+            false_negative_rate=0.10,
+        )
+        self.assertEqual(manip_flagged["result"], "FAIL")
+        self.assertEqual(manip_flagged["false_positive_rate"], 0.05)
+        self.assertEqual(manip_flagged["false_negative_rate"], 0.10)
+
+        # 5) Authority & revocation still bind in low-ceremony mode
         with tempfile.TemporaryDirectory() as tmp:
             b = _binding()
             store = BindingStore(db_path=Path(tmp) / "bind.db")
@@ -291,23 +655,19 @@ class F6WitnessAndPolicyTests(unittest.TestCase):
                 state_guard=lambda r, b: (True, ""),
             )
             self.assertEqual(out["decision"], BindingVerdict.REJECT_REVOKED)
-            # privacy: no human_id anywhere in the decision payload
             self.assertNotIn("human_id", json.dumps(out))
 
-    def test_10_undecided_policies_stay_inactive(self):
-        """Third-party dignity + collective witness: PENDING/HOLD, not implemented."""
+    def test_10_undecided_policies_stay_inactive(self) -> None:
+        """Criterion 11: Pending policies remain inactive; valid paths still work."""
         meters = evaluate_all()
         blob = json.dumps(meters)
-        # no third-party moral-classifier blocking policy claimed
         self.assertNotIn("third_party_protected", blob)
         self.assertNotIn("collective_veto", blob)
-        # external peer witness slot remains unassigned
         self.assertNotIn("peer_witness:assigned", blob)
-        # f6_overall stays unproven language, never 'solved'/'protected'/'sealed'
         self.assertIn("UNPROVEN", meters["f6_overall"])
         for forbidden in ("F6 solved", "maruah protected", "sealed"):
             self.assertNotIn(forbidden, blob)
-        # §2: all three policies report inactive; enforcement attempt fails closed
+
         pp = pending_policies.all_pending()
         statuses = {p["policy_id"]: p["status"] for p in pp["policies"]}
         self.assertEqual(statuses["third_party_dignity"], "PENDING")
@@ -317,13 +677,72 @@ class F6WitnessAndPolicyTests(unittest.TestCase):
         with self.assertRaises(pending_policies.PolicyNotActive):
             pending_policies.enforce("collective_veto")
 
-    def test_11_no_human_id_in_any_f6_output(self):
-        """Red line 1: F6 telemetry never carries human_id."""
+        # Valid path works end-to-end via execute_bound
+        with tempfile.TemporaryDirectory() as tmp:
+            b = _binding()
+            store = BindingStore(db_path=Path(tmp) / "bind.db")
+            store.save(b)
+            res = execute_bound(
+                ActionRequest(
+                    "b-test", "agent-x", "write:issues", "repo/A-FORGE#1",
+                    params={"title": "valid issue"},
+                ),
+                store,
+                lambda req: {"created": req.params["title"]},
+                state_guard=lambda r, b: (True, ""),
+            )
+            self.assertTrue(res["executed"])
+            self.assertEqual(res["tool_output"], {"created": "valid issue"})
+
+    def test_11_privacy_redress_and_rollback_separation(self) -> None:
+        """Privacy guards, append-only challenge/supersede, and technical vs external rollback."""
         meters = evaluate_all()
-        blob = json.dumps(meters)
-        self.assertNotIn("human_id", blob)
-        self.assertNotIn("dignity_index", blob.lower())
-        self.assertNotIn("dignity index", blob.lower())
+        ok_m, viol_m = validate_no_human_scoring(meters)
+        self.assertTrue(ok_m, viol_m)
+        ok_bad, _ = validate_no_human_scoring({"dignity_score": 0.9})
+        self.assertFalse(ok_bad)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            auth_p = Path(tmp) / "auth.db"
+            ana_p = Path(tmp) / "analytics.jsonl"
+            sep = verify_analytics_authority_separation(meters, auth_p, ana_p)
+            self.assertTrue(sep["separated"])
+            same = verify_analytics_authority_separation(meters, auth_p, auth_p)
+            self.assertFalse(same["separated"])
+
+            # Append-only challenge & supersede preserve history
+            led = Path(tmp) / "corr.jsonl"
+            rec = record_correction("d1", "v1", "old", "new", ledger_path=led)
+            ch = challenge_record(rec.correction_id, "contested evidence", ledger_path=led)
+            self.assertEqual(ch.status, CorrectionStatus.CHALLENGED.value)
+            sup = supersede(rec.correction_id, "refined", ledger_path=led)
+            self.assertEqual(sup.supersedes_id, rec.correction_id)
+            rows = load_corrections(led)
+            self.assertEqual(len(rows), 3)  # history preserved, nothing deleted
+            self.assertTrue(enforce_private_file_mode(led))
+
+        # Technical rollback vs irreversible external consequence
+        tech = classify_rollback_outcome(
+            technical_state_reverted=True,
+            external_effect_occurred=False,
+        )
+        self.assertEqual(
+            tech["classification"],
+            RollbackClassification.TECHNICAL_ROLLBACK_COMPLETE,
+        )
+        self.assertTrue(tech["fully_undone"])
+
+        ext = classify_rollback_outcome(
+            technical_state_reverted=True,
+            external_effect_occurred=True,
+            external_effect_description="email sent to external recipient",
+            compensating_action="send retraction notice",
+        )
+        self.assertEqual(
+            ext["classification"],
+            RollbackClassification.EXTERNAL_CONSEQUENCE_IRREVERSIBLE,
+        )
+        self.assertFalse(ext["fully_undone"])
 
 
 if __name__ == "__main__":

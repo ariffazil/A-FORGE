@@ -1,9 +1,6 @@
 """F6 §2 — interfaces for the three UNDECIDED policies. NOTHING IS ACTIVE.
 
-Order §2 (verbatim intent): these three are NOT Arif's decisions; they are
-proposals kept at their constitutional status. This module exists so the
-extension point is real and testable WITHOUT activating any policy:
-
+Implements F6 v0 Tiga Keputusan Tertangguh:
   (A) Third-party dignity  — PENDING. Extension point only. NO moral
       classifier may block users. No third-party protection is claimed.
   (B) Collective witness   — DISABLED/HOLD. No active family/group veto,
@@ -19,7 +16,7 @@ PolicyNotActive. There is no code path that enforces (A)-(C).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 SCHEMA = "apa.core.f6.pending_policies.v1"
 
@@ -42,9 +39,10 @@ class PendingPolicy:
     description: str
     extension_point: str  # where a future activation WOULD hook in
     activation_requires: str  # what F13 must decide first
-    synthetic_fixtures: list = field(default_factory=list)
+    f13_recorded_leaning: str = ""  # spec C.8.5 (non-activating note)
+    synthetic_fixtures: list[dict[str, Any]] = field(default_factory=list)
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "schema": SCHEMA,
             "policy_id": self.policy_id,
@@ -53,6 +51,7 @@ class PendingPolicy:
             "description": self.description,
             "extension_point": self.extension_point,
             "activation_requires": self.activation_requires,
+            "f13_recorded_leaning": self.f13_recorded_leaning,
             "synthetic_fixtures": self.synthetic_fixtures,
         }
 
@@ -72,6 +71,10 @@ def third_party_dignity() -> PendingPolicy:
         activation_requires=(
             "F13 decision: is third-party dignity inside or outside F6 scope? "
             "Attacker surface vs blindness tradeoff (spec §8a)."
+        ),
+        f13_recorded_leaning=(
+            "Protect absent stakeholder by default (authority over self != authority over others); "
+            "awaiting formal F13 ratification before any enforcement."
         ),
         synthetic_fixtures=[
             {"case": "shared room, third human present", "expected_if_active": "ASSESS"},
@@ -95,6 +98,10 @@ def collective_witness() -> PendingPolicy:
             "F13 decision: HOLD or REJECT? Patriarchy/policing risk unresolved "
             "(spec §8b)."
         ),
+        f13_recorded_leaning=(
+            "Witness can inform; witness cannot own or hold veto over an individual. "
+            "Execution remains DISABLED/HOLD."
+        ),
         synthetic_fixtures=[
             {"case": "one member votes veto", "expected_if_active": "REJECTED_BY_DESIGN_RISK"},
         ],
@@ -116,6 +123,10 @@ def external_peer_witness() -> PendingPolicy:
             "F13 decision: who and when for the peer witness slot (spec §8c). "
             "Filling the slot needs a person to consent; that is a human act."
         ),
+        f13_recorded_leaning=(
+            "Independence over intelligence: witness from a distinct reality model preferred "
+            "over same-loop insider. Slot remains UNASSIGNED."
+        ),
         synthetic_fixtures=[
             {"case": "no witness row", "expected": "UNWITNESSED"},
             {"case": "witness row older than 7d", "expected": "STALE"},
@@ -123,7 +134,7 @@ def external_peer_witness() -> PendingPolicy:
     )
 
 
-def all_pending() -> dict:
+def all_pending() -> dict[str, Any]:
     return {
         "schema": SCHEMA,
         "note": "None of these are active. No real actions taken. No one contacted.",

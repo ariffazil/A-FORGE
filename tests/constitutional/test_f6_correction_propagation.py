@@ -9,26 +9,25 @@ what I meant) -> the system must PROVE, per layer:
 
 Absence in ANY layer = fail with the layer named.
 Bounded synthetic fixtures; no real surfaces touched.
-
-Prior evidence (measured 2026-10-23): apa/core/forget_propagation.py only
-RECORDS forget-events; no subscriber mutates any layer. The kernel-side
-arifosmcp memory_store gates RECALL intent (law.py check_floor_constraint),
-not removal. Honest expectation: fail-with-layers-named; this test documents
-the defect so a future fix flips the pinned assertion deliberately.
 """
 
 from __future__ import annotations
 
+import sys
 import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
 FORGE_ROOT = Path(__file__).resolve().parents[2]
-import sys  # noqa: E402
 sys.path.insert(0, str(FORGE_ROOT))
 
-from apa.core.f6.correction_effect import record_correction  # noqa: E402
+from apa.core.f6.correction_effect import (  # noqa: E402
+    CorrectionStatus,
+    load_corrections,
+    propagate_correction_across_layers,
+    record_correction,
+)
 from apa.core.forget_propagation import ForgetPropagation  # noqa: E402
 
 STALE_FACT_ID = "fact:X_is_42"
@@ -66,12 +65,12 @@ def _stale_in(rows: list[dict]) -> bool:
 class TestFourLayerCorrection(unittest.TestCase):
     """Meter 5 falsifier: 'itu bukan maksud saya' must reach all four layers."""
 
-    def test_bukan_maksud_saya_requires_all_four_layers_clean(self):
+    def test_bukan_maksud_saya_requires_all_four_layers_clean(self) -> None:
+        """Without calling propagate_correction_across_layers, ForgetPropagation.emit
+        + record_correction alone leave all four layers stale."""
         with tempfile.TemporaryDirectory() as tmp:
             world = FourLayerWorld()
 
-            # Fire the correction through every mechanism the codebase offers
-            # today: forget_propagation.emit() + F6 record_correction().
             fp = ForgetPropagation(db_path=Path(tmp) / "forget.db")
             fp.emit(
                 target_fact_id=STALE_FACT_ID,
@@ -81,46 +80,24 @@ class TestFourLayerCorrection(unittest.TestCase):
             )
             with tempfile.TemporaryDirectory() as tmp2:
                 record_correction(
-                    "dec-1", "agent-v1", "X is 42", "X is 24",
+                    "dec-1",
+                    "agent-v1",
+                    "X is 42",
+                    "X is 24",
                     ledger_path=Path(tmp2) / "c.jsonl",
                 )
 
-            # Measure each layer separately. This test PINS THE MEASURED
-            # DEFECT, so the suite stays green while the meter verdict is
-            # recorded honestly as FAIL. The requirement (all four layers must
-            # prove removal) is recorded in the spec as METER-5 FALSIFIER: FAIL.
-            # When a real propagation subscriber lands, this assertion will
-            # itself FAIL — and that failure IS the repair receipt (update it
-            # to assert stale_layers == []).
             stale_layers = [
                 name for name, rows in world.layers().items() if _stale_in(rows)
             ]
-            report = {
-                "schema": "apa.core.f6.correction_propagation_probe.v1",
-                "scenario": "human says 'itu bukan maksud saya'",
-                "layers_examined": list(world.layers().keys()),
-                "layers_still_stale": stale_layers,
-                "requirement": "old assumption removed from ALL four layers",
-                "meter5_verdict": "FAIL — correction cosmetic, stale assumption persists",
-            }
-            # Today's measured reality: all four layers still carry the
-            # revoked assumption. That is the finding; it is pinned here so no
-            # future reader can mistake 'correction recorded' for 'correction
-            # effective'.
             self.assertEqual(
                 stale_layers,
                 ["L1_memory", "L2_queue", "L3_planner", "L4_tool_payload"],
-                "MEASURED REALITY CHANGED — if this fails, correction "
-                "propagation may now exist. Re-verify against the kernel "
-                f"memory/planner/tool layers and update this pin. Report: {report}",
             )
 
-    def test_measured_reality_all_four_layers_stale_pre_fix(self):
-        """Pins the MEASURED truth (2026-10-23): all four layers retain the
-        stale assumption because no propagation subscriber exists — while the
-        propagation ledger CLAIMS the event was propagated. That gap between
-        record and reality is the Meter-5/6 defect. When a fix lands, this
-        assertion flips deliberately and the flip IS the repair receipt."""
+    def test_measured_reality_all_four_layers_stale_pre_fix(self) -> None:
+        """Pins the MEASURED truth: ForgetPropagation.emit records an event
+        without mutating downstream layers."""
         with tempfile.TemporaryDirectory() as tmp:
             world = FourLayerWorld()
             fp = ForgetPropagation(db_path=Path(tmp) / "forget.db")
@@ -133,26 +110,59 @@ class TestFourLayerCorrection(unittest.TestCase):
             layers_stale = {
                 name: _stale_in(rows) for name, rows in world.layers().items()
             }
-            self.assertTrue(
-                all(layers_stale.values()),
-                f"expected all four layers stale pre-fix, got {layers_stale}",
-            )
-            # The record says 'forgotten'; reality says otherwise:
+            self.assertTrue(all(layers_stale.values()))
             self.assertTrue(fp.is_forgotten(STALE_FACT_ID))
             self.assertTrue(any(_stale_in(r) for r in world.layers().values()))
 
-    def test_no_subscriber_to_forget_events_exists(self):
-        """Static probe: who CONSUMES forget events? (history_for_target is
-        read-only; no writer updates memory/planner/queue/payloads.)"""
+    def test_no_subscriber_to_forget_events_exists(self) -> None:
+        """Static probe: ForgetPropagation itself has no subscriber methods."""
         fp_src = (FORGE_ROOT / "apa" / "core" / "forget_propagation.py").read_text()
         self.assertNotIn("def propagate_to_memory", fp_src)
         self.assertNotIn("def clear_from_queue", fp_src)
         self.assertNotIn("def invalidate_payload", fp_src)
-        f6_src = (
-            FORGE_ROOT / "apa" / "core" / "f6" / "correction_effect.py"
-        ).read_text()
-        self.assertNotIn("memory_store", f6_src)
-        self.assertNotIn("planner", f6_src)
+
+    def test_propagate_correction_across_layers_partial_fails_with_layer_named(self) -> None:
+        """If any layer is missing or still retains the stale assumption,
+        propagate_correction_across_layers fails and names the stale layer."""
+        with tempfile.TemporaryDirectory() as tmp:
+            led = Path(tmp) / "c.jsonl"
+            world = FourLayerWorld()
+            partial_layers = {
+                "L1_memory": world.memory,
+                "L2_queue": world.queue,
+                "L3_planner": world.planner,
+                # L4_tool_payload omitted!
+            }
+            out = propagate_correction_across_layers(
+                decision_id="dec-1",
+                agent_version="agent-v1",
+                stale_value=STALE,
+                corrected_value=FIXED,
+                layers=partial_layers,
+                ledger_path=led,
+            )
+            self.assertFalse(out["effect_verified"])
+            self.assertIn("L4_tool_payload", out["layers_still_stale"])
+
+    def test_propagate_correction_across_all_four_layers_verifies_effect(self) -> None:
+        """When all four layers (L1..L4) are provided and cleaned,
+        propagate_correction_across_layers verifies the effect with before/after evidence."""
+        with tempfile.TemporaryDirectory() as tmp:
+            led = Path(tmp) / "c.jsonl"
+            world = FourLayerWorld()
+            out = propagate_correction_across_layers(
+                decision_id="dec-1",
+                agent_version="agent-v1",
+                stale_value=STALE,
+                corrected_value=FIXED,
+                layers=world.layers(),
+                ledger_path=led,
+            )
+            self.assertTrue(out["effect_verified"])
+            self.assertEqual(out["layers_still_stale"], [])
+            self.assertFalse(any(_stale_in(r) for r in world.layers().values()))
+            rows = load_corrections(led)
+            self.assertEqual(rows[-1]["status"], CorrectionStatus.EFFECT_VERIFIED.value)
 
 
 if __name__ == "__main__":
