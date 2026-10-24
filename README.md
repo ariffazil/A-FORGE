@@ -129,9 +129,9 @@ Each defect is a measured observation (hand-audit 2026-10-11; receipts in [`CURR
 
 | Defect | Consequence | Status |
 |---|---|---|
-| Invocation-telemetry writer has no governance-outcome field | a kernel `HOLD` (`can_claim_success:false`) persisted as `ok:true` | **Open** |
-| Refusal cause (`A_THINK_GUARD`) logged 0× | the ledger cannot explain why a refusal happened | **Open** |
-| `sessionGate.ts:315` infers `verified` from `verdict === "SEAL"` | a verdict string is not identity evidence | **Open** |
+| Invocation-telemetry writer has governance fields, but the registration wrapper never feeds them | `withInvocationLog` (`invocationLog.ts:226`) omits `verdict`/`gate`/`refusal_cause`, so a kernel HOLD still persists as `ok:true` with `verdict:null` | **Open** — partial fix only (fields + HOLD/VOID `ok:false` default live at `invocationLog.ts:123`); measured 2026-10-25: 331/331 A-FORGE ledger lines carry `verdict:null` |
+| Refusal cause (`A_THINK_GUARD`) logged 0× | the ledger cannot explain why a refusal happened | **Open** — re-measured 2026-10-25: `refusal_cause` non-null in 0 of 22,492 ledger lines |
+| `sessionGate.ts:315` inferred `verified` from `verdict === "SEAL"` | a verdict string is not identity evidence | **Fixed** (2026-10-25 probe) — inference removed at `sessionGate.ts:316-319`; `interfaces/mcp/core.ts:1488-89` binds identity only via `actor.actor_verified === true` |
 | Default session ids manufactured with `SEAL-` prefix | `SEAL` label collision in this codebase | **Open** |
 | No reproducible unauthorised-mutation refusal fixture | refusal is evidenced by observation, not by a runnable proof | **Open** — build fixture first, then document it |
 
