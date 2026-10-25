@@ -1078,6 +1078,10 @@ export function registerSkillTools(server: McpServer): void {
         .describe("arifOS seal verdict (required for arifos domain or execute_after_register)"),
       staging: z.boolean().default(false)
         .describe("If true, stage the generated skill for mesa/Landauer scan before production registration"),
+      revision_kind: z.enum(["harness_revision"]).optional()
+        .describe("Declare this forge as a revision of existing execution logic. Requires generalization_evidence; a declared revision without it is HELD (Harness Adaptation Gap, arXiv:2610.30499)."),
+      generalization_evidence: z.string().optional()
+        .describe("JSON GeneralizationEvidence: dev/held-out scores before+after, preregistration_sha256, heldout_provenance, optional run/outer cost. Required when revision_kind=harness_revision."),
     },
     async (args) => {
       try {
@@ -1125,13 +1129,44 @@ export function registerSkillTools(server: McpServer): void {
           );
         }
 
+        // ── Harness Adaptation Gap gate (arXiv:2610.30499) ──────────────
+        // A declared revision is judged on held-out evidence, never on the
+        // traces it was tuned on. This blocks PROMOTION only; it does not
+        // claim the forge itself failed.
+        let generalization = null;
+        if (args.revision_kind === "harness_revision") {
+          const { evaluateGeneralization, unmeasuredAssessment } = await import(
+            "../../domain/governance/GeneralizationGate.js"
+          );
+          if (!args.generalization_evidence) {
+            generalization = unmeasuredAssessment(
+              "revision_kind=harness_revision declared without generalization_evidence",
+            );
+          } else {
+            try {
+              generalization = evaluateGeneralization(JSON.parse(args.generalization_evidence));
+            } catch (err: any) {
+              generalization = unmeasuredAssessment(
+                `generalization_evidence is not valid JSON: ${err?.message ?? String(err)}`,
+              );
+            }
+          }
+        }
+        const blockedByGeneralization =
+          args.revision_kind === "harness_revision" && generalization !== null && !generalization.promotable;
+
         const isError = result.status === "WITHER" || result.status === "DORMANT";
         return {
           content: [{
             type: "text" as const,
-            text: JSON.stringify({ ...result, staging: stagingResult }, null, 2),
+            text: JSON.stringify({
+              ...result,
+              staging: stagingResult,
+              ...(generalization ? { generalization } : {}),
+              ...(blockedByGeneralization ? { promotion_blocked: "HARNESS_ADAPTATION_GAP" } : {}),
+            }, null, 2),
           }],
-          isError,
+          isError: isError || blockedByGeneralization,
         };
       } catch (err: any) {
         return {
