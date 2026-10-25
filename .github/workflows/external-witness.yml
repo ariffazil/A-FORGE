@@ -42,7 +42,7 @@ on:
 permissions:
   contents: read
   pull-requests: read
-  issues: read
+  issues: write
 
 jobs:
   # ── PR event: validate attestation exists and is SHA-bound ──
