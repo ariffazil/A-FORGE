@@ -609,8 +609,10 @@ const _originalTool = server.tool.bind(server);
   // them call the handler stored in the SDK registry. Fail-soft, additive.
   const wrappedHandler = withInvocationLog(name, async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
-    const toolMode = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
-    const actionClass = classifyTool(name, toolMode); // runtime classification with mode
+    // 2026-10-25: pass the full args — classifyTool normalizes the action
+    // carrier (mode OR verb). Extracting only args.mode hid forge_telegram
+    // {verb:"send"} behind the OBSERVE default.
+    const actionClass = classifyTool(name, argsObj); // runtime classification (mode/verb carrier)
 
     // ── APA CUSTODY PREFLIGHT (kill switch + idempotency) ────────────────
     // Runs before FQ/ACT/claim/lease. Revocation is absolute: a valid lease
@@ -833,8 +835,8 @@ const _originalRegisterTool = server.registerTool.bind(server);
   // contract, same single line per call).
   const wrappedHandler = withInvocationLog(name, async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
-    const toolMode = (typeof argsObj.mode === "string") ? argsObj.mode : undefined;
-    const actionClass = classifyTool(name, toolMode);
+    // 2026-10-25: full args to classifyTool (mode OR verb carrier normalization)
+    const actionClass = classifyTool(name, argsObj);
 
     // ── APA CUSTODY PREFLIGHT (kill switch + idempotency) ────────────────
     // Runs before FQ/ACT/claim/lease. Revocation is absolute: a valid lease

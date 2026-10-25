@@ -200,3 +200,39 @@ test("P1: arif_report (KERNEL cross-organ) — write modes governed, reads free"
   // modeless (registration-time) takes the MUTATE floor — fail-closed.
   assert.equal(classifyTool("arif_report"), "EXECUTE_REVERSIBLE");
 });
+
+test("F1 carrier: verb-carrier args classify by the action, not the OBSERVE default", () => {
+  // Root defect (reproduced live 2026-10-25): the APA/Workspace schemas carry
+  // the action in `verb`, but callers extracted only args.mode — so a real
+  // forge_telegram {verb:"send"} (external Telegram egress) classified OBSERVE
+  // and skipped ACT/lease/FQ governance.
+  assert.equal(classifyTool("forge_telegram", { verb: "send" }), "EXECUTE_REVERSIBLE");
+  assert.equal(classifyTool("forge_telegram", { verb: "get_me" }), "OBSERVE");
+  assert.equal(
+    requiresGovernance(classifyTool("forge_telegram", { verb: "send" })),
+    true,
+    "telegram send must require governance",
+  );
+  // Same defect class on the Workspace trio.
+  assert.equal(classifyTool("forge_gmail", { verb: "send" }), "EXECUTE_REVERSIBLE");
+  assert.equal(classifyTool("forge_sheets", { verb: "append" }), "EXECUTE_REVERSIBLE");
+  assert.equal(classifyTool("forge_calendar", { verb: "create" }), "EXECUTE_REVERSIBLE");
+  // Their read verbs stay reads.
+  assert.equal(classifyTool("forge_gmail", { verb: "read-unread" }), "OBSERVE");
+  assert.equal(classifyTool("forge_sheets", { verb: "read" }), "OBSERVE");
+  assert.equal(classifyTool("forge_calendar", { verb: "list" }), "OBSERVE");
+  // String carrier regression (legacy callers pass args.mode as string).
+  assert.equal(classifyTool("forge_telegram", "send"), "EXECUTE_REVERSIBLE");
+  assert.equal(classifyTool("forge_telegram", "get_me"), "OBSERVE");
+});
+
+test("F1 carrier: missing or unknown action on a required-carrier tool fails closed", () => {
+  // Schema requires verb (not optional) — a dispatch without it is malformed.
+  for (const t of ["forge_telegram", "forge_gmail", "forge_sheets", "forge_calendar"]) {
+    assert.equal(classifyTool(t, {}), "EXECUTE_REVERSIBLE", `${t} without carrier`);
+    assert.equal(classifyTool(t), "EXECUTE_REVERSIBLE", `${t} modeless (annotation path)`);
+    assert.equal(classifyTool(t, { verb: "not_a_real_verb" }), "EXECUTE_REVERSIBLE", `${t} unknown verb`);
+  }
+  // Optional-carrier tools keep their documented read default (status query).
+  assert.equal(classifyTool("forge_reality_loop", {}), "OBSERVE");
+});

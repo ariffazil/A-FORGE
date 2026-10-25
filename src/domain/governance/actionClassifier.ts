@@ -224,7 +224,50 @@ const OBSERVE_TOOLS = new Set([
  * forces HOLD before any execution, so the class fallback only shapes
  * direct classifyTool() consumers (HTTP /execute, MCP annotations).
  */
-export function classifyTool(toolName: string, mode?: string): ActionClass {
+/**
+ * Tools whose schema REQUIRES the action carrier (`verb: z.enum(...)` with no
+ * `.optional()` — forgeApaConnectors.ts:188, forgeGoogleWorkspace.ts:160/193/209).
+ * A call without a carrier is malformed; classifyTool must never admit it as a
+ * read (2026-10-25 verb/mode carrier fix).
+ */
+const REQUIRED_ACTION_CARRIERS = new Set<string>([
+  "forge_telegram",
+  "forge_gmail",
+  "forge_sheets",
+  "forge_calendar",
+]);
+
+export function classifyTool(
+  toolName: string,
+  modeArg?: string | Record<string, unknown>,
+): ActionClass {
+  // Action-carrier normalization (2026-10-25): the APA/Workspace tool schemas
+  // carry the action in `verb` (z.enum required), while callers extracted only
+  // `args.mode` — so a real `forge_telegram {verb:"send"}` (external Telegram
+  // egress) classified OBSERVE and skipped ACT/lease/FQ governance (reproduced
+  // live 2026-10-25 against the deployed build). Accept either carrier as the
+  // action; unrecognized carriers fall through the per-tool chains to the
+  // fail-closed MUTATE floor below.
+  let mode: string | undefined;
+  if (typeof modeArg === "string") {
+    mode = modeArg;
+  } else if (modeArg && typeof modeArg === "object") {
+    const carriers = modeArg as { mode?: unknown; verb?: unknown };
+    mode =
+      typeof carriers.mode === "string"
+        ? carriers.mode
+        : typeof carriers.verb === "string"
+          ? carriers.verb
+          : undefined;
+  }
+  // Required-carrier tools (schema: verb z.enum REQUIRED — not optional):
+  // a dispatch that omits the carrier is malformed and must never be admitted
+  // as a read. This also makes registration-time classifyTool(name) (used for
+  // MCP annotations) conservative over the whole tool, per the surface-audit
+  // doctrine: one annotation must describe the tool's most dangerous mode.
+  if (mode === undefined && REQUIRED_ACTION_CARRIERS.has(toolName)) {
+    return "EXECUTE_REVERSIBLE";
+  }
   // ── Mode-aware overrides ──
   // forge_agent: list/status=OBSERVE, register=EXECUTE_REVERSIBLE, kill=IRREVERSIBLE
   if (toolName === "forge_agent") {
