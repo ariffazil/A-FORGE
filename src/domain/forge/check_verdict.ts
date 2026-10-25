@@ -75,6 +75,10 @@ interface FqState {
   executeCount: number;
   verifyCount: number;
   timestamp: number;
+  // ADDITIVE 2026-10-25 (diagnostic only — must NEVER gate): message provenance.
+  rollupFormula: string;
+  windowSample: number | null;
+  bindingActor: { actor: string; quotient: number } | null;
 }
 
 let _fqCache: FqState | null = null;
@@ -100,6 +104,26 @@ async function probeFq(): Promise<FqState> {
       executeCount: fq.execute_count || 0,
       verifyCount: fq.verify_count || 0,
       timestamp: Date.now(),
+      // ADDITIVE 2026-10-25 (diagnostic only — must never gate): message provenance.
+      // bindingActor mirrors the engine rollup input (non-synthetic, execute>0, min quotient)
+      // so the displayed binding actor matches minimum_gated_harmonic_mean.
+      rollupFormula: typeof fq.rollup_formula === 'string' ? fq.rollup_formula : 'unknown',
+      windowSample: typeof fq.metric_frame?.sample_size === 'number' ? fq.metric_frame.sample_size : null,
+      bindingActor: (() => {
+        const SYNTHETIC = new Set([
+          'test', 'test_agent', 'honest_agent', 'attacker',
+          'adversarial_agent', 'unstable_agent', 'staged_agent',
+        ]);
+        const per = (fq.per_actor || {}) as Record<string, { quotient?: unknown; execute?: unknown }>;
+        let best: { actor: string; quotient: number } | null = null;
+        for (const [id, s] of Object.entries(per)) {
+          const q = s?.quotient;
+          const e = typeof s?.execute === 'number' ? s.execute : 0;
+          if (SYNTHETIC.has(id) || e <= 0 || typeof q !== 'number') continue;
+          if (best === null || q < best.quotient) best = { actor: id, quotient: q };
+        }
+        return best;
+      })(),
     };
     return _fqCache;
   } catch {
@@ -110,6 +134,10 @@ async function probeFq(): Promise<FqState> {
       executeCount: 0,
       verifyCount: 0,
       timestamp: Date.now(),
+      // ADDITIVE 2026-10-25 (diagnostic only — must never gate): provenance defaults.
+      rollupFormula: 'unknown',
+      windowSample: null,
+      bindingActor: null,
     };
   }
 }
@@ -310,7 +338,7 @@ export async function checkFqGate(actionClass: ActionClass): Promise<FqGateResul
       permitted: false,
       fq: state.quotient,
       verdict: state.verdict,
-      reason: `FQ=${state.quotient.toFixed(3)} < 0.50 — metabolic STUCK. Execute=${state.executeCount} Verify=${state.verifyCount}. Agents must verify to raise FQ before MUTATE is permitted.`,
+      reason: `FQ=${state.quotient.toFixed(3)} < ${FQ_GATE_THRESHOLD} — metabolic STUCK. rollup=${state.rollupFormula}; binding actor=${state.bindingActor?.actor ?? 'unknown'}@${state.bindingActor?.quotient?.toFixed(3) ?? '?'}. Pooled window counts (NOT the gated input): Execute=${state.executeCount} Verify=${state.verifyCount} sample=${state.windowSample ?? '?'} cached_at=${new Date(state.timestamp).toISOString()} cache_age_ms=${Date.now() - state.timestamp} policy=fq_policy.yaml#observe_only_below. Remediation: real acceptance-verification on the binding actor(s); pooled count inflation does not move the rollup.`,
     };
   }
 
@@ -318,7 +346,7 @@ export async function checkFqGate(actionClass: ActionClass): Promise<FqGateResul
     permitted: true,
     fq: state.quotient,
     verdict: state.verdict,
-    reason: `FQ=${state.quotient.toFixed(3)} — metabolic gate passed.`,
+    reason: `FQ=${state.quotient.toFixed(3)} — metabolic gate passed. rollup=${state.rollupFormula}; binding actor=${state.bindingActor?.actor ?? 'unknown'}@${state.bindingActor?.quotient?.toFixed(3) ?? '?'}; pooled counts (NOT the gated input) E=${state.executeCount} V=${state.verifyCount}; cached_at=${new Date(state.timestamp).toISOString()} cache_age_ms=${Date.now() - state.timestamp}.`,
   };
 }
 
