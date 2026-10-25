@@ -32,7 +32,7 @@ Reality determines survival.
 A-FORGE is the **Execution Engine** for the arifOS Federation — where governed intentions become reality.
 
 * **Port 7071 (Sense):** Observation & read-only probes.
-* **Port 7072 (Forge):** Governed mutation & tool execution (122 live tools — `tools/list` on `:7072/health` is the only count to quote).
+* **Port 7072 (Forge):** Governed mutation & tool execution (live tool count is runtime-measured — `tools/list` on `:7072/health` is the only count to quote; **115** listed / 87 stateless as of 2026-10-21, prior prose "122" was stale pre-retirement).
 * **ACT Ingress:** HMAC-SHA256 verified capability tokens (Arif Capability Token).
 * **Actuators:**
   - `forge_shell` / `forge_shell_dryrun`: Canonical governed shell execution.
