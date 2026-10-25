@@ -10,7 +10,22 @@
  *   - MCP tool wrapper (core.ts)
  *   - arifOS MCP Gate v0 (cross-organ)
  *
- * Conservative: tools not explicitly listed default to OBSERVE.
+ * FEDERATION_HARDENING P1 (2026-10-25, sovereign directive) — hardening pass:
+ *   - Registry is source of truth: every entry here names a tool that is LIVE
+ *     on the A-FORGE :7072 surface (tools_sot.yaml, generated from live
+ *     tools/list) or a LIVE cross-organ tool verified on its own organ
+ *     (arifOS kernel :8088, GEOX). Dead entries removed (registry-is-SOT).
+ *   - Default class is the MUTATE floor (EXECUTE_REVERSIBLE): an unknown tool
+ *     is treated as mutation-capable. Fail-closed — never read-only by default.
+ *   - isClassifiedTool() stays the policy-gate intercept: an unknown tool is
+ *     still forced to HOLD at McpPolicyGate (L4b) regardless of the class
+ *     fallback, so the fallback only governs direct classifyTool() consumers.
+ *   - Mode-aware overrides exist for every live tool that mutates only in some
+ *     modes (forge_policy set/remove, forge_scar seal, forge_github non-read
+ *     modes, forge_job submit, auth_pipeline non-dry_run, arif_report write
+ *     modes) — a write mode may never hide behind an OBSERVE base class.
+ *   - CI coverage test: test/classifierCoverage.test.ts fails the build when
+ *     any live tool is unclassified or any entry here is dead.
  *
  * DITEMPA BUKAN DIBERI — 8 classes, not 3. Precision over simplicity.
  */
@@ -27,7 +42,10 @@ export type ActionClass =
   | "EXECUTE_HIGH_IMPACT"  // Deploy, billing, data mutation
   | "IRREVERSIBLE";        // rm -rf, DROP TABLE, vault seal, physical actuation
 
-// ── Class priority (lower = higher severity) ────────────────────────────────
+/** The MUTATE floor: the class an unknown (unclassified) tool falls back to. */
+export const MUTATE_FLOOR: ActionClass = "EXECUTE_REVERSIBLE";
+
+// ── Class priority (lower = higher severity) ───────────────────────────────
 
 const CLASS_PRIORITY: Record<ActionClass, number> = {
   "OBSERVE": 7,
@@ -48,52 +66,31 @@ export function isMoreSevere(a: ActionClass, b: ActionClass): boolean {
 }
 
 // ── Tool Classifications ───────────────────────────────────────────────────
+//
+// P1 (2026-10-25): every entry below was verified against the live A-FORGE
+// tools/list (118 tools, tools_sot.yaml generated 2026-10-24) or against the
+// live organ it belongs to (arifOS kernel :8088 — 9 tools; GEOX :8081).
+// Entries naming tools not live anywhere were deleted; adding one back
+// without a live registry entry fails test/classifierCoverage.test.ts.
 
 // Tools that seal, approve, or cause irreversible / high-blast-radius effects.
 // arif_seal and arif_judge are KERNEL tools (constitutional, not bypass) —
 // they are the LEGAL path to irreversible action, not a bypass.
 const IRREVERSIBLE_TOOLS = new Set([
-  "arif_vault_seal",
-  "arif_seal",
-  "forge_vault_seal",
-  "forge_kernel_seal",
-  // "forge_approve", — DEPRECATED 2026-07-30: tool self-refuses, never executes. Route to arif_judge.
-  "arif_forge_execute",
-  "docker_container_remove",
-  "docker_volume_remove",
-  "systemctl_stop",
-  "systemctl_restart",
-  "git_push_force",
-  "git_hard_reset",
-  "hostinger_vps_restart",
-  "hostinger_vps_stop",
-  "forge_github_create_or_update_file",
-  "forge_visual_seal",      // VAULT999 composite seal — IRREVERSIBLE
-  "forge_seal",             // VAULT999 seal — IRREVERSIBLE
+  "arif_seal",                          // KERNEL :8088 — live cross-organ
+  "forge_seal",                         // VAULT999 seal — IRREVERSIBLE
+  "forge_github_create_or_update_file", // remote repo file write — IRREVERSIBLE
 ]);
 
 // Tools that execute high-impact operations (deploy, data mutation, billing)
 // arif_judge is a KERNEL constitutional tool — it is the LEGAL path to SEAL, not a bypass.
 const HIGH_IMPACT_TOOLS = new Set([
-  "arif_judge",
-  "arif_forge",
-  "forge_kernel_judge",
-  "forge_kernel_forge",
+  "arif_judge",              // KERNEL :8088 — live cross-organ
+  "arif_forge",              // KERNEL :8088 — live cross-organ (governed execution)
   "forge_execute",
-  "docker_container_start",
-  "docker_container_restart",
-  "git_push",
-  "forge_git_commit",  // consistent with registered tool names
-  "forge_postgres_query",
-  "forge_github_pr",
-  "forge_vault_write",
-  "forge_github_create_issue",
+  "forge_git_commit",        // consistent with registered tool names
   // ── H1 HARDENING (2026-09-27, sovereign directive, 333-AGI audit):
-  // The P0.2 block below once said "moved to HIGH_IMPACT" for these three
-  // but the move was never executed — code silently disagreed with its own
-  // documented intent (CSA "safety co-option" class: lenient drift at the
-  // classification layer). Raised here; elicitation/F13 defenses unchanged.
-  // Tightening-only ratchet. ──
+  // Tightening-only ratchet — money/egress/sealed-execution stay HIGH_IMPACT.
   "forge_execute_sealed",   // sealed execution — EXECUTE_HIGH_IMPACT (H1)
   "forge_transfer_confirm", // money transfer — EXECUTE_HIGH_IMPACT (H1)
   "forge_send_confirm",     // outbound send with confirmation — EXECUTE_HIGH_IMPACT (H1)
@@ -103,267 +100,131 @@ const HIGH_IMPACT_TOOLS = new Set([
 // arif_init/observe/think/route/memory are KERNEL constitutional tools.
 // They are the LEGAL path to governance, not bypass attempts.
 const REVERSIBLE_EXEC_TOOLS = new Set([
+  // ── KERNEL :8088 — live cross-organ ──
   "arif_init",
   "arif_observe",
   "arif_think",
   "arif_route",
   "arif_memory",
-  "forge_kernel_init",
-  "forge_kernel_observe",
-  "forge_kernel_think",
-  "forge_kernel_route",
-  "forge_kernel_memory",
-  "write",
-  "edit",
-  "bash",
-  "arif_systemctl",
-  "arif_sudo",
-  "arif_run",
-  "forge_docker_exec",
-  "forge_remember",
-  "request_amanah_lock",
-  "release_amanah_lock",
-  "forge_well_anchor",
-  "forge_agent_register",   // identity mutation — requires session
-  "forge_job_submit",       // async job submission — requires session
-  "forge_lease_request",    // lease issuance — requires session
-  "forge_lease_revoke",     // lease revocation — requires session
+  // ── A-FORGE live surface (verified 2026-10-25 against :7072 tools/list) ──
+  "forge_kernel",           // constitutional kernel proxy to arifOS — EXECUTE_REVERSIBLE
   "forge_shell",            // shell execution — governed, session required (T₁ 2026-07-19)
   "forge_canonize",         // draft → canonical promotion — EXECUTE_REVERSIBLE (file copy)
   "forge_parallel",         // spawn N concurrent A2A tasks — EXECUTE_REVERSIBLE
   "forge_parallel_cancel",  // cancel running parallel agents — EXECUTE_REVERSIBLE
-  "forge_kernel",           // constitutional kernel proxy to arifOS — EXECUTE_REVERSIBLE
-  // ── P0.2 FIX: newly-classified mutation tools ──
-  // H1 (2026-09-27): forge_execute_sealed / forge_transfer_confirm / forge_send_confirm
-  //   MOVED to HIGH_IMPACT_TOOLS — the "moved below" intent is now executed.
-  // H2 (2026-09-27): ghost dual-entries REMOVED — forge_github_create_or_update_file
-  //   lives in IRREVERSIBLE_TOOLS; forge_github_create_issue lives in HIGH_IMPACT_TOOLS.
-  //   (first-match-wins made these dead code; F10 ghost cleanup, no behaviour change.)
-  "forge_skill",               // dynamic tool generation — EXECUTE_REVERSIBLE
-  "forge_skillstore_write",    // artifact store write — EXECUTE_REVERSIBLE
-  "forge_register",            // APEX-gated tool registration — EXECUTE_REVERSIBLE
-  "forge_reality_loop",        // 7-stage intent compiler — EXECUTE_REVERSIBLE (stages are governed)
-  "forge_sandbox_run",         // sandbox execution — EXECUTE_REVERSIBLE (isolated)
-  "forge_synthesize",          // code generation — DRAFT (moved to draft below)
-  "forge_stage",               // artifact staging — EXECUTE_REVERSIBLE
-  "forge_tier_bind",           // trust tier binding — EXECUTE_REVERSIBLE
-  "forge_lock",                // amanah lock acquire/release — EXECUTE_REVERSIBLE
-  "forge_pipeline_run",        // autonomous intelligence pipeline — EXECUTE_REVERSIBLE
-  "forge_abort",               // safe stop + rollback — EXECUTE_REVERSIBLE
-  // H4-dedup (2026-09-27): forge_parallel / forge_parallel_cancel duplicate
-  // entries removed (already listed above in this set — Set-dedup made them
-  // harmless but the file lied about its own contents).
+  "forge_skill",            // dynamic tool generation — EXECUTE_REVERSIBLE
+  "forge_skillstore_write", // artifact store write — EXECUTE_REVERSIBLE
+  "forge_register",         // APEX-gated tool registration — EXECUTE_REVERSIBLE
+  "forge_sandbox_run",      // sandbox execution — EXECUTE_REVERSIBLE (isolated)
+  "forge_tier_bind",        // trust tier binding — EXECUTE_REVERSIBLE
+  "forge_lock",             // amanah lock acquire/release — EXECUTE_REVERSIBLE
+  "forge_abort",            // safe stop + rollback — EXECUTE_REVERSIBLE
   // ── Sandbox Lifecycle Operations ──
-  "forge_sandbox_pause",       // pause sandbox upperdir — EXECUTE_REVERSIBLE
-  "forge_sandbox_resume",      // resume sandbox overlay — EXECUTE_REVERSIBLE
-  "forge_sandbox_auto_evict",   // evict stale sandbox snapshots — EXECUTE_REVERSIBLE
-  "forge_hf_import",           // HuggingFace model import — EXECUTE_REVERSIBLE
-  // ── MuleRouter Multimodal (2026-07-30) — EXECUTE_REVERSIBLE ──
-  // "forge_ephemeral" — REMOVED (now mode-aware in classifyTool, see line ~355)
+  "forge_sandbox_pause",    // pause sandbox upperdir — EXECUTE_REVERSIBLE
+  "forge_sandbox_resume",   // resume sandbox overlay — EXECUTE_REVERSIBLE
+  "forge_sandbox_auto_evict", // evict stale sandbox snapshots — EXECUTE_REVERSIBLE
+  "forge_hf_import",        // HuggingFace model import — EXECUTE_REVERSIBLE
+  // ── P1 (2026-10-25): formerly unclassified live tools ──
+  // Measured handler behaviour: each writes in-memory compiler/run state.
+  "forge_compile_task",     // intent → immutable TaskIR — writes taskirStore
+  "forge_dispatch_lane",    // TaskIR → bounded lane invocation — writes dispatchLog
+  "forge_collect_evidence", // runtime → typed evidence packet — writes evidenceStore
+  "forge_seal_run",         // TaskIR+evidence → AWAITING_VERIFICATION — governance submission (fail-closed MUTATE floor)
+  // P1 false-readonly closure: appends to the experience trace store.
+  "forge_experience_trace", // record experience trace — append-only WRITE, not OBSERVE
 ]);
 
-// Tools that should always be simulated first
+// Tools that should always be simulated first (cross-organ, LIVE on GEOX :8081)
 const SIMULATE_FIRST_TOOLS = new Set([
-  "forge_dry_run",
   "geox_prospect",
   "geox_seismic_compute",
 ]);
-const SUGGEST_TOOLS = new Set([
-  "arif_suggest",
-  "forge_suggest",
-  "wealth_suggest_allocation",
-  "geox_prospect",
-]);
-
-// Queued / scheduled tools
-const QUEUE_TOOLS = new Set([
-  "forge_queue",
-  "forge_schedule",
-  "jobs_schedule",
-]);
 
 // Explicit OBSERVE-class tools (documentation + future-proofing)
-// These default to OBSERVE anyway, but listing them makes the contract explicit.
+// Every name here is LIVE on the A-FORGE :7072 surface (verified 2026-10-25).
+// Mode-aware tools that mutate in some modes are NOT listed here — they are
+// resolved in classifyTool() so a write mode can never hide behind OBSERVE.
 const OBSERVE_TOOLS = new Set([
-  "forge_pipeline",           // routing tool — no mutation
-  "forge_check_governance",   // governance check — read-only
-  "forge_job_status",         // job status — read-only
-  "forge_job_result",         // job result — read-only
-  "forge_log_tail",           // log read — read-only
-  "forge_registry_status",    // registry read — read-only
-  "forge_lease_status",       // lease status — read-only
-  "forge_agent_list",         // agent list — read-only
-  "forge_agent_status",       // agent status — read-only
-  "forge_health_check",       // health check — read-only
-  "forge_probe",              // federation organ liveness — read-only (hits /health endpoints)
-  "forge_memory_recall",      // memory read — read-only
-  "forge_filesystem_glob",    // file search — read-only
-  "forge_filesystem_grep",    // content search — read-only
-  "forge_document_ingest",    // document intelligence — read-only
-  "forge_security_drift_scan", // Machine Constitution security drift — read-only
-  "forge_git_status",         // git status — read-only
-  "forge_git_log",            // git log — read-only
-  "forge_git_diff",           // git diff — read-only
-  "forge_docker_ps",          // docker ps — read-only
-  "forge_docker_images",      // docker images — read-only
-  "forge_docker_logs",        // docker logs — read-only
-  "forge_postgres_schema",    // schema read — read-only
-  "forge_search",             // web search — read-only
-  "forge_research",           // web research — read-only
-  "forge_docs_lookup",        // docs lookup — read-only
-  "forge_browser_navigate",   // browser nav — read-only (observe-class)
-  "forge_browser_click",      // browser click — read-only (observe-class)
-  "forge_browser_type",       // browser type — read-only (observe-class)
-  "forge_browser_screenshot", // browser screenshot — read-only
-  "forge_browser_extract_text", // browser text extract — read-only
-  "forge_browser_evaluate_js",  // browser JS eval — read-only
-  "forge_well_state_read",    // well state — read-only
-  "forge_well_readiness_check", // well readiness — read-only
-  "forge_well_floor_scan",    // well floor scan — read-only
-  "forge_shell_status",       // shell subsystem status — read-only
-  "forge_shell_dryrun",       // shell preview — read-only (no mutation)
-  "forge_shell_ledger",       // shell ledger — read-only
-  "forge_shell_alert_history", // shell alert history — read-only
-  "forge_worktree",           // local git physics sensor — read-only, OBSERVE
-  "forge_runtime_verify",     // runtime hash verification — read-only, OBSERVE
-  "forge_cool_drift",         // cooling receipt drift — read-only, OBSERVE
-  "forge_cool_pattern",       // cooling receipt pattern — read-only, OBSERVE
-  "forge_parallel_list",      // task group list — read-only, OBSERVE
-  "forge_parallel_status",    // task group status query — read-only, OBSERVE
-  "forge_visual_qa",          // constitutional visual QA — read-only analysis, OBSERVE
-  "forge_heart_critique",     // risk assessment — read-only, OBSERVE
-  "forge_session_init",       // constitutional session ignition — OBSERVE
-  "forge_canon_recall",       // semantic recall over federation canon — read-only, OBSERVE (shells out to witness_recall.py)
-  "forge_memory",             // memory recall — read-only, OBSERVE
-  "forge_predict",            // pre-action simulation — read-only, OBSERVE
-  "forge_isomorphism_check",  // J-space manifold check — read-only, OBSERVE
-  "forge_fingerprint_check",  // tool fingerprint verification — read-only, OBSERVE
-  "forge_entropy_sweep",      // workspace entropy measurement — read-only, OBSERVE
-  "forge_status",             // active execution state — read-only, OBSERVE
-  "forge_surface_guard",      // MCP surface drift detection — read-only, OBSERVE
-  "forge_surface_audit",      // MCP tool surface audit — read-only, OBSERVE
-  "forge_netdata_alarms",     // Netdata alarms read — read-only, OBSERVE
-  "forge_netdata_metrics",    // Netdata metrics read — read-only, OBSERVE
-  "forge_journalctl",         // systemd journal read — read-only, OBSERVE
-  "forge_vps_ports",          // VPS port scanning — read-only, OBSERVE
-  "forge_vps_services",       // VPS service listing — read-only, OBSERVE
-  "forge_vps_cron",           // VPS cron registry — read-only, OBSERVE
-  "forge_receipt_draft",      // compliance receipt draft — read-only, OBSERVE
-  "forge_docket_prep",        // evidence packaging — read-only, OBSERVE
-  "forge_verify_timeline",    // timeline claim verification — read-only, OBSERVE
-  "forge_verify",              // WAJIB 2 verification lane — read-only, OBSERVE (verifier ≠ executor)
-  // forge_visual_seal REMOVED from OBSERVE 2026-09-17 (333-AGI F10 fix):
-  // it is IRREVERSIBLE (listed above) — dual classification was a ghost.
-  // forge_scar_scan REMOVED 2026-09-17 ENT-005 (use forge_scar(mode=consult))
-  "forge_skillstore_read",    // artifact store query — read-only, OBSERVE
-  "forge_registry",           // skill registry (list/get) — read-only, OBSERVE
-  "forge_policy",             // MCP policy engine (check/list) — read-only, OBSERVE
-  "forge_job",                // background job (submit/status) — read-only base, OBSERVE
-  "forge_wealth",             // WEALTH organ bridge — read-only, OBSERVE
-  "forge_well",               // WELL organ relay — read-only, OBSERVE
-  "forge_docsgpt",            // DocsGPT knowledge spine — read-only, OBSERVE (FORGE-1 membrane)
-  "forge_github_get_file",    // GitHub file read — read-only, OBSERVE
-  // forge_visual_seal REMOVED from OBSERVE 2026-09-17 (333-AGI F10 fix):
-  // it is IRREVERSIBLE (listed above) — dual classification was a ghost.
-  // ── P0.2 FIX (2026-07-19): 68 previously-unclassified tools now explicitly assigned ──
-  "forge_session_init",        // session ignition — OBSERVE (creates context, no mutation)
-  "forge_heart_critique",      // risk/ethics critique — OBSERVE
-  "forge_judge_proxy",         // proxy to arifOS judge — OBSERVE (delegates, never adjudicates)
-  "forge_chart",               // charting/visualization — OBSERVE
-  "forge_scan",                // security scan — OBSERVE
-  "forge_fetch",               // URL fetch — OBSERVE
-  "forge_web_extract",         // Universal web extract — SSRF-safe, read-only, OBSERVE (2026-09-14)
-  "forge_fingerprint_check",   // tool fingerprint check — OBSERVE
-  "forge_github",              // GitHub ops — mode-aware (search/get=OBSERVE)
-  "forge_github_get_file",     // file read — OBSERVE
-  "forge_journalctl",          // journal log query — OBSERVE
-  "forge_memory",              // memory recall/list — OBSERVE
-  "forge_netdata_alarms",      // netdata alarms — OBSERVE
-  "forge_netdata_metrics",     // netdata metrics — OBSERVE
-  "forge_probe_site",          // site probe — OBSERVE
-  "forge_web_zen",             // web zen CLI wrapper — OBSERVE (doctor/sense/verify; orphan dry-run; ephemeral sandbox)
-  "forge_receipt_draft",       // receipt drafting — OBSERVE (generates draft, no mutation)
-  "forge_registry",            // registry read — OBSERVE
-  "forge_scar",                // scar ledger — mode-aware (list/consult=OBSERVE)
-  "forge_skillstore_read",     // skill store read — OBSERVE
-  "forge_canon_recall",         // semantic recall over federation canon — OBSERVE (reads Qdrant + Qwen/Ollama, no mutation)
-  "forge_status",              // execution state overview — OBSERVE
-  "forge_surface_audit",       // tool surface audit — OBSERVE
-  "forge_surface_guard",       // surface guard check — OBSERVE
-  "forge_vps_ports",           // port scan — OBSERVE
-  "forge_vps_services",        // service scan — OBSERVE
-  "forge_vps_cron",            // cron scan — OBSERVE
-  "forge_verify_timeline",     // timeline verification — OBSERVE
-  "forge_isomorphism_check",   // manifold stability check — OBSERVE
-  "forge_policy",              // policy engine — mode-aware (list/check=OBSERVE)
-  "forge_parallel_list",       // task group list — OBSERVE
-  "forge_parallel_status",     // task group status — OBSERVE
-  "forge_evaluate",            // tool evaluation — OBSERVE (computes G + C_dark, no mutation)
-  "forge_witness",             // tri-witness consensus — OBSERVE (computes W³, no mutation)
-  "forge_entropy_sweep",       // entropy measurement — OBSERVE
-  // forge_scar_scan REMOVED 2026-09-17 ENT-005 (use forge_scar(mode=consult))
-  "forge_predict",             // pre-action simulation — SIMULATE (moved to simulate set below)
-  "forge_document_ingest",     // already above, kept for clarity
-  // ── Google Workspace & External Model Bridges (2026-08-25) ──
-  "forge_gemini",              // Google AI Studio Gemini bridge — OBSERVE inference
-  "forge_drive",               // Google Drive search/list — OBSERVE
-  // ── World Model observation (2026-08-13) — read-only stats/gaps/quality ──
-  "forge_wm_stats",            // WM statistics dashboard — read-only
-  "forge_wm_gaps",             // WM gap alerts — read-only
-  "forge_wm_quality",          // WM trajectory quality — read-only
-  // ── Experience Traces (2026-08-26) — Chain-of-Experience observation ──
-  "forge_experience_trace",    // record experience trace — append-only OBSERVE
-  "forge_experience_query",    // query experience traces — read-only
-  "forge_skill_select_query",  // skill selection events — read-only (SkillGate Phase 1)
-  // ── APEX J-Space & Metabolic Tools (evaluation & task vector modeling, no filesystem mutation) ──
-  "forge_apex_encode",         // goal → task vector with Jacobian J=∂T/∂G — read-only J-space model, OBSERVE
-  "forge_apex_metabolize",     // metabolic weight adjustment in session store — OBSERVE
-  "forge_apex_recompute",      // sparse sensitivity recomputation — OBSERVE
-  "forge_apex_emd",            // EMD consistency check — OBSERVE
-  "forge_apex_goal_status",    // inspect J-space goal vector — read-only, OBSERVE
-  // ── Sandbox & External Search Observation ──
-  "forge_sandbox_list_paused", // list paused sandboxes — read-only, OBSERVE
-  "forge_minimax_search",      // MiniMax search — read-only, OBSERVE
-  // ── RSI State Vector & Frequency Signals ──
-  "forge_rsi_impulse_response",// RSI impulse response sensor — read-only, OBSERVE
-  "forge_rsi_dual_rate_fq",    // RSI dual rate FQ signal — read-only, OBSERVE
-  "forge_rsi_state_vector",    // RSI state vector snapshot — read-only, OBSERVE
-  "auth_pipeline",             // Auth pipeline status & verification — read-only, OBSERVE
-  "forge_cool",                // H4 (2026-09-27, name-drift fix): live cooling verb
-                               // (coolingVerbs.ts:189) was unclassified → fail-closed HOLD.
-                               // Tool contract declares INV-C1 OBSERVE-only; VAULT999
-                               // cooling appends are audit-witness writes, not state
-                               // mutation — consistent with forge_cool_drift/pattern above.
-  // ── MuleRouter Multimodal (2026-07-30) ──
-  // "forge_ephemeral" — REMOVED (now mode-aware in classifyTool, see line ~355)
+  "forge_apex_emd",          // EMD consistency check — OBSERVE
+  "forge_apex_encode",       // goal → task vector — read-only J-space model, OBSERVE
+  "forge_apex_goal_status",  // inspect J-space goal vector — read-only, OBSERVE
+  "forge_apex_metabolize",   // metabolic weight adjustment in session store — OBSERVE
+  "forge_apex_recompute",    // sparse sensitivity recomputation — OBSERVE
+  "forge_browser_navigate",  // browser nav — OBSERVE
+  "forge_canon_recall",      // semantic recall over federation canon — OBSERVE
+  "forge_chain_state",       // P1: THE read surface for chain liveness — reads only (R5 header: never writes a chain)
+  "forge_chart",             // charting/visualization — OBSERVE
+  "forge_check_governance",  // governance check — read-only
+  "forge_cool",              // H4 (2026-09-27): cooling verb — contract INV-C1 OBSERVE-only; cooling appends are audit-witness writes, not state mutation
+  "forge_docket_prep",       // evidence packaging — OBSERVE
+  "forge_docsgpt",           // DocsGPT knowledge spine — OBSERVE (FORGE-1 membrane)
+  "forge_document_ingest",   // document intelligence — OBSERVE
+  "forge_drive",             // Google Drive search/list — OBSERVE
+  "forge_entropy_sweep",     // workspace entropy measurement — OBSERVE
+  "forge_evaluate",          // APEX G-space evaluation — computes G + C_dark, no mutation
+  "forge_experience_query",  // query experience traces — read-only
+  "forge_fetch",             // URL fetch — OBSERVE
+  "forge_fingerprint_check", // tool fingerprint verification — OBSERVE
+  "forge_gemini",            // Gemini bridge — OBSERVE inference
+  "forge_health_check",      // health check — read-only
+  "forge_heart_critique",    // risk/ethics critique — OBSERVE
+  "forge_isomorphism_check", // manifold stability check — OBSERVE
+  "forge_journalctl",        // journal log query — OBSERVE
+  "forge_judge_proxy",       // proxy to arifOS judge — OBSERVE (delegates, never adjudicates)
+  "forge_memory",            // memory recall — OBSERVE
+  "forge_netdata_alarms",    // netdata alarms — OBSERVE
+  "forge_netdata_metrics",   // netdata metrics — OBSERVE
+  "forge_parallel_list",     // task group list — OBSERVE
+  "forge_parallel_status",   // task group status — OBSERVE
+  "forge_predict",           // pre-action simulation — OBSERVE
+  "forge_probe",             // federation organ liveness — OBSERVE (hits /health endpoints)
+  "forge_probe_site",        // site probe — OBSERVE
+  "forge_receipt_draft",     // receipt drafting — OBSERVE (generates draft, no mutation)
+  "forge_registry",          // skill registry (status/list) — OBSERVE
+  "forge_registry_status",   // registry read — OBSERVE
+  "forge_rsi_dual_rate_fq",  // RSI dual rate FQ signal — OBSERVE
+  "forge_rsi_impulse_response", // RSI impulse response sensor — OBSERVE
+  "forge_rsi_state_vector",  // RSI state vector snapshot — OBSERVE
+  "forge_runtime_verify",    // runtime hash verification — OBSERVE
+  "forge_sandbox_list_paused", // list paused sandboxes — OBSERVE
+  "forge_scan",              // security scan — OBSERVE
+  "forge_search",            // web search — OBSERVE
+  "forge_security_drift_scan", // Machine Constitution security drift — OBSERVE
+  "forge_session_init",      // constitutional session ignition — OBSERVE (creates context, no mutation)
+  "forge_shell_alert_history", // shell alert history — OBSERVE
+  "forge_shell_dryrun",      // shell preview — OBSERVE (no mutation)
+  "forge_shell_ledger",      // shell ledger — OBSERVE
+  "forge_shell_status",      // shell subsystem status — OBSERVE
+  "forge_skill_select_query", // skill selection events — read-only
+  "forge_skillstore_read",   // artifact store query — OBSERVE
+  "forge_status",            // execution state overview — OBSERVE
+  "forge_surface_audit",     // tool surface audit — OBSERVE
+  "forge_surface_guard",     // surface guard check — OBSERVE
+  "forge_verify_timeline",   // timeline claim verification — OBSERVE
+  "forge_vps_cron",          // VPS cron registry — OBSERVE
+  "forge_vps_ports",         // VPS port scanning — OBSERVE
+  "forge_vps_services",      // VPS service listing — OBSERVE
+  "forge_wealth",            // WEALTH organ bridge — OBSERVE (deprecated relay)
+  "forge_web_extract",       // Universal web extract — SSRF-safe, OBSERVE
+  "forge_web_zen",           // web zen CLI wrapper — OBSERVE (doctor/sense/verify; orphan dry-run)
+  "forge_well",              // WELL organ relay — OBSERVE (deprecated relay)
+  "forge_witness",           // tri-witness consensus — computes W³, no mutation
+  "forge_wm_gaps",           // WM gap alerts — read-only
+  "forge_wm_quality",        // WM trajectory quality — read-only
+  "forge_wm_stats",          // WM statistics dashboard — read-only
+  "forge_worktree",          // local git physics sensor — read-only
 ]);
 
 /**
- * P0.1 FIX (2026-07-19): Unknown tools MUST return HOLD, not OBSERVE.
- * Fail-open is not fail-safe. A new mutation tool omitted from the
- * classifier could be treated as read-only and bypass the session gate.
- *
- * Mode-aware tools (forge_agent, forge_filesystem, forge_vault etc.)
- * MUST be classified by tool+mode, not tool name alone.
- */
-export type UnknownActionBehaviour = "HOLD" | "OBSERVE";
-
-let unknownBehaviour: UnknownActionBehaviour = "HOLD";
-
-/** Override unknown-tool behaviour (TESTING ONLY). */
-export function setUnknownActionBehaviour(b: UnknownActionBehaviour): void {
-  unknownBehaviour = b;
-}
-
-/**
- * P0.1 FIX: classify by tool name + mode. Mode-aware tools are resolved
- * to their specific action class. Unknown tools return HOLD
- * (not IRREVERSIBLE — too aggressive for fail-closed). P0.6 fix 2026-07-19.
+ * P0.1 FIX (2026-07-19): Unknown tools MUST NOT resolve to OBSERVE.
+ * FEDERATION_HARDENING P1 (2026-10-25): the fallback class is the MUTATE
+ * floor (EXECUTE_REVERSIBLE) — an unknown tool is treated as mutation-capable
+ * and therefore governed (session + lease). It is NOT treated as harmless.
+ * Fail-closed is preserved by isClassifiedTool()=false → McpPolicyGate L4b
+ * forces HOLD before any execution, so the class fallback only shapes
+ * direct classifyTool() consumers (HTTP /execute, MCP annotations).
  */
 export function classifyTool(toolName: string, mode?: string): ActionClass {
-  // Mode-aware resolution: combine tool + mode for accurate classification
-  const fullKey = mode ? `${toolName}/${mode}` : toolName;
-
   // ── Mode-aware overrides ──
   // forge_agent: list/status=OBSERVE, register=EXECUTE_REVERSIBLE, kill=IRREVERSIBLE
   if (toolName === "forge_agent") {
@@ -372,8 +233,8 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (mode === "kill") return "IRREVERSIBLE";
   }
   // forge_filesystem: read/tree/search/stat/glob/grep=OBSERVE, write/patch/move/restore=EXECUTE_REVERSIBLE, delete=EXECUTE_HIGH_IMPACT
-  // No-mode default is OBSERVE (same pattern as forge_vault). Registration-time
-  // annotations and policy-gate pre-classify must not treat a read as IRREVERSIBLE.
+  // No-mode default is OBSERVE (registration-time annotations and policy-gate
+  // pre-classification must not treat a read as IRREVERSIBLE).
   // Handler re-classifies with the actual mode on each call.
   if (toolName === "forge_filesystem") {
     if (!mode) return "OBSERVE";
@@ -382,11 +243,9 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (mode === "delete") return "EXECUTE_HIGH_IMPACT";
   }
   // forge_vault: read/list=OBSERVE, write/seal=EXECUTE_REVERSIBLE, no-mode=OBSERVE (P2.1 fix)
-  // Previously EXECUTE_HIGH_IMPACT which required 888_HOLD — blocked autonomous
-  // seal path. VAULT999 is append-only, so write is effectively reversible
-  // (new entry, never overwrite). Session + lease gate still applies.
-  // Without mode (e.g. policy gate pre-classification), default to OBSERVE —
-  // the per-call handler re-classifies with actual mode.
+  // VAULT999 is append-only, so write is effectively reversible (new entry,
+  // never overwrite). Session + lease gate still applies. Without mode the
+  // policy gate pre-classifies OBSERVE; the per-call handler re-classifies.
   if (toolName === "forge_vault") {
     if (!mode) return "OBSERVE";
     if (mode === "read" || mode === "list") return "OBSERVE";
@@ -402,7 +261,7 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
     if (["ps", "images", "logs"].includes(mode ?? "")) return "OBSERVE";
     if (mode === "exec") return "EXECUTE_REVERSIBLE";
   }
-  // forge_lease: status/list=OBSERVE, request=OBSERVE, revoke=EXECUTE_REVERSIBLE
+  // forge_lease: status/list/request=OBSERVE, revoke=EXECUTE_REVERSIBLE
   //
   // WHY request is OBSERVE (333-AGI 2026-10-20, bootstrap-circularity fix):
   // it was EXECUTE_REVERSIBLE, and the lease gate ranked it against the caller's
@@ -414,9 +273,8 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
   // stays with arifOS. It remains session-gated — an unbound caller still fails.
   // `revoke` stays EXECUTE_REVERSIBLE: that IS a mutation of live authority.
   if (toolName === "forge_lease") {
-    if (["status", "list"].includes(mode ?? "")) return "OBSERVE";
-    if (mode === "request") return "OBSERVE";
-    if (["revoke"].includes(mode ?? "")) return "EXECUTE_REVERSIBLE";
+    if (["status", "list", "request"].includes(mode ?? "")) return "OBSERVE";
+    if (mode === "revoke") return "EXECUTE_REVERSIBLE";
   }
   // forge_postgres: query/schema=OBSERVE (read), query with mutate=true=EXECUTE_HIGH_IMPACT
   if (toolName === "forge_postgres") {
@@ -459,25 +317,65 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
   if (toolName === "forge_drive_create") return "EXECUTE_REVERSIBLE";
   // forge_trust_score: list/history/verify=OBSERVE (read-only trust ledger queries),
   // score/evaluate=EXECUTE_REVERSIBLE (persist to Postgres trust_scores + trust_history).
-  // Without mode-aware override, the tool falls through to IRREVERSIBLE_TOOLS and
-  // even a read of mode='list' gets blocked. Same pattern as forge_ephemeral.
   if (toolName === "forge_trust_score") {
     if (!mode) return "OBSERVE"; // default: harmless list query
     if (["list", "history", "verify"].includes(mode)) return "OBSERVE";
     if (["score", "evaluate"].includes(mode)) return "EXECUTE_REVERSIBLE";
   }
-  // H4 (2026-09-27, name-drift fix — RE-APPLIED after concurrent-writer race
-  // clobbered the first application in commit 99232241's file-level write):
-  // forge_compose is LIVE-registered (forgeComposeTools.ts:70) but was
-  // unclassified → fail-closed IRREVERSIBLE fallback 888-gated even status
-  // reads. Mode-aware: status/analyze=OBSERVE, execute/cancel=EXECUTE_REVERSIBLE.
+  // forge_compose: status/analyze=OBSERVE, execute/cancel=EXECUTE_REVERSIBLE.
   // Irreversible compositions carry hold_id and are gated INTERNALLY by F13
-  // (composition bus refuses irreversible steps without hold) — same
-  // delegation pattern as forge_ephemeral's sandbox gate.
+  // (composition bus refuses irreversible steps without hold).
   if (toolName === "forge_compose") {
     if (!mode) return "OBSERVE"; // default: status query
     if (["status", "analyze"].includes(mode)) return "OBSERVE";
     if (["execute", "cancel"].includes(mode)) return "EXECUTE_REVERSIBLE";
+  }
+  // ── P1 (2026-10-25) false-readonly closures — measured handler behaviour ──
+  // forge_policy: check/list=OBSERVE (read-only policy engine), set/remove/save
+  // =EXECUTE_REVERSIBLE (mutates the governed MCP policy store — policyTools.ts
+  // mode dispatch). Was name-classified OBSERVE: a policy WRITE read as read-only.
+  if (toolName === "forge_policy") {
+    if (!mode) return "OBSERVE"; // default: status/list query
+    if (["check", "list", "status"].includes(mode)) return "OBSERVE";
+    if (["set", "remove", "save"].includes(mode)) return "EXECUTE_REVERSIBLE";
+  }
+  // forge_scar: list/consult=OBSERVE (read-only scar ledger), seal=EXECUTE_REVERSIBLE
+  // (records a failure into the scar ledger — a write; was name-classified OBSERVE).
+  if (toolName === "forge_scar") {
+    if (!mode) return "OBSERVE"; // default: list/consult read
+    if (["list", "consult", "scan"].includes(mode)) return "OBSERVE";
+    if (mode === "seal") return "EXECUTE_REVERSIBLE";
+  }
+  // forge_github: search/get=OBSERVE (read-only GitHub queries via forge_github
+  // mode='search' | 'get'), every other mode (pr create etc.) =EXECUTE_REVERSIBLE.
+  // Unknown mode falls to the MUTATE floor — fail-closed.
+  if (toolName === "forge_github") {
+    if (mode === "search" || mode === "get") return "OBSERVE";
+    return "EXECUTE_REVERSIBLE";
+  }
+  // forge_job: status/list=OBSERVE (read-only), submit=EXECUTE_REVERSIBLE
+  // (spawns a background job — an execution, not a query).
+  if (toolName === "forge_job") {
+    if (!mode) return "OBSERVE"; // default: status query
+    if (["status", "list", "result"].includes(mode)) return "OBSERVE";
+    if (mode === "submit") return "EXECUTE_REVERSIBLE";
+  }
+  // auth_pipeline: dry_run=OBSERVE (pure contract validation), otherwise
+  // EXECUTE_REVERSIBLE — the handler runs executePipeline(contract) which walks
+  // the full AUTH pipeline (lease → lock → runtime_verify → execute …) for any
+  // non-dry_run, non-OBSERVE contract. The OBSERVE base class was a false
+  // readonly (P1 2026-10-25); modeless calls now take the MUTATE floor.
+  if (toolName === "auth_pipeline") {
+    if (mode === "dry_run") return "OBSERVE";
+    return "EXECUTE_REVERSIBLE";
+  }
+  // arif_report (KERNEL :8088 — live cross-organ): inbox/stats=OBSERVE (read the
+  // peer lane), report/ack/flush=EXECUTE_REVERSIBLE (append/mutate the
+  // append-only peer-lane store — arifosmcp/abi/mode_contracts.json:
+  // file=MATERIAL, ack=MATERIAL, flush=MATERIAL after P1-2 2026-10-25).
+  if (toolName === "arif_report") {
+    if (mode === "inbox" || mode === "stats") return "OBSERVE";
+    return "EXECUTE_REVERSIBLE";
   }
 
   // ── Name-only classification (existing sets) ──
@@ -485,17 +383,40 @@ export function classifyTool(toolName: string, mode?: string): ActionClass {
   if (HIGH_IMPACT_TOOLS.has(toolName)) return "EXECUTE_HIGH_IMPACT";
   if (SIMULATE_FIRST_TOOLS.has(toolName)) return "SIMULATE";
   if (REVERSIBLE_EXEC_TOOLS.has(toolName)) return "EXECUTE_REVERSIBLE";
-  if (SUGGEST_TOOLS.has(toolName)) return "SUGGEST";
-  if (QUEUE_TOOLS.has(toolName)) return "QUEUE";
   if (OBSERVE_TOOLS.has(toolName)) return "OBSERVE";
 
-  // P0.6 FIX (2026-07-19): Unknown tools → HOLD via unknownBehaviour.
-  // When unknownBehaviour="HOLD", classifyTool returns IRREVERSIBLE (max
-  // blast radius) but the policy gate MUST intercept this via
-  // isClassifiedTool() and force HOLD verdict. When unknownBehaviour was
-  // "OBSERVE" (legacy fail-open), the fallback was wrong — too permissive.
-  return "IRREVERSIBLE";
+  // P1 (2026-10-25): unknown tool → MUTATE floor (fail-closed toward
+  // governance, never toward read-only). isClassifiedTool() stays false, so
+  // McpPolicyGate L4b still forces HOLD before any execution.
+  return MUTATE_FLOOR;
 }
+
+/** Mode-aware base names — classified per-tool+mode in classifyTool(). */
+const MODE_AWARE_TOOLS = [
+  "forge_agent",
+  "forge_filesystem",
+  "forge_vault",
+  "forge_git",
+  "forge_docker",
+  "forge_lease",
+  "forge_postgres",
+  "forge_ephemeral",
+  "forge_reality_loop",
+  "forge_calendar",
+  "forge_sheets",
+  "forge_gmail",
+  "forge_telegram",
+  "forge_drive_create",
+  "forge_trust_score",
+  "forge_compose",
+  // P1 (2026-10-25) — false-readonly closures + cross-organ lane:
+  "forge_policy",
+  "forge_scar",
+  "forge_github",
+  "forge_job",
+  "auth_pipeline",
+  "arif_report",
+];
 
 /**
  * P0.6: Returns true if the tool is explicitly classified in any set
@@ -508,29 +429,25 @@ export function isClassifiedTool(toolName: string): boolean {
   if (REVERSIBLE_EXEC_TOOLS.has(toolName)) return true;
   if (OBSERVE_TOOLS.has(toolName)) return true;
   if (SIMULATE_FIRST_TOOLS.has(toolName)) return true;
-  if (SUGGEST_TOOLS.has(toolName)) return true;
-  if (QUEUE_TOOLS.has(toolName)) return true;
-  // Check mode-aware base names
-  const modeAware = [
-    "forge_agent",
-    "forge_filesystem",
-    "forge_vault",
-    "forge_git",
-    "forge_docker",
-    "forge_lease",
-    "forge_postgres",
-    "forge_ephemeral",
-    "forge_reality_loop",
-    "forge_calendar",
-    "forge_sheets",
-    "forge_gmail",
-    "forge_telegram",
-    "forge_drive_create",
-    "forge_trust_score",
-    "forge_compose", // H4 2026-09-27: mode-aware compose bus
-  ];
-  if (modeAware.includes(toolName)) return true;
+  if (MODE_AWARE_TOOLS.includes(toolName)) return true;
   return false;
+}
+
+/**
+ * P1 (2026-10-25): every tool name this classifier explicitly knows —
+ * the union of the name sets and the mode-aware base names. Consumed by
+ * test/classifierCoverage.test.ts to prove live_tools == classified_tools
+ * and dead_entries == 0 against the registry SOT (tools_sot.yaml).
+ */
+export function classifiedToolRegistry(): string[] {
+  return [
+    ...IRREVERSIBLE_TOOLS,
+    ...HIGH_IMPACT_TOOLS,
+    ...REVERSIBLE_EXEC_TOOLS,
+    ...SIMULATE_FIRST_TOOLS,
+    ...OBSERVE_TOOLS,
+    ...MODE_AWARE_TOOLS,
+  ];
 }
 
 /**
