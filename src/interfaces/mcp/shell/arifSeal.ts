@@ -389,10 +389,51 @@ export class ArifSeal {
 
 let _defaultInstance: ArifSeal | null = null;
 
+/**
+ * Default seal ledger. Frozen archive segment: /root/A-FORGE/data is chattr +i
+ * (file AND directory), so this path is readable but NOT appendable. The freeze
+ * is deliberate — do not thaw it to "fix" writes; point AFORGE_SEAL_LEDGER at a
+ * new segment instead, and record the continuity hash.
+ */
+export const DEFAULT_SEAL_LEDGER_PATH = "/root/A-FORGE/data/vault999_chain.jsonl";
+
+/** Resolve the active ledger path (env override wins; default unchanged). */
+export function resolveSealLedgerPath(): string {
+  const override = process.env.AFORGE_SEAL_LEDGER;
+  return override && override.trim() ? override.trim() : DEFAULT_SEAL_LEDGER_PATH;
+}
+
+/**
+ * 2026-10-26 (333-AGI, next-horizon P0): a receipt ledger that silently stops is
+ * worse than no ledger — it keeps the appearance of audit while the evidence set
+ * is frozen. This probe makes the failure visible; /health reports it.
+ * Truthful by construction: writable=false always carries a reason.
+ */
+export async function sealLedgerHealth(): Promise<{
+  path: string;
+  writable: boolean;
+  error: string | null;
+  source: "env" | "default";
+}> {
+  const ledgerPath = resolveSealLedgerPath();
+  const source = process.env.AFORGE_SEAL_LEDGER?.trim() ? "env" : "default";
+  try {
+    await fs.appendFile(ledgerPath, "");
+    return { path: ledgerPath, writable: true, error: null, source };
+  } catch (err: any) {
+    return {
+      path: ledgerPath,
+      writable: false,
+      error: err?.code ?? err?.message ?? String(err),
+      source,
+    };
+  }
+}
+
 export function getDefaultArifSeal(): ArifSeal {
   if (!_defaultInstance) {
     _defaultInstance = new ArifSeal({
-      ledgerPath: "/root/A-FORGE/data/vault999_chain.jsonl",
+      ledgerPath: resolveSealLedgerPath(),
     });
   }
   return _defaultInstance;

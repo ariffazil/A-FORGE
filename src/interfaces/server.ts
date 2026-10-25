@@ -69,7 +69,9 @@ import {
   type ApexScalarReplicaSet,
 } from "../domain/governance/GovernanceBridge.js";
 import { validateSession } from "../domain/session/sessionGate.js";
-import { classifyTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
+import { classifyTool, isClassifiedTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
+import { sealLedgerHealth } from "./mcp/shell/arifSeal.js";
+import { getMcpPolicyGate } from "../domain/governance/McpPolicyGate.js";
 import {
   gateToolClaim,
   claimGateHoldBody,
@@ -567,6 +569,26 @@ app.post("/execute", async (req: Request, res: Response) => {
 
     // ── ADAT AGENTIC: Classify action before execution ──
     const actionClass = classifyTool(tool);
+
+    // UNCLASSIFIED GATE (2026-10-26, 333-AGI - next-horizon P0)
+    // The MUTATE floor stops an unknown tool reading as harmless, but class !=
+    // block: this ingress never consulted isClassifiedTool(), so an unknown tool
+    // was gated only as EXECUTE_REVERSIBLE (session+lease) while McpPolicyGate
+    // L4b held it. Deployed behaviour was IRREVERSIBLE + 888_HOLD. Static
+    // classification is checked before metabolic budget: an unclassified tool is
+    // denied on identity, not on FQ. Tightening only - classified tools keep
+    // their exact existing behaviour.
+    if (!isClassifiedTool(tool)) {
+      return res.status(423).json({
+        ok: false,
+        error: "UNCLASSIFIED_TOOL",
+        type: "governance_hold",
+        verdict: "HOLD",
+        message: `tool "${tool}" is not explicitly classified - unclassified mutation is blocked. Add it to actionClassifier.ts.`,
+        gate: "CLASSIFY",
+        adat_gate: "UNCLASSIFIED_HOLD",
+      });
+    }
 
     // FQ Metabolic Gate (P0.1) — per-lane when actor is known (doctrine 2026-10-18)
     const fqBlock = await gateToolByFq(actionClass, tool, actor_id);
@@ -1160,6 +1182,9 @@ app.get("/health", async (_req: Request, res: Response) => {
   // T5 2026-07-17 — canonical 5-field federation header + organ payload.
   // ok retained for legacy callers; status is canonical.
   const liveToolCount = getRegisteredMcpToolCount();
+  // 2026-10-26 (333-AGI): a frozen/unwritable seal ledger must be visible in
+  // health, never swallowed. See sealLedgerHealth() for the freeze note.
+  const sealLedger = await sealLedgerHealth();
   res.json({
     ok: !isDegradedMode && !deploymentDrift, // legacy alias — prefer status
     degraded_mode: isDegradedMode || deploymentDrift,
@@ -1178,6 +1203,11 @@ app.get("/health", async (_req: Request, res: Response) => {
     source_commit: sourceCommit,
     deployment_drift: deploymentDrift,
     head_commit: headCommit,
+    seal_ledger: sealLedger,
+    // 2026-10-26 (333-AGI): the pin violation used to be stderr-only. Health now
+    // states which policy is actually in force, so a green boot cannot be read
+    // as "reviewed policies loaded".
+    policy_gate: getMcpPolicyGate().getPinStatus(),
     status: isDegradedMode || deploymentDrift ? "degraded" : "healthy",
     apex_scalars: apexScalars,
     // F2-fidelity fix (MCP-PROBE-2026-08-08): UNMEASURED is by-design delegation

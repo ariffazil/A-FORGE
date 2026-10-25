@@ -166,6 +166,13 @@ const OBSERVE_TOOLS = new Set([
   "forge_fetch",             // URL fetch — OBSERVE
   "forge_fingerprint_check", // tool fingerprint verification — OBSERVE
   "forge_gemini",            // Gemini bridge — OBSERVE inference
+  // 2026-10-26 (333-AGI, classifierCoverage): live + declared read by its own
+  // handler ("Read a file from GitHub", gatewayTools.ts:1895) and by policyTools
+  // ("stays ungated (OBSERVE)", policyTools.ts:289). It was absent from every
+  // set, so L4b held a read as an unknown tool. Deprecated (GC 2026-10-22,
+  // removal epoch 2026-11-05) — when it leaves the live surface, the coverage
+  // gate fails until this entry is deleted too.
+  "forge_github_get_file",   // GitHub file read — OBSERVE (deprecated alias)
   "forge_health_check",      // health check — read-only
   "forge_heart_critique",    // risk/ethics critique — OBSERVE
   "forge_isomorphism_check", // manifold stability check — OBSERVE
