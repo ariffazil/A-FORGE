@@ -21,6 +21,16 @@ model_list:
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 8
     min_tokens: 200
+# Bump log: 2026-10-27 333-AGI — landing deploy tail (F13 sovereign order tonight): governance header re-restored after a SECOND unlogged deletion found in worktree; body = LIVE runtime state (litellm-federation container booted 2026-10-27 20:04 +08 off this file via docker bind-mount) — additional_drop_params:["include"] shims recorded as-is. Comments only, parser-invisible: no litellm restart required.
+model_list:
+- model_name: apex-888
+  litellm_params:
+    model: openai/deepseek-flash
+    api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 8
+    min_tokens: 200
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -35,6 +45,7 @@ model_list:
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 1
     min_tokens: 200
@@ -53,6 +64,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 6
   model_info:
@@ -66,6 +78,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 99
     min_tokens: 200
@@ -79,6 +92,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 99
   model_info:
@@ -92,6 +106,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 97
   model_info:
@@ -104,6 +119,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 999
   model_info:
@@ -115,6 +131,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 997
   model_info:
@@ -127,6 +144,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 999
   model_info:
@@ -138,6 +156,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 997
   model_info:
@@ -150,6 +169,7 @@ model_list:
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 8
     min_tokens: 200
@@ -182,6 +202,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 3
     max_input_tokens: 1000000
@@ -201,6 +222,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_PLATFORM_API_KEY
     order: 991
     max_input_tokens: 1048576
@@ -225,6 +247,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://opencode.ai/zen/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-i-arif-lane-001
@@ -246,6 +269,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 4
     min_tokens: 200
@@ -265,6 +289,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 2
     max_input_tokens: 1048576
@@ -282,6 +307,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-flash
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 6
     max_input_tokens: 131072
@@ -301,6 +327,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
     max_input_tokens: 131072
@@ -320,6 +347,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 1
     extra_headers:
@@ -336,6 +364,7 @@ model_list:
   litellm_params:
     model: openai/kimi-k2.7-code
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 1
     extra_headers:
@@ -350,6 +379,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 1
     min_tokens: 200
@@ -366,6 +396,7 @@ model_list:
   litellm_params:
     model: openai/minimax-m3
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 1
     extra_headers:
@@ -381,6 +412,7 @@ model_list:
   litellm_params:
     model: openai/gpt-6-luna
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 6
     extra_headers:
@@ -395,6 +427,7 @@ model_list:
   litellm_params:
     model: openai/claude-haiku-5-5
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 6
     extra_headers:
@@ -409,6 +442,7 @@ model_list:
   litellm_params:
     model: openai/beam-free
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 5
     extra_headers:
@@ -423,6 +457,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4.1-flash
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 5
     extra_headers:
@@ -437,6 +472,7 @@ model_list:
   litellm_params:
     model: openai/gemini-4-argon-contributor
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 10
     extra_headers:
@@ -451,6 +487,7 @@ model_list:
   litellm_params:
     model: openai/grok-4.7
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 10
     extra_headers:
@@ -465,6 +502,7 @@ model_list:
   litellm_params:
     model: openai/longcat-2.5-preview-free
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 5
     extra_headers:
@@ -479,6 +517,7 @@ model_list:
   litellm_params:
     model: openai/space-bunny
     api_base: https://opencode.ai/inference/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     order: 5
     extra_headers:
@@ -493,6 +532,7 @@ model_list:
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     min_tokens: 200
     order: 1
@@ -509,6 +549,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://opencode.ai/zen/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-agi-333-lane-001
@@ -525,6 +566,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 999
   model_info:
@@ -539,6 +581,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
@@ -553,6 +596,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 999
   model_info:
@@ -563,6 +607,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     min_tokens: 200
@@ -572,8 +617,9 @@ model_list:
     mode: chat
 - model_name: agi-333
   litellm_params:
-    model: openai/kimi-k3
+    model: openai/glm-5.3  # QFREE swap 2026-10-26 (was kimi-k3 PAYG; F13 free-is-free) zero-cost free quota, same key/endpoint, expires 2026-11-23
     api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DASHSCOPE_API_KEY
     order: 999
   model_info:
@@ -584,6 +630,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 1
   model_info:
@@ -597,6 +644,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://opencode.ai/zen/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-asi-555-lane-001
@@ -612,6 +660,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 3
   model_info:
@@ -626,6 +675,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 97
   model_info:
@@ -638,6 +688,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 97
   model_info:
@@ -652,6 +703,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 99
   model_info:
@@ -663,6 +715,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 97
   model_info:
@@ -675,6 +728,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 99
   model_info:
@@ -686,6 +740,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 97
   model_info:
@@ -698,6 +753,7 @@ model_list:
   litellm_params:
     model: openai/wan2.7-image-pro
     api_base: http://100.64.0.5:4020/v1
+    additional_drop_params: ["include"]
     request_timeout: 180
     order: 1
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
@@ -711,6 +767,7 @@ model_list:
   litellm_params:
     model: openai/wan2.7-image
     api_base: http://100.64.0.5:4020/v1
+    additional_drop_params: ["include"]
     request_timeout: 180
     order: 99
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
@@ -722,6 +779,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-flash-0731
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 99
     min_tokens: 200
@@ -736,6 +794,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
     order: 1
   model_info:
@@ -753,6 +812,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
     order: 1
   model_info:
@@ -770,6 +830,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
     min_tokens: 200
@@ -787,6 +848,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 3
   model_info:
@@ -802,6 +864,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
     min_tokens: 200
@@ -819,6 +882,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://opencode.ai/zen/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-forge-economy-lane-001
@@ -835,6 +899,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
     order: 4
   model_info:
@@ -850,6 +915,7 @@ model_list:
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 1
     min_tokens: 200
@@ -868,6 +934,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 2
   model_info:
@@ -882,6 +949,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
     order: 3
   model_info:
@@ -897,6 +965,7 @@ model_list:
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 1
     min_tokens: 200
@@ -916,6 +985,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 5
   model_info:
@@ -929,6 +999,7 @@ model_list:
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 6
     min_tokens: 200
@@ -947,6 +1018,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://opencode.ai/zen/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-forge-777-lane-001
@@ -962,6 +1034,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-pro-payg
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_PLATFORM_API_KEY
     order: 901
   model_info:
@@ -978,6 +1051,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 97
   model_info:
@@ -996,6 +1070,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 991
   model_info:
@@ -1014,6 +1089,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 8
   model_info:
@@ -1026,6 +1102,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
     min_tokens: 200
@@ -1043,6 +1120,7 @@ model_list:
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
     api_base: https://api.sea-lion.ai/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/SEA_LION_API_KEY
     order: 98
   model_info:
@@ -1053,8 +1131,9 @@ model_list:
       Coding-task evaluation pending — RESEARCH state.'
 - model_name: forge-777
   litellm_params:
-    model: openai/kimi-k3
+    model: openai/k3.1-pro
     api_base: https://api.kimi.com/coding/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/KIMI_API_KEY
     order: 99
   model_info:
@@ -1065,8 +1144,9 @@ model_list:
       Will recover when cycle refreshes.
 - model_name: asi-555
   litellm_params:
-    model: openai/qwen3-next-80b-a3b-instruct
+    model: openai/deepseek-v4.1-flash  # QFREE swap 2026-10-26 (was qwen3-next-80b PAYG; F13 free-is-free) zero-cost free quota, expires 2026-12-13
     api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DASHSCOPE_API_KEY
     order: 99
     max_input_tokens: 1048576
@@ -1084,6 +1164,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
     min_tokens: 200
@@ -1099,6 +1180,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 8
     min_tokens: 200
@@ -1116,6 +1198,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://opencode.ai/zen/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-openclaw-lane-001
@@ -1131,6 +1214,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 2
   model_info:
@@ -1144,6 +1228,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 6
     max_input_tokens: 1048576
@@ -1161,6 +1246,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 5
     max_input_tokens: 1048576
@@ -1177,6 +1263,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 7
     max_input_tokens: 1048576
@@ -1192,6 +1279,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 8
     min_tokens: 200
@@ -1206,8 +1294,9 @@ model_list:
     mode: chat
 - model_name: openclaw
   litellm_params:
-    model: openai/kimi-k3
+    model: openai/glm-5.3  # QFREE swap 2026-10-26 (was kimi-k3 PAYG; F13 free-is-free) zero-cost free quota, expires 2026-11-23
     api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DASHSCOPE_API_KEY
     order: 99
     max_input_tokens: 1048576
@@ -1223,6 +1312,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 1
     max_input_tokens: 1048576
@@ -1239,6 +1329,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 2
     max_input_tokens: 1048576
@@ -1254,6 +1345,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 3
     max_input_tokens: 1048576
@@ -1268,6 +1360,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 4
     min_tokens: 200
@@ -1281,8 +1374,9 @@ model_list:
     mode: chat
 - model_name: hermes-asi
   litellm_params:
-    model: openai/kimi-k3
+    model: openai/deepseek-v4.1-flash  # QFREE swap 2026-10-26 (was kimi-k3 PAYG; F13 free-is-free) zero-cost free quota, vision-capable, expires 2026-12-13
     api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DASHSCOPE_API_KEY
     order: 99
     max_input_tokens: 1048576
@@ -1298,6 +1392,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.6-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 99
     max_input_tokens: 1048576
@@ -1311,6 +1406,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.6-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 99
   model_info:
@@ -1321,6 +1417,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 1
     max_input_tokens: 1048576
@@ -1336,6 +1433,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 99
     max_input_tokens: 1048576
@@ -1351,6 +1449,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 99
   model_info:
@@ -1361,6 +1460,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 1
   model_info:
@@ -1372,6 +1472,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 99
   model_info:
@@ -1382,6 +1483,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 1
   model_info:
@@ -1394,6 +1496,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 99
   model_info:
@@ -1404,6 +1507,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.6-flash
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 1
   model_info:
@@ -1416,6 +1520,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.6-flash
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 99
   model_info:
@@ -1424,8 +1529,9 @@ model_list:
     mode: chat
 - model_name: kimi-k3
   litellm_params:
-    model: openai/kimi-k3
+    model: openai/k3.1-pro
     api_base: https://api.kimi.com/coding/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/KIMI_API_KEY
     order: 99
     max_input_tokens: 1048576
@@ -1438,10 +1544,45 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
+- model_name: kimi-k3.1-pro
+  litellm_params:
+    model: openai/k3.1-pro
+    api_base: https://api.kimi.com/coding/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/KIMI_API_KEY
+    order: 99
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: KIMI DIRECT — k3.1-pro flagship (Pro plan, Standard tier). Alias 2026-10-27.
+- model_name: kimi-k3.1-pro-highspeed
+  litellm_params:
+    model: openai/k3.1-pro-highspeed
+    api_base: https://api.kimi.com/coding/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/KIMI_API_KEY
+    order: 99
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: KIMI DIRECT — k3.1-pro-highspeed (Pro plan, 2-3x faster, 2x credit). Alias 2026-10-27.
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
+  model_info:
+    max_input_tokens: 131072
+    max_output_tokens: 131072
+    mode: chat
 - model_name: mimo-v2.5-pro
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 4
     supports_vision: true
@@ -1457,6 +1598,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 4
     supports_vision: true
@@ -1472,6 +1614,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 5
     supports_vision: true
@@ -1498,6 +1641,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_PLATFORM_API_KEY
     order: 5
     supports_vision: true
@@ -1514,6 +1658,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 5
     supports_vision: true
@@ -1538,6 +1683,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_PLATFORM_API_KEY
     order: 5
     supports_vision: true
@@ -1554,6 +1700,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-pro-ultraspeed
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_PLATFORM_API_KEY
     order: 5
     supports_vision: true
@@ -1570,6 +1717,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 0
     mode: chat
@@ -1586,6 +1734,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 0
     min_tokens: 200
@@ -1604,6 +1753,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 0
     min_tokens: 200
@@ -1625,6 +1775,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 2
     min_tokens: 200
@@ -1645,6 +1796,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 1
     max_input_tokens: 1048576
@@ -1664,6 +1816,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 0
     min_tokens: 200
@@ -1686,6 +1839,7 @@ model_list:
   litellm_params:
     model: openai/MiniMax-M3.1-Flash
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 0
     min_tokens: 200
@@ -1704,6 +1858,7 @@ model_list:
   litellm_params:
     model: openai/MiniMax-M3.1-Flash-Preview
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 0
     min_tokens: 200
@@ -1727,6 +1882,7 @@ model_list:
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 0
     min_tokens: 200
@@ -1750,6 +1906,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 0
     max_input_tokens: 1048576
@@ -1764,6 +1921,7 @@ model_list:
 - litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 3
   model_info:
@@ -1778,6 +1936,7 @@ model_list:
 - litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 4
     max_input_tokens: 1048576
@@ -1796,6 +1955,7 @@ model_list:
 - litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 3
     max_input_tokens: 1048576
@@ -1812,6 +1972,7 @@ model_list:
 - litellm_params:
     model: openai/qwen3.6-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 99
     max_input_tokens: 1048576
@@ -1828,6 +1989,7 @@ model_list:
 - litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/anthropic/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 4
     min_tokens: 200
@@ -1866,6 +2028,7 @@ model_list:
 - litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 1
     max_input_tokens: 1048576
@@ -1883,6 +2046,7 @@ model_list:
 - litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 5
     max_input_tokens: 1048576
@@ -1899,6 +2063,7 @@ model_list:
 - litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 3
     max_input_tokens: 1048576
@@ -1915,6 +2080,7 @@ model_list:
 - litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 6
     max_input_tokens: 1048576
@@ -1931,6 +2097,7 @@ model_list:
 - litellm_params:
     model: openai/qwen3.6-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 7
     max_input_tokens: 1048576
@@ -1948,6 +2115,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.5-tts-voiceclone
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 1
   model_info:
@@ -1961,6 +2129,7 @@ model_list:
   litellm_params:
     model: openai/speech-2.8-hd
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 1
   model_info:
@@ -1977,6 +2146,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_ARIFOS_API_KEY
     order: 3
   model_info:
@@ -1990,6 +2160,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 4
     min_tokens: 200
@@ -2002,6 +2173,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 2
   model_info:
@@ -2014,6 +2186,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 4
     min_tokens: 200
@@ -2027,6 +2200,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_HERMES_API_KEY
     order: 3
   model_info:
@@ -2039,6 +2213,7 @@ model_list:
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4-32B-IT
     api_base: https://api.sea-lion.ai/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/SEA_LION_API_KEY
     order: 1
   model_info:
@@ -2050,6 +2225,7 @@ model_list:
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
     api_base: https://api.sea-lion.ai/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/SEA_LION_API_KEY
     order: 2
   model_info:
@@ -2061,6 +2237,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max-0902
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 2
   model_info:
@@ -2073,6 +2250,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: os.environ/ZAI_API_BASE
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 2
   model_info:
@@ -2084,6 +2262,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
     max_input_tokens: 1048576
@@ -2106,6 +2285,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
     order: 3
     max_input_tokens: 1048576
@@ -2122,6 +2302,7 @@ model_list:
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://opencode.ai/zen/go/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENCODE_GO_API_KEY
     extra_headers:
       x-opencode-session: arif-fed-i-arif-lane-001
@@ -2163,6 +2344,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
     order: 91
     max_input_tokens: 1048576
@@ -2184,6 +2366,7 @@ model_list:
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
     order: 7
     min_tokens: 200
@@ -2204,6 +2387,7 @@ model_list:
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
     api_key: os.environ/ZAI_API_KEY
     order: 8
     max_input_tokens: 1000000
@@ -2220,6 +2404,7 @@ model_list:
   litellm_params:
     model: openai/mimo-v2.6-pro-payg
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    additional_drop_params: ["include"]
     api_key: os.environ/MIMO_PLATFORM_API_KEY
     order: 4
     max_input_tokens: 1048576
@@ -2243,6 +2428,7 @@ model_list:
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 0
     min_tokens: 200
@@ -2257,6 +2443,7 @@ model_list:
   litellm_params:
     model: openai/mistral-large-latest
     api_base: https://api.mistral.ai/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MISTRAL_API_KEY
     order: 0
     mode: chat
@@ -2267,6 +2454,7 @@ model_list:
   litellm_params:
     model: openai/codestral-latest
     api_base: https://api.mistral.ai/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MISTRAL_API_KEY
     order: 0
     mode: chat
@@ -2277,6 +2465,7 @@ model_list:
   litellm_params:
     model: openai/mistral-small-latest
     api_base: https://api.mistral.ai/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/MISTRAL_API_KEY
     order: 0
     mode: chat
@@ -2287,21 +2476,23 @@ model_list:
   litellm_params:
     model: openai/openai/gpt-oss-120b
     api_base: https://api.groq.com/openai/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/GROQ_API_KEY
     order: 0
   model_info:
-    max_input_tokens: 131072
+    max_input_tokens: 8000
     max_output_tokens: 32768
     mode: chat
-    notes: sovereign-west W1 — Groq gpt-oss-120b, verified 200 on work path 2026-10-20.
+    notes: sovereign-west W1 — Groq gpt-oss-120b, verified 200 on work path 2026-10-20; window clamped to plan TPM 8K 2026-10-26 (agy gpt-oss 429).
 - model_name: sovereign-west
   litellm_params:
     model: openai/openai/gpt-oss-20b
     api_base: https://api.groq.com/openai/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/GROQ_API_KEY
     order: 1
   model_info:
-    max_input_tokens: 131072
+    max_input_tokens: 8000
     max_output_tokens: 32768
     mode: chat
     notes: sovereign-west W2 — Groq gpt-oss-20b, same key.
@@ -2309,6 +2500,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 2
   model_info:
@@ -2324,6 +2516,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 2
   model_info:
@@ -2339,6 +2532,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 2
   model_info:
@@ -2354,6 +2548,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 2
   model_info:
@@ -2369,6 +2564,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 7
   model_info:
@@ -2384,6 +2580,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 5
   model_info:
@@ -2399,6 +2596,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 9
   model_info:
@@ -2414,6 +2612,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 1
   model_info:
@@ -2429,6 +2628,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 1
   model_info:
@@ -2444,6 +2644,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 1
   model_info:
@@ -2459,6 +2660,7 @@ model_list:
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
     api_base: https://openrouter.ai/api/v1
+    additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 1
   model_info:
@@ -2470,10 +2672,106 @@ model_list:
     notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
       direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
       via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+# ─── fed/free — CANONICAL ZERO-COST LANE (F13 'FREE IS FREE!! FED IT!' 2026-10-26) ───
+# Successor to the FLAME free-inference concept (organ retired 2026-09-04, stays dead).
+# Every rung live-probed HTTP 200 on 2026-10-26 (1-token chat). $0 marginal cost.
+# Order: high-capacity free tiers first; quota-limited mid; local sovereign last (blind survival).
+- model_name: fed/free
+  litellm_params:
+    model: openai/openai/gpt-oss-120b
+    api_base: https://api.groq.com/openai/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/GROQ_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    notes: fed/free rung1 Groq free tier gpt-oss-120b (probe 200 2026-10-26)
+- model_name: fed/free
+  litellm_params:
+    model: openai/@cf/meta/llama-3.3-70b-instruct-fp8-fast
+    api_base: https://api.cloudflare.com/client/v4/accounts/22cc94b77b6481d2b054bee7952710e6/ai/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/CLOUDFLARE_WORKERS_AI_TOKEN
+    order: 2
+  model_info:
+    mode: chat
+    notes: fed/free rung2 Cloudflare Workers AI free allowance 10k neurons/day (probe 200 2026-10-26)
+- model_name: fed/free
+  litellm_params:
+    model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+    additional_drop_params: ["include"]
+    api_key: os.environ/OPENROUTER_API_KEY
+    order: 3
+  model_info:
+    mode: chat
+    notes: fed/free rung3 OpenRouter :free 550B giant, ~20 req/day free limit (probe 200 2026-10-26)
+- model_name: fed/free
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    additional_drop_params: ["include"]
+    api_key: os.environ/GEMINI_API_KEY
+    order: 4
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: fed/free rung4 Gemini free tier, RPD-capped, vision-capable (probe 200 2026-10-26). PRIVACY — free-tier content used by Google to improve products — never route sovereign/PII/F13-class data here.
+- model_name: fed/free
+  litellm_params:
+    model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
+    api_base: https://api.sea-lion.ai/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/SEA_LION_API_KEY
+    order: 5
+  model_info:
+    mode: chat
+    notes: fed/free rung5 AI Singapore SEA-LION free regional model (live via FED 2026-10-26)
+- model_name: fed/free
+  litellm_params:
+    model: openai/glm-5.3
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 6
+  model_info:
+    mode: chat
+    notes: fed/free rung6 QwenCloud qfree quota 1M tok, expires 2026-11-23 (probe 200 2026-10-26)
+- model_name: fed/free
+  litellm_params:
+    model: openai/deepseek-v4.1-flash
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/DASHSCOPE_API_KEY
+    order: 7
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: fed/free rung7 QwenCloud qfree quota 1M tok, expires 2026-12-13, vision (probe 200 2026-10-26)
+- model_name: fed/free
+  litellm_params:
+    model: openai/openai-fast
+    api_base: https://text.pollinations.ai/openai
+    additional_drop_params: ["include"]
+    api_key: pollinations-keyless
+    order: 8
+  model_info:
+    mode: chat
+    notes: fed/free rung8 Pollinations keyless (GEN-OK x2 probe 2026-10-26, serves gpt-oss-20b). SUSTAINABILITY UNKNOWN — official docs moving to Pollen/auth; rung self-heals via fallthrough if it dies. No sensitive data.
+- model_name: fed/free
+  litellm_params:
+    model: openai/qwen2.5:3b
+    api_base: http://127.0.0.1:11434/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/OLLAMA_API_KEY
+    order: 9
+  model_info:
+    mode: chat
+    notes: fed/free rung9 Ollama local sovereign RM0 (qwen2.5:3b probe 200 2026-10-26; 7b cold-start slow)
+
 litellm_settings:
   callbacks:
   - fed_spend_callback.proxy_handler_instance
   - data.pii_redact_callback.proxy_handler_instance
+  - data.fed_attribution_callback.proxy_handler_instance
   num_retries: 2
   request_timeout: 60
   allowed_fails: 2
@@ -2653,6 +2951,14 @@ router_settings:
     - mimo-v2.6-flash
     - glm-5.3
     - sovereign-west
+  - kimi-k3.1-pro:
+    - mimo-v2.6-flash
+    - glm-5.3
+    - sovereign-west
+  - kimi-k3.1-pro-highspeed:
+    - kimi-k3.1-pro
+    - mimo-v2.6-flash
+    - glm-5.3
   - glm-5.2:
     - glm-5.3
     - mimo-v2.6-flash
