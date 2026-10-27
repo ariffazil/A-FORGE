@@ -22,7 +22,7 @@ import path from "node:path";
 
 const PROTOCOL_VERSION = process.env.MCP_PROTOCOL_VERSION || "2025-06-18";
 
-import { server } from "./core.js";
+import { server, evaluateRefusalGate } from "./core.js";
 import { getConstitutionGate, CONSTITUTION_GATE } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
@@ -1237,6 +1237,20 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             // carries a session_id + session_token. If so, validate via
             // kernel and register as verified so derivePrincipal() sees
             // FULL authority.
+            // ── GATE 0: HUMAN REFUSAL (stateless HTTP ingress) ─────────────────────
+            // A human consequence-bearer can issue a scoped NO.
+            // If a valid refusal covers the scope, execution is BLOCKED immediately.
+            const refusalVerdict = await evaluateRefusalGate(toolName, (toolArgs && typeof toolArgs === "object") ? toolArgs : {});
+            if (refusalVerdict.blocked) {
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({
+                jsonrpc: "2.0",
+                id: msgId,
+                result: refusalVerdict.response,
+              }));
+              return;
+            }
+
             const preSessionId = (typeof toolArgs?.session_id === "string") ? toolArgs.session_id : undefined;
             const preSessionToken = (typeof toolArgs?.session_token === "string")
               ? toolArgs.session_token

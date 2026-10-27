@@ -54,6 +54,7 @@ import {
   gateToolClaim,
   claimGateRefusalResponse,
 } from "../../infrastructure/governance/claimGate.js";
+import { checkRefusalGate } from "../../infrastructure/bridges/refusalGateBridge.js";
 import {
   registerFilesystemTools,
   registerPostgresTools,
@@ -535,6 +536,7 @@ const GOVERNANCE_FIELDS = {
   sct: z.string().optional().describe("DEPRECATED alias of act"),
   act: z.string().optional().describe("arifOS ACT (act_v1.*) — preferred credential"),
   justification: z.string().optional().describe("Why (claim-class gate judges it)"),
+  scope: z.string().optional().describe("Governed refusal scope (e.g. 'deploy:site', 'test:shell-refusal')"),
   claim_class: z
     .enum(["MEASURED", "MECHANISM", "PATTERN", "NARRATIVE", "UNCLASSIFIED"])
     .optional()
@@ -584,6 +586,7 @@ function extendInputSchema(schema: any): any {
         lease_id: { type: "string", description: "Lease id" },
         act: { type: "string", description: "arifOS ACT (act_v1.*) — preferred credential" },
         justification: { type: "string", description: "Why (claim-class gate judges it)" },
+        scope: { type: "string", description: "Governed refusal scope (e.g. 'deploy:site', 'test:shell-refusal')" },
         claim_class: {
           type: "string",
           enum: ["MEASURED", "MECHANISM", "PATTERN", "NARRATIVE", "UNCLASSIFIED"],
@@ -593,6 +596,88 @@ function extendInputSchema(schema: any): any {
     };
   }
   return schema;
+}
+
+/**
+ * Gate 0: Evaluates whether any active human refusal covers this tool invocation.
+ * Fail-closed: unverified / tampered store returns HOLD.
+ */
+export async function evaluateRefusalGate(name: string, argsObj: Record<string, any>): Promise<{ blocked: boolean; response?: any }> {
+  const scopesToCheck: string[] = [];
+  if (typeof argsObj.scope === "string" && argsObj.scope.trim()) {
+    scopesToCheck.push(argsObj.scope.trim());
+  }
+  scopesToCheck.push(`tool:${name}`);
+  if ((name === "forge_shell" || name === "forge_execute") && typeof argsObj.command === "string") {
+    const execParts = argsObj.command.trim().split(/\s+/);
+    const executable = execParts[0]?.replace(/^["'`]/, "").split("/").pop() ?? "";
+    if (executable) {
+      scopesToCheck.push(`shell:${executable}`);
+    }
+  }
+
+  for (const targetScope of scopesToCheck) {
+    const refusalCheck = await checkRefusalGate(targetScope);
+    if (refusalCheck.hold) {
+      return {
+        blocked: true,
+        response: {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              error: "REFUSAL_HOLD",
+              verdict: "HOLD",
+              status: "REFUSAL_HOLD",
+              gate: "GATE_0_REFUSAL",
+              target_scope: targetScope,
+              message: `EXECUTION HELD — refusal store cannot be verified. Fail closed.`,
+              error_detail: refusalCheck.error || refusalCheck.reason,
+              constitutional_floor: "F1 AMANAH",
+              _epistemic: {
+                output_class: "GOVERNANCE_TEMPLATE",
+                authority_claim: "FAIL_CLOSED",
+                evidence_source: "REFUSAL_STORE",
+                tagged_by: "aforge-mcp",
+                tagged_at: new Date().toISOString(),
+              },
+            }, null, 2),
+          }],
+          isError: true,
+        },
+      };
+    }
+
+    if (refusalCheck.block) {
+      return {
+        blocked: true,
+        response: {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              error: "REFUSAL_BLOCKED",
+              verdict: "BLOCK",
+              status: "REFUSAL_BLOCKED",
+              gate: "GATE_0_REFUSAL",
+              target_scope: targetScope,
+              message: `EXECUTION BLOCKED — a human consequence-bearer issued an active NO on scope '${targetScope}'.`,
+              blocking: refusalCheck.blocking,
+              constitutional_floor: "F13 SOVEREIGN_VETO",
+              _epistemic: {
+                output_class: "GOVERNANCE_TEMPLATE",
+                authority_claim: "REFUSAL_OBJECT",
+                evidence_source: "REFUSAL_STORE",
+                tagged_by: "aforge-mcp",
+                tagged_at: new Date().toISOString(),
+              },
+            }, null, 2),
+          }],
+          isError: true,
+        },
+      };
+    }
+  }
+
+  return { blocked: false };
 }
 
 const _originalTool = server.tool.bind(server);
@@ -613,6 +698,12 @@ const _originalTool = server.tool.bind(server);
     // carrier (mode OR verb). Extracting only args.mode hid forge_telegram
     // {verb:"send"} behind the OBSERVE default.
     const actionClass = classifyTool(name, argsObj); // runtime classification (mode/verb carrier)
+
+    // ── GATE 0: HUMAN REFUSAL (E14/E15 LAW OF REFUSAL) ─────────────────────
+    // Runs before APA, FQ, ACT, claim, or any execution.
+    // If an active human refusal covers this scope, BLOCK immediately.
+    const refusalVerdict = await evaluateRefusalGate(name, argsObj);
+    if (refusalVerdict.blocked) return refusalVerdict.response;
 
     // ── APA CUSTODY PREFLIGHT (kill switch + idempotency) ────────────────
     // Runs before FQ/ACT/claim/lease. Revocation is absolute: a valid lease
@@ -849,6 +940,12 @@ const _originalRegisterTool = server.registerTool.bind(server);
     const argsObj = (args && typeof args === "object") ? args : {};
     // 2026-10-25: full args to classifyTool (mode OR verb carrier normalization)
     const actionClass = classifyTool(name, argsObj);
+
+    // ── GATE 0: HUMAN REFUSAL (E14/E15 LAW OF REFUSAL) ─────────────────────
+    // Runs before APA, FQ, ACT, claim, or any execution.
+    // If an active human refusal covers this scope, BLOCK immediately.
+    const refusalVerdict = await evaluateRefusalGate(name, argsObj);
+    if (refusalVerdict.blocked) return refusalVerdict.response;
 
     // ── APA CUSTODY PREFLIGHT (kill switch + idempotency) ────────────────
     // Runs before FQ/ACT/claim/lease. Revocation is absolute: a valid lease

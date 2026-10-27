@@ -29,6 +29,7 @@ import { appendFile, mkdir } from "node:fs/promises";
 import { classifyCommand, type JudgeResult } from "./arifJudge.js";
 import { getDefaultArifSeal, ledgerPageFromContent } from "./arifSeal.js";
 import { emitFlowReceipt } from "../../../infrastructure/bridges/arifFlowBridge.js";
+import { checkRefusalGate } from "../../../infrastructure/bridges/refusalGateBridge.js";
 import { checkModificationIntent, isGodelLocked } from "./godelLock.js";
 import { classifyShellCommand, type ActionClass, isQa2rCollapse } from "../../../domain/governance/execution-authority.js";
 import { classifyUnknown, isStructuredError } from "../../../domain/governance/error-classifier.js";
@@ -1009,6 +1010,7 @@ export function registerShellTools(server: McpServer): void {
       timeout: z.number().default(DEFAULT_TIMEOUT_MS).describe("Timeout in ms (max " + MAX_TIMEOUT_MS + ")"),
       session_id: z.string().optional().describe("arifOS-issued session_id from arif_init(). REQUIRED for execution."),
       lease_id: z.string().optional().describe("Governed lease ID"),
+      scope: z.string().optional().describe("Governed refusal scope (e.g. 'deploy:site', 'test:shell-refusal'). Checked against Signed Refusal Objects."),
       expected_output: z.string().min(1).max(4000).describe(
         "REQUIRED (2026-07-29 doctrine): what the agent expects this command to produce. " +
         "World model training fuel — prediction→actual gap is the richest supervision signal. " +
@@ -1017,11 +1019,77 @@ export function registerShellTools(server: McpServer): void {
         "The gap between expected vs actual trains the ECHO world model (grpo.ts λ=0.03)."
       ),
     },
-    async ({ command, cwd, timeout, session_id, lease_id, expected_output }) => {
+    async ({ command, cwd, timeout, session_id, lease_id, scope, expected_output }) => {
       // Apply defaults (stateless HTTP path bypasses Zod schema defaults)
       const safeCwd = cwd || DEFAULT_WORKSPACE;
       const safeTimeout = (typeof timeout === 'number' && timeout > 0) ? Math.min(timeout, MAX_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
       const startedAt = Date.now();
+
+      // ── GATE 0: HUMAN REFUSAL (E14/E15 LAW OF REFUSAL) ─────────────────────
+      // A human consequence-bearer can issue a scoped NO.
+      // If a valid refusal covers the scope, execution is BLOCKED.
+      // If store is unverified/tampered, execution is HELD (fail closed).
+      // Absence of refusal is NOT approval.
+      const execParts = command.trim().split(/\s+/);
+      const executable = execParts[0]?.replace(/^["'`]/, "").split("/").pop() ?? "";
+      const scopesToCheck: string[] = [];
+      if (scope) {
+        scopesToCheck.push(scope.trim());
+      }
+      if (executable) {
+        scopesToCheck.push(`shell:${executable}`);
+      }
+
+      for (const targetScope of scopesToCheck) {
+        const refusalCheck = await checkRefusalGate(targetScope);
+        if (refusalCheck.hold) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "REFUSAL_HOLD",
+                gate: "GATE_0_REFUSAL",
+                target_scope: targetScope,
+                reason: `EXECUTION HELD — refusal store cannot be verified. Fail closed.`,
+                error: refusalCheck.error || refusalCheck.reason,
+                constitutional_floor: "F1 AMANAH",
+                _epistemic: {
+                  output_class: "GOVERNANCE_TEMPLATE",
+                  authority_claim: "FAIL_CLOSED",
+                  evidence_source: "REFUSAL_STORE",
+                  tagged_by: "aforge-mcp",
+                  tagged_at: new Date().toISOString(),
+                },
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+
+        if (refusalCheck.block) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "REFUSAL_BLOCKED",
+                gate: "GATE_0_REFUSAL",
+                target_scope: targetScope,
+                reason: `EXECUTION BLOCKED — a human consequence-bearer issued an active NO on scope '${targetScope}'.`,
+                blocking_refusals: refusalCheck.blocking,
+                constitutional_floor: "F13 SOVEREIGN_VETO",
+                _epistemic: {
+                  output_class: "GOVERNANCE_TEMPLATE",
+                  authority_claim: "REFUSAL_OBJECT",
+                  evidence_source: "REFUSAL_STORE",
+                  tagged_by: "aforge-mcp",
+                  tagged_at: new Date().toISOString(),
+                },
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+      }
 
       // ── PHASE 2 PRE-EXECUTION GATE (E1 JITU) ────────────────────────────────
       // All commands pass through classifyShellCommandRisk — NO BYPASS.
@@ -1617,6 +1685,11 @@ export function registerShellTools(server: McpServer): void {
             judge: {
               deny_patterns: 37,
               gate_patterns: 38,
+            },
+            refusal_gate: {
+              status: "ENFORCING",
+              gate_script: "/root/forge_work/patches/refusal-gate-20261028/gate.py",
+              canonical_store: "/var/lib/arifos/refusals.jsonl",
             },
             defaults: {
               workspace: DEFAULT_WORKSPACE,
