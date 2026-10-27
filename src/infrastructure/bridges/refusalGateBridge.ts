@@ -39,7 +39,7 @@ export interface RefusalCheckResult {
   note?: string;
 }
 
-const GATE_SCRIPT = "/root/forge_work/patches/refusal-gate-20261028/gate.py";
+const GATE_SCRIPT = "/opt/arifos/refusal-gate/gate.py";
 const CANONICAL_STORE = "/var/lib/arifos/refusals.jsonl";
 
 /**
