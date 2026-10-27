@@ -1585,47 +1585,15 @@ server.tool(
           "forge_health_check",
           "forge_ephemeral",
         ];
-        let lease_status = "UNMINTED";
-        let lease_reason = "kernel lease not attempted";
-        try {
-          const leaseResp = (await callMCP("arifos.arif_lease_issue", {
-            actor_did: actor_id,
-            organ_id: "A-FORGE",
-            actor_id,
-            tool: leaseScope[0],
-            scope: leaseScope,
-            // Never request more than the presented ACT proves.
-            max_action_class: actAuth === "OBSERVE_ONLY" ? "OBSERVE" : "MUTATE",
-            ttl_s: 1800,
-            max_invocations: 100,
-            metadata: { requested_by: "forge_session_init", act_verified: Boolean(actAuth) },
-            session_id,
-          })) as Record<string, unknown>;
-          const leaseBody = (leaseResp?.result as Record<string, unknown> | undefined) ?? leaseResp;
-          const lease_id = String(
-            leaseBody?.lease_id
-              ?? ((leaseBody?.lease as Record<string, unknown> | undefined)?.lease_id)
-              ?? "",
-          );
-          if (String(leaseResp?.status ?? "") === "OK" && lease_id) {
-            const spec = (leaseBody?.spec as Record<string, unknown> | undefined) ?? {};
-            const issued_ms = typeof leaseBody?.issued_at === "number" ? Number(leaseBody.issued_at) * 1000 : Date.now();
-            const expires_ms = typeof leaseBody?.expires_at === "number" ? Number(leaseBody.expires_at) * 1000 : issued_ms + 1800_000;
-            pre_minted_lease = {
-              lease_id,
-              scope: Array.isArray(spec.scope) ? (spec.scope as unknown[]).map(String) : leaseScope,
-              max_action_class: String(spec.max_action_class ?? "MUTATE"),
-              ttl_seconds: Number(spec.ttl_s ?? Math.max(1, Math.floor((expires_ms - issued_ms) / 1000))),
-              expires_at: expires_ms,
-            };
-            lease_status = "MINTED";
-            lease_reason = "";
-          } else {
-            lease_reason = String(leaseResp?.reason ?? "kernel returned no lease_id");
-          }
-        } catch (_leaseErr) {
-          lease_reason = _leaseErr instanceof Error ? _leaseErr.message : String(_leaseErr);
-        }
+        // MEASURED 2026-10-27 (forge_surface_audit outbound-ABI): arifOS exposes
+        // NO lease verbs on its canonical MCP surface (internal-only leases;
+        // drift_check.py: "use arif_init for authority bootstrap"). The historic
+        // call here could never succeed — it surfaced as OUTBOUND_ABI_DRIFT and,
+        // pre-2026-10-25, was silently rewritten to arif_judge (the
+        // LEASE_CLASS_EXCEEDED defect). Authority = the presented ACT: the
+        // kernel_act lease path below (registerActLease) binds it at session init.
+        let lease_status = "KERNEL_LEASES_INTERNAL_ONLY";
+        let lease_reason = "arifOS exposes no lease verbs on its canonical surface — authority = arif_init ACT (registerActLease)";
         // Self-minting authority is DISABLED by default — same rule as
         // issueLeaseViaKernel. An absent kernel lease narrows authority; it
         // never licenses the actuator to grant itself one. The old fallback

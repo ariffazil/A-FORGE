@@ -197,6 +197,16 @@ export function registerActLease(lease: LeaseRecord): LeaseRecord {
   return governed;
 }
 
+/**
+ * Read-only registry access for cross-module validators (e.g. safety
+ * requireMutationApproval). The registry holds kernel-ACT-derived leases
+ * (source=kernel_act) and clearly-marked dev fallbacks — presentation of an
+ * id is never authorization; callers must check provenance, expiry, revocation.
+ */
+export function getRegisteredLease(lease_id: string): LeaseRecord | undefined {
+  return activeLeases.get(lease_id);
+}
+
 // ── Action Class Priority ─────────────────────────────────────────────────────
 // Lower rank = higher severity. Lease must meet or exceed requested severity.
 // Includes both 8-value taxonomy (actionClassifier.ts) and legacy values
@@ -441,73 +451,17 @@ async function issueLeaseViaKernel(args: {
   forbidden: string[];
   session_id?: string;
 }): Promise<{ ok: true; lease: LeaseRecord } | { ok: false; reason: string }> {
-  // DARWIN FIX OPTION-B: try arifOS kernel first; if kernel tool is
-  // absent or returns an outputSchema validation error (e.g. the
-  // arif_lease_issue MCP tool not registered in arifOS), fall back to
-  // a locally-minted lease so A-FORGE remains functional even when the
-  // federation kernel is degraded. The local lease is auditable (sha256
-  // hash-chained) and bounded by the same TTL, but does not have a
-  // sovereign 888_JUDGE signature — clearly marked in scope/source so
-  // downstream verifiers know it's federation-local, not kernel-minted.
-  try {
-    // 2026-10-25 (333-AGI): kernel contract is
-    //   arif_lease_issue(actor_did, tool, scope, max_action_class, ttl_s,
-    //                    max_invocations, organ_id, session_id)
-    //   -> {status, verdict, result:{lease_id, spec:{...}, issued_at, expires_at}}
-    // The previous call sent actor_id/ttl_seconds/forbidden and parsed
-    // `result.lease`; the kernel answered HOLD (WAJIB: actor_did/tool) and the
-    // caller read a missing lease as a transport failure. Send the declared
-    // shape, and read the flat lease_id the kernel actually returns.
-    const result = await callMCP("arifos.arif_lease_issue", {
-      actor_did: args.agent_id,
-      organ_id: "A-FORGE",
-      actor_id: args.agent_id,
-      tool: args.scope[0] ?? "forge_filesystem",
-      scope: args.scope,
-      max_action_class: toArifosActionClass(args.max_action_class),
-      ttl_s: args.ttl_seconds,
-      max_invocations: 100,
-      metadata: { requested_by: "forge_lease" },
-      session_id: args.session_id,
-    }) as any;
-
-    const body = result?.result ?? result;
-    const leaseId = body?.lease_id ?? body?.lease?.lease_id;
-    if (String(result?.status ?? "") !== "OK" || !leaseId) {
-      throw new Error(
-        `Kernel refused lease: status=${result?.status ?? "?"} reason=${result?.reason ?? "no lease_id"}`,
-      );
-    }
-    const spec = body?.spec ?? {};
-    const issuedAt = typeof body?.issued_at === "number" ? body.issued_at * 1000 : Date.now();
-    const expiresAt = typeof body?.expires_at === "number" ? body.expires_at * 1000 : issuedAt + args.ttl_seconds * 1000;
-    const lease = {
-      lease_id: leaseId,
-      actor_id: spec.actor_did ?? args.agent_id,
-      scope: Array.isArray(spec.scope) ? spec.scope : args.scope,
-      max_action_class: spec.max_action_class ?? args.max_action_class,
-      issued_at: issuedAt,
-      expires_at: expiresAt,
-      forbidden: args.forbidden,
-      revoked: false,
-    };
-    const localLease = arifosLeaseToLocal(lease);
-    enforceOneSkillOneTool(localLease, lease.max_action_class || "OBSERVE", "lease_issue");
-    return { ok: true, lease: localLease };
-  } catch (kernelErr: any) {
-    // P0.3 FIX (2026-07-19): Local lease fallback is DISABLED by default.
-    // When the kernel is unreachable, A-FORGE MUST HOLD, not self-mint.
-    // Set ALLOW_LOCAL_LEASE_FALLBACK=true for local dev only.
-    const allowFallback = process.env.ALLOW_LOCAL_LEASE_FALLBACK === "true";
-    if (!allowFallback) {
-      const kmsg = String(kernelErr?.message ?? kernelErr);
-      process.stderr.write(`[A-FORGE] arif_lease_issue kernel call FAILED — HOLDING (no local fallback). ${kmsg.slice(0, 120)}\n`);
-      return { ok: false, reason: `KERNEL_UNREACHABLE: Lease requires arifOS kernel. ${kmsg.slice(0, 200)}` };
-    }
-
-    // Local-only fallback (dev mode only). Audit-trail this in the lease record.
-    const kmsg = String(kernelErr?.message ?? kernelErr);
-    process.stderr.write(`[A-FORGE] arif_lease_issue kernel call failed (${kmsg.slice(0, 120)}); minting local lease as fallback (dev mode)\n`);
+  // MEASURED 2026-10-27 (forge_surface_audit outbound-ABI): arifOS exposes NO
+  // lease verbs on its canonical MCP surface (9 tools; internal-only leases,
+  // drift_check.py: "leases are internal-only; use arif_init for authority
+  // bootstrap"). A call here could never succeed — pre-2026-10-25 the verb was
+  // rewritten to arif_judge and silently dropped (LEASE_CLASS_EXCEEDED), and
+  // the direct call surfaced as OUTBOUND_ABI_DRIFT. The legal kernel-derived
+  // lease path is an ACT: arif_init mints act_v1 → verifyActToken →
+  // registerActLease (source=kernel_act) at session bind.
+  if (process.env.ALLOW_LOCAL_LEASE_FALLBACK === "true") {
+    // Dev-only, unchanged semantics: clearly-marked local lease (auditable,
+    // sha256 tamper-evident, TTL-bounded — never a sovereign signature).
     const ttl_seconds = Math.min(Math.max(args.ttl_seconds ?? 300, 1), 3600);
     const expires_at = Date.now() + ttl_seconds * 1000;
     const lease_id = `LCL-${args.agent_id}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -535,10 +489,22 @@ async function issueLeaseViaKernel(args: {
     } catch { /* hash non-fatal */ }
     return { ok: true, lease: localLease };
   }
+  return {
+    ok: false,
+    reason:
+      "KERNEL_LEASES_INTERNAL_ONLY: arifOS exposes no lease verbs on its canonical surface. " +
+      "Authority bootstrap = arif_init ACT token → registerActLease (source=kernel_act). " +
+      "Present a kernel-signed ACT or HOLD.",
+  };
 }
 
-async function inspectLeaseViaKernel(lease_id: string): Promise<any> {
-  return callMCP("arifos.arif_lease_inspect", { lease_id });
+async function inspectLeaseViaKernel(_lease_id: string): Promise<{ lease?: any; result?: { lease?: any } } | null> {
+  // MEASURED 2026-10-27 (forge_surface_audit outbound-ABI): arifOS exposes no
+  // lease verbs on its canonical surface — there is no kernel lease store to
+  // inspect. Callers fall through to the A-FORGE registry (activeLeases),
+  // which holds ACT-bound leases registered at session init. Kept as a seam
+  // so a future kernel lease surface wires in at exactly one place.
+  return null;
 }
 
 async function revokeLeaseViaKernel(args: {
@@ -547,22 +513,19 @@ async function revokeLeaseViaKernel(args: {
   reason?: string;
   session_id?: string;
 }): Promise<{ ok: true; lease: LeaseRecord } | { ok: false; reason: string }> {
-  try {
-    const result = await callMCP("arifos.arif_lease_revoke", {
-      lease_id: args.lease_id,
-      actor_id: args.agent_id,
-      reason: args.reason ?? "a-forge-revoke",
-      session_id: args.session_id,
-    }) as any;
-
-    const lease = result?.lease ?? result?.result?.lease;
-    if (!lease || !lease.lease_id) {
-      return { ok: false, reason: `Kernel revoke returned no lease: ${JSON.stringify(result)}` };
-    }
-    return { ok: true, lease: arifosLeaseToLocal(lease) };
-  } catch (err: any) {
-    return { ok: false, reason: err?.message ?? String(err) };
+  // MEASURED 2026-10-27: no kernel lease verbs (internal-only leases) — the
+  // A-FORGE registry IS the lease store. Revoking a kernel_act-derived lease
+  // here is a real revocation of its bound authority: validators refuse
+  // revoked records.
+  const lease = activeLeases.get(args.lease_id);
+  if (!lease) {
+    return { ok: false, reason: `Lease '${args.lease_id}' not registered in A-FORGE lease registry` };
   }
+  if (lease.agent_id !== args.agent_id) {
+    return { ok: false, reason: `Lease '${args.lease_id}' belongs to '${lease.agent_id}', not '${args.agent_id}'` };
+  }
+  lease.revoked = true;
+  return { ok: true, lease };
 }
 
 /**
@@ -622,7 +585,7 @@ export async function validateLeaseForTool(
         const fail = {
           ok: false as const,
           gate: "LEASE_KERNEL_UNKNOWN",
-          reason: `arifOS holds no lease record for '${lease_id}' and no valid local lease is registered (kernel lease store not implemented — arif_lease_inspect maps to arif_judge validate)`,
+          reason: `arifOS holds no lease record for '${lease_id}' and no valid local lease is registered (kernel lease store is internal-only — no lease verbs on the canonical surface)`,
         };
         logLeaseDecision(lease_id, tool, actionClass, fail);
         return fail;
