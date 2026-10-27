@@ -13,6 +13,13 @@
 #   Runtime semantics identical to candidate (parsed-YAML identity verified 2026-10-25).
 #   Semantic diff vs dc73e807 = 934 changes (420 routing / 286 metadata / 134 note edits /
 #   94 structure) — see /root/work/AFORGE-LITELLM-SEMANTIC-DIFF-2026-10-25.md.
+# Bump log: 2026-10-28 333-AGI — Anthropic-wire (/v1/messages) forced onto
+#   chat/completions via systemd env LITELLM_USE_CHAT_COMPLETIONS_URL_FOR_ANTHROPIC_MESSAGES=True
+#   (drop-in 40-anthropic-chat.conf). Root cause: litellm routes openai/-prefixed
+#   deployments to the vendor /responses endpoint; DeepSeek 400s long Claude Code
+#   histories with "messages[N].content must be a string". Verified: replay of the
+#   poisoned 79-message history went 400 -> 200. rollback: remove drop-in + daemon-reload.
+
 model_list:
 - model_name: apex-888
   litellm_params:
@@ -1100,6 +1107,10 @@ model_list:
     notes: 'forge-777 P4 (ZAI GLM-5.3): standard coding plan fallback.'
 - model_name: forge-777
   litellm_params:
+    # 2026-10-28 333-AGI: keep openai/ prefix; /v1/messages is forced onto
+    # chat/completions by litellm_settings.use_chat_completions_url_for_anthropic_messages.
+    # (Responses route 400s on long Claude Code histories; native deepseek/
+    # passthrough rejects litellm redacted_thinking blocks.)
     model: openai/deepseek-flash
     api_base: https://api.deepseek.com/v1
     additional_drop_params: ["include"]
@@ -2714,7 +2725,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: fed/free rung4 Gemini free tier, RPD-capped, vision-capable (probe 200 2026-10-26). PRIVACY — free-tier content used by Google to improve products — never route sovereign/PII/F13-class data here.
+    notes: 'fed/free rung4 Gemini — RELABELLED 2026-10-28: key is now PAID credit (RM70 top-up), so this rung is NO LONGER zero-cost; it bills per token if rungs 1-3 fail. Trade-off accepted to keep availability. Paid tier = Google does not train on API content (contrast free tier). Dedicated paid seats: gemini-flash / gemini-flash-lite / gemini-pro.'
 - model_name: fed/free
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
@@ -2766,6 +2777,321 @@ model_list:
   model_info:
     mode: chat
     notes: fed/free rung9 Ollama local sovereign RM0 (qwen2.5:3b probe 200 2026-10-26; 7b cold-start slow)
+
+# ─── GEMINI PAID SEATS + AGENT FALLBACK RUNGS · wired 2026-10-28 (RM70 credit) ───
+# Key: GEMINI_API_KEY (AQ.* new-format, present in kunci-mas.env / flat.env / a-forge.env).
+# Paid tier proven: gemini-4-argon / gemini-3.8-flash / gemini-3.1-pro-preview all 200 (free tier = 429 limit:0).
+# Judge seats (apex-888, forge-judge) DELIBERATELY EXCLUDED — Gemini must not judge a run Gemini may have served.
+
+- model_name: gemini-flash
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: '2026-10-28 Gemini 2.5 Flash — PAID credit lane (Arif top-up RM70). Native gemini/ prefix = thought_signature preserved, tool-loop safe. 1M ctx, vision. Live probe 200 2026-10-28.'
+
+- model_name: gemini-flash-lite
+  litellm_params:
+    model: gemini/gemini-2.5-flash-lite
+    api_key: os.environ/GEMINI_API_KEY
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_function_calling: true
+    notes: '2026-10-28 Gemini 2.5 Flash-Lite — cheapest paid rung, highest RPD. Text only. Use for bulk/trivial. Live probe 200 2026-10-28.'
+
+- model_name: gemini-pro
+  litellm_params:
+    model: gemini/gemini-2.5-pro
+    api_key: os.environ/GEMINI_API_KEY
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: '2026-10-28 Gemini 2.5 Pro — paid deep-reasoning + vision rung. Expensive: reserve for judge/verify-class work. Live probe 200 2026-10-28.'
+
+- model_name: hermes-default
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: hermes-asi
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: agi-333
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: asi-555
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: forge-777
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: forge-builder
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: forge-planner
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: forge-scout
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: forge-scout-pro
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: forge-economy
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: opencode
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: openclaw
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
+- model_name: fed/vision
+  litellm_params:
+    model: gemini/gemini-2.5-flash
+    api_key: os.environ/GEMINI_API_KEY
+    order: 950
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+  model_info:
+    mode: chat
+    supports_vision: true
+    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
+
 
 litellm_settings:
   callbacks:
