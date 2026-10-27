@@ -177,6 +177,26 @@ export function registerLocalLease(lease: LeaseRecord): LeaseRecord {
   return governed;
 }
 
+/**
+ * 2026-10-25 (333-AGI): a lease derived from a KERNEL-SIGNED ACT.
+ *
+ * The kernel does not expose arif_lease_issue on its canonical public surface
+ * (measured: "Unknown tool … Not on canonical public surface"; drift_check.py
+ * states "leases are internal-only; use arif_init for authority bootstrap").
+ * A-FORGE's session init nevertheless tried to mint one, the call was rewritten
+ * to arif_judge, and every session silently ran lease-less while reporting OK
+ * (forge_vault receipt → LEASE_CLASS_EXCEEDED, 2026-10-25).
+ *
+ * This is NOT self-issuance: the band and scope come from an HMAC-verified
+ * act_v1 token that arifOS minted. Absent that token, registerLocalLease's
+ * OBSERVE cap still applies — no evidence, no authority.
+ */
+export function registerActLease(lease: LeaseRecord): LeaseRecord {
+  const governed: LeaseRecord = { ...lease, source: "kernel_act", degraded: false };
+  activeLeases.set(governed.lease_id, governed);
+  return governed;
+}
+
 // ── Action Class Priority ─────────────────────────────────────────────────────
 // Lower rank = higher severity. Lease must meet or exceed requested severity.
 // Includes both 8-value taxonomy (actionClassifier.ts) and legacy values
@@ -430,21 +450,47 @@ async function issueLeaseViaKernel(args: {
   // sovereign 888_JUDGE signature — clearly marked in scope/source so
   // downstream verifiers know it's federation-local, not kernel-minted.
   try {
+    // 2026-10-25 (333-AGI): kernel contract is
+    //   arif_lease_issue(actor_did, tool, scope, max_action_class, ttl_s,
+    //                    max_invocations, organ_id, session_id)
+    //   -> {status, verdict, result:{lease_id, spec:{...}, issued_at, expires_at}}
+    // The previous call sent actor_id/ttl_seconds/forbidden and parsed
+    // `result.lease`; the kernel answered HOLD (WAJIB: actor_did/tool) and the
+    // caller read a missing lease as a transport failure. Send the declared
+    // shape, and read the flat lease_id the kernel actually returns.
     const result = await callMCP("arifos.arif_lease_issue", {
+      actor_did: args.agent_id,
       organ_id: "A-FORGE",
       actor_id: args.agent_id,
+      tool: args.scope[0] ?? "forge_filesystem",
       scope: args.scope,
       max_action_class: toArifosActionClass(args.max_action_class),
-      ttl_seconds: args.ttl_seconds,
-      forbidden: args.forbidden,
+      ttl_s: args.ttl_seconds,
+      max_invocations: 100,
+      metadata: { requested_by: "forge_lease" },
       session_id: args.session_id,
     }) as any;
 
-    const lease = result?.lease ?? result?.result?.lease;
-    if (!lease || !lease.lease_id) {
-      // Kernel tool exists but returned no lease — fall through to local
-      throw new Error(`Kernel returned no lease: ${JSON.stringify(result).slice(0, 200)}`);
+    const body = result?.result ?? result;
+    const leaseId = body?.lease_id ?? body?.lease?.lease_id;
+    if (String(result?.status ?? "") !== "OK" || !leaseId) {
+      throw new Error(
+        `Kernel refused lease: status=${result?.status ?? "?"} reason=${result?.reason ?? "no lease_id"}`,
+      );
     }
+    const spec = body?.spec ?? {};
+    const issuedAt = typeof body?.issued_at === "number" ? body.issued_at * 1000 : Date.now();
+    const expiresAt = typeof body?.expires_at === "number" ? body.expires_at * 1000 : issuedAt + args.ttl_seconds * 1000;
+    const lease = {
+      lease_id: leaseId,
+      actor_id: spec.actor_did ?? args.agent_id,
+      scope: Array.isArray(spec.scope) ? spec.scope : args.scope,
+      max_action_class: spec.max_action_class ?? args.max_action_class,
+      issued_at: issuedAt,
+      expires_at: expiresAt,
+      forbidden: args.forbidden,
+      revoked: false,
+    };
     const localLease = arifosLeaseToLocal(lease);
     enforceOneSkillOneTool(localLease, lease.max_action_class || "OBSERVE", "lease_issue");
     return { ok: true, lease: localLease };
