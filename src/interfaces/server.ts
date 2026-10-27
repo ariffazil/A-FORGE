@@ -1139,7 +1139,12 @@ app.get("/health", async (_req: Request, res: Response) => {
     if (scalarReplicas) {
       const replica: ScalarReplica | null = scalarReplicas[key as keyof ApexScalarReplicaSet] as ScalarReplica | null;
       if (replica) {
-        return { value: replica.value, status: replica.status, source: replica.source, replicated_at: replica.replicated_at };
+        // KX-010 gaps verdict (W3/S3, BINDING): one replication
+        // implementation — the bridge's extractScalar already attaches
+        // measurement_contract verbatim or the exact legacy marker
+        // ("LEGACY_UNCONTRACTED"). Pass the replica through instead of
+        // rebuilding a second shape that drops both.
+        return { ...replica };
       }
       // arifOS reachable but this scalar missing — partial response
       return {
