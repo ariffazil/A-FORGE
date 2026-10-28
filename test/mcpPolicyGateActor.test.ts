@@ -18,7 +18,7 @@ import { createHmac } from "node:crypto";
 import {
   McpPolicyGate,
   type ToolCallRequest,
-} from "../domain/governance/McpPolicyGate.js";
+} from "../src/domain/governance/McpPolicyGate.js";
 
 const SECRET = "l09-test-secret-0123456789ab";
 
