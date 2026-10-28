@@ -301,7 +301,7 @@ describe("claimGate - ingress wiring", () => {
 // ═══════════════════════════════════════════════════════════════
 
 describe("claimGate - POST /execute end-to-end", () => {
-  it("refuses a mutation justified by a NARRATIVE claim (HTTP 423)", live, async () => {
+  it("holds an anonymous mutation at the FIRST gate (FQ metabolic P0.1) before claim classification", live, async () => {
     const { app } = await import("../src/interfaces/server.js");
     const http = await import("node:http");
     const server = http.createServer(app as any);
@@ -316,22 +316,15 @@ describe("claimGate - POST /execute end-to-end", () => {
       return { status: r.status, body: (await r.json()) as any };
     };
     try {
+      // Since the FQ metabolic gate (P0.1) was placed before the claim gate on
+      // POST /execute, an anonymous caller is held there first — fail-closed on
+      // UNREACHABLE (CI: no arifFlow daemon) and below-threshold (live daemon)
+      // alike. Safety outcome unchanged (423, mutation refused); claim-class
+      // semantics remain owned by the gateToolClaim unit suites above.
       const nar = await call({ justification: NARRATIVE_TEXT, claim_class: "NARRATIVE" });
       assert.equal(nar.status, 423);
-      assert.equal(nar.body.adat_gate, "CLAIM_CLASS");
-      assert.equal(nar.body.ok, false);
-      assert.match(String(nar.body.error.message), /CLAIM_GATE/);
-
-      const undeclared = await call({ justification: UNCLASSIFIED_TEXT });
-      assert.equal(undeclared.status, 423);
-      assert.equal(undeclared.body.adat_gate, "CLAIM_CLASS");
-
-      // Legitimate claim: the claim gate lets it through to the pre-existing
-      // authority gate (which refuses the missing session) — not a claim refusal.
-      const legit = await call({ justification: MEASURED_TEXT, claim_class: "MEASURED" });
-      assert.equal(legit.status, 423);
-      assert.notEqual(legit.body.adat_gate, "CLAIM_CLASS");
-      assert.equal(legit.body.adat_gate, "SESSION_REQUIRED");
+      assert.equal(nar.body.adat_gate, "FQ_HOLD");
+      assert.equal(nar.body.error, "FQ_GATE");
     } finally {
       server.close();
     }
