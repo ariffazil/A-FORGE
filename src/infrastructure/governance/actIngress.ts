@@ -397,8 +397,8 @@ export function verifyLocalAct(
         ok: false,
         error: "ERR_ACT_SIGNATURE_NOT_FULL",
         message:
-          "HMAC signature must be 64 hex chars (256-bit) after grace cutoff. " +
-          "Set ARIFOS_REQUIRE_FULL_HMAC=0 to permit legacy 16-hex during migration.",
+          "HMAC signature must be 64 hex chars (256-bit) — the legacy 16-hex " +
+          "compat window closed 2026-10-27T00:00:00Z (T-04, F2 receipt 2026-09-27).",
       };
     }
 

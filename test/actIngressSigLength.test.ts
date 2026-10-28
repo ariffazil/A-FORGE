@@ -51,8 +51,9 @@ test("G2: accepts full 64-hex signature (new tokens)", () => {
   delete process.env.ARIFOS_SESSION_SECRET;
 });
 
-test("G2: accepts legacy 16-hex signature (compat window)", () => {
+test("G2: rejects legacy 16-hex signature after T-04 cutoff (window closed 2026-10-27)", () => {
   process.env.ARIFOS_SESSION_SECRET = SECRET;
+  delete process.env.ARIFOS_REQUIRE_FULL_HMAC;
   const payloadB64 = b64url(
     JSON.stringify({
       act_v: 1,
@@ -65,7 +66,11 @@ test("G2: accepts legacy 16-hex signature (compat window)", () => {
   const res = verifyLocalAct(`act_v1.${payloadB64}.${legacySig}`, {
     expectedActor: "333-agi",
   });
-  assert.ok(res && res.ok, `expected ok for legacy sig, got: ${JSON.stringify(res)}`);
+  // Post-cutoff contract (T-04, F2 receipt 2026-09-27): the legacy 16-hex
+  // compat window closed 2026-10-27T00:00:00Z; post-cutoff enforcement is
+  // unconditional (ARIFOS_REQUIRE_FULL_HMAC only adds enforcement pre-cutoff).
+  assert.ok(!res || !res.ok, `legacy 16-hex must be rejected post-cutoff, got: ${JSON.stringify(res)}`);
+  if (res && !res.ok) assert.equal(res.error, "ERR_ACT_SIGNATURE_NOT_FULL");
   delete process.env.ARIFOS_SESSION_SECRET;
 });
 
