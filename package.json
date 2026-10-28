@@ -54,6 +54,6 @@
     "pngjs": "^7.0.0",
     "pyright": "^1.1.411",
     "typescript": "^7.0.2",
-    "yaml-language-server": "^1.23.0"
+    "yaml-language-server": "^2.0.0"
   }
 }
