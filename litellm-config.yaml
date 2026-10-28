@@ -3,6 +3,7 @@
 # Bump log: 2026-10-18 333-AGI — reconciled 9 unlogged upstream entries (8x go-* + fed/minimax-tts); NOT deployed (incarnation verify pending).
 # Bump log: 2026-10-20 claude-code-kvm8 (FI-002) — added sovereign-west last-resort rung to all seat ladders + fixed mistral double-prefix; reason: 100% Chinese-origin single-point dependency (live probe evidence in script header).
 # Bump log: 20261021T084110ZZ-marker 333-AGI — AUTHORIZE: wire 11 P2-cost OpenRouter DeepSeek rungs after dead direct seat (F13 'fix ja la bagi habis', in-session 2026-10-21); 888-APEX RECOMMEND_SEAL conf 0.82 cond C1-C11 (ses_ea2909d79ffe4QnKmxQT0jOQ6Z); ruamel adapter preserves comments. C8 revert: cp litellm-config.yaml.bak-deepseek-or-p2-20261021T084110Z $F && fed-restart-gate.sh litellm-federation.service
+# Bump log: 2026-10-28 qwen (FI-003) — RETIRED go-minimax-m3 rung (F13 'buang rung tu'): OpenCode Go account 402 insufficient funds; standalone alias, no fallback group; regression probes post-restart OK.
 # WRITER-OF-RECORD: 333-AGI (accountable), F13 SOVEREIGN (owner). 
 # Concurrency rule: one writer at a time — when editing, bump this line with
 # your actor id + date. Unowned concurrent writes = drift generator (danger list 2026-10-18).
@@ -399,22 +400,9 @@ model_list:
       UTC wkdays).
     max_input_tokens: 131072
     max_output_tokens: 131072
-- model_name: go-minimax-m3
-  litellm_params:
-    model: openai/minimax-m3
-    api_base: https://opencode.ai/inference/go/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/OPENCODE_GO_API_KEY
-    order: 1
-    extra_headers:
-      User-Agent: arifos-fed/1.0
-      x-opencode-session: fed-opencode-go
-  model_info:
-    mode: chat
-    notes: OpenCode Go lane - judge-deputy diversity (provider-distinct from MiniMax
-      direct). Wire 200 2026-10-14.
-    max_input_tokens: 1000000
-    max_output_tokens: 131072
+# go-minimax-m3 RETIRED 2026-10-28 (F13 'buang rung tu') — upstream opencode.ai/inference/go/v1
+#   returns 402 'Insufficient account funds' (full-error probe 2026-10-28). Standalone alias, no
+#   fallback group. Removal, not disable. Model id was lowercase minimax-m3 (correct for Go catalog).
 - model_name: go-gpt-6-luna
   litellm_params:
     model: openai/gpt-6-luna
