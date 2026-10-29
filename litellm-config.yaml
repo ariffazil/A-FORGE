@@ -5,6 +5,7 @@
 # Bump log: 20261021T084110ZZ-marker 333-AGI — AUTHORIZE: wire 11 P2-cost OpenRouter DeepSeek rungs after dead direct seat (F13 'fix ja la bagi habis', in-session 2026-10-21); 888-APEX RECOMMEND_SEAL conf 0.82 cond C1-C11 (ses_ea2909d79ffe4QnKmxQT0jOQ6Z); ruamel adapter preserves comments. C8 revert: cp litellm-config.yaml.bak-deepseek-or-p2-20261021T084110Z $F && fed-restart-gate.sh litellm-federation.service
 # Bump log: 2026-10-28 qwen (FI-003) — RETIRED go-minimax-m3 rung (F13 'buang rung tu'): OpenCode Go account 402 insufficient funds; standalone alias, no fallback group; regression probes post-restart OK.
 # Bump log: 2026-10-29 333-AGI (F13 'yes sambung laa') — ADDED standalone alias qwen-auto: Qwen Token Plan INDIVIDUAL seat (QWEN_INDIVIDUAL_API_KEY, credit was idle/unwired), model 'auto' = platform meta-router (docs 2026-10-21; live-probe 200/1.5s 2026-10-29). No cascade/fallback changes. Revert: cp /root/forge_work/backups/litellm-config-20261029T032249Z-pre-qwen-auto.yaml /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
+# Bump log: 2026-10-29 333-AGI (F13 'GLM5.3 lets utilized it') — ADDED standalone alias glm-53-free: PAYG free-tier lane (DASHSCOPE_API_KEY @ dashscope-intl — PAYG var holds unresolved {env:} placeholder from 2026-10-29 12:36 flat.env regen, this var verified real), glm-5.3 free quota 76.52% of 1M remaining, expires 2026-11-23. Zero-cost kernel-test lane. Standalone, no cascade. Revert: cp /root/forge_work/backups/litellm-config-20261029T065224Z-pre-glm-free.yaml /root/A-FORGE/litellm-config.yaml && apply-litellm-config.sh
 # WRITER-OF-RECORD: 333-AGI (accountable), F13 SOVEREIGN (owner). 
 # Concurrency rule: one writer at a time — when editing, bump this line with
 # your actor id + date. Unowned concurrent writes = drift generator (danger list 2026-10-18).
@@ -3111,6 +3112,17 @@ model_list:
     max_input_tokens: 1000000
     max_output_tokens: 131072
     notes: 'Qwen Token Plan INDIVIDUAL seat (Personal plan, separate credit pool from team seats). Model "auto" = platform meta-router: auto-matches an underlying model per request, balancing quality and cost. Standalone alias, no fallback group. Wired 2026-10-29 F13 sambung.'
+
+- model_name: glm-53-free
+  litellm_params:
+    model: openai/glm-5.3
+    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+    api_key: os.environ/DASHSCOPE_API_KEY
+  model_info:
+    mode: chat
+    max_input_tokens: 1000000
+    max_output_tokens: 131072
+    notes: 'Qwen Model Studio PAYG FREE-TIER lane (not token plan): glm-5.3 free quota 1M tokens, 76.52% remaining 2026-10-29, expires 2026-11-23. Per-model quota — do NOT route other models on this key (their free tiers exhausted, 403 FreeTierOnly). Standalone alias, no fallback group. Wired 2026-10-29 F13.'
 
 litellm_settings:
   callbacks:
