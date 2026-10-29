@@ -712,7 +712,7 @@ async function forgeExecuteHandler(args: z.infer<typeof ForgeExecuteRequestSchem
           error_message: "forge_execute requires valid VAULT999 SEAL from arifOS or stage_id + human_seal_token.",
           constitutional_violation: {
             violated_principle: "A-FORGE cannot self-authorize",
-            required_action: "Obtain VAULT999 SEAL from arif_judge + arif_seal, or use forge_stage(mode=governance) for two-phase commit",
+            required_action: "Obtain VAULT999 SEAL from arif_judge + arif_seal (arifOS :8088). The forge_stage governance path was retired 2026-10-18.",
           },
           _epistemic: epistemicTag("forge_execute"),
         }, null, 2),

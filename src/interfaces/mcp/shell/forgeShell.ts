@@ -1003,7 +1003,7 @@ export function registerShellTools(server: McpServer): void {
     "DENY patterns are hard-blocked. GATE patterns require human approval. " +
     "Every execution is sealed to VAULT999 hash chain. " +
     "REQUIRES arifOS authority envelope for executing mutable shell commands: call arif_init() first, pass the returned session_id. " +
-    "Read-only probes may omit session_id when they are clearly observation-only. Use forge_shell_dryrun for preview without side effects.",
+    "session_id may be omitted ONLY when the gate's classifier (classifyShellCommandRisk) passes the command as SAFE — classification is the gate's decision, never the caller's claim. MUTATION without a session returns GATE_HOLD; IRREVERSIBLE without a verified SEAL returns HOLD_IRREVERSIBLE. Use forge_shell_dryrun for preview without side effects.",
     {
       command: z.string().min(1).max(4000).describe("Shell command to execute"),
       cwd: z.string().default(DEFAULT_WORKSPACE).describe("Working directory"),

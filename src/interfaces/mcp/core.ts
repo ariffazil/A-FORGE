@@ -2323,7 +2323,7 @@ const judgeHandler = async ({ holdId, reason }: { holdId: string, reason?: strin
           gate: "SELF_AUTHORIZE_REFUSED",
           holdId,
           reason: reason ?? "none given",
-          message: "A-FORGE cannot self-authorize. Route to arifOS via: forge_judge_proxy({mode:'judge', candidate:'...', session_id:'...'}). See forge_judge_proxy for full parameter spec.",
+          message: "A-FORGE cannot self-authorize. Route to arifOS arif_judge (:8088/mcp) with your session_id. (forge_judge_proxy is a GC stub, removal epoch 2026-11-05.)",
         }, null, 2),
       }],
       isError: true,

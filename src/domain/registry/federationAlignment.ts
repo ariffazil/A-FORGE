@@ -118,7 +118,10 @@ export function enrichActuatorDescription(
   if (entry?.purpose) {
     const clean = stripActuatorPrefix(entry.purpose).replace(/\.+$/, "").trim();
     // Only add trigger if purpose is different from base (many registry entries duplicate them)
-    if (clean && !base.toLowerCase().startsWith(clean.toLowerCase().slice(0, 30))) {
+    // includes, not startsWith: enrichment can run twice (registration +
+    // serve-time listing) — startsWith re-appended the trigger on every pass
+    // (the duplicated "Use when: …" tails callers saw). includes keeps it idempotent.
+    if (clean && !base.toLowerCase().includes(clean.toLowerCase().slice(0, 30))) {
       trigger = ` Use when: ${clean}.`;
     }
   }

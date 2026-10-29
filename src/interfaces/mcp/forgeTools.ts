@@ -15,6 +15,7 @@
 
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { elicitUser, tradeConfirmationSchema, isGenuineAuthorization } from "./elicitation.js";
 import { execSync } from "node:child_process";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -265,7 +266,7 @@ export function registerIdentityTools(server: McpServer): void {
 // forge_agent — merged: register, status, list, kill
   server.tool(
     "forge_agent",
-    "Agent identity management. Modes: register, status, list, kill. F11 AUTH.",
+    "Agent identity management. Modes: register, status, list, kill. F11 AUTH. register/kill are state-mutating; aggressive authority grants (always / skip_git_ack:true) require a kernel-issued lease — Authority(child) ⊆ Authority(parent).",
     {
       mode: z.enum(["register", "status", "list", "kill"]).default("list"),
       agent_id: z.string().optional().describe("Agent identifier"),
@@ -281,10 +282,10 @@ export function registerIdentityTools(server: McpServer): void {
         propose_patch: z.boolean().default(true),
         mutate_files: z.enum(["always", "lease_required", "never"]).default("lease_required"),
         shell_exec: z.enum(["always", "lease_required", "never"]).default("lease_required"),
-        git_commit: z.enum(["always", "888_HOLD", "never"]).default("always"),
+        git_commit: z.enum(["always", "888_HOLD", "never"]).default("888_HOLD"),
         deploy: z.enum(["always", "888_HOLD", "never"]).default("888_HOLD"),
         vault_seal: z.enum(["always", "888_HOLD", "never"]).default("888_HOLD"),
-      skip_git_ack: z.boolean().default(true).describe("Skip human ack for git ops — F13 streamlined autonomy"),
+      skip_git_ack: z.boolean().default(false).describe("Skip human ack for git ops — aggressive grant: register with lease when set"),
       }).optional().describe("Authority ceiling per action class"),
       identity_proof: z.string().optional().describe("SHA-256 of agent's public key or session nonce"),
     },
@@ -327,6 +328,26 @@ export function registerIdentityTools(server: McpServer): void {
       }
       // register
       if (!agent_id || !agent_type || !role) return { content: [{ type: "text" as const, text: "agent_id, agent_type, role required for mode=register" }], isError: true };
+      // Authority(child) ⊆ Authority(parent) (audit 2026-10-28): aggressive
+      // self-grants at registration require the same F1/F11 evidence kill mode
+      // demands — a live kernel-issued lease. Conservative registrations pass.
+      const aggressive = !!authority && (
+        authority.git_commit === "always" || authority.deploy === "always" ||
+        authority.vault_seal === "always" || authority.mutate_files === "always" ||
+        authority.shell_exec === "always" || authority.skip_git_ack === true
+      );
+      if (aggressive) {
+        if (!lease_id || !reason || reason.trim().length === 0) {
+          return { content: [{ type: "text" as const, text: JSON.stringify({
+            status: "HOLD",
+            gate: "SELF_AUTHORIZATION_REFUSED",
+            reason: "Aggressive authority grants at register require kernel-issued lease_id + reason (Authority(child) ⊆ Authority(parent)).",
+          }, null, 2) }], isError: true };
+        }
+        const lease = activeLeases.get(lease_id);
+        if (!lease || lease.revoked) return { content: [{ type: "text" as const, text: `Lease '${lease_id}' not found or revoked` }], isError: true };
+        if (new Date(lease.expires_at).getTime() < Date.now()) return { content: [{ type: "text" as const, text: `Lease '${lease_id}' expired` }], isError: true };
+      }
       const now = new Date().toISOString();
       const agent = { agent_id, agent_type, role, authority: (authority ?? {}) as Record<string, string>, identity_proof: identity_proof ?? "pending", registered_at: now, last_seen: now, lease_ids: [] };
       registeredAgents.set(agent_id, agent);
@@ -1196,10 +1217,10 @@ export function registerSkillTools(server: McpServer): void {
   // ── forge_seal — VAULT999 skill binding (Phase 2 Sprint 4) ────────────────
   server.tool(
     "forge_seal",
-    "Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills cannot be deleted, demoted below TRUSTED, or expired. Requires REVIEWED tier + Tri-Witness PASS + F13 approval token.",
+    "Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills cannot be deleted, demoted below TRUSTED, or expired. Requires REVIEWED tier + Tri-Witness PASS + live human confirmation (elicitation gate at the MCP boundary); human_approval_token is recorded for provenance.",
     {
       skill_name: z.string().describe("Tool name to seal (forge_*)"),
-      human_approval_token: z.string().describe("Audit-only human approval reference (recorded into seal receipt for F2 Truth provenance; NOT used as authorization gate — authorization comes from tri_witness_evidence + constitutional_chain_id)"),
+      human_approval_token: z.string().describe("F13 approval reference recorded into the seal receipt (F2 provenance). Authorization = live elicitation confirmation in this call + tri_witness_evidence + constitutional_chain_id."),
       tri_witness_evidence: z.string()
         .describe("JSON-serialized TriWitnessResult from prior validation (REQUIRED for Q9 self-seal rejection)"),
       constitutional_chain_id: z.string()
@@ -1208,6 +1229,27 @@ export function registerSkillTools(server: McpServer): void {
     },
     async (args) => {
       try {
+        // F13 human gate (audit 2026-10-28): the approval token was audit-only —
+        // recorded but never enforced. An irreversible VAULT999 binding now requires
+        // live human confirmation at the MCP boundary (same pattern forge_judge_proxy
+        // uses for IRREVERSIBLE tiers). Non-interactive clients fail closed.
+        const elicitReq = tradeConfirmationSchema(
+          `forge_seal IRREVERSIBLE: bind skill '${args.skill_name}' into permanent VAULT999 memory. Recorded approval token: ${String(args.human_approval_token).slice(0, 32)}…`,
+        );
+        const elicitResult = await elicitUser(server.server, elicitReq);
+        const auth = isGenuineAuthorization(elicitResult);
+        if (!auth.authorized) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              status: "HOLD",
+              gate: "HUMAN_CONFIRMATION_WITHHELD",
+              reason: auth.reason,
+              skill_name: args.skill_name,
+              constitutional_floor: "F13 SOVEREIGN",
+            }, null, 2) }],
+            isError: true,
+          };
+        }
         const { getForgeSealService } = await import("../../domain/governance/ForgeSealService.js");
         const { getTriWitnessValidator } = await import("../../domain/governance/TriWitnessValidator.js");
         const { getSkillStore } = await import("../../infrastructure/skills/SkillStore.js");
