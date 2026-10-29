@@ -2257,6 +2257,25 @@ model_list:
     notes: GLM 5.3 Flash - added 2026-09-12 by retirement-watch.
     max_input_tokens: 1048576
     max_output_tokens: 131072
+- model_name: zai-pro
+  litellm_params:
+    model: openai/glm-5.3
+    api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params: ["include"]
+    api_key: os.environ/ZAI_API_KEY
+    order: 0
+    mode: chat
+    notes: 'ADDED 2026-10-29 (333-AGI, Arif directive zai-plan-update): stable alias
+      for ZAI coding-plan flagship. Claude settings fallback chain references FED
+      zai-pro (primary) but the alias did not exist in litellm (dead rung). glm-5.3
+      = plan contract flagship (glm-5.2/5.1 redirect upstream). Live probe 2026-10-29
+      off-peak: glm-5.3 200 served glm-5.3, content OK.'
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
 - model_name: i-arif
   litellm_params:
     model: openai/deepseek-flash
