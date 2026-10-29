@@ -27,6 +27,7 @@ import { getConstitutionGate, CONSTITUTION_GATE } from "../../application/approv
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
 import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpPolicyGate.js";
+import { validateIngressArgs } from "./statelessIngress.js";
 import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 
 // ── arifFlow Post-Execution Receipt Hook (F13-ratified 2026-09-17) ──
@@ -1369,6 +1370,38 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               // Forward the args as-is; let the ACT path + PolicyGate derive principal.
               // Reference: VAULT999/process_violations/2026-08-13_F2-TRUTH_correction.json
               void toolArgs; // explicit: no mutation, no overwrite
+              // ── INGRESS VALIDATION (stateless path) ─────────────────────────
+              // The stdio/SDK path validates tools/call args against the tool's
+              // zod shape inside McpServer; this hand-rolled HTTP path did not,
+              // so a malformed payload reached tool code and died there as an
+              // opaque TypeError, which the policy interceptor then mislabelled
+              // as a gate failure. Measured 2026-10-29: forge_verify_timeline with
+              // a source item missing `sources` returned
+              //   "MCP Policy Gate engine error during pre-check ... reading 'length'"
+              // — wrong layer, wrong diagnosis, unrecoverable for the caller.
+              // Reject at the boundary with the field path instead.
+              const ingressIssues = validateIngressArgs(
+                getServerTools().find(t => t.name === toolName)?.inputSchema,
+                toolArgs,
+              );
+              if (ingressIssues) {
+                process.stderr.write(
+                  `[A-FORGE-MCP] INVALID_PARAMS (stateless) ${toolName}: ` +
+                  ingressIssues.map(i => `${i.path}: ${i.message}`).join(" | ") + "\n",
+                );
+                res.writeHead(200, {
+                  "Content-Type": "application/json",
+                  "X-AForge-Gate": "INVALID_PARAMS",
+                });
+                res.end(toolIsErrorResult(msgId, `Invalid arguments for ${toolName}`, {
+                  error_class: "INVALID_PARAMS",
+                  recoverability: "AGENT_CAN_RETRY",
+                  gate: "INGRESS_SCHEMA",
+                  tool: toolName,
+                  issues: ingressIssues,
+                }));
+                return;
+              }
               const _toolStartMs = Date.now();
               const result = await handler(toolArgs);
               const _toolDurationMs = Date.now() - _toolStartMs;
