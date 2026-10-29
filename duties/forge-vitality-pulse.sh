@@ -20,14 +20,25 @@ ORGAN_TABLE=""
 for svc in "arifos:8088" "aforge:7071" "aaa:3001" "geox:8081" "wealth:18082" "well:18083"; do
   name="${svc%%:*}"; port="${svc##*:}"
   start_ns=$(date +%s%N)
+  # A single-shot probe of a just-restarted service reports DOWN for the 2-4s
+  # before uvicorn binds, which fires a false CRITICAL at a human. Probe, and on
+  # failure distinguish "not healthy" from "still binding": retry once after 3s,
+  # and consult systemd. UP + slow is a latency finding, not an outage.
   if curl -sf "http://127.0.0.1:${port}/health" >/dev/null 2>&1; then
     end_ns=$(date +%s%N)
     latency=$(( (end_ns - start_ns) / 1000000 ))
     ORGAN_TABLE="${ORGAN_TABLE}| ${name} | ✅ UP | ${latency}ms |
 "
     ALIVE=$((ALIVE + 1))
+  elif sleep 3 && curl -sf "http://127.0.0.1:${port}/health" >/dev/null 2>&1; then
+    end_ns=$(date +%s%N)
+    latency=$(( (end_ns - start_ns) / 1000000 ))
+    ORGAN_TABLE="${ORGAN_TABLE}| ${name} | ✅ UP (2nd probe, was binding) | ${latency}ms |
+"
+    ALIVE=$((ALIVE + 1))
   else
-    ORGAN_TABLE="${ORGAN_TABLE}| ${name} | ❌ DOWN | — |
+    unit_state=$(systemctl is-active "${name}.service" 2>/dev/null || echo unknown)
+    ORGAN_TABLE="${ORGAN_TABLE}| ${name} | ❌ DOWN (systemd=${unit_state}) | — |
 "
   fi
 done
@@ -75,6 +86,28 @@ if [ "$STALE_WORK" -gt 3 ]; then
   ENTROPY_SCORE=$((ENTROPY_SCORE + 1))
   ENTROPY_DETAILS="${ENTROPY_DETAILS}  ⚠️  ${STALE_WORK} forge_work directories age>7d (retention ledger — inspect before purge)
 "
+fi
+
+# WITNESS LIVENESS (2026-10-24): a silent witness is not a witness.
+# floor_gate_witness writes these streams per LLM turn; if any goes quiet >24h
+# the observation plane is dead and nothing else will notice.
+WITNESS_STALE=0
+NOW_EPOCH=$(date +%s)
+for wf in /root/.hermes/cache/floor_holds.jsonl /root/.hermes/cache/human9_telemetry.jsonl /root/.hermes/cache/drift_events.jsonl; do
+  if [ ! -f "$wf" ]; then
+    WITNESS_STALE=$((WITNESS_STALE + 1))
+    ENTROPY_DETAILS="${ENTROPY_DETAILS}  ⚠️  witness stream MISSING: ${wf}\n"
+  else
+    AGE_H=$(( (NOW_EPOCH - $(stat -c %Y "$wf" 2>/dev/null || echo "$NOW_EPOCH")) / 3600 ))
+    if [ "$AGE_H" -gt 24 ]; then
+      WITNESS_STALE=$((WITNESS_STALE + 1))
+      ENTROPY_DETAILS="${ENTROPY_DETAILS}  ⚠️  witness silent ${AGE_H}h: ${wf}\n"
+    fi
+  fi
+done
+if [ "$WITNESS_STALE" -gt 0 ]; then
+  ENTROPY_SCORE=$((ENTROPY_SCORE + WITNESS_STALE))
+  ENTROPY_DETAILS="${ENTROPY_DETAILS}  → fix: check hermes-asi-gateway post_llm_call hooks (floor_gate_witness)\n"
 fi
 
 # Entropy band

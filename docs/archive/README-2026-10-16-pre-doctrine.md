@@ -1,3 +1,4 @@
+> **STALE-FLAG 2026-10-18 (333-AGI):** the "Open defects" list below is SUPERSEDED — sessionGate verdict==SEAL inference and invocationLog ok-on-HOLD were fixed under F13 overrides plan-2026-10-11-0742 F.5/F.7. Verified against live source 2026-10-18. Do not re-open rows from this list without re-probing code.
 <!-- CURRENT-VERIFIED-STATE :: re-probed 2026-10-10/11 UTC · do not delete -->
 > ### ⚠️ Current verified state (2026-10-11) — measured, not intended
 >

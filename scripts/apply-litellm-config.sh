@@ -17,7 +17,11 @@ CFG=/root/A-FORGE/litellm-config.yaml
 UNIT=litellm-federation
 MARKER=/root/A-FORGE/.litellm-config.applied.sha256
 GW=http://127.0.0.1:4013
-KEY=$(grep -oE 'LITELLM_MASTER_KEY=sk-[A-Za-z0-9_.-]+' /root/.secrets/kunci-mas.flat.env | head -1 | cut -d= -f2)
+# 2026-10-20 claude-code-kvm8: env stores the key single-quoted, so the old
+# `=sk-` grep matched nothing and `set -e` killed this script silently (rc=1,
+# no output) — every config apply failed at line 20 before validating anything.
+KEY=$(sed -nE "s/^LITELLM_MASTER_KEY=['\"]?(sk-[^'\"]+)['\"]?[[:space:]]*$/\1/p" /root/.secrets/kunci-mas.flat.env | head -1)
+[ -n "$KEY" ] || { echo "FAIL: LITELLM_MASTER_KEY not found in env file"; exit 1; }
 
 echo "== 1) YAML validate =="
 python3 - "$CFG" <<'PY'

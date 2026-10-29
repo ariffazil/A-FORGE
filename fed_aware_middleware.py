@@ -174,6 +174,8 @@ MODEL_TO_ACTOR = {
     "MiniMax-M2.7": "agi-333",
     "MiniMax-M2.5": "agi-333",
     "mimo-v2.5": "asi-555",
+    "mimo-v2.6-flash": "asi-555",
+    "mimo-v2.6-pro": "agi-333",
     "mimo-v2.5-pro": "agi-333",
     "k3": "agi-333",
     "k3-256k": "agi-333",

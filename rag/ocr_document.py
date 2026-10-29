@@ -176,67 +176,57 @@ def exec_qwen25_vl(file_path: str, pages: str = "") -> Optional[dict]:
 
 
 def exec_unlimited_gradio(file_path: str, pages: str = "") -> Optional[dict]:
-    """Run Unlimited-OCR via HF Gradio Space (FREE, RM0)."""
-    import base64
-    from urllib.request import Request, urlopen
-    from urllib.error import URLError
+    """Run Unlimited-OCR via HF Gradio Space (FREE, RM0).
 
-    GRADIO_API = os.environ.get(
-        "UNLIMITED_OCR_GRADIO",
-        "https://baidu-unlimited-ocr.hf.space/api/ocr",
-    )
+    2026-10-28 (HERMES) — HORIZON REWRITE. The old implementation posted
+    base64 to `https://baidu-unlimited-ocr.hf.space/api/ocr`, which now returns
+    HTTP 404, and it called the Space once PER PAGE. The v2 Space exposes
+    `/parse_document`, which takes every page of a document in ONE request so
+    the model's SR-SWA attention can use cross-page context.
 
+    When the requested page set fits the Space's document cap (20), ONE
+    `/parse_document` call is made. Beyond the cap, pages are chunked and the
+    result reports `cross_page_context: false` — the context loss is stated,
+    not hidden.
+    """
     try:
+        from gradio_bridge import GradioOCRClient, HF_PARSE_DOCUMENT
+
         images = pdf_to_images(file_path, dpi=200)
         page_range = _parse_page_range(pages, len(images))
-        elements = []
+        selected = [images[idx] for idx in page_range]
+        if not selected:
+            return {"error": "no pages selected", "engine": "unlimited_gradio"}
 
-        # Probe the actual endpoint
-        probe_url = GRADIO_API.replace("/api/ocr", "/queue/join")
-        try:
-            req = Request(
-                probe_url, method="HEAD", headers={"User-Agent": "arifOS/1.0"}
-            )
-            with urlopen(req, timeout=5) as r:
-                pass
-        except URLError:
-            # Fallback: try HF space direct
-            GRADIO_API = "https://baidu-unlimited-ocr.hf.space/api/ocr"
+        client = GradioOCRClient()
+        elements: list[dict] = []
+        chunks = 0
+        cross_page = True
 
-        for idx in page_range:
-            img_path = images[idx]
-            with open(img_path, "rb") as f:
-                img_b64 = base64.b64encode(f.read()).decode()
+        CAP = getattr(client, "max_doc_pages", 20)
+        if len(selected) <= CAP:
+            groups = [selected]
+        else:
+            groups = [
+                selected[i : i + CAP] for i in range(0, len(selected), CAP)
+            ]
+            cross_page = False
 
-            payload = {"data": [img_b64]}
-            req = Request(
-                GRADIO_API,
-                data=json.dumps(payload).encode(),
-                headers={
-                    "Content-Type": "application/json",
-                    "User-Agent": "arifOS/1.0",
-                },
-            )
-
-            try:
-                with urlopen(req, timeout=120) as r:
-                    resp = json.loads(r.read())
-            except URLError:
-                return {
-                    "error": "Gradio Space unreachable",
-                    "engine": "unlimited_gradio",
-                }
-
-            text = (
-                resp.get("data", [""])[0]
-                if isinstance(resp.get("data"), list)
-                else str(resp)
-            )
+        for group in groups:
+            chunks += 1
+            result = client.ocr_document(group)
+            text = result.get("text", "") if isinstance(result, dict) else str(result)
             if text and text.strip():
+                # ONE request returns ONE combined text for the whole group.
+                # Do NOT duplicate it per page — that would fabricate page-level
+                # elements the engine never produced.
+                first_page = page_range[0] + 1
                 elements.append(
                     {
                         "text": text.strip(),
-                        "page": idx + 1,
+                        "page": first_page,
+                        "page_end": first_page + len(group) - 1,
+                        "pages_in_request": len(group),
                         "bbox": None,
                         "engine": "unlimited_gradio",
                     }
@@ -247,6 +237,10 @@ def exec_unlimited_gradio(file_path: str, pages: str = "") -> Optional[dict]:
             "page_count": len(page_range),
             "engine": "unlimited_gradio",
             "is_vlm": True,
+            "horizon": "document" if cross_page else "chunked",
+            "chunks": chunks,
+            "cross_page_context": cross_page,
+            "endpoint": HF_PARSE_DOCUMENT,
         }
     except Exception as e:
         return {"error": str(e), "engine": "unlimited_gradio"}
@@ -575,35 +569,17 @@ def exec_qwen25_vl_single(image_path: str, page_num: int) -> dict:
 
 def exec_unlimited_gradio_single(image_path: str, page_num: int) -> dict:
     """Process single page via Unlimited-OCR Gradio (used by concurrent processor)."""
-    import base64
-    from urllib.request import Request, urlopen
-    from urllib.error import URLError
-
-    GRADIO_API = os.environ.get(
-        "UNLIMITED_OCR_GRADIO", "https://baidu-unlimited-ocr.hf.space/api/ocr"
-    )
-
+    # 2026-10-28 (HERMES): the raw /api/ocr URL this function posted to now
+    # returns HTTP 404 (probe). The Space moved to the Gradio 6 named-endpoint
+    # surface. Route through the shared bridge, which PROBES the endpoint
+    # before calling and raises instead of silently returning an empty page.
     try:
-        with open(image_path, "rb") as f:
-            img_b64 = base64.b64encode(f.read()).decode()
+        from gradio_bridge import GradioOCRClient
 
-        payload = {"data": [img_b64]}
-        req = Request(
-            GRADIO_API,
-            data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json", "User-Agent": "arifOS/1.0"},
-        )
-
-        with urlopen(req, timeout=120) as r:
-            resp = json.loads(r.read())
-
-        text = (
-            resp.get("data", [""])[0]
-            if isinstance(resp.get("data"), list)
-            else str(resp)
-        )
+        result = GradioOCRClient().ocr_page(image_path)
+        text = result.get("text", "") if isinstance(result, dict) else str(result)
         return {
-            "text": text.strip() if text else "",
+            "text": (text or "").strip(),
             "page": page_num,
             "bbox": None,
             "engine": "unlimited_gradio",

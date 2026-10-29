@@ -568,7 +568,15 @@ export function installPolicyInterceptor(srv: any): void {
     if ((tool.handler as any)[WRAPPED]) continue;
 
     const original = tool.handler.bind(tool);
+    // ── TWO failure classes, two labels (333-AGI sweep 2026-10-29) ──────
+    // The pre-check and the handler used to share one try/catch, so ANY error
+    // raised downstream — including inside the tool's own body — was relabelled
+    // "MCP Policy Gate engine error during pre-check". Observed live:
+    // forge_verify_timeline with an item missing `sources` threw a TypeError in
+    // the HANDLER and was reported as a Policy Gate fault, pointing the reader
+    // at the wrong layer. The gate is not on trial for the handler's crimes.
     const wrappedHandler = async (args: any, extra?: any): Promise<any> => {
+      let verdict;
       try {
         const actorId =
           args?.actor_id ?? args?.actorId ?? args?.actor ?? extra?.actor_id;
@@ -589,27 +597,12 @@ export function installPolicyInterceptor(srv: any): void {
           }
         }
 
-        const verdict = gate.evaluate({
+        verdict = gate.evaluate({
           actor_id: typeof actorId === "string" ? actorId : undefined,
           session_id: sessionId,
           tool_name: toolName,
           arguments: args ?? {},
         });
-
-        if (verdict.verdict === "DENY") {
-          process.stderr.write(
-            `[PolicyInterceptor] DENY tool=${toolName} actor=${verdict.actor_id} reasons=${verdict.reasons.join(",")}\n`,
-          );
-          const err: any = new Error(
-            `MCP Policy Gate denied this call: ${verdict.reasons.join("; ")}`,
-          );
-          err.code = -32010;
-          err.name = "PolicyGateError";
-          err.verdict = verdict;
-          throw err;
-        }
-
-        return await original(args, extra);
       } catch (e) {
         // Re-throw PolicyGateError as-is (preserves code = -32010)
         if ((e as any)?.name === "PolicyGateError") throw e;
@@ -624,6 +617,23 @@ export function installPolicyInterceptor(srv: any): void {
         err.name = "PolicyGateError";
         throw err;
       }
+
+      if (verdict.verdict === "DENY") {
+        process.stderr.write(
+          `[PolicyInterceptor] DENY tool=${toolName} actor=${verdict.actor_id} reasons=${verdict.reasons.join(",")}\n`,
+        );
+        const err: any = new Error(
+          `MCP Policy Gate denied this call: ${verdict.reasons.join("; ")}`,
+        );
+        err.code = -32010;
+        err.name = "PolicyGateError";
+        err.verdict = verdict;
+        throw err;
+      }
+
+      // Gate opened — run the handler OUTSIDE the pre-check envelope so its
+      // own failures are reported as the tool's failures.
+      return await original(args, extra);
     };
 
     Object.defineProperty(wrappedHandler, WRAPPED, { value: true });

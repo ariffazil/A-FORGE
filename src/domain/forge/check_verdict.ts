@@ -75,6 +75,10 @@ interface FqState {
   executeCount: number;
   verifyCount: number;
   timestamp: number;
+  // ADDITIVE 2026-10-25 (diagnostic only — must NEVER gate): message provenance.
+  rollupFormula: string;
+  windowSample: number | null;
+  bindingActor: { actor: string; quotient: number } | null;
 }
 
 let _fqCache: FqState | null = null;
@@ -100,6 +104,26 @@ async function probeFq(): Promise<FqState> {
       executeCount: fq.execute_count || 0,
       verifyCount: fq.verify_count || 0,
       timestamp: Date.now(),
+      // ADDITIVE 2026-10-25 (diagnostic only — must never gate): message provenance.
+      // bindingActor mirrors the engine rollup input (non-synthetic, execute>0, min quotient)
+      // so the displayed binding actor matches minimum_gated_harmonic_mean.
+      rollupFormula: typeof fq.rollup_formula === 'string' ? fq.rollup_formula : 'unknown',
+      windowSample: typeof fq.metric_frame?.sample_size === 'number' ? fq.metric_frame.sample_size : null,
+      bindingActor: (() => {
+        const SYNTHETIC = new Set([
+          'test', 'test_agent', 'honest_agent', 'attacker',
+          'adversarial_agent', 'unstable_agent', 'staged_agent',
+        ]);
+        const per = (fq.per_actor || {}) as Record<string, { quotient?: unknown; execute?: unknown }>;
+        let best: { actor: string; quotient: number } | null = null;
+        for (const [id, s] of Object.entries(per)) {
+          const q = s?.quotient;
+          const e = typeof s?.execute === 'number' ? s.execute : 0;
+          if (SYNTHETIC.has(id) || e <= 0 || typeof q !== 'number') continue;
+          if (best === null || q < best.quotient) best = { actor: id, quotient: q };
+        }
+        return best;
+      })(),
     };
     return _fqCache;
   } catch {
@@ -110,6 +134,10 @@ async function probeFq(): Promise<FqState> {
       executeCount: 0,
       verifyCount: 0,
       timestamp: Date.now(),
+      // ADDITIVE 2026-10-25 (diagnostic only — must never gate): provenance defaults.
+      rollupFormula: 'unknown',
+      windowSample: null,
+      bindingActor: null,
     };
   }
 }
@@ -119,6 +147,163 @@ export interface FqGateResult {
   fq: number;
   verdict: string;
   reason: string;
+  /** false when the lane has no measurement and a conservative fallback decided. */
+  lane_measured?: boolean;
+}
+
+/**
+ * Actor-level metabolic gate — checks per-actor HELD/THROTTLED state
+ * from arifFlow's invariant enforcer. Closes the gap where system FQ
+ * passes but individual actors are held (FQ per-actor != FQ system).
+ *
+ * Scar: scar-2026-10-06-001 ("witness-without-governance-change-is-bangang")
+ * Detection: arifFlow records 27,419 holds, 0 throttles. Per-actor holds
+ * don't gate execution because nobody reads them before acting.
+ *
+ * This function bridges arifFlow's per-actor enforcement to A-FORGE's
+ * execution gate. Same pattern as checkFqGate — probe, cache, fail-closed.
+ */
+const ACTOR_GATE_CACHE_TTL_MS = 10_000; // 10s cache for per-actor state
+
+interface ActorGateState {
+  held: boolean;
+  throttled: boolean;
+  verdict: string;
+  fq: number | null;
+  reason: string;
+  timestamp: number;
+}
+
+let _actorGateCache: Map<string, ActorGateState> = new Map();
+
+async function probeActorState(actorIdRaw: string): Promise<ActorGateState> {
+  // D1 (888-APEX 2026-10-20): canonicalize BEFORE cache + lookup. ACT
+  // verification matches actor ids case-insensitively; an uncanonicalized key
+  // here would let a HELD lane escape its own hold via case/whitespace
+  // variance ("333-agi/memory-helix" vs "333-AGI/MEMORY-HELIX").
+  const actorId = actorIdRaw.trim().toLowerCase();
+  const cached = _actorGateCache.get(actorId);
+  if (cached && (Date.now() - cached.timestamp) < ACTOR_GATE_CACHE_TTL_MS) {
+    return cached;
+  }
+
+  try {
+    const resp = await fetch(`${ARIFLOW_URL}/health`, { signal: AbortSignal.timeout(2000) });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const actorData = data.fq?.per_actor?.[actorId];
+
+    const state: ActorGateState = actorData ? {
+      held: actorData.held ?? false,
+      throttled: actorData.throttled ?? false,
+      verdict: actorData.verdict ?? 'UNKNOWN',
+      fq: typeof actorData.quotient === 'number' ? actorData.quotient : null,
+      reason: actorData.diagnosis ?? 'no diagnosis',
+      timestamp: Date.now(),
+    } : {
+      held: false,
+      throttled: false,
+      verdict: 'UNKNOWN',
+      fq: null,
+      reason: `actor '${actorId}' not tracked by arifFlow`,
+      timestamp: Date.now(),
+    };
+
+    _actorGateCache.set(actorId, state);
+    return state;
+  } catch {
+    // arifFlow unreachable — fail closed for HELD actors
+    return {
+      held: true,
+      throttled: false,
+      verdict: 'UNREACHABLE',
+      fq: null,
+      reason: 'arifFlow unreachable — cannot verify actor state. HOLD (fail-closed).',
+      timestamp: Date.now(),
+    };
+  }
+}
+
+export interface ActorGateResult {
+  permitted: boolean;
+  actorId: string;
+  held: boolean;
+  throttled: boolean;
+  verdict: string;
+  fq: number | null;
+  reason: string;
+}
+
+/**
+ * Actor-level metabolic gate. For MUTATE/ATOMIC actions, checks whether
+ * the actor is HELD or THROTTLED by arifFlow's invariant enforcer.
+ *
+ * OBSERVE/DERIVE are exempt — same as FQ gate.
+ * Fail-closed: if arifFlow unreachable, actor is HELD.
+ */
+export async function checkActorGate(
+  actionClass: ActionClass,
+  actorId?: string,
+): Promise<ActorGateResult> {
+  if (actionClass !== 'MUTATE' && actionClass !== 'ATOMIC') {
+    return {
+      permitted: true,
+      actorId: actorId ?? 'unknown',
+      held: false,
+      throttled: false,
+      verdict: 'EXEMPT',
+      fq: null,
+      reason: `${actionClass} exempt from actor gate`,
+    };
+  }
+
+  if (!actorId) {
+    return {
+      permitted: false,
+      actorId: 'unknown',
+      held: true,
+      throttled: false,
+      verdict: 'NO_ACTOR',
+      fq: null,
+      reason: 'No actor ID provided. MUTATE/ATOMIC requires actor identification. HOLD.',
+    };
+  }
+
+  const state = await probeActorState(actorId);
+
+  if (state.held) {
+    return {
+      permitted: false,
+      actorId,
+      held: true,
+      throttled: state.throttled,
+      verdict: state.verdict,
+      fq: state.fq,
+      reason: `Actor '${actorId}' is HELD by arifFlow. ${state.reason}. Verify before executing.`,
+    };
+  }
+
+  if (state.throttled) {
+    return {
+      permitted: false,
+      actorId,
+      held: false,
+      throttled: true,
+      verdict: state.verdict,
+      fq: state.fq,
+      reason: `Actor '${actorId}' is THROTTLED by arifFlow. Cooldown active.`,
+    };
+  }
+
+  return {
+    permitted: true,
+    actorId,
+    held: false,
+    throttled: false,
+    verdict: state.verdict,
+    fq: state.fq,
+    reason: `Actor '${actorId}' — ${state.verdict}. Gate passed.`,
+  };
 }
 
 /**
@@ -153,7 +338,7 @@ export async function checkFqGate(actionClass: ActionClass): Promise<FqGateResul
       permitted: false,
       fq: state.quotient,
       verdict: state.verdict,
-      reason: `FQ=${state.quotient.toFixed(3)} < 0.50 — metabolic STUCK. Execute=${state.executeCount} Verify=${state.verifyCount}. Agents must verify to raise FQ before MUTATE is permitted.`,
+      reason: `FQ=${state.quotient.toFixed(3)} < ${FQ_GATE_THRESHOLD} — metabolic STUCK. rollup=${state.rollupFormula}; binding actor=${state.bindingActor?.actor ?? 'unknown'}@${state.bindingActor?.quotient?.toFixed(3) ?? '?'}. Pooled window counts (NOT the gated input): Execute=${state.executeCount} Verify=${state.verifyCount} sample=${state.windowSample ?? '?'} cached_at=${new Date(state.timestamp).toISOString()} cache_age_ms=${Date.now() - state.timestamp} policy=fq_policy.yaml#observe_only_below. Remediation: real acceptance-verification on the binding actor(s); pooled count inflation does not move the rollup.`,
     };
   }
 
@@ -161,7 +346,7 @@ export async function checkFqGate(actionClass: ActionClass): Promise<FqGateResul
     permitted: true,
     fq: state.quotient,
     verdict: state.verdict,
-    reason: `FQ=${state.quotient.toFixed(3)} — metabolic gate passed.`,
+    reason: `FQ=${state.quotient.toFixed(3)} — metabolic gate passed. rollup=${state.rollupFormula}; binding actor=${state.bindingActor?.actor ?? 'unknown'}@${state.bindingActor?.quotient?.toFixed(3) ?? '?'}; pooled counts (NOT the gated input) E=${state.executeCount} V=${state.verifyCount}; cached_at=${new Date(state.timestamp).toISOString()} cache_age_ms=${Date.now() - state.timestamp}.`,
   };
 }
 
@@ -178,6 +363,8 @@ export function getRequiredVerdict(actionClass: ActionClass): 'SEAL' | 'SABAR' |
 export interface FullVerdictPrecondition extends VerdictPrecondition {
   fqGate?: FqGateResult;
   fqChecked: boolean;
+  actorGate?: ActorGateResult;
+  actorGateChecked: boolean;
 }
 
 /**
@@ -198,6 +385,7 @@ export interface FullVerdictPrecondition extends VerdictPrecondition {
 export async function checkVerdictPrecondition(
   actionClass: ActionClass,
   sessionState: SessionVerdictState | null,
+  actorId?: string,
 ): Promise<FullVerdictPrecondition> {
   const requiredVerdict = VERDICT_REQUIREMENTS[actionClass];
   const acThreshold = AC_RISK_THRESHOLDS[actionClass];
@@ -205,8 +393,45 @@ export async function checkVerdictPrecondition(
   const acRisk = sessionState?.acRisk ?? 0.50;
   const simIndex = sessionState?.simulationIndex ?? 0.0;
 
-  // ── GATE 1: FQ Metabolic Gate (inclusive — cannot be bypassed) ──
-  const fqGate = await checkFqGate(actionClass);
+  // ── GATE 0: Actor-Level Metabolic Gate (per-actor HELD/THROTTLED) ──
+  // Closes scar-2026-10-06-001: witness → stored but no routing change.
+  // arifFlow's check_actor() is now wired into the execution gate.
+  // Lane FQ < 0.50 also holds (doctrine 2026-10-18: "Lane FQ sendiri < 0.5
+  // atau held=true → LANE ITU sahaja HOLD").
+  const actorGate = await checkActorGate(actionClass, actorId);
+  const laneQuotient = actorGate.fq;
+  const laneBelowDoctrine = typeof laneQuotient === "number" && laneQuotient < FQ_GATE_THRESHOLD;
+  if (!actorGate.permitted || laneBelowDoctrine) {
+    return {
+      permitted: false,
+      actionClass,
+      requiredVerdict,
+      currentVerdict: sessionState?.verdict ?? null,
+      acRisk,
+      simulationIndex: simIndex,
+      circuitBreakersActive: activeBreakers,
+      reason: `Actor Gate HOLD: ${actorGate.reason}` +
+        (laneBelowDoctrine ? ` Lane FQ=${laneQuotient!.toFixed(3)} < ${FQ_GATE_THRESHOLD}.` : ""),
+      fqGate: undefined,
+      fqChecked: false,
+      actorGate,
+      actorGateChecked: true,
+    };
+  }
+
+  // ── GATE 1: FQ Metabolic Gate ──
+  // Doctrine 2026-10-18: "Rollup = pemantauan, bukan gerbang." When the
+  // mutation is attributed to a lane, the global rollup is MONITORING (the
+  // lane gate above is the gate). Unattributed → conservative global gate.
+  const fqGate = actorId
+    ? {
+        permitted: true,
+        fq: (await probeFq()).quotient,
+        verdict: "MONITORING",
+        reason: "Global rollup = pemantauan, bukan gerbang (lane enforced at GATE 0).",
+        lane_measured: true,
+      }
+    : await checkFqGate(actionClass);
   if (!fqGate.permitted) {
     return {
       permitted: false,
@@ -219,6 +444,8 @@ export async function checkVerdictPrecondition(
       reason: `FQ Metabolic Gate HOLD: ${fqGate.reason}`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -235,6 +462,8 @@ export async function checkVerdictPrecondition(
       reason: `${actionClass} actions do not require a precondition verdict. Proceed.`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -251,6 +480,8 @@ export async function checkVerdictPrecondition(
       reason: `No verdict state for session. ${actionClass} requires ${requiredVerdict} before execution. Run deliberate() first.`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -267,6 +498,8 @@ export async function checkVerdictPrecondition(
       reason: `Circuit breakers active: [${activeBreakers.join(', ')}]. ${actionClass} blocked — paradox state must clear before execution.`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -283,6 +516,8 @@ export async function checkVerdictPrecondition(
       reason: `AC_Risk ${acRisk.toFixed(2)} exceeds ${actionClass} threshold ${acThreshold}. Anomalous contrast too high for safe execution.`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -300,6 +535,8 @@ export async function checkVerdictPrecondition(
       reason: `Session verdict is "${sessionState.verdict}" but ${actionClass} requires "${requiredVerdict}". Obtain ${actionName} before execution.`,
       fqGate,
       fqChecked: true,
+      actorGate,
+      actorGateChecked: true,
     };
   }
 
@@ -315,6 +552,8 @@ export async function checkVerdictPrecondition(
     reason: `Verdict precondition satisfied. ${sessionState.verdict} permits ${actionClass} execution.`,
     fqGate,
     fqChecked: true,
+    actorGate,
+    actorGateChecked: true,
   };
 }
 
@@ -332,7 +571,8 @@ export function requiresVerdictCheck(simulationIndex: number): boolean {
 
 export async function gateToolByFq(
   actionClass: string,
-  toolName?: string
+  toolName?: string,
+  actorId?: string,
 ): Promise<{
   allowed: boolean;
   fq?: Awaited<ReturnType<typeof checkFqGate>>;
@@ -351,6 +591,79 @@ export async function gateToolByFq(
   const legacyClass = (actionClass === "IRREVERSIBLE" || actionClass === "EXECUTE_HIGH_IMPACT")
     ? "ATOMIC" : "MUTATE";
 
+  // ── PER-LANE metabolic gate (doctrine dipinda 2026-10-18, selari enjin):
+  //    "Lane FQ sendiri < 0.5 atau held=true → LANE ITU sahaja HOLD;
+  //     lane lain terus jalan. Rollup = pemantauan, bukan gerbang."
+  //    The global rollup below is MONITORING ONLY for attributed mutations;
+  //    it gates only mutations that arrive with NO actor identity (fail-safe
+  //    fallback — unattributed MUTATE path is NOT widened, per the
+  //    2026-08-13 revert lesson: MUTATE path widening requires F13).
+  if (actorId) {
+    const actorGate = await checkActorGate(legacyClass as "MUTATE" | "ATOMIC", actorId);
+    const global = await probeFq(); // monitoring only — never gates an attributed measured lane
+    const laneQuotient = actorGate.fq;
+
+    if (!actorGate.permitted) {
+      return {
+        allowed: false,
+        fq: {
+          permitted: false,
+          fq: laneQuotient ?? 0,
+          verdict: actorGate.verdict,
+          reason: `FQ_GATE[actor=${actorId}]: ${actorGate.reason}` +
+            ` Global rollup FQ=${global.quotient.toFixed(3)} [${global.verdict}] = monitoring only.`,
+          lane_measured: typeof laneQuotient === "number",
+        },
+      };
+    }
+
+    // D3 (888-APEX 2026-10-20): an UNMEASURED lane is an unmade decision,
+    // not a ratified pass. Conservative fallback — the global gate decides,
+    // and the receipt says the lane was unmeasured (never launder the rollup
+    // number as a lane measurement).
+    if (typeof laneQuotient !== "number") {
+      const fq = await checkFqGate(legacyClass as "MUTATE" | "ATOMIC");
+      return {
+        allowed: fq.permitted,
+        fq: {
+          permitted: fq.permitted,
+          fq: fq.fq,
+          verdict: fq.verdict,
+          reason: `FQ_GATE[actor=${actorId}]: lane UNMEASURED — conservative global fallback. ${fq.reason}`,
+          lane_measured: false,
+        },
+      };
+    }
+
+    const laneBelowDoctrine = laneQuotient < FQ_GATE_THRESHOLD;
+    if (laneBelowDoctrine) {
+      return {
+        allowed: false,
+        fq: {
+          permitted: false,
+          fq: laneQuotient,
+          verdict: actorGate.verdict,
+          reason: `FQ_GATE[actor=${actorId}]: ${actorGate.reason}` +
+            ` Lane FQ=${laneQuotient.toFixed(3)} < ${FQ_GATE_THRESHOLD}.` +
+            ` Global rollup FQ=${global.quotient.toFixed(3)} [${global.verdict}] = monitoring only.`,
+          lane_measured: true,
+        },
+      };
+    }
+    return {
+      allowed: true,
+      fq: {
+        permitted: true,
+        fq: laneQuotient,
+        verdict: actorGate.verdict,
+        reason: `FQ_GATE[actor=${actorId}]: lane healthy — ${actorGate.reason}` +
+          ` Global rollup FQ=${global.quotient.toFixed(3)} [${global.verdict}] = monitoring only.`,
+        lane_measured: true,
+      },
+    };
+  }
+
+  // No actor identity → conservative legacy global gate (unchanged behavior).
   const fq = await checkFqGate(legacyClass as "MUTATE" | "ATOMIC");
 
   return { allowed: fq.permitted, fq };

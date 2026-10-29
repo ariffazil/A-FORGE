@@ -581,7 +581,7 @@ export const ForgeExecuteRequestSchema = z.object({
   
   // ── Governance two-phase commit path ──
   stage_id: z.string().optional()
-    .describe("Stage ID from forge_stage(mode=governance)"),
+    .describe("Stage ID from the governance two-phase path (forge_stage RETIRED 2026-10-18 — only pre-retirement stages can execute). Prefer docket_id + vault_seal_id."),
   
   human_seal_token: z.string().min(16).optional()
     .describe("F13 sovereign approval token from UI SEAL button"),
