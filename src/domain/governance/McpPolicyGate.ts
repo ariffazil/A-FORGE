@@ -301,6 +301,27 @@ export function verifyACT(act: string, expectedActorId: string, expectedSessionI
 export class McpPolicyGate {
   private policies: Map<string, McpPolicy> = new Map();
   private defaultPolicy: McpPolicy;
+  /**
+   * Policy for callers whose identity is NOT cryptographically verified.
+   *
+   * 2026-10-29 (housekeeping): the sovereign policy was selected by matching
+   * the caller-supplied actor_id as a *string*. A caller claiming "arif"
+   * therefore received `default:sovereign` — the policy whose
+   * `allow_by_default` is true and whose allowlist reaches every MCP server
+   * (github, postgres, cloudflare, docker, hostinger, …).
+   *
+   * Mutation was already refused by the independent authority layer, which
+   * derives authority from provenance rather than from the actor_id string.
+   * But the *policy* itself was still chosen by name, and the verdict recorded
+   * `policy_id: default:sovereign` for an unauthenticated caller — which reads
+   * in an audit trail as if sovereign policy had been applied.
+   *
+   * This policy is deny-by-default and scoped to the federation organs. An
+   * unauthenticated caller keeps OBSERVE-class access to the organs (the
+   * authority layer still decides read vs write) and loses the
+   * credential-bearing external servers until it authenticates.
+   */
+  private unverifiedPolicy: McpPolicy;
   private auditLog: string;
   /** P0.1: Per-request verified session map replaces global activeActor. */
   private verifiedSessions: Map<string, { actorId: string; verifiedAt: number }> = new Map();
@@ -308,7 +329,9 @@ export class McpPolicyGate {
 
   constructor(nonceStore?: NonceStore) {
     this.defaultPolicy = buildDefaultSovereignPolicy();
+    this.unverifiedPolicy = buildUnverifiedObserverPolicy();
     this.policies.set("default:sovereign", this.defaultPolicy);
+    this.policies.set("default:unverified", this.unverifiedPolicy);
     this.auditLog = "/root/A-FORGE/logs/mcp_policy_gate.log";
     this.nonceStore = nonceStore ?? globalNonceStore;
     this.loadFromDisk();  // load overrides if config exists
@@ -432,7 +455,7 @@ export class McpPolicyGate {
    */
   evaluate(req: ToolCallRequest): VerdictResult {
     const principal = this.derivePrincipal(req);
-    const policy = this.resolvePolicy(principal.actorId ?? principal.displayLabel);
+    const policy = this.resolvePolicy(principal);
     const mcpServer = this.extractServerFromTool(req.tool_name);
     const toolMode = typeof req.arguments?.mode === "string" ? req.arguments.mode : undefined;
     const toolClass = classifyTool(req.tool_name, toolMode); // P0.2: classify once, use everywhere (mode-aware)
@@ -800,11 +823,24 @@ export class McpPolicyGate {
     };
   }
 
-  private resolvePolicy(actorId: string): McpPolicy {
+  private resolvePolicy(principal: Principal): McpPolicy {
+    // 2026-10-29 (housekeeping): the policy is keyed to VERIFIED identity,
+    // not to the actor_id string. A caller that merely claims "arif" no
+    // longer resolves to the sovereign policy — it resolves to the
+    // deny-by-default observer policy.
+    //
+    // Mutation was already refused for unauthenticated principals by the
+    // authority layer (provenance-derived, not name-derived); this closes the
+    // remaining gap, where an unverified caller still received the sovereign
+    // policy's server allowlist and its `allow_by_default: true`.
+    if (!principal.authenticated) {
+      return this.unverifiedPolicy;
+    }
     // Prefer an actor-specific policy, then fall back to default sovereign.
     // P0 BOUNDARY FIX (2026-07-29): case-insensitive matching.
-    const normalized = String(actorId).trim().toLowerCase();
+    const normalized = String(principal.actorId ?? principal.displayLabel).trim().toLowerCase();
     for (const p of this.policies.values()) {
+      if (p.policy_id === "default:unverified") continue;
       if (String(p.actor_id || "").trim().toLowerCase() === normalized) return p;
     }
     return this.defaultPolicy;
@@ -1019,6 +1055,68 @@ function buildDefaultSovereignPolicy(): McpPolicy {
       chrome:  { allow: true, tools: {} },
       meyhem:  { allow: true, tools: {} },
     },
+  };
+}
+
+// ── Unverified-observer policy (2026-10-29 housekeeping) ──────────────
+//
+// Deny-by-default for any caller whose identity is not cryptographically
+// verified. Federation organs stay reachable at OBSERVE class; the
+// credential-bearing external servers (github, postgres, supabase,
+// cloudflare, docker, hostinger, …) do not.
+//
+// `default_tool_policy: {}` keeps OBSERVE-class tools on the allowed organs
+// working: with allow_by_default false, a tool that is not individually
+// named would otherwise be refused outright.
+
+const UNVERIFIED_ALLOWED_SERVERS = [
+  "forge",
+  "aforge",
+  "arifos",
+  "geox",
+  "wealth",
+  "well",
+  "aaa",
+  "hermes",
+  "qdrant",
+] as const;
+
+function buildUnverifiedObserverPolicy(): McpPolicy {
+  const allowed_mcp_servers: Record<string, ServerPolicy> = {};
+  for (const server of UNVERIFIED_ALLOWED_SERVERS) {
+    allowed_mcp_servers[server] = { allow: true, tools: {}, default_tool_policy: {} };
+  }
+  return {
+    policy_id: "default:unverified",
+    actor_id: "",
+    role: "observer",
+    description:
+      "Policy for callers whose identity is not cryptographically verified. " +
+      "Deny-by-default; federation organs reachable at OBSERVE class only. " +
+      "Replaces the previous behaviour where an unverified caller claiming " +
+      "'arif' received the sovereign policy (allow_by_default: true, every " +
+      "MCP server allowed). Mutation was already refused by the provenance-" +
+      "derived authority layer; this also keeps the sovereign policy itself " +
+      "off the audit trail of an unauthenticated caller.",
+    allow_by_default: false,
+    allowed_mcp_servers,
+    denied_mcp_servers: [
+      "github",
+      "postgres",
+      "supabase",
+      "cloudflare",
+      "docker",
+      "hostinger",
+      "minimax",
+      "brave",
+      "perplexity",
+      "exa",
+      "context7",
+      "sequential",
+      "playwright",
+      "chrome",
+      "meyhem",
+    ],
   };
 }
 
