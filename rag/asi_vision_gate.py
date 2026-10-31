@@ -461,7 +461,15 @@ class EngineRouter:
 
     @classmethod
     def select(cls, pages: int, needs_bbox: bool, is_financial: bool) -> str:
-        """Auto-select best engine based on document characteristics."""
+        """Auto-select best engine based on document characteristics.
+
+        2026-10-28 (HERMES): availability is now MEASURED for the Space-backed
+        engine, not read from a hardcoded dict entry. A router that trusts a
+        constant will keep choosing a dead engine after the upstream moves.
+        """
+        uocr_status, _ = cls._probe_unlimited_gradio()
+        uocr_ready = uocr_status == "ready"
+
         # Financial docs → must have bbox for re-grounding
         if is_financial or needs_bbox:
             if cls.ENGINES["qwen25_vl"]["status"] == "ready":
@@ -470,31 +478,57 @@ class EngineRouter:
 
         # Multi-page → prefer vision-native for speed/compression
         if pages > 5:
-            if cls.ENGINES["unlimited_gradio"]["status"] == "ready":
+            if uocr_ready:
                 return "unlimited_gradio"
             if cls.ENGINES["qwen25_vl"]["status"] == "ready":
                 return "qwen25_vl"
 
         # Short docs, no special needs
-        if cls.ENGINES["unlimited_gradio"]["status"] == "ready":
+        if uocr_ready:
             return "unlimited_gradio"
 
         return "tesseract"
 
     @classmethod
     def status(cls) -> dict:
-        """Probe all engine statuses."""
-        return {
-            name: {
+        """Probe all engine statuses.
+
+        2026-10-28 (HERMES): the `status` field is now MEASURED for the engines
+        that depend on a live external surface. A hardcoded "ready" is a
+        narrative, and this file's own comment claimed "HF space live" for a
+        Space whose raw endpoint had already returned HTTP 404.
+        """
+        out: dict = {}
+        for name, info in cls.ENGINES.items():
+            live_status = info["status"]
+            detail = ""
+            if name == "unlimited_gradio":
+                live_status, detail = cls._probe_unlimited_gradio()
+            out[name] = {
                 "class": info["class"],
-                "ready": info["status"] == "ready",
-                "status": info["status"],
+                "ready": live_status == "ready",
+                "status": live_status,
                 "compression": info["compression"],
                 "bbox": info["bbox"],
                 "cost": f"${info['cost_per_page']}/page",
+                "detail": detail,
             }
-            for name, info in cls.ENGINES.items()
-        }
+        return out
+
+    @staticmethod
+    def _probe_unlimited_gradio() -> tuple[str, str]:
+        """Live-probe the Gradio Space surface. Returns (status, detail)."""
+        try:
+            from gradio_bridge import _space_endpoints
+
+            endpoints = _space_endpoints()
+            if not endpoints:
+                return "unreachable", "endpoint probe failed (space did not answer)"
+            if "/parse_page" in endpoints:
+                return "ready", f"live endpoints: {endpoints}"
+            return "degraded", f"space alive but no /parse_page; live: {endpoints}"
+        except Exception as exc:  # noqa: BLE001 — reported as status, not raised
+            return "unknown", f"{type(exc).__name__}: {exc}"
 
 
 # ═══════════════════════════════════════════════════════════════════════

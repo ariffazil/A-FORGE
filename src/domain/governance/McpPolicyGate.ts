@@ -907,6 +907,8 @@ export class McpPolicyGate {
   // rate measured). F13 override via env: AF_FORGE_POLICY_UNPINNED=1.
   private pinnedCommit: string | null = null;
   private pinViolation: boolean = false;
+  /** Head SHA observed at load time — reported so health can show the real posture. */
+  private sawHeadSha: string | null = null;
 
   private getCurrentHeadSha(): string | null {
     // Read deploy-stamped commit from /root/A-FORGE/.git_commit (set by
@@ -927,6 +929,29 @@ export class McpPolicyGate {
     return this.pinViolation;
   }
 
+  /**
+   * Observable pin posture (2026-10-26, 333-AGI). A control that names a
+   * defence it does not perform is worse than an unnamed one: this reports the
+   * policy actually in force, so /health cannot be read as "policies loaded".
+   */
+  getPinStatus(): {
+    pin_violated: boolean;
+    pinned_commit: string | null;
+    head_sha: string | null;
+    effective_policy: string;
+    allow_by_default: boolean;
+    posture: "PINNED" | "PERMISSIVE_FALLBACK";
+  } {
+    return {
+      pin_violated: this.pinViolation,
+      pinned_commit: this.pinnedCommit ?? null,
+      head_sha: this.sawHeadSha ?? null,
+      effective_policy: this.defaultPolicy.policy_id,
+      allow_by_default: this.defaultPolicy.allow_by_default === true,
+      posture: this.pinViolation ? "PERMISSIVE_FALLBACK" : "PINNED",
+    };
+  }
+
   private loadFromDisk(): void {
     const path = "/root/A-FORGE/config/mcp_policies.json";
     if (!existsSync(path)) return;
@@ -944,10 +969,16 @@ export class McpPolicyGate {
         const headShort = headSha.substring(0, 7);
         if (pinnedShort !== headShort) {
           this.pinViolation = true;
+          this.sawHeadSha = headShort;
+          this.pinnedCommit = pinnedShort; // report what it WAS pinned to, not null
+          // 2026-10-26 (333-AGI): the previous text claimed "fail-closed" while
+          // this return leaves only default:sovereign (allow_by_default: true)
+          // in force — i.e. fail-OPEN. Say what actually happens.
           process.stderr.write(
             `[McpPolicyGate] CONSTRAINT_PIN_VIOLATION: policy pinned to ${pinnedShort} ` +
-            `but source HEAD is ${headShort}. Policies NOT loaded. Governance in fail-closed mode. ` +
-            `Override with AF_FORGE_POLICY_UNPINNED=1.\n`,
+            `but source HEAD is ${headShort}. Reviewed policies NOT loaded — falling back to ` +
+            `default:sovereign (allow_by_default=true): FAIL-OPEN, not fail-closed. ` +
+            `Re-pin deliberately after review, or override with AF_FORGE_POLICY_UNPINNED=1.\n`,
           );
           return;
         }

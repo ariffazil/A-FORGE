@@ -14,7 +14,7 @@ Three steps to use OutcomeSpec in any organ (Hermes, OpenClaw, AAA):
 2. **Validate it** (calls `validateMission()` → returns `ValidationReceipt`).
 3. **Branch on the verdict** (SEAL → proceed, HOLD → ask human, VOID → fix spec).
 
-That's it. No LLM in the loop, no I/O, no agent can bypass it.
+That's it. `validateMission()` is a pure function with no I/O. **Status 2026-10-31: NOT WIRED.** No runtime module imports it (`rg 'validateMission' src` returns only the definition and its own wrapper). Until it is wired into the MCP call path, this is a contract you can call — not a control that stops an agent. The Status line at the top of this file already says simple helpers may bypass.
 
 ---
 

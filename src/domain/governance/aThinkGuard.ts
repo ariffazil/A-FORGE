@@ -271,6 +271,23 @@ const READONLY_DOCKER_MODES = new Set([
 ]);
 
 /**
+ * Is THIS invocation one of the read-only modes this file already declares safe
+ * (READONLY_GIT_MODES / READONLY_DOCKER_MODES)? `invocation` is the tool's mode
+ * string as passed by the ingress paths (serve.ts:1204, core.ts:812-815), which
+ * for these two tools is exactly the git/docker sub-command.
+ *
+ * Returns false for every tool without a declared read-only set, so nothing else
+ * on the surface changes behaviour.
+ */
+function isDeclaredReadonlyInvocation(toolName: string, invocation?: string): boolean {
+  const m = (invocation ?? "").trim().toLowerCase();
+  if (!m) return false;
+  if (toolName === "forge_git") return READONLY_GIT_MODES.has(m);
+  if (toolName === "forge_docker") return READONLY_DOCKER_MODES.has(m);
+  return false;
+}
+
+/**
  * D-1 FIX (2026-08-15): Pure OBSERVE tool set — these tools NEVER mutate
  * state and consume no budget. The policy gate skips them entirely.
  *
@@ -350,6 +367,7 @@ function checkAffordance(
   cards: Map<string, AffordanceCard>,
   toolName: string,
   mode: AThinkMode,
+  invocation?: string,
 ): { allowed: boolean; reason: string; card?: AffordanceCard } {
   const card = cards.get(toolName);
 
@@ -390,6 +408,31 @@ function checkAffordance(
   const toolMin = MODE_ORDER[card.min_mode] ?? 99;
   const requestLevel = MODE_ORDER[mode] ?? -1;
   if (requestLevel < toolMin) {
+    // ── Mode-blind min_mode is a known defect family, and this file already
+    // owns the exemption: READONLY_GIT_MODES / READONLY_DOCKER_MODES above are
+    // documented as "safe to bypass GOVERN+HOLD gate", and D-06 (2026-09-28)
+    // records the same class for forge_docker mode=ps. But the exemption was
+    // only ever applied inside the requires_human_approval branch (line ~616),
+    // never here — so `forge_git mode=status` died at the min_mode wall with
+    // "HARAM: requires min_mode=GOVERN" while `git status` reads nothing and
+    // writes nothing. Measured 2026-10-29 after the dispatch-floor fix: status
+    // and log are STILL unreachable, now for a different wrong reason.
+    //
+    // Applying the ALREADY-DECLARED read-only set at the layer that was missing
+    // it. No new permission is minted: commit/add/push stay min_mode=GOVERN,
+    // docker exec stays gated, and any mode absent from these two sets keeps the
+    // HARAM verdict verbatim. The reason string names the exemption so the audit
+    // trail says WHY it passed rather than hiding that it did.
+    if (isDeclaredReadonlyInvocation(toolName, invocation)) {
+      return {
+        allowed: true,
+        reason:
+          `ALLOWED (declared read-only mode '${(invocation ?? "").trim().toLowerCase()}' of ` +
+          `tool '${toolName}' — card requires min_mode=${card.min_mode}, exemption from ` +
+          `READONLY_${toolName === "forge_git" ? "GIT" : "DOCKER"}_MODES; mutating modes stay gated)`,
+        card,
+      };
+    }
     return {
       allowed: false,
       reason: `HARAM: tool '${toolName}' requires min_mode=${card.min_mode}, requested=${mode}`,
@@ -465,6 +508,32 @@ export class AThinkGuard {
       }
     }
 
+    // ── MODE FLOOR AT DISPATCH: a tool call is never a FAST turn ──────────
+    // 333-AGI full-surface sweep, 2026-10-29. Evidence (two instruments, same
+    // answer): forge_git({mode:"status"}) → STOP "BUDGET: max_tools=0 reached
+    // (used=0)" from both the SDK client and raw curl. Root cause is a category
+    // error, not a budget: classifyMode() was written to read a human/agent
+    // SENTENCE ("Summarize this" → FAST = answer without tooling), but every
+    // caller here (serve.ts:1207, core.ts:815, core.ts:1050) passes it a tool
+    // PARAMETER — for forge_git that parameter is literally the string
+    // "status". "status" is not ambiguous and needs no analysis, so it
+    // classified FAST, and FAST carries max_tools:0 BY DESIGN → the request was
+    // refused for having spent a budget it was never allowed to touch. Any tool
+    // whose mode/args string reads as "simple" is dead on the MCP surface this
+    // way; DARWIN FIX 5 above is a one-tool patch over the same class.
+    //
+    // Fix: floor the lane to THINK at dispatch. The FAST lane itself is NOT
+    // loosened — budgets.yaml is untouched and classifyMode() still answers
+    // FAST for plain questions, so a turn that should not use tools still
+    // doesn't. What changes is that an already-arrived tool call is judged in
+    // the cheapest lane that can actually serve one.
+    //
+    // No gate weakens: checkAffordance() compares MODE_ORDER (THINK=1 <
+    // GOVERN=2), so the 21 cards demanding GOVERN still HOLD from THINK; the
+    // requires_human_approval check at line ~560 still fires; MUTATE-class
+    // session gating happens downstream of this function, not inside it.
+    if (mode === "FAST") mode = "THINK";
+
     // D-1 FIX (2026-08-15): OBSERVE bypass — pure observation tools skip the
     // entire budget + affordance chain. A read-only probe has no budget to check.
     // Placed HERE (after mode classification, before session/budget) so OBSERVE
@@ -537,7 +606,11 @@ export class AThinkGuard {
     }
 
     // Step 5: Affordance check (UNKNOWN = HOLD)
-    const affordance = checkAffordance(this.affordanceCards, toolName, mode);
+    // `userInput` is threaded as `invocation` so the min_mode check can see the
+    // tool's own mode string (serve.ts:1204 / core.ts:812-815 pass args.mode for
+    // these tools). Without this argument the read-only exemption below is dead
+    // code — a signature change that compiles and does nothing.
+    const affordance = checkAffordance(this.affordanceCards, toolName, mode, userInput);
     if (!affordance.allowed) {
       const isUnknown = affordance.reason.includes("UNKNOWN") || affordance.reason.includes("no affordance card");
       return {
@@ -641,7 +714,13 @@ export class AThinkGuard {
     return {
       allowed: true,
       status: "ALLOW",
-      reason: "ALLOWED",
+      // F11 AUDIT (2026-10-29, 333-AGI surface sweep): the verdict used to read
+      // bare "ALLOWED" and threw away `affordance.reason` — so a call that
+      // passed via the read-only-mode exemption, or one that passed because it
+      // has NO affordance card at all (DEFAULT_ALLOW), was indistinguishable
+      // from a plainly-gated pass. A control that hides which branch let you
+      // through is not auditable. Carry the branch in the reason.
+      reason: affordance.reason === "ALLOWED" ? "ALLOWED" : `ALLOWED — ${affordance.reason}`,
       mode,
       tool_name: toolName,
       risk_label: card?.risk_label ?? "R0",

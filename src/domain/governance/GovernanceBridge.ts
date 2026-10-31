@@ -35,6 +35,17 @@ export interface ScalarReplica {
   status: "REPLICATED";
   source: "arifos.health";
   replicated_at: string;
+  /**
+   * KX-010 (VD-888-KX010-APEX-MEASUREMENT-CONTRACT-2026-10-27): verbatim
+   * arifOS measurement_contract, replicated as-is when the kernel attached
+   * one. Never interpreted or rewritten here — passthrough only.
+   */
+  measurement_contract?: Record<string, unknown>;
+  /**
+   * KX-010: surfaced INSTEAD of measurement_contract when arifOS shipped the
+   * scalar without one. Legacy records are never retroactively promoted.
+   */
+  legacy?: "LEGACY_UNCONTRACTED";
 }
 
 export interface ApexScalarReplicaSet {
@@ -322,12 +333,25 @@ export class GovernanceBridge {
       const extractScalar = (key: string): ScalarReplica | null => {
         const field = apexScalars[key];
         if (!field || typeof field.value !== "number") return null;
-        return {
+        const replica: ScalarReplica = {
           value: field.value,
           status: "REPLICATED",
           source: "arifos.health",
           replicated_at: new Date().toISOString(),
         };
+        // KX-010 passthrough: contract rides verbatim; its absence is named
+        // LEGACY_UNCONTRACTED beside the value (never silently dropped, never
+        // promoted). Consumers read .measurement_contract / .legacy.
+        if (
+          field.measurement_contract &&
+          typeof field.measurement_contract === "object" &&
+          !Array.isArray(field.measurement_contract)
+        ) {
+          replica.measurement_contract = field.measurement_contract as Record<string, unknown>;
+        } else {
+          replica.legacy = "LEGACY_UNCONTRACTED";
+        }
+        return replica;
       };
 
       return {
@@ -358,4 +382,139 @@ export class GovernanceBridge {
     }
     return "arif_observe";
   }
+}
+
+// ── KX-010 consumer-side guards (A3 iii/v) ──────────────────────────────────
+// Fail-closed consumption assertions for replicated apex scalars. These are
+// pure functions on ScalarReplica so any consumer (server.ts, evaluate.ts,
+// future gates) can gate arithmetic and scope-scoped reads without trusting
+// the wire. Both THROW on violation — a violation is a caller bug, not a
+// value of 0 (HOLD, not zero; 05-CONTRACT-SCHEMA fail_closed_rule).
+
+/** Returns the declared unit string, or null when the replica carries no usable contract. */
+function _declaredUnit(replica: ScalarReplica): string | null {
+  const c = replica.measurement_contract;
+  if (!c || typeof c !== "object") return null;
+  const unit = (c as { unit?: unknown }).unit;
+  return typeof unit === "string" && unit.length > 0 ? unit : null;
+}
+
+/**
+ * A3(iii) — cross-unit arithmetic gate.
+ * Both replicas must carry a measurement_contract declaring the SAME unit
+ * before any arithmetic may combine them. A LEGACY_UNCONTRACTED replica (no
+ * contract) is never unit-provable and is rejected — fail closed.
+ *
+ * @throws Error on missing contract or unit mismatch.
+ */
+export function assertSameUnit(a: ScalarReplica, b: ScalarReplica): void {
+  const ua = _declaredUnit(a);
+  const ub = _declaredUnit(b);
+  if (ua === null || ub === null) {
+    throw new Error(
+      `KX010_UNIT_UNPROVABLE: cannot combine scalars without declared units ` +
+        `(legacy=${ua === null ? "yes" : "no"}/${ub === null ? "yes" : "no"}). ` +
+        `LEGACY_UNCONTRACTED values are never retroactively promoted.`
+    );
+  }
+  if (ua !== ub) {
+    throw new Error(`KX010_UNIT_MISMATCH: cannot combine unit='${ua}' with unit='${ub}'`);
+  }
+}
+
+/**
+ * A3(v) — scope-matched consumption gate.
+ * Reading a replica for a NAMED consumer scope requires a contract whose
+ * scope matches exactly. Unscoped or LEGACY_UNCONTRACTED replicas fail the
+ * assertion (a named-scope read must be provably in scope; "no scope
+ * declared" is not evidence of scope). Bare scalars without scope contracts
+ * must be consumed without a scope requirement.
+ *
+ * @throws Error on missing contract/scope or scope mismatch.
+ */
+export function assertScopeAllows(replica: ScalarReplica, requiredScope: string): void {
+  const c = replica.measurement_contract;
+  const scope =
+    c && typeof c === "object" && typeof (c as { scope?: unknown }).scope === "string"
+      ? (c as { scope: string }).scope
+      : null;
+  if (scope === null) {
+    throw new Error(
+      `KX010_SCOPE_UNDECLARED: scope-gated read '${requiredScope}' needs a ` +
+        `contract that declares scope; replica is LEGACY_UNCONTRACTED or unscoped`
+    );
+  }
+  if (scope !== requiredScope) {
+    throw new Error(
+      `KX010_SCOPE_MISMATCH: contract scope='${scope}' does not authorize ` +
+        `consumer scope='${requiredScope}'`
+    );
+  }
+}
+
+/**
+ * A3(i/ii/iv/i-staleness) — decision-eligibility resolution for a replica.
+ * Returns the contract's decision_eligibility when the contract is present,
+ * fresh, and in range; otherwise "NONE" (fail closed, never zero/pass).
+ *
+ * Staleness policy (declared per A3): a contract is stale when
+ * `valid_until` has elapsed OR when `observed_at` is older than
+ * KX010_DEFAULT_MAX_AGE_MS (one documented default — 7 days, matching the
+ * apex metrics window in apex_primitives.compute_apex_from_metrics). No
+ * per-metric ad-hoc windows.
+ *
+ * expected_range: when the contract declares [low, high] and the value falls
+ * outside, eligibility degrades to NONE. Composite components: when the
+ * contract declares `components` and any named component is null/absent on
+ * `components_present`, eligibility is NONE.
+ */
+export const KX010_DEFAULT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function resolveDecisionEligibility(
+  replica: ScalarReplica,
+  now: Date = new Date()
+): "DISPLAY_ONLY" | "ADVISORY" | "ROUTING" | "THRESHOLD_ALERT" | "HOLD_TRIGGER" | "AUTHORIZATION_INPUT" | "MUTATION_GATE" | "NONE" {
+  const c = replica.measurement_contract;
+  if (!c || typeof c !== "object") return "NONE"; // LEGACY_UNCONTRACTED
+  const rec = c as {
+    decision_eligibility?: unknown;
+    valid_until?: unknown;
+    observed_at?: unknown;
+    expected_range?: unknown;
+    components?: unknown;
+    components_present?: unknown;
+  };
+  const declared = typeof rec.decision_eligibility === "string" ? rec.decision_eligibility : null;
+  if (declared === null) return "NONE";
+  if (declared === "NONE") return "NONE";
+  // Staleness: valid_until elapsed -> NONE
+  if (typeof rec.valid_until === "string") {
+    const until = Date.parse(rec.valid_until);
+    if (!Number.isNaN(until) && now.getTime() > until) return "NONE";
+  }
+  // Staleness: observed_at older than the one default max_age -> NONE
+  if (typeof rec.observed_at === "string") {
+    const at = Date.parse(rec.observed_at);
+    if (!Number.isNaN(at) && now.getTime() - at > KX010_DEFAULT_MAX_AGE_MS) return "NONE";
+  }
+  // expected_range: out of range -> NONE
+  if (
+    Array.isArray(rec.expected_range) &&
+    rec.expected_range.length === 2 &&
+    typeof rec.expected_range[0] === "number" &&
+    typeof rec.expected_range[1] === "number"
+  ) {
+    const [lo, hi] = rec.expected_range as [number, number];
+    if (replica.value < lo || replica.value > hi) return "NONE";
+  }
+  // Composite null component -> NONE
+  if (Array.isArray(rec.components) && rec.components.length > 0) {
+    const present = rec.components_present;
+    if (!present || typeof present !== "object") return "NONE";
+    for (const name of rec.components as string[]) {
+      const v = (present as Record<string, unknown>)[name];
+      if (v === null || v === undefined) return "NONE";
+    }
+  }
+  return declared as ReturnType<typeof resolveDecisionEligibility>;
 }
