@@ -40,6 +40,22 @@ export {
   clearUnknownOutcomes,
   verifyProbeIndependence,
 } from "./reconcile.js";
+export {
+  claimReceipt,
+  markDispatched,
+  markOutcome,
+  getReceiptRecord,
+  receiptState,
+  listReceiptRecords,
+  clearReceiptLedger,
+  claimantOf,
+} from "./receiptLedger.js";
+export type {
+  ReceiptState,
+  ReceiptRecord,
+  ClaimOutcome,
+  ClaimFailureReason,
+} from "./receiptLedger.js";
 export type {
   ProbeReceipt,
   ReconcileResult,

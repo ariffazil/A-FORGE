@@ -1,0 +1,31 @@
+# FINAL RUNS 2026-11-01T04:44:02+08:00
+
+## grantContract
+✔ A1 ACT expiry: an expired ACT is denied with a reason tied to expiry (2.636446ms)
+✔ A1 POSITIVE CONTROL: same claims, unexpired, are trusted (0.476349ms)
+✔ A2 receipt lease expiry: refused before dispatch, zero executor invocations (1.494793ms)
+✔ B1 tool-level substitution: a grant for target A never dispatches target B (1.360231ms)
+✔ B1b toolName outside allowedActions is refused (no widening by renaming) (0.420535ms)
+✖ B2 param-level substitution: grant bound to target A must refuse a request for target B (1.568215ms)
+✔ C1 timeout is UNKNOWN_OUTCOME, and the four states stay distinguishable (11.239247ms)
+✔ C2 the same authorized receipt executed twice creates ONE mutation, not two (0.655579ms)
+✔ D actor binding: an ACT bound to actor A is refused when presented by actor B (0.601747ms)
+✔ E1 a single-token grant stays exactly that token (never widened to the band) (1.381763ms)
+✔ E2 a kernel-verb list is not a narrow grant and cannot be read as one (0.451661ms)
+✔ E3 an ACT naming forge tools grants only the named ones, never the band (0.150657ms)
+✔ E4 allowedActions beyond bounds.maxTools is capped, not widened at execution (0.375938ms)
+✔ C3 concurrent replay: exactly one claimant, one invocation, one mutation (0.541627ms)
+✔ C4 a validation refusal does NOT consume the receipt (0.561457ms)
+✔ C5 claimed but never dispatched: consumed, but dispatched stays false (0.338059ms)
+✔ C6 a timeout leaves the receipt consumed as UNKNOWN_OUTCOME; retry is denied (11.305708ms)
+✔ AXIS: stage 555 and lane 555-ASI are different coordinates and both stand (0.297809ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 17
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5159.6616
+✖ failing tests:
+✖ B2 param-level substitution: grant bound to target A must refuse a request for target B (1.568215ms)

@@ -1,0 +1,62 @@
+# grantContract.test.js run — 2026-11-01T04:32:17+08:00 MYT
+# command: node --test dist/test/grantContract.test.js
+✔ A1 ACT expiry: an expired ACT is denied with a reason tied to expiry (2.227268ms)
+✔ A1 POSITIVE CONTROL: same claims, unexpired, are trusted (0.285621ms)
+✔ A2 receipt lease expiry: refused before dispatch, zero executor invocations (1.565941ms)
+✔ B1 tool-level substitution: a grant for target A never dispatches target B (1.52454ms)
+✔ B1b toolName outside allowedActions is refused (no widening by renaming) (0.455347ms)
+✖ B2 param-level substitution: grant bound to target A must refuse a request for target B (1.508395ms)
+✔ C1 timeout is UNKNOWN_OUTCOME, and the four states stay distinguishable (12.04943ms)
+✖ C2 the same authorized receipt executed twice creates ONE mutation, not two (0.747507ms)
+✔ D actor binding: an ACT bound to actor A is refused when presented by actor B (0.672034ms)
+✔ E1 a single-token grant stays exactly that token (never widened to the band) (0.886347ms)
+✔ E2 a kernel-verb list is not a narrow grant and cannot be read as one (0.154424ms)
+✔ E3 an ACT naming forge tools grants only the named ones, never the band (0.128233ms)
+✔ E4 allowedActions beyond bounds.maxTools is capped, not widened at execution (0.502507ms)
+✔ AXIS: stage 555 and lane 555-ASI are different coordinates and both stand (0.131038ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 12
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5156.760747
+
+✖ failing tests:
+
+test at dist/test/grantContract.test.js:210:1
+✖ B2 param-level substitution: grant bound to target A must refuse a request for target B (1.508395ms)
+  AssertionError [ERR_ASSERTION]: a request whose params do not match the receipt's inputHash must be DENIED before dispatch
+  + actual - expected
+  
+  + 'SUCCESS'
+  - 'DENIED'
+  
+      at TestContext.<anonymous> (file:///root/A-FORGE/dist/test/grantContract.test.js:225:12)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'SUCCESS',
+    expected: 'DENIED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist/test/grantContract.test.js:255:1
+✖ C2 the same authorized receipt executed twice creates ONE mutation, not two (0.747507ms)
+  AssertionError [ERR_ASSERTION]: a retry with receiptId=RC-8e339f5d must not produce a second mutation (observed 2 mutations from 2 submissions)
+  
+  2 !== 1
+  
+      at TestContext.<anonymous> (file:///root/A-FORGE/dist/test/grantContract.test.js:268:12)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 1,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -119,6 +119,13 @@ export interface ActionResult {
   outcome_class: OutcomeClass;
   tool: string;
   output: unknown;
+  /**
+   * F13 ORDER 2026-11-01 — verification-failure completion semantics.
+   * PASS = expected_output supplied and matched exactly; FAIL = supplied
+   * but not matched (or no actual output); UNSPECIFIED = none supplied.
+   * FAIL forbids the done claim: summary.verdict becomes VERIFICATION_FAILED.
+   */
+  verification?: "PASS" | "FAIL" | "UNSPECIFIED";
   error?: string;
   timestamp: string;
   durationMs: number;
@@ -146,7 +153,13 @@ export interface ExecutionReport {
     succeeded: number;
     failed: number;
     totalDurationMs: number;
-    verdict: "SUCCESS" | "PARTIAL" | "FAILURE" | "REFUSED";
+    verdict: "SUCCESS" | "PARTIAL" | "FAILURE" | "REFUSED" | "VERIFICATION_FAILED";
+    /** F13 ORDER 2026-11-01 — completion cannot be claimed while verification fails. */
+    verification?: {
+      specified: number;
+      passed: number;
+      failed: number;
+    };
     /**
      * F13-ratified 2026-09-25 — aggregate outcome class across actions.
      * Rules:
