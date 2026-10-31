@@ -407,6 +407,28 @@ async function webSearchWithFallback(
   }).filter((s) => s.lfdScore > 0 || s.score >= 0.9) // curriculum gate; keep strong priors eligible on easy
     .sort((a, b) => b.lfdScore - a.lfdScore);
 
+  // FREE-FIRST (2026-11-01, FI-008; F13 order "web search free at least"):
+  // local SearXNG costs RM0 and is healthy on this box, but the LFD weight
+  // layer (exa saturated at 3.0) starved it 905:32 — the free lane only ran
+  // when paid lanes failed. For discovery/verification intents, hoist searxng
+  // to the front when its circuit is closed; paid lanes remain the scored
+  // fallback on failure/empty. extraction/research stay quality-ordered
+  // (searxng extraction prior 0.2, research 0.6 — quality matters there).
+  // Note: medium/hard difficulty can curriculum-filter searxng out of `scored`
+  // entirely (lfdScore=0, cap 0.75 < 0.9) — re-insert it in that case.
+  // Kill-switch: AFORGE_WEB_FREE_FIRST=0 restores pure LFD order.
+  const freeFirst = process.env.AFORGE_WEB_FREE_FIRST !== "0"
+    && (intent === "discovery" || intent === "verification")
+    && !circuitIsOpen("searxng");
+  if (freeFirst) {
+    const i = scored.findIndex((s) => s.provider === "searxng");
+    if (i > 0) {
+      scored.unshift(...scored.splice(i, 1));
+    } else if (i < 0) {
+      scored.unshift({ provider: "searxng", score: 0.75, lfdScore: 0, reasons: ["free-first"] });
+    }
+  }
+
   const errors: string[] = [];
   const evidence: EvidenceItem[] = [];
 
