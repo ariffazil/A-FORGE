@@ -23,15 +23,8 @@
 #   histories with "messages[N].content must be a string". Verified: replay of the
 #   poisoned 79-message history went 400 -> 200. rollback: remove drop-in + daemon-reload.
 
-model_list:
-- model_name: apex-888
-  litellm_params:
-    model: openai/deepseek-flash
-    api_base: https://api.deepseek.com/v1
-    api_key: os.environ/DEEPSEEK_API_KEY
-    order: 8
-    min_tokens: 200
 # Bump log: 2026-10-27 333-AGI — landing deploy tail (F13 sovereign order tonight): governance header re-restored after a SECOND unlogged deletion found in worktree; body = LIVE runtime state (litellm-federation container booted 2026-10-27 20:04 +08 off this file via docker bind-mount) — additional_drop_params:["include"] shims recorded as-is. Comments only, parser-invisible: no litellm restart required.
+# Bump log: 2026-10-31 HERMES (F13 'finish off all FED related stuff') — FED finish-off: (a) RESTORED alias hermes-default -> i-arif (bare deletion left the name answering 400; matches the agi-333/hermes-asi consolidation pattern); (b) PARKED dead seats by order bump + note: MiniMax-M3/M3.1-Flash/M3.1-Flash-Preview order 0->995 (429 Token Plan usage limit, live probe 2026-10-31), gemini-flash/gemini-pro->996 (402 prepayment credits depleted), glm-53-free->997 (403 free quota exhausted); (c) qwen-auto drops `temperature` (upstream meta-router returns 400 'auto does not support parameter(s): temperature'). No routing/fallback semantics changed beyond that. Revert: git -C /root/A-FORGE checkout -- litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
 model_list:
 - model_name: apex-888
   litellm_params:
@@ -53,10 +46,13 @@ model_list:
       V4.1 native multimodal, 1M ctx. Last-resort fallback rung.'
 - model_name: apex-888
   litellm_params:
-    model: openai/MiniMax-M3
-    api_base: https://api.minimax.io/v1
+    # 2026-10-31 F13: MiniMax M Plan is 429 exhausted (probed live). This head rung
+    # was unreachable, so every request paid a failed attempt first. Repointed to
+    # the highest-measured live reasoner (3/3 on modular-exponent / factorial-zeros / CRT).
+    model: openai/deepseek-v4-pro
+    api_base: https://api.deepseek.com/v1
     additional_drop_params: ["include"]
-    api_key: os.environ/MINIMAX_MPLAN_KEY
+    api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
     min_tokens: 200
   model_info:
@@ -175,184 +171,6 @@ model_list:
     mode: chat
     notes: 'apex-888 P97 (legacy qwen3.7-max ariffazil Standard seat): documented
       2026-09-21 F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover.'
-- model_name: hermes-default
-  litellm_params:
-    model: openai/MiniMax-M3
-    api_base: https://api.minimax.io/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/MINIMAX_MPLAN_KEY
-    order: 8
-    min_tokens: 200
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY
-      (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat
-      and /v1/t2a_v2). Models and base URLs unchanged.'
-    notes: 'HERMES P1: MiniMax-M3 (minimax.io). PRIMARY. LIVE PROBED 2026-10-02 15:12
-      MYT. Qwen Token Plan REINSTATED LIVE 2026-10-02 probe (team+arifos+hermes keys
-      OK). Cascade: MiniMax→GLM→MiMo→DeepSeek→Qwen→OpenCode. DIVERSITY: 8 models,
-      6 providers. APEX_G_m=0.83 (rank 2 in /root/.config/federation-models.json apex_hermes_default_ranking_2026_10_03).
-      GLM-5.3 numerically G_m=0.86 but T-axis conflates organ readiness with model
-      capability; live probe of GLM as P1 candidate pending F13 sign-off (no cascade
-      mutation 2026-10-03). 2026-10-03T01:03Z EMPIRICAL BENCH (7 tasks × 1 prompt
-      × 3 models): GLM-5.3 86% empty content despite HTTP 200, MiniMax-M3 100% substantial
-      output — P1 confirmed. Recommend cascade order: keep MiniMax P1, demote GLM
-      P2→P5, demote qwen3.8-max P5→P6 due to 43% timeout. PENDING F13 SAH for cascade
-      mutation.'
-    frequency_penalty: 0.4
-    presence_penalty: 0.2
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-- model_name: hermes-default
-  litellm_params:
-    model: openai/glm-5.3-flash
-    api_base: https://api.z.ai/api/coding/paas/v4
-    additional_drop_params: ["include"]
-    api_key: os.environ/ZAI_API_KEY
-    order: 3
-    max_input_tokens: 1000000
-    max_output_tokens: 128000
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: 'HERMES P2: GLM-5.3-Flash (Z.AI). LIVE PROBED 2026-10-02 15:12 MYT. 1M
-      ctx, multimodal, $12 credit.'
-    frequency_penalty: 0.4
-    presence_penalty: 0.2
-  model_info:
-    max_input_tokens: 1000000
-    max_output_tokens: 128000
-    mode: chat
-- model_name: hermes-default
-  litellm_params:
-    model: openai/mimo-v2.6-pro
-    api_base: os.environ/MIMO_PLATFORM_BASE_URL
-    additional_drop_params: ["include"]
-    api_key: os.environ/MIMO_PLATFORM_API_KEY
-    order: 991
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    min_tokens: 200
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: HERMES P3->PARKED 91 (HTTP 402 insufficient balance, live probe 2026-10-08
-      18:30 MYT). Restore to order 3 on topup (F13).
-    frequency_penalty: 0.4
-    presence_penalty: 0.2
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_audio_input: true
-    supports_video_input: true
-    supports_vision: true
-    supports_function_calling: true
-- model_name: hermes-default
-  litellm_params:
-    model: openai/qwen3.8-max
-    api_base: https://opencode.ai/zen/go/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/OPENCODE_GO_API_KEY
-    extra_headers:
-      x-opencode-session: arif-fed-i-arif-lane-001
-    order: 92
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: HERMES P8->PARKED 92 (HTTP 429 GoUsageLimitError monthly, live probe 2026-10-08
-      18:30 MYT). Recovers next billing cycle.
-    frequency_penalty: 0.4
-    presence_penalty: 0.2
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-- model_name: hermes-default
-  litellm_params:
-    model: openai/deepseek-v4-pro
-    api_base: https://api.deepseek.com/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/DEEPSEEK_API_KEY
-    order: 4
-    min_tokens: 200
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    supports_function_calling: true
-    notes: 'HERMES P4: DeepSeek-v4-Pro DIRECT (api.deepseek.com). LIVE PROBED 2026-10-02.
-      Cheap direct lane.'
-  model_info:
-    input_cost_per_token: 1.32e-06
-    output_cost_per_token: 3.96e-06
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-- model_name: hermes-default
-  litellm_params:
-    model: openai/qwen3.8-max
-    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 2
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: 'HERMES P5: Qwen3.8-max QWEN TOKEN PLAN. REINSTATED 2026-10-02 (LIVE probe,
-      team+arifos+hermes keys OK).'
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-- model_name: hermes-default
-  litellm_params:
-    model: openai/deepseek-v4-flash
-    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/QWEN_ARIFOS_API_KEY
-    order: 6
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    min_tokens: 200
-    notes: 'HERMES P6: deepseek-vision-flash (deepseek-v4-flash via Qwen Token Plan).
-      Vision probe 2026-10-02: accepted image input. Reasoning model min_tokens 200.'
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-- model_name: hermes-default
-  litellm_params:
-    model: openai/deepseek-flash
-    api_base: https://api.deepseek.com/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    min_tokens: 200
-    mode: chat
-    supports_function_calling: true
-    notes: 'HERMES P7->P2 (2026-10-19 888-override): deepseek-flash DIRECT raised
-      7->2 (cost-frontier secondary), min_tokens=200 thinking headroom. Balance-gated.'
-  model_info:
-    input_cost_per_token: 3.0e-07
-    output_cost_per_token: 1.2e-06
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
 - model_name: go-glm-5.3-flash
   litellm_params:
     model: openai/glm-5.3-flash
@@ -525,104 +343,6 @@ model_list:
     notes: OpenCode Go — Space Bunny Free. Zero cost.
     max_input_tokens: 131072
     max_output_tokens: 131072
-- model_name: agi-333
-  litellm_params:
-    model: openai/MiniMax-M3
-    api_base: https://api.minimax.io/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/MINIMAX_MPLAN_KEY
-    min_tokens: 200
-    order: 1
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: 'HEAD inserted 2026-10-23 pulsefix: zen-head parked 429 (Oct 8), qwen-TP
-      + kimi quotas exhausted -> lane fell to garbage provider (PULSE-文). M3 strong-first
-      per F13 fallback direction. Rollback: litellm-config.yaml.bak-pulsefix-20261023'
-- model_name: agi-333
-  litellm_params:
-    model: openai/qwen3.8-max
-    api_base: https://opencode.ai/zen/go/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/OPENCODE_GO_API_KEY
-    extra_headers:
-      x-opencode-session: arif-fed-agi-333-lane-001
-    order: 999
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: 'agi-333 P1->PARKED 90 (HTTP 429 GoUsageLimitError monthly, live probe
-      2026-10-08 19:15 MYT; recovers next billing cycle). Was: paid resubscribed 2026-09-13.'
-- model_name: agi-333
-  litellm_params:
-    model: openai/glm-5.3-flash
-    api_base: https://api.z.ai/api/coding/paas/v4
-    additional_drop_params: ["include"]
-    api_key: os.environ/ZAI_API_KEY
-    order: 999
-  model_info:
-    max_input_tokens: 1000000
-    max_output_tokens: 128000
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: 'agi-333 P3 (ZAI GLM-5.3-Flash): 1M context, 3x quota, multimodal. Reordered
-      2026-10-08 behind token-plan seats.'
-- model_name: agi-333
-  litellm_params:
-    model: openai/qwen3.8-max
-    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 999
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: 'agi-333 P1: Team seat ARIFOS qwen3.8-max. Promoted 2026-10-08 (HTTP 200
-      1.8s live probe; 1M ctx, stable tool-calling, SG region).'
-- model_name: agi-333
-  litellm_params:
-    model: openai/qwen3.7-plus
-    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/QWEN_HERMES_API_KEY
-    order: 999
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-- model_name: agi-333
-  litellm_params:
-    model: openai/deepseek-v4-pro
-    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 999
-    min_tokens: 200
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
-- model_name: agi-333
-  litellm_params:
-    model: openai/glm-5.3  # QFREE swap 2026-10-26 (was kimi-k3 PAYG; F13 free-is-free) zero-cost free quota, same key/endpoint, expires 2026-11-23
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 999
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
 - model_name: asi-555
   litellm_params:
     model: openai/glm-5.3-flash
@@ -960,10 +680,13 @@ model_list:
     notes: 'forge-planner P3 (MiMo V2.5): cheap planner fallback.'
 - model_name: forge-judge
   litellm_params:
-    model: openai/MiniMax-M3
-    api_base: https://api.minimax.io/v1
+    # 2026-10-31 F13: MiniMax M Plan is 429 exhausted (probed live). This head rung
+    # was unreachable, so every request paid a failed attempt first. Repointed to
+    # the highest-measured live reasoner (3/3 on modular-exponent / factorial-zeros / CRT).
+    model: openai/deepseek-v4-pro
+    api_base: https://api.deepseek.com/v1
     additional_drop_params: ["include"]
-    api_key: os.environ/MINIMAX_MPLAN_KEY
+    api_key: os.environ/DEEPSEEK_API_KEY
     order: 1
     min_tokens: 200
   model_info:
@@ -1029,11 +752,17 @@ model_list:
     notes: 'forge-777 P3 (OpenCode Go): 1M context, paid resubscribed.'
 - model_name: forge-777
   litellm_params:
-    model: openai/mimo-v2.6-pro-payg
-    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    # 2026-10-31 F13: upstream id must be the VENDOR id, not our alias name.
+    # "mimo-v2.6-pro-payg" is a litellm alias -> vendor answered 400 Unsupported model.
+    # Repointed to the live MiMo TEAM seat (same vendor family, funded).
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
     additional_drop_params: ["include"]
-    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    api_key: os.environ/MIMO_API_KEY
     order: 901
+    # vendor cap: 100 RPM / 10M TPM per account per model -> local throttle
+    rpm: 90
+    tpm: 9000000
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1575,10 +1304,8 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-  model_info:
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
+# ALIAS: vendor retired the mimo-v2.5 / mimo-v2.5-pro model IDs on 2026-10-21.
+# This name is kept for picker compatibility but routes to a V2.6 upstream.
 - model_name: mimo-v2.5-pro
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -1587,6 +1314,10 @@ model_list:
     api_key: os.environ/MIMO_API_KEY
     order: 4
     supports_vision: true
+    # Vendor cap (docs 2026-10-23): 100 RPM / 10M TPM per ACCOUNT per model,
+    # summed across every API key. Throttle locally so FED never trips 429.
+    rpm: 90
+    tpm: 9000000
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1595,6 +1326,7 @@ model_list:
     supports_video_input: true
     supports_vision: true
     notes: 'F13 2026-09-14: supports_vision enabled for image input.'
+# ALIAS: vendor retired this ID on 2026-10-21 — routes to openai/mimo-v2.6-flash.
 - model_name: mimo-v2.5
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -1603,6 +1335,9 @@ model_list:
     api_key: os.environ/MIMO_API_KEY
     order: 4
     supports_vision: true
+    # Vendor cap: 100 RPM / 10M TPM per account per model.
+    rpm: 90
+    tpm: 9000000
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1619,6 +1354,9 @@ model_list:
     api_key: os.environ/MIMO_API_KEY
     order: 5
     supports_vision: true
+    # Vendor cap: 100 RPM / 10M TPM per account per model.
+    rpm: 90
+    tpm: 9000000
     extra_body:
       modalities:
       - text
@@ -1663,6 +1401,9 @@ model_list:
     api_key: os.environ/MIMO_API_KEY
     order: 5
     supports_vision: true
+    # Vendor cap: 100 RPM / 10M TPM per account per model.
+    rpm: 90
+    tpm: 9000000
     extra_body:
       modalities:
       - text
@@ -1842,7 +1583,7 @@ model_list:
     api_base: https://api.minimax.io/v1
     additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
-    order: 0
+    order: 995
     min_tokens: 200
   model_info:
     max_input_tokens: 1000000
@@ -1855,13 +1596,14 @@ model_list:
       group carries the canonical name so callers do not depend on a retired alias.
       Same wire, same base URL, same key (MINIMAX_MPLAN_KEY). Live-probed 2026-10-21
       on both OpenAI- and Anthropic-compatible endpoints.'
+    notes_fed_park: 'PARKED 2026-10-31: Token Plan usage limit reached (429). Same key/seat as MiniMax-M3. Unpark on topup.'
 - model_name: MiniMax-M3.1-Flash-Preview
   litellm_params:
     model: openai/MiniMax-M3.1-Flash-Preview
     api_base: https://api.minimax.io/v1
     additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
-    order: 0
+    order: 995
     min_tokens: 200
   model_info:
     max_input_tokens: 1000000
@@ -1879,13 +1621,14 @@ model_list:
       (/anthropic wire); thinking returns in reasoning_content. Verified live 2026-09-28
       (333-AGI): HTTP 200 /v1/chat/completions + /anthropic/v1/messages with sk-cp
       Token Plan key. Judge P1 seats remain MiniMax-M3 (F13-promoted 2026-09-21).'
+    notes_fed_park: 'PARKED 2026-10-31: Token Plan usage limit reached (429). Same key/seat as MiniMax-M3. Unpark on topup.'
 - model_name: MiniMax-M3
   litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     additional_drop_params: ["include"]
     api_key: os.environ/MINIMAX_MPLAN_KEY
-    order: 0
+    order: 995
     min_tokens: 200
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1903,6 +1646,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    notes_fed_park: 'PARKED 2026-10-31: Token Plan usage limit reached (429) — direct probe against api.minimax.io with MINIMAX_MPLAN_KEY. Unpark to order 0 on topup.'
 - model_name: glm-5.3
   litellm_params:
     model: openai/glm-5.3
@@ -2422,14 +2166,19 @@ model_list:
     mode: chat
 - model_name: i-arif
   litellm_params:
-    model: openai/mimo-v2.6-pro-payg
-    api_base: os.environ/MIMO_PLATFORM_BASE_URL
+    # 2026-10-31 F13: upstream id must be the VENDOR id, not our alias name.
+    # "mimo-v2.6-pro-payg" is a litellm alias -> vendor answered 400 Unsupported model.
+    # Repointed to the live MiMo TEAM seat (same vendor family, funded).
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
     additional_drop_params: ["include"]
-    api_key: os.environ/MIMO_PLATFORM_API_KEY
+    api_key: os.environ/MIMO_API_KEY
     order: 4
+    # vendor cap: 100 RPM / 10M TPM per account per model -> local throttle
+    rpm: 90
+    tpm: 9000000
     max_input_tokens: 1048576
     max_output_tokens: 131072
-    min_tokens: 200
     mode: chat
     supports_vision: true
     supports_function_calling: true
@@ -2587,22 +2336,6 @@ model_list:
     additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
     order: 7
-  model_info:
-    input_cost_per_token: 4.9e-08
-    output_cost_per_token: 3.75e-07
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
-- model_name: hermes-default
-  litellm_params:
-    model: openai/deepseek/deepseek-v4.1-flash
-    api_base: https://openrouter.ai/api/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/OPENROUTER_API_KEY
-    order: 5
   model_info:
     input_cost_per_token: 4.9e-08
     output_cost_per_token: 3.75e-07
@@ -2787,6 +2520,45 @@ model_list:
     mode: chat
     notes: fed/free rung9 Ollama local sovereign RM0 (qwen2.5:3b probe 200 2026-10-26; 7b cold-start slow)
 
+# ─── FED/VERIFIER-INDEPENDENT · 2026-10-30 (F13 order: "Go") ───
+# Constitutional purpose: give VERIFIER / JUDGE-support roles a route whose failure
+# domain is reachable by NEITHER the proposer (agi-333, i-arif) NOR the executor
+# (forge-777, openclaw, opencode) — the R1 invariant.
+#
+# Measured 2026-10-30 (19 candidate independent lanes probed live on :4013):
+#   mistral (3 aliases) ............................. 402 payment failure
+#   opencode-go paid (gpt-6-luna, claude-haiku, grok, kimi, glm, deepseek) ... 402 insufficient balance
+#   qwen3.8-max-0902 ................................ 404 model not exist
+#   go-longcat / go-space-bunny / go-gemini-argon / qwen-auto ... 400 bad request
+#   ONLY alive: local ollama qwen2.5:3b (9.5s) and qwen2.5:7b (26s)
+#
+# DELIBERATELY BOUNDED. No global fallback, no paid shared-key lane. If both rungs
+# die the correct outcome is HOLD — never a silent failover onto the proposer's
+# provider. go-beam-free is NOT included despite being alive: it rides
+# OPENCODE_GO_API_KEY, the same account the paid lanes use, so it is correlated by
+# key and does not earn independence.
+- model_name: fed/verifier-independent
+  litellm_params:
+    model: openai/qwen2.5:3b
+    api_base: http://127.0.0.1:11434/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/OLLAMA_API_KEY
+    order: 1
+  model_info:
+    mode: chat
+    notes: "R1-independent rung1 · local ollama qwen2.5:3b · loopback = zero shared provider/key · probe 200 9.5s 2026-10-30"
+- model_name: fed/verifier-independent
+  litellm_params:
+    model: openai/qwen2.5:7b
+    api_base: http://127.0.0.1:11434/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/OLLAMA_API_KEY
+    order: 2
+  model_info:
+    mode: chat
+    notes: "R1-independent rung2 · local ollama qwen2.5:7b · probe 200 26s 2026-10-30 · stronger witness, slower"
+
+
 # ─── GEMINI PAID SEATS + AGENT FALLBACK RUNGS · wired 2026-10-28 (RM70 credit) ───
 # Key: GEMINI_API_KEY (AQ.* new-format, present in kunci-mas.env / flat.env / a-forge.env).
 # Paid tier proven: gemini-4-argon / gemini-3.8-flash / gemini-3.1-pro-preview all 200 (free tier = 429 limit:0).
@@ -2796,6 +2568,7 @@ model_list:
   litellm_params:
     model: gemini/gemini-2.5-flash
     api_key: os.environ/GEMINI_API_KEY
+    order: 996
     safety_settings:
     - category: HARM_CATEGORY_HARASSMENT
       threshold: BLOCK_NONE
@@ -2813,6 +2586,7 @@ model_list:
     supports_function_calling: true
     notes: '2026-10-28 Gemini 2.5 Flash — PAID credit lane (Arif top-up RM70). Native gemini/ prefix = thought_signature preserved, tool-loop safe. 1M ctx, vision. Live probe 200 2026-10-28.'
 
+    notes_fed_park: 'PARKED 2026-10-31: Gemini prepayment credits depleted (402) — probe via :4000 returned 402 PaymentRequiredError. Unpark when AI Studio credit is topped up.'
 - model_name: gemini-flash-lite
   litellm_params:
     model: gemini/gemini-2.5-flash-lite
@@ -2837,6 +2611,7 @@ model_list:
   litellm_params:
     model: gemini/gemini-2.5-pro
     api_key: os.environ/GEMINI_API_KEY
+    order: 996
     safety_settings:
     - category: HARM_CATEGORY_HARASSMENT
       threshold: BLOCK_NONE
@@ -2854,45 +2629,8 @@ model_list:
     supports_function_calling: true
     notes: '2026-10-28 Gemini 2.5 Pro — paid deep-reasoning + vision rung. Expensive: reserve for judge/verify-class work. Live probe 200 2026-10-28.'
 
-- model_name: hermes-default
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
+    notes_fed_park: 'PARKED 2026-10-31: Gemini prepayment credits depleted (402). Same seat as gemini-flash. Unpark on topup.'
 - model_name: hermes-asi
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: agi-333
   litellm_params:
     model: gemini/gemini-2.5-flash
     api_key: os.environ/GEMINI_API_KEY
@@ -3107,6 +2845,7 @@ model_list:
     model: openai/auto
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_INDIVIDUAL_API_KEY
+    additional_drop_params: ["include", "temperature"]
   model_info:
     mode: chat
     max_input_tokens: 1000000
@@ -3118,6 +2857,7 @@ model_list:
     model: openai/glm-5.3
     api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
     api_key: os.environ/DASHSCOPE_API_KEY
+    order: 997
   model_info:
     mode: chat
     max_input_tokens: 1000000
@@ -3174,14 +2914,6 @@ router_settings:
     - MiniMax-M3.1-Flash-Preview
     - MiniMax-M3
     - glm-5.3-flash
-    - sovereign-west
-  - agi-333:
-    - deepseek-v4-flash
-    - MiniMax-M3.1-Flash-Preview
-    - MiniMax-M3
-    - mimo-v2.6-flash
-    - glm-5.3-flash
-    - qwen3.8-max
     - sovereign-west
   - asi-555:
     - deepseek-v4-flash
@@ -3349,17 +3081,7 @@ router_settings:
     - qwen3.8-max
     - mimo-v2.6-flash
     - sovereign-west
-  - hermes-default:
-    - mimo-v2.6-flash
-    - mimo-v2.6-pro
-    - agi-333
-    - go-beam-free
-    - go-glm-5.3-flash
-    - sovereign-west
   context_window_fallbacks:
-  - agi-333:
-    - qwen3.8-max
-    - MiniMax-M3
   - forge-777:
     - qwen3.8-max
     - deepseek-v4-pro
@@ -3377,16 +3099,17 @@ router_settings:
     qwen-vision: fed/vision
     sealion: fed/sealion
     deepseek-v4-flash-vision-exp: deepseek-v4-flash-vision
-    deepseek-v3.2: agi-333
+    deepseek-v3.2: i-arif
     qwen-coder: qwen3.6-plus
-    qwen3.8-27b: agi-333
-    qwen3.8-2.4t-a95b: agi-333
-    qwen-plus-latest: agi-333
-    qwen3-max-preview: agi-333
+    qwen3.8-27b: i-arif
+    qwen3.8-2.4t-a95b: i-arif
+    qwen-plus-latest: i-arif
+    qwen3-max-preview: i-arif
     opencode: forge-777
     openclaw: forge-777
     hermes-asi: forge-777
-    agi-333: forge-777
+    agi-333: i-arif
+    hermes-default: i-arif
     qwen3-coder-plus: forge-777
     qwen3-coder-flash: forge-777
     qwen3-coder-next: forge-777
@@ -3441,3 +3164,4 @@ guardrails:
     guardrail: fed_context_guard.FedContextGuard
     mode: pre_call
     default_on: true
+    notes_fed_park: 'PARKED 2026-10-31: free quota exhausted (403 free quota has been exhausted). Unpark when a new free window opens.'
