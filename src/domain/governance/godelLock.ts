@@ -5,8 +5,10 @@
  * system contains true statements it cannot prove within its own axioms.
  * Translated: no autonomous agent can certify its own absolute certainty.
  *
- * This gate enforces a mandatory uncertainty band (Ω₀ ∈ [0.03, 0.05]) on every output.
- * Any output claiming > 0.97 confidence is structurally impossible and must be rejected.
+ * STATUS 2026-10-31 — UNWIRED. This module is imported only by its own test
+ * (`dist/test/godelLock.test.js`); no runtime handler calls `applyGodelLock`.
+ * It *defines* an uncertainty band (Ω₀ ∈ [0.03, 0.05]); it enforces nothing today.
+ * Either wire it into the tool-response path or delete the claim of enforcement.
  *
  * DITEMPA BUKAN DIBERI — Forged, Not Given
  */
