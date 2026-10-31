@@ -17,9 +17,16 @@ Phases:
   7. RECEIPT   — "This act is now part of institutional memory."
 
 DITEMPA BUKAN DIBERI — Execution is forged, not given.
+
+TOMBSTONED 2026-10-23 (F13 order):
+  This 7-phase executor is TEST-ONLY. It is not the production execution path.
+  Production lease validation lives in src/interfaces/mcp/core.ts; the live
+  custody gate (kill switch, denial ledger, idempotency, read-back) lives in
+  src/interfaces/mcp/apaCustody.ts. Do NOT wire this class into a production
+  caller. Setting A_FORGE_PRODUCTION=1 makes instantiation fail closed.
 """
 
-import json, time, hashlib
+import json, time, hashlib, os
 from datetime import datetime, timezone
 from enum import Enum
 from dataclasses import dataclass, field
@@ -101,6 +108,12 @@ class ACTExecutor:
     """
 
     def __init__(self, bridge_dispatch: Callable, vault_write: Callable):
+        if os.environ.get("A_FORGE_PRODUCTION", "").lower() in {"1", "true", "yes"}:
+            raise RuntimeError(
+                "ACTExecutor is TOMBSTONED (2026-10-23). Production lease "
+                "validation is src/interfaces/mcp/core.ts; custody is "
+                "src/interfaces/mcp/apaCustody.ts. See TOMBSTONE-ACT-EXECUTOR.md."
+            )
         self.bridge = bridge_dispatch  # (params) → result dict
         self.vault = vault_write  # (receipt) → vault entry
         self.phases = []

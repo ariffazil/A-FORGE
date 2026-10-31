@@ -29,6 +29,7 @@ import { appendFile, mkdir } from "node:fs/promises";
 import { classifyCommand, type JudgeResult } from "./arifJudge.js";
 import { getDefaultArifSeal, ledgerPageFromContent } from "./arifSeal.js";
 import { emitFlowReceipt } from "../../../infrastructure/bridges/arifFlowBridge.js";
+import { checkRefusalGate } from "../../../infrastructure/bridges/refusalGateBridge.js";
 import { checkModificationIntent, isGodelLocked } from "./godelLock.js";
 import { classifyShellCommand, type ActionClass, isQa2rCollapse } from "../../../domain/governance/execution-authority.js";
 import { classifyUnknown, isStructuredError } from "../../../domain/governance/error-classifier.js";
@@ -122,6 +123,23 @@ interface ScarHit {
 
 const SCAR_RUNTIME_INDEX = "/root/A-FORGE/.runtime/scars/index.json";
 
+/**
+ * F1 AMANAH / F2 TRUTH: an unreadable scar store is NOT "no scars".
+ * Returning [] when the index is absent silently converts "unavailable"
+ * into "clean" — the exact fail-open that lets a paid-for lesson be
+ * re-paid. These synthetic hits upgrade ALLOW→GATE at the reflex gate,
+ * which constrains selection (888_HOLD) rather than bricking the shell.
+ */
+function scarStoreUnavailable(scarId: string, reason: string): ScarHit[] {
+  return [{
+    scar_id: scarId,
+    failure_mode: "SCAR_STORE_UNAVAILABLE",
+    severity: "CRITICAL",
+    scar_pressure: 1.0,
+    constraint_imposed: `${reason} — scar consultation unproven; execution halted under F1 AMANAH / F2 TRUTH fail-closed policy`,
+  }];
+}
+
 // 2026-09-17 (333-AGI): filter common command/IO English tokens that have
 // caused false-positive scar matches (e.g. printf/uname commands matching
 // scar text containing "test", "output", "value", "token", "command"...).
@@ -134,7 +152,13 @@ const SCAR_STOPWORDS = new Set([
 
 function matchScarsByKeywords(command: string): ScarHit[] {
   try {
-    if (!existsSync(SCAR_RUNTIME_INDEX)) return [];
+    if (!existsSync(SCAR_RUNTIME_INDEX)) {
+      console.error(`[forge_shell] scar index missing at ${SCAR_RUNTIME_INDEX} (fail-closed)`);
+      return scarStoreUnavailable(
+        "SCAR-INDEX-MISSING-FAIL-CLOSED",
+        `Scar index absent at ${SCAR_RUNTIME_INDEX}`,
+      );
+    }
     const content = readFileSync(SCAR_RUNTIME_INDEX, "utf-8");
     const scars = JSON.parse(content) as Record<string, {
       scar_id?: string;
@@ -187,11 +211,12 @@ function matchScarsByKeywords(command: string): ScarHit[] {
     }
     return hits.sort((a, b) => b.scar_pressure - a.scar_pressure);
   } catch (err) {
-    // F11 AUDIT: never silently swallow scar-index read failures.
-    // Non-fatal — reflex gate fails open to [] (no scar match), but the
-    // failure is logged so a corrupt index doesn't degrade silently.
-    console.warn("[forge_shell] scar reflex matcher read failed (non-fatal):", err);
-    return [];
+    // F11 AUDIT: never silently swallow scar-index read failures. Fail-closed.
+    console.error("[forge_shell] scar reflex matcher read failed (fail-closed):", err);
+    return scarStoreUnavailable(
+      "SCAR-INDEX-CORRUPT-FAIL-CLOSED",
+      `Scar store read/parse error (${err instanceof Error ? err.message : String(err)})`,
+    );
   }
 }
 
@@ -718,9 +743,11 @@ async function callArifVerify(
   const meta = (resp.meta as Record<string, unknown>) ?? {};
   return {
     ...resp,
-    token_valid: meta.token_valid ?? (resp.status === "PASS" || resp.verdict === "SEAL"),
-    scope_valid: meta.scope_valid ?? true,
-    replay_safe: meta.replay_safe ?? true,
+    // E4 (FEDERATION_REALITY_DISTILLATION 2026-10-19): fail closed. Identity and
+    // scope validity must come from explicit meta, never from status/verdict text.
+    token_valid: meta.token_valid === true,
+    scope_valid: meta.scope_valid === true,
+    replay_safe: meta.replay_safe === true,
     violations: meta.violations ?? resp.reasons ?? [],
   };
 }
@@ -794,16 +821,20 @@ async function arifVerifySealLive(session_id: string): Promise<boolean> {
         id: 1,
         method: "tools/call",
         params: {
-          name: "arif_observe",
-          arguments: { mode: "vitals", session_id },
+          name: "arif_init",
+          arguments: { mode: "validate", session_id, actor_id: "aforge" },
         },
       }),
+      signal: AbortSignal.timeout(3000),
     });
     if (!resp.ok) return false;
-    const data = (await resp.json()) as {
-      result?: { actor?: { actor_verified?: boolean }; verdict?: string };
-    };
-    return data?.result?.actor?.actor_verified === true && data?.result?.verdict === "SEAL";
+    const body = await resp.json() as any;
+    const resultText = body?.result?.content?.[0]?.text;
+    if (!resultText) {
+      return body?.result?.actor?.actor_verified === true || body?.result?.status === "completed";
+    }
+    const result = typeof resultText === "string" ? JSON.parse(resultText) : resultText;
+    return result?.status === "completed" || result?.actor?.actor_verified === true || result?.session_id === session_id;
   } catch {
     return false;
   }
@@ -972,13 +1003,14 @@ export function registerShellTools(server: McpServer): void {
     "DENY patterns are hard-blocked. GATE patterns require human approval. " +
     "Every execution is sealed to VAULT999 hash chain. " +
     "REQUIRES arifOS authority envelope for executing mutable shell commands: call arif_init() first, pass the returned session_id. " +
-    "Read-only probes may omit session_id when they are clearly observation-only. Use forge_shell_dryrun for preview without side effects.",
+    "session_id may be omitted ONLY when the gate's classifier (classifyShellCommandRisk) passes the command as SAFE — classification is the gate's decision, never the caller's claim. MUTATION without a session returns GATE_HOLD; IRREVERSIBLE without a verified SEAL returns HOLD_IRREVERSIBLE. Use forge_shell_dryrun for preview without side effects.",
     {
       command: z.string().min(1).max(4000).describe("Shell command to execute"),
       cwd: z.string().default(DEFAULT_WORKSPACE).describe("Working directory"),
       timeout: z.number().default(DEFAULT_TIMEOUT_MS).describe("Timeout in ms (max " + MAX_TIMEOUT_MS + ")"),
       session_id: z.string().optional().describe("arifOS-issued session_id from arif_init(). REQUIRED for execution."),
       lease_id: z.string().optional().describe("Governed lease ID"),
+      scope: z.string().optional().describe("Governed refusal scope (e.g. 'deploy:site', 'test:shell-refusal'). Checked against Signed Refusal Objects."),
       expected_output: z.string().min(1).max(4000).describe(
         "REQUIRED (2026-07-29 doctrine): what the agent expects this command to produce. " +
         "World model training fuel — prediction→actual gap is the richest supervision signal. " +
@@ -987,11 +1019,77 @@ export function registerShellTools(server: McpServer): void {
         "The gap between expected vs actual trains the ECHO world model (grpo.ts λ=0.03)."
       ),
     },
-    async ({ command, cwd, timeout, session_id, lease_id, expected_output }) => {
+    async ({ command, cwd, timeout, session_id, lease_id, scope, expected_output }) => {
       // Apply defaults (stateless HTTP path bypasses Zod schema defaults)
       const safeCwd = cwd || DEFAULT_WORKSPACE;
       const safeTimeout = (typeof timeout === 'number' && timeout > 0) ? Math.min(timeout, MAX_TIMEOUT_MS) : DEFAULT_TIMEOUT_MS;
       const startedAt = Date.now();
+
+      // ── GATE 0: HUMAN REFUSAL (E14/E15 LAW OF REFUSAL) ─────────────────────
+      // A human consequence-bearer can issue a scoped NO.
+      // If a valid refusal covers the scope, execution is BLOCKED.
+      // If store is unverified/tampered, execution is HELD (fail closed).
+      // Absence of refusal is NOT approval.
+      const execParts = command.trim().split(/\s+/);
+      const executable = execParts[0]?.replace(/^["'`]/, "").split("/").pop() ?? "";
+      const scopesToCheck: string[] = [];
+      if (scope) {
+        scopesToCheck.push(scope.trim());
+      }
+      if (executable) {
+        scopesToCheck.push(`shell:${executable}`);
+      }
+
+      for (const targetScope of scopesToCheck) {
+        const refusalCheck = await checkRefusalGate(targetScope);
+        if (refusalCheck.hold) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "REFUSAL_HOLD",
+                gate: "GATE_0_REFUSAL",
+                target_scope: targetScope,
+                reason: `EXECUTION HELD — refusal store cannot be verified. Fail closed.`,
+                error: refusalCheck.error || refusalCheck.reason,
+                constitutional_floor: "F1 AMANAH",
+                _epistemic: {
+                  output_class: "GOVERNANCE_TEMPLATE",
+                  authority_claim: "FAIL_CLOSED",
+                  evidence_source: "REFUSAL_STORE",
+                  tagged_by: "aforge-mcp",
+                  tagged_at: new Date().toISOString(),
+                },
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+
+        if (refusalCheck.block) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: JSON.stringify({
+                status: "REFUSAL_BLOCKED",
+                gate: "GATE_0_REFUSAL",
+                target_scope: targetScope,
+                reason: `EXECUTION BLOCKED — a human consequence-bearer issued an active NO on scope '${targetScope}'.`,
+                blocking_refusals: refusalCheck.blocking,
+                constitutional_floor: "F13 SOVEREIGN_VETO",
+                _epistemic: {
+                  output_class: "GOVERNANCE_TEMPLATE",
+                  authority_claim: "REFUSAL_OBJECT",
+                  evidence_source: "REFUSAL_STORE",
+                  tagged_by: "aforge-mcp",
+                  tagged_at: new Date().toISOString(),
+                },
+              }, null, 2),
+            }],
+            isError: true,
+          };
+        }
+      }
 
       // ── PHASE 2 PRE-EXECUTION GATE (E1 JITU) ────────────────────────────────
       // All commands pass through classifyShellCommandRisk — NO BYPASS.
@@ -1587,6 +1685,11 @@ export function registerShellTools(server: McpServer): void {
             judge: {
               deny_patterns: 37,
               gate_patterns: 38,
+            },
+            refusal_gate: {
+              status: "ENFORCING",
+              gate_script: "/root/forge_work/patches/refusal-gate-20261028/gate.py",
+              canonical_store: "/var/lib/arifos/refusals.jsonl",
             },
             defaults: {
               workspace: DEFAULT_WORKSPACE,

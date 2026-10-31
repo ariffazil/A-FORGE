@@ -87,6 +87,16 @@ const CODE_ACCEPTING_TOOLS = new Set([
   "forge_filesystem_move",
   "forge_filesystem_delete",
   "forge_document_ingest",
+  // Google Workspace tools (forge_gmail/drive/sheets/calendar): free-text
+  // content (email bodies, subject lines, sheet values) legitimately contains
+  // unicode em-dashes, emoji, and punctuation that SHELL_METACHARS flags as
+  // false positives. These tools execute via execFileSync (arg array — no
+  // shell), and mutation is gated by gateMutate (arif_judge F1/F3/F13)
+  // instead. No shell injection surface remains.
+  "forge_gmail",
+  "forge_drive",
+  "forge_sheets",
+  "forge_calendar",
 ]);
 
 /**

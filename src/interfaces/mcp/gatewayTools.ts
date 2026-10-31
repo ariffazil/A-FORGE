@@ -29,6 +29,17 @@ import {
   browserSentinelErrorResponse,
 } from "../../domain/governance/browserInjectionSentinel.js";
 
+// WEBO-Ω federation kernel (persistent hysteresis, G_fed, intent classification)
+import {
+  Hysteron,
+  computeGFed,
+  computeCDark,
+  classifyIntent,
+  classifyDifficulty,
+  curriculumScore,
+  type WebIntent,
+} from "../../domain/web/federation.js";
+
 // ── Configuration ─────────────────────────────────────────────────────────────
 
 const PLAYWRIGHT_MCP_URL = process.env.PLAYWRIGHT_MCP_URL ?? "http://localhost:8931/mcp";
@@ -37,51 +48,37 @@ const NETDATA_URL = process.env.NETDATA_URL ?? "http://localhost:19999";
 const CONTEXT7_MCP_URL = process.env.CONTEXT7_MCP_URL ?? "https://mcp.context7.com/mcp";
 const BRAVE_API_KEY = process.env.BRAVE_SEARCH_API_KEY ?? process.env.BRAVE_API_KEY ?? "";
 const SEARXNG_URL = (process.env.SEARXNG_URL ?? "http://127.0.0.1:8080").replace(/\/+$/, "");
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY ?? "";
+const DEEPSEEK_TOOLS_URL = (process.env.DEEPSEEK_TOOLS_URL ?? "https://api.deepseek.com/v1/tools").replace(/\/+$/, "");
+const EXA_API_KEY = process.env.EXA_API_KEY ?? "";
+const SERPAPI_API_KEY = process.env.SERPAPI_API_KEY ?? "";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN ?? process.env.GH_TOKEN ?? "";
 
 const RECEIPT_LOG = "/root/A-FORGE/data/gateway_receipts.jsonl";
 
-// ── Circuit Breaker ───────────────────────────────────────────────────────────
+// ── Circuit Breaker (WEBO-Ω: persistent hysteron, Ω12) ────────────────────────
 // Per-provider failure tracking. After CONSECUTIVE_FAILURE_THRESHOLD failures,
-// provider is skipped for COOLDOWN_MS milliseconds.
+// provider is skipped for COOLDOWN_MS milliseconds. State is persisted to disk
+// (data/web_federation_state.json) so restarts do not forget provider failures.
 
-interface CircuitState {
-  failures: number;
-  lastFailure: number;
-  openUntil: number;
-}
-
-const CONSECUTIVE_FAILURE_THRESHOLD = 3;
-const COOLDOWN_MS = 60_000; // 1 minute cooldown after 3 consecutive failures
-const circuitState: Record<string, CircuitState> = {};
+const federationHysteron = new Hysteron(
+  join("/root/A-FORGE/data", "web_federation_state.json"),
+);
 
 function circuitIsOpen(provider: string): boolean {
-  const state = circuitState[provider];
-  if (!state) return false;
-  if (state.failures < CONSECUTIVE_FAILURE_THRESHOLD) return false;
-  if (Date.now() < state.openUntil) return true;
-  // Cooldown expired — half-open: allow one try
-  state.failures = CONSECUTIVE_FAILURE_THRESHOLD - 1;
-  return false;
+  return federationHysteron.isOpen(provider);
 }
 
 function circuitRecordSuccess(provider: string): void {
-  circuitState[provider] = { failures: 0, lastFailure: 0, openUntil: 0 };
+  federationHysteron.recordSuccess(provider);
 }
 
 function circuitRecordFailure(provider: string): void {
-  const prev = circuitState[provider] || { failures: 0, lastFailure: 0, openUntil: 0 };
-  const failures = prev.failures + 1;
-  circuitState[provider] = {
-    failures,
-    lastFailure: Date.now(),
-    openUntil: failures >= CONSECUTIVE_FAILURE_THRESHOLD ? Date.now() + COOLDOWN_MS : 0,
-  };
+  federationHysteron.recordFailure(provider);
 }
 
 // ── Provider Scoring ──────────────────────────────────────────────────────────
-
-type WebIntent = "discovery" | "verification" | "extraction" | "research";
+// WebIntent now comes from domain/web/federation.js (single source).
 
 interface ProviderScore {
   provider: string;
@@ -95,10 +92,10 @@ function scoreProviders(
 ): ProviderScore[] {
   // Base capability match per intent
   const capabilityMatrix: Record<string, Record<string, number>> = {
-    discovery: { brave: 0.9, searxng: 0.7, ddgs: 0.6, minimax: 0.7, context7: 0.3 },
-    verification: { brave: 0.7, searxng: 0.8, context7: 0.5, minimax: 0.5 },
-    extraction: { brave: 0.3, searxng: 0.2, context7: 0.8, minimax: 0.3 },
-    research: { brave: 0.7, searxng: 0.6, context7: 0.9, minimax: 0.6 },
+    discovery: { exa: 0.85, serpapi: 0.8, brave: 0.9, searxng: 0.7, ddgs: 0.6, minimax: 0.7, context7: 0.3, deepseek: 0.65 },
+    verification: { exa: 0.8, serpapi: 0.75, brave: 0.7, searxng: 0.8, context7: 0.5, minimax: 0.5, deepseek: 0.7 },
+    extraction: { exa: 0.85, serpapi: 0.4, brave: 0.3, searxng: 0.2, context7: 0.8, minimax: 0.3, deepseek: 0.3 },
+    research: { exa: 0.85, serpapi: 0.7, brave: 0.7, searxng: 0.6, context7: 0.9, minimax: 0.6, deepseek: 0.8 },
   };
 
   const caps = capabilityMatrix[intent] || capabilityMatrix.discovery;
@@ -112,7 +109,7 @@ function scoreProviders(
       // Bonus for local providers (lower latency)
       if (provider === "searxng") { score += 0.05; reasons.push("local+5%"); }
       // Penalty for circuit-open (already filtered above, but state matters)
-      const cs = circuitState[provider];
+      const cs = federationHysteron.stats(provider)?.circuit;
       if (cs && cs.failures > 0) {
         const penalty = cs.failures * 0.05;
         score = Math.max(0, score - penalty);
@@ -254,7 +251,13 @@ async function searxngWebSearch(
   count: number,
 ): Promise<{ ok: boolean; results: BraveResult[]; error?: string }> {
   try {
-    const params = new URLSearchParams({ q: query, format: "json", pageno: "1" });
+    // Engine pinning (2026-10-29, 333-AGI): the default engine list (101
+    // entries) is mostly dead providers from this box — an unpinned query
+    // returns results:[] and the ladder mis-attributes failure to searxng.
+    // Kernel probes same day: pinned bing/google/wikipedia return 10 real
+    // results each. Wiring owns engine selection; container config stays.
+    const engines = process.env.SEARXNG_ENGINES ?? "bing,google,wikipedia,bing news";
+    const params = new URLSearchParams({ q: query, format: "json", pageno: "1", engines });
     const resp = await fetch(`${SEARXNG_URL}/search?${params.toString()}`, {
       headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(12_000),
@@ -278,15 +281,131 @@ async function searxngWebSearch(
   }
 }
 
+// DeepSeek Search & Fetch (standalone tool APIs — https://api-docs.deepseek.com/guides/search).
+// Billing: $0.75 per 1,000 SUCCESSFUL requests (200 + non-empty results); failures/empties free.
+// Server-side tool calls via DeepSeek Harness/Claude Code/Codex bill from 2026-11-01 00:00 Beijing.
+// Fallback rung only (Brave 402 + SearXNG thin engines); circuit-breaker shared with other providers.
+async function deepseekWebSearch(
+  query: string,
+  count: number,
+): Promise<{ ok: boolean; results: BraveResult[]; error?: string }> {
+  if (!DEEPSEEK_API_KEY) {
+    return { ok: false, results: [], error: "DeepSeek Search: DEEPSEEK_API_KEY not set" };
+  }
+  try {
+    const resp = await fetch(`${DEEPSEEK_TOOLS_URL}/search`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ query, count: Math.min(Math.max(1, count), 50), need_content: false }),
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!resp.ok) {
+      return { ok: false, results: [], error: `DeepSeek Search HTTP ${resp.status}` };
+    }
+    const data = (await resp.json()) as {
+      results?: Array<{ title?: string; url?: string; summary?: string; snippet?: string; date?: string }>;
+    };
+    const results = (data.results ?? []).slice(0, Math.max(1, count)).map((r) => ({
+      title: r.title ?? "",
+      url: r.url ?? "",
+      description: r.summary ?? r.snippet ?? "",
+      age: r.date,
+    }));
+    // Billable only on 200 + non-empty results; empty = free, treated as failure for fallback.
+    return { ok: results.length > 0, results, error: results.length > 0 ? undefined : "DeepSeek Search: empty results" };
+  } catch (err: any) {
+    return { ok: false, results: [], error: `DeepSeek Search failed: ${err?.message ?? String(err)}` };
+  }
+}
+
+// Exa neural search (api.exa.ai) — live-verified 2026-10-18 ($0.007/search, clean text).
+async function exaWebSearch(
+  query: string,
+  count: number,
+): Promise<{ ok: boolean; results: BraveResult[]; error?: string }> {
+  if (!EXA_API_KEY) return { ok: false, results: [], error: "Exa: EXA_API_KEY not set" };
+  try {
+    const resp = await fetch("https://api.exa.ai/search", {
+      method: "POST",
+      headers: { "x-api-key": EXA_API_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query,
+        numResults: Math.min(Math.max(1, count), 25),
+        type: "auto",
+        contents: { text: { maxCharacters: 400 } },
+      }),
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!resp.ok) return { ok: false, results: [], error: `Exa HTTP ${resp.status}` };
+    const data = (await resp.json()) as {
+      results?: Array<{ title?: string; url?: string; text?: string; publishedDate?: string }>;
+    };
+    const results = (data.results ?? []).map((r) => ({
+      title: r.title ?? "",
+      url: r.url ?? "",
+      description: (r.text ?? "").slice(0, 300),
+      age: r.publishedDate,
+    }));
+    return { ok: results.length > 0, results, error: results.length > 0 ? undefined : "Exa: empty results" };
+  } catch (err: any) {
+    return { ok: false, results: [], error: `Exa failed: ${err?.message ?? String(err)}` };
+  }
+}
+
+// SerpApi (serpapi.com) — live-verified 2026-10-18 (Google organic results).
+async function serpapiWebSearch(
+  query: string,
+  count: number,
+): Promise<{ ok: boolean; results: BraveResult[]; error?: string }> {
+  if (!SERPAPI_API_KEY) return { ok: false, results: [], error: "SerpApi: SERPAPI_API_KEY not set" };
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      num: String(Math.min(Math.max(1, count), 20)),
+      api_key: SERPAPI_API_KEY,
+    });
+    const resp = await fetch(`https://serpapi.com/search.json?${params.toString()}`, {
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!resp.ok) return { ok: false, results: [], error: `SerpApi HTTP ${resp.status}` };
+    const data = (await resp.json()) as {
+      organic_results?: Array<{ title?: string; link?: string; snippet?: string; date?: string }>;
+      error?: string;
+    };
+    if (data.error) return { ok: false, results: [], error: `SerpApi: ${data.error}` };
+    const results = (data.organic_results ?? []).slice(0, Math.max(1, count)).map((r) => ({
+      title: r.title ?? "",
+      url: r.link ?? "",
+      description: r.snippet ?? "",
+      age: r.date,
+    }));
+    return { ok: results.length > 0, results, error: results.length > 0 ? undefined : "SerpApi: empty results" };
+  } catch (err: any) {
+    return { ok: false, results: [], error: `SerpApi failed: ${err?.message ?? String(err)}` };
+  }
+}
+
 async function webSearchWithFallback(
   query: string,
   count: number,
   freshness: string,
   safesearch: string,
+  intent: WebIntent = "discovery",
 ): Promise<{ ok: boolean; results: BraveResult[]; error?: string; provider: string; evidence?: EvidenceItem[] }> {
-  // Score providers by intent (default: discovery for generic search)
-  const allProviders = ["brave", "searxng"];
-  const scored = scoreProviders("discovery", allProviders);
+  // LFD routing (method: LFD 2610.17246 port — curriculum + preference weights):
+  // difficulty class matched to what each provider has DEMONSTRED it can handle;
+  // order = static prior × learned weight (self-correcting: dead lanes fall,
+  // healthy lanes rise — fallback order is emergent, not hardcoded).
+  const allProviders = ["exa", "serpapi", "searxng", "deepseek", "brave"];
+  const difficulty = classifyDifficulty(query);
+  const scored = scoreProviders(intent, allProviders).map((s) => {
+    const lfdScore = curriculumScore(s.score, federationHysteron.lfdGet(s.provider), difficulty);
+    return { ...s, lfdScore };
+  }).filter((s) => s.lfdScore > 0 || s.score >= 0.9) // curriculum gate; keep strong priors eligible on easy
+    .sort((a, b) => b.lfdScore - a.lfdScore);
 
   const errors: string[] = [];
   const evidence: EvidenceItem[] = [];
@@ -294,16 +413,23 @@ async function webSearchWithFallback(
   for (const { provider } of scored) {
     let attempt: { ok: boolean; results: BraveResult[]; error?: string };
 
-    if (provider === "brave") {
+    if (provider === "exa") {
+      attempt = await exaWebSearch(query, count);
+    } else if (provider === "serpapi") {
+      attempt = await serpapiWebSearch(query, count);
+    } else if (provider === "brave") {
       attempt = await braveWebSearch(query, count, freshness, safesearch);
     } else if (provider === "searxng") {
       attempt = await searxngWebSearch(query, count);
+    } else if (provider === "deepseek") {
+      attempt = await deepseekWebSearch(query, count);
     } else {
       continue; // Unknown provider in scored list
     }
 
     if (attempt.ok && attempt.results.length > 0) {
       circuitRecordSuccess(provider);
+      federationHysteron.lfdRecord(provider, difficulty, 1); // LFD: winner
       // Normalize results to evidence items
       attempt.results.forEach((r, i) => {
         evidence.push(normalizeEvidenceItem(r, provider, i + 1));
@@ -312,6 +438,7 @@ async function webSearchWithFallback(
     }
 
     circuitRecordFailure(provider);
+    federationHysteron.lfdRecord(provider, difficulty, 0); // LFD: loser
     errors.push(`${provider}: ${attempt.error ?? "empty results"}`);
   }
 
@@ -433,14 +560,34 @@ export async function handleForgeResearch(args: any) {
     ? results.map((r) => ({ title: r.title, url: r.url, source: search.provider, date: r.age ?? null }))
     : [];
   const answer = results.map((r) => `- ${r.title}: ${r.description ?? ""}`).join("\n") || "No grounded results.";
-  const confidence = results.length > 5 ? "high" : results.length > 0 ? "medium" : "low";
-  const gaps = results.length === 0 ? ["No web results returned"] : [];
+  // EXPLORATION-RESEARCH-ORTHOGONALIZATION §6.5: confidence never from cardinality.
+  // UNMEASURED until a calibration model exists (INV-8: don't fabricate from n).
+  const confidence = "UNMEASURED";
+  const gaps = results.length === 0
+    ? ["No web results returned"]
+    : ["confidence UNMEASURED — no calibration model (cardinality≠confidence)"];
 
   const receipt_id = await recordReceipt({ ...receiptMeta, provider: search.provider, result_count: results.length });
   return {
     content: [{
       type: "text" as const,
-      text: JSON.stringify({ request_id, answer, citations, confidence, gaps, receipt_id }, null, 2),
+      text: JSON.stringify({
+        request_id,
+        answer,
+        citations,
+        confidence,
+        gaps,
+        receipt_id,
+        // §6.2–6.3 honesty contract: this surface is exploration+synthesis, NOT research.
+        // Downstream agents must not launder it as research evidence (INV-6).
+        research_class: "EXPLORATION_SYNTHESIS",
+        _axis: ["discover", "narrate"],
+        depth_implemented: false,
+        _research_contract: {
+          claim: false, falsify: false, verify: false,
+          note: "True research = explore + claim_validate + counterstory_test + record_verification (see EXPLORATION-RESEARCH-ORTHOGONALIZATION.md §4)",
+        },
+      }, null, 2),
     }],
   };
 }
@@ -522,7 +669,8 @@ export async function handleForgeSearch(args: any) {
   }
 
   // 4. Default: Web search (scored providers, circuit-breaker protected)
-  const search = await webSearchWithFallback(query, count, freshness, safesearch);
+  const intent = classifyIntent(source);
+  const search = await webSearchWithFallback(query, count, freshness, safesearch, intent);
   if (!search.ok) {
     return gatewayError(reqId, `Search failed: ${search.error}`, receiptMeta);
   }
@@ -541,13 +689,55 @@ export async function handleForgeSearch(args: any) {
       i + 1,
     ),
   );
+  const providersConsidered = ["exa", "serpapi", "searxng", "deepseek", "brave"];
   const receipt_id = await recordReceipt({
     ...receiptMeta,
     provider: search.provider,
     result_count: results.length,
     evidence_count: evidence.length,
-    providers_considered: ["brave", "searxng"],
+    providers_considered: providersConsidered,
+    intent,
   });
+
+  // WEBO-Ω federation block — live health scalar (G_fed) + dark debt.
+  // is_canonical_g=false (INV-6): forge_evaluate owns constitutional G.
+  const fieldState = federationHysteron.field(providersConsidered);
+  const gFed = computeGFed({
+    A: fieldState.alive / Math.max(1, providersConsidered.length),
+    P: 1, // provenance integrity — every call emits exactly one receipt (Ω01)
+    E: results.length > 0 ? 1 : 0.5, // coarse per-call yield; windowed E in module
+    X: 1, // per-call single-provider; windowed Jaccard X in module
+  });
+  const cDark = computeCDark({
+    calls: 1,
+    successes: results.length > 0 ? 1 : 0,
+    empties: results.length > 0 ? 0 : 1,
+    failures: 0,
+    receipts: 1,
+    deadLaneRatio: fieldState.deadLaneRatio,
+    staleRatio: 0,
+  });
+  const federation = {
+    intent,
+    g_fed: { value: Number(gFed.value.toFixed(4)), verdict: gFed.verdict, is_canonical_g: false },
+    c_dark: { value: Number(cDark.value.toFixed(4)), verdict: cDark.verdict },
+    lanes: Object.fromEntries(providersConsidered.map((p, idx) => [p, {
+      available: fieldState.availability[idx] === 1,
+      circuit_open: federationHysteron.isOpen(p),
+      ...(federationHysteron.stats(p) ? {
+        success_count: federationHysteron.stats(p)!.successCount,
+        failure_count: federationHysteron.stats(p)!.failureCount,
+      } : {}),
+    }])),
+    restart_count: federationHysteron.restarts(),
+    lfd: {
+      difficulty: classifyDifficulty(query),
+      weights: Object.fromEntries(providersConsidered.map((p) => {
+        const s = federationHysteron.lfdGet(p);
+        return [p, s ? { easy: Number(s.weights.easy.toFixed(3)), medium: Number(s.weights.medium.toFixed(3)), hard: Number(s.weights.hard.toFixed(3)), wins: s.wins, losses: s.losses } : null];
+      })),
+    },
+  };
 
   // FLAME synthesis (optional)
   let flame: any = null;
@@ -570,6 +760,7 @@ export async function handleForgeSearch(args: any) {
         provider: search.provider,
         receipt_id,
         evidence,
+        _federation: federation,
         _epistemic: {
           output_class: "DOMAIN_COMPUTATION",
           authority_claim: "ADVISORY",
@@ -1694,45 +1885,13 @@ export function registerGatewayTools(server: McpServer): void {
     page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
   }, handleForgeBrowserNavigate);
 
-  server.tool("forge_browser_click", "Click a browser element.", {
-    selector: z.string().describe("Element selector"),
-    button: z.enum(["left", "right", "middle"]).default("left").describe("Mouse button"),
-    request_id: z.string().describe("Caller request ID"),
-    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
-    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, handleForgeBrowserClick);
-
-  server.tool("forge_browser_type", "Type text into a browser element.", {
-    selector: z.string().describe("Element selector"),
-    text: z.string().max(1000).describe("Text to type"),
-    submit: z.boolean().default(false).describe("Submit after typing"),
-    request_id: z.string().describe("Caller request ID"),
-    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
-    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, handleForgeBrowserType);
-
-  server.tool("forge_browser_screenshot", "Take a browser screenshot.", {
-    selector: z.string().optional().describe("Element selector (omit for full page)"),
-    full_page: z.boolean().default(false).describe("Full page screenshot"),
-    request_id: z.string().describe("Caller request ID"),
-    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
-    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, handleForgeBrowserScreenshot);
-
-  server.tool("forge_browser_extract_text", "Extract text from browser page.", {
-    selector: z.string().optional().describe("Element selector (omit for body)"),
-    max_chars: z.number().default(50000).describe("Max characters"),
-    request_id: z.string().describe("Caller request ID"),
-    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
-    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, handleForgeBrowserExtractText);
-
-  server.tool("forge_browser_evaluate_js", "Evaluate JS in browser context.", {
-    script: z.string().max(2000).describe("JavaScript to evaluate"),
-    request_id: z.string().describe("Caller request ID"),
-    task_context: TaskContextSchema.optional().describe("Trusted agent task authority (CONTEXT B)"),
-    page_context: PageContextSchema.optional().describe("Untrusted page evidence (CONTEXT A)"),
-  }, handleForgeBrowserEvaluateJs);
+  // Browser action tools — RETIRED 2026-10-18 (Tugas 1.4 / C-06 Capability-Entropy Pruning).
+  // forge_browser_navigate and forge_browser_screenshot retained for read/inspection.
+  // Handlers retained for backwards compatibility; unregistered from live MCP surface.
+  // server.tool("forge_browser_click", "Click a browser element.", { ... }, handleForgeBrowserClick);
+  // server.tool("forge_browser_type", "Type text into a browser element.", { ... }, handleForgeBrowserType);
+  // server.tool("forge_browser_extract_text", "Extract text from browser page.", { ... }, handleForgeBrowserExtractText);
+  // server.tool("forge_browser_evaluate_js", "Evaluate JS in browser context.", { ... }, handleForgeBrowserEvaluateJs);
 
   // ── GitHub — search/repos collapsed into forge_github(mode='search', type='code'|'repositories') — 2026-07-31 entropy sweep ──
   // forge_github_search_code + forge_github_search_repos were thin wrappers.
@@ -1761,16 +1920,11 @@ export function registerGatewayTools(server: McpServer): void {
     lease_id: z.string().describe("Kernel-issued lease ID"),
   }, handleForgeGitHubCreateOrUpdateFile);
 
-  server.tool("forge_github_create_issue", "Create a GitHub issue.", {
-    owner: z.string().describe("Repository owner"),
-    repo: z.string().describe("Repository name"),
-    title: z.string().describe("Issue title"),
-    body: z.string().describe("Issue body"),
-    labels: z.array(z.string()).optional().describe("Labels"),
-    assignees: z.array(z.string()).optional().describe("Assignees"),
-    request_id: z.string().describe("Caller request ID"),
-    lease_id: z.string().describe("Kernel-issued lease ID"),
-  }, handleForgeGitHubCreateIssue);
+  // ── forge_github_create_issue RETIRED 2026-10-18 (Arif T4, RECEIPT-T4) ──
+  // Zero runtime callers; remaining hits were classifier/policy maps, registries,
+  // docs, and 2 skill examples. Registration preserved verbatim at
+  //   src/interfaces/mcp/retired/forge_github_create_issue.registration.ts.retired
+  // Handler handleForgeGitHubCreateIssue stays in-file but is unreachable (F1: not deleted).
 
   // ── forge_github_create_pull_request collapsed into forge_github(mode='pr',action='create') — 2026-07-31 ──
   // Reduction: 1 tool → 0. ΔS = −1.

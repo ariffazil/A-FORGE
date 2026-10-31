@@ -21,7 +21,7 @@ public_a2a_card: none by default — A-FORGE is actuator, not a public A2A mind
 >
 > **Runtime self-measurement** (`http://127.0.0.1:7072/health @2026-10-16T09:05:54Z`): **healthy** · commit `adb09ef3` · tools listed **122** (87 stateless) · authority ceiling `777_FORGE` · transport streamable-http.
 >
-> **Independent/hand audit** (2026-10-11, live re-probe by FI-008 (forge_registry_status + observed MUTATE-class call)): a MUTATE-class call without presented authority was stopped by A_THINK_GUARD (BUDGET: max_tools=0). Enforcement is **action class + budget — NOT a SEAL verdict binding**. **Audit follow-up (2026-10-19, code re-read):** **one defect is fixed end-to-end** — `sessionGate.ts` now verifies only `actor.actor_verified === true` (the `status=="resumed"` / `verdict=="SEAL"` inference is removed). **One is schema-only, not runtime-fixed** — `invocationLog.ts` now carries `verdict`, `gate`, `can_claim_success` and defaults `ok:false` when a HOLD/VOID verdict is supplied, but the sole production writer `withInvocationLog` (`invocationLog.ts:214-220`) does not thread `verdict`/`gate`; no caller passes them, so a kernel HOLD can still persist as `ok:true`. **Still open:** `forgeShell.ts:721-723` and `:806`; `mcp-bridge.ts:196/204`; `interfaces/mcp/core.ts:1439` still infer identity/validity from `status=="PASS"/"resumed" || verdict=="SEAL"`; `mcp-bridge.ts` also defaults `scope_valid`/`replay_safe` to true when `meta.*` is absent; default session ids still use a `SEAL-` prefix; refusal-cause coverage in the ledger is not proven.
+> **Audit follow-up (2026-10-31, code re-read on main `1b2ab3a` — verified, not inherited):** `sessionGate.ts` verifies only `actor.actor_verified === true` (fix in place). **Schema-only, not runtime-fixed:** `invocationLog.ts` can carry `verdict`/`gate`/`can_claim_success`, but the sole production writer `withInvocationLog` (`invocationLog.ts:207-225`) never threads `verdict` or `gate`, so a kernel HOLD can still persist as `ok:true`. **New (found in this re-read):** `forgeShell.ts:800-806` still builds a synthetic identity object with `actor_id:"kernel-sealed"`, `authority_mode:"EXECUTE"` and a hardcoded `verdict:"SEAL"`. **Stale references removed:** `core.ts:1439/1452` is chart-drawing code; `mcp-bridge.ts` does not exist in the tree. **Still open:** default session ids use a `SEAL-` prefix (`forgeShell.ts` `SEAL_SESSION_PATTERN`); refusal-cause coverage in the ledger is not proven.
 >
 > **Self-measurement ≠ independent audit.** A tested unauthorised MUTATE-class request was
 > refused; universal SEAL-verdict binding is the **target architecture, not the measured
@@ -54,6 +54,7 @@ A-FORGE is the **execution plane** of the arifOS federation. It exposes bounded 
 [![Current gate](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ariffazil/A-FORGE/main/docs/state/badges/gate.json&style=flat-square)](#current-enforcement-model-measured)
 [![Tool registry](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ariffazil/A-FORGE/main/docs/state/badges/tool-registry.json&style=flat-square)](#tool-discovery)
 [![Governance fidelity](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ariffazil/A-FORGE/main/docs/state/badges/fidelity.json&style=flat-square)](#known-defects)
+[![Awesome AI Governance](https://img.shields.io/badge/Awesome-AI_Agent_Governance-orange?style=flat-square)](https://github.com/agentrust-io/awesome-ai-governance#governance-frameworks)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](./LICENSE)
 
 ---
@@ -128,9 +129,9 @@ Each defect is a measured observation (hand-audit 2026-10-11; receipts in [`CURR
 
 | Defect | Consequence | Status |
 |---|---|---|
-| Invocation-telemetry writer has no governance-outcome field | a kernel `HOLD` (`can_claim_success:false`) persisted as `ok:true` | **Open** |
-| Refusal cause (`A_THINK_GUARD`) logged 0× | the ledger cannot explain why a refusal happened | **Open** |
-| `sessionGate.ts:315` infers `verified` from `verdict === "SEAL"` | a verdict string is not identity evidence | **Open** |
+| Invocation-telemetry writer has governance fields, but the registration wrapper never feeds them | `withInvocationLog` (`invocationLog.ts:226`) omits `verdict`/`gate`/`refusal_cause`, so a kernel HOLD still persists as `ok:true` with `verdict:null` | **Open** — partial fix only (fields + HOLD/VOID `ok:false` default live at `invocationLog.ts:123`); measured 2026-10-25: 331/331 A-FORGE ledger lines carry `verdict:null` |
+| Refusal cause (`A_THINK_GUARD`) logged 0× | the ledger cannot explain why a refusal happened | **Open** — re-measured 2026-10-25: `refusal_cause` non-null in 0 of 22,492 ledger lines |
+| `sessionGate.ts:315` inferred `verified` from `verdict === "SEAL"` | a verdict string is not identity evidence | **Fixed** (2026-10-25 probe) — inference removed at `sessionGate.ts:316-319`; `interfaces/mcp/core.ts:1488-89` binds identity only via `actor.actor_verified === true` |
 | Default session ids manufactured with `SEAL-` prefix | `SEAL` label collision in this codebase | **Open** |
 | No reproducible unauthorised-mutation refusal fixture | refusal is evidenced by observation, not by a runnable proof | **Open** — build fixture first, then document it |
 
@@ -159,6 +160,21 @@ Observability surfaces (shell ledger, RSI control loop, world-model quality, evi
 - ACT ingress carries HMAC-SHA256 verification **on the transport path**; end-to-end identity binding is **not proven** (see Known Defects). Treat `verified` flags in session output as claims until the verdict-string inference defect is closed.
 - Secret/pattern scanning runs before execution (L1 AMANAH); F13 consent-gated confirmations exist for irreversible classes (`forge_send_confirm`, `forge_transfer_confirm`).
 - Production operations runbook (rebuild, `systemctl restart a-forge-mcp.service`, fleet checks): [`RUNBOOK.md`](./RUNBOOK.md).
+
+---
+
+## External Footprint & Discovery
+
+A-FORGE is the execution plane of the arifOS federation and is publicly discoverable as part of the ecosystem.
+
+- **Discoverable:** YES (GitHub repository, cataloged in Agentrust Awesome-AI-Governance)
+- **Installable / Callable:** YES (Governed stdio & HTTP MCP endpoint)
+- **Inspectable & Forkable:** YES
+- **Independent Validation:** NOT YET ESTABLISHED
+
+*Execution without a prior kernel SEAL verdict is strictly prohibited.*
+
+Canonical Witness Ledger: [EXTERNAL_WITNESS_LEDGER.md](https://github.com/ariffazil/arifOS/blob/main/docs/EXTERNAL_WITNESS_LEDGER.md)
 
 ---
 

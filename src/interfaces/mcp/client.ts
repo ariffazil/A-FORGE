@@ -301,7 +301,13 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
         timestamp: Date.now(),
       };
 
-      const precondition = await checkVerdictPrecondition(actionClass, sessionState);
+      // Thread the caller's actor identity into the metabolic gate (888 D2b:
+      // this path previously arrived actor-blind, so GATE 0 held everything
+      // on NO_ACTOR). Args carry actor_id across the federation tool surface.
+      const actorIdFromArgs = (typeof argsRecord.actor_id === "string")
+        ? (argsRecord.actor_id as string)
+        : undefined;
+      const precondition = await checkVerdictPrecondition(actionClass, sessionState, actorIdFromArgs);
       if (!precondition.permitted) {
         const err = new Error(
           `MCP Bridge: Verdict precondition failed for "${canonicalTool}". ` +
@@ -521,7 +527,18 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
   // Kernel-level error handling — structured rejection envelope within tool result
   const resultObj = (typeof rawResult === "object" && rawResult !== null ? rawResult : { _raw: rawResult }) as Record<string, unknown>;
   console.log(`[callMCP] ${canonicalTool} — resultObj.status=${resultObj.status}, verdict=${resultObj.verdict}, httpOk=${httpOk}`);
-  if (!httpOk || resultObj.status === "error" || resultObj.verdict === "HOLD") {
+  // 2026-10-18 (333-AGI): the kernel returns status="completed" with
+  // verdict="HOLD" on a SUCCESSFUL ignition (HOLD there means "no mutation
+  // authority", not "operation failed"). Treating verdict==="HOLD" as fatal
+  // made forge_session_init impossible — the reality loop could never bind a
+  // session. Only fail when there is also no session to hand downstream.
+  const _hasSessionId = Boolean(
+    resultObj.session_id ||
+      (resultObj.result && typeof resultObj.result === "object" &&
+        (resultObj.result as Record<string, unknown>).session_id),
+  );
+  const _holdIsFatal = resultObj.verdict === "HOLD" && !_hasSessionId;
+  if (!httpOk || resultObj.status === "error" || _holdIsFatal) {
     const errorMsg =
       (resultObj.error as string) ??
       (resultObj.reason as string) ??

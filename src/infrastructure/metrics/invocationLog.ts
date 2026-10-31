@@ -65,6 +65,10 @@ export interface InvocationOptions {
   verdict?: "SEAL" | "HOLD" | "VOID" | "SABAR" | "PASS" | null;
   gate?: string | null;
   can_claim_success?: boolean;
+  /** E5: why the invocation was refused. Never inferred from transport status. */
+  refusalCause?: string | null;
+  /** E5: the governance outcome, kept distinct from the transport outcome. */
+  governanceVerdict?: string | null;
 }
 
 let _host: string | null = null;
@@ -120,6 +124,14 @@ export function buildInvocationRecord(tool: string, opts: InvocationOptions = {}
     can_claim_success: opts.can_claim_success ?? (opts.verdict !== "HOLD" && opts.verdict !== "VOID"),
     verdict: opts.verdict ?? null,
     gate: opts.gate ?? null,
+    // E5 (FEDERATION_REALITY_DISTILLATION 2026-10-19): governance semantics stay
+    // on the receipt. A HOLD/VOID without its cause is a fidelity failure.
+    governance_verdict: opts.governanceVerdict ?? opts.verdict ?? null,
+    refusal_cause:
+      opts.refusalCause ??
+      (opts.verdict === "HOLD" || opts.verdict === "VOID"
+        ? (opts.error ? String(opts.error).slice(0, 200) : "UNSPECIFIED_REFUSAL")
+        : null),
     duration_ms: opts.durationMs === null || opts.durationMs === undefined ? null : round3(opts.durationMs),
     session_id: opts.sessionId ?? null,
     epoch: now / 1000,

@@ -13,6 +13,7 @@
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
+import { canonicalActorId, samePrincipal } from "../../domain/governance/identityCanon.js";
 
 const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
 const ACT_DECISION_EVENT_DIR =
@@ -96,7 +97,7 @@ export function canonicalizeActor(raw: string | null | undefined): string {
 }
 
 export type ActGateResult =
-  | { ok: true; actor?: string; authority?: string; claims?: Record<string, unknown> }
+  | { ok: true; actor?: string; lane_actor?: string; authority?: string; claims?: Record<string, unknown> }
   | {
       ok: false;
       error: string;
@@ -480,10 +481,19 @@ export function verifyLocalAct(
         ? canonicalizeActor(String(claims.delegated_from))
         : null;
 
+      // IDENTITY_CANON v1 (2026-10-22): same-principal check FIRST — one rule
+      // for every surface (contracts/IDENTITY_CANON.md). The scattered
+      // SOVEREIGN_IDENTITY_MAP / ACTOR_ALIAS_MAP scar patches above are
+      // demoted to legacy fallback; `claude/opus-5.5` vs `CLAUDE`,
+      // `arif-fazil` vs `arif`, `ARIF_FAZIL` vs `ariffazil` all resolve.
+      const samePrin = samePrincipal(rawActor, String(opts.expectedActor));
+
       // Path (a): Direct actor match
-      const directMatch = actor === expected;
+      const directMatch = actor === expected || samePrin;
       // Path (b): Delegation — the ACT's delegator matches the caller
-      const delegationMatch = delegatedFrom !== null && delegatedFrom === expected;
+      const delegationMatch =
+        (delegatedFrom !== null && delegatedFrom === expected) ||
+        (claims.delegated_from ? samePrincipal(String(claims.delegated_from), String(opts.expectedActor)) : false);
       // Path (c): Audience — ACT was minted for a specific domain
       const audienceMatch = false; // Reserved for aud claim check (Phase 2)
 
@@ -500,6 +510,12 @@ export function verifyLocalAct(
     }
 
     // ── 7. Authority rank check ────────────────────────────────────────
+    // F13 ruling 2026-10-22: PRINCIPAL ≠ LANE. `actor` is the principal per
+    // IDENTITY_CANON (claude/opus-5.5 → CLAUDE); `lane_actor` is the FATWA-K1
+    // lane label (→ 333-agi) kept for lane routing only. The principal never
+    // follows the lane map.
+    const principal = canonicalActorId(rawActor) ?? actor;
+
     const RANK = ["OBSERVE_ONLY", "OPERATOR", "LIMITED_MUTATE", "FULL", "SOVEREIGN"];
     if (!RANK.includes(requiredAuthority) || !RANK.includes(authority)) {
       return { ok: false, error: "UNKNOWN_AUTHORITY", message: `${authority} / required ${requiredAuthority}` };
@@ -508,7 +524,7 @@ export function verifyLocalAct(
       return { ok: false, error: "INSUFFICIENT_AUTHORITY", message: `ACT ${authority} < required ${requiredAuthority}` };
     }
 
-    return { ok: true, actor, authority, claims };
+    return { ok: true, actor: principal, lane_actor: actor, authority, claims };
   } catch {
     return null; // Can't decode — fall through to arifOS
   }

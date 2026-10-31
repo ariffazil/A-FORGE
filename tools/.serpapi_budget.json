@@ -1,7 +1,10 @@
 {
-  "month": "2026-07",
+  "month": "2026-10",
   "total_limit": 250,
-  "used": 7,
+  "hard_ceiling": 200,
+  "daily_cap": 10,
+  "auto_pagination": false,
+  "used": 10,
   "calls": [
     {
       "timestamp": "2026-07-07T10:12:33.615510+00:00",
@@ -44,16 +47,92 @@
       "domain": "finance",
       "query": "GOOGL:NASDAQ",
       "credits": 1
+    },
+    {
+      "timestamp": "2026-10-17T22:43:39+00:00",
+      "engine": "google_news_light",
+      "domain": "news",
+      "query": "\"PETRONAS\" (\"SK317B\" OR \"TotalEnergies\" OR \"IHUC\")",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-10-17T22:43:40+00:00",
+      "engine": "google_scholar",
+      "domain": "academic",
+      "query": "\"Sarawak Basin\" OR \"Central Luconia\" OR \"Balingian\" stratigraphy carbonate TotalEnergies",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-10-17T22:43:41+00:00",
+      "engine": "google_scholar",
+      "domain": "academic",
+      "query": "\"Lelong Basin\" stratigraphy",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-10-17T22:43:56+00:00",
+      "engine": "google_jobs",
+      "domain": "jobs",
+      "query": "(\"Geoscientist\" OR \"Exploration\" OR \"Subsurface\" OR \"CCUS\" OR \"Carbon Capture\") Malaysia",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-10-17T23:12:52+00:00",
+      "engine": "instagram_profile",
+      "domain": "social",
+      "query": "raifzilaf",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-10-17T23:15:38+00:00",
+      "engine": "instagram_profile",
+      "domain": "social",
+      "query": "raif_zilaf",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-10-17T23:15:40+00:00",
+      "engine": "instagram_profile",
+      "domain": "social",
+      "query": "raifzilaf_",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-10-17T23:15:48+00:00",
+      "engine": "instagram_profile",
+      "domain": "social",
+      "query": "raifzilaf.official",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-10-17T23:15:51+00:00",
+      "engine": "instagram_profile",
+      "domain": "social",
+      "query": "arif.fazil",
+      "credits": 1
+    },
+    {
+      "timestamp": "2026-10-17T23:15:58+00:00",
+      "engine": "instagram_profile",
+      "domain": "social",
+      "query": "arif_fazil",
+      "credits": 1
     }
   ],
   "by_domain": {
     "finance": 3,
     "search": 2,
-    "academic": 2
+    "academic": 4,
+    "news": 1,
+    "jobs": 1,
+    "social": 6
   },
   "by_engine": {
     "google_finance": 3,
     "bing_copilot": 2,
-    "google_scholar": 2
+    "google_scholar": 4,
+    "google_news_light": 1,
+    "google_jobs": 1,
+    "instagram_profile": 6
   }
 }
