@@ -6,7 +6,7 @@
  */
 import * as assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { test } from "node:test";
@@ -15,6 +15,16 @@ import { canonicalActorId, comparisonKey, samePrincipal } from "../src/domain/go
 
 const here = dirname(fileURLToPath(import.meta.url));
 const FIXTURE = resolve(here, "../../../arifOS/contracts/identity_canon_fixtures.json");
+
+// 2026-10-31: this suite reads a SIBLING arifOS checkout that CI never has, so
+// every PR run failed with ENOENT (Q3 / Lane 1 red on main for any PR). The
+// parity assertions are only meaningful where both repos exist (the forge box).
+// Skip them explicitly — never fake a pass, never vendor a second copy of canon
+// that can rot. Inline assertions below keep canonicalActorId covered in CI.
+const HAS_SIBLING_FIXTURE = existsSync(FIXTURE);
+const SKIP_NO_SIBLING = HAS_SIBLING_FIXTURE
+  ? false
+  : "arifOS sibling checkout absent (CI) — cross-repo parity runs on the forge box only";
 
 function loadFixture(): {
   canon_version: string;
@@ -36,11 +46,11 @@ function loadFixture(): {
   return doc;
 }
 
-test("shared fixture hash intact", () => {
+test("shared fixture hash intact", { skip: SKIP_NO_SIBLING }, () => {
   loadFixture();
 });
 
-test("all fixture cases resolve identically to the Python canon", () => {
+test("all fixture cases resolve identically to the Python canon", { skip: SKIP_NO_SIBLING }, () => {
   for (const c of loadFixture().cases) {
     assert.strictEqual(canonicalActorId(c.raw), c.canonical_id, `canonical mismatch for ${c.raw}`);
     assert.strictEqual(comparisonKey(c.raw), c.comparison_key, `key mismatch for ${c.raw}`);
