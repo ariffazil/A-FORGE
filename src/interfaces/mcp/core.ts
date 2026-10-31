@@ -127,7 +127,7 @@ import {
   type PredictionResult,
 } from "../../domain/governance/preActionSimulation.js";
 import { validateSession, registerSession, setKernelVerifier, storeSessionAct, getSessionAct, parseActClaims, verifyActToken } from "../../domain/session/sessionGate.js";
-import { resolveActLeaseScope } from "./actLeaseScope.js";
+import { resolveActLeaseScope, DEFAULT_LEASE_SCOPE } from "./actLeaseScope.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
@@ -1493,9 +1493,11 @@ server.tool(
     ),
     session_token: z.string().optional().describe("arifOS ACT for session continuity"),
     sct: z.string().optional().describe("Legacy alias for session_token — prefer act"),
+    act: z.string().optional().describe("arifOS ACT (act_v1.*) — preferred credential"),
     session_id: z.string().optional().describe("arifOS governance session ID (injected by middleware)"),
   },
-  async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct, session_id: _govSessionId }) => {
+  async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct, act: _reqAct, session_id: _govSessionId }) => {
+    const callerAct = _reqAct ?? _reqToken ?? _reqSct;
     const effectiveSessionId = _govSessionId ?? parent_session_id;
     const startedAt = Date.now();
     await telemetryInvoke("forge_session_init");
@@ -1510,7 +1512,7 @@ server.tool(
             intent: intent ?? "aforge session",
             mode: "light",
             session_id: effectiveSessionId ?? undefined,
-            session_token: _reqToken ?? _reqSct ?? undefined,
+            session_token: callerAct ?? undefined,
           });
         } catch (primaryErr) {
           console.error(`[forge_session_init] primary arif_init failed:`, primaryErr instanceof Error ? primaryErr.message : primaryErr);
@@ -1520,17 +1522,23 @@ server.tool(
             intent: intent ?? "aforge session",
             mode: "light",
             session_id: effectiveSessionId ?? undefined,
-            session_token: _reqToken ?? _reqSct ?? undefined,
+            session_token: callerAct ?? undefined,
           });
         }
         const response = kernelResponse as Record<string, unknown>;
 	// Extract session_id from kernel response (nested in session object or result object)
         const sessionObj = response.session as Record<string, unknown> | undefined;
         const resultObj = response.result as Record<string, unknown> | undefined;
+        const metaObj = response.meta as Record<string, unknown> | undefined;
         const session_id =
           (sessionObj?.session_id as string | undefined) ??
           (resultObj?.session_id as string | undefined) ??
           (response.session_id as string | undefined);
+        const kernelTraceId =
+          (response.trace_id as string | undefined) ??
+          (resultObj?.trace_id as string | undefined) ??
+          (sessionObj?.trace_id as string | undefined) ??
+          (metaObj?.trace_id as string | undefined);
         // P1.3: Extract session_token (ACT) from kernel for downstream tools
         const session_token =
           (response.session_token as string | undefined) ??
@@ -1553,7 +1561,7 @@ server.tool(
         // P2.2 FIX (2026-08-27): prefer caller-supplied ACT when present —
         // arifOS responses can echo a non-verifiable ACT (act_token mint/verify
         // split). Gate ingress verifies fail-closed, so valid caller ACT wins.
-        const actToStore = _reqToken ?? _reqSct ?? session_token;
+        const actToStore = callerAct ?? session_token;
         if (actToStore) {
           storeSessionAct(session_id, actToStore);
         }
@@ -1644,7 +1652,7 @@ server.tool(
         // setActor(), leaving an actor the kernel had already verified
         // unverified here — the other half of the LEASE_CLASS_EXCEEDED report.
         let actAuth: string | null = null;
-        const actCandidate = _reqToken ?? _reqSct ?? session_token;
+        const actCandidate = callerAct ?? session_token;
         if (actCandidate) {
           const v = verifyActToken(actCandidate);
           if (v.valid && (!v.actor || v.actor === actor_id)) {
@@ -1672,17 +1680,9 @@ server.tool(
         // ran without authority (observed: forge_vault receipt →
         // LEASE_CLASS_EXCEEDED, 2026-10-25). Fix the contract AND report the
         // mint result; an unminted lease must never read as OK.
-        const leaseScope = [
-          "forge_filesystem",
-          "forge_vault",
-          "forge_shell",
-          "forge_shell_dryrun",
-          "forge_seal",
-          "arif_seal",
-          "forge_session_init",
-          "forge_health_check",
-          "forge_ephemeral",
-        ];
+        // Band list has ONE owner — actLeaseScope.ts — so the ACT-resolution
+        // branches, the minted lease and the regression tests cannot drift.
+        const leaseScope = DEFAULT_LEASE_SCOPE;
         // MEASURED 2026-10-27 (forge_surface_audit outbound-ABI): arifOS exposes
         // NO lease verbs on its canonical MCP surface (internal-only leases;
         // drift_check.py: "use arif_init for authority bootstrap"). The historic
@@ -1708,7 +1708,7 @@ server.tool(
             const localLeaseId = `LCL-${actor_id}-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
             pre_minted_lease = {
               lease_id: localLeaseId,
-              scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_trust_score"],
+              scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_trust_score", "forge_reality_loop"],
               max_action_class: "MUTATE",
               ttl_seconds: ttl,
               expires_at: now + ttl * 1000,
@@ -1767,11 +1767,7 @@ server.tool(
               expires_at: now + ttl * 1000,
               forbidden: [],
               revoked: false,
-              // NO verdict_geometry. The verdict loop (INIT → judge → seal) is
-              // a per-action constitutional requirement; a session-level ACT
-              // proves the actor's band, not that a trace exists. Synthesizing
-              // a trace_id here would be authority theatre — the action layer
-              // must still demand a real one (VERDICT_LOOP_REQUIRED).
+              session_geometry: kernelTraceId ? { trace_id: kernelTraceId } : undefined,
             } as any);
             pre_minted_lease = {
               lease_id,
@@ -1791,7 +1787,7 @@ server.tool(
             text: JSON.stringify({
               status: "OK",
               session_id,
-              session_token: session_token ?? null,
+              session_token: actToStore ?? session_token ?? null,
               parent_session_id: parent_session_id ?? null,
               kernel_origin: true,
               epoch: new Date().toISOString().split("T")[0],

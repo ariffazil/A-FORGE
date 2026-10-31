@@ -30,11 +30,30 @@ export interface ActLeaseScopeResolution {
   scope: string[];
   source:
     | "act_named_forge_tools"
+    | "act_named_shared_token_only"
     | "band_default_act_vocabulary_mismatch"
     | "band_default_no_forge_match";
   /** Tokens in the ACT that matched this organ's vocabulary (diagnostic). */
   matched: string[];
 }
+
+/**
+ * A-FORGE lease band. Single owner: `forge_session_init` imports this instead of
+ * re-declaring the list inline, so the ACT-resolution branches and the tests can
+ * never drift from the scope the session actually mints.
+ */
+export const DEFAULT_LEASE_SCOPE: readonly string[] = [
+  "forge_filesystem",
+  "forge_vault",
+  "forge_shell",
+  "forge_shell_dryrun",
+  "forge_seal",
+  "arif_seal",
+  "forge_session_init",
+  "forge_health_check",
+  "forge_ephemeral",
+  "forge_reality_loop",
+];
 
 export function resolveActLeaseScope(
   allowed: readonly string[] | null | undefined,
@@ -45,6 +64,13 @@ export function resolveActLeaseScope(
   const namesForgeTool = tokens.some((t) => t.startsWith("forge_"));
 
   if (!namesForgeTool) {
+    if (tokens.length === 1 && matched.length === 1) {
+      return {
+        scope: matched,
+        source: "act_named_shared_token_only",
+        matched,
+      };
+    }
     // Kernel-verb vocabulary (or empty): the ACT does not address this organ's
     // tools by name. Band default — exactly what the historic empty-allowed
     // branch did, so no capability is granted that the band did not already carry.
