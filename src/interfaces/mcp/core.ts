@@ -127,6 +127,7 @@ import {
   type PredictionResult,
 } from "../../domain/governance/preActionSimulation.js";
 import { validateSession, registerSession, setKernelVerifier, storeSessionAct, getSessionAct, parseActClaims, verifyActToken } from "../../domain/session/sessionGate.js";
+import { resolveActLeaseScope } from "./actLeaseScope.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
@@ -1690,6 +1691,10 @@ server.tool(
         // LEASE_CLASS_EXCEEDED defect). Authority = the presented ACT: the
         // kernel_act lease path below (registerActLease) binds it at session init.
         let lease_status = "KERNEL_LEASES_INTERNAL_ONLY";
+        // Why the ACT-derived scope is what it is (vocabulary match vs band default).
+        // Null until the ACT path runs; reported on the wire so a narrowed lease is
+        // never mistaken for an explicit grant.
+        let leaseScopeSource: string | null = null;
         let lease_reason = "arifOS exposes no lease verbs on its canonical surface — authority = arif_init ACT (registerActLease)";
         // Self-minting authority is DISABLED by default — same rule as
         // issueLeaseViaKernel. An absent kernel lease narrows authority; it
@@ -1736,8 +1741,17 @@ server.tool(
         if (!pre_minted_lease && actAuth && actAuth !== "OBSERVE_ONLY") {
           try {
             const claims = actCandidate ? parseActClaims(actCandidate) : null;
-            const allowed = (claims?.allowed ?? []).filter((t) => leaseScope.includes(t));
-            const scope = allowed.length ? allowed : leaseScope;
+            // Bug 2026-10-31: intersecting the ACT's kernel-verb vocabulary with
+            // A-FORGE's forge_* vocabulary shared exactly one token ("arif_seal"),
+            // so a valid FULL-band ACT produced a lease scoped to arif_seal only
+            // while still reporting ACT_DERIVED. Resolution + reason live in
+            // actLeaseScope.ts so the branch is testable and reportable.
+            const resolvedScope = resolveActLeaseScope(
+              claims?.allowed,
+              leaseScope,
+            );
+            const scope = resolvedScope.scope;
+            leaseScopeSource = resolvedScope.source;
             const now = Date.now();
             const ttl = 1800;
             const band = actAuth === "FULL" ? "EXECUTE_HIGH_IMPACT" : "EXECUTE_REVERSIBLE";
@@ -1790,6 +1804,7 @@ server.tool(
               act_auth: actAuth,
               lease_status,
               lease_reason,
+              lease_scope_source: leaseScopeSource,
               pre_minted_lease,
             }, null, 2),
           }],
