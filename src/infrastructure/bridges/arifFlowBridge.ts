@@ -20,6 +20,9 @@
  */
 
 import { randomUUID } from "node:crypto";
+import { appendFile, mkdir } from "node:fs/promises";
+import { homedir } from "node:os";
+import { dirname, resolve } from "node:path";
 
 export type FlowStepType =
   | "Execute"
@@ -125,12 +128,14 @@ export async function emitFlowReceipt(
     });
     if (!res.ok) {
       warnOnce(`arifFlow /ingest HTTP ${res.status}`);
+      await writeBridgeFallback(input, effectiveFloor, `HTTP ${res.status}`);
       return { ok: false, status: `http_${res.status}` };
     }
     return { ok: true, status: "ingested" };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     warnOnce(`arifFlow unreachable: ${msg}`);
+    await writeBridgeFallback(input, effectiveFloor, msg);
     return { ok: false, status: "error", error: msg };
   }
 }
@@ -139,4 +144,67 @@ function warnOnce(msg: string): void {
   if (warnedOnce) return;
   warnedOnce = true;
   console.error(`[arifFlowBridge] ${msg} (fail-open; further warnings suppressed)`);
+}
+
+// ── P1-7 executor receipt hook (F-C, 2026-10-30 retest) ──────────────────
+// The retest proved the shell edge loses receipts permanently on writer-down
+// or process death (fail-open with NO persistence). This hook writes the
+// failure case to the flowFallbackSweeper ledger format so the existing G-13
+// sweeper replays it on the next successful emission. Env read at CALL time
+// so tests can isolate the path via AF_FLOW_FALLBACK_PATH.
+
+const RUST_TO_SHORT_EPISTEMIC: Record<string, string> = {
+  Observation: "OBS", Derivation: "DER", Interpretation: "INT",
+  Specification: "SPEC", Seal: "SEAL",
+};
+const RUST_TO_SHORT_FLOOR: Record<string, string> = {
+  Pass: "PASS", Caution: "CAUTION", Hold: "HOLD", Void: "VOID",
+};
+
+function fallbackPath(): string {
+  return (
+    process.env.AF_FLOW_FALLBACK_PATH ??
+    resolve(homedir(), ".agent-workbench", "aforge-flow-fallback.jsonl")
+  );
+}
+
+async function writeBridgeFallback(
+  input: FlowReceiptInput,
+  effectiveFloor: FlowFloorVerdict,
+  reason: string
+): Promise<void> {
+  const summary =
+    (input.payload && typeof input.payload.summary === "string"
+      ? input.payload.summary
+      : (input.intent_reason ?? "forge_shell receipt (bridge fallback)"));
+  const entry = {
+    ts: new Date().toISOString(),
+    kind: "flow_receipt_fallback",
+    actor_id: input.actor_id,
+    session_id: input.session_id,
+    summary,
+    step_type: input.step_type,
+    error: reason,
+    params: {
+      actor_id: input.actor_id,
+      session_id: input.session_id,
+      step_type: input.step_type,
+      summary,
+      epistemic_label: RUST_TO_SHORT_EPISTEMIC[input.epistemic_label ?? "Observation"] ?? "OBS",
+      floor_verdict: RUST_TO_SHORT_FLOOR[effectiveFloor] ?? "PASS",
+      cost_ns: input.cost_ns,
+      details: input.payload ?? {},
+      p1_7_bridge_fallback: true,
+    },
+  };
+  try {
+    const p = fallbackPath();
+    await mkdir(dirname(p), { recursive: true });
+    await appendFile(p, JSON.stringify(entry) + "\n", "utf-8");
+  } catch {
+    // Last resort: journald-visible. Never throw — fail-open contract holds.
+    process.stderr.write(
+      JSON.stringify({ level: "error", component: "arifFlowBridge", msg: "fallback unwritable", path: fallbackPath() }) + "\n"
+    );
+  }
 }
