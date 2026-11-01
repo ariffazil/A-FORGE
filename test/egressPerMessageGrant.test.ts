@@ -355,13 +355,13 @@ test("G1(b): grant binds sha256(subject+body) literally — no separator, both f
   // correct: literal concatenation subject + body
   const ok = checkEgressGrant({
     ...params,
-    grant_record: record(sha256Hex(SUBJECT + BODY)),
+    grantRecord: record(sha256Hex(SUBJECT + BODY)),
   });
   assert.equal(ok.hold, false, "exact subject+body concat must verify");
   // a separator in the hash → mismatch → HOLD
   const bad = checkEgressGrant({
     ...params,
-    grant_record: record(sha256Hex(SUBJECT + "\n" + BODY)),
+    grantRecord: record(sha256Hex(SUBJECT + "\n" + BODY)),
   });
   assert.equal(bad.hold, true);
   assert.equal((bad as any).code, "GRANT_PAYLOAD_MISMATCH");
@@ -369,7 +369,7 @@ test("G1(b): grant binds sha256(subject+body) literally — no separator, both f
   const bodySwap = checkEgressGrant({
     ...params,
     body: BODY + "!",
-    grant_record: record(sha256Hex(SUBJECT + BODY)),
+    grantRecord: record(sha256Hex(SUBJECT + BODY)),
   });
   assert.equal(bodySwap.hold, true);
   assert.equal((bodySwap as any).code, "GRANT_PAYLOAD_MISMATCH");
@@ -389,7 +389,7 @@ test("G1(b): missing/empty issued_by → HOLD (issuer binding is mandatory)", ()
     subject: "",
     body: BODY,
     env: { [FLAG]: "1" },
-    grant_record: {
+    grantRecord: {
       grant_id: "GRANT-TEST-4",
       recipient: CHAT_ID,
       payload_sha256: sha256Hex("" + BODY),

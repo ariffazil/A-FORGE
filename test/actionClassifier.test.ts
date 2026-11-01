@@ -206,7 +206,9 @@ test("F1 carrier: verb-carrier args classify by the action, not the OBSERVE defa
   // the action in `verb`, but callers extracted only args.mode — so a real
   // forge_telegram {verb:"send"} (external Telegram egress) classified OBSERVE
   // and skipped ACT/lease/FQ governance.
-  assert.equal(classifyTool("forge_telegram", { verb: "send" }), "EXECUTE_REVERSIBLE");
+  // HUMAN_RASA G1 (2026-11-01): telegram send/send_message/send_file raised to
+  // IRREVERSIBLE — a sent message cannot be recalled (was EXECUTE_REVERSIBLE).
+  assert.equal(classifyTool("forge_telegram", { verb: "send" }), "IRREVERSIBLE");
   assert.equal(classifyTool("forge_telegram", { verb: "get_me" }), "OBSERVE");
   assert.equal(
     requiresGovernance(classifyTool("forge_telegram", { verb: "send" })),
@@ -222,7 +224,7 @@ test("F1 carrier: verb-carrier args classify by the action, not the OBSERVE defa
   assert.equal(classifyTool("forge_sheets", { verb: "read" }), "OBSERVE");
   assert.equal(classifyTool("forge_calendar", { verb: "list" }), "OBSERVE");
   // String carrier regression (legacy callers pass args.mode as string).
-  assert.equal(classifyTool("forge_telegram", "send"), "EXECUTE_REVERSIBLE");
+  assert.equal(classifyTool("forge_telegram", "send"), "IRREVERSIBLE");
   assert.equal(classifyTool("forge_telegram", "get_me"), "OBSERVE");
 });
 

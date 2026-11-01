@@ -358,10 +358,13 @@ export function classifyTool(
     if (!mode || mode === "read-unread") return "OBSERVE";
     if (mode === "send") return "EXECUTE_REVERSIBLE";
   }
-  // forge_telegram: get_me/default=OBSERVE, send=EXECUTE_REVERSIBLE
+  // forge_telegram: get_me/default=OBSERVE, send/send_message/send_file=IRREVERSIBLE
+  // HUMAN_RASA G1 (2026-11-01): a sent Telegram message cannot be recalled —
+  // external egress is irreversible by nature, so send must classify IRREVERSIBLE
+  // (matching gmail send's gateMutate reversibility), not EXECUTE_REVERSIBLE.
   if (toolName === "forge_telegram") {
     if (!mode || mode === "get_me") return "OBSERVE";
-    if (mode === "send") return "EXECUTE_REVERSIBLE";
+    if (mode === "send" || mode === "send_message" || mode === "send_file") return "IRREVERSIBLE";
   }
   // forge_drive_create: always a reversible external write
   if (toolName === "forge_drive_create") return "EXECUTE_REVERSIBLE";

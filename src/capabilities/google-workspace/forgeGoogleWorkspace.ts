@@ -17,6 +17,7 @@
 
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { checkEgressGrant } from "../../domain/governance/egressGrant.js";
 
 const GWS_BRIDGE = "/root/A-FORGE/src/capabilities/google-workspace/gws_bridge.py";
 const PYTHON = "python3";
@@ -55,10 +56,15 @@ async function bridgeCall(service: string, verb: string, args: Record<string, un
 
 /** 
  * arif_judge gate wrapper — every mutating verb passes through here.
- * In production this calls arifOS :8088 arif_judge. For now, structured gate.
+ * HUMAN_RASA G1 (2026-11-01) doc-truth fix: this does NOT call arifOS arif_judge.
+ * It is a local structured reversibility gate: IRREVERSIBLE verbs fail closed
+ * (HOLD) UNLESS they are gmail.send / gmail.draft_send, which ride the standing
+ * F13_EMAIL_SEND lane authorized 2026-10-18 (receipt recorded for audit, no HOLD).
+ * Production arif_judge integration (SEAL + sovereign ACK + tri-witness) has NOT
+ * landed; the IRREVERSIBLE_VERB reason below is what holds every other verb.
  */
-async function gateMutate(verb: string, blastRadius: string, reversibility: string): Promise<{ passed: boolean; cc_id?: string; reason?: string }> {
-  // Constitutional gate — delegates to arif_judge in production
+export async function gateMutate(verb: string, blastRadius: string, reversibility: string): Promise<{ passed: boolean; cc_id?: string; reason?: string }> {
+  // Local structured gate — NOT a live arif_judge call (see doc comment above)
   // For irreversible verbs, requires witness + sovereign ACK
   if (reversibility === "IRREVERSIBLE") {
     // F13 authorization 2026-10-18: email send is a sovereign-authorized
@@ -77,18 +83,48 @@ async function gateMutate(verb: string, blastRadius: string, reversibility: stri
 
 // ─── HANDLERS ────────────────────────────────────────────────────────
 
-async function gmailHandler(args: any): Promise<any> {
-  const { verb, ...opts } = args;
+export async function gmailHandler(
+  args: any,
+  _ctx?: any,
+  deps?: { bridge?: (service: string, verb: string, opts?: Record<string, unknown>) => Promise<Record<string, unknown>> },
+): Promise<any> {
+  const { verb, grant_id, grant_record, grant_path, ...opts } = args;
   // WEBO audit 2026-10-18: draft_send was misclassified REVERSIBLE via startsWith("draft")
   // and escaped the gate — but draft_send SENDS THE EMAIL (gmail_bridge action_draft_send →
   // users().drafts().send()) = IRREVERSIBLE per the bridge's own header. Fixed: both send
-  // paths are IRREVERSIBLE → gateMutate fail-closed → 888_HOLD until arif_judge production
-  // integration (SEAL + sovereign ACK + tri-witness) lands. [EXPLORATION/Vault audit F1/F13]
+  // paths are IRREVERSIBLE → gateMutate. HUMAN_RASA G1 doc-truth fix (2026-11-01): the old
+  // claim "gateMutate fail-closed → 888_HOLD until arif_judge lands" was stale — since the
+  // F13 re-authorization the same day, gateMutate passes gmail.send / gmail.draft_send on
+  // the standing cc_id F13_EMAIL_SEND lane (no HOLD); every other IRREVERSIBLE verb still
+  // HOLDs. [EXPLORATION/Vault audit F1/F13]
   // F13 re-authorization 2026-10-18: email send is a sovereign-authorized capability lane.
   // Actor defaults to the sovereign (arif) for audit; agent may pass an explicit actor_id.
   const gating = (verb === "send" || verb === "draft_send") ? { br: "HIGH", rev: "IRREVERSIBLE" }
     : verb?.startsWith("draft") || verb === "modify_labels" ? { br: "LOW", rev: "REVERSIBLE" }
     : { br: "LOW", rev: "READ" };
+
+  // HUMAN_RASA G1 — per-message egress grant (AFORGE_EGRESS_PER_MESSAGE_GRANT,
+  // default "0", NOT flipped). Runs BEFORE the F13_EMAIL_SEND lane: when the flag
+  // is on, a standing lane pass is no longer enough — the exact message must be
+  // grant-bound. Flag off → skipped, the 2026-10-18 lane behaves exactly as before.
+  if (verb === "send" || verb === "draft_send") {
+    const grant = checkEgressGrant({
+      grantId: grant_id,
+      grantRecord: grant_record,
+      grantPath: grant_path,
+      recipient: String(opts.to ?? ""),
+      subject: String(opts.subject ?? ""),
+      body: String(opts.body ?? ""),
+    });
+    if (grant.hold) {
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({ verdict: "HOLD", gate: "EGRESS_PER_MESSAGE_GRANT", reason: `${grant.code}: ${grant.reason}` }),
+        }],
+      };
+    }
+  }
 
   if (gating.rev !== "READ") {
     const gate = await gateMutate(`gmail.${verb}`, gating.br, gating.rev);
@@ -102,7 +138,7 @@ async function gmailHandler(args: any): Promise<any> {
     opts.actor_id = "arif";
   }
 
-  const result = await bridgeCall("gmail", verb, opts);
+  const result = await (deps?.bridge ?? bridgeCall)("gmail", verb, opts);
   return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
 }
 
@@ -155,7 +191,7 @@ export function registerGoogleWorkspaceTools(server: McpServer): void {
   server.registerTool(
     "forge_gmail",
     {
-      description: "Google Gmail — search, read, draft, send emails through constitutional gate. ACTUATOR · gmail · MUTATE. OBSERVE-class for reads. Every write gated by arif_judge + F1/F3/F13.",
+      description: "Google Gmail — search, read, draft, send emails through the local structured reversibility gate (gateMutate). ACTUATOR · gmail · MUTATE. OBSERVE-class for reads. NOTE: gateMutate does NOT call arif_judge — writes pass a local gate; gmail send/draft_send ride the standing F13_EMAIL_SEND lane (2026-10-18), all other IRREVERSIBLE verbs HOLD. When AFORGE_EGRESS_PER_MESSAGE_GRANT=1, send additionally requires grant_id + a readable grant record — fail-closed HOLD otherwise.",
       inputSchema: z.object({
         verb: z.enum(["read-unread", "send"]).describe("Gmail action"),
         max: z.number().optional().describe("Max results (1-50)"),
@@ -163,6 +199,9 @@ export function registerGoogleWorkspaceTools(server: McpServer): void {
         to: z.string().optional().describe("Recipient (send)"),
         subject: z.string().optional().describe("Email subject (send)"),
         body: z.string().optional().describe("Email body (send)"),
+        grant_id: z.string().optional().describe("Per-message egress grant id (required when AFORGE_EGRESS_PER_MESSAGE_GRANT=1)"),
+        grant_record: z.record(z.string(), z.unknown()).optional().describe("Stored grant record binding {grant_id, recipient, payload_sha256, expires_at, issued_by}"),
+        grant_path: z.string().optional().describe("Path to a JSON grant record (alternative to grant_record)"),
         ...sessionFields,
       }),
     },

@@ -13,6 +13,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { checkEgressGrant } from "../../domain/governance/egressGrant.js";
 
 const TELEGRAM_BRIDGE = process.env.APA_TELEGRAM_BRIDGE_URL ?? "http://127.0.0.1:18096";
 const GWS_BIN = process.env.GWS_BIN ?? "/usr/local/bin/gws";
@@ -45,10 +46,14 @@ async function telegramBridge(mode: string, params: Record<string, unknown> = {}
   }
 }
 
-async function telegramHandler(args: any): Promise<any> {
+export async function telegramHandler(
+  args: any,
+  _ctx?: any,
+  deps?: { bridge?: (mode: string, params?: Record<string, unknown>) => Promise<any> },
+): Promise<any> {
   const verb = String(args.verb ?? "");
   if (verb === "get_me") {
-    const r = await telegramBridge("get_me");
+    const r = await (deps?.bridge ?? telegramBridge)("get_me");
     const payload = r?.ok
       ? { status: "SEAL", verb, result: r.result }
       : { status: "HOLD", verb, error: r?.error ?? "telegram_get_me_failed" };
@@ -67,7 +72,23 @@ async function telegramHandler(args: any): Promise<any> {
     };
   }
 
-  const r = await telegramBridge("send_message", {
+  // HUMAN_RASA G1 — per-message egress grant (AFORGE_EGRESS_PER_MESSAGE_GRANT,
+  // default "0"). Telegram has no subject → subject "" so the grant binds
+  // sha256("" + text). Fail-closed: any HOLD below fires BEFORE the bridge call.
+  const grant = checkEgressGrant({
+    grantId: args.grant_id,
+    grantRecord: args.grant_record,
+    grantPath: args.grant_path,
+    recipient: String(args.chat_id),
+    subject: "",
+    body: String(args.text),
+  });
+  if (grant.hold) {
+    const payload = { status: "HOLD", verb, gate: "EGRESS_PER_MESSAGE_GRANT", error: grant.code, reason: grant.reason };
+    return { content: [{ type: "text", text: JSON.stringify(payload, null, 2) }] };
+  }
+
+  const r = await (deps?.bridge ?? telegramBridge)("send_message", {
     chat_id: args.chat_id,
     text: args.text,
     parse_mode: args.parse_mode ?? "HTML",
@@ -183,12 +204,15 @@ export function registerApaConnectors(server: McpServer): void {
   server.registerTool(
     "forge_telegram",
     {
-      description: "APA Telegram send-only connector. Verbs: send, get_me. Sends through the local APA bridge (:18096) using @arifOS_bot. send is EXECUTE_REVERSIBLE and carries transport read-back.",
+      description: "APA Telegram send-only connector. Verbs: send, get_me. Sends through the local APA bridge (:18096) using @arifOS_bot. send is IRREVERSIBLE (a sent message cannot be recalled) and carries transport read-back. When AFORGE_EGRESS_PER_MESSAGE_GRANT=1, send additionally requires grant_id + a readable grant record binding {recipient, sha256(subject+body), expires_at, issued_by} — fail-closed HOLD otherwise.",
       inputSchema: z.object({
         verb: z.enum(["send", "get_me"]).describe("Telegram action"),
         chat_id: z.string().optional().describe("Target chat id (send)"),
         text: z.string().optional().describe("Message text (send)"),
         parse_mode: z.enum(["HTML", "Markdown", "MarkdownV2"]).optional().describe("Parse mode (default HTML)"),
+        grant_id: z.string().optional().describe("Per-message egress grant id (required when AFORGE_EGRESS_PER_MESSAGE_GRANT=1)"),
+        grant_record: z.record(z.string(), z.unknown()).optional().describe("Stored grant record binding {grant_id, recipient, payload_sha256, expires_at, issued_by}"),
+        grant_path: z.string().optional().describe("Path to a JSON grant record (alternative to grant_record)"),
         ...sessionFields,
       }),
     },
