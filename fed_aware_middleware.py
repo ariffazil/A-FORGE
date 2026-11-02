@@ -641,6 +641,17 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                         # loop — fed_report_latency had ZERO callers. Best-effort,
                         # daemon thread, never blocks the response.
                         try:
+                            # T2-followup (2026-11-02): tag refusals so upstream
+                            # classifier suppression is measurable, not hypothesised.
+                            _bl = resp_body.decode("utf-8", "ignore").lower() if isinstance(resp_body, (bytes, bytearray)) else ""
+                            _refused = (
+                                "content_filter" in _bl
+                                or '"refusal"' in _bl
+                                or "cannot assist" in _bl
+                                or "can't assist" in _bl
+                                or "content management policy" in _bl
+                                or status in (403, 451)
+                            )
                             _rb = json.dumps(
                                 {
                                     "provider": resolved_provider,
@@ -649,6 +660,7 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                                     "status_code": status,
                                     "agent_id": "fed-aware-middleware",
                                     "hcsvog_fingerprint": hcsvog_fp_preview,
+                                    "outcome": "refused" if _refused else "ok",
                                 }
                             ).encode("utf-8")
                             _rq = urllib.request.Request(
@@ -692,6 +704,7 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                         resolved_model,
                         resolved_provider,
                         model,
+                        outcome="fallback",
                     )
                     return
             else:
@@ -700,7 +713,8 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                 # which already handles litellm aliases for agi-333 / asi-555 / etc.
                 forward_body = json.dumps(body).encode("utf-8")
                 self._forward_to_litellm(
-                    forward_body, self.headers, model, "fed-fallback", model
+                    forward_body, self.headers, model, "fed-fallback", model,
+                    outcome="fallback",
                 )
                 return
 
@@ -712,7 +726,8 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
         )
 
     def _forward_to_litellm(
-        self, body_bytes, headers, resolved_model, resolved_provider, original_cap
+        self, body_bytes, headers, resolved_model, resolved_provider, original_cap,
+        outcome: str = "",
     ):
         # ZEN 2026-08-17: raw model name -> actor alias so :4000 never 400s.
         if resolved_model not in ("agi-333", "asi-555", "forge-777", "apex-888", "i-arif"):
@@ -738,12 +753,51 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
             if self.path.startswith("/v1/responses")
             else "http://127.0.0.1:4000/v1/chat/completions"
         )
+        import time as _tm_fwd
+        _t0_fwd = _tm_fwd.time()
         status, hdrs, resp_body = _proxy_to(
             litellm_target,
             body_bytes,
             {k: v for k, v in headers.items()},
             None,
         )
+        if outcome:
+            # T2-followup (2026-11-02): fallback paths were invisible to
+            # telemetry — tag them so fallback volume is countable.
+            try:
+                import threading as _th_fwd
+                import urllib.request as _ur_fwd
+                _lat_fwd = round((_tm_fwd.time() - _t0_fwd) * 1000, 1)
+                _prov_fwd = str(resolved_provider)
+                _model_fwd = str(resolved_model)
+                _status_fwd = status
+                _outcome_fwd = outcome
+
+                def _rep_fwd():
+                    try:
+                        _ur_fwd.urlopen(
+                            _ur_fwd.Request(
+                                f"{FED_URL}/report",
+                                data=json.dumps(
+                                    {
+                                        "provider": _prov_fwd,
+                                        "model": _model_fwd,
+                                        "latency_ms": _lat_fwd,
+                                        "status_code": _status_fwd,
+                                        "agent_id": "fed-aware-middleware",
+                                        "outcome": _outcome_fwd,
+                                    }
+                                ).encode("utf-8"),
+                                headers={"Content-Type": "application/json"},
+                            ),
+                            timeout=2,
+                        ).read()
+                    except Exception:
+                        pass
+
+                _th_fwd.Thread(target=_rep_fwd, daemon=True).start()
+            except Exception:
+                pass
         self.send_response(status)
         for k, v in hdrs.items():
             if k.lower() not in ("transfer-encoding", "content-length", "server"):
