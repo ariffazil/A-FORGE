@@ -887,15 +887,24 @@ export class McpPolicyGate {
   }
 
   private appendAudit(v: VerdictResult): void {
+    const line = JSON.stringify(v) + "\n";
     try {
       if (!existsSync(dirname(this.auditLog))) {
         mkdirSync(dirname(this.auditLog), { recursive: true });
       }
-      const line = JSON.stringify(v) + "\n";
       appendFileSync(this.auditLog, line, "utf-8");
-    } catch {
-      // audit failures never block the main flow — but we log to stderr
-      process.stderr.write(`[McpPolicyGate] audit log write failed\n`);
+    } catch (e) {
+      // T1 2026-11-02: primary log went chattr +i on 2026-10-22; the swallowed
+      // EPERM left every ALLOW/DENY unrecorded for 11+ days. Never drop a decision:
+      // fall back to a writable sibling, and scream if even that fails.
+      const fallback = `${this.auditLog}.fallback`;
+      const msg = (err: unknown) => (err instanceof Error ? err.message : String(err));
+      try {
+        appendFileSync(fallback, line, "utf-8");
+        process.stderr.write(`[McpPolicyGate] audit primary failed (${msg(e)}); decision appended to ${fallback}\n`);
+      } catch (e2) {
+        process.stderr.write(`[McpPolicyGate] AUDIT LOSS primary+fallback (${msg(e)} / ${msg(e2)}): ${line}`);
+      }
     }
   }
 

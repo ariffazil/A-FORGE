@@ -24,7 +24,6 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import {
   checkVerdictPrecondition,
-  requiresVerdictCheck,
   type SessionVerdictState,
 } from "../../domain/forge/check_verdict.js";
 import * as fs from "node:fs";
@@ -247,7 +246,12 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
   // This prevents execution without constitutional approval.
   // Note: aligned to actionClassifier and enforce_restraint_and_verdict where possible.
   const actionClass = classifyToolAction(canonicalTool);
-  if (requiresVerdictCheck(0.5) && (actionClass === 'MUTATE' || actionClass === 'ATOMIC')) {
+  // DISABLED 2026-11-02 (T1 packet): the old guard called requiresVerdictCheck(0.5)
+  // which is `0.5 > 0.5` — always false, so this precondition NEVER executed.
+  // Made explicit so nobody mistakes it for a live threshold. Enabling this block
+  // makes session_id mandatory for MUTATE/ATOMIC → needs call-site audit + tests first.
+  const VERDICT_PRECONDITION_ENABLED = false;
+  if (VERDICT_PRECONDITION_ENABLED && (actionClass === 'MUTATE' || actionClass === 'ATOMIC')) {
     // Check for session_id in args — if present, check session verdict state
     const sessionId = argsRecord.session_id as string | undefined;
     if (!sessionId) {
