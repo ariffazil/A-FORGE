@@ -897,7 +897,8 @@ export class McpPolicyGate {
       // T1 2026-11-02: primary log went chattr +i on 2026-10-22; the swallowed
       // EPERM left every ALLOW/DENY unrecorded for 11+ days. Never drop a decision:
       // fall back to a writable sibling, and scream if even that fails.
-      const fallback = `${this.auditLog}.fallback`;
+      // logs/ is chattr +i (dir AND files, 2026-11-02 probe) — repo root is writable by forge.
+      const fallback = "/root/A-FORGE/mcp_policy_gate.fallback.log";
       const msg = (err: unknown) => (err instanceof Error ? err.message : String(err));
       try {
         appendFileSync(fallback, line, "utf-8");
