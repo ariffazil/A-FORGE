@@ -3599,11 +3599,6 @@ registerCognitionTools(server);
 registerEphemeralTools(server);
 registerWebZenTools(server);
 
-// Install the 5-layer policy pre-check wrapper on every registered tool.
-// Called AFTER all other registerXTools() so it wraps them all.
-// Idempotent: only forge_policy_* tools themselves are excluded to avoid loops.
-installPolicyInterceptor(server);
-
 // Install elicitation gate AFTER policy interceptor.
 // External clients calling MUTATE tools get -32042 (URLElicitationRequiredError)
 // instead of silent denial or execution. This is the Item 2 elicitation gate
@@ -3678,6 +3673,14 @@ startupIsomorphismCheck();
 // Install verdict envelope interceptor — wraps EVERY tool response through
 // standardized VerdictEnvelope. Satu format, satu lokasi, satu monotonic chain.
 // Chamber ke-7: verdict monotonicity.
+// E2-order fix (2026-11-03, unwrap-13-tools-named): the policy interceptor is a
+// ONE-TIME walk over _registeredTools — every module registered after its old
+// install position stayed policy-UNWRAPPED (forge_isomorphism_check, forge_cool,
+// forge_cool_pattern, forge_rsi_dual_rate_fq, forge_rsi_impulse_response,
+// forge_rsi_state_vector, forge_runtime_verify, forge_chain_state,
+// forge_trust_score, forge_compose). It now installs AFTER ALL registrations so
+// it wraps them all; only forge_policy_* is excluded (loop-avoidance BYPASS).
+installPolicyInterceptor(server);
 installVerdictInterceptor(server);
 
 // Initialize identity store
