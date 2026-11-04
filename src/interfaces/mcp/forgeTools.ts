@@ -715,7 +715,7 @@ export function registerLeaseTools(server: McpServer): void {
       lease_id: z.string().optional().describe("Lease ID (status/revoke)"),
       agent_id: z.string().optional().describe("Agent ID (request/revoke)"),
       scope: z.array(z.string()).optional().describe("Tools to include (request)"),
-      max_action_class: z.enum(["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE", "PROPOSE", "MUTATE", "ATOMIC"]).default("EXECUTE_REVERSIBLE").describe("Max action class (request)"),
+      max_action_class: z.enum(["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE", "PROPOSE", "MUTATE", "ATOMIC"]).default("EXECUTE_REVERSIBLE").describe("Max action class (request). Valid enum: OBSERVE | SUGGEST | SIMULATE | DRAFT | QUEUE | EXECUTE_REVERSIBLE | EXECUTE_HIGH_IMPACT | IRREVERSIBLE | PROPOSE | MUTATE | ATOMIC. NOTE: This is an action class, NOT a governance tier label (do NOT pass T1, T2, or T3)."),
       ttl_seconds: z.number().default(300).describe("Lease TTL (request, max 3600)"),
       forbidden: z.array(z.string()).optional().describe("Forbidden tools (request)"),
       reason: z.string().optional().describe("Reason (revoke)"),

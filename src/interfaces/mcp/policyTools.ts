@@ -561,6 +561,7 @@ export function installPolicyInterceptor(srv: any): void {
     "forge_policy",
   ]);
 
+  const wrappedNames: string[] = [];
   let wrapped = 0;
   for (const [toolName, tool] of Object.entries(registry)) {
     if (BYPASS.has(toolName)) continue;
@@ -639,9 +640,16 @@ export function installPolicyInterceptor(srv: any): void {
     Object.defineProperty(wrappedHandler, WRAPPED, { value: true });
     tool.handler = wrappedHandler;
     wrapped++;
+    wrappedNames.push(toolName);
   }
 
   process.stderr.write(
     `[PolicyInterceptor] installed — ${wrapped} tools wrapped with 5-layer policy pre-check\n`,
+  );
+  const unwrappedNames = Object.keys(registry).filter(
+    (n) => !BYPASS.has(n) && !(registry[n]?.handler as any)?.[WRAPPED],
+  );
+  process.stderr.write(
+    `[PolicyInterceptor] unwrapped (${unwrappedNames.length}): ${unwrappedNames.join(", ") || "none"} | bypass: ${[...BYPASS].join(", ")}\n`,
   );
 }
