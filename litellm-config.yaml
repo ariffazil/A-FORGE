@@ -7,6 +7,9 @@
 # Bump log: 2026-10-29 333-AGI (F13 'yes sambung laa') — ADDED standalone alias qwen-auto: Qwen Token Plan INDIVIDUAL seat (QWEN_INDIVIDUAL_API_KEY, credit was idle/unwired), model 'auto' = platform meta-router (docs 2026-10-21; live-probe 200/1.5s 2026-10-29). No cascade/fallback changes. Revert: cp /root/forge_work/backups/litellm-config-20261029T032249Z-pre-qwen-auto.yaml /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
 # Bump log: 2026-10-29 333-AGI (F13 'GLM5.3 lets utilized it') — ADDED standalone alias glm-53-free: PAYG free-tier lane (DASHSCOPE_API_KEY @ dashscope-intl — PAYG var holds unresolved {env:} placeholder from 2026-10-29 12:36 flat.env regen, this var verified real), glm-5.3 free quota 76.52% of 1M remaining, expires 2026-11-23. Zero-cost kernel-test lane. Standalone, no cascade. Revert: cp /root/forge_work/backups/litellm-config-20261029T065224Z-pre-glm-free.yaml /root/A-FORGE/litellm-config.yaml && apply-litellm-config.sh
 # WRITER-OF-RECORD: 333-AGI (accountable), F13 SOVEREIGN (owner). 
+# Bump log: 2026-11-04 333-AGI (F13 Arif 'optimize, lower entropy') — tier-1 prune: 13 gemini corpse rungs deleted (402 PaymentRequired, probed dead 2026-11-04), glm-53-free alias deleted (403 exhausted), forge-777 mimo flash unparked 901->1 (F13 coding=flash), exact-duplicate rungs collapsed. Corpse law: parked+probed-dead >=1 session => delete (git preserves). Revert: cp /root/forge_work/backups/litellm-config.yaml.bak-mimo3key-20261103T235020Z /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
+# Bump log: 2026-11-04 333-AGI (F13 Arif in-session 'i-ARIF have pro deep reasoning, coding agents flash model') — i-arif mimo rungs: pro only (+old-team pro tail); forge-777 mimo rungs: flash only (dups collapsed); scout-pro/asi-555 stay pro by role. Revert: cp /root/forge_work/backups/litellm-config.yaml.bak-mimo3key-20261103T235020Z /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
+# Bump log: 2026-11-04 333-AGI (F13 Arif in-session + 888-APEX RECOMMEND_SEAL ses_e5c32387fffeZERB63Z1IMd7s2) — MiMo 3-key fallback: 9 sibling deployments (MIMO_TEAM_PLAN2_API_KEY=new seat-2 primary, MIMO_TOKEN_PLAN_API_KEY=old team tail [renews ~2026-12-01], MIMO_INDIVIDUAL_PLAN_API_KEY=individual tail; env via team-plan.env drop-in). Revert: cp /root/forge_work/backups/litellm-config.yaml.bak-mimo3key-20261103T235020Z /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
 # Concurrency rule: one writer at a time — when editing, bump this line with
 # your actor id + date. Unowned concurrent writes = drift generator (danger list 2026-10-18).
 # Bump log: 2026-10-25 333-AGI — F-3 repair: governance header RESTORED verbatim from
@@ -41,9 +44,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-    notes: 'apex-888 P8 (DeepSeek V4.1-Flash Direct PAYG): UPDATED 2026-09-28 — retired
-      name deepseek-chat (discontinued 2026-07-24) replaced with canonical deepseek-flash.
-      V4.1 native multimodal, 1M ctx. Last-resort fallback rung.'
+    notes: 'apex-888 P8 (DeepSeek V4.1-Flash Direct PAYG): UPDATED 2026-09-28 — retired name deepseek-chat (discontinued 2026-07-24) replaced with canonical deepseek-flash. V4.1 native multimodal, 1M ctx. Last-resort fallback rung.'
 - model_name: apex-888
   litellm_params:
     # 2026-10-31 F13: MiniMax M Plan is 429 exhausted (probed live). This head rung
@@ -61,11 +62,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY
-      (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat
-      and /v1/t2a_v2). Models and base URLs unchanged.'
-    notes: 'apex-888 P1 (MiniMax-M3 Token Plan Max): promoted 2026-09-21 F13 FI-008
-      — 1M-capable primary for constitutional judging of large evidence.'
+    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat and /v1/t2a_v2). Models and base URLs unchanged.'
+    notes: 'apex-888 P1 (MiniMax-M3 Token Plan Max): promoted 2026-09-21 F13 FI-008 — 1M-capable primary for constitutional judging of large evidence.'
 - model_name: apex-888
   litellm_params:
     model: openai/glm-5.3-flash
@@ -92,8 +90,7 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-    notes: apex-888 → QWEN deepseek-v4-pro — PRIMARY constitutional judge lane. MiniMax
-      Token Plan Max restored 2026-08-18.
+    notes: apex-888 → QWEN deepseek-v4-pro — PRIMARY constitutional judge lane. MiniMax Token Plan Max restored 2026-08-18.
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -119,8 +116,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'apex-888 P97 (legacy qwen3.7-max QWEN Team Owner): documented 2026-09-21
-      F13 FI-008 — older model fallback for when qwen3.8-max failover chains exhaust.'
+    notes: 'apex-888 P97 (legacy qwen3.7-max QWEN Team Owner): documented 2026-09-21 F13 FI-008 — older model fallback for when qwen3.8-max failover chains exhaust.'
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -144,8 +140,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'apex-888 P97 (legacy qwen3.7-max arifOS Advanced seat): documented 2026-09-21
-      F13 FI-008 — older model parallel to arifOS qwen3.8-max failover.'
+    notes: 'apex-888 P97 (legacy qwen3.7-max arifOS Advanced seat): documented 2026-09-21 F13 FI-008 — older model parallel to arifOS qwen3.8-max failover.'
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -169,8 +164,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'apex-888 P97 (legacy qwen3.7-max ariffazil Standard seat): documented
-      2026-09-21 F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover.'
+    notes: 'apex-888 P97 (legacy qwen3.7-max ariffazil Standard seat): documented 2026-09-21 F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover.'
 - model_name: go-glm-5.3-flash
   litellm_params:
     model: openai/glm-5.3-flash
@@ -184,8 +178,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: OpenCode Go lane - cheap flash fallback, FED-independent. GO-CANARY-OK
-      2026-10-14.
+    notes: OpenCode Go lane - cheap flash fallback, FED-independent. GO-CANARY-OK 2026-10-14.
     max_input_tokens: 1000000
     max_output_tokens: 131072
 - model_name: go-kimi-k2.7-code
@@ -216,8 +209,7 @@ model_list:
       x-opencode-session: fed-opencode-go
   model_info:
     mode: chat
-    notes: OpenCode Go lane - heavy reasoning. Off-peak 50% cheaper (peak 01-04,06-10
-      UTC wkdays).
+    notes: OpenCode Go lane - heavy reasoning. Off-peak 50% cheaper (peak 01-04,06-10 UTC wkdays).
     max_input_tokens: 131072
     max_output_tokens: 131072
 # go-minimax-m3 RETIRED 2026-10-28 (F13 'buang rung tu') — upstream opencode.ai/inference/go/v1
@@ -399,8 +391,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'asi-555 P97 (legacy qwen3.8-max QWEN Team Owner): documented 2026-09-21
-      F13 FI-008 — Team Owner seat qwen3.8-max fallback.'
+    notes: 'asi-555 P97 (legacy qwen3.8-max QWEN Team Owner): documented 2026-09-21 F13 FI-008 — Team Owner seat qwen3.8-max fallback.'
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.7-max
@@ -414,8 +405,7 @@ model_list:
     mode: chat
     supports_image_input: true
     supports_function_calling: true
-    notes: 'asi-555 P97 (legacy qwen3.7-max QWEN Team Owner): documented 2026-09-21
-      F13 FI-008 — older model parallel to Team Owner qwen3.8-max.'
+    notes: 'asi-555 P97 (legacy qwen3.7-max QWEN Team Owner): documented 2026-09-21 F13 FI-008 — older model parallel to Team Owner qwen3.8-max.'
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -439,8 +429,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'asi-555 P97 (legacy qwen3.7-max arifOS Advanced seat): documented 2026-09-21
-      F13 FI-008 — older model parallel to arifOS qwen3.8-max failover.'
+    notes: 'asi-555 P97 (legacy qwen3.7-max arifOS Advanced seat): documented 2026-09-21 F13 FI-008 — older model parallel to arifOS qwen3.8-max failover.'
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -464,8 +453,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'asi-555 P97 (legacy qwen3.7-max ariffazil Standard seat): documented 2026-09-21
-      F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover.'
+    notes: 'asi-555 P97 (legacy qwen3.7-max ariffazil Standard seat): documented 2026-09-21 F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover.'
 - model_name: fed/image-gen
   litellm_params:
     model: openai/wan2.7-image-pro
@@ -478,8 +466,7 @@ model_list:
     max_input_tokens: 32768
     max_output_tokens: 8192
     mode: image
-    notes: 'fed/image-gen P1 (wan2.7-image-pro): promoted 2026-09-21 F13 FI-008 —
-      was order=99 (misrouted as fallback), now order=1 primary.'
+    notes: 'fed/image-gen P1 (wan2.7-image-pro): promoted 2026-09-21 F13 FI-008 — was order=99 (misrouted as fallback), now order=1 primary.'
 - model_name: fed/image-gen
   litellm_params:
     model: openai/wan2.7-image
@@ -504,9 +491,23 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-    notes: 'deepseek-v4-flash via QWEN Token Plan Individual — PRIMARY for asi-555.
-      Burst queue: 30s. NOTE: reasoning model, requires max_tokens>=200. [REASONING_MODEL:
-      requires max_tokens>=200, min content budget]'
+    notes: 'deepseek-v4-flash via QWEN Token Plan Individual — PRIMARY for asi-555. Burst queue: 30s. NOTE: reasoning model, requires max_tokens>=200. [REASONING_MODEL: requires max_tokens>=200, min content budget]'
+- model_name: forge-scout
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
+    api_key: os.environ/MIMO_TEAM_PLAN2_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_audio_input: true
+    supports_video_input: true
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-scout P1 (MiMo V2.5 omni-modal): multimodal evidence reader — screenshots, diagrams, browser DOM, logs. License: coding-tools-only compliant. Token Plan Max 82B credits fresh 2026-09-13. PONG 1500ms.'
 - model_name: forge-scout
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -522,9 +523,23 @@ model_list:
     supports_video_input: true
     supports_vision: true
     supports_function_calling: true
-    notes: 'forge-scout P1 (MiMo V2.5 omni-modal): multimodal evidence reader — screenshots,
-      diagrams, browser DOM, logs. License: coding-tools-only compliant. Token Plan
-      Max 82B credits fresh 2026-09-13. PONG 1500ms.'
+    notes: 'forge-scout P1 (MiMo V2.5 omni-modal): multimodal evidence reader — screenshots, diagrams, browser DOM, logs. License: coding-tools-only compliant. Token Plan Max 82B credits fresh 2026-09-13. PONG 1500ms.'
+- model_name: forge-scout-pro
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
+    api_key: os.environ/MIMO_TEAM_PLAN2_API_KEY
+    order: 1
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_audio_input: true
+    supports_video_input: true
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-scout-pro P1 (MiMo V2.5 Pro 1T/42B MoE): heavy multimodal synthesis — design review, architecture diff, multimodal contract analysis. Token Plan Max. PONG 1840ms.'
 - model_name: forge-scout-pro
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -540,9 +555,7 @@ model_list:
     supports_video_input: true
     supports_vision: true
     supports_function_calling: true
-    notes: 'forge-scout-pro P1 (MiMo V2.5 Pro 1T/42B MoE): heavy multimodal synthesis
-      — design review, architecture diff, multimodal contract analysis. Token Plan
-      Max. PONG 1840ms.'
+    notes: 'forge-scout-pro P1 (MiMo V2.5 Pro 1T/42B MoE): heavy multimodal synthesis — design review, architecture diff, multimodal contract analysis. Token Plan Max. PONG 1840ms.'
 - model_name: forge-builder
   litellm_params:
     model: openai/deepseek-flash
@@ -558,9 +571,7 @@ model_list:
     max_output_tokens: 32768
     mode: chat
     supports_function_calling: true
-    notes: forge-builder P1 (DeepSeek V4.1-Flash) — canonical name updated 2026-09-28
-      (v4-flash retired upstream 2026-09-10). Cost-frontier for high-volume builder
-      loops. ZAI glm-5.3-flash remains P2.
+    notes: forge-builder P1 (DeepSeek V4.1-Flash) — canonical name updated 2026-09-28 (v4-flash retired upstream 2026-09-10). Cost-frontier for high-volume builder loops. ZAI glm-5.3-flash remains P2.
 - model_name: forge-builder
   litellm_params:
     model: openai/glm-5.3-flash
@@ -574,9 +585,7 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'forge-builder P2 (ZAI GLM-5.3-Flash): QUOTA EXHAUSTED until 2026-09-15
-      16:13 MYT. Order demoted 1→2 behind DeepSeek V4 Flash. Restore probe required
-      before re-promotion.'
+    notes: 'forge-builder P2 (ZAI GLM-5.3-Flash): QUOTA EXHAUSTED until 2026-09-15 16:13 MYT. Order demoted 1→2 behind DeepSeek V4 Flash. Restore probe required before re-promotion.'
 - model_name: forge-economy
   litellm_params:
     model: openai/deepseek-flash
@@ -592,9 +601,7 @@ model_list:
     max_output_tokens: 32768
     mode: chat
     supports_function_calling: true
-    notes: forge-economy P1 (DeepSeek V4.1-Flash) — canonical name updated 2026-09-28.
-      $0.15/$0.60 off-peak ($0.30/$1.20 peak) per MTok. COST-FRONTIER default for
-      high-volume inner loops.
+    notes: forge-economy P1 (DeepSeek V4.1-Flash) — canonical name updated 2026-09-28. $0.15/$0.60 off-peak ($0.30/$1.20 peak) per MTok. COST-FRONTIER default for high-volume inner loops.
 - model_name: forge-economy
   litellm_params:
     model: openai/qwen3.8-max
@@ -610,8 +617,23 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'forge-economy P2 (Qwen3.8-Max via OpenCode Go): $10/mo flat fallback when
-      deepseek-v4-flash 429/quota.'
+    notes: 'forge-economy P2 (Qwen3.8-Max via OpenCode Go): $10/mo flat fallback when deepseek-v4-flash 429/quota.'
+- model_name: forge-economy
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
+    api_key: os.environ/MIMO_TEAM_PLAN2_API_KEY
+    order: 4
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_audio_input: true
+    supports_video_input: true
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-economy P3 (MiMo V2.5): 82B credits, multimodal fallback for forge-economy.'
 - model_name: forge-economy
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -642,11 +664,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY
-      (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat
-      and /v1/t2a_v2). Models and base URLs unchanged.'
-    notes: 'forge-planner P1 (MiniMax-M3): 1M ctx, task decomposition, scope/budget/architecture
-      planning. Token Plan Max fresh 2026-09-13.'
+    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat and /v1/t2a_v2). Models and base URLs unchanged.'
+    notes: 'forge-planner P1 (MiniMax-M3): 1M ctx, task decomposition, scope/budget/architecture planning. Token Plan Max fresh 2026-09-13.'
 - model_name: forge-planner
   litellm_params:
     model: openai/glm-5.3-flash
@@ -660,8 +679,23 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'forge-planner P2 (ZAI GLM-5.3-Flash): 3x ZAI Coding Plan quota — KingBench-3
-      #1 fallback when MiniMax-M3 busy.'
+    notes: 'forge-planner P2 (ZAI GLM-5.3-Flash): 3x ZAI Coding Plan quota — KingBench-3 #1 fallback when MiniMax-M3 busy.'
+- model_name: forge-planner
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
+    api_key: os.environ/MIMO_TEAM_PLAN2_API_KEY
+    order: 3
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_audio_input: true
+    supports_video_input: true
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-planner P3 (MiMo V2.5): cheap planner fallback.'
 - model_name: forge-planner
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -695,12 +729,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY
-      (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat
-      and /v1/t2a_v2). Models and base URLs unchanged.'
-    notes: 'forge-judge P1 (MiniMax-M3 Token Plan Max): constitutional adjudication
-      lane — diff+receipt comparison. 1M ctx, multimodal evidence accepted. Fresh
-      2026-09-13.'
+    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat and /v1/t2a_v2). Models and base URLs unchanged.'
+    notes: 'forge-judge P1 (MiniMax-M3 Token Plan Max): constitutional adjudication lane — diff+receipt comparison. 1M ctx, multimodal evidence accepted. Fresh 2026-09-13.'
 - model_name: forge-777
   litellm_params:
     model: openai/glm-5.3-flash
@@ -729,11 +759,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY
-      (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat
-      and /v1/t2a_v2). Models and base URLs unchanged.'
-    notes: 'forge-777 P3 (MiniMax-M3 Token Plan Max, topped up 2026-09-13): 1M context,
-      vision, function calling. Reasoning model — needs max_tokens>=200 headroom.'
+    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat and /v1/t2a_v2). Models and base URLs unchanged.'
+    notes: 'forge-777 P3 (MiniMax-M3 Token Plan Max, topped up 2026-09-13): 1M context, vision, function calling. Reasoning model — needs max_tokens>=200 headroom.'
 - model_name: forge-777
   litellm_params:
     model: openai/qwen3.8-max
@@ -755,11 +782,11 @@ model_list:
     # 2026-10-31 F13: upstream id must be the VENDOR id, not our alias name.
     # "mimo-v2.6-pro-payg" is a litellm alias -> vendor answered 400 Unsupported model.
     # Repointed to the live MiMo TEAM seat (same vendor family, funded).
-    model: openai/mimo-v2.6-pro
+    model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
-    order: 901
+    order: 1
     # vendor cap: 100 RPM / 10M TPM per account per model -> local throttle
     rpm: 90
     tpm: 9000000
@@ -770,35 +797,20 @@ model_list:
     supports_audio_input: true
     supports_video_input: true
     supports_vision: true
-    notes: 'Stage 2 (2026-09-22): forge-777 P1 — MiMo-V2.6-Pro PAYG/platform. AA Index
-      46, $0.43/$0.87 per 1M. Multimodal text+image+video+audio. Primary quality tier
-      for federation; V2.5 demoted to order 5 fallback.'
+    notes: 'Stage 2 (2026-09-22): forge-777 P1 — MiMo-V2.6-Pro PAYG/platform. AA Index 46, $0.43/$0.87 per 1M. Multimodal text+image+video+audio. Primary quality tier for federation; V2.5 demoted to order 5 fallback.'
 - model_name: forge-777
   litellm_params:
-    model: openai/mimo-v2.6-pro
-    api_base: os.environ/MIMO_BASE_URL
-    additional_drop_params: ["include"]
-    api_key: os.environ/MIMO_API_KEY
-    order: 97
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_audio_input: true
-    supports_video_input: true
-    supports_vision: true
-    notes: 'PARKED order 97 (2026-09-22): GHOST CAPABILITY. Routed through the 429-dead
-      token-plan lane and returned "No fallback model group found". Revive by restoring
-      order: 2 once TP entitlement is restored. Original: Stage 2 (2026-09-22): forge-777
-      P2 — MiMo-V2.6-Pro Token Plan (SG). Distinct quota pool from PAYG above; cascades
-      if PAYG exhausts.'
-- model_name: forge-777
-  litellm_params:
+    # 2026-10-31 F13: upstream id must be the VENDOR id, not our alias name.
+    # "mimo-v2.6-pro-payg" is a litellm alias -> vendor answered 400 Unsupported model.
+    # Repointed to the live MiMo TEAM seat (same vendor family, funded).
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     additional_drop_params: ["include"]
-    api_key: os.environ/MIMO_API_KEY
-    order: 991
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 1
+    # vendor cap: 100 RPM / 10M TPM per account per model -> local throttle
+    rpm: 90
+    tpm: 9000000
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -806,11 +818,7 @@ model_list:
     supports_audio_input: true
     supports_video_input: true
     supports_vision: true
-    supports_function_calling: true
-    notes: 'forge-777 P4 (MiMo v2.5 Token Plan Max, SGP): 1M ctx, omni-modal vision,
-      function calling. Cheapest meter ($0.14/$0.28 per MTok). PROBED 2026-09-06 LIVE
-      637-981ms. CORRECTED 2026-09-14: mimo-v2.5 is the omni-modal model (v2.5-pro
-      is text-only).'
+    notes: 'Stage 2 (2026-09-22): forge-777 P1 — MiMo-V2.6-Pro PAYG/platform. AA Index 46, $0.43/$0.87 per 1M. Multimodal text+image+video+audio. Primary quality tier for federation; V2.5 demoted to order 5 fallback.'
 - model_name: forge-777
   litellm_params:
     model: openai/glm-5.3
@@ -843,9 +851,7 @@ model_list:
     max_output_tokens: 32768
     mode: chat
     supports_function_calling: true
-    notes: 'forge-777 P5 (DeepSeek V4.1-Flash): canonical name updated 2026-09-28.
-      Cost-frontier default for high-volume inner loops. VERIFIED LIVE 2026-09-28
-      (direct chat canary 200, balance $19.99).'
+    notes: 'forge-777 P5 (DeepSeek V4.1-Flash): canonical name updated 2026-09-28. Cost-frontier default for high-volume inner loops. VERIFIED LIVE 2026-09-28 (direct chat canary 200, balance $19.99).'
 - model_name: forge-777
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
@@ -857,8 +863,7 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 8192
     mode: chat
-    notes: 'forge-777 P6 (SEA-LION v4.5-27B): sovereign BM/SEA-language lane. SG-jurisdiction.
-      Coding-task evaluation pending — RESEARCH state.'
+    notes: 'forge-777 P6 (SEA-LION v4.5-27B): sovereign BM/SEA-language lane. SG-jurisdiction. Coding-task evaluation pending — RESEARCH state.'
 - model_name: forge-777
   litellm_params:
     model: openai/k3.1-pro
@@ -870,8 +875,7 @@ model_list:
     mode: chat
     max_input_tokens: 131072
     max_output_tokens: 131072
-    notes: forge-777 fallback — Kimi K3 coding plan. Billing cycle exhausted (403).
-      Will recover when cycle refreshes.
+    notes: forge-777 fallback — Kimi K3 coding plan. Billing cycle exhausted (403). Will recover when cycle refreshes.
 - model_name: asi-555
   litellm_params:
     model: openai/deepseek-v4.1-flash  # QFREE swap 2026-10-26 (was qwen3-next-80b PAYG; F13 free-is-free) zero-cost free quota, expires 2026-12-13
@@ -904,8 +908,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
-    notes: opencode alias compressed -> forge-777 chain via deepseek-flash (V4.1 canonical,
-      updated 2026-09-28).
+    notes: opencode alias compressed -> forge-777 chain via deepseek-flash (V4.1 canonical, updated 2026-09-28).
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek-flash
@@ -920,10 +923,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 32768
     mode: chat
-    notes: hermes-asi alias-compressed fast-path to deepseek-flash — demoted 2026-09-21
-      F13 FI-008 from order=1 to break race with hermes-asi Block-2 qwen3.8-max (both
-      were at order=1). Name canonicalized 2026-09-28. Kept as last-resort-first before
-      kimi-k3.
+    notes: hermes-asi alias-compressed fast-path to deepseek-flash — demoted 2026-09-21 F13 FI-008 from order=1 to break race with hermes-asi Block-2 qwen3.8-max (both were at order=1). Name canonicalized 2026-09-28. Kept as last-resort-first before kimi-k3.
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.8-max
@@ -966,8 +966,7 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: INDIVIDUAL PLAN — qwen3.8-max. 36d runway. Repositioned 2026-09-21 F13
-      FI-008 from order=3 (was colliding with qwen3.7-max at order=3).
+    notes: INDIVIDUAL PLAN — qwen3.8-max. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=3 (was colliding with qwen3.7-max at order=3).
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -983,8 +982,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-    notes: INDIVIDUAL PLAN — qwen3.7-plus. 36d runway. Repositioned 2026-09-21 F13
-      FI-008 from order=2 (was colliding with glm-5.3-flash at order=2).
+    notes: INDIVIDUAL PLAN — qwen3.7-plus. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=2 (was colliding with glm-5.3-flash at order=2).
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -999,8 +997,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: INDIVIDUAL PLAN — qwen3.7-max. 36d runway. Repositioned 2026-09-21 F13
-      FI-008 from order=3 (was colliding with qwen3.8-max at order=3).
+    notes: INDIVIDUAL PLAN — qwen3.7-max. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=3 (was colliding with qwen3.8-max at order=3).
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1016,8 +1013,7 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-    notes: INDIVIDUAL PLAN — deepseek-v4-pro. 36d runway. Repositioned 2026-09-21
-      F13 FI-008 from order=4 (sequential cascade realignment).
+    notes: INDIVIDUAL PLAN — deepseek-v4-pro. 36d runway. Repositioned 2026-09-21 F13 FI-008 from order=4 (sequential cascade realignment).
   model_info:
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -1171,17 +1167,6 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-- model_name: qwen3.8-max
-  litellm_params:
-    model: openai/qwen3.8-max
-    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 99
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1371,11 +1356,59 @@ model_list:
     supports_audio_input: true
     supports_video_input: true
     supports_audio_output: false
-    notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url
-      in content[] (OpenAI chat completions). Token Plan endpoint token-plan-sgp.xiaomimimo.com.
-      Probed live: image 1024 tok, audio 25 tok (correct ASR), video 1144+19 tok.
-      FPS 0.1-10, media_resolution default|max. Video ≤300MB URL / ≤50MB b64. Audio
-      ≤100MB URL / ≤50MB b64. Image ≤50MB.'
+    notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url in content[] (OpenAI chat completions). Token Plan endpoint token-plan-sgp.xiaomimimo.com. Probed live: image 1024 tok, audio 25 tok (correct ASR), video 1144+19 tok. FPS 0.1-10, media_resolution default|max. Video ≤300MB URL / ≤50MB b64. Audio ≤100MB URL / ≤50MB b64. Image ≤50MB.'
+- model_name: mimo-v2.6-pro
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
+    api_key: os.environ/MIMO_INDIVIDUAL_PLAN_API_KEY
+    order: 5
+    supports_vision: true
+    # Vendor cap: 100 RPM / 10M TPM per account per model.
+    rpm: 90
+    tpm: 9000000
+    extra_body:
+      modalities:
+      - text
+      - image
+      - audio
+      - video
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_audio_input: true
+    supports_video_input: true
+    supports_audio_output: false
+    notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url in content[] (OpenAI chat completions). Token Plan endpoint token-plan-sgp.xiaomimimo.com. Probed live: image 1024 tok, audio 25 tok (correct ASR), video 1144+19 tok. FPS 0.1-10, media_resolution default|max. Video ≤300MB URL / ≤50MB b64. Audio ≤100MB URL / ≤50MB b64. Image ≤50MB.'
+- model_name: mimo-v2.6-pro
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 5
+    supports_vision: true
+    # Vendor cap: 100 RPM / 10M TPM per account per model.
+    rpm: 90
+    tpm: 9000000
+    extra_body:
+      modalities:
+      - text
+      - image
+      - audio
+      - video
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_audio_input: true
+    supports_video_input: true
+    supports_audio_output: false
+    notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url in content[] (OpenAI chat completions). Token Plan endpoint token-plan-sgp.xiaomimimo.com. Probed live: image 1024 tok, audio 25 tok (correct ASR), video 1144+19 tok. FPS 0.1-10, media_resolution default|max. Video ≤300MB URL / ≤50MB b64. Audio ≤100MB URL / ≤50MB b64. Image ≤50MB.'
 - model_name: mimo-v2.6-pro-payg
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -1391,8 +1424,7 @@ model_list:
     supports_audio_input: true
     supports_video_input: true
     supports_vision: true
-    notes: 2026-09-22 Stage 1 sidecar — PAYG/platform endpoint (api.xiaomimimo.com).
-      Distinct model_name for "have both" choice.
+    notes: 2026-09-22 Stage 1 sidecar — PAYG/platform endpoint (api.xiaomimimo.com). Distinct model_name for "have both" choice.
 - model_name: mimo-v2.6-flash
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -1418,9 +1450,59 @@ model_list:
     supports_audio_input: true
     supports_video_input: true
     supports_audio_output: false
-    notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url
-      in content[]. Token Plan endpoint. Cheaper than Pro. Same modality support as
-      v2.6-pro.'
+    notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url in content[]. Token Plan endpoint. Cheaper than Pro. Same modality support as v2.6-pro.'
+- model_name: mimo-v2.6-flash
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
+    api_key: os.environ/MIMO_INDIVIDUAL_PLAN_API_KEY
+    order: 5
+    supports_vision: true
+    # Vendor cap: 100 RPM / 10M TPM per account per model.
+    rpm: 90
+    tpm: 9000000
+    extra_body:
+      modalities:
+      - text
+      - image
+      - audio
+      - video
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_audio_input: true
+    supports_video_input: true
+    supports_audio_output: false
+    notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url in content[]. Token Plan endpoint. Cheaper than Pro. Same modality support as v2.6-pro.'
+- model_name: mimo-v2.6-flash
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 5
+    supports_vision: true
+    # Vendor cap: 100 RPM / 10M TPM per account per model.
+    rpm: 90
+    tpm: 9000000
+    extra_body:
+      modalities:
+      - text
+      - image
+      - audio
+      - video
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_audio_input: true
+    supports_video_input: true
+    supports_audio_output: false
+    notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url in content[]. Token Plan endpoint. Cheaper than Pro. Same modality support as v2.6-pro.'
 - model_name: mimo-v2.6-flash-payg
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -1436,8 +1518,7 @@ model_list:
     supports_audio_input: true
     supports_video_input: true
     supports_vision: true
-    notes: 2026-09-22 Stage 1 sidecar — PAYG/platform endpoint. Distinct model_name
-      for "have both" choice.
+    notes: 2026-09-22 Stage 1 sidecar — PAYG/platform endpoint. Distinct model_name for "have both" choice.
 - model_name: mimo-v2.6-pro-ultraspeed
   litellm_params:
     model: openai/mimo-v2.6-pro-ultraspeed
@@ -1453,8 +1534,7 @@ model_list:
     supports_audio_input: true
     supports_video_input: true
     supports_vision: true
-    notes: 2026-09-22 Stage 1 sidecar — PAYG-only (token-plan /models probe did NOT
-      list ultraspeed). Vendor-claimed 20x speed; pending live latency probe.
+    notes: 2026-09-22 Stage 1 sidecar — PAYG-only (token-plan /models probe did NOT list ultraspeed). Vendor-claimed 20x speed; pending live latency probe.
 - model_name: glm-5.2
   litellm_params:
     model: openai/glm-5.3
@@ -1463,11 +1543,7 @@ model_list:
     api_key: os.environ/ZAI_API_KEY
     order: 0
     mode: chat
-    notes: 'NORMALIZED 2026-10-14 (333-AGI, F13 zai-devpack-align order): upstream
-      set to glm-5.3 explicitly — z.ai silently redirects glm-5.2->glm-5.3 on the
-      coding endpoint (live-probed 2026-10-14: requested 5.2, served model=glm-5.3).
-      Alias name glm-5.2 KEPT for HERMES picker compat; wire behavior identical. Prev:
-      REPOINTED 2026-09-06 coding-plan pin.'
+    notes: 'NORMALIZED 2026-10-14 (333-AGI, F13 zai-devpack-align order): upstream set to glm-5.3 explicitly — z.ai silently redirects glm-5.2->glm-5.3 on the coding endpoint (live-probed 2026-10-14: requested 5.2, served model=glm-5.3). Alias name glm-5.2 KEPT for HERMES picker compat; wire behavior identical. Prev: REPOINTED 2026-09-06 coding-plan pin.'
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1481,10 +1557,7 @@ model_list:
     order: 0
     min_tokens: 200
     mode: chat
-    notes: 'UPDATED 2026-09-13: alias compat-routes server-side to DeepSeek-V4.1-Flash
-      (canonical name deepseek-flash, released 2026-09-10). Direct PAYG last-resort
-      rung. Live-verified 2026-09-13. 2026-10-17: server now serves V4.1-Flash-1017
-      checkpoint (weights-only; same id).'
+    notes: 'UPDATED 2026-09-13: alias compat-routes server-side to DeepSeek-V4.1-Flash (canonical name deepseek-flash, released 2026-09-10). Direct PAYG last-resort rung. Live-verified 2026-09-13. 2026-10-17: server now serves V4.1-Flash-1017 checkpoint (weights-only; same id).'
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -1503,9 +1576,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-    notes: 'UPDATED 2026-09-13: legacy vision-exp retired in V4.1-Flash release (2026-09-10);
-      served by deepseek-flash native multimodal. i-arif sovereign vision rung, DeepSeek
-      direct PAYG. Serves V4.1-Flash-1017 checkpoint (2026-10-17).'
+    notes: 'UPDATED 2026-09-13: legacy vision-exp retired in V4.1-Flash release (2026-09-10); served by deepseek-flash native multimodal. i-arif sovereign vision rung, DeepSeek direct PAYG. Serves V4.1-Flash-1017 checkpoint (2026-10-17).'
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -1530,8 +1601,7 @@ model_list:
     output_cost_per_token: 1.2e-06
     mode: chat
     supports_vision: true
-    notes: 'P0 2026-10-03: deepseek-flash promoted to fed/vision primary — 5s strict-JSON
-      on real 1600px outcrop vs qwen3.8-max >180s timeout. Interactive vision lane.'
+    notes: 'P0 2026-10-03: deepseek-flash promoted to fed/vision primary — 5s strict-JSON on real 1600px outcrop vs qwen3.8-max >180s timeout. Interactive vision lane.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
 - model_name: fed/vision
@@ -1551,9 +1621,7 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     supports_vision: true
-    notes: 'VISION PRIMARY (2026-10-19 888, real-image-verified): mimo-v2.6-flash
-      answered Red on 64x64 PNG. MiniMax-M3 insufficient-balance(1008); deepseek-flash
-      returns EMPTY on images.'
+    notes: 'VISION PRIMARY (2026-10-19 888, real-image-verified): mimo-v2.6-flash answered Red on 64x64 PNG. MiniMax-M3 insufficient-balance(1008); deepseek-flash returns EMPTY on images.'
 - model_name: deepseek-flash
   litellm_params:
     model: openai/deepseek-flash
@@ -1563,13 +1631,7 @@ model_list:
     order: 0
     min_tokens: 200
     mode: chat
-    notes: CANONICAL DeepSeek V4.1-Flash group (added 2026-09-28). Resolves the i-arif
-      fallback-chain reference that previously returned "Invalid model name" (group
-      was missing). V4.1 native multimodal, 1M ctx. CHECKPOINT 2026-10-17 (V4.1-Flash-1017)
-      — weights-only update, same id auto-served. RL-with-self-feedback tuning, Terminal-Bench
-      4.0 31.2->42.3, HLE w/o-tools 36.8->42.6, shorter outputs (cost-down for builder
-      loops). Thinking ON by default — small max_tokens returns empty content (finish_reason=length),
-      pin thinking=disabled or give budget room in tool loops.
+    notes: CANONICAL DeepSeek V4.1-Flash group (added 2026-09-28). Resolves the i-arif fallback-chain reference that previously returned "Invalid model name" (group was missing). V4.1 native multimodal, 1M ctx. CHECKPOINT 2026-10-17 (V4.1-Flash-1017) — weights-only update, same id auto-served. RL-with-self-feedback tuning, Terminal-Bench 4.0 31.2->42.3, HLE w/o-tools 36.8->42.6, shorter outputs (cost-down for builder loops). Thinking ON by default — small max_tokens returns empty content (finish_reason=length), pin thinking=disabled or give budget room in tool loops.
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -1591,11 +1653,7 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'Added 2026-10-21: MiniMax retired the -Preview model name; requests using
-      the old name are now served by MiniMax-M3.1-Flash (vendor M Plan docs). This
-      group carries the canonical name so callers do not depend on a retired alias.
-      Same wire, same base URL, same key (MINIMAX_MPLAN_KEY). Live-probed 2026-10-21
-      on both OpenAI- and Anthropic-compatible endpoints.'
+    notes: 'Added 2026-10-21: MiniMax retired the -Preview model name; requests using the old name are now served by MiniMax-M3.1-Flash (vendor M Plan docs). This group carries the canonical name so callers do not depend on a retired alias. Same wire, same base URL, same key (MINIMAX_MPLAN_KEY). Live-probed 2026-10-21 on both OpenAI- and Anthropic-compatible endpoints.'
     notes_fed_park: 'PARKED 2026-10-31: Token Plan usage limit reached (429). Same key/seat as MiniMax-M3. Unpark on topup.'
 - model_name: MiniMax-M3.1-Flash-Preview
   litellm_params:
@@ -1611,16 +1669,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY
-      (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat
-      and /v1/t2a_v2). Models and base URLs unchanged.'
-    notes: 'Token Plan refresh 2026-09-28 (F13 Arif): MiniMax-M3.1-Flash-Preview —
-      Token Plan/MiniMax Code EXCLUSIVE. 1M ctx, multimodal in (text/image/video),
-      agentic reasoning + tool use. Thinking ALWAYS ON, default effort=max; tune via
-      reasoning_effort=low|medium|high|xhigh|max (OpenAI-compat) or output_config.effort
-      (/anthropic wire); thinking returns in reasoning_content. Verified live 2026-09-28
-      (333-AGI): HTTP 200 /v1/chat/completions + /anthropic/v1/messages with sk-cp
-      Token Plan key. Judge P1 seats remain MiniMax-M3 (F13-promoted 2026-09-21).'
+    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat and /v1/t2a_v2). Models and base URLs unchanged.'
+    notes: 'Token Plan refresh 2026-09-28 (F13 Arif): MiniMax-M3.1-Flash-Preview — Token Plan/MiniMax Code EXCLUSIVE. 1M ctx, multimodal in (text/image/video), agentic reasoning + tool use. Thinking ALWAYS ON, default effort=max; tune via reasoning_effort=low|medium|high|xhigh|max (OpenAI-compat) or output_config.effort (/anthropic wire); thinking returns in reasoning_content. Verified live 2026-09-28 (333-AGI): HTTP 200 /v1/chat/completions + /anthropic/v1/messages with sk-cp Token Plan key. Judge P1 seats remain MiniMax-M3 (F13-promoted 2026-09-21).'
     notes_fed_park: 'PARKED 2026-10-31: Token Plan usage limit reached (429). Same key/seat as MiniMax-M3. Unpark on topup.'
 - model_name: MiniMax-M3
   litellm_params:
@@ -1635,13 +1685,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY
-      (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat
-      and /v1/t2a_v2). Models and base URLs unchanged.'
-    notes: 'F13 multimodal 2026-09-06: image_url + video_url content parts (OpenAI-compat
-      passthrough; img<=10MB JPEG/PNG/GIF/WEBP, vid<=50MB MP4/AVI/MOV/MKV, <=512MB
-      via mm_file://; detail low/default/high, video fps 0.2-5). NO audio input. thinking
-      + reasoning_split supported.'
+    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat and /v1/t2a_v2). Models and base URLs unchanged.'
+    notes: 'F13 multimodal 2026-09-06: image_url + video_url content parts (OpenAI-compat passthrough; img<=10MB JPEG/PNG/GIF/WEBP, vid<=50MB MP4/AVI/MOV/MKV, <=512MB via mm_file://; detail low/default/high, video fps 0.2-5). NO audio input. thinking + reasoning_split supported.'
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1672,9 +1717,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P1 2026-09-13: ZAI coding plan glm-5.3-flash native multimodal. DEMOTED
-      to order=2 2026-10-03 (F13 sovereign: update with working api key) — zai upstream
-      hit 402 credit exhaustion, hung Earth Witness 30-47s. Qwen primary now.'
+    notes: 'P1 2026-09-13: ZAI coding plan glm-5.3-flash native multimodal. DEMOTED to order=2 2026-10-03 (F13 sovereign: update with working api key) — zai upstream hit 402 credit exhaustion, hung Earth Witness 30-47s. Qwen primary now.'
     max_input_tokens: 1000000
     max_output_tokens: 128000
   model_name: fed/vision
@@ -1691,9 +1734,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P2 2026-10-03: PROMOTED from fed/vision-parked to fed/vision order=1 (F13
-      sovereign: update with working api key) — Individual Plan 75% runway, 1M ctx
-      visual reasoning. Now the Earth Witness primary.'
+    notes: 'P2 2026-10-03: PROMOTED from fed/vision-parked to fed/vision order=1 (F13 sovereign: update with working api key) — Individual Plan 75% runway, 1M ctx visual reasoning. Now the Earth Witness primary.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: fed/vision
@@ -1745,11 +1786,8 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY
-      (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat
-      and /v1/t2a_v2). Models and base URLs unchanged.'
-    notes: 'P1 PRIMARY (F13 2026-09-14): MiniMax M3. Proven working — no content filtering,
-      low latency, multimodal.'
+    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat and /v1/t2a_v2). Models and base URLs unchanged.'
+    notes: 'P1 PRIMARY (F13 2026-09-14): MiniMax M3. Proven working — no content filtering, low latency, multimodal.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
@@ -1765,8 +1803,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P2: DeepSeek V4.1-Flash (canonical deepseek-flash; retired vision-exp
-      alias replaced 2026-09-28). Native multimodal, no content moderation.'
+    notes: 'P2: DeepSeek V4.1-Flash (canonical deepseek-flash; retired vision-exp alias replaced 2026-09-28). Native multimodal, no content moderation.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
@@ -1783,8 +1820,7 @@ model_list:
   model_info:
     mode: chat
     supports_vision: true
-    notes: 'P3: MiMo v2.5 (Xiaomi). CORRECTED 2026-09-14 — mimo-v2.5-pro is TEXT-ONLY
-      per SOT. mimo-v2.5 is the omni-modal model.'
+    notes: 'P3: MiMo v2.5 (Xiaomi). CORRECTED 2026-09-14 — mimo-v2.5-pro is TEXT-ONLY per SOT. mimo-v2.5 is the omni-modal model.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
@@ -1866,8 +1902,7 @@ model_list:
   model_info:
     mode: chat
     supports_audio_output: true
-    notes: F13 UNLOCKED 2026-10-11 — audited, not locked. Every call logged via fed_spend_callback
-      -> token_bank.db (model+agent_id+tokens+cost).
+    notes: F13 UNLOCKED 2026-10-11 — audited, not locked. Every call logged via fed_spend_callback -> token_bank.db (model+agent_id+tokens+cost).
     max_input_tokens: 1048576
     max_output_tokens: 131072
 - model_name: fed/minimax-tts
@@ -1880,11 +1915,8 @@ model_list:
   model_info:
     mode: chat
     supports_audio_output: true
-    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY
-      (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat
-      and /v1/t2a_v2). Models and base URLs unchanged.'
-    notes: MiniMax Token Plan speech-2.8-hd. 3 voice clones LIVE. Call t2a_v2 with
-      voice_id from registry.
+    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat and /v1/t2a_v2). Models and base URLs unchanged.'
+    notes: MiniMax Token Plan speech-2.8-hd. 3 voice clones LIVE. Call t2a_v2 with voice_id from registry.
     max_input_tokens: 1048576
     max_output_tokens: 131072
 - model_name: apex-888
@@ -1914,19 +1946,6 @@ model_list:
     max_output_tokens: 131072
     mode: chat
     notes: apex-888 -> QWEN deepseek-v4-pro live Individual plan
-- model_name: asi-555
-  litellm_params:
-    model: openai/qwen3.8-max
-    api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
-    additional_drop_params: ["include"]
-    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
-    order: 2
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    notes: asi-555 -> QWEN qwen3.8-max live Individual plan fallback
 - model_name: forge-777
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -1939,8 +1958,7 @@ model_list:
     max_input_tokens: 131072
     max_output_tokens: 131072
     mode: chat
-    notes: forge-777 P7 (QWEN Individual deepseek-v4-pro, topped up 2026-09-13) —
-      secondary fallback via Aliyun Individual plan. VERIFIED LIVE.
+    notes: forge-777 P7 (QWEN Individual deepseek-v4-pro, topped up 2026-09-13) — secondary fallback via Aliyun Individual plan. VERIFIED LIVE.
 - model_name: forge-777
   litellm_params:
     model: openai/qwen3.8-max
@@ -1952,8 +1970,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: forge-777 P8 (QWEN Individual qwen3.8-max, topped up 2026-09-13) — tertiary
-      fallback via Aliyun Individual plan. VERIFIED LIVE.
+    notes: forge-777 P8 (QWEN Individual qwen3.8-max, topped up 2026-09-13) — tertiary fallback via Aliyun Individual plan. VERIFIED LIVE.
 - model_name: fed/sealion
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4-32B-IT
@@ -2011,11 +2028,7 @@ model_list:
     api_key: os.environ/ZAI_API_KEY
     order: 0
     mode: chat
-    notes: 'ADDED 2026-10-29 (333-AGI, Arif directive zai-plan-update): stable alias
-      for ZAI coding-plan flagship. Claude settings fallback chain references FED
-      zai-pro (primary) but the alias did not exist in litellm (dead rung). glm-5.3
-      = plan contract flagship (glm-5.2/5.1 redirect upstream). Live probe 2026-10-29
-      off-peak: glm-5.3 200 served glm-5.3, content OK.'
+    notes: 'ADDED 2026-10-29 (333-AGI, Arif directive zai-plan-update): stable alias for ZAI coding-plan flagship. Claude settings fallback chain references FED zai-pro (primary) but the alias did not exist in litellm (dead rung). glm-5.3 = plan contract flagship (glm-5.2/5.1 redirect upstream). Live probe 2026-10-29 off-peak: glm-5.3 200 served glm-5.3, content OK.'
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -2034,10 +2047,7 @@ model_list:
     min_tokens: 200
     mode: chat
     supports_vision: true
-    notes: 'UN-PARKED 2026-10-11: DeepSeek balance re-verified LIVE (deepseek-flash
-      completion OK). Restored to PRIMARY order 1. i-arif DeepSeek Flash Vision: deepseek-flash
-      (V4.1 native multimodal). Upstream: api.deepseek.com. Direct PAYG. min_tokens=200
-      for reasoning headroom.'
+    notes: 'UN-PARKED 2026-10-11: DeepSeek balance re-verified LIVE (deepseek-flash completion OK). Restored to PRIMARY order 1. i-arif DeepSeek Flash Vision: deepseek-flash (V4.1 native multimodal). Upstream: api.deepseek.com. Direct PAYG. min_tokens=200 for reasoning headroom.'
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -2106,28 +2116,6 @@ model_list:
     mode: chat
 - model_name: i-arif
   litellm_params:
-    model: openai/mimo-v2.6-flash
-    api_base: os.environ/MIMO_BASE_URL
-    additional_drop_params: ["include"]
-    api_key: os.environ/MIMO_API_KEY
-    order: 91
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    notes: 'PARKED order 91 (2026-09-22): token-plan lane 429-dead (5 probes/30min,
-      incl 0-credit TTS => entitlement dead not balance). Superseded by mimo-v2.6-pro-payg
-      at order 2. Revive by restoring order: 5. Original: i-arif MiMo v2.5 (Xiaomi).
-      Upstream: xiaomimimo.com. Omni-modal vision.'
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_audio_input: true
-    supports_video_input: true
-    supports_vision: true
-- model_name: i-arif
-  litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/v1
     additional_drop_params: ["include"]
@@ -2139,9 +2127,7 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY
-      (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat
-      and /v1/t2a_v2). Models and base URLs unchanged.'
+    notes_mplan: 'M Plan migration 2026-10-21: api_key now reads MINIMAX_MPLAN_KEY (MiniMax M Plan subscription key; live-probed on OpenAI-compat, Anthropic-compat and /v1/t2a_v2). Models and base URLs unchanged.'
     notes: 'i-arif MiniMax-M3. Upstream: minimax.io. Vision.'
   model_info:
     max_input_tokens: 1048576
@@ -2182,9 +2168,34 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'i-arif MiMo-V2.6-Pro (Xiaomi Platform API / PAYG). Live-verified 2026-09-22:
-      HTTP 200, tool_calls OK, vision OK. min_tokens=200 for reasoning headroom. Native
-      omni-modal. Added per F13 directive.'
+    notes: 'i-arif MiMo-V2.6-Pro (Xiaomi Platform API / PAYG). Live-verified 2026-09-22: HTTP 200, tool_calls OK, vision OK. min_tokens=200 for reasoning headroom. Native omni-modal. Added per F13 directive.'
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_audio_input: true
+    supports_video_input: true
+    supports_vision: true
+    supports_function_calling: true
+- model_name: i-arif
+  litellm_params:
+    # 2026-10-31 F13: upstream id must be the VENDOR id, not our alias name.
+    # "mimo-v2.6-pro-payg" is a litellm alias -> vendor answered 400 Unsupported model.
+    # Repointed to the live MiMo TEAM seat (same vendor family, funded).
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params: ["include"]
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 4
+    # vendor cap: 100 RPM / 10M TPM per account per model -> local throttle
+    rpm: 90
+    tpm: 9000000
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'i-arif MiMo-V2.6-Pro (Xiaomi Platform API / PAYG). Live-verified 2026-09-22: HTTP 200, tool_calls OK, vision OK. min_tokens=200 for reasoning headroom. Native omni-modal. Added per F13 directive.'
   model_info:
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -2278,9 +2289,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
 - model_name: forge-economy
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2294,9 +2303,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
 - model_name: forge-777
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2310,9 +2317,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
 - model_name: i-arif
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2326,9 +2331,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2342,9 +2345,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2358,9 +2359,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
 - model_name: deepseek-flash
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2374,9 +2373,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
 - model_name: deepseek-v4-flash
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2390,9 +2387,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
 - model_name: deepseek-v4-pro
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2406,9 +2401,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
 - model_name: deepseek-v4-flash-vision
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2422,9 +2415,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
-    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
-      direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+    notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
 # ─── fed/free — CANONICAL ZERO-COST LANE (F13 'FREE IS FREE!! FED IT!' 2026-10-26) ───
 # Successor to the FLAME free-inference concept (organ retired 2026-09-04, stays dead).
 # Every rung live-probed HTTP 200 on 2026-10-26 (1-token chat). $0 marginal cost.
@@ -2564,29 +2555,6 @@ model_list:
 # Paid tier proven: gemini-4-argon / gemini-3.8-flash / gemini-3.1-pro-preview all 200 (free tier = 429 limit:0).
 # Judge seats (apex-888, forge-judge) DELIBERATELY EXCLUDED — Gemini must not judge a run Gemini may have served.
 
-- model_name: gemini-flash
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 996
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 65536
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: '2026-10-28 Gemini 2.5 Flash — PAID credit lane (Arif top-up RM70). Native gemini/ prefix = thought_signature preserved, tool-loop safe. 1M ctx, vision. Live probe 200 2026-10-28.'
-
-    notes_fed_park: 'PARKED 2026-10-31: Gemini prepayment credits depleted (402) — probe via :4000 returned 402 PaymentRequiredError. Unpark when AI Studio credit is topped up.'
 - model_name: gemini-flash-lite
   litellm_params:
     model: gemini/gemini-2.5-flash-lite
@@ -2607,239 +2575,6 @@ model_list:
     supports_function_calling: true
     notes: '2026-10-28 Gemini 2.5 Flash-Lite — cheapest paid rung, highest RPD. Text only. Use for bulk/trivial. Live probe 200 2026-10-28.'
 
-- model_name: gemini-pro
-  litellm_params:
-    model: gemini/gemini-2.5-pro
-    api_key: os.environ/GEMINI_API_KEY
-    order: 996
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    max_input_tokens: 1048576
-    max_output_tokens: 65536
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: '2026-10-28 Gemini 2.5 Pro — paid deep-reasoning + vision rung. Expensive: reserve for judge/verify-class work. Live probe 200 2026-10-28.'
-
-    notes_fed_park: 'PARKED 2026-10-31: Gemini prepayment credits depleted (402). Same seat as gemini-flash. Unpark on topup.'
-- model_name: hermes-asi
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: asi-555
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: forge-777
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: forge-builder
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: forge-planner
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: forge-scout
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: forge-scout-pro
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: forge-economy
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: opencode
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: openclaw
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-- model_name: fed/vision
-  litellm_params:
-    model: gemini/gemini-2.5-flash
-    api_key: os.environ/GEMINI_API_KEY
-    order: 950
-    safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
-  model_info:
-    mode: chat
-    supports_vision: true
-    notes: 'Gemini 2.5 Flash late-fallback rung (order 950, wired 2026-10-28). Cross-vendor availability net when every Qwen/DeepSeek/MiMo/GLM rung is down or rate-limited.'
-
-
 - model_name: qwen-auto
   litellm_params:
     model: openai/auto
@@ -2851,18 +2586,6 @@ model_list:
     max_input_tokens: 1000000
     max_output_tokens: 131072
     notes: 'Qwen Token Plan INDIVIDUAL seat (Personal plan, separate credit pool from team seats). Model "auto" = platform meta-router: auto-matches an underlying model per request, balancing quality and cost. Standalone alias, no fallback group. Wired 2026-10-29 F13 sambung.'
-
-- model_name: glm-53-free
-  litellm_params:
-    model: openai/glm-5.3
-    api_base: https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-    api_key: os.environ/DASHSCOPE_API_KEY
-    order: 997
-  model_info:
-    mode: chat
-    max_input_tokens: 1000000
-    max_output_tokens: 131072
-    notes: 'Qwen Model Studio PAYG FREE-TIER lane (not token plan): glm-5.3 free quota 1M tokens, 76.52% remaining 2026-10-29, expires 2026-11-23. Per-model quota — do NOT route other models on this key (their free tiers exhausted, 403 FreeTierOnly). Standalone alias, no fallback group. Wired 2026-10-29 F13.'
 
 litellm_settings:
   callbacks:
