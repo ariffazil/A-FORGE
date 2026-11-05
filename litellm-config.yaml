@@ -842,7 +842,7 @@ model_list:
     api_base: https://api.deepseek.com/v1
     additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 90
     min_tokens: 200
   model_info:
     input_cost_per_token: 3.0e-07
@@ -851,7 +851,7 @@ model_list:
     max_output_tokens: 32768
     mode: chat
     supports_function_calling: true
-    notes: 'forge-777 P5 (DeepSeek V4.1-Flash): canonical name updated 2026-09-28. Cost-frontier default for high-volume inner loops. VERIFIED LIVE 2026-09-28 (direct chat canary 200, balance $19.99).'
+    notes: 'forge-777 P5 PARKED 2026-11-04: direct probe HTTP 402 Insufficient Balance. Was order 1 beside live MiMo, so the router shuffled onto a dead head and the client saw a timeout/503. Live head is mimo-v2.6-flash order 1. Restore to order 1 only after a 200 on api.deepseek.com.'
 - model_name: forge-777
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
@@ -2041,13 +2041,13 @@ model_list:
     api_base: https://api.deepseek.com/v1
     additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 90
     max_input_tokens: 1048576
     max_output_tokens: 131072
     min_tokens: 200
     mode: chat
     supports_vision: true
-    notes: 'UN-PARKED 2026-10-11: DeepSeek balance re-verified LIVE (deepseek-flash completion OK). Restored to PRIMARY order 1. i-arif DeepSeek Flash Vision: deepseek-flash (V4.1 native multimodal). Upstream: api.deepseek.com. Direct PAYG. min_tokens=200 for reasoning headroom.'
+    notes: 'PARKED 2026-11-04: direct probe HTTP 402 Insufficient Balance. Was i-arif order 1. Live head is mimo-v2.6-pro order 1. Restore only after a 200 on api.deepseek.com.'
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
@@ -2159,7 +2159,7 @@ model_list:
     api_base: os.environ/MIMO_BASE_URL
     additional_drop_params: ["include"]
     api_key: os.environ/MIMO_API_KEY
-    order: 4
+    order: 1
     # vendor cap: 100 RPM / 10M TPM per account per model -> local throttle
     rpm: 90
     tpm: 9000000
@@ -2186,7 +2186,7 @@ model_list:
     api_base: os.environ/MIMO_BASE_URL
     additional_drop_params: ["include"]
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 4
+    order: 1
     # vendor cap: 100 RPM / 10M TPM per account per model -> local throttle
     rpm: 90
     tpm: 9000000
@@ -2310,7 +2310,7 @@ model_list:
     api_base: https://openrouter.ai/api/v1
     additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
-    order: 2
+    order: 91
   model_info:
     input_cost_per_token: 4.9e-08
     output_cost_per_token: 3.75e-07
@@ -2324,7 +2324,7 @@ model_list:
     api_base: https://openrouter.ai/api/v1
     additional_drop_params: ["include"]
     api_key: os.environ/OPENROUTER_API_KEY
-    order: 2
+    order: 91
   model_info:
     input_cost_per_token: 4.9e-08
     output_cost_per_token: 3.75e-07
