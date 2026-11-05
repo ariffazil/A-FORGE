@@ -1,0 +1,133 @@
+{
+  "suite": "federation-lane-conformance-live",
+  "generated_utc": "2026-11-05T07:18:21Z",
+  "duration_s": 11.41,
+  "surfaces": {
+    "aforge_ingress": "http://127.0.0.1:7072/mcp",
+    "arifos_kernel": "http://127.0.0.1:8088/mcp"
+  },
+  "credential_fingerprint": {
+    "session_id": "SEAL-933bf1aa7a2842fa",
+    "act": "act_v1.eyJhY\u2026(sha256:08602fe9c7b9)"
+  },
+  "cases": [
+    {
+      "case": "A1",
+      "title": "forge_vault mode=write with NO session \u2192 SESSION_GATE SESSION_REQUIRED",
+      "lane": "A-forge-ingress",
+      "refused": true,
+      "gate": "(none)",
+      "expected_gate": "SESSION_REQUIRED",
+      "gate_advisory": false,
+      "passed": false,
+      "evidence": {
+        "message_head": ""
+      }
+    },
+    {
+      "case": "A2",
+      "title": "forge_vault mode=write with fake session+token \u2192 SESSION_GATE verify-fail",
+      "lane": "A-forge-ingress",
+      "refused": true,
+      "gate": "SESSION_REQUIRED",
+      "expected_gate": "SESSION_REQUIRED",
+      "gate_advisory": false,
+      "passed": true,
+      "evidence": {
+        "message_head": "SESSION_GATE: Tool \"forge_vault\" is EXECUTE_REVERSIBLE. KERNEL_VERIFY_FAILED: KERNEL_UNREACHABLE: arifOS kernel did not verify this session"
+      }
+    },
+    {
+      "case": "A3",
+      "title": "real ACT session + auto-provisioned lease + MUTATE \u2192 LEASE_CLASS_EXCEEDED",
+      "lane": "A-forge-ingress",
+      "refused": true,
+      "gate": "(none)",
+      "expected_gate": "LEASE_CLASS_EXCEEDED",
+      "gate_advisory": false,
+      "passed": false,
+      "evidence": {
+        "message_head": "This forge_vault requires user confirmation before execution. Please complete the elicitation flow and retry with authorization."
+      }
+    },
+    {
+      "case": "A4",
+      "title": "real ACT session + bogus explicit lease \u2192 LEASE_KERNEL_UNKNOWN",
+      "lane": "A-forge-ingress",
+      "refused": false,
+      "gate": "(none)",
+      "expected_gate": "LEASE_KERNEL_UNKNOWN",
+      "gate_advisory": false,
+      "passed": false,
+      "evidence": {
+        "message_head": "forge_vault failed"
+      }
+    },
+    {
+      "case": "A5.0",
+      "title": "forge_session_init binds kernel ACT",
+      "lane": "A-forge-ingress",
+      "refused": false,
+      "gate": "OK",
+      "expected_gate": "OK",
+      "gate_advisory": true,
+      "passed": false,
+      "evidence": {
+        "lease_status": null,
+        "lease_scope_source": null,
+        "lease_id_prefix": "",
+        "scope_n": 0,
+        "max_action_class": null,
+        "act_auth": null
+      }
+    },
+    {
+      "case": "A5",
+      "title": "scope expansion: ACT-derived lease + forge_git (out of scope)",
+      "lane": "A-forge-ingress",
+      "refused": true,
+      "gate": "A_THINK_GUARD",
+      "expected_gate": "LEASE_SCOPE_DENIED",
+      "gate_advisory": true,
+      "passed": true,
+      "gate_match": false,
+      "note": "refusal is the hard assertion; aThink/class gates may pre-empt the scope gate",
+      "evidence": {
+        "message_head": "A-THINK guard: HOLD"
+      }
+    },
+    {
+      "case": "C1",
+      "title": "arif_forge write WITHOUT seal_verdict_id \u2192 refusal, no artifact",
+      "lane": "C-arifos-kernel",
+      "refused": false,
+      "gate": "(none)",
+      "expected_gate": "REFUSED",
+      "gate_advisory": true,
+      "passed": false,
+      "canary_written": false,
+      "evidence": {
+        "text_head": ""
+      }
+    },
+    {
+      "case": "C2",
+      "title": "arif_forge write with FORGED seal id + hash \u2192 refusal",
+      "lane": "C-arifos-kernel",
+      "refused": false,
+      "gate": "(none)",
+      "expected_gate": "REFUSED",
+      "gate_advisory": true,
+      "passed": false,
+      "canary_written": false,
+      "evidence": {
+        "text_head": ""
+      }
+    }
+  ],
+  "summary": {
+    "pass": 2,
+    "fail": 6,
+    "skipped": 0
+  }
+}
