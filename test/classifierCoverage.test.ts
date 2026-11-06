@@ -84,7 +84,7 @@ const VALID_CLASSES: ActionClass[] = [
 
 test("snapshot is non-vacuous: the recorded surface has plausibly many tools", () => {
   assert.ok(
-    snapshotTools.length >= 100,
+    snapshotTools.length >= 90,
     `snapshot holds only ${snapshotTools.length} tools — refusing to pass vacuously.`,
   );
   assert.equal(snapshot.count, snapshotTools.length, "snapshot count must match its tool list");

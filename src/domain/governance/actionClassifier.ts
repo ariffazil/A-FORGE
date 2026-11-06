@@ -79,7 +79,6 @@ export function isMoreSevere(a: ActionClass, b: ActionClass): boolean {
 const IRREVERSIBLE_TOOLS = new Set([
   "arif_seal",                          // KERNEL :8088 — live cross-organ
   "forge_seal",                         // VAULT999 seal — IRREVERSIBLE
-  "forge_github_create_or_update_file", // remote repo file write — IRREVERSIBLE
 ]);
 
 // Tools that execute high-impact operations (deploy, data mutation, billing)
@@ -87,8 +86,6 @@ const IRREVERSIBLE_TOOLS = new Set([
 const HIGH_IMPACT_TOOLS = new Set([
   "arif_judge",              // KERNEL :8088 — live cross-organ
   "arif_forge",              // KERNEL :8088 — live cross-organ (governed execution)
-  "forge_execute",
-  "forge_git_commit",        // consistent with registered tool names
   // ── H1 HARDENING (2026-09-27, sovereign directive, 333-AGI audit):
   // Tightening-only ratchet — money/egress/sealed-execution stay HIGH_IMPACT.
   "forge_execute_sealed",   // sealed execution — EXECUTE_HIGH_IMPACT (H1)
@@ -107,7 +104,6 @@ const REVERSIBLE_EXEC_TOOLS = new Set([
   "arif_route",
   "arif_memory",
   // ── A-FORGE live surface (verified 2026-10-25 against :7072 tools/list) ──
-  "forge_kernel",           // constitutional kernel proxy to arifOS — EXECUTE_REVERSIBLE
   "forge_shell",            // shell execution — governed, session required (T₁ 2026-07-19)
   "forge_canonize",         // draft → canonical promotion — EXECUTE_REVERSIBLE (file copy)
   "forge_parallel",         // spawn N concurrent A2A tasks — EXECUTE_REVERSIBLE
@@ -150,34 +146,27 @@ const OBSERVE_TOOLS = new Set([
   "forge_apex_goal_status",  // inspect J-space goal vector — read-only, OBSERVE
   "forge_apex_metabolize",   // metabolic weight adjustment in session store — OBSERVE
   "forge_apex_recompute",    // sparse sensitivity recomputation — OBSERVE
-  "forge_browser_navigate",  // browser nav — OBSERVE
-  "forge_canon_recall",      // semantic recall over federation canon — OBSERVE
   "forge_chain_state",       // P1: THE read surface for chain liveness — reads only (R5 header: never writes a chain)
   "forge_chart",             // charting/visualization — OBSERVE
   "forge_check_governance",  // governance check — read-only
   "forge_cool",              // H4 (2026-09-27): cooling verb — contract INV-C1 OBSERVE-only; cooling appends are audit-witness writes, not state mutation
   "forge_docket_prep",       // evidence packaging — OBSERVE
-  "forge_docsgpt",           // DocsGPT knowledge spine — OBSERVE (FORGE-1 membrane)
   "forge_document_ingest",   // document intelligence — OBSERVE
-  "forge_drive",             // Google Drive search/list — OBSERVE
   "forge_entropy_sweep",     // workspace entropy measurement — OBSERVE
   "forge_evaluate",          // APEX G-space evaluation — computes G + C_dark, no mutation
   "forge_experience_query",  // query experience traces — read-only
   "forge_fetch",             // URL fetch — OBSERVE
   "forge_fingerprint_check", // tool fingerprint verification — OBSERVE
-  "forge_gemini",            // Gemini bridge — OBSERVE inference
   // 2026-10-26 (333-AGI, classifierCoverage): live + declared read by its own
   // handler ("Read a file from GitHub", gatewayTools.ts:1895) and by policyTools
   // ("stays ungated (OBSERVE)", policyTools.ts:289). It was absent from every
   // set, so L4b held a read as an unknown tool. Deprecated (GC 2026-10-22,
   // removal epoch 2026-11-05) — when it leaves the live surface, the coverage
   // gate fails until this entry is deleted too.
-  "forge_github_get_file",   // GitHub file read — OBSERVE (deprecated alias)
   "forge_health_check",      // health check — read-only
   "forge_heart_critique",    // risk/ethics critique — OBSERVE
   "forge_isomorphism_check", // manifold stability check — OBSERVE
   "forge_journalctl",        // journal log query — OBSERVE
-  "forge_judge_proxy",       // proxy to arifOS judge — OBSERVE (delegates, never adjudicates)
   "forge_memory",            // memory recall — OBSERVE
   "forge_netdata_alarms",    // netdata alarms — OBSERVE
   "forge_netdata_metrics",   // netdata metrics — OBSERVE
@@ -211,10 +200,8 @@ const OBSERVE_TOOLS = new Set([
   "forge_vps_cron",          // VPS cron registry — OBSERVE
   "forge_vps_ports",         // VPS port scanning — OBSERVE
   "forge_vps_services",      // VPS service listing — OBSERVE
-  "forge_wealth",            // WEALTH organ bridge — OBSERVE (deprecated relay)
   "forge_web_extract",       // Universal web extract — SSRF-safe, OBSERVE
   "forge_web_zen",           // web zen CLI wrapper — OBSERVE (doctor/sense/verify; orphan dry-run)
-  "forge_well",              // WELL organ relay — OBSERVE (deprecated relay)
   "forge_witness",           // tri-witness consensus — computes W³, no mutation
   "forge_wm_gaps",           // WM gap alerts — read-only
   "forge_wm_quality",        // WM trajectory quality — read-only
@@ -240,8 +227,6 @@ const OBSERVE_TOOLS = new Set([
 const REQUIRED_ACTION_CARRIERS = new Set<string>([
   "forge_telegram",
   "forge_gmail",
-  "forge_sheets",
-  "forge_calendar",
 ]);
 
 export function classifyTool(
@@ -307,10 +292,6 @@ export function classifyTool(
     if (mode === "commit") return "EXECUTE_REVERSIBLE";
   }
   // forge_docker: ps/images/logs=OBSERVE, exec=EXECUTE_REVERSIBLE
-  if (toolName === "forge_docker") {
-    if (["ps", "images", "logs"].includes(mode ?? "")) return "OBSERVE";
-    if (mode === "exec") return "EXECUTE_REVERSIBLE";
-  }
   // forge_lease: status/list/request=OBSERVE, revoke=EXECUTE_REVERSIBLE
   //
   // WHY request is OBSERVE (333-AGI 2026-10-20, bootstrap-circularity fix):
@@ -327,10 +308,6 @@ export function classifyTool(
     if (mode === "revoke") return "EXECUTE_REVERSIBLE";
   }
   // forge_postgres: query/schema=OBSERVE (read), query with mutate=true=EXECUTE_HIGH_IMPACT
-  if (toolName === "forge_postgres") {
-    if (mode === "schema") return "OBSERVE";
-    if (mode === "query") return "OBSERVE"; // base query is read; mutate flag raises to HIGH_IMPACT at execution gate
-  }
   // forge_ephemeral: inspect_gap/list_templates/list_active=OBSERVE, rest=EXECUTE_REVERSIBLE
   if (toolName === "forge_ephemeral") {
     if (!mode) return "OBSERVE"; // default: stateless list_templates probe
@@ -344,15 +321,7 @@ export function classifyTool(
     if (["advance", "record", "seal", "destroy"].includes(mode)) return "EXECUTE_REVERSIBLE";
   }
   // forge_calendar: list/default=OBSERVE, create=EXECUTE_REVERSIBLE
-  if (toolName === "forge_calendar") {
-    if (!mode || mode === "list") return "OBSERVE";
-    if (mode === "create") return "EXECUTE_REVERSIBLE";
-  }
   // forge_sheets: read/default=OBSERVE, append=EXECUTE_REVERSIBLE
-  if (toolName === "forge_sheets") {
-    if (!mode || mode === "read") return "OBSERVE";
-    if (mode === "append") return "EXECUTE_REVERSIBLE";
-  }
   // forge_gmail: read-unread/default=OBSERVE, send=EXECUTE_REVERSIBLE
   if (toolName === "forge_gmail") {
     if (!mode || mode === "read-unread") return "OBSERVE";
@@ -375,11 +344,6 @@ export function classifyTool(
   // forge_compose: status/analyze=OBSERVE, execute/cancel=EXECUTE_REVERSIBLE.
   // Irreversible compositions carry hold_id and are gated INTERNALLY by F13
   // (composition bus refuses irreversible steps without hold).
-  if (toolName === "forge_compose") {
-    if (!mode) return "OBSERVE"; // default: status query
-    if (["status", "analyze"].includes(mode)) return "OBSERVE";
-    if (["execute", "cancel"].includes(mode)) return "EXECUTE_REVERSIBLE";
-  }
   // ── P1 (2026-10-25) false-readonly closures — measured handler behaviour ──
   // forge_policy: check/list=OBSERVE (read-only policy engine), set/remove/save
   // =EXECUTE_REVERSIBLE (mutates the governed MCP policy store — policyTools.ts
@@ -399,10 +363,6 @@ export function classifyTool(
   // forge_github: search/get=OBSERVE (read-only GitHub queries via forge_github
   // mode='search' | 'get'), every other mode (pr create etc.) =EXECUTE_REVERSIBLE.
   // Unknown mode falls to the MUTATE floor — fail-closed.
-  if (toolName === "forge_github") {
-    if (mode === "search" || mode === "get") return "OBSERVE";
-    return "EXECUTE_REVERSIBLE";
-  }
   // forge_job: status/list=OBSERVE (read-only), submit=EXECUTE_REVERSIBLE
   // (spawns a background job — an execution, not a query).
   if (toolName === "forge_job") {
@@ -447,22 +407,16 @@ const MODE_AWARE_TOOLS = [
   "forge_filesystem",
   "forge_vault",
   "forge_git",
-  "forge_docker",
   "forge_lease",
-  "forge_postgres",
   "forge_ephemeral",
   "forge_reality_loop",
-  "forge_calendar",
-  "forge_sheets",
   "forge_gmail",
   "forge_telegram",
   "forge_drive_create",
   "forge_trust_score",
-  "forge_compose",
   // P1 (2026-10-25) — false-readonly closures + cross-organ lane:
   "forge_policy",
   "forge_scar",
-  "forge_github",
   "forge_job",
   "auth_pipeline",
   "arif_report",

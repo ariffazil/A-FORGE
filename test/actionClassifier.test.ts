@@ -45,7 +45,7 @@ test("H1: money/send/sealed-execute tools are EXECUTE_HIGH_IMPACT", () => {
 });
 
 test("H2: remote-repo file writer resolves to IRREVERSIBLE (severity floor)", () => {
-  assert.equal(classifyTool("forge_github_create_or_update_file"), "IRREVERSIBLE");
+  // REMOVED 2026-11-07: forge_github_create_or_update_file (GC epoch executed) — assertion retired; IRREVERSIBLE floor now carried by forge_seal / arif_seal.
   // P1 (2026-10-25): forge_github_create_issue is not on the live registry
   // (tools_sot.yaml 118) — its entry was removed as dead. The MUTATE floor
   // governs any reintroduction; it may never fall to OBSERVE.
@@ -61,12 +61,7 @@ test("H3: forge_predict stays OBSERVE (pure evidence tool, no session gating)", 
 test("H4: former name-drift tools are classified (no fail-closed HOLD on live surface)", () => {
   assert.equal(isClassifiedTool("forge_cool"), true);
   assert.equal(classifyTool("forge_cool"), "OBSERVE");
-  assert.equal(isClassifiedTool("forge_compose"), true);
-  // compose is mode-aware
-  assert.equal(classifyTool("forge_compose", "status"), "OBSERVE");
-  assert.equal(classifyTool("forge_compose", "analyze"), "OBSERVE");
-  assert.equal(classifyTool("forge_compose", "execute"), "EXECUTE_REVERSIBLE");
-  assert.equal(classifyTool("forge_compose", "cancel"), "EXECUTE_REVERSIBLE");
+  // REMOVED 2026-11-07: forge_compose (GC epoch executed) — mode-aware coverage lives in forge_filesystem / forge_policy ladder tests.
   // P1 (2026-10-25): auth_pipeline is NOT read-only — non-dry_run runs the
   // full AUTH pipeline. Only the dry_run validation path is OBSERVE.
   assert.equal(isClassifiedTool("auth_pipeline"), true);
@@ -84,7 +79,7 @@ test("fail-closed contract: unknown tool → MUTATE floor, unclassified, gate HO
 });
 
 test("seals are IRREVERSIBLE (constitutional floor)", () => {
-  for (const t of ["forge_seal", "arif_seal", "forge_github_create_or_update_file"]) {
+  for (const t of ["forge_seal", "arif_seal"]) {
     assert.equal(classifyTool(t), "IRREVERSIBLE", `${t} must never be downgraded`);
   }
 });
@@ -176,12 +171,7 @@ test("P1: false-readonly closures — write modes may not hide behind an OBSERVE
   assert.equal(classifyTool("forge_scar", "list"), "OBSERVE");
   assert.equal(classifyTool("forge_scar", "consult"), "OBSERVE");
   assert.equal(classifyTool("forge_scar", "seal"), "EXECUTE_REVERSIBLE");
-  // forge_github: read modes OBSERVE; every other mode (pr create …) governed;
-  // unknown mode takes the MUTATE floor — fail-closed, never OBSERVE.
-  assert.equal(classifyTool("forge_github", "search"), "OBSERVE");
-  assert.equal(classifyTool("forge_github", "get"), "OBSERVE");
-  assert.equal(classifyTool("forge_github", "pr"), "EXECUTE_REVERSIBLE");
-  assert.equal(classifyTool("forge_github", "definitely_unknown_mode"), "EXECUTE_REVERSIBLE");
+  // REMOVED 2026-11-07: forge_github (GC epoch executed) — fail-closed unknown-mode coverage lives in forge_telegram/forge_gmail carrier tests.
   // forge_job: submit spawns a background job — an execution, not a query.
   assert.equal(classifyTool("forge_job", "status"), "OBSERVE");
   assert.equal(classifyTool("forge_job", "list"), "OBSERVE");
@@ -215,12 +205,8 @@ test("F1 carrier: verb-carrier args classify by the action, not the OBSERVE defa
   );
   // Same defect class on the Workspace trio.
   assert.equal(classifyTool("forge_gmail", { verb: "send" }), "EXECUTE_REVERSIBLE");
-  assert.equal(classifyTool("forge_sheets", { verb: "append" }), "EXECUTE_REVERSIBLE");
-  assert.equal(classifyTool("forge_calendar", { verb: "create" }), "EXECUTE_REVERSIBLE");
   // Their read verbs stay reads.
   assert.equal(classifyTool("forge_gmail", { verb: "read-unread" }), "OBSERVE");
-  assert.equal(classifyTool("forge_sheets", { verb: "read" }), "OBSERVE");
-  assert.equal(classifyTool("forge_calendar", { verb: "list" }), "OBSERVE");
   // String carrier regression (legacy callers pass args.mode as string).
   assert.equal(classifyTool("forge_telegram", "send"), "EXECUTE_REVERSIBLE");
   assert.equal(classifyTool("forge_telegram", "get_me"), "OBSERVE");
@@ -228,7 +214,7 @@ test("F1 carrier: verb-carrier args classify by the action, not the OBSERVE defa
 
 test("F1 carrier: missing or unknown action on a required-carrier tool fails closed", () => {
   // Schema requires verb (not optional) — a dispatch without it is malformed.
-  for (const t of ["forge_telegram", "forge_gmail", "forge_sheets", "forge_calendar"]) {
+  for (const t of ["forge_telegram", "forge_gmail"]) {
     assert.equal(classifyTool(t, {}), "EXECUTE_REVERSIBLE", `${t} without carrier`);
     assert.equal(classifyTool(t), "EXECUTE_REVERSIBLE", `${t} modeless (annotation path)`);
     assert.equal(classifyTool(t, { verb: "not_a_real_verb" }), "EXECUTE_REVERSIBLE", `${t} unknown verb`);
