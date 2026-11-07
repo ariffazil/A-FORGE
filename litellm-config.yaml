@@ -7,6 +7,7 @@
 # Bump log: 2026-10-29 333-AGI (F13 'yes sambung laa') — ADDED standalone alias qwen-auto: Qwen Token Plan INDIVIDUAL seat (QWEN_INDIVIDUAL_API_KEY, credit was idle/unwired), model 'auto' = platform meta-router (docs 2026-10-21; live-probe 200/1.5s 2026-10-29). No cascade/fallback changes. Revert: cp /root/forge_work/backups/litellm-config-20261029T032249Z-pre-qwen-auto.yaml /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
 # Bump log: 2026-10-29 333-AGI (F13 'GLM5.3 lets utilized it') — ADDED standalone alias glm-53-free: PAYG free-tier lane (DASHSCOPE_API_KEY @ dashscope-intl — PAYG var holds unresolved {env:} placeholder from 2026-10-29 12:36 flat.env regen, this var verified real), glm-5.3 free quota 76.52% of 1M remaining, expires 2026-11-23. Zero-cost kernel-test lane. Standalone, no cascade. Revert: cp /root/forge_work/backups/litellm-config-20261029T065224Z-pre-glm-free.yaml /root/A-FORGE/litellm-config.yaml && apply-litellm-config.sh
 # WRITER-OF-RECORD: 333-AGI (accountable), F13 SOVEREIGN (owner). 
+# Bump log: 2026-11-07 333-AGI — ADDED qwen-auto fallback ladder (deepseek-flash, glm-5.3-flash, fed/sealion, sovereign-west) after qwen-auto 429 token-plan quota death (until 11-30); no other routing change. Rollback: remove qwen-auto block in router_settings.fallbacks + rerun apply-litellm-config.sh.
 # Bump log: 2026-11-04 333-AGI (F13 Arif 'optimize, lower entropy') — tier-1 prune: 13 gemini corpse rungs deleted (402 PaymentRequired, probed dead 2026-11-04), glm-53-free alias deleted (403 exhausted), forge-777 mimo flash unparked 901->1 (F13 coding=flash), exact-duplicate rungs collapsed. Corpse law: parked+probed-dead >=1 session => delete (git preserves). Revert: cp /root/forge_work/backups/litellm-config.yaml.bak-mimo3key-20261103T235020Z /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
 # Bump log: 2026-11-04 333-AGI (F13 Arif in-session 'i-ARIF have pro deep reasoning, coding agents flash model') — i-arif mimo rungs: pro only (+old-team pro tail); forge-777 mimo rungs: flash only (dups collapsed); scout-pro/asi-555 stay pro by role. Revert: cp /root/forge_work/backups/litellm-config.yaml.bak-mimo3key-20261103T235020Z /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
 # Bump log: 2026-11-04 333-AGI (F13 Arif in-session + 888-APEX RECOMMEND_SEAL ses_e5c32387fffeZERB63Z1IMd7s2) — MiMo 3-key fallback: 9 sibling deployments (MIMO_TEAM_PLAN2_API_KEY=new seat-2 primary, MIMO_TOKEN_PLAN_API_KEY=old team tail [renews ~2026-12-01], MIMO_INDIVIDUAL_PLAN_API_KEY=individual tail; env via team-plan.env drop-in). Revert: cp /root/forge_work/backups/litellm-config.yaml.bak-mimo3key-20261103T235020Z /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
@@ -842,16 +843,16 @@ model_list:
     api_base: https://api.deepseek.com/v1
     additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 90
+    order: 1
     min_tokens: 200
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
     max_input_tokens: 1048576
-    max_output_tokens: 32768
+    max_output_tokens: 393216
     mode: chat
     supports_function_calling: true
-    notes: 'forge-777 P5 PARKED 2026-11-04: direct probe HTTP 402 Insufficient Balance. Was order 1 beside live MiMo, so the router shuffled onto a dead head and the client saw a timeout/503. Live head is mimo-v2.6-flash order 1. Restore to order 1 only after a 200 on api.deepseek.com.'
+    notes: 'forge-777 P5 RESTORED 2026-11-07: direct probe HTTP 200 ($49.92 balance). Restored to order 1 alongside MiMo. DeepSeek-V4.1-Flash canonical.'
 - model_name: forge-777
   litellm_params:
     model: openai/aisingapore/Qwen-SEA-LION-v4.5-27B-IT
@@ -2041,18 +2042,82 @@ model_list:
     api_base: https://api.deepseek.com/v1
     additional_drop_params: ["include"]
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 90
+    order: 1
     max_input_tokens: 1048576
-    max_output_tokens: 131072
+    max_output_tokens: 393216
     min_tokens: 200
     mode: chat
     supports_vision: true
-    notes: 'PARKED 2026-11-04: direct probe HTTP 402 Insufficient Balance. Was i-arif order 1. Live head is mimo-v2.6-pro order 1. Restore only after a 200 on api.deepseek.com.'
+    notes: 'i-arif DeepSeek-V4.1-Flash (canonical deepseek-flash). Direct DeepSeek PAYG. Restored 2026-11-07 after $50 topup (balance $49.92, HTTP 200 verified). 1M ctx, native multimodal vision + reasoning.'
   model_info:
     input_cost_per_token: 3.0e-07
     output_cost_per_token: 1.2e-06
     max_input_tokens: 1048576
-    max_output_tokens: 131072
+    max_output_tokens: 393216
+    mode: chat
+    supports_vision: true
+- model_name: i-arif
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://api.deepseek.com/v1
+    additional_drop_params: ["include"]
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 2
+    max_input_tokens: 1048576
+    max_output_tokens: 393216
+    min_tokens: 200
+    mode: chat
+    notes: 'i-arif DeepSeek-V4-Pro (flagship deep reasoning). Direct DeepSeek PAYG. Added 2026-11-07 after $50 topup (balance $49.92, HTTP 200 verified). 1M ctx, deep reasoning trace / thinking mode.'
+  model_info:
+    input_cost_per_token: 1.32e-06
+    output_cost_per_token: 3.96e-06
+    max_input_tokens: 1048576
+    max_output_tokens: 393216
+    mode: chat
+- model_name: i-arif
+  litellm_params:
+    model: gemini/deep-research-preview-04-2026
+    api_key: os.environ/GEMINI_API_KEY
+    order: 4
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+    notes: 'i-arif Gemini Deep Research (models/deep-research-preview-04-2026). Autonomous multi-step research agent.'
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+- model_name: i-arif
+  litellm_params:
+    model: gemini/gemini-2.5-pro
+    api_key: os.environ/GEMINI_API_KEY
+    order: 5
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    safety_settings:
+    - category: HARM_CATEGORY_HARASSMENT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_HATE_SPEECH
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
+      threshold: BLOCK_NONE
+    - category: HARM_CATEGORY_DANGEROUS_CONTENT
+      threshold: BLOCK_NONE
+    notes: 'i-arif Gemini 2.5 Pro (deep reasoning / complex research). Upstream: Google.'
+  model_info:
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
     mode: chat
     supports_vision: true
 - model_name: i-arif
@@ -2803,6 +2868,11 @@ router_settings:
   - fed/sealion:
     - qwen3.8-max
     - mimo-v2.6-flash
+    - sovereign-west
+  - qwen-auto:
+    - deepseek-flash
+    - glm-5.3-flash
+    - fed/sealion
     - sovereign-west
   context_window_fallbacks:
   - forge-777:
