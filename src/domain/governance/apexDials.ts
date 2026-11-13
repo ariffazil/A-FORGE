@@ -39,7 +39,7 @@ export interface ApexGateVerdict {
   detail: string;
   boundary?: "LIVE" | "CACHED" | "INFERRED";
   action_class?: "READ" | "MUTATE" | "ATOMIC" | "IRREVERSIBLE";
-  proof_level?: "ZKPC_NONE" | "ZKPC_OBSERVATION" | "ZKPC_AUDIT" | "ZKPC_CERTAINTY";
+  proof_level?: "PROOF_NONE" | "PROOF_OBSERVED" | "PROOF_ATTESTED" | "PROOF_VERIFIED";
   actor_id?: string;
 }
 
@@ -184,9 +184,9 @@ function reversibilityGate(actionClass: "READ" | "MUTATE" | "ATOMIC" | "IRREVERS
 }
 
 function proofGate(proofLevel: string, actionClass: string): ApexGateVerdict {
-  const required: Record<string, string> = { READ: "ZKPC_NONE", MUTATE: "ZKPC_OBSERVATION", ATOMIC: "ZKPC_AUDIT", IRREVERSIBLE: "ZKPC_CERTAINTY" };
-  const order: Record<string, number> = { ZKPC_NONE: 0, ZKPC_OBSERVATION: 1, ZKPC_AUDIT: 2, ZKPC_CERTAINTY: 3 };
-  const req = required[actionClass] ?? "ZKPC_OBSERVATION";
+  const required: Record<string, string> = { READ: "PROOF_NONE", MUTATE: "PROOF_OBSERVED", ATOMIC: "PROOF_ATTESTED", IRREVERSIBLE: "PROOF_VERIFIED" };
+  const order: Record<string, number> = { PROOF_NONE: 0, PROOF_OBSERVED: 1, PROOF_ATTESTED: 2, PROOF_VERIFIED: 3 };
+  const req = required[actionClass] ?? "PROOF_OBSERVED";
   const have = order[proofLevel] ?? 0;
   const need = order[req] ?? 1;
   return {
@@ -281,7 +281,7 @@ export function buildApexEnvelope(params: {
     energy: energyGate(params.costUsed ?? 0, params.costBudget ?? 1, params.landauerRatio ?? 1),
     authority: authorityGate(params.actorId, params.registry),
     reversibility: reversibilityGate(params.actionClass ?? "READ"),
-    proof: proofGate(params.proofLevel ?? "ZKPC_OBSERVATION", params.actionClass ?? "READ"),
+    proof: proofGate(params.proofLevel ?? "PROOF_OBSERVED", params.actionClass ?? "READ"),
     sovereign: sovereignGate(params.f13Halt ?? false, params.humanPresent ?? true, params.actionClass ?? "READ"),
   };
   const dials = gatesToDials6(gates);
@@ -440,7 +440,7 @@ export function computeApex10Gates(
   opts: {
     actor_id?: string;
     action_class?: "READ" | "MUTATE" | "ATOMIC" | "IRREVERSIBLE";
-    proof_level?: "ZKPC_NONE" | "ZKPC_OBSERVATION" | "ZKPC_AUDIT" | "ZKPC_CERTAINTY";
+    proof_level?: "PROOF_NONE" | "PROOF_OBSERVED" | "PROOF_ATTESTED" | "PROOF_VERIFIED";
     boundary?: "LIVE" | "CACHED" | "INFERRED";
     compute_budget_used?: number;
     compute_budget_max?: number;
@@ -449,7 +449,7 @@ export function computeApex10Gates(
   const {
     actor_id,
     action_class = "READ",
-    proof_level = "ZKPC_OBSERVATION",
+    proof_level = "PROOF_OBSERVED",
     boundary = "LIVE",
     compute_budget_used = 0.5,
     compute_budget_max = 1.0,
@@ -489,11 +489,11 @@ export function computeApex10Gates(
   const reversibilityScore = acScores[action_class] ?? 0.5;
   const reversibility = gate(action_class !== "IRREVERSIBLE", reversibilityScore, action_class, { action_class });
 
-  // Gate 9: Proof — ZKPC level matches risk
-  const proofOrder: Record<string, number> = { ZKPC_NONE: 0, ZKPC_OBSERVATION: 1, ZKPC_AUDIT: 2, ZKPC_CERTAINTY: 3 };
-  const requiredProof: Record<string, string> = { READ: "ZKPC_NONE", MUTATE: "ZKPC_OBSERVATION", ATOMIC: "ZKPC_AUDIT", IRREVERSIBLE: "ZKPC_CERTAINTY" };
+  // Gate 9: Proof — proof level matches risk
+  const proofOrder: Record<string, number> = { PROOF_NONE: 0, PROOF_OBSERVED: 1, PROOF_ATTESTED: 2, PROOF_VERIFIED: 3 };
+  const requiredProof: Record<string, string> = { READ: "PROOF_NONE", MUTATE: "PROOF_OBSERVED", ATOMIC: "PROOF_ATTESTED", IRREVERSIBLE: "PROOF_VERIFIED" };
   const have = proofOrder[proof_level] ?? 1;
-  const need = proofOrder[requiredProof[action_class] ?? "ZKPC_OBSERVATION"] ?? 1;
+  const need = proofOrder[requiredProof[action_class] ?? "PROOF_OBSERVED"] ?? 1;
   const proofScore = Math.min(1, have / Math.max(need, 1));
   const proof = gate(have >= need, proofScore, `${proof_level} >= ${requiredProof[action_class]}`, { proof_level });
 

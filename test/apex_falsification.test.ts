@@ -210,7 +210,7 @@ describe("AXIOM A5 — F8 Threshold (Genius Boundary)", () => {
     const result = computeApex10Gates(floors, {
       actor_id: "test",
       action_class: "READ",
-      proof_level: "ZKPC_CERTAINTY",
+      proof_level: "PROOF_VERIFIED",
     });
     assert.strictEqual(result.verdict, "SEAL");
   });
@@ -592,7 +592,7 @@ describe("CONSISTENCY — All G implementations agree", () => {
     const envelope = computeApex10Gates(floors, {
       actor_id: "test",
       action_class: "READ",
-      proof_level: "ZKPC_CERTAINTY",
+      proof_level: "PROOF_VERIFIED",
       compute_budget_used: 0,   // zero cost = high energy score
       compute_budget_max: 1,
     });

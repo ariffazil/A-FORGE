@@ -102,7 +102,7 @@ describe("NASH COLLAPSE (Zero Boundary)", () => {
     const result = computeApex10Gates(floors, {
       actor_id: "test",
       action_class: "READ",
-      proof_level: "ZKPC_CERTAINTY",
+      proof_level: "PROOF_VERIFIED",
     });
     assert.ok(result.G >= 0.90, `Expected G >= 0.90, got ${result.G}`);
     assert.strictEqual(result.verdict, "SEAL");
