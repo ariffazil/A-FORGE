@@ -40,6 +40,11 @@ MAX_IMAGE_BYTES = int(os.environ.get("MAX_IMAGE_BYTES", "10_000_000"))  # 10 MB
 
 # Models that need URL→base64 conversion (reject external URLs)
 MIMO_MODELS = frozenset({
+    # V2.6 series - live IDs after vendor retirement of V2.5 LLM IDs (2026-10-21)
+    "mimo-v2.6-pro",
+    "mimo-v2.6-flash",
+    "mimo-v2.6-pro-ultraspeed",
+    # Retired IDs kept for alias traffic (litellm ALIAS maps these to V2.6)
     "mimo-v2.5",
     "mimo-v2.5-pro",
     "mimo-v2.5-ultraspeed",

@@ -51,7 +51,7 @@ Hermes (Telegram gateway)
 | 2 | qwen3.8-max | Qwen Individual | Token Plan | ✓ |
 | 3 | qwen3.8-max | OpenCode Go | opencode.ai | ✓ |
 | 4 | gemini-3.6-flash | Google | Google AI | ✓ |
-| 5 | mimo-v2.5 | Xiaomi | xiaomimimo.com | ✓ |
+| 5 | mimo-v2.6-flash | Xiaomi | xiaomimimo.com | ✓ |
 | 6 | MiniMax-M3 | MiniMax | minimax.io | ✓ |
 | 7 | glm-5.3-flash | Z.AI | api.z.ai | ✓ |
 
@@ -69,7 +69,7 @@ DeepSeek Flash has `min_tokens: 200` (reasoning model — needs headroom for thi
 ### Cross-group fallbacks
 
 If ALL i-arif entries fail, litellm falls back to these model groups:
-`deepseek-flash` → `mimo-v2.5` → `MiniMax-M3` → `gemini-3.6-flash` → `glm-5.3-flash`
+`deepseek-flash` → `mimo-v2.6-flash` → `MiniMax-M3` → `gemini-3.6-flash` → `glm-5.3-flash`
 
 ## HAProxy Config
 

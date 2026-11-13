@@ -193,7 +193,7 @@ s, b, ms = http(
     ).rstrip("/")
     + "/chat/completions",
     K("MIMO_TOKEN_PLAN_"),
-    dict(PING, model="mimo-v2.5"),
+    dict(PING, model="mimo-v2.6-flash"),
 )
 rec("mimo-token-plan", "LIVE" if s == 200 else "UNKNOWN", f"[{s}] {b[:120]}")
 s, b, ms = http(

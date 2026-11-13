@@ -37,8 +37,8 @@ PROVIDERS = {
     'mimo': {
         'url': env.get('MIMO_BASE_URL', 'https://api.xiaomimimo.com/v1').rstrip('/') + '/chat/completions',
         'key': env.get('MIMO_API_KEY', ''),
-        'model': 'mimo-v2.5',
-        'payload': b'{"model":"mimo-v2.5","messages":[{"role":"user","content":"OK"}],"max_tokens":5}'
+        'model': 'mimo-v2.6-flash',
+        'payload': b'{"model":"mimo-v2.6-flash","messages":[{"role":"user","content":"OK"}],"max_tokens":5}'
     },
 }
 

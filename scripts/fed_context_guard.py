@@ -40,8 +40,8 @@ from fastapi import HTTPException
 import litellm
 from litellm.integrations.custom_guardrail import CustomGuardrail
 
-WARN = int(os.environ.get("ARIF_CONTEXT_WARN_TOKENS", "384000"))
-HOLD = int(os.environ.get("ARIF_CONTEXT_HOLD_TOKENS", "704000"))
+WARN = int(os.environ.get("ARIF_CONTEXT_WARN_TOKENS", "96000"))
+HOLD = int(os.environ.get("ARIF_CONTEXT_HOLD_TOKENS", "160000"))
 LOOP_MAX = int(os.environ.get("ARIF_CONTEXT_LOOP_MAX", "3"))
 LOOP_WINDOW_S = int(os.environ.get("ARIF_CONTEXT_LOOP_WINDOW_S", "600"))
 OVERRIDE_SECRET = os.environ.get("ARIF_CONTEXT_OVERRIDE_SECRET") or None
@@ -57,14 +57,14 @@ GUARD_ON = os.environ.get("ARIF_CONTEXT_GUARD", "on").lower() not in (
 )
 
 # Dedicated kill switch & target for authorized production canary (2026-10-21)
+# 2026-11-10 F13 founder playbook optimization: universal budget gate across PAYG routes
 BUDGET_GATE_ON = os.environ.get("ARIF_FALLBACK_BUDGET_GATE", "on").lower() not in (
     "",
     "0",
     "false",
     "off",
 )
-BUDGET_GATE_ROUTE = "go-gpt-6-luna"
-BUDGET_PER_CALL_CAP_USD = float(os.environ.get("ARIF_BUDGET_PER_CALL_CAP_USD", "0.25"))
+BUDGET_PER_CALL_CAP_USD = float(os.environ.get("ARIF_BUDGET_PER_CALL_CAP_USD", "0.20"))
 
 _FAIL_COUNT = [0]
 _LOOP_WIN = {}  # (key_alias:body_hash) -> [count, window_start_ts]
@@ -211,11 +211,29 @@ def _audit(event: dict) -> None:
 
 
 def _check_route_budget(model: str, messages, tools) -> tuple[bool, dict]:
-    """Pre-dispatch budget check for authorized canary route only."""
+    """Pre-dispatch budget check across PAYG routes."""
     import time
-    # Approximate pricing: $10/M input tokens for go-gpt-6-luna
     est_tokens = _estimate(model, messages, tools)
-    est_cost = est_tokens * (10.0 / 1_000_000.0)
+    
+    # Resolve pricing per input token
+    cost_per_token = 0.0
+    m_info = litellm.model_cost.get(model) or {}
+    if not m_info:
+        for k in (model, model.split("/")[-1], f"openai/{model}"):
+            if k in litellm.model_cost:
+                m_info = litellm.model_cost[k]
+                break
+
+    if m_info and "input_cost_per_token" in m_info:
+        cost_per_token = float(m_info["input_cost_per_token"])
+    elif any(frag in model.lower() for frag in ("pro", "sonnet", "opus", "grok")):
+        cost_per_token = 2.0e-6
+    elif any(frag in model.lower() for frag in ("flash", "mini")):
+        cost_per_token = 3.0e-7
+    else:
+        cost_per_token = 1.0e-6
+
+    est_cost = est_tokens * cost_per_token
     allowed = est_cost <= BUDGET_PER_CALL_CAP_USD
     decision = "ALLOW" if allowed else "HOLD"
     reason = (
@@ -256,34 +274,36 @@ class FedContextGuard(CustomGuardrail):
             messages = data.get("messages") or []
             tools = data.get("tools")
 
-            # CANARY: Pre-dispatch budget gate for authorized route (go-gpt-6-luna)
-            if BUDGET_GATE_ON and model == BUDGET_GATE_ROUTE:
-                ok, bgt_receipt = _check_route_budget(model, messages, tools)
-                _audit(bgt_receipt)
-                if not ok:
-                    hdrs = _request_headers(data)
-                    key_alias = _key_suffix(user_api_key_dict)
-                    if _override_valid(hdrs):
-                        _audit({
-                            "event": "budget_override",
-                            "receipt_id": bgt_receipt["receipt_id"],
-                            "model": model,
-                            "key": key_alias,
-                        })
-                    else:
-                        raise HTTPException(
-                            status_code=413,
-                            detail={
-                                "error": "budget_gate",
-                                "kind": "hold",
+            # Pre-dispatch budget gate for all non-free routes (2026-11-10 founder optimization)
+            if BUDGET_GATE_ON:
+                is_free_alias = model.startswith("fed/free") or "free" in model.lower()
+                if not is_free_alias:
+                    ok, bgt_receipt = _check_route_budget(model, messages, tools)
+                    if not ok:
+                        _audit(bgt_receipt)
+                        hdrs = _request_headers(data)
+                        key_alias = _key_suffix(user_api_key_dict)
+                        if _override_valid(hdrs):
+                            _audit({
+                                "event": "budget_override",
                                 "receipt_id": bgt_receipt["receipt_id"],
-                                "receipt_hash": bgt_receipt["receipt_hash"],
-                                "reason": bgt_receipt["reason"],
-                                "est_cost_usd": bgt_receipt["est_cost_usd"],
-                                "limit_usd": BUDGET_PER_CALL_CAP_USD,
                                 "model": model,
-                            },
-                        )
+                                "key": key_alias,
+                            })
+                        else:
+                            raise HTTPException(
+                                status_code=413,
+                                detail={
+                                    "error": "budget_gate",
+                                    "kind": "hold",
+                                    "receipt_id": bgt_receipt["receipt_id"],
+                                    "receipt_hash": bgt_receipt["receipt_hash"],
+                                    "reason": bgt_receipt["reason"],
+                                    "est_cost_usd": bgt_receipt["est_cost_usd"],
+                                    "limit_usd": BUDGET_PER_CALL_CAP_USD,
+                                    "model": model,
+                                },
+                            )
             chars = _char_len(messages, tools)
             if chars <= 0:
                 return data
@@ -385,7 +405,7 @@ print(
     f"loop_max={LOOP_MAX} loop_window_s={LOOP_WINDOW_S} "
     f"guard_on={GUARD_ON} override={'on' if OVERRIDE_SECRET else 'off'} "
     f"budget_gate={'on' if BUDGET_GATE_ON else 'off'} "
-    f"budget_route={BUDGET_GATE_ROUTE} cap=${BUDGET_PER_CALL_CAP_USD} "
+    f"cap=${BUDGET_PER_CALL_CAP_USD} "
     f"models={MODELS or 'ALL'}",
     file=sys.stderr,
     flush=True,
