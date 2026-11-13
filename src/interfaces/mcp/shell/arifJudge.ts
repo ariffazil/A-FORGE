@@ -157,9 +157,15 @@ const GATE_PATTERNS: RegExp[] = [
   /\bbrew\s+uninstall\b/,
   /\bcargo\s+publish\b/,
 
-  // Network writes (still gated — external side effects)
-  /\bcurl\s+.*-X\s*(POST|PUT|DELETE|PATCH)\b/,
-  /\bwget\s+.*-O\s+/,
+  // Network writes (external side effects) — egress, never read-only.
+  // 2026-11-14 (333-AGI): `-X POST` alone missed `curl -d/--data/-F/-T`,
+  // which imply POST/PUT WITHOUT the -X flag — a silent prompt-injection
+  // egress vector (Hermes classified a curl POST as read-only).
+  /\bcurl\b.*-X\s*(POST|PUT|DELETE|PATCH)\b/,
+  /\bcurl\b.*\s-(d|F|T)\b/,
+  /\bcurl\b.*--(data|form|upload-file)(\b|=)/,
+  /\bwget\b.*-O\s+/,
+  /\bwget\b.*--post-(data|file)(\b|=)/,
   /\bscp\b/,
   /\brsync\b/,
 
