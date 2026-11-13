@@ -365,6 +365,14 @@ export function checkIncompletenessAwareness(
  * Map a shell command to its action class.
  * Used by forge_shell to enforce authority.
  */
+/**
+ * curl/wget are EGRESS, always. A bare `curl URL` is NOT proof of GET:
+ * .curlrc / CURL_HOME / --config can inject --request/--data/--json, and
+ * new flags appear faster than a blacklist can track. There is no sound
+ * "plain GET" exception from argv alone. Read-only network fetch must use
+ * the governed egress tool, not shell curl/wget.
+ * 2026-11-14 (333-AGI): whitelist removed — it allowed bare curl as OBSERVE.
+ */
 export function classifyShellCommand(command: string): ActionClass {
   const cmd = command.trim().toLowerCase();
 
@@ -374,6 +382,11 @@ export function classifyShellCommand(command: string): ActionClass {
   if (/git\s+push\s+.*--force/.test(cmd)) return 'IRREVERSIBLE';
   if (/git\s+rebase\s+-i/.test(cmd)) return 'IRREVERSIBLE';
   if (/mkfs|fdisk|parted/.test(cmd)) return 'IRREVERSIBLE';
+
+  // Any curl/wget anywhere in the command is egress (chained commands included).
+  // Must run before the generic MUTATE/redirect checks: `echo hi && curl -d ...`
+  // is still a speech act, not a local mutation.
+  if (/\b(curl|wget)\b/.test(cmd)) return 'EXECUTE_HIGH_IMPACT';
 
   // EXECUTE_HIGH_IMPACT patterns
   if (/^git\s+push/.test(cmd)) return 'EXECUTE_HIGH_IMPACT';
@@ -392,7 +405,7 @@ export function classifyShellCommand(command: string): ActionClass {
   if (/^(ls|cat|head|tail|grep|find|wc|diff|git\s+(status|log|diff|show))/.test(cmd)) return 'OBSERVE';
   if (/^(echo|printf|date|whoami|pwd|uname|env)\s*$/.test(cmd)) return 'OBSERVE';
   if (/^(docker\s+ps|systemctl\s+(status|list))/.test(cmd)) return 'OBSERVE';
-  if (/^curl\s.*-sf\s/.test(cmd) && !/>/.test(cmd)) return 'OBSERVE';
+  // curl/wget already caught by the anywhere-check above.
 
   // QA2R_COLLAPSE patterns (F13 2026-10-08) — last step before reality-side irreversible
   // Money: bank transfer, broker order, crypto send, bill payment
