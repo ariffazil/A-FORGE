@@ -365,6 +365,24 @@ export function checkIncompletenessAwareness(
  * Map a shell command to its action class.
  * Used by forge_shell to enforce authority.
  */
+/**
+ * curl/wget are EGRESS by default (fail-closed). A command is provably
+ * GET-only only when it carries no write verb and no file output.
+ * 2026-11-14 (333-AGI): the old blacklist kept missing flag families
+ * (--request/--json/--method); invert to a whitelist instead.
+ */
+function isProvablyGetOnly(cmd: string): boolean {
+  // Write verbs that imply POST/PUT/DELETE or file output. `cmd` is already
+  // lowercased, so single-letter flags collapse case (-d/-f/-t/-x/-o are all
+  // treated as potential writes — fail-closed, over-gating is safe).
+  const writeVerb = /(?:-X\s+\S+|--request\b|--json\b|--data|--form|--upload-file\b|--post-data\b|--post-file\b|--method\b|\s-d\b|\s-f\b|\s-t\b|\s-x\b)/;
+  if (writeVerb.test(cmd)) return false;
+  // -o/--output to a non-null path writes a file → not GET-only.
+  const out = cmd.match(/(?:-o|--output)\s+(\S+)/);
+  if (out && !/^\/dev\/(null|stdout|stderr)$/.test(out[1])) return false;
+  return true;
+}
+
 export function classifyShellCommand(command: string): ActionClass {
   const cmd = command.trim().toLowerCase();
 
@@ -392,7 +410,10 @@ export function classifyShellCommand(command: string): ActionClass {
   if (/^(ls|cat|head|tail|grep|find|wc|diff|git\s+(status|log|diff|show))/.test(cmd)) return 'OBSERVE';
   if (/^(echo|printf|date|whoami|pwd|uname|env)\s*$/.test(cmd)) return 'OBSERVE';
   if (/^(docker\s+ps|systemctl\s+(status|list))/.test(cmd)) return 'OBSERVE';
-  if (/^curl\s.*-sf\s/.test(cmd) && !/>/.test(cmd)) return 'OBSERVE';
+  // curl/wget → egress unless provably GET-only (fail-closed whitelist)
+  if (/^(curl|wget)\b/.test(cmd)) {
+    return isProvablyGetOnly(cmd) ? 'OBSERVE' : 'EXECUTE_HIGH_IMPACT';
+  }
 
   // QA2R_COLLAPSE patterns (F13 2026-10-08) — last step before reality-side irreversible
   // Money: bank transfer, broker order, crypto send, bill payment
