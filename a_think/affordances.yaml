@@ -1904,3 +1904,51 @@ tools:
   external_side_effect: false
   destructive: false
   reversible: true
+- name: forge_chain_state
+  purpose: 'PROBE [vault/OBSERVE] supervised by kernel 999_SEAL. Canonical VAULT999 chain heartbeat computed from chain bytes at read time: silence hours since newest record, phantom-seq detection (declared head vs rows present), declared-vs-observed divergence findings. Supersedes ad-hoc heartbeat reads from seal_chain_head.json or tasks.json.'
+  affordance_class: probe
+  capability_surface: aforge.probe.chain_state
+  kernel_verb: 999_SEAL
+  mutation_class: OBSERVE
+  reads:
+  - vault
+  - system_state
+  writes: []
+  external_side_effect: false
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: OBSERVE
+  risk_label: R0
+- name: forge_drive_create
+  purpose: 'ACTUATOR [gdrive/execute] supervised by kernel 777_FORGE. Creates a Google Drive file (text content, any MIME type) via gws CLI; returns file_id, metadata read back after creation for APA custody. Native Google Docs go through the gws docs lane instead.'
+  affordance_class: execute
+  capability_surface: aforge.execute.drive_create
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - tools
+  writes:
+  - external_state
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R3
+- name: forge_telegram
+  purpose: 'ACTUATOR [telegram/execute] supervised by kernel 777_FORGE. APA Telegram send-only connector via local bridge :18096 (@arifOS_bot). Verbs: send (transport read-back), get_me. Sends are EXECUTE_REVERSIBLE.'
+  affordance_class: execute
+  capability_surface: aforge.execute.telegram
+  kernel_verb: 777_FORGE
+  mutation_class: MUTATE
+  reads:
+  - tools
+  writes:
+  - external_state
+  external_side_effect: true
+  destructive: false
+  reversible: true
+  requires_human_approval: false
+  min_mode: GOVERN
+  risk_label: R3

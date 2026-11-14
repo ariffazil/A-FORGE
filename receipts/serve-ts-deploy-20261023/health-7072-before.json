@@ -1,0 +1,1 @@
+{"ok":true,"service":"A-FORGE-MCP","status":"healthy","version":"v2026.09.30-fix","commit":"ccda2357+apa-custody+serve-e3fb527","transport":"streamable-http","authority_ceiling":"777_FORGE","sessions":"active","tools_listed":118,"stateless_tools":87,"session":{"idle_seconds":1800,"age_seconds":1800}}

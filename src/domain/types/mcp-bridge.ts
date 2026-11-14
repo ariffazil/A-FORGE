@@ -61,14 +61,16 @@ export const TOOL_NAME_MAP: Record<string, string> = {
   // 3. Cryptographic shell verification: arif_verify maps to arif_seal (stage 999, mode="verify")
   arif_verify: "arif_seal",
 
-  // 4. Lease inspection: arif_lease_inspect maps to arif_judge (stage 666, mode="validate")
-  arif_lease_inspect: "arif_judge",
-
-  // 5. Lease issuance: arif_lease_issue maps to arif_judge (stage 666, mode="judge")
-  arif_lease_issue: "arif_judge",
-
-  // 6. Lease revocation: arif_lease_revoke maps to arif_judge (stage 666, mode="hold")
-  arif_lease_revoke: "arif_judge",
+  // 4-6. Lease verbs are NOT mapped. Measured 2026-10-25: arif_lease_issue /
+  // arif_lease_inspect / arif_lease_revoke are registered on the kernel MCP
+  // surface (arifosmcp/server.py), but this map rewrote them to arif_judge with
+  // no mode, so the kernel answered a JUDGE question and the caller looked for
+  // `result.lease` in a verdict envelope. Every forge_session_init therefore
+  // ran with no kernel lease while reporting status OK — the actuator silently
+  // lost mutation authority (forge_vault receipt → LEASE_CLASS_EXCEEDED).
+  // Mapping a verb to a shape-incompatible target is the exact failure this
+  // file's header warns about. Leave the names literal; a missing tool must
+  // fail loudly, not impersonate a judge.
 };
 
 /** Namespace routing map: which env var / default URL per namespace */

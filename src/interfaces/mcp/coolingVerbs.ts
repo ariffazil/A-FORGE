@@ -187,7 +187,7 @@ export function registerCoolingVerbs(server: McpServer): void {
   // INV-C1..C4 preserved verbatim. Handler pipeline unchanged.
   server.tool(
     "forge_cool",
-    "Emit a COOLING_RECEIPT. verb=drift for single convergence signal; verb=pattern for observed failure recurrence. Routes through seal_chain.js validateCooling() → VAULT999 append. INV-C1: OBSERVE-only. INV-C2: no forge caller. INV-C3: COLD_LINK. INV-C4: explicit governance.",
+    "Emit a COOLING_RECEIPT. verb=drift for single convergence signal; verb=pattern for observed failure recurrence. Routes through seal_chain.js validateCooling() → VAULT999 append. INV-C1: observation semantics, no execution — durable side effect: APPENDS a draft receipt to VAULT999 (never a constitutional SEAL). INV-C2: no forge caller. INV-C3: COLD_LINK. INV-C4: explicit governance.",
     {
       verb: z.enum(["drift", "pattern"]).describe("drift=single convergence signal, pattern=observed failure recurrence"),
       session_id: z.string().describe("Session ID of the cooled session"),

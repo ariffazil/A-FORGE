@@ -1,7 +1,6 @@
 import { execFile } from "node:child_process";
 import * as path from "node:path";
 import { promisify } from "node:util";
-import { callMCP } from "../../../interfaces/mcp/client.js";
 
 export const execFileAsync = promisify(execFile);
 
@@ -63,35 +62,39 @@ export async function requireMutationApproval(action: string, target: string, le
     };
   }
 
-  try {
-    const inspect = await callMCP("arifos.arif_lease_inspect", { lease_id }) as any;
-    const lease = inspect?.lease ?? inspect?.result?.lease;
-    if (!lease || !lease.lease_id) {
-      return {
-        allowed: false,
-        error: `888_HOLD: ${action} on ${target} — lease '${lease_id}' not recognised by arifOS.`,
-      };
-    }
-    if (lease.revoked === true) {
-      return {
-        allowed: false,
-        error: `888_HOLD: ${action} on ${target} — lease '${lease_id}' revoked by kernel.`,
-      };
-    }
-    const expiresAt = new Date(lease.expires_at).getTime();
-    if (Date.now() > expiresAt) {
-      return {
-        allowed: false,
-        error: `888_HOLD: ${action} on ${target} — lease '${lease_id}' expired.`,
-      };
-    }
-    return { allowed: true };
-  } catch (err: any) {
+  // MEASURED 2026-10-27 (forge_surface_audit outbound-ABI): arifOS exposes NO
+  // lease verbs on its canonical MCP surface — leases are internal-only and
+  // authority bootstraps via arif_init ACT. The A-FORGE registry holds the
+  // leases bound from kernel-signed ACTs (source=kernel_act, registered at
+  // session init). Validate against it: provenance + expiry + revocation.
+  // Presentation of an id is never authorization.
+  const { getRegisteredLease } = await import("../../../interfaces/mcp/forgeTools.js");
+  const lease = getRegisteredLease(lease_id);
+  if (!lease) {
     return {
       allowed: false,
-      error: `888_HOLD: cannot verify lease '${lease_id}' with arifOS for ${action} on ${target}. Failing closed: ${err?.message ?? String(err)}`,
+      error: `888_HOLD: ${action} on ${target} — lease '${lease_id}' not registered in the A-FORGE lease registry (kernel lease store is internal-only; authority = arif_init ACT).`,
     };
   }
+  if (lease.source !== "kernel_act") {
+    return {
+      allowed: false,
+      error: `888_HOLD: ${action} on ${target} — lease '${lease_id}' provenance '${lease.source ?? "unmarked"}' is not kernel_act; presentation is not authorization.`,
+    };
+  }
+  if (lease.revoked === true) {
+    return {
+      allowed: false,
+      error: `888_HOLD: ${action} on ${target} — lease '${lease_id}' revoked.`,
+    };
+  }
+  if (Date.now() > lease.expires_at) {
+    return {
+      allowed: false,
+      error: `888_HOLD: ${action} on ${target} — lease '${lease_id}' expired.`,
+    };
+  }
+  return { allowed: true };
 }
 
 export function resolveWorkspacePath(filePath: string, workspaceRoot = "/root"): string {

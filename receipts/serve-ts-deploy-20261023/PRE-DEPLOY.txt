@@ -1,0 +1,14 @@
+captured_utc: 2026-10-23T15:07:01Z
+head_before: ccda235772889ea10ea47fafb7339ab92bea8051
+serve_ts_blob_before: 85e5525aa595f7ae2100206b9dc2c9f7b12bde86
+git_commit_stamp_before: e3fb5271
+dist_build_commit_before: ccda2357+apa-custody+serve-e3fb527
+dist_serve_before: 89a786fcfee1f63e663d3cb1b33690487c1557c68eff24452f366b4474ded5c4
+dist_server_before: 91d1413be67fea252b5e1158689e81f6ccb2ef3de8f2685f40c551a68044ef4d
+untracked_or_dirty_before:
+ M AGENTS.md
+ M data/web_federation_state.json
+ M litellm-config.yaml
+ M src/interfaces/mcp/serve.ts
+?? receipts/
+DEFECT-NOTE: .git_commit was chattr +i (deploy stamp frozen at e3fb527 => guaranteed false drift). Unlocked for this deploy; left writable so future deploys can stamp truth.

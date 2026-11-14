@@ -54,6 +54,7 @@ import {
   gateToolClaim,
   claimGateRefusalResponse,
 } from "../../infrastructure/governance/claimGate.js";
+import { checkRefusalGate } from "../../infrastructure/bridges/refusalGateBridge.js";
 import {
   registerFilesystemTools,
   registerPostgresTools,
@@ -125,7 +126,8 @@ import {
   type SimulationRequest,
   type PredictionResult,
 } from "../../domain/governance/preActionSimulation.js";
-import { validateSession, registerSession, setKernelVerifier, storeSessionAct, getSessionAct, parseActClaims } from "../../domain/session/sessionGate.js";
+import { validateSession, registerSession, setKernelVerifier, storeSessionAct, getSessionAct, parseActClaims, verifyActToken } from "../../domain/session/sessionGate.js";
+import { resolveActLeaseScope, DEFAULT_LEASE_SCOPE } from "./actLeaseScope.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
@@ -535,6 +537,7 @@ const GOVERNANCE_FIELDS = {
   sct: z.string().optional().describe("DEPRECATED alias of act"),
   act: z.string().optional().describe("arifOS ACT (act_v1.*) — preferred credential"),
   justification: z.string().optional().describe("Why (claim-class gate judges it)"),
+  scope: z.string().optional().describe("Governed refusal scope (e.g. 'deploy:site', 'test:shell-refusal')"),
   claim_class: z
     .enum(["MEASURED", "MECHANISM", "PATTERN", "NARRATIVE", "UNCLASSIFIED"])
     .optional()
@@ -584,6 +587,7 @@ function extendInputSchema(schema: any): any {
         lease_id: { type: "string", description: "Lease id" },
         act: { type: "string", description: "arifOS ACT (act_v1.*) — preferred credential" },
         justification: { type: "string", description: "Why (claim-class gate judges it)" },
+        scope: { type: "string", description: "Governed refusal scope (e.g. 'deploy:site', 'test:shell-refusal')" },
         claim_class: {
           type: "string",
           enum: ["MEASURED", "MECHANISM", "PATTERN", "NARRATIVE", "UNCLASSIFIED"],
@@ -593,6 +597,88 @@ function extendInputSchema(schema: any): any {
     };
   }
   return schema;
+}
+
+/**
+ * Gate 0: Evaluates whether any active human refusal covers this tool invocation.
+ * Fail-closed: unverified / tampered store returns HOLD.
+ */
+export async function evaluateRefusalGate(name: string, argsObj: Record<string, any>): Promise<{ blocked: boolean; response?: any }> {
+  const scopesToCheck: string[] = [];
+  if (typeof argsObj.scope === "string" && argsObj.scope.trim()) {
+    scopesToCheck.push(argsObj.scope.trim());
+  }
+  scopesToCheck.push(`tool:${name}`);
+  if ((name === "forge_shell" || name === "forge_execute") && typeof argsObj.command === "string") {
+    const execParts = argsObj.command.trim().split(/\s+/);
+    const executable = execParts[0]?.replace(/^["'`]/, "").split("/").pop() ?? "";
+    if (executable) {
+      scopesToCheck.push(`shell:${executable}`);
+    }
+  }
+
+  for (const targetScope of scopesToCheck) {
+    const refusalCheck = await checkRefusalGate(targetScope);
+    if (refusalCheck.hold) {
+      return {
+        blocked: true,
+        response: {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              error: "REFUSAL_HOLD",
+              verdict: "HOLD",
+              status: "REFUSAL_HOLD",
+              gate: "GATE_0_REFUSAL",
+              target_scope: targetScope,
+              message: `EXECUTION HELD — refusal store cannot be verified. Fail closed.`,
+              error_detail: refusalCheck.error || refusalCheck.reason,
+              constitutional_floor: "F1 AMANAH",
+              _epistemic: {
+                output_class: "GOVERNANCE_TEMPLATE",
+                authority_claim: "FAIL_CLOSED",
+                evidence_source: "REFUSAL_STORE",
+                tagged_by: "aforge-mcp",
+                tagged_at: new Date().toISOString(),
+              },
+            }, null, 2),
+          }],
+          isError: true,
+        },
+      };
+    }
+
+    if (refusalCheck.block) {
+      return {
+        blocked: true,
+        response: {
+          content: [{
+            type: "text" as const,
+            text: JSON.stringify({
+              error: "REFUSAL_BLOCKED",
+              verdict: "BLOCK",
+              status: "REFUSAL_BLOCKED",
+              gate: "GATE_0_REFUSAL",
+              target_scope: targetScope,
+              message: `EXECUTION BLOCKED — a human consequence-bearer issued an active NO on scope '${targetScope}'.`,
+              blocking: refusalCheck.blocking,
+              constitutional_floor: "F13 SOVEREIGN_VETO",
+              _epistemic: {
+                output_class: "GOVERNANCE_TEMPLATE",
+                authority_claim: "REFUSAL_OBJECT",
+                evidence_source: "REFUSAL_STORE",
+                tagged_by: "aforge-mcp",
+                tagged_at: new Date().toISOString(),
+              },
+            }, null, 2),
+          }],
+          isError: true,
+        },
+      };
+    }
+  }
+
+  return { blocked: false };
 }
 
 const _originalTool = server.tool.bind(server);
@@ -613,6 +699,12 @@ const _originalTool = server.tool.bind(server);
     // carrier (mode OR verb). Extracting only args.mode hid forge_telegram
     // {verb:"send"} behind the OBSERVE default.
     const actionClass = classifyTool(name, argsObj); // runtime classification (mode/verb carrier)
+
+    // ── GATE 0: HUMAN REFUSAL (E14/E15 LAW OF REFUSAL) ─────────────────────
+    // Runs before APA, FQ, ACT, claim, or any execution.
+    // If an active human refusal covers this scope, BLOCK immediately.
+    const refusalVerdict = await evaluateRefusalGate(name, argsObj);
+    if (refusalVerdict.blocked) return refusalVerdict.response;
 
     // ── APA CUSTODY PREFLIGHT (kill switch + idempotency) ────────────────
     // Runs before FQ/ACT/claim/lease. Revocation is absolute: a valid lease
@@ -692,6 +784,18 @@ const _originalTool = server.tool.bind(server);
     // runs. Additive: governed action classes only, and only when the caller
     // actually states a justification claim and/or declares its class.
     const claimGate = await gateToolClaim(name, argsObj, actionClass);
+    // ── P0 EXPECTATION GATE (2026-10-26 closeout) ───────────────────────
+    // Fail-before-run: a consequential mutation must declare a measurable
+    // expected effect before it reaches FQ/ACT/lease/execution. Runs after the
+    // claim gate (which is cheaper) but before FQ/ACT/lease. Reversible tier is
+    // measured-only by default (recorded, never silent); irreversible tier is
+    // hard-refused. FORGE_EXPECT_ENFORCE=0 disables hard-refuse.
+    const { checkExpectedEffect: _cee, expectationRefusal: _er } = await import("../../domain/forge/expectationGate.js");
+    const _expGate = _cee(actionClass, argsObj);
+    if (!_expGate.ok) {
+      return _er(actionClass, _expGate.tier);
+    }
+
     if (!claimGate.ok) {
       return claimGateRefusalResponse(claimGate) as any;
     }
@@ -838,6 +942,12 @@ const _originalRegisterTool = server.registerTool.bind(server);
     // 2026-10-25: full args to classifyTool (mode OR verb carrier normalization)
     const actionClass = classifyTool(name, argsObj);
 
+    // ── GATE 0: HUMAN REFUSAL (E14/E15 LAW OF REFUSAL) ─────────────────────
+    // Runs before APA, FQ, ACT, claim, or any execution.
+    // If an active human refusal covers this scope, BLOCK immediately.
+    const refusalVerdict = await evaluateRefusalGate(name, argsObj);
+    if (refusalVerdict.blocked) return refusalVerdict.response;
+
     // ── APA CUSTODY PREFLIGHT (kill switch + idempotency) ────────────────
     // Runs before FQ/ACT/claim/lease. Revocation is absolute: a valid lease
     // cannot execute a revoked app.
@@ -909,6 +1019,18 @@ const _originalRegisterTool = server.registerTool.bind(server);
     // runs. Additive: governed action classes only, and only when the caller
     // actually states a justification claim and/or declares its class.
     const claimGate = await gateToolClaim(name, argsObj, actionClass);
+    // ── P0 EXPECTATION GATE (2026-10-26 closeout) ───────────────────────
+    // Fail-before-run: a consequential mutation must declare a measurable
+    // expected effect before it reaches FQ/ACT/lease/execution. Runs after the
+    // claim gate (which is cheaper) but before FQ/ACT/lease. Reversible tier is
+    // measured-only by default (recorded, never silent); irreversible tier is
+    // hard-refused. FORGE_EXPECT_ENFORCE=0 disables hard-refuse.
+    const { checkExpectedEffect: _cee, expectationRefusal: _er } = await import("../../domain/forge/expectationGate.js");
+    const _expGate = _cee(actionClass, argsObj);
+    if (!_expGate.ok) {
+      return _er(actionClass, _expGate.tier);
+    }
+
     if (!claimGate.ok) {
       return claimGateRefusalResponse(claimGate) as any;
     }
@@ -1371,9 +1493,11 @@ server.tool(
     ),
     session_token: z.string().optional().describe("arifOS ACT for session continuity"),
     sct: z.string().optional().describe("Legacy alias for session_token — prefer act"),
+    act: z.string().optional().describe("arifOS ACT (act_v1.*) — preferred credential"),
     session_id: z.string().optional().describe("arifOS governance session ID (injected by middleware)"),
   },
-  async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct, session_id: _govSessionId }) => {
+  async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct, act: _reqAct, session_id: _govSessionId }) => {
+    const callerAct = _reqAct ?? _reqToken ?? _reqSct;
     const effectiveSessionId = _govSessionId ?? parent_session_id;
     const startedAt = Date.now();
     await telemetryInvoke("forge_session_init");
@@ -1388,7 +1512,7 @@ server.tool(
             intent: intent ?? "aforge session",
             mode: "light",
             session_id: effectiveSessionId ?? undefined,
-            session_token: _reqToken ?? _reqSct ?? undefined,
+            session_token: callerAct ?? undefined,
           });
         } catch (primaryErr) {
           console.error(`[forge_session_init] primary arif_init failed:`, primaryErr instanceof Error ? primaryErr.message : primaryErr);
@@ -1398,17 +1522,23 @@ server.tool(
             intent: intent ?? "aforge session",
             mode: "light",
             session_id: effectiveSessionId ?? undefined,
-            session_token: _reqToken ?? _reqSct ?? undefined,
+            session_token: callerAct ?? undefined,
           });
         }
         const response = kernelResponse as Record<string, unknown>;
 	// Extract session_id from kernel response (nested in session object or result object)
         const sessionObj = response.session as Record<string, unknown> | undefined;
         const resultObj = response.result as Record<string, unknown> | undefined;
+        const metaObj = response.meta as Record<string, unknown> | undefined;
         const session_id =
           (sessionObj?.session_id as string | undefined) ??
           (resultObj?.session_id as string | undefined) ??
           (response.session_id as string | undefined);
+        const kernelTraceId =
+          (response.trace_id as string | undefined) ??
+          (resultObj?.trace_id as string | undefined) ??
+          (sessionObj?.trace_id as string | undefined) ??
+          (metaObj?.trace_id as string | undefined);
         // P1.3: Extract session_token (ACT) from kernel for downstream tools
         const session_token =
           (response.session_token as string | undefined) ??
@@ -1431,7 +1561,7 @@ server.tool(
         // P2.2 FIX (2026-08-27): prefer caller-supplied ACT when present —
         // arifOS responses can echo a non-verifiable ACT (act_token mint/verify
         // split). Gate ingress verifies fail-closed, so valid caller ACT wins.
-        const actToStore = _reqToken ?? _reqSct ?? session_token;
+        const actToStore = callerAct ?? session_token;
         if (actToStore) {
           storeSessionAct(session_id, actToStore);
         }
@@ -1515,6 +1645,23 @@ server.tool(
             getMcpPolicyGate().setActor(actor_id);
           }
         } catch {}
+        // 2026-10-25 (333-AGI): a caller-supplied kernel ACT is cryptographic
+        // evidence of the actor's band. Verify it locally and bind THIS session
+        // as kernel-verified. The previous path called registerVerifiedSession
+        // without an ACT (always false) and fell back to the deprecated
+        // setActor(), leaving an actor the kernel had already verified
+        // unverified here — the other half of the LEASE_CLASS_EXCEEDED report.
+        let actAuth: string | null = null;
+        const actCandidate = callerAct ?? session_token;
+        if (actCandidate) {
+          const v = verifyActToken(actCandidate);
+          if (v.valid && (!v.actor || v.actor === actor_id)) {
+            actAuth = v.auth;
+            try {
+              getMcpPolicyGate().registerKernelVerifiedSession(session_id, v.actor || actor_id);
+            } catch { /* gate not initialised — authority stays unverified */ }
+          }
+        }
         // ── DARWIN FIX 1a: pre-mint default lease as part of session envelope
         // Kills the L1_IDENTITY chicken-egg where subsequent mutate tools
         // (forge_filesystem.write, forge_vault.write, forge_shell) need a
@@ -1523,60 +1670,49 @@ server.tool(
         // is now active; auto-issue a default EXECUTE_REVERSIBLE lease so
         // downstream calls pass L2/L3 without a separate forge_lease round.
         let pre_minted_lease: { lease_id: string; scope: string[]; max_action_class: string; ttl_seconds: number; expires_at: number } | null = null;
-        try {
-          const leaseResp = await callMCP("arifos.arif_lease_issue", {
-            organ_id: "A-FORGE",
-            actor_id,
-            scope: [
-              "forge_filesystem",
-              "forge_vault",
-              "forge_shell",
-              "forge_shell_dryrun",
-              "forge_seal",
-              "arif_seal",
-              "forge_session_init",
-              "forge_health_check",
-              "forge_ephemeral",
-            ],
-            max_action_class: "MUTATE",  // arifOS expects MUTATE for EXECUTE_REVERSIBLE
-            ttl_seconds: 1800,
-            forbidden: [],
-            session_id,
-          });
-          const leaseRespObj = leaseResp as Record<string, unknown>;
-          const leaseObj = (leaseRespObj?.lease as Record<string, unknown> | undefined)
-            ?? ((leaseRespObj?.result as Record<string, unknown> | undefined)?.lease as Record<string, unknown> | undefined);
-          if (leaseObj && leaseObj.lease_id) {
-            const expires_at = typeof leaseObj.expires_at === "number"
-              ? leaseObj.expires_at
-              : Date.now() + 1800_000;
-            pre_minted_lease = {
-              lease_id: String(leaseObj.lease_id),
-              scope: Array.isArray(leaseObj.scope) ? leaseObj.scope.map(String) : [],
-              max_action_class: String(leaseObj.max_action_class ?? "EXECUTE_REVERSIBLE"),
-              ttl_seconds: Number(leaseObj.ttl_seconds ?? 1800),
-              expires_at,
-            };
-          }
-        } catch (_leaseErr) {
-          // P1.3: Kernel lease failed — mint local fallback lease.
-          // Without this, all downstream MUTATE tools (forge_vault seal
-          // etc.) fail at LEASE_GATE with LEASE_REQUIRED. The local lease
-          // is tamper-evident and bounded by the same TTL.
+        // 2026-10-25 (333-AGI): kernel lease contract is
+        //   arif_lease_issue(actor_did, tool, scope, max_action_class, ttl_s,
+        //                    max_invocations, organ_id, session_id)
+        //   -> {status, result:{lease_id, spec, issued_at, expires_at}}.
+        // The previous call sent actor_id/ttl_seconds/forbidden and parsed
+        // `result.lease`, so the kernel answered HOLD (WAJIB: actor_did/tool)
+        // and the missing lease was silently discarded — every session then
+        // ran without authority (observed: forge_vault receipt →
+        // LEASE_CLASS_EXCEEDED, 2026-10-25). Fix the contract AND report the
+        // mint result; an unminted lease must never read as OK.
+        // Band list has ONE owner — actLeaseScope.ts — so the ACT-resolution
+        // branches, the minted lease and the regression tests cannot drift.
+        const leaseScope = DEFAULT_LEASE_SCOPE;
+        // MEASURED 2026-10-27 (forge_surface_audit outbound-ABI): arifOS exposes
+        // NO lease verbs on its canonical MCP surface (internal-only leases;
+        // drift_check.py: "use arif_init for authority bootstrap"). The historic
+        // call here could never succeed — it surfaced as OUTBOUND_ABI_DRIFT and,
+        // pre-2026-10-25, was silently rewritten to arif_judge (the
+        // LEASE_CLASS_EXCEEDED defect). Authority = the presented ACT: the
+        // kernel_act lease path below (registerActLease) binds it at session init.
+        let lease_status = "KERNEL_LEASES_INTERNAL_ONLY";
+        // Why the ACT-derived scope is what it is (vocabulary match vs band default).
+        // Null until the ACT path runs; reported on the wire so a narrowed lease is
+        // never mistaken for an explicit grant.
+        let leaseScopeSource: string | null = null;
+        let lease_reason = "arifOS exposes no lease verbs on its canonical surface — authority = arif_init ACT (registerActLease)";
+        // Self-minting authority is DISABLED by default — same rule as
+        // issueLeaseViaKernel. An absent kernel lease narrows authority; it
+        // never licenses the actuator to grant itself one. The old fallback
+        // ran unconditionally here, which is why one path could self-mint while
+        // the sibling refused to.
+        if (!pre_minted_lease && process.env.ALLOW_LOCAL_LEASE_FALLBACK === "true") {
           try {
             const ttl = 1800;
             const now = Date.now();
             const localLeaseId = `LCL-${actor_id}-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
             pre_minted_lease = {
               lease_id: localLeaseId,
-            // P2 ACT SCOPE FIX: forge_shell requires explicit lease.
-            // P3: forge_seal_lane_a removed (phantom purge 2026-09-15).
-            scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_trust_score"],
+              scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_trust_score", "forge_reality_loop"],
               max_action_class: "MUTATE",
               ttl_seconds: ttl,
               expires_at: now + ttl * 1000,
             };
-            // Register with the active lease cache so validateLeaseForTool finds it
             const { registerLocalLease } = await import("./forgeTools.js");
             registerLocalLease({
               lease_id: localLeaseId,
@@ -1588,17 +1724,62 @@ server.tool(
               expires_at: now + ttl * 1000,
               forbidden: ["forge_shell", "forge_shell_dryrun"],
               revoked: false,
-              // P1.3: Verdict geometry for autonomous seal path.
-              // Local leases need trace_id to satisfy the verdict loop check
-              // (checkVerdictLoop in forgeTools.ts). Without this, all
-              // non-OBSERVE tools fail at VERDICT_RESTRAINT_GATE.
               verdict_geometry: {
                 trace_id: `auto-${localLeaseId}`,
                 auto_sealed: true,
                 source: "forge_session_init_local_fallback",
               } as any,
             } as any);
+            lease_status = "LOCAL_FALLBACK";
+            lease_reason = "kernel lease unavailable; local OBSERVE-capped lease (ALLOW_LOCAL_LEASE_FALLBACK=true)";
           } catch { /* local lease best-effort */ }
+        }
+        // Kernel-signed ACT as the authority basis (2026-10-25). The canonical
+        // surface refuses arif_lease_issue by design; A-FORGE may still honour
+        // the band the kernel already granted, because the ACT is HMAC-signed
+        // by arifOS. No ACT → UNMINTED (OBSERVE), never a self-grant.
+        if (!pre_minted_lease && actAuth && actAuth !== "OBSERVE_ONLY") {
+          try {
+            const claims = actCandidate ? parseActClaims(actCandidate) : null;
+            // Bug 2026-10-31: intersecting the ACT's kernel-verb vocabulary with
+            // A-FORGE's forge_* vocabulary shared exactly one token ("arif_seal"),
+            // so a valid FULL-band ACT produced a lease scoped to arif_seal only
+            // while still reporting ACT_DERIVED. Resolution + reason live in
+            // actLeaseScope.ts so the branch is testable and reportable.
+            const resolvedScope = resolveActLeaseScope(
+              claims?.allowed,
+              leaseScope,
+            );
+            const scope = resolvedScope.scope;
+            leaseScopeSource = resolvedScope.source;
+            const now = Date.now();
+            const ttl = 1800;
+            const band = actAuth === "FULL" ? "EXECUTE_HIGH_IMPACT" : "EXECUTE_REVERSIBLE";
+            const lease_id = `ACT-${actor_id}-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+            const { registerActLease } = await import("./forgeTools.js");
+            registerActLease({
+              lease_id,
+              agent_id: actor_id,
+              scope,
+              max_action_class: band,
+              ttl_seconds: ttl,
+              issued_at: now,
+              expires_at: now + ttl * 1000,
+              forbidden: [],
+              revoked: false,
+              session_geometry: kernelTraceId ? { trace_id: kernelTraceId } : undefined,
+            } as any);
+            pre_minted_lease = {
+              lease_id,
+              scope,
+              max_action_class: band,
+              ttl_seconds: ttl,
+              expires_at: now + ttl * 1000,
+            };
+            lease_status = "ACT_DERIVED";
+            lease_reason =
+              "kernel does not expose lease issuance on the canonical surface; band and scope from kernel-signed ACT";
+          } catch { /* fall through to UNMINTED */ }
         }
         const result = {
           content: [{
@@ -1606,7 +1787,7 @@ server.tool(
             text: JSON.stringify({
               status: "OK",
               session_id,
-              session_token: session_token ?? null,
+              session_token: actToStore ?? session_token ?? null,
               parent_session_id: parent_session_id ?? null,
               kernel_origin: true,
               epoch: new Date().toISOString().split("T")[0],
@@ -1615,6 +1796,11 @@ server.tool(
               mode: mode ?? "external",
               expires_at: session.expires_at,
               verdict: "OK",
+              act_verified: Boolean(actAuth),
+              act_auth: actAuth,
+              lease_status,
+              lease_reason,
+              lease_scope_source: leaseScopeSource,
               pre_minted_lease,
             }, null, 2),
           }],
@@ -2148,7 +2334,7 @@ const judgeHandler = async ({ holdId, reason }: { holdId: string, reason?: strin
           gate: "SELF_AUTHORIZE_REFUSED",
           holdId,
           reason: reason ?? "none given",
-          message: "A-FORGE cannot self-authorize. Route to arifOS via: forge_judge_proxy({mode:'judge', candidate:'...', session_id:'...'}). See forge_judge_proxy for full parameter spec.",
+          message: "A-FORGE cannot self-authorize. Route to arifOS arif_judge (:8088/mcp) with your session_id. (forge_judge_proxy is a GC stub, removal epoch 2026-11-05.)",
         }, null, 2),
       }],
       isError: true,
