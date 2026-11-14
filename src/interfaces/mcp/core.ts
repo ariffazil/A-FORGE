@@ -49,6 +49,134 @@ import { visionAnalyze } from "../../infrastructure/tools/visionAnalyze.js";
 import { domLinter } from "../../infrastructure/tools/domLinter.js";
 import { getMcpPolicyGate } from "../../domain/governance/McpPolicyGate.js";
 import { enforceMcpFloor, floorErrorResponse } from "../../domain/governance/mcpFloorEnforcer.js";
+
+// ── P1-5 FULL / P1-7 (ARIF GO 2026-11-14): canonical executor receipt emitter ──
+// Every governed tool execution on every transport (stdio / :7072 stateful /
+// :7072 stateless / :7071 in-process) flows through the registration wrappers
+// below; withFlowReceipt mints a schema-complete FlowReceipt to arifFlow
+// POST :7073/ingest, fire-and-forget (receipt failure NEVER blocks execution).
+// Schema-completeness is the P1-5f lesson (2026-09-07): receipt_id, created_at
+// and cooling_decision are REQUIRED by arifFlow's FlowReceipt deserializer —
+// their omission silently 400'd every mint and left the executor surface
+// unrepresented in the receipt chain (observatory F-004 source).
+// P1-7 deprecation: the legacy serve.ts local mint (aforge-post-exec-hook,
+// stateless-only, schema-incomplete) is REMOVED — this module is the single
+// canonical emitter. Legacy sinks (local RealityLedger, sealTerminal) remain
+// local-state-only by design and are NOT receipt authority.
+import { randomUUID } from "node:crypto";
+
+export interface FlowReceiptExtra {
+  step_type?: string;
+  floor_verdict?: string;
+  gate?: string;
+  source?: string;
+}
+
+let _flowReceiptSeq = 0;
+
+function classifyFlowStepType(toolName: string): string {
+  if (toolName.includes("check") || toolName.includes("verify") || toolName.includes("probe") ||
+      toolName.includes("health") || toolName.includes("scan") || toolName.includes("fingerprint")) {
+    return "Verify";
+  }
+  if (toolName.includes("seal") || toolName.includes("vault") || toolName.includes("canonize")) {
+    return "Seal";
+  }
+  if (toolName.includes("route") || toolName.includes("dispatch")) {
+    return "Route";
+  }
+  return "Execute";
+}
+
+function classifyFlowEpistemic(toolName: string): string {
+  if (toolName.includes("probe") || toolName.includes("health") || toolName.includes("status") ||
+      toolName.includes("scan") || toolName.includes("observe")) {
+    return "Observation";
+  }
+  if (toolName.includes("compute") || toolName.includes("score") || toolName.includes("evaluate")) {
+    return "Derivation";
+  }
+  if (toolName.includes("think") || toolName.includes("reason") || toolName.includes("analyze")) {
+    return "Interpretation";
+  }
+  return "Derivation";
+}
+
+/** Pure builder — schema-complete FlowReceipt payload (exported for tests). */
+export function buildFlowReceipt(
+  toolName: string,
+  actorId: string,
+  sessionId: string,
+  durationMs: number,
+  isError: boolean,
+  extra?: FlowReceiptExtra,
+): Record<string, unknown> {
+  return {
+    receipt_id: randomUUID(),
+    created_at: new Date().toISOString(),
+    actor_id: actorId || "aforge",
+    session_id: sessionId || "mcp-unbound",
+    step_type: extra?.step_type ?? classifyFlowStepType(toolName),
+    step_number: ++_flowReceiptSeq,
+    epistemic_label: classifyFlowEpistemic(toolName),
+    floor_verdict: extra?.floor_verdict ?? (isError ? "Void" : "Pass"),
+    cost_ns: Math.max(1, Math.round(durationMs * 1_000_000)),
+    cooling_decision: "None", // required by /ingest FlowReceipt schema (P1-5f class)
+    witness_organs: ["aforge"],
+    payload: {
+      organ: "A-FORGE",
+      tool: toolName,
+      source: extra?.source ?? "aforge-exec-hook-p1-5-full",
+      ...(extra?.gate ? { gate: extra.gate } : {}),
+    },
+  };
+}
+
+/** Fire-and-forget emit — never throws, never blocks execution. */
+export function postFlowReceipt(
+  toolName: string,
+  actorId: string,
+  sessionId: string,
+  durationMs: number,
+  isError: boolean,
+  extra?: FlowReceiptExtra,
+): void {
+  try {
+    const body = JSON.stringify(buildFlowReceipt(toolName, actorId, sessionId, durationMs, isError, extra));
+    fetch("http://127.0.0.1:7073/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      signal: AbortSignal.timeout(3000),
+    }).catch(() => {}); // arifFlow unreachable — local sinks remain, execution unblocked
+  } catch { /* never blocks */ }
+}
+
+/**
+ * P1-5 FULL hook wrapper: outermost around the registration chokepoint so
+ * success, isError, and thrown failures each mint exactly one receipt.
+ */
+export function withFlowReceipt(
+  toolName: string,
+  handler: (args: any, ctx: any) => Promise<any>,
+): (args: any, ctx: any) => Promise<any> {
+  return async (args: any, ctx: any) => {
+    const t0 = Date.now();
+    const argsObj = (args && typeof args === "object") ? args : {};
+    const actor = (typeof argsObj.actor_id === "string") ? argsObj.actor_id : "";
+    const sess = (typeof argsObj.session_id === "string") ? argsObj.session_id : "";
+    try {
+      const res = await handler(args, ctx);
+      const isErr = !!(res && typeof res === "object" && res.isError === true);
+      postFlowReceipt(toolName, actor, sess, Date.now() - t0, isErr);
+      return res;
+    } catch (err) {
+      postFlowReceipt(toolName, actor, sess, Date.now() - t0, true, { source: "aforge-exec-threw" });
+      throw err;
+    }
+  };
+}
+
 import { gateToolIngress } from "../../infrastructure/governance/actIngress.js";
 import {
   gateToolClaim,
@@ -693,7 +821,7 @@ const _originalTool = server.tool.bind(server);
   // Tuas 2 invocation telemetry. This wrapper is the narrowest point common to
   // every dispatch transport (stdio / :7072 gated / :7071 in-process) — all of
   // them call the handler stored in the SDK registry. Fail-soft, additive.
-  const wrappedHandler = withInvocationLog(name, async (args: any, ctx: any) => {
+  const wrappedHandler = withFlowReceipt(name, withInvocationLog(name, async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     // 2026-10-25: pass the full args — classifyTool normalizes the action
     // carrier (mode OR verb). Extracting only args.mode hid forge_telegram
@@ -910,7 +1038,7 @@ const _originalTool = server.tool.bind(server);
       throw err;
     }
     return injectEpistemic(result, name) as any;
-  });
+  }));
   // Federation alignment: ACTUATOR header on server.tool() path too
   const actuatorDesc = enrichActuatorDescription(name, description);
   // ── MCP annotations: readOnlyHint / destructiveHint (2026-07-19) ──
@@ -937,7 +1065,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
     : options;
   // Tuas 2 invocation telemetry — registerTool dispatch path (same shared
   // contract, same single line per call).
-  const wrappedHandler = withInvocationLog(name, async (args: any, ctx: any) => {
+  const wrappedHandler = withFlowReceipt(name, withInvocationLog(name, async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     // 2026-10-25: full args to classifyTool (mode OR verb carrier normalization)
     const actionClass = classifyTool(name, argsObj);
@@ -1141,7 +1269,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
       throw err;
     }
     return injectEpistemic(result, name) as any;
-  });
+  }));
   return _originalRegisterTool(name, gatedOptions, wrappedHandler as any);
 };
 
