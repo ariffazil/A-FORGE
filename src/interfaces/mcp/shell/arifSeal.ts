@@ -330,6 +330,24 @@ export class ArifSeal {
       const content = await fs.readFile(this.config.ledgerPath, "utf-8");
       const lines = content.trim().split("\n").filter(Boolean);
       let prevHash = computeHash("GENESIS_BLOCK_arifOS_FORGE_v1");
+      // R-2026-11-15: rotated segments open with prev_hash = previous segment's
+      // tail (sidecar ROTATION-*.json beside the ledger, per the 2026-11-06
+      // sealLedgerRouting rotation). Genesis seeding flagged the healthy rotated
+      // chain as CHAIN_ERROR. Honor the sidecar when it points at this file.
+      try {
+        const dir = path.dirname(this.config.ledgerPath);
+        for (const f of await fs.readdir(dir)) {
+          if (!/^ROTATION-.*\.json$/.test(f)) continue;
+          const rot = JSON.parse(await fs.readFile(path.join(dir, f), "utf-8")) as {
+            new_segment?: string; previous_tail_hash?: string;
+          };
+          if (rot.new_segment && typeof rot.previous_tail_hash === "string" &&
+              path.resolve(rot.new_segment) === path.resolve(this.config.ledgerPath)) {
+            prevHash = rot.previous_tail_hash;
+            break;
+          }
+        }
+      } catch { /* no readable sidecar → keep genesis seeding */ }
 
       for (let i = 0; i < lines.length; i++) {
         records++;

@@ -136,6 +136,30 @@ export function registerPolicyTools(server: McpServer): void {
             }
           }
         }
+        // R-2026-11-15 (external probe): the composite projected the session
+        // gate but not the SHELL judge — a command-bearing call answered ALLOW
+        // for `rm -rf ...` strings, because the policy layer judges tool access,
+        // not command content. classifyCommand is the same classifier the
+        // runtime shell gate uses; its deny/gate must surface at plan time.
+        const cmdStr = typeof (plannedArgs as Record<string, unknown>)?.command === "string"
+          ? ((plannedArgs as Record<string, unknown>).command as string)
+          : undefined;
+        if (cmdStr && cmdStr.trim()) {
+          const shell = classifyCommand(cmdStr);
+          if (shell.decision === "deny") {
+            composite.policy_verdict ??= composite.verdict ?? "ALLOW";
+            composite.verdict = "DENY";
+            composite.reasons = [...(composite.reasons ?? []),
+              `SHELL_JUDGE_PROJECTION: classifyCommand → DENY (${shell.reason})`,
+            ];
+          } else if (shell.decision === "gate") {
+            composite.policy_verdict ??= composite.verdict ?? "ALLOW";
+            composite.verdict = "HOLD";
+            composite.reasons = [...(composite.reasons ?? []),
+              `SHELL_JUDGE_PROJECTION: classifyCommand → GATE (${shell.reason}) — runtime requires human approval`,
+            ];
+          }
+        }
         return {
           content: [{ type: "text" as const, text: JSON.stringify(composite, null, 2) }],
         };

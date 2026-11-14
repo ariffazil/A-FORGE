@@ -37,61 +37,11 @@ import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 // F2 TRUTH: receipts are evidence of execution, not assertion.
 // Fire-and-forget: never blocks the MCP response.
 
-const ARIFLOW_INGEST = "http://127.0.0.1:7073/ingest";
+// P1-7 (ARIF GO 2026-11-14): legacy local receipt mint REMOVED — canonical emitter
+// lives in core.ts (buildFlowReceipt/postFlowReceipt/withFlowReceipt) covering every
+// transport. This block previously minted schema-incomplete receipts (missing
+// receipt_id/created_at/cooling_decision) that silently 400'd at arifFlow /ingest.
 
-function classifyFlowStepType(toolName: string): string {
-  if (toolName.includes("check") || toolName.includes("verify") || toolName.includes("probe") ||
-      toolName.includes("health") || toolName.includes("scan") || toolName.includes("fingerprint")) {
-    return "Verify";
-  }
-  if (toolName.includes("seal") || toolName.includes("vault") || toolName.includes("canonize")) {
-    return "Seal";
-  }
-  if (toolName.includes("route") || toolName.includes("dispatch")) {
-    return "Route";
-  }
-  return "Execute";
-}
-
-function classifyFlowEpistemic(toolName: string): string {
-  if (toolName.includes("probe") || toolName.includes("health") || toolName.includes("status") ||
-      toolName.includes("scan") || toolName.includes("observe")) {
-    return "Observation";
-  }
-  if (toolName.includes("compute") || toolName.includes("score") || toolName.includes("evaluate")) {
-    return "Derivation";
-  }
-  if (toolName.includes("think") || toolName.includes("reason") || toolName.includes("analyze")) {
-    return "Interpretation";
-  }
-  return "Derivation";
-}
-
-let _flowReceiptSeq = 0;
-
-function mintFlowReceipt(
-  toolName: string,
-  actorId: string,
-  sessionId: string,
-  durationMs: number,
-  isError: boolean,
-): void {
-  const receipt = {
-    actor_id: actorId || "aforge-stateless",
-    session_id: sessionId || "http-stateless",
-    step_type: classifyFlowStepType(toolName),
-    step_number: ++_flowReceiptSeq,
-    epistemic_label: classifyFlowEpistemic(toolName),
-    floor_verdict: isError ? "Void" : "Pass",
-    cost_ns: Math.max(1, Math.round(durationMs * 1_000_000)),
-    payload: { tool: toolName, source: "aforge-post-exec-hook" },
-  };
-  fetch(ARIFLOW_INGEST, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(receipt),
-  }).catch(() => {}); // fire-and-forget; never blocks, never throws
-}
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
 import { assertActMutationGateOrExit } from "../../infrastructure/governance/actIngress.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
@@ -183,6 +133,11 @@ const STATELESS_TOOLS = new Set([
   "forge_shell_status",
   "forge_shell_ledger",
   "forge_shell_alert_history",
+  // R-2026-11-15 (external probe SEAL-30b82fe057ca4950): chain heartbeat is a
+  // pure read (actionClassifier OBSERVE_TOOLS; R5 header: never writes a chain)
+  // but was absent here, so stateless external agents got SESSION_REQUIRED —
+  // the federation's liveness pulse was unobservable from outside.
+  "forge_chain_state",
   "forge_registry",
   "forge_document_ingest",                                   // Phase 1 — read-only, no side effects
 
@@ -1469,14 +1424,8 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 verdict: normalized?.isError ? "failure" : "success",
                 actor_id: toolArgs?.actor_id ?? "stateless-client",
               }, `${toolName} → ${normalized?.isError ? "isError" : "success"}`);
-              // ── arifFlow post-execution receipt (F13-ratified 2026-09-17) ──
-              mintFlowReceipt(
-                toolName,
-                toolArgs?.actor_id ?? toolArgs?.actorId ?? "",
-                toolArgs?.session_id ?? "",
-                _toolDurationMs,
-                !!(normalized && typeof normalized === "object" && normalized.isError),
-              );
+              // P1-5 full hook: receipt minted at the registration chokepoint (core.ts
+              // withFlowReceipt) — covers every transport; no double-mint here.
               res.writeHead(200, { "Content-Type": "application/json" });
               res.end(jsonRpcResult(msgId, normalized));
             } catch (err: any) {

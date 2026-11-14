@@ -2355,7 +2355,10 @@ export function registerPredictTools(server: McpServer): void {
         target: proposed_action,
         intent: proposed_action,
         tool_name: "forge_predict",
-        metadata: params as any,
+        // R-2026-11-15 (external probe): `mode` was destructured then dropped,
+        // so the simulator never saw the caller's requested mode and silently
+        // substituted mc defaults. Pass it through.
+        metadata: { ...(params as Record<string, unknown>), ...(mode ? { mode } : {}) } as any,
       };
 
       // Use the canonical preActionSimulation module when possible (Tier 2 wiring)
