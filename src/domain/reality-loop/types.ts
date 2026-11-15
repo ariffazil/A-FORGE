@@ -360,6 +360,9 @@ export interface RealityLoopState {
 
   /** Active quantum hypotheses (from quantum-frame stage) */
   active_hypotheses: Hypothesis[];
+  /** Telemetry provenance — set ONLY by a collapse that passed the
+   *  deterministic gate. Null while INPUT_BINDING_GAP is unresolved. */
+  last_quantum_evaluation: QuantumEvaluation | null;
 
   /** The last executed action (from reality-engineer stage) */
   last_action: ActionRecord | null;
@@ -450,6 +453,7 @@ export interface RealityLoopState {
   threshold_validation: {
     min_g_score: ThresholdValidation;
     min_witness: ThresholdValidation;
+    axis_floor: ThresholdValidation;
   };
 }
 
@@ -464,6 +468,39 @@ export interface EvidenceEntry {
   captured_at: string;
 }
 
+/** Typed ingestion contract for quantum-collapse axes (P0 2026-11-15).
+ *  These are the four [0,1] axes the ENCODE prompt currently only NAMES
+ *  (G = Q·V·Ψ·Φ). The model→engine boundary does not yet carry them;
+ *  until it does, every collapse must fail closed. */
+export interface QuantumAxes {
+  q: number;
+  v: number;
+  psi: number;
+  phi: number;
+}
+
+/** Immutable deterministic evaluation of one candidate.
+ *  Produced ONLY by evaluateQuantumCandidate(); the collapse gate accepts
+ *  nothing else. Caller-supplied booleans cannot become an evaluation. */
+export interface QuantumEvaluation {
+  hypothesisId: string;
+  axes: QuantumAxes;
+  score: number;
+  minAxis: number;
+  /** Per-axis admissibility floor (axis_floor key — NOT min_g_score). */
+  floor: number;
+  failedAxes: Array<keyof QuantumAxes>;
+  /** Product-G floor (min_g_score) bound to this evaluation; null = axis-only legacy eval. */
+  productFloor: number | null;
+  /** True when score >= productFloor (true when no product floor was bound). */
+  scoreGatePassed: boolean;
+  eligible: boolean;
+  evaluatorVersion: "quantum-evaluator-v1";
+  inputHash: string;
+  iteration: number;
+  evaluatedAt: string;
+}
+
 export interface Hypothesis {
   id: string;
   statement: string;
@@ -474,6 +511,9 @@ export interface Hypothesis {
   collapsed: boolean;
   collapsed_to?: boolean;
   collapsed_at?: string;
+  /** Structured axes from the model response — null when the boundary does
+   *  not supply them (current state: INPUT_BINDING_GAP, fail closed). */
+  axes?: QuantumAxes | null;
 }
 
 export interface ActionRecord {
@@ -585,6 +625,14 @@ export interface RealityLoopConfig {
   min_g_score: number;
 
   /**
+   * Per-axis admissibility floor: min(q, v, psi, phi) >= axis_floor.
+   * NEW key per F13 floor decision 2026-11-15 — additive to min_g_score,
+   * which stays the PRODUCT-G floor. Never overload one key for both.
+   * PHASE 1 HEURISTIC — calibration required.
+   */
+  axis_floor: number;
+
+  /**
    * Per-iteration tri-witness gate (layer 1 of 3 APEX gates, prompt side).
    * W³ = ∛(h × ai × ext) computed at STAGE 4 (VERIFY) must exceed this
    * to pass. Default 0.70. Distinct from promotion_thresholds.W3_min
@@ -615,6 +663,7 @@ export type ThresholdValidation = {
 export const DEFAULT_HEURISTIC_GATES = {
   min_g_score: 0.70,
   min_witness: 0.70,
+  axis_floor: 0.70,
 } as const;
 
 export const DEFAULT_CONFIG: RealityLoopConfig = {
@@ -632,4 +681,5 @@ export const DEFAULT_CONFIG: RealityLoopConfig = {
   },
   min_g_score: DEFAULT_HEURISTIC_GATES.min_g_score,
   min_witness: DEFAULT_HEURISTIC_GATES.min_witness,
+  axis_floor: DEFAULT_HEURISTIC_GATES.axis_floor,
 };

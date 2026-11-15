@@ -14,7 +14,7 @@
  * @constitutional F4 CLARITY — each iteration must reduce entropy
  */
 
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
@@ -25,6 +25,8 @@ import {
   type RealityLoopConfig,
   type ThresholdValidation,
   type Hypothesis,
+  type QuantumAxes,
+  type QuantumEvaluation,
   type EvidenceEntry,
   type ActionRecord,
   type EntropyEntry,
@@ -134,14 +136,17 @@ export function createLoop(
   const cfgRecord = (config ?? {}) as Record<string, unknown>;
   const rawG = cfgRecord.min_g_score;
   const rawW = cfgRecord.min_witness;
+  const rawA = cfgRecord.axis_floor;
   const minG = normalizeThreshold(rawG, DEFAULT_CONFIG.min_g_score, "min_g_score");
   const minW = normalizeThreshold(rawW, DEFAULT_CONFIG.min_witness, "min_witness");
+  const minA = normalizeThreshold(rawA, DEFAULT_CONFIG.axis_floor, "axis_floor");
 
   const cfg = {
     ...DEFAULT_CONFIG,
     ...config,
     min_g_score: minG.effective_value,
     min_witness: minW.effective_value,
+    axis_floor: minA.effective_value,
   };
 
   const state: RealityLoopState = {
@@ -151,6 +156,7 @@ export function createLoop(
     started_at: new Date().toISOString(),
     evidence_base: [],
     active_hypotheses: [],
+    last_quantum_evaluation: null,
     last_action: null,
     entropy_history: [],
     self_modifications: [],
@@ -172,6 +178,7 @@ export function createLoop(
     threshold_validation: {
       min_g_score: minG,
       min_witness: minW,
+      axis_floor: minA,
     },
   };
   activeLoops.set(session_id, state);
@@ -353,26 +360,204 @@ export function setHypotheses(
   hypotheses: Omit<Hypothesis, "id" | "probability_amplitude">[],
 ): Hypothesis[] {
   const n = hypotheses.length;
+  // Typed ingestion boundary (P0 2026-11-15): if axes are supplied they must
+  // be valid; if absent they are stored as null and the hypothesis can never
+  // collapse (the gate refuses unbound axes). No invented values.
+  for (const h of hypotheses) {
+    if (h.axes != null) {
+      const check = validateQuantumAxes(h.axes);
+      if (!check.ok) {
+        throw new QuantumAxesError(
+          `invalid quantum axes on ingestion: ${check.failed.join(",")}`,
+          check.failed,
+        );
+      }
+    }
+  }
   state.active_hypotheses = hypotheses.map((h, i) => ({
     ...h,
+    axes: h.axes ?? null,
     id: `H${state.iteration}-${i + 1}`,
     probability_amplitude: 1 / n,
   }));
   return state.active_hypotheses;
 }
 
+// ── Quantum collapse gate (P0 slice 2026-11-15) ──────────────────────────────
+// Typed ingestion + deterministic evaluation + pre-mutation choke point.
+// INPUT_BINDING_GAP (probe 2026-11-15): the ENCODE prompt NAMES G=Q·V·Ψ·Φ but
+// the model→engine boundary does not carry structured axes. Absent axes fail
+// closed. Caller-supplied booleans can no longer collapse a hypothesis.
+
+export type QuantumAxesValidation =
+  | { ok: true }
+  | { ok: false; failed: string[] };
+
+export class QuantumAxesError extends Error {
+  readonly axesFailure: string[];
+  constructor(message: string, axesFailure: string[] = []) {
+    super(message);
+    this.name = "QuantumAxesError";
+    this.axesFailure = axesFailure;
+  }
+}
+
+const QUANTUM_AXIS_KEYS = ["q", "v", "psi", "phi"] as const;
+
+/** Fail-closed validation: finite numbers in [0,1], all four present. No clamp. */
+export function validateQuantumAxes(axes: unknown): QuantumAxesValidation {
+  const failed: string[] = [];
+  if (!axes || typeof axes !== "object") {
+    return { ok: false, failed: [...QUANTUM_AXIS_KEYS] };
+  }
+  const rec = axes as Record<string, unknown>;
+  for (const k of QUANTUM_AXIS_KEYS) {
+    const value = rec[k];
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1) {
+      failed.push(k);
+    }
+  }
+  return failed.length === 0 ? { ok: true } : { ok: false, failed };
+}
+
+/** Canonical hash of the exact inputs an evaluation attests to.
+ *  Binds BOTH named floors: axis floor (`floor`) and product floor. */
+export function quantumAxesHash(
+  hypothesisId: string,
+  axes: QuantumAxes,
+  floor: number,
+  productFloor: number | null = null,
+): string {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        hypothesisId,
+        axes: { q: axes.q, v: axes.v, psi: axes.psi, phi: axes.phi },
+        floor,
+        productFloor,
+      }),
+    )
+    .digest("hex");
+}
+
+/** Pure deterministic evaluator. Invalid input fails closed (throws);
+ *  a below-floor axis yields ineligible, not an error. Immutable result. */
+export function evaluateQuantumCandidate(input: {
+  hypothesisId: string;
+  axes: QuantumAxes;
+  /** Per-axis admissibility floor (axis_floor key). */
+  floor: number;
+  iteration: number;
+  /** Product-G floor (min_g_score). Omit ONLY for axis-only legacy evaluations
+   *  (productFloor=null); live collapse paths must always bind it. */
+  productFloor?: number;
+}): QuantumEvaluation {
+  const check = validateQuantumAxes(input.axes);
+  if (!check.ok) {
+    throw new QuantumAxesError(
+      `invalid axes for ${input.hypothesisId}: ${check.failed.join(",")}`,
+      check.failed,
+    );
+  }
+  if (!Number.isFinite(input.floor) || input.floor < 0 || input.floor > 1) {
+    throw new QuantumAxesError(`invalid floor: ${String(input.floor)}`, ["floor"]);
+  }
+  const { q, v, psi, phi } = input.axes;
+  const productFloor = input.productFloor ?? null;
+  if (productFloor !== null && (!Number.isFinite(productFloor) || productFloor < 0 || productFloor > 1)) {
+    throw new QuantumAxesError(`invalid productFloor: ${String(productFloor)}`, ["productFloor"]);
+  }
+  const score = q * v * psi * phi;
+  const scoreGatePassed = productFloor === null ? true : score >= productFloor;
+  const failedAxes = QUANTUM_AXIS_KEYS.filter((k) => input.axes[k] < input.floor);
+  const evaluation: QuantumEvaluation = Object.freeze({
+    hypothesisId: input.hypothesisId,
+    axes: Object.freeze({ q, v, psi, phi }),
+    score,
+    minAxis: Math.min(q, v, psi, phi),
+    floor: input.floor,
+    failedAxes,
+    productFloor,
+    scoreGatePassed,
+    eligible: failedAxes.length === 0 && scoreGatePassed,
+    evaluatorVersion: "quantum-evaluator-v1" as const,
+    inputHash: quantumAxesHash(input.hypothesisId, { q, v, psi, phi }, input.floor, productFloor),
+    iteration: input.iteration,
+    evaluatedAt: new Date().toISOString(),
+  });
+  return evaluation;
+}
+
+export type CollapseResult =
+  | { status: "COLLAPSED"; hypothesis: Hypothesis; evaluation: QuantumEvaluation }
+  | { status: "REFUSED"; reason: string; failed: string[] };
+
+/** Guarded collapse choke point. The only mutation path to collapsed=true.
+ *  A caller-supplied boolean or any forged object is refused. */
 export function collapseHypothesis(
   state: RealityLoopState,
   hypothesis_id: string,
-  value: boolean,
-): Hypothesis | undefined {
-  const h = state.active_hypotheses.find((h) => h.id === hypothesis_id);
-  if (h) {
-    h.collapsed = true;
-    h.collapsed_to = value;
-    h.collapsed_at = new Date().toISOString();
+  evaluation: QuantumEvaluation,
+): CollapseResult {
+  const refuse = (reason: string, failed?: string[]): CollapseResult => ({
+    status: "REFUSED",
+    reason,
+    failed: failed ?? [reason],
+  });
+  if (
+    !evaluation ||
+    typeof evaluation !== "object" ||
+    (evaluation as QuantumEvaluation).evaluatorVersion !== "quantum-evaluator-v1"
+  ) {
+    return refuse("evaluation_required: caller-supplied booleans cannot collapse");
   }
-  return h;
+  const h = state.active_hypotheses.find((x) => x.id === hypothesis_id);
+  if (!h) return refuse("hypothesis_not_found");
+  if (evaluation.hypothesisId !== hypothesis_id) return refuse("id_mismatch");
+  if (!h.axes) {
+    return refuse("axes_unbound: INPUT_BINDING_GAP — hypothesis carries no structured axes");
+  }
+  const expected = quantumAxesHash(hypothesis_id, h.axes, evaluation.floor, evaluation.productFloor);
+  if (expected !== evaluation.inputHash) return refuse("input_hash_mismatch");
+  const axisFloor = state.effective_config.axis_floor ?? DEFAULT_CONFIG.axis_floor;
+  if (evaluation.floor !== axisFloor) {
+    return refuse("floor_mismatch: evaluation axis floor != effective config axis_floor");
+  }
+  const productFloor = state.effective_config.min_g_score;
+  if (evaluation.productFloor === null || evaluation.productFloor === undefined) {
+    return refuse("product_floor_unbound: evaluation must bind the product floor (min_g_score)");
+  }
+  if (evaluation.productFloor !== productFloor) {
+    return refuse("product_floor_mismatch: evaluation product floor != effective config min_g_score");
+  }
+  if (evaluation.iteration !== state.iteration) return refuse("stale_evaluation");
+  if (!evaluation.eligible) return refuse("ineligible", evaluation.failedAxes.map(String));
+  h.collapsed = true;
+  h.collapsed_to = true;
+  h.collapsed_at = new Date().toISOString();
+  state.last_quantum_evaluation = evaluation;
+  return { status: "COLLAPSED", hypothesis: h, evaluation };
+}
+
+export type SelectionResult =
+  | { status: "HOLD"; reason: "no_admissible_candidate" }
+  | { status: "SELECTED"; evaluation: QuantumEvaluation };
+
+/** Phase-4 selection over evaluations: admissible set only, argmax score,
+ *  deterministic tie-break (score desc, then hypothesisId asc). */
+export function selectAdmissible(
+  evaluations: readonly QuantumEvaluation[],
+): SelectionResult {
+  const admissible = evaluations.filter((e) => e.eligible);
+  if (admissible.length === 0) {
+    return { status: "HOLD", reason: "no_admissible_candidate" };
+  }
+  const sorted = [...admissible].sort(
+    (a, b) =>
+      b.score - a.score ||
+      (a.hypothesisId < b.hypothesisId ? -1 : a.hypothesisId > b.hypothesisId ? 1 : 0),
+  );
+  return { status: "SELECTED", evaluation: sorted[0] };
 }
 
 export function recordAction(
@@ -534,6 +719,10 @@ export async function sealIteration(state: RealityLoopState): Promise<string> {
     },
     threshold_validation: state.threshold_validation,
     calibration_required: true,
+    // Quantum collapse provenance (G directive): telemetry is produced ONLY by
+    // the deterministic evaluator — never from prompt text or model-reported scores.
+    quantum_g_score: state.last_quantum_evaluation?.score ?? null,
+    quantum_evaluation: state.last_quantum_evaluation,
   }, null, 2);
 
   const vaultPath = resolve(vaultDir, `iter-${state.iteration}.json`);
