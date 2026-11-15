@@ -248,6 +248,9 @@ export function advanceStage(state: RealityLoopState): RealityStage {
   // If we just completed SEAL, increment iteration and land on RETURN
   if (next === "RETURN") {
     state.iteration++;
+    // Telemetry provenance fix (2026-11-15): a closed iteration must not leak
+    // its collapse evaluation into the next cycle.
+    state.last_quantum_evaluation = null;
   }
   // If we looped back to OBSERVE (from RETURN or explicit restart)
   if (next === "OBSERVE" && state.iteration === 0) {

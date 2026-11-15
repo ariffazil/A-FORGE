@@ -2081,9 +2081,10 @@ export function registerRealityLoopTools(server: McpServer): void {
                     iteration: state.iteration,
                   }));
                 const selection = selectAdmissible(evaluations);
-                state.last_quantum_evaluation = selection.status === "SELECTED"
-                  ? selection.evaluation
-                  : (evaluations[0] ?? null);
+                // Telemetry provenance fix (2026-11-15): ingest MUST NOT write
+                // collapse telemetry. last_quantum_evaluation is set ONLY by a
+                // COLLAPSED result from collapseHypothesis. The selection above is
+                // advisory display for this response and never becomes provenance.
                 return {
                   content: [{
                     type: "text" as const,

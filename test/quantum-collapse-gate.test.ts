@@ -16,6 +16,7 @@ import assert from "node:assert/strict";
 import { createLoop } from "../src/domain/reality-loop/engine.js";
 import {
   QuantumAxesError,
+  advanceStage,
   collapseHypothesis,
   evaluateQuantumCandidate,
   quantumAxesHash,
@@ -336,4 +337,19 @@ test("quantumAxesHash binds id+axes+floor", () => {
   assert.notEqual(h1, quantumAxesHash("H1-1", AX, 0.8, 0.5));
   assert.notEqual(h1, quantumAxesHash("H1-1", AX, 0.7, 0.6));
   assert.match(h1, /^[0-9a-f]{64}$/);
+});
+
+// 19 — telemetry does not leak across iterations
+test("collapse evaluation resets when iteration closes (RETURN)", () => {
+  const state = makeLoop([AX]);
+  const h = state.active_hypotheses[0];
+  const ev = evaluateFor(state, 0);
+  const res = collapseHypothesis(state, h.id, ev);
+  assert.equal(res.status, "COLLAPSED");
+  assert.equal(state.last_quantum_evaluation, ev);
+  state.current_stage = "SEAL";
+  const next = advanceStage(state);
+  assert.equal(next, "RETURN");
+  assert.equal(state.iteration, 2);
+  assert.equal(state.last_quantum_evaluation, null, "new iteration must not inherit telemetry");
 });
