@@ -1,0 +1,66 @@
+{
+  "suite": "federation-lane-conformance-live",
+  "generated_utc": "2026-11-05T09:16:32Z",
+  "duration_s": 6.09,
+  "surfaces": {
+    "aforge_ingress": "http://127.0.0.1:7072/mcp",
+    "arifos_kernel": "http://127.0.0.1:8088/mcp"
+  },
+  "credential_fingerprint": {
+    "session_id": "(absent)",
+    "act": "(absent)"
+  },
+  "cases": [
+    {
+      "case": "A1",
+      "title": "forge_vault mode=write with NO session \u2192 SESSION_GATE SESSION_REQUIRED",
+      "lane": "A-forge-ingress",
+      "refused": true,
+      "gate": "SESSION_REQUIRED",
+      "expected_gate": "SESSION_REQUIRED",
+      "gate_advisory": false,
+      "gate_match": true,
+      "passed": true,
+      "evidence": {
+        "message_head": "SESSION_GATE: Tool \"forge_vault\" is EXECUTE_REVERSIBLE. SESSION_REQUIRED: No session_id provided for MUTATE-class tool"
+      }
+    },
+    {
+      "case": "A2",
+      "title": "forge_vault mode=write with fake session+token \u2192 SESSION_GATE SESSION_REQUIRED",
+      "lane": "A-forge-ingress",
+      "refused": true,
+      "gate": "SESSION_REQUIRED",
+      "expected_gate": "SESSION_REQUIRED",
+      "gate_advisory": false,
+      "gate_match": true,
+      "passed": true,
+      "evidence": {
+        "message_head": "SESSION_GATE: Tool \"forge_vault\" is EXECUTE_REVERSIBLE. KERNEL_VERIFY_FAILED: KERNEL_UNREACHABLE: arifOS kernel did not verify this session"
+      }
+    },
+    {
+      "case": "A3",
+      "lane": "A-forge-ingress",
+      "skipped": true,
+      "reason": "AF_SESSION_ID/AF_ACT not provided"
+    },
+    {
+      "case": "A5",
+      "lane": "A-forge-ingress",
+      "skipped": true,
+      "reason": "AF_SESSION_ID/AF_ACT not provided"
+    },
+    {
+      "case": "C1",
+      "lane": "C-arifos-kernel",
+      "skipped": true,
+      "reason": "AF_SESSION_ID/AF_ACT not provided"
+    }
+  ],
+  "summary": {
+    "pass": 2,
+    "fail": 0,
+    "skipped": 3
+  }
+}

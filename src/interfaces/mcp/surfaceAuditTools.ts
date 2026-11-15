@@ -593,6 +593,11 @@ export function registerSurfaceAuditTools(server: McpServer): void {
             text: JSON.stringify({
               status: allClean ? "PASS" : "DRIFT_DETECTED",
               summary: results.map((r) => `${r.organ}: ${r.drift_count} drifts ${r.is_clean ? "✅" : "⚠️"}`).join(" | "),
+              // F2 TRUTH (2026-11-07): a drift COUNT without its findings is a
+              // count without evidence — the scan envelope previously dropped
+              // `results`, making remote audits undiagnosable while the same
+              // module returned full findings on direct calls. Carry them.
+              results,
               timestamp: new Date().toISOString(),
             }, null, 2),
           }],

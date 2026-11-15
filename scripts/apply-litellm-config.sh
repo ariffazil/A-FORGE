@@ -62,9 +62,10 @@ fi
 echo "healthy after ~$((i*2))s"
 
 echo "== 5) canary =="
+# 2026-11-07 333-AGI: canary moved mimo-v2.6-flash-payg -> fed/sealion. The MiMo PAYG lane now falls back to Groq gpt-oss-120b (reasoning), which returns empty content at max_tokens=20 -> every apply failed its own canary after a healthy restart. fed/sealion is RM0 and returns literal APPLY_OK (live probe 2026-11-07T02:33Z).
 CAN=$(curl -s --max-time 30 "$GW/v1/chat/completions" \
   -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
-  -d '{"model":"mimo-v2.6-flash-payg","messages":[{"role":"user","content":"reply exactly: APPLY_OK"}],"max_tokens":20}')
+  -d '{"model":"fed/sealion","messages":[{"role":"user","content":"reply exactly: APPLY_OK"}],"max_tokens":20}')
 echo "$CAN" | python3 -c "import sys,json; d=json.load(sys.stdin); c=d['choices'][0]['message']['content']; assert 'APPLY_OK' in c, d; print('canary OK:', c)"
 
 echo "$NEW_SHA" > "$MARKER"

@@ -187,3 +187,4 @@ data/token_bank.db
 # Retention owner = A-FORGE runtime state writer. File RETAINED on disk (frozen),
 # untracked by explicit reviewed change; churn no longer dirties the tree.
 data/web_federation_state.json
+data-ledger/

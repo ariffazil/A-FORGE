@@ -63,34 +63,14 @@ export function applyDeprecationAliases(server: McpServer): void {
     process.stderr.write("[deprecationAliases] _registeredTools unavailable — aliases NOT applied\n");
     return;
   }
-  for (const [name, survivor] of Object.entries(DEPRECATION_ALIASES)) {
-    const tool = registry[name];
-    if (!tool) {
-      process.stderr.write(`[deprecationAliases] ${name} not registered — alias skipped (GAP)\n`);
-      continue;
+  // REMOVAL EPOCH EXECUTED 2026-11-07 — F13 sovereign GO ("Item-3 19-alat").
+  // The one-epoch stub grace (2026-10-22 -> 2026-11-05) is over: the aliased
+  // tools are unregistered entirely. The map above is retained as the removal
+  // manifest + survivor pointer for tool-not-found diagnostics.
+  for (const name of Object.keys(DEPRECATION_ALIASES)) {
+    if (registry[name]) {
+      delete registry[name];
+      process.stderr.write(`[deprecationAliases] ${name} REMOVED (epoch ${REMOVAL_EPOCH} passed; use ${DEPRECATION_ALIASES[name]})\n`);
     }
-    tool.description =
-      `DEPRECATED (GC ${DEPRECATION_DATE}) — use ${survivor}. Removal epoch ${REMOVAL_EPOCH}.`;
-    // Minimal zod object schema: serializes in tools/list as a bare object
-    // schema; unknown arguments are accepted and silently stripped (zod
-    // default), so the stub answers any args with the same body.
-    tool.inputSchema = z.object({});
-    tool.annotations = {
-      readOnlyHint: true,
-      destructiveHint: false,
-      idempotentHint: true,
-    };
-    tool.handler = async () => ({
-      content: [
-        {
-          type: "text" as const,
-          text: JSON.stringify(
-            { deprecated: true, use: survivor, removal_epoch: REMOVAL_EPOCH },
-            null,
-            2,
-          ),
-        },
-      ],
-    });
   }
 }

@@ -224,7 +224,14 @@ function loadAffordances(): Map<string, AffordanceCard> {
       destructive: tool.destructive ?? false,
       reversible: tool.reversible ?? true,
       requires_human_approval: tool.requires_human_approval ?? false,
-      min_mode: (tool.min_mode ?? "GOVERN") as AThinkMode,
+      // R-2026-11-15: cards authored with the classifier vocabulary say
+      // min_mode=OBSERVE; MODE_ORDER only knows FAST|THINK|GOVERN, so an
+      // OBSERVE card became toolMin=99 and denied every caller. Normalize:
+      // OBSERVE means "any request mode may pass" → FAST. Any OTHER unknown
+      // value stays GOVERN (fail-closed).
+      min_mode: (tool.min_mode === "OBSERVE"
+        ? "FAST"
+        : (tool.min_mode ?? "GOVERN")) as AThinkMode,
       risk_label: (tool.risk_label ?? "R0") as RiskLabel,
     });
   }
@@ -311,6 +318,11 @@ const OBSERVE_ONLY_TOOLS = new Set([
   // Shell observation (no execute)
   "forge_shell_status", "forge_shell_alert_history", "forge_shell_ledger",
   "forge_shell_dryrun",
+  // R-2026-11-15 (external probe): chain liveness heartbeat — read-by-design
+  // (R5 header: never writes a chain). Absent here AND its affordance card
+  // carries min_mode=OBSERVE, which MODE_ORDER does not know (FAST|THINK|GOVERN)
+  // → toolMin=99 → every request denied. Set membership + normalization below.
+  "forge_chain_state",
   // Git observation
   "forge_worktree", "forge_vault",  // read/list modes checked at affordance; set here for read
   // Memory & vault reads

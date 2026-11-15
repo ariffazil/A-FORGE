@@ -49,6 +49,134 @@ import { visionAnalyze } from "../../infrastructure/tools/visionAnalyze.js";
 import { domLinter } from "../../infrastructure/tools/domLinter.js";
 import { getMcpPolicyGate } from "../../domain/governance/McpPolicyGate.js";
 import { enforceMcpFloor, floorErrorResponse } from "../../domain/governance/mcpFloorEnforcer.js";
+
+// ── P1-5 FULL / P1-7 (ARIF GO 2026-11-14): canonical executor receipt emitter ──
+// Every governed tool execution on every transport (stdio / :7072 stateful /
+// :7072 stateless / :7071 in-process) flows through the registration wrappers
+// below; withFlowReceipt mints a schema-complete FlowReceipt to arifFlow
+// POST :7073/ingest, fire-and-forget (receipt failure NEVER blocks execution).
+// Schema-completeness is the P1-5f lesson (2026-09-07): receipt_id, created_at
+// and cooling_decision are REQUIRED by arifFlow's FlowReceipt deserializer —
+// their omission silently 400'd every mint and left the executor surface
+// unrepresented in the receipt chain (observatory F-004 source).
+// P1-7 deprecation: the legacy serve.ts local mint (aforge-post-exec-hook,
+// stateless-only, schema-incomplete) is REMOVED — this module is the single
+// canonical emitter. Legacy sinks (local RealityLedger, sealTerminal) remain
+// local-state-only by design and are NOT receipt authority.
+import { randomUUID } from "node:crypto";
+
+export interface FlowReceiptExtra {
+  step_type?: string;
+  floor_verdict?: string;
+  gate?: string;
+  source?: string;
+}
+
+let _flowReceiptSeq = 0;
+
+function classifyFlowStepType(toolName: string): string {
+  if (toolName.includes("check") || toolName.includes("verify") || toolName.includes("probe") ||
+      toolName.includes("health") || toolName.includes("scan") || toolName.includes("fingerprint")) {
+    return "Verify";
+  }
+  if (toolName.includes("seal") || toolName.includes("vault") || toolName.includes("canonize")) {
+    return "Seal";
+  }
+  if (toolName.includes("route") || toolName.includes("dispatch")) {
+    return "Route";
+  }
+  return "Execute";
+}
+
+function classifyFlowEpistemic(toolName: string): string {
+  if (toolName.includes("probe") || toolName.includes("health") || toolName.includes("status") ||
+      toolName.includes("scan") || toolName.includes("observe")) {
+    return "Observation";
+  }
+  if (toolName.includes("compute") || toolName.includes("score") || toolName.includes("evaluate")) {
+    return "Derivation";
+  }
+  if (toolName.includes("think") || toolName.includes("reason") || toolName.includes("analyze")) {
+    return "Interpretation";
+  }
+  return "Derivation";
+}
+
+/** Pure builder — schema-complete FlowReceipt payload (exported for tests). */
+export function buildFlowReceipt(
+  toolName: string,
+  actorId: string,
+  sessionId: string,
+  durationMs: number,
+  isError: boolean,
+  extra?: FlowReceiptExtra,
+): Record<string, unknown> {
+  return {
+    receipt_id: randomUUID(),
+    created_at: new Date().toISOString(),
+    actor_id: actorId || "aforge",
+    session_id: sessionId || "mcp-unbound",
+    step_type: extra?.step_type ?? classifyFlowStepType(toolName),
+    step_number: ++_flowReceiptSeq,
+    epistemic_label: classifyFlowEpistemic(toolName),
+    floor_verdict: extra?.floor_verdict ?? (isError ? "Void" : "Pass"),
+    cost_ns: Math.max(1, Math.round(durationMs * 1_000_000)),
+    cooling_decision: "None", // required by /ingest FlowReceipt schema (P1-5f class)
+    witness_organs: ["aforge"],
+    payload: {
+      organ: "A-FORGE",
+      tool: toolName,
+      source: extra?.source ?? "aforge-exec-hook-p1-5-full",
+      ...(extra?.gate ? { gate: extra.gate } : {}),
+    },
+  };
+}
+
+/** Fire-and-forget emit — never throws, never blocks execution. */
+export function postFlowReceipt(
+  toolName: string,
+  actorId: string,
+  sessionId: string,
+  durationMs: number,
+  isError: boolean,
+  extra?: FlowReceiptExtra,
+): void {
+  try {
+    const body = JSON.stringify(buildFlowReceipt(toolName, actorId, sessionId, durationMs, isError, extra));
+    fetch("http://127.0.0.1:7073/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      signal: AbortSignal.timeout(3000),
+    }).catch(() => {}); // arifFlow unreachable — local sinks remain, execution unblocked
+  } catch { /* never blocks */ }
+}
+
+/**
+ * P1-5 FULL hook wrapper: outermost around the registration chokepoint so
+ * success, isError, and thrown failures each mint exactly one receipt.
+ */
+export function withFlowReceipt(
+  toolName: string,
+  handler: (args: any, ctx: any) => Promise<any>,
+): (args: any, ctx: any) => Promise<any> {
+  return async (args: any, ctx: any) => {
+    const t0 = Date.now();
+    const argsObj = (args && typeof args === "object") ? args : {};
+    const actor = (typeof argsObj.actor_id === "string") ? argsObj.actor_id : "";
+    const sess = (typeof argsObj.session_id === "string") ? argsObj.session_id : "";
+    try {
+      const res = await handler(args, ctx);
+      const isErr = !!(res && typeof res === "object" && res.isError === true);
+      postFlowReceipt(toolName, actor, sess, Date.now() - t0, isErr);
+      return res;
+    } catch (err) {
+      postFlowReceipt(toolName, actor, sess, Date.now() - t0, true, { source: "aforge-exec-threw" });
+      throw err;
+    }
+  };
+}
+
 import { gateToolIngress } from "../../infrastructure/governance/actIngress.js";
 import {
   gateToolClaim,
@@ -127,6 +255,7 @@ import {
   type PredictionResult,
 } from "../../domain/governance/preActionSimulation.js";
 import { validateSession, registerSession, setKernelVerifier, storeSessionAct, getSessionAct, parseActClaims, verifyActToken } from "../../domain/session/sessionGate.js";
+import { resolveActLeaseScope, DEFAULT_LEASE_SCOPE } from "./actLeaseScope.js";
 import { validateLeaseForTool } from "./forgeTools.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
@@ -692,7 +821,7 @@ const _originalTool = server.tool.bind(server);
   // Tuas 2 invocation telemetry. This wrapper is the narrowest point common to
   // every dispatch transport (stdio / :7072 gated / :7071 in-process) — all of
   // them call the handler stored in the SDK registry. Fail-soft, additive.
-  const wrappedHandler = withInvocationLog(name, async (args: any, ctx: any) => {
+  const wrappedHandler = withFlowReceipt(name, withInvocationLog(name, async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     // 2026-10-25: pass the full args — classifyTool normalizes the action
     // carrier (mode OR verb). Extracting only args.mode hid forge_telegram
@@ -909,7 +1038,7 @@ const _originalTool = server.tool.bind(server);
       throw err;
     }
     return injectEpistemic(result, name) as any;
-  });
+  }));
   // Federation alignment: ACTUATOR header on server.tool() path too
   const actuatorDesc = enrichActuatorDescription(name, description);
   // ── MCP annotations: readOnlyHint / destructiveHint (2026-07-19) ──
@@ -936,7 +1065,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
     : options;
   // Tuas 2 invocation telemetry — registerTool dispatch path (same shared
   // contract, same single line per call).
-  const wrappedHandler = withInvocationLog(name, async (args: any, ctx: any) => {
+  const wrappedHandler = withFlowReceipt(name, withInvocationLog(name, async (args: any, ctx: any) => {
     const argsObj = (args && typeof args === "object") ? args : {};
     // 2026-10-25: full args to classifyTool (mode OR verb carrier normalization)
     const actionClass = classifyTool(name, argsObj);
@@ -1140,7 +1269,7 @@ const _originalRegisterTool = server.registerTool.bind(server);
       throw err;
     }
     return injectEpistemic(result, name) as any;
-  });
+  }));
   return _originalRegisterTool(name, gatedOptions, wrappedHandler as any);
 };
 
@@ -1492,9 +1621,11 @@ server.tool(
     ),
     session_token: z.string().optional().describe("arifOS ACT for session continuity"),
     sct: z.string().optional().describe("Legacy alias for session_token — prefer act"),
+    act: z.string().optional().describe("arifOS ACT (act_v1.*) — preferred credential"),
     session_id: z.string().optional().describe("arifOS governance session ID (injected by middleware)"),
   },
-  async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct, session_id: _govSessionId }) => {
+  async ({ actor_id, intent, mode, parent_session_id, session_token: _reqToken, sct: _reqSct, act: _reqAct, session_id: _govSessionId }) => {
+    const callerAct = _reqAct ?? _reqToken ?? _reqSct;
     const effectiveSessionId = _govSessionId ?? parent_session_id;
     const startedAt = Date.now();
     await telemetryInvoke("forge_session_init");
@@ -1509,7 +1640,7 @@ server.tool(
             intent: intent ?? "aforge session",
             mode: "light",
             session_id: effectiveSessionId ?? undefined,
-            session_token: _reqToken ?? _reqSct ?? undefined,
+            session_token: callerAct ?? undefined,
           });
         } catch (primaryErr) {
           console.error(`[forge_session_init] primary arif_init failed:`, primaryErr instanceof Error ? primaryErr.message : primaryErr);
@@ -1519,17 +1650,23 @@ server.tool(
             intent: intent ?? "aforge session",
             mode: "light",
             session_id: effectiveSessionId ?? undefined,
-            session_token: _reqToken ?? _reqSct ?? undefined,
+            session_token: callerAct ?? undefined,
           });
         }
         const response = kernelResponse as Record<string, unknown>;
 	// Extract session_id from kernel response (nested in session object or result object)
         const sessionObj = response.session as Record<string, unknown> | undefined;
         const resultObj = response.result as Record<string, unknown> | undefined;
+        const metaObj = response.meta as Record<string, unknown> | undefined;
         const session_id =
           (sessionObj?.session_id as string | undefined) ??
           (resultObj?.session_id as string | undefined) ??
           (response.session_id as string | undefined);
+        const kernelTraceId =
+          (response.trace_id as string | undefined) ??
+          (resultObj?.trace_id as string | undefined) ??
+          (sessionObj?.trace_id as string | undefined) ??
+          (metaObj?.trace_id as string | undefined);
         // P1.3: Extract session_token (ACT) from kernel for downstream tools
         const session_token =
           (response.session_token as string | undefined) ??
@@ -1552,7 +1689,7 @@ server.tool(
         // P2.2 FIX (2026-08-27): prefer caller-supplied ACT when present —
         // arifOS responses can echo a non-verifiable ACT (act_token mint/verify
         // split). Gate ingress verifies fail-closed, so valid caller ACT wins.
-        const actToStore = _reqToken ?? _reqSct ?? session_token;
+        const actToStore = callerAct ?? session_token;
         if (actToStore) {
           storeSessionAct(session_id, actToStore);
         }
@@ -1643,7 +1780,7 @@ server.tool(
         // setActor(), leaving an actor the kernel had already verified
         // unverified here — the other half of the LEASE_CLASS_EXCEEDED report.
         let actAuth: string | null = null;
-        const actCandidate = _reqToken ?? _reqSct ?? session_token;
+        const actCandidate = callerAct ?? session_token;
         if (actCandidate) {
           const v = verifyActToken(actCandidate);
           if (v.valid && (!v.actor || v.actor === actor_id)) {
@@ -1671,17 +1808,9 @@ server.tool(
         // ran without authority (observed: forge_vault receipt →
         // LEASE_CLASS_EXCEEDED, 2026-10-25). Fix the contract AND report the
         // mint result; an unminted lease must never read as OK.
-        const leaseScope = [
-          "forge_filesystem",
-          "forge_vault",
-          "forge_shell",
-          "forge_shell_dryrun",
-          "forge_seal",
-          "arif_seal",
-          "forge_session_init",
-          "forge_health_check",
-          "forge_ephemeral",
-        ];
+        // Band list has ONE owner — actLeaseScope.ts — so the ACT-resolution
+        // branches, the minted lease and the regression tests cannot drift.
+        const leaseScope = DEFAULT_LEASE_SCOPE;
         // MEASURED 2026-10-27 (forge_surface_audit outbound-ABI): arifOS exposes
         // NO lease verbs on its canonical MCP surface (internal-only leases;
         // drift_check.py: "use arif_init for authority bootstrap"). The historic
@@ -1690,6 +1819,10 @@ server.tool(
         // LEASE_CLASS_EXCEEDED defect). Authority = the presented ACT: the
         // kernel_act lease path below (registerActLease) binds it at session init.
         let lease_status = "KERNEL_LEASES_INTERNAL_ONLY";
+        // Why the ACT-derived scope is what it is (vocabulary match vs band default).
+        // Null until the ACT path runs; reported on the wire so a narrowed lease is
+        // never mistaken for an explicit grant.
+        let leaseScopeSource: string | null = null;
         let lease_reason = "arifOS exposes no lease verbs on its canonical surface — authority = arif_init ACT (registerActLease)";
         // Self-minting authority is DISABLED by default — same rule as
         // issueLeaseViaKernel. An absent kernel lease narrows authority; it
@@ -1703,7 +1836,7 @@ server.tool(
             const localLeaseId = `LCL-${actor_id}-${now.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
             pre_minted_lease = {
               lease_id: localLeaseId,
-              scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_trust_score"],
+              scope: ["forge_filesystem", "forge_vault", "forge_seal", "arif_seal", "forge_session_init", "forge_health_check", "forge_ephemeral", "forge_trust_score", "forge_reality_loop"],
               max_action_class: "MUTATE",
               ttl_seconds: ttl,
               expires_at: now + ttl * 1000,
@@ -1736,8 +1869,17 @@ server.tool(
         if (!pre_minted_lease && actAuth && actAuth !== "OBSERVE_ONLY") {
           try {
             const claims = actCandidate ? parseActClaims(actCandidate) : null;
-            const allowed = (claims?.allowed ?? []).filter((t) => leaseScope.includes(t));
-            const scope = allowed.length ? allowed : leaseScope;
+            // Bug 2026-10-31: intersecting the ACT's kernel-verb vocabulary with
+            // A-FORGE's forge_* vocabulary shared exactly one token ("arif_seal"),
+            // so a valid FULL-band ACT produced a lease scoped to arif_seal only
+            // while still reporting ACT_DERIVED. Resolution + reason live in
+            // actLeaseScope.ts so the branch is testable and reportable.
+            const resolvedScope = resolveActLeaseScope(
+              claims?.allowed,
+              leaseScope,
+            );
+            const scope = resolvedScope.scope;
+            leaseScopeSource = resolvedScope.source;
             const now = Date.now();
             const ttl = 1800;
             const band = actAuth === "FULL" ? "EXECUTE_HIGH_IMPACT" : "EXECUTE_REVERSIBLE";
@@ -1753,11 +1895,7 @@ server.tool(
               expires_at: now + ttl * 1000,
               forbidden: [],
               revoked: false,
-              // NO verdict_geometry. The verdict loop (INIT → judge → seal) is
-              // a per-action constitutional requirement; a session-level ACT
-              // proves the actor's band, not that a trace exists. Synthesizing
-              // a trace_id here would be authority theatre — the action layer
-              // must still demand a real one (VERDICT_LOOP_REQUIRED).
+              session_geometry: kernelTraceId ? { trace_id: kernelTraceId } : undefined,
             } as any);
             pre_minted_lease = {
               lease_id,
@@ -1777,7 +1915,7 @@ server.tool(
             text: JSON.stringify({
               status: "OK",
               session_id,
-              session_token: session_token ?? null,
+              session_token: actToStore ?? session_token ?? null,
               parent_session_id: parent_session_id ?? null,
               kernel_origin: true,
               epoch: new Date().toISOString().split("T")[0],
@@ -1790,6 +1928,7 @@ server.tool(
               act_auth: actAuth,
               lease_status,
               lease_reason,
+              lease_scope_source: leaseScopeSource,
               pre_minted_lease,
             }, null, 2),
           }],
@@ -3588,11 +3727,6 @@ registerCognitionTools(server);
 registerEphemeralTools(server);
 registerWebZenTools(server);
 
-// Install the 5-layer policy pre-check wrapper on every registered tool.
-// Called AFTER all other registerXTools() so it wraps them all.
-// Idempotent: only forge_policy_* tools themselves are excluded to avoid loops.
-installPolicyInterceptor(server);
-
 // Install elicitation gate AFTER policy interceptor.
 // External clients calling MUTATE tools get -32042 (URLElicitationRequiredError)
 // instead of silent denial or execution. This is the Item 2 elicitation gate
@@ -3667,6 +3801,14 @@ startupIsomorphismCheck();
 // Install verdict envelope interceptor — wraps EVERY tool response through
 // standardized VerdictEnvelope. Satu format, satu lokasi, satu monotonic chain.
 // Chamber ke-7: verdict monotonicity.
+// E2-order fix (2026-11-03, unwrap-13-tools-named): the policy interceptor is a
+// ONE-TIME walk over _registeredTools — every module registered after its old
+// install position stayed policy-UNWRAPPED (forge_isomorphism_check, forge_cool,
+// forge_cool_pattern, forge_rsi_dual_rate_fq, forge_rsi_impulse_response,
+// forge_rsi_state_vector, forge_runtime_verify, forge_chain_state,
+// forge_trust_score, forge_compose). It now installs AFTER ALL registrations so
+// it wraps them all; only forge_policy_* is excluded (loop-avoidance BYPASS).
+installPolicyInterceptor(server);
 installVerdictInterceptor(server);
 
 // Initialize identity store

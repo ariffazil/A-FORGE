@@ -24,11 +24,27 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import {
   checkVerdictPrecondition,
-  requiresVerdictCheck,
   type SessionVerdictState,
 } from "../../domain/forge/check_verdict.js";
 import * as fs from "node:fs";
 import * as crypto from "node:crypto";
+
+/**
+ * Explicit kernel call budget (root-cause fix 2026-11-15).
+ *
+ * The MCP SDK applies an implicit 60s request timeout. `arif_init(mode=init)`
+ * is a documented ~60s verb (measured 61.7s with a 180s budget, 75-104s under
+ * probe load; the kernel's own server-side cap is FAST_MCP_TIMEOUT_S=75s).
+ * With the implicit default the client aborted 1.7s before the server's answer,
+ * surfacing as `-32001 Request timed out` / `ARIFOS_UNREACHABLE` in
+ * forge_session_init tests and any A-FORGE init path.
+ *
+ * 180s gives 2.4x headroom over the server cap without masking a true hang.
+ * Override with ARIFOS_KERNEL_CALL_TIMEOUT_MS if a slower verb ever needs it.
+ */
+const KERNEL_CALL_TIMEOUT_MS = Number(
+  process.env.ARIFOS_KERNEL_CALL_TIMEOUT_MS ?? 180_000,
+);
 
 /**
  * Canonical constitution_hash computation.
@@ -247,7 +263,12 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
   // This prevents execution without constitutional approval.
   // Note: aligned to actionClassifier and enforce_restraint_and_verdict where possible.
   const actionClass = classifyToolAction(canonicalTool);
-  if (requiresVerdictCheck(0.5) && (actionClass === 'MUTATE' || actionClass === 'ATOMIC')) {
+  // DISABLED 2026-11-02 (T1 packet): the old guard called requiresVerdictCheck(0.5)
+  // which is `0.5 > 0.5` — always false, so this precondition NEVER executed.
+  // Made explicit so nobody mistakes it for a live threshold. Enabling this block
+  // makes session_id mandatory for MUTATE/ATOMIC → needs call-site audit + tests first.
+  const VERDICT_PRECONDITION_ENABLED = false;
+  if (VERDICT_PRECONDITION_ENABLED && (actionClass === 'MUTATE' || actionClass === 'ATOMIC')) {
     // Check for session_id in args — if present, check session verdict state
     const sessionId = argsRecord.session_id as string | undefined;
     if (!sessionId) {
@@ -423,7 +444,11 @@ export async function callMCP(tool: string, args: unknown): Promise<unknown> {
     });
     try {
       await client.connect(transport);
-      const res = await client.callTool({ name: canonicalTool, arguments: body });
+      const res = await client.callTool(
+        { name: canonicalTool, arguments: body },
+        undefined,
+        { timeout: KERNEL_CALL_TIMEOUT_MS },
+      );
       // Normalise into the JSON-RPC envelope shape the unwrap logic below
       // already handles, so error classification and attribution are unchanged.
       jsonRpcResponse = {

@@ -36,6 +36,26 @@ for grp in ('glm-5.3', 'glm-5.2'):
     print(grp, 'relayed' if n else 'NO-MATCH')
 open(p, 'w').write(src)
 PYEOF"
+  # 2b. 2026-11-07 333-AGI: the literal patch above can NO-MATCH because the SOT moved
+  # ZAI base to os.environ/ZAI_API_BASE. This post-pass is idempotent and authoritative:
+  # relay EVERY zai deployment, make the runtime modules present, rewrite guardrail ref.
+  scp -o BatchMode=yes -q /root/A-FORGE/scripts/fed_context_guard.py $KVM4:/root/A-FORGE/scripts/data/
+  scp -o BatchMode=yes -q /root/.local/share/arifos/fed_attribution_callback.py $KVM4:/root/A-FORGE/scripts/data/
+  ssh -o BatchMode=yes $KVM4 "python3 - <<'PYEOF'
+p='/docker/litellm/config.yaml'
+s=open(p).read()
+s=s.replace('api_base: os.environ/ZAI_API_BASE','api_base: http://100.64.0.2:4013/v1')
+s=s.replace('api_base: https://api.z.ai/api/coding/paas/v4','api_base: http://100.64.0.2:4013/v1')
+lines=s.splitlines(); last=''
+for i,l in enumerate(lines):
+    if 'api_base:' in l: last=l
+    if l.strip()=='api_key: os.environ/ZAI_API_KEY' and '100.64.0.2:4013' in last:
+        lines[i]=l.replace('ZAI_API_KEY','LITELLM_MASTER_KEY')
+s='\n'.join(lines)+'\n'
+s=s.replace('guardrail: fed_context_guard.FedContextGuard','guardrail: data.fed_context_guard.FedContextGuard')
+open(p,'w').write(s)
+print('post-pass: relay_bases=%d guardrail_refs=%d' % (s.count('100.64.0.2:4013'), s.count('data.fed_context_guard')))
+PYEOF"
   # 3. restart + wait
   ssh -o BatchMode=yes $KVM4 "systemctl reset-failed fed-litellm 2>/dev/null || true; systemctl restart fed-litellm"
   sleep 14

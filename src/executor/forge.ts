@@ -22,6 +22,7 @@ import {
   outcomeClassFromStatus,
 } from "./types.js";
 import { recordUnknownOutcome } from "./reconcile.js";
+import { claimReceipt, markDispatched, markOutcome, claimantOf } from "./receiptLedger.js";
 import { recordExperienceTrace } from "../interfaces/mcp/experienceTraceTools.js";
 
 
@@ -118,6 +119,7 @@ async function executeCommand(
   params: Record<string, unknown>,
   bounds: ExecutorReceipt["bounds"],
   authority: ExecutorReceipt["authority"],
+  receiptId: string,
 ): Promise<ActionResult> {
   const startTime = Date.now();
   const actionId = `act-${crypto.randomUUID().slice(0, 8)}`;
@@ -163,6 +165,10 @@ async function executeCommand(
   const TIMEOUT_ERROR_RE = /^(Timed out|AbortError|aborted|The operation was aborted)/i;
 
   try {
+    // The mutation boundary: the tool body is about to run. Everything that can
+    // refuse before this line (validation, verdict, claim, unregistered tool,
+    // out-of-bounds timeout) leaves the receipt CLAIMED but `dispatched: false`.
+    markDispatched(receiptId);
     const output = await Promise.race([
       tool.execute(params),
       new Promise<never>((_, reject) =>
@@ -342,6 +348,68 @@ export async function forgeExecute(
     };
   }
 
+  // ── C2: single-use receipt claim (F13 ORDER 2026-11-01) ──
+  // A grant authorizes ONE mutation. Claiming happens AFTER validation and the
+  // verdict check (so an invalid or non-executable receipt is never consumed)
+  // and BEFORE any dispatch (so a replay can never reach a tool). The claim is
+  // synchronous, hence atomic within this process — see receiptLedger.ts for the
+  // declared persistence boundary (no cross-restart / multi-worker protection).
+  const claim = claimReceipt(receipt.receiptId, claimantOf(receipt));
+  if (!claim.ok) {
+    return {
+      receipt,
+      results: [],
+      summary: {
+        totalActions: 0,
+        succeeded: 0,
+        failed: 0,
+        totalDurationMs: Date.now() - startTime,
+        verdict: "REFUSED",
+        outcome_class: "DENIED",
+      },
+      refusalReasons: [
+        `REPLAY_REJECTED: receipt '${receipt.receiptId}' is already ${claim.state} ` +
+          `(${claim.reason}) — a grant authorizes exactly one execution. ` +
+          `Resolve an UNKNOWN_OUTCOME through reconcile(), or obtain a new receipt.`,
+      ],
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // ── P0-A / B2: bind dispatched params to receipt.inputHash (F13 2026-11-01) ──
+  // receipt.inputHash commits to the approved inputs: sha256(stableStringify(approvedParams)).
+  // Immediately before dispatch, each SUPPLIED action's exact effective params are re-hashed
+  // with forge.ts's own stableStringify (canonical = the contract test's paramsHash) and
+  // compared to the commitment. On mismatch: DENIED, zero tool invocation, zero mutation,
+  // explicit committed/observed hash evidence. Skips only when no params were supplied for
+  // that action (nothing to bind).
+  const preActions = receipt.allowedActions.slice(0, receipt.bounds.maxTools);
+  for (const actionName of preActions) {
+    const provided = params?.[actionName];
+    if (provided === undefined) continue;
+    const observed = createHash("sha256")
+      .update(stableStringify(provided))
+      .digest("hex");
+    if (observed !== receipt.inputHash) {
+      return {
+        receipt,
+        results: [],
+        summary: {
+          totalActions: 0,
+          succeeded: 0,
+          failed: 0,
+          totalDurationMs: Date.now() - startTime,
+          verdict: "REFUSED",
+          outcome_class: "DENIED", // parameter substitution never reaches dispatch
+        },
+        refusalReasons: [
+          `inputHash mismatch for '${actionName}': committed=${receipt.inputHash} observed=${observed} — parameter substitution denied before dispatch`,
+        ],
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
   // Execute each allowed action
   const results: ActionResult[] = [];
   const actions = receipt.allowedActions.slice(
@@ -356,6 +424,7 @@ export async function forgeExecute(
       actionParams,
       receipt.bounds,
       receipt.authority,
+      receipt.receiptId,
     );
     results.push(result);
   }
@@ -373,12 +442,22 @@ export async function forgeExecute(
   // by aggregateOutcomeClass: any UNKNOWN_OUTCOME wins).
   const summaryOutcome = aggregateOutcomeClass(results);
 
+  // Terminal state. UNKNOWN_OUTCOME stays consumed (rule 3): a timeout is
+  // resolved by reconcile() or a new receipt, never by retrying this one.
+  markOutcome(receipt.receiptId, summaryOutcome);
+
   // ── P1: Auto-diff expected vs actual (F13-ratified 2026-09-08) ──
   // For each action that supplied expected_output (e.g., forge_shell's
   // expected_output param), compute diff against actual result. The
   // apprentice "rep" — auto-populate feedback_environmental with the
   // delta so the experience trace captures surprise, not just count.
   const diffs: string[] = [];
+  // F13 ORDER 2026-11-01 — verification axis: a supplied expected_output
+  // is a claim about the intended world outcome; it must be verified before
+  // completion may be claimed (command success is NOT the outcome).
+  let vSpecified = 0;
+  let vPassed = 0;
+  let vFailed = 0;
   for (const r of results) {
     const actionParams = params?.[r.tool] as Record<string, unknown> | undefined;
     const expected = actionParams?.expected_output;
@@ -389,15 +468,33 @@ export async function forgeExecute(
       const lenRatio = lenExpected > 0 ? Number((lenActual / lenExpected).toFixed(2)) : 0;
       const exactMatch = expected === actualStr;
       const headEqual = expected.slice(0, 80) === actualStr.slice(0, 80);
+      vSpecified += 1;
+      if (exactMatch) {
+        vPassed += 1;
+        r.verification = "PASS";
+      } else {
+        vFailed += 1;
+        r.verification = "FAIL";
+      }
       diffs.push(
         `${r.tool}:status=${r.status} expected_len=${lenExpected} actual_len=${lenActual} ratio=${lenRatio} exact=${exactMatch ? "yes" : "no"} head80=${headEqual ? "yes" : "no"}`,
       );
     } else if (typeof expected === "string") {
+      vSpecified += 1;
+      vFailed += 1;
+      r.verification = "FAIL";
       diffs.push(`${r.tool}:status=${r.status} no_actual_output`);
     } else {
+      r.verification = "UNSPECIFIED";
       diffs.push(`${r.tool}:status=${r.status} no_prediction`);
     }
   }
+
+  // F13 ORDER 2026-11-01 — verification-failure completion semantics: the
+  // done claim (SUCCESS verdict) is not issuable when a supplied expectation
+  // failed verification. Command succeeded ≠ intended outcome occurred.
+  const completionVerdict =
+    vFailed > 0 ? "VERIFICATION_FAILED" : summaryVerdict;
 
   // ── P0: Auto-fire experience trace (F13-ratified 2026-09-08) ──
   // Constitutional territory: each forgeExecute invocation leaves a
@@ -409,8 +506,8 @@ export async function forgeExecute(
     agent_id: (receipt as unknown as { actor_id?: string }).actor_id ?? "aforge-auto",
     tool: "forge_execute",
     input_summary: `forgeExecute actions=[${actions.join(",")}] blastRadius=${receipt.bounds?.blastRadius ?? "?"} reversible=${receipt.bounds?.reversible ?? "?"}`,
-    output_summary: `verdict=${summaryVerdict} succeeded=${succeeded} failed=${failed} duration_ms=${totalDuration}`,
-    success: failed === 0,
+    output_summary: `verdict=${completionVerdict} succeeded=${succeeded} failed=${failed} verified=${vPassed}/${vSpecified} duration_ms=${totalDuration}`,
+    success: failed === 0 && vFailed === 0,
     // F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.8.
 // Explicit 5-arm mapping: SEAL→PASS, SABAR→SABAR, HOLD→FAIL (kernel refused),
 // VOID→FAIL (constitutional violation), anything else→UNKNOWN.
@@ -435,8 +532,9 @@ export async function forgeExecute(
       succeeded,
       failed,
       totalDurationMs: totalDuration,
-      verdict: summaryVerdict,
+      verdict: completionVerdict,
       outcome_class: summaryOutcome,
+      verification: { specified: vSpecified, passed: vPassed, failed: vFailed },
     },
     timestamp: new Date().toISOString(),
   };
