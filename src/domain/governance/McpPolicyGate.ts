@@ -434,8 +434,8 @@ export class McpPolicyGate {
     const principal = this.derivePrincipal(req);
     const policy = this.resolvePolicy(principal.actorId ?? principal.displayLabel);
     const mcpServer = this.extractServerFromTool(req.tool_name);
-    const toolMode = typeof req.arguments?.mode === "string" ? req.arguments.mode : undefined;
-    const toolClass = classifyTool(req.tool_name, toolMode); // P0.2: classify once, use everywhere (mode-aware)
+    // 2026-10-25: full arguments to classifyTool (mode OR verb carrier)
+    const toolClass = classifyTool(req.tool_name, req.arguments ?? undefined); // P0.2: classify once, use everywhere (mode/verb-aware)
 
     const result: VerdictResult = {
       verdict: "DENY",
@@ -671,10 +671,7 @@ export class McpPolicyGate {
       }
 
       const aaeClass = req.aae.action_class as ActionClass;
-      const toolClass = classifyTool(
-        req.tool_name,
-        typeof req.arguments?.mode === "string" ? req.arguments.mode : undefined,
-      );
+      const toolClass = classifyTool(req.tool_name, req.arguments ?? undefined);
 
       // IRREVERSIBLE tools require IRREVERSIBLE AAE
       if (toolClass === "IRREVERSIBLE" && aaeClass !== "IRREVERSIBLE") {
@@ -890,15 +887,25 @@ export class McpPolicyGate {
   }
 
   private appendAudit(v: VerdictResult): void {
+    const line = JSON.stringify(v) + "\n";
     try {
       if (!existsSync(dirname(this.auditLog))) {
         mkdirSync(dirname(this.auditLog), { recursive: true });
       }
-      const line = JSON.stringify(v) + "\n";
       appendFileSync(this.auditLog, line, "utf-8");
-    } catch {
-      // audit failures never block the main flow — but we log to stderr
-      process.stderr.write(`[McpPolicyGate] audit log write failed\n`);
+    } catch (e) {
+      // T1 2026-11-02: primary log went chattr +i on 2026-10-22; the swallowed
+      // EPERM left every ALLOW/DENY unrecorded for 11+ days. Never drop a decision:
+      // fall back to a writable sibling, and scream if even that fails.
+      // logs/ is chattr +i (dir AND files, 2026-11-02 probe) — repo root is writable by forge.
+      const fallback = "/root/A-FORGE/mcp_policy_gate.fallback.log";
+      const msg = (err: unknown) => (err instanceof Error ? err.message : String(err));
+      try {
+        appendFileSync(fallback, line, "utf-8");
+        process.stderr.write(`[McpPolicyGate] audit primary failed (${msg(e)}); decision appended to ${fallback}\n`);
+      } catch (e2) {
+        process.stderr.write(`[McpPolicyGate] AUDIT LOSS primary+fallback (${msg(e)} / ${msg(e2)}): ${line}`);
+      }
     }
   }
 
@@ -910,6 +917,8 @@ export class McpPolicyGate {
   // rate measured). F13 override via env: AF_FORGE_POLICY_UNPINNED=1.
   private pinnedCommit: string | null = null;
   private pinViolation: boolean = false;
+  /** Head SHA observed at load time — reported so health can show the real posture. */
+  private sawHeadSha: string | null = null;
 
   private getCurrentHeadSha(): string | null {
     // Read deploy-stamped commit from /root/A-FORGE/.git_commit (set by
@@ -930,6 +939,29 @@ export class McpPolicyGate {
     return this.pinViolation;
   }
 
+  /**
+   * Observable pin posture (2026-10-26, 333-AGI). A control that names a
+   * defence it does not perform is worse than an unnamed one: this reports the
+   * policy actually in force, so /health cannot be read as "policies loaded".
+   */
+  getPinStatus(): {
+    pin_violated: boolean;
+    pinned_commit: string | null;
+    head_sha: string | null;
+    effective_policy: string;
+    allow_by_default: boolean;
+    posture: "PINNED" | "PERMISSIVE_FALLBACK" | "FAIL_CLOSED_PIN_VIOLATION";
+  } {
+    return {
+      pin_violated: this.pinViolation,
+      pinned_commit: this.pinnedCommit ?? null,
+      head_sha: this.sawHeadSha ?? null,
+      effective_policy: this.defaultPolicy.policy_id,
+      allow_by_default: this.defaultPolicy.allow_by_default === true,
+      posture: this.pinViolation ? "FAIL_CLOSED_PIN_VIOLATION" : "PINNED",
+    };
+  }
+
   private loadFromDisk(): void {
     const path = "/root/A-FORGE/config/mcp_policies.json";
     if (!existsSync(path)) return;
@@ -947,10 +979,30 @@ export class McpPolicyGate {
         const headShort = headSha.substring(0, 7);
         if (pinnedShort !== headShort) {
           this.pinViolation = true;
+          this.sawHeadSha = headShort;
+          this.pinnedCommit = pinnedShort; // report what it WAS pinned to, not null
+          // 2026-11-16 (F13 "ya, baiki meterai"): a pin mismatch means no reviewed
+          // policy was loaded. Installing the allow-all sovereign default here was
+          // fail-OPEN. Fail-CLOSED instead: deny-by-default with an empty allowlist
+          // until a deliberate re-pin restores reviewed policies.
+          const failClosed: McpPolicy = {
+            policy_id: "fail_closed:constraint_pin_violation",
+            actor_id: "*",
+            role: "fail-closed",
+            description:
+              "Deny-by-default. Reviewed policies were NOT loaded because the policy " +
+              "pin does not match source HEAD. Re-pin deliberately to restore them.",
+            allow_by_default: false,
+            denied_mcp_servers: [],
+            allowed_mcp_servers: {},
+          };
+          this.defaultPolicy = failClosed;
+          this.policies.set("default:sovereign", failClosed);
           process.stderr.write(
             `[McpPolicyGate] CONSTRAINT_PIN_VIOLATION: policy pinned to ${pinnedShort} ` +
-            `but source HEAD is ${headShort}. Policies NOT loaded. Governance in fail-closed mode. ` +
-            `Override with AF_FORGE_POLICY_UNPINNED=1.\n`,
+            `but source HEAD is ${headShort}. Reviewed policies NOT loaded — ` +
+            `FAIL-CLOSED: deny-by-default in force; every MCP tool call is denied ` +
+            `until a deliberate re-pin. Override only with AF_FORGE_POLICY_UNPINNED=1.\n`,
           );
           return;
         }
