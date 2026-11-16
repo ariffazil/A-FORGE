@@ -17,9 +17,9 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { randomUUID } from "node:crypto";
 import { mkdir, appendFile } from "node:fs/promises";
-import { resolve, join } from "node:path";
+import { resolve, join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 
 // FLAME client for search result synthesis
 import {
@@ -75,6 +75,99 @@ function circuitRecordSuccess(provider: string): void {
 
 function circuitRecordFailure(provider: string): void {
   federationHysteron.recordFailure(provider);
+}
+
+// ── Quota ledger (FI-003, 2026-11-16) ─────────────────────────────────────────
+// A circuit breaker forgets on a cooldown; a vendor quota does not. When a lane
+// answers with a *billing* wall (429/402 + "limit exhausted", "insufficient
+// credit", "will reset at …") that lane is dead until the vendor's own reset —
+// not for COOLDOWN_MS. Record the expiry so the ladder skips the lane instead of
+// re-proving it dead on every call.
+//
+// Measured 2026-11-16 (kimi-code search incident): Moonshot WebSearch 429
+// (monthly cycle) and Z.AI web_search_prime 429 until 2026-11-17T15:31:55 while
+// this ladder answered from Exa in 4.6 s. Brave was 402 prepaid-balance — a
+// quota, not a rate limit.
+
+const QUOTA_LEDGER_PATH = join("/root/A-FORGE/data", "search_quota_ledger.json");
+// Unparsed reset: retry at most once a day rather than inventing a vendor date.
+const QUOTA_FALLBACK_MS = 24 * 60 * 60 * 1000;
+
+interface QuotaEntry {
+  dead_until: string;
+  reset_parsed: boolean;
+  error: string;
+  first_seen: string;
+  hits: number;
+}
+
+function readQuotaLedger(): Record<string, QuotaEntry> {
+  try {
+    if (!existsSync(QUOTA_LEDGER_PATH)) return {};
+    const parsed = JSON.parse(readFileSync(QUOTA_LEDGER_PATH, "utf8"));
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, QuotaEntry>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeQuotaLedger(ledger: Record<string, QuotaEntry>): void {
+  try {
+    mkdirSync(dirname(QUOTA_LEDGER_PATH), { recursive: true });
+    writeFileSync(QUOTA_LEDGER_PATH, JSON.stringify(ledger, null, 2));
+  } catch {
+    // Advisory ledger: never block a search on it.
+  }
+}
+
+/** ISO expiry when the lane is currently quota-dead, else null. */
+function quotaDeadUntil(provider: string): string | null {
+  const entry = readQuotaLedger()[provider];
+  if (!entry) return null;
+  const until = Date.parse(entry.dead_until);
+  if (!Number.isFinite(until)) return null;
+  return until > Date.now() ? entry.dead_until : null;
+}
+
+/** Parse the vendor's own reset string; null when the body names none. */
+function parseQuotaReset(error: string): Date | null {
+  const naive = error.match(/reset[^0-9]{0,24}(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2})?)/i);
+  if (naive) {
+    const time = naive[2].length === 5 ? `${naive[2]}:00` : naive[2];
+    const d = new Date(`${naive[1]}T${time}+08:00`);
+    if (Number.isFinite(d.getTime())) return d;
+  }
+  const iso = error.match(/reset[^0-9]{0,24}(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)/i);
+  if (iso) {
+    const d = new Date(iso[1]);
+    if (Number.isFinite(d.getTime())) return d;
+  }
+  return null;
+}
+
+/** A billing wall (quota) rather than a transient rate limit. */
+function isQuotaError(error: string): boolean {
+  const e = error.toLowerCase();
+  if (!/\b(429|402)\b/.test(e)) return false;
+  return /(quota|limit|credit|balance|insufficient|billing|cycle|reset)/.test(e);
+}
+
+function quotaRecord(provider: string, error: string): void {
+  const ledger = readQuotaLedger();
+  const prev = ledger[provider];
+  const reset = parseQuotaReset(error);
+  const deadUntil = (reset ?? new Date(Date.now() + QUOTA_FALLBACK_MS)).toISOString();
+  ledger[provider] = {
+    dead_until: deadUntil,
+    reset_parsed: Boolean(reset),
+    error: error.slice(0, 300),
+    first_seen: prev?.first_seen ?? new Date().toISOString(),
+    hits: (prev?.hits ?? 0) + 1,
+  };
+  writeQuotaLedger(ledger);
+  process.stderr.write(
+    `[gateway] quota lane dead: ${provider} until ${deadUntil} (${reset ? "vendor reset" : "unparsed -> 24h"})\n`,
+  );
 }
 
 // ── Provider Scoring ──────────────────────────────────────────────────────────
@@ -394,7 +487,14 @@ async function webSearchWithFallback(
   freshness: string,
   safesearch: string,
   intent: WebIntent = "discovery",
-): Promise<{ ok: boolean; results: BraveResult[]; error?: string; provider: string; evidence?: EvidenceItem[] }> {
+): Promise<{
+  ok: boolean;
+  results: BraveResult[];
+  error?: string;
+  provider: string;
+  evidence?: EvidenceItem[];
+  quotaSkipped?: Array<{ provider: string; dead_until: string }>;
+}> {
   // LFD routing (method: LFD 2610.17246 port — curriculum + preference weights):
   // difficulty class matched to what each provider has DEMONSTRED it can handle;
   // order = static prior × learned weight (self-correcting: dead lanes fall,
@@ -431,8 +531,17 @@ async function webSearchWithFallback(
 
   const errors: string[] = [];
   const evidence: EvidenceItem[] = [];
+  const quotaSkipped: Array<{ provider: string; dead_until: string }> = [];
+  const liveLanes = scored.filter((lane) => {
+    const deadUntil = quotaDeadUntil(lane.provider);
+    if (deadUntil) {
+      quotaSkipped.push({ provider: lane.provider, dead_until: deadUntil });
+      return false;
+    }
+    return true;
+  });
 
-  for (const { provider } of scored) {
+  for (const { provider } of liveLanes) {
     let attempt: { ok: boolean; results: BraveResult[]; error?: string };
 
     if (provider === "exa") {
@@ -456,12 +565,19 @@ async function webSearchWithFallback(
       attempt.results.forEach((r, i) => {
         evidence.push(normalizeEvidenceItem(r, provider, i + 1));
       });
-      return { ...attempt, provider, evidence };
+      return { ...attempt, provider, evidence, quotaSkipped };
     }
 
     circuitRecordFailure(provider);
     federationHysteron.lfdRecord(provider, difficulty, 0); // LFD: loser
+    if (isQuotaError(attempt.error ?? "")) quotaRecord(provider, attempt.error ?? "");
     errors.push(`${provider}: ${attempt.error ?? "empty results"}`);
+  }
+
+  if (errors.length === 0 && quotaSkipped.length > 0) {
+    errors.push(
+      `all lanes quota-dead: ${quotaSkipped.map((q) => `${q.provider} until ${q.dead_until}`).join(", ")}`,
+    );
   }
 
   return {
@@ -470,6 +586,7 @@ async function webSearchWithFallback(
     provider: "none",
     error: errors.join("; ") || "All providers failed",
     evidence,
+    quotaSkipped,
   };
 }
 
@@ -746,6 +863,7 @@ export async function handleForgeSearch(args: any) {
     lanes: Object.fromEntries(providersConsidered.map((p, idx) => [p, {
       available: fieldState.availability[idx] === 1,
       circuit_open: federationHysteron.isOpen(p),
+      quota_dead_until: quotaDeadUntil(p),
       ...(federationHysteron.stats(p) ? {
         success_count: federationHysteron.stats(p)!.successCount,
         failure_count: federationHysteron.stats(p)!.failureCount,
@@ -1877,7 +1995,7 @@ export function registerGatewayTools(server: McpServer): void {
   //   request_id: z.string().describe("Caller request ID"),
   // }, handleForgeResearch);
 
-  server.tool("forge_search", "Unified governed search across web (Brave), documentation (Context7), and deep research with provenance and epistemic labels.", {
+  server.tool("forge_search", "Unified governed search across a live-ordered multi-provider ladder (Exa / SerpApi / SearXNG / DeepSeek / Brave), documentation (Context7), and deep research, with provenance and epistemic labels. Dead lanes are skipped rather than retried: persistent circuit state plus vendor quota expiries (429/402 billing walls recorded until the vendor reset).", {
     query: z.string().max(500).describe("Search or research query"),
     source: z.enum(["web", "docs", "research", "all"]).default("web").describe("Search source: 'web' (Brave), 'docs' (Context7 library docs), 'research' (deep synthesis), 'all' (multi-source)"),
     count: z.number().min(1).max(50).default(10).describe("Result count"),
