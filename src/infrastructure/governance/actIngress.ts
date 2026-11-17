@@ -583,7 +583,20 @@ export async function verifyFederationAct(
 
   // P2.1: Local decode is the primary path (no arifOS roundtrip needed)
   const local = verifyLocalAct(act, opts);
-  if (local) {
+  // FIX-FALLBACK (F13 2026-11-17): a local crypto failure is not a
+  // trustworthy rejection — the kernel holds the authoritative ACT secret,
+  // not A-FORGE's ARIFOS_SESSION_SECRET. Fall through to the arifOS roundtrip
+  // below and let the kernel accept/reject. Governance rejections
+  // (binding/authority/replay/expiry/version) still return locally.
+  const LOCAL_CRYPTO_ERRORS = new Set([
+    "ERR_ACT_SIGNATURE_INVALID",
+    "ERR_ACT_SIGNATURE_SHORT",
+    "ERR_ACT_SIGNATURE_NOT_FULL",
+    "ERR_ACT_NO_SECRET",
+  ]);
+  const localCryptoFailure =
+    local !== null && !local.ok && LOCAL_CRYPTO_ERRORS.has(local.error);
+  if (local && !localCryptoFailure) {
     // T-06 (F2 receipt 2026-09-27): floor enforcement at ACT gate (Option A).
     // After local crypto+claims pass, check replicated apex scalars against
     // canonical thresholds. Only enforced when:
