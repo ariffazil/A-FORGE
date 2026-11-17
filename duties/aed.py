@@ -229,6 +229,8 @@ def ingest_flow(
     floor_verdict: str = "Pass",
     step_number: int = 1,
     payload: Optional[dict] = None,
+    session_token: Optional[str] = None,
+    routed_organ: str = "A-FORGE",
 ) -> bool:
     """Call arifFlow POST /ingest to log a step in the metabolic ledger."""
     import urllib.error
@@ -247,7 +249,14 @@ def ingest_flow(
         # arifFlow serde prefers RFC3339 Z; strip +00:00
         "created_at": ts_now().replace("+00:00", "Z"),
         "cooling_decision": "None",
+        # 2026-11-18 (333-AGI, binding-gap item 2): routed_organ was null on
+        # 100% of A-FORGE receipts (54,764-row audit). Name the organ at the
+        # builder; session_token is the caller's lease/ACT when it has one —
+        # omitted, never fabricated, when absent.
+        "routed_organ": routed_organ,
     }
+    if session_token:
+        body["session_token"] = session_token
     if payload:
         body["payload"] = payload
 

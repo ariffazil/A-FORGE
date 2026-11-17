@@ -120,6 +120,8 @@ export async function emitObligation(
       body: JSON.stringify({
         actor_id: actorId ?? "aforge-777",
         session_id: sessionId ?? "SEAL-forge-obligation",
+        // 2026-11-18 (333-AGI, binding-gap item 2): name the organ at the builder.
+        routed_organ: "A-FORGE",
         step_type: "Execute",
         step_number: 1,
         epistemic_label: "Specification",

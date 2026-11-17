@@ -482,6 +482,7 @@ def seal_loop(
                 "receipt_id": str(uuid.uuid4()),
                 "created_at": ts(),
                 "cooling_decision": "None",
+                "routed_organ": "A-FORGE",
             }
             req = urllib.request.Request(
                 f"{ARIFLOW_URL}/ingest",
@@ -503,6 +504,7 @@ def seal_loop(
             "receipt_id": str(uuid.uuid4()),
             "created_at": ts(),
             "cooling_decision": "None",
+            "routed_organ": "A-FORGE",
             "payload": {
                 "organs_healthy": audit["all_healthy"],
                 "applied": apply_results.get("applied"),
