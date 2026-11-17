@@ -646,8 +646,14 @@ export async function verifyFederationAct(
         params: {
           name: "arif_init",
           arguments: {
-            mode: "init",
-            session_token: act,
+            // F13 2026-11-17: mode=validate (tools.py:12661) returns
+            // {valid, claims, error, authority} via verify_act — the shape this
+            // fallback parses. mode=init created a session and returned no
+            // `valid` field, so every valid kernel ACT became ACT_INVALID.
+            mode: "validate",
+            // input contract: session_id must be stated explicitly (tools.py
+            // validate handler reads it; session_token alone -> MISSING_INPUT)
+            session_id: act,
             actor_id: opts.expectedActor || undefined,
           },
         },
