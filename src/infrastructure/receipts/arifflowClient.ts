@@ -197,10 +197,15 @@ export async function emitReceipt(
     created_at: new Date().toISOString(),
     actor_id: params.actor_id,
     session_id: params.session_id,
-    // 2026-11-18 (333-AGI, binding-gap item 2): session_token was hardcoded
-    // null on every A-FORGE receipt (54,764-row audit: A-FORGE 0/6,522).
-    // The caller's lease/ACT is the token when it has one — null, never
-    // fabricated, when absent.
+    // 2026-11-18 (333-AGI, binding-gap item 2 + F13 design correction):
+    // session_token was hardcoded null on every A-FORGE receipt (54,764-row
+    // audit: A-FORGE 0/6,522). CONTRACT (F13, 2026-11-18): receipts carry a
+    // grant REFERENCE — issuer id + scope + verification decision bound to
+    // this action — NEVER a raw reusable credential (act_v1 bearer string).
+    // Transport does NOT verify: arifFlow is METABOLIZE_ONLY (carries, never
+    // judges). A token-shaped string here proves nothing; authority is only
+    // established at consumption via kernel arif_verify (token_valid /
+    // scope_valid / replay_safe). Null, never fabricated, when absent.
     session_token: params.lease_id || null,
     routed_organ: params.organ || 'A-FORGE',
     step_type: (params.step_type || 'Execute') as RustStepType,

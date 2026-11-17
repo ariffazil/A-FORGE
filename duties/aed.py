@@ -249,10 +249,13 @@ def ingest_flow(
         # arifFlow serde prefers RFC3339 Z; strip +00:00
         "created_at": ts_now().replace("+00:00", "Z"),
         "cooling_decision": "None",
-        # 2026-11-18 (333-AGI, binding-gap item 2): routed_organ was null on
-        # 100% of A-FORGE receipts (54,764-row audit). Name the organ at the
-        # builder; session_token is the caller's lease/ACT when it has one —
-        # omitted, never fabricated, when absent.
+        # 2026-11-18 (333-AGI, binding-gap item 2 + F13 design correction):
+        # routed_organ was null on 100% of A-FORGE receipts (54,764-row
+        # audit). Name the organ at the builder. session_token CONTRACT
+        # (F13): carry a grant REFERENCE, never a raw reusable credential;
+        # transport does NOT verify (arifFlow METABOLIZE_ONLY) — authority
+        # is established only at consumption via kernel arif_verify.
+        # Omitted, never fabricated, when absent.
         "routed_organ": routed_organ,
     }
     if session_token:
