@@ -13,11 +13,21 @@
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
+import { canonicalActorId, samePrincipal } from "../../domain/governance/identityCanon.js";
+
+// D1 (F13 GO 2026-11-17): decision rows must carry the registry's canonical
+// action_class. Before this every emit site passed nothing, so
+// `opts.action_class || ""` wrote "" and M1 (which counts the MUTATE leg)
+// stayed blind to every ACT-gated mutation the gate actually saw.
+import { ACTION_REGISTRY } from "../../domain/governance/execution-authority.js";
 
 const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
+// D1 (F13 GO 2026-11-17): the federation's canonical decision ledger is
+// /var/lib/arifos/act_decision_events — the SAME path F6 meters read
+// (meters.py:F6_LEDGER_DIR). The old default wrote to an organ-local
+// forge_work/<date>/ dir, so M1 could never see an A-FORGE row.
 const ACT_DECISION_EVENT_DIR =
-  process.env.ACT_DECISION_EVENT_DIR ||
-  `/root/A-FORGE/forge_work/${new Date().toISOString().slice(0, 10)}/act_decision_events`;
+  process.env.ACT_DECISION_EVENT_DIR || "/var/lib/arifos/act_decision_events";
 const ACT_TIMEOUT_MS = Number(process.env.ARIFOS_ACT_TIMEOUT_MS || "2500");
 // P2.1 DUAL-ACCEPT (2026-08-07): Transition from SCT to ACT.
 // Accepts both sct_v1.* (legacy) and act_v1.* (new) for one TTL cycle (~8h).
@@ -96,7 +106,7 @@ export function canonicalizeActor(raw: string | null | undefined): string {
 }
 
 export type ActGateResult =
-  | { ok: true; actor?: string; authority?: string; claims?: Record<string, unknown> }
+  | { ok: true; actor?: string; lane_actor?: string; authority?: string; claims?: Record<string, unknown> }
   | {
       ok: false;
       error: string;
@@ -480,10 +490,19 @@ export function verifyLocalAct(
         ? canonicalizeActor(String(claims.delegated_from))
         : null;
 
+      // IDENTITY_CANON v1 (2026-10-22): same-principal check FIRST — one rule
+      // for every surface (contracts/IDENTITY_CANON.md). The scattered
+      // SOVEREIGN_IDENTITY_MAP / ACTOR_ALIAS_MAP scar patches above are
+      // demoted to legacy fallback; `claude/opus-5.5` vs `CLAUDE`,
+      // `arif-fazil` vs `arif`, `ARIF_FAZIL` vs `ariffazil` all resolve.
+      const samePrin = samePrincipal(rawActor, String(opts.expectedActor));
+
       // Path (a): Direct actor match
-      const directMatch = actor === expected;
+      const directMatch = actor === expected || samePrin;
       // Path (b): Delegation — the ACT's delegator matches the caller
-      const delegationMatch = delegatedFrom !== null && delegatedFrom === expected;
+      const delegationMatch =
+        (delegatedFrom !== null && delegatedFrom === expected) ||
+        (claims.delegated_from ? samePrincipal(String(claims.delegated_from), String(opts.expectedActor)) : false);
       // Path (c): Audience — ACT was minted for a specific domain
       const audienceMatch = false; // Reserved for aud claim check (Phase 2)
 
@@ -500,6 +519,12 @@ export function verifyLocalAct(
     }
 
     // ── 7. Authority rank check ────────────────────────────────────────
+    // F13 ruling 2026-10-22: PRINCIPAL ≠ LANE. `actor` is the principal per
+    // IDENTITY_CANON (claude/opus-5.5 → CLAUDE); `lane_actor` is the FATWA-K1
+    // lane label (→ 333-agi) kept for lane routing only. The principal never
+    // follows the lane map.
+    const principal = canonicalActorId(rawActor) ?? actor;
+
     const RANK = ["OBSERVE_ONLY", "OPERATOR", "LIMITED_MUTATE", "FULL", "SOVEREIGN"];
     if (!RANK.includes(requiredAuthority) || !RANK.includes(authority)) {
       return { ok: false, error: "UNKNOWN_AUTHORITY", message: `${authority} / required ${requiredAuthority}` };
@@ -508,7 +533,7 @@ export function verifyLocalAct(
       return { ok: false, error: "INSUFFICIENT_AUTHORITY", message: `ACT ${authority} < required ${requiredAuthority}` };
     }
 
-    return { ok: true, actor, authority, claims };
+    return { ok: true, actor: principal, lane_actor: actor, authority, claims };
   } catch {
     return null; // Can't decode — fall through to arifOS
   }
@@ -709,6 +734,36 @@ export async function verifyFederationAct(
  * - requireAct=true and missing → ACT_REQUIRED
  * - otherwise allow (backward-compatible OBSERVE)
  */
+
+// ── A-MAP (F13 2026-11-17): MCP tool + mutation sub-action -> ACTION_REGISTRY ──
+// The 8-tier classifier is unchanged. This bridge only names the canonical
+// action key for the ACT decision row: a filesystem write is recorded as
+// MUTATE (write_file) while the engine still gates it as EXECUTE_REVERSIBLE.
+const MCP_ACTION_MAP: Record<string, Record<string, string>> = {
+  forge_filesystem: {
+    write: "write_file",
+    patch: "edit_file",
+    move: "write_file",
+    restore: "write_file",
+    delete: "rm_rf",
+  },
+  forge_vault: { write: "vault_seal", seal: "vault_seal" },
+  forge_git: { commit: "git_commit", push: "git_push", force_push: "git_force_push" },
+  forge_docker: { exec: "docker_exec" },
+};
+
+function _mappedActionClass(
+  toolName: string,
+  args: Record<string, unknown> | null | undefined,
+): string {
+  const mode = String(
+    (args && (args.mode ?? args.operation ?? args.verb ?? args.action)) || "",
+  ).toLowerCase();
+  const mapped = MCP_ACTION_MAP[toolName]?.[mode];
+  if (!mapped) return "";
+  return ACTION_REGISTRY[mapped]?.action_class || "";
+}
+
 export async function gateToolIngress(
   toolName: string,
   args: Record<string, unknown>,
@@ -719,8 +774,20 @@ export async function gateToolIngress(
     meta?: Record<string, unknown> | null;
     /** Fallback ACT token derived from a validated session (P2.1 fix for ACT_GATE regression) */
     sessionFallbackToken?: string | null;
+    /** D1: the class the caller gated on (classifyTool), stamped into the row */
+    actionClass?: string;
   } = {},
 ): Promise<ActGateResult | { ok: true; skipped: true }> {
+  // D1: the caller (mcp/core.ts) already classified the call with
+  // classifyTool(); ACTION_REGISTRY is only a fallback for legacy names.
+  // Preferring the caller is what keeps the row's class equal to the class
+  // the gate actually gated on.
+  const actionClass =
+    _mappedActionClass(toolName, args) ||
+    opts.actionClass ||
+    (ACTION_REGISTRY as Record<string, { action_class?: string }>)[toolName]?.action_class ||
+    "";
+
   const extraction = extractActFromCall(args, {
     headers: opts.headers,
     meta: opts.meta,
@@ -732,6 +799,7 @@ export async function gateToolIngress(
 
   if (extraction.status === "AMBIGUOUS") {
     emitDecisionEvent({
+      action_class: actionClass,
       tool: toolName, decision: "REJECT", reason_code: "ACT_AMBIGUOUS",
       actor_id: actor || undefined, require_act: true,
       act_source_count: extraction.source_count,
@@ -762,6 +830,7 @@ export async function gateToolIngress(
       });
       if (verified.ok) {
         emitDecisionEvent({
+          action_class: actionClass,
           tool: toolName, decision: "ALLOW", reason_code: "OK_SESSION_FALLBACK",
           actor_id: verified.actor || actor || undefined,
           require_act: true,
@@ -775,6 +844,7 @@ export async function gateToolIngress(
     }
     if (opts.requireAct) {
       emitDecisionEvent({
+        action_class: actionClass,
         tool: toolName, decision: "REJECT", reason_code: "ACT_REQUIRED",
         actor_id: actor || undefined, require_act: true,
       });
@@ -787,6 +857,7 @@ export async function gateToolIngress(
       };
     }
     emitDecisionEvent({
+      action_class: actionClass,
       tool: toolName, decision: "ALLOW", reason_code: "OK_NO_ACT_OBSERVE",
       actor_id: actor || undefined, require_act: false,
     });
@@ -799,6 +870,7 @@ export async function gateToolIngress(
   });
   if (!verified.ok) {
     emitDecisionEvent({
+      action_class: actionClass,
       tool: toolName, decision: "REJECT", reason_code: verified.error || "ACT_INVALID",
       actor_id: actor || undefined, require_act: true,
       act_fingerprint: extraction.sources.length > 0
@@ -811,6 +883,7 @@ export async function gateToolIngress(
     return { ...verified, extraction };
   }
   emitDecisionEvent({
+    action_class: actionClass,
     tool: toolName, decision: "ALLOW", reason_code: "OK",
     actor_id: verified.actor || actor || undefined,
     require_act: true,
