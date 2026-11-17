@@ -259,7 +259,15 @@ def ingest_flow(
         "routed_organ": routed_organ,
     }
     if session_token:
-        body["session_token"] = session_token
+        # F13 "fix all" 2026-11-18: raw bearer-shaped credentials are never
+        # emitted (arifFlow 422s them at ingest). Reference form only.
+        t = session_token.strip()
+        if t.startswith("Bearer "):
+            t = t[7:]
+        if t.startswith(("act_v1.", "sk-", "ghp_")):
+            t = ""
+        if t:
+            body["session_token"] = t
     if payload:
         body["payload"] = payload
 
