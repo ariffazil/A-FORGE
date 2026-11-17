@@ -159,6 +159,31 @@ class GoogleBridge:
 # ── HTTP Server scaffolding ─────────────────────────────────────────────────
 
 
+def apa_revocation(connector: str) -> Optional[Dict[str, Any]]:
+    """Return the revocation entry for this connector, or None if not revoked.
+
+    Reads the same state file as the A-FORGE MCP custody gate. Fail-closed:
+    an unreadable state file blocks every verb rather than silently allowing.
+    """
+    state_dir = os.environ.get("APA_STATE_DIR", "/var/lib/a-forge/apa")
+    path = os.path.join(state_dir, "revocations.json")
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        revoked = data.get("revoked") or {}
+        entry = revoked.get(connector) or revoked.get("*")
+        if not entry:
+            return None
+        return entry if isinstance(entry, dict) else {"reason": str(entry)}
+    except FileNotFoundError:
+        return None
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "reason": f"REVOCATION_STATE_UNREADABLE: {exc}",
+            "by": "apa-bridge-fail-closed",
+        }
+
+
 def make_handler(bridge):
     """Create BaseHTTPRequestHandler subclass bound to a GoogleBridge instance."""
 
@@ -204,6 +229,22 @@ def make_handler(bridge):
 
             verb = body.get("verb") or body.get("mode") or ""
             params = body.get("params") or body
+
+            rev = apa_revocation(bridge.CONNECTOR_NAME)
+            if rev:
+                reason = rev.get("reason", "revoked")
+                self._send(
+                    envelope(
+                        bridge.CONNECTOR_NAME,
+                        verb or "?",
+                        False,
+                        {"revoked": rev},
+                        error=f"APA_REVOKED: {reason}",
+                    ),
+                    200,
+                )
+                return
+
             if verb not in bridge.ACTIONS:
                 self._send(
                     envelope(

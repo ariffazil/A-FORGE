@@ -1,4 +1,43 @@
 #!/usr/bin/env bash
+
+# ─── LANE IDENTITY GATE (2026-10-18 · F13 directive) ───────────────────
+# Every commit must carry a registered (name, email, signing-key) triple.
+# Registry: /root/.config/git/lane-identities.tsv · wrapper: /root/scripts/git-lane
+# Remedy: git-lane <lane> commit ...   (list lanes: git-lane list)
+LANE_REGISTRY="/root/.config/git/lane-identities.tsv"
+lane_gate() {
+  if [ ! -r "$LANE_REGISTRY" ]; then
+    echo "LANE GATE: commit blocked — registry $LANE_REGISTRY is unreadable." >&2
+    return 1
+  fi
+  _lg_name=$(git config user.name 2>/dev/null || true)
+  _lg_email=$(git config user.email 2>/dev/null || true)
+  _lg_key=$(git config user.signingkey 2>/dev/null || true)
+  if [ -z "$_lg_name" ] || [ -z "$_lg_key" ]; then
+    echo "LANE GATE: commit blocked — identity or signing key missing." >&2
+    echo "  user.name='${_lg_name}'  user.signingkey='${_lg_key}'" >&2
+    echo "  Commit with an explicit lane:  git-lane <lane> commit ..." >&2
+    echo "  Registered lanes:" >&2
+    awk -F'|' '{printf "    %-10s %s\n", $1, $2}' "$LANE_REGISTRY" >&2
+    return 1
+  fi
+  if [ ! -f "$_lg_key" ]; then
+    echo "LANE GATE: commit blocked — signing key '$_lg_key' is not a readable file." >&2
+    return 1
+  fi
+  _lg_fp=$(ssh-keygen -lf "$_lg_key" 2>/dev/null | awk '{print $2}')
+  if ! awk -F'|' -v n="$_lg_name" -v e="$_lg_email" -v f="$_lg_fp" \
+       '$2==n && $3==e && $5==f {ok=1} END{exit !ok}' "$LANE_REGISTRY"; then
+    echo "LANE GATE: commit blocked — unregistered identity/key pair." >&2
+    echo "  name='$_lg_name'  email='$_lg_email'  key=$_lg_fp" >&2
+    echo "  Registered lanes:" >&2
+    awk -F'|' '{printf "    %-10s %s <%s>\n", $1, $2, $3}' "$LANE_REGISTRY" >&2
+    return 1
+  fi
+  return 0
+}
+lane_gate || exit 1
+# ─── end LANE IDENTITY GATE ────────────────────────────────────────────
 # ╔══════════════════════════════════════════════════════════════╗
 # ║  LSP PRE-COMMIT GATE — Hard enforcement at commit boundary  ║
 # ║  Forged: 2026-08-06 by 333-AGI Δ MIND · F13 SOVEREIGN      ║

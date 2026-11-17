@@ -166,20 +166,49 @@ class HybridOCRRouter:
         t0 = time.monotonic()
         print(f"[GRADIO] Processing {req.pages} pages via HF Space (RM0)...")
 
-        result = self.gradio.ocr_pdf_pages(req.file_path, dpi=req.dpi, mode="base")
+        # 2026-10-28 (HERMES) — HORIZON. A document that fits the Space's
+        # document cap goes as ONE /parse_document request so the model can
+        # use cross-page context. Longer documents are chunked and the result
+        # states the context loss explicitly.
+        from gradio_bridge import HF_PARSE_DOCUMENT  # noqa: F401
+
+        CAP = 20
+        if req.pages <= CAP:
+            result = self.gradio.ocr_document(
+                pdf_to_images(req.file_path, dpi=req.dpi), mode="base"
+            )
+            text = result.get("text", "") if isinstance(result, dict) else str(result)
+            pages_success = 1 if text.strip() else 0
+            pages_errors = 0 if text.strip() else 1
+            total_chars = len(text)
+            cross_page = True
+            chunks = 1
+        else:
+            result = self.gradio.ocr_pdf_pages(
+                req.file_path, dpi=req.dpi, mode="base"
+            )
+            text = result["full_markdown"]
+            pages_success = result["pages_success"]
+            pages_errors = result["pages_errors"]
+            total_chars = result["total_chars"]
+            cross_page = False
+            chunks = (req.pages + CAP - 1) // CAP
 
         # Save output
         md_path = os.path.join(req.output_dir, "ocr_output.md")
-        Path(md_path).write_text(result["full_markdown"], encoding="utf-8")
+        Path(md_path).write_text(text, encoding="utf-8")
 
         return {
             "backend": "unlimited_gradio",
             "markdown_path": md_path,
-            "pages_success": result["pages_success"],
-            "pages_total": result["pages_total"],
-            "total_chars": result["total_chars"],
+            "pages_success": pages_success,
+            "pages_total": req.pages,
+            "total_chars": total_chars,
             "elapsed_s": round(time.monotonic() - t0, 1),
-            "quota_hit": result["pages_errors"] > 0,
+            "quota_hit": pages_errors > 0,
+            "horizon": "document" if cross_page else "chunked",
+            "chunks": chunks,
+            "cross_page_context": cross_page,
         }
 
     def _process_sglang(self, req: OCRCRequest) -> dict:
@@ -225,15 +254,32 @@ class HybridOCRRouter:
         }
 
     def health(self) -> dict:
-        """Probe all backends."""
+        """Probe all backends.
+
+        2026-10-28 (HERMES): the Gradio Space entry was hardcoded
+        `available: True` with a quota figure copied from an older era. It is
+        now MEASURED from the Space's live endpoint surface.
+        """
+        gradio_available = False
+        gradio_detail = ""
+        try:
+            from gradio_bridge import _space_endpoints
+
+            endpoints = _space_endpoints()
+            gradio_available = "/parse_page" in endpoints
+            gradio_detail = f"live endpoints: {endpoints}" if endpoints else "probe failed"
+        except Exception as exc:  # noqa: BLE001
+            gradio_detail = f"{type(exc).__name__}: {exc}"
+
         return {
             "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "backends": {
                 "unlimited_gradio": {
-                    "available": True,
+                    "available": gradio_available,
                     "cost": "RM0",
-                    "quota": "~6 pages/session (ZeroGPU free tier)",
-                    "status": "ready",
+                    "quota": "ZeroGPU free tier: 2 min/day unauthenticated, 5 min/day with a free HF token; document cap 20 pages/request",
+                    "status": "ready" if gradio_available else "unreachable",
+                    "detail": gradio_detail,
                 },
                 "unlimited_sglang": {
                     "available": self.sglang_available,
@@ -251,8 +297,8 @@ class HybridOCRRouter:
             "routing_rules": [
                 "requires_bbox or is_financial → qwen25_vl",
                 "GPU available → unlimited_sglang",
-                "pages ≤ 6 → unlimited_gradio (free)",
-                "pages > 6, no GPU → unlimited_gradio (best effort)",
+                "pages ≤ 20 → unlimited_gradio as ONE document request (cross-page context)",
+                "pages > 20 → chunked, cross-page context LOST at chunk boundary",
             ],
         }
 

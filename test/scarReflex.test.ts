@@ -31,10 +31,27 @@ const SCAR_STOPWORDS = new Set([
   "test", "tests", "match", "match_count", "count",
 ]);
 
+// Mirror of scarStoreUnavailable in forgeShell.ts — keep in sync.
+function scarStoreUnavailable(scarId: string, reason: string): any[] {
+  return [{
+    scar_id: scarId,
+    failure_mode: "SCAR_STORE_UNAVAILABLE",
+    severity: "CRITICAL",
+    scar_pressure: 1.0,
+    constraint_imposed: `${reason} — scar consultation unproven; execution halted under F1 AMANAH / F2 TRUTH fail-closed policy`,
+  }];
+}
+
 // Inline the matcher (mirror of forgeShell.ts pattern)
 function matchScarsByKeywords(command: string, indexPath: string): any[] {
   try {
-    if (!fs.existsSync(indexPath)) return [];
+    if (!fs.existsSync(indexPath)) {
+      // F1 AMANAH / F2 TRUTH: absent store is UNKNOWN, not "no scars".
+      return scarStoreUnavailable(
+        "SCAR-INDEX-MISSING-FAIL-CLOSED",
+        `Scar index absent at ${indexPath}`,
+      );
+    }
     const content = fs.readFileSync(indexPath, "utf-8");
     const scars = JSON.parse(content) as Record<string, any>;
     // Split command into primary tokens and sub-tokens (splitting across delimiters including . - _ /)
@@ -71,8 +88,11 @@ function matchScarsByKeywords(command: string, indexPath: string): any[] {
       }
     }
     return hits.sort((a, b) => b.scar_pressure - a.scar_pressure);
-  } catch {
-    return [];
+  } catch (err) {
+    return scarStoreUnavailable(
+      "SCAR-INDEX-CORRUPT-FAIL-CLOSED",
+      `Scar store read/parse error (${err instanceof Error ? err.message : String(err)})`,
+    );
   }
 }
 
@@ -108,9 +128,21 @@ describe("Scar Reflex Gate", () => {
     }
   });
 
-  it("should return empty for missing index", () => {
+  it("FAIL-CLOSED: missing index surfaces a CRITICAL hit, not []", () => {
     const hits = matchScarsByKeywords("git push", "/nonexistent/path.json");
-    assert.strictEqual(hits.length, 0);
+    assert.strictEqual(hits.length, 1, "Missing store must not be reported as clean");
+    assert.strictEqual(hits[0].scar_id, "SCAR-INDEX-MISSING-FAIL-CLOSED");
+    assert.strictEqual(hits[0].severity, "CRITICAL");
+    assert.strictEqual(hits[0].scar_pressure, 1.0);
+  });
+
+  it("FAIL-CLOSED: corrupt JSON surfaces a CRITICAL hit", () => {
+    const corrupt = path.join(TEST_SCAR_DIR, "corrupt.json");
+    fs.writeFileSync(corrupt, "{not valid json");
+    const hits = matchScarsByKeywords("git push", corrupt);
+    assert.strictEqual(hits.length, 1, "Corrupt store must not be reported as clean");
+    assert.strictEqual(hits[0].scar_id, "SCAR-INDEX-CORRUPT-FAIL-CLOSED");
+    assert.strictEqual(hits[0].severity, "CRITICAL");
   });
 
   // 2026-09-17 regression: ChatGPT external audit found printf/uname commands

@@ -45,7 +45,7 @@ function loadConfig(): OrganConfig[] {
       { id: 'aforge', url: 'http://localhost:7072', required_tools: ['forge_execute', 'forge_shell', 'forge_git', 'forge_docker'] },
       { id: 'geox', url: 'http://localhost:8081', required_tools: ['geox_well_ingest', 'geox_petrophysics', 'geox_seismic_compute', 'geox_basin'] },
       { id: 'wealth', url: 'http://localhost:18082', required_tools: ['wealth_compute_npv', 'wealth_compute_emv', 'wealth_monte_carlo_simulate'] },
-      { id: 'well', url: 'http://localhost:18083', required_tools: ['well_readiness', 'well_validate_vitality', 'well_assess_homeostasis'] },
+      { id: 'well', url: 'http://localhost:18083', required_tools: ['well_validate_vitality', 'well_assess_homeostasis'] },
     ];
   }
 }

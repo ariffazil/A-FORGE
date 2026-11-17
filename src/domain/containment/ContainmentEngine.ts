@@ -33,6 +33,104 @@ export interface ContainmentResult {
   killed: boolean;
 }
 
+// ── Environment Sanitizer (HOLD-001 Remediation) ─────────────
+export const SECRET_PATTERN = /(KEY|TOKEN|SECRET|PASSWORD|PASS|CREDENTIAL|AUTH|BEARER|SIGNING|PRIVATE)/i;
+
+export const DEFAULT_REQUIRED_VARS = [
+  'PATH',
+  'LANG',
+  'LC_ALL',
+  'TERM',
+  'TZ',
+  'TMPDIR',
+  'USER',
+  'HOME',
+];
+
+export const DEFAULT_FALLBACK_ENV: Record<string, string> = {
+  PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+  LANG: 'C.UTF-8',
+  LC_ALL: 'C.UTF-8',
+  TERM: 'dumb',
+  TMPDIR: '/tmp',
+  USER: 'nobody',
+  HOME: '/tmp',
+};
+
+export const MAX_ENVS_CAPS: Record<SandboxBackend, number> = {
+  firejail: 128,
+  bwrap: 256,
+  docker: 64,
+  auto: 128,
+};
+
+export class EnvironmentSanitizationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'EnvironmentSanitizationError';
+  }
+}
+
+export interface SanitizedEnvOptions {
+  backend: SandboxBackend;
+  parentEnv?: Record<string, string | undefined>;
+  allowedVars?: string[];
+  setVars?: Record<string, string>;
+  extraEnv?: Record<string, string>;
+}
+
+export function buildSanitizedEnvironment(options: SanitizedEnvOptions): Record<string, string> {
+  const { backend, parentEnv = process.env, allowedVars, setVars, extraEnv } = options;
+  const result: Record<string, string> = {};
+  const maxCap = MAX_ENVS_CAPS[backend] || 128;
+
+  const allowedSet = new Set<string>(DEFAULT_REQUIRED_VARS);
+  if (allowedVars) {
+    for (const v of allowedVars) {
+      if (!SECRET_PATTERN.test(v)) {
+        allowedSet.add(v);
+      }
+    }
+  }
+
+  for (const varName of allowedSet) {
+    if (SECRET_PATTERN.test(varName)) {
+      continue;
+    }
+    const val = parentEnv[varName] || DEFAULT_FALLBACK_ENV[varName];
+    if (val !== undefined) {
+      result[varName] = val;
+    }
+  }
+
+  if (setVars) {
+    for (const [key, val] of Object.entries(setVars)) {
+      if (SECRET_PATTERN.test(key)) {
+        throw new EnvironmentSanitizationError(`Policy attempted to set forbidden secret variable: ${key}`);
+      }
+      result[key] = val;
+    }
+  }
+
+  if (extraEnv) {
+    for (const [key, val] of Object.entries(extraEnv)) {
+      if (SECRET_PATTERN.test(key)) {
+        throw new EnvironmentSanitizationError(`Caller attempted to pass forbidden secret variable: ${key}`);
+      }
+      result[key] = val;
+    }
+  }
+
+  const totalVars = Object.keys(result).length;
+  if (totalVars > maxCap) {
+    throw new EnvironmentSanitizationError(
+      `Sanitized environment variable count (${totalVars}) exceeds backend limit for ${backend} (${maxCap})`
+    );
+  }
+
+  return result;
+}
+
 // ── Backend Detection ─────────────────────────────────────────
 function detectBackend(): SandboxBackend {
   try {
@@ -41,8 +139,9 @@ function detectBackend(): SandboxBackend {
     return 'bwrap';
   } catch {}
   try {
-    execSync('firejail --version', { stdio: 'pipe' });
-    execSync('firejail --quiet true', { stdio: 'pipe' });
+    const fjEnv = buildSanitizedEnvironment({ backend: 'firejail' });
+    execSync('firejail --version', { stdio: 'pipe', env: fjEnv });
+    execSync('firejail --quiet true', { stdio: 'pipe', env: fjEnv });
     return 'firejail';
   } catch {}
   return 'docker';
@@ -296,6 +395,11 @@ export async function executeInSandbox(
         console.error(`[containment:firejail] ${sandboxId} policy=${policy.name} backend=firejail`);
         childProcess = spawn('firejail', [...fjArgs, '--', '/bin/sh', '-c', command], {
           stdio: ['pipe', 'pipe', 'pipe'],
+          env: buildSanitizedEnvironment({
+            backend: 'firejail',
+            allowedVars: policy.environment?.allowed,
+            setVars: policy.environment?.set,
+          }),
         });
         break;
       }
@@ -529,8 +633,9 @@ export async function testBackend(backend: SandboxBackend): Promise<{ ok: boolea
         return { ok: true, version: result };
       }
       case 'firejail': {
-        const result = execSync('firejail --version', { encoding: 'utf-8' }).trim();
-        execSync('firejail --quiet true', { stdio: 'pipe' });
+        const fjEnv = buildSanitizedEnvironment({ backend: 'firejail' });
+        const result = execSync('firejail --version', { encoding: 'utf-8', env: fjEnv }).trim();
+        execSync('firejail --quiet true', { stdio: 'pipe', env: fjEnv });
         return { ok: true, version: result };
       }
       case 'docker': {

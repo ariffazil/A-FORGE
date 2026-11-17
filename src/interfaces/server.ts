@@ -16,6 +16,9 @@ import { readFileSync } from "fs";
 import { execFileSync } from "node:child_process";
 import { computeDeploymentDrift } from "../infrastructure/attestation/deploymentDrift.js";
 import * as http from "http";
+
+const _pkg = JSON.parse(readFileSync(new URL("../../../package.json", import.meta.url), "utf8"));
+const FORGE_VERSION = `v${_pkg.version}`;
 import { createHash } from "crypto";
 import { modelGateway } from "../infrastructure/llm/ModelGateway.js";
 import { runSense } from "../domain/policy/sense.js";
@@ -66,7 +69,9 @@ import {
   type ApexScalarReplicaSet,
 } from "../domain/governance/GovernanceBridge.js";
 import { validateSession } from "../domain/session/sessionGate.js";
-import { classifyTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
+import { classifyTool, isClassifiedTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
+import { sealLedgerHealth } from "./mcp/shell/arifSeal.js";
+import { getMcpPolicyGate } from "../domain/governance/McpPolicyGate.js";
 import {
   gateToolClaim,
   claimGateHoldBody,
@@ -260,7 +265,7 @@ export function createApp(): express.Express {
     // OpenCode compat: static server info
     res.json({
       service: "A-FORGE",
-      version: "v2026.07.24",
+      version: FORGE_VERSION,
       protocol_version: "2025-03-26",
       mcp_endpoint: "/mcp",
       health_endpoint: "/health",
@@ -475,7 +480,7 @@ app.post("/sense", async (req: Request, res: Response) => {
       },
       context: {
         source: "A-FORGE",
-        version: "v2026.07.24",
+        version: FORGE_VERSION,
         epoch: "2026-04-08",
         received_context: context,
         peer_contract_id,
@@ -565,8 +570,28 @@ app.post("/execute", async (req: Request, res: Response) => {
     // ── ADAT AGENTIC: Classify action before execution ──
     const actionClass = classifyTool(tool);
 
-    // FQ Metabolic Gate (P0.1)
-    const fqBlock = await gateToolByFq(actionClass, tool);
+    // UNCLASSIFIED GATE (2026-10-26, 333-AGI - next-horizon P0)
+    // The MUTATE floor stops an unknown tool reading as harmless, but class !=
+    // block: this ingress never consulted isClassifiedTool(), so an unknown tool
+    // was gated only as EXECUTE_REVERSIBLE (session+lease) while McpPolicyGate
+    // L4b held it. Deployed behaviour was IRREVERSIBLE + 888_HOLD. Static
+    // classification is checked before metabolic budget: an unclassified tool is
+    // denied on identity, not on FQ. Tightening only - classified tools keep
+    // their exact existing behaviour.
+    if (!isClassifiedTool(tool)) {
+      return res.status(423).json({
+        ok: false,
+        error: "UNCLASSIFIED_TOOL",
+        type: "governance_hold",
+        verdict: "HOLD",
+        message: `tool "${tool}" is not explicitly classified - unclassified mutation is blocked. Add it to actionClassifier.ts.`,
+        gate: "CLASSIFY",
+        adat_gate: "UNCLASSIFIED_HOLD",
+      });
+    }
+
+    // FQ Metabolic Gate (P0.1) — per-lane when actor is known (doctrine 2026-10-18)
+    const fqBlock = await gateToolByFq(actionClass, tool, actor_id);
     if (!fqBlock.allowed && fqBlock.fq) {
       return res.status(423).json({
         error: 'FQ_GATE', type: 'governance_hold',
@@ -1050,7 +1075,7 @@ app.post("/GEOX/log_interpreter", async (req: Request, res: Response) => {
  * Service health check
  */
 app.get("/health", async (_req: Request, res: Response) => {
-  const DEPLOY_ROOT = "/opt/a-forge/app";
+  const DEPLOY_ROOT = process.env.AF_FORGE_DEPLOY_ROOT || "/root/A-FORGE";
   let identityHash = "UNAVAILABLE";
   let deployedCommit = "UNAVAILABLE";
   let sourceCommit = "UNAVAILABLE";
@@ -1114,7 +1139,12 @@ app.get("/health", async (_req: Request, res: Response) => {
     if (scalarReplicas) {
       const replica: ScalarReplica | null = scalarReplicas[key as keyof ApexScalarReplicaSet] as ScalarReplica | null;
       if (replica) {
-        return { value: replica.value, status: replica.status, source: replica.source, replicated_at: replica.replicated_at };
+        // KX-010 gaps verdict (W3/S3, BINDING): one replication
+        // implementation — the bridge's extractScalar already attaches
+        // measurement_contract verbatim or the exact legacy marker
+        // ("LEGACY_UNCONTRACTED"). Pass the replica through instead of
+        // rebuilding a second shape that drops both.
+        return { ...replica };
       }
       // arifOS reachable but this scalar missing — partial response
       return {
@@ -1157,11 +1187,14 @@ app.get("/health", async (_req: Request, res: Response) => {
   // T5 2026-07-17 — canonical 5-field federation header + organ payload.
   // ok retained for legacy callers; status is canonical.
   const liveToolCount = getRegisteredMcpToolCount();
+  // 2026-10-26 (333-AGI): a frozen/unwritable seal ledger must be visible in
+  // health, never swallowed. See sealLedgerHealth() for the freeze note.
+  const sealLedger = await sealLedgerHealth();
   res.json({
     ok: !isDegradedMode && !deploymentDrift, // legacy alias — prefer status
     degraded_mode: isDegradedMode || deploymentDrift,
     service: "A-FORGE-sense",
-    version: "v2026.07.24",
+    version: FORGE_VERSION,
     federation_schema_version: "2.0.0",
     tool_count: liveToolCount,
     tools_loaded: liveToolCount,
@@ -1175,6 +1208,11 @@ app.get("/health", async (_req: Request, res: Response) => {
     source_commit: sourceCommit,
     deployment_drift: deploymentDrift,
     head_commit: headCommit,
+    seal_ledger: sealLedger,
+    // 2026-10-26 (333-AGI): the pin violation used to be stderr-only. Health now
+    // states which policy is actually in force, so a green boot cannot be read
+    // as "reviewed policies loaded".
+    policy_gate: getMcpPolicyGate().getPinStatus(),
     status: isDegradedMode || deploymentDrift ? "degraded" : "healthy",
     apex_scalars: apexScalars,
     // F2-fidelity fix (MCP-PROBE-2026-08-08): UNMEASURED is by-design delegation

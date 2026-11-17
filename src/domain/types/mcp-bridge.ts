@@ -61,14 +61,16 @@ export const TOOL_NAME_MAP: Record<string, string> = {
   // 3. Cryptographic shell verification: arif_verify maps to arif_seal (stage 999, mode="verify")
   arif_verify: "arif_seal",
 
-  // 4. Lease inspection: arif_lease_inspect maps to arif_judge (stage 666, mode="validate")
-  arif_lease_inspect: "arif_judge",
-
-  // 5. Lease issuance: arif_lease_issue maps to arif_judge (stage 666, mode="judge")
-  arif_lease_issue: "arif_judge",
-
-  // 6. Lease revocation: arif_lease_revoke maps to arif_judge (stage 666, mode="hold")
-  arif_lease_revoke: "arif_judge",
+  // 4-6. Lease verbs are NOT mapped. Measured 2026-10-25: arif_lease_issue /
+  // arif_lease_inspect / arif_lease_revoke are registered on the kernel MCP
+  // surface (arifosmcp/server.py), but this map rewrote them to arif_judge with
+  // no mode, so the kernel answered a JUDGE question and the caller looked for
+  // `result.lease` in a verdict envelope. Every forge_session_init therefore
+  // ran with no kernel lease while reporting status OK — the actuator silently
+  // lost mutation authority (forge_vault receipt → LEASE_CLASS_EXCEEDED).
+  // Mapping a verb to a shape-incompatible target is the exact failure this
+  // file's header warns about. Leave the names literal; a missing tool must
+  // fail loudly, not impersonate a judge.
 };
 
 /** Namespace routing map: which env var / default URL per namespace */
@@ -191,21 +193,29 @@ export function transformResponse(tool: string, result: Record<string, unknown>)
 
   if (tool === "arif_verify") {
     const meta = (result.meta as Record<string, unknown>) ?? {};
+    // E4 (FEDERATION_REALITY_DISTILLATION 2026-10-19): fail closed. A verdict
+    // string is not proof of token/scope/replay validity; only explicit meta.
     return {
       ...result,
-      token_valid: meta.token_valid ?? (result.status === "PASS" || result.verdict === "SEAL"),
-      scope_valid: meta.scope_valid ?? true,
-      replay_safe: meta.replay_safe ?? true,
+      token_valid: meta.token_valid === true,
+      scope_valid: meta.scope_valid === true,
+      replay_safe: meta.replay_safe === true,
       violations: meta.violations ?? result.reasons ?? [],
     };
   }
 
   if (tool === "arif_lease_inspect") {
-    const valid = result.verdict === "SEAL" || result.status === "PASS" || result.status === "OK";
+    const meta = (result.meta as Record<string, unknown>) ?? {};
+    const valid =
+      meta.lease_active === true || meta.active === true || meta.token_valid === true;
+    // P-3 (2026-10-20): never fabricate a lease id. "LEASE-VERIFIED" was invented when
+    // the kernel returned no chain id — a verification claim that never happened.
+    // No id => leave it empty so the gate reports the real state (kernel holds no
+    // record) and falls back to any registered local lease or fails closed.
     return {
       ...result,
       lease: {
-        lease_id: result.constitutional_chain_id ?? result.entry_id ?? "LEASE-VERIFIED",
+        lease_id: (result.constitutional_chain_id as string) ?? (result.entry_id as string) ?? "",
         active: valid,
         revoked: result.verdict === "VOID" || result.verdict === "HOLD",
         expires_at: new Date(Date.now() + 1800_000).toISOString(),

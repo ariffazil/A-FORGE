@@ -15,6 +15,7 @@
 
 import { z } from "zod";
 import { type McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { elicitUser, tradeConfirmationSchema, isGenuineAuthorization } from "./elicitation.js";
 import { execSync } from "node:child_process";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -65,6 +66,11 @@ import {
   recordModification,
   recordScar,
   recordFloorViolation,
+  setHypotheses,
+  evaluateQuantumCandidate,
+  collapseHypothesis,
+  selectAdmissible,
+  QuantumAxesError,
 } from "../../domain/reality-loop/engine.js";
 import type { RealityLoopConfig } from "../../domain/reality-loop/types.js";
 import type {
@@ -177,6 +183,36 @@ export function registerLocalLease(lease: LeaseRecord): LeaseRecord {
   return governed;
 }
 
+/**
+ * 2026-10-25 (333-AGI): a lease derived from a KERNEL-SIGNED ACT.
+ *
+ * The kernel does not expose arif_lease_issue on its canonical public surface
+ * (measured: "Unknown tool … Not on canonical public surface"; drift_check.py
+ * states "leases are internal-only; use arif_init for authority bootstrap").
+ * A-FORGE's session init nevertheless tried to mint one, the call was rewritten
+ * to arif_judge, and every session silently ran lease-less while reporting OK
+ * (forge_vault receipt → LEASE_CLASS_EXCEEDED, 2026-10-25).
+ *
+ * This is NOT self-issuance: the band and scope come from an HMAC-verified
+ * act_v1 token that arifOS minted. Absent that token, registerLocalLease's
+ * OBSERVE cap still applies — no evidence, no authority.
+ */
+export function registerActLease(lease: LeaseRecord): LeaseRecord {
+  const governed: LeaseRecord = { ...lease, source: "kernel_act", degraded: false };
+  activeLeases.set(governed.lease_id, governed);
+  return governed;
+}
+
+/**
+ * Read-only registry access for cross-module validators (e.g. safety
+ * requireMutationApproval). The registry holds kernel-ACT-derived leases
+ * (source=kernel_act) and clearly-marked dev fallbacks — presentation of an
+ * id is never authorization; callers must check provenance, expiry, revocation.
+ */
+export function getRegisteredLease(lease_id: string): LeaseRecord | undefined {
+  return activeLeases.get(lease_id);
+}
+
 // ── Action Class Priority ─────────────────────────────────────────────────────
 // Lower rank = higher severity. Lease must meet or exceed requested severity.
 // Includes both 8-value taxonomy (actionClassifier.ts) and legacy values
@@ -235,7 +271,7 @@ export function registerIdentityTools(server: McpServer): void {
 // forge_agent — merged: register, status, list, kill
   server.tool(
     "forge_agent",
-    "Agent identity management. Modes: register, status, list, kill. F11 AUTH.",
+    "Agent identity management. Modes: register, status, list, kill. F11 AUTH. register/kill are state-mutating; aggressive authority grants (always / skip_git_ack:true) require a kernel-issued lease — Authority(child) ⊆ Authority(parent).",
     {
       mode: z.enum(["register", "status", "list", "kill"]).default("list"),
       agent_id: z.string().optional().describe("Agent identifier"),
@@ -251,10 +287,10 @@ export function registerIdentityTools(server: McpServer): void {
         propose_patch: z.boolean().default(true),
         mutate_files: z.enum(["always", "lease_required", "never"]).default("lease_required"),
         shell_exec: z.enum(["always", "lease_required", "never"]).default("lease_required"),
-        git_commit: z.enum(["always", "888_HOLD", "never"]).default("always"),
+        git_commit: z.enum(["always", "888_HOLD", "never"]).default("888_HOLD"),
         deploy: z.enum(["always", "888_HOLD", "never"]).default("888_HOLD"),
         vault_seal: z.enum(["always", "888_HOLD", "never"]).default("888_HOLD"),
-      skip_git_ack: z.boolean().default(true).describe("Skip human ack for git ops — F13 streamlined autonomy"),
+      skip_git_ack: z.boolean().default(false).describe("Skip human ack for git ops — aggressive grant: register with lease when set"),
       }).optional().describe("Authority ceiling per action class"),
       identity_proof: z.string().optional().describe("SHA-256 of agent's public key or session nonce"),
     },
@@ -297,6 +333,26 @@ export function registerIdentityTools(server: McpServer): void {
       }
       // register
       if (!agent_id || !agent_type || !role) return { content: [{ type: "text" as const, text: "agent_id, agent_type, role required for mode=register" }], isError: true };
+      // Authority(child) ⊆ Authority(parent) (audit 2026-10-28): aggressive
+      // self-grants at registration require the same F1/F11 evidence kill mode
+      // demands — a live kernel-issued lease. Conservative registrations pass.
+      const aggressive = !!authority && (
+        authority.git_commit === "always" || authority.deploy === "always" ||
+        authority.vault_seal === "always" || authority.mutate_files === "always" ||
+        authority.shell_exec === "always" || authority.skip_git_ack === true
+      );
+      if (aggressive) {
+        if (!lease_id || !reason || reason.trim().length === 0) {
+          return { content: [{ type: "text" as const, text: JSON.stringify({
+            status: "HOLD",
+            gate: "SELF_AUTHORIZATION_REFUSED",
+            reason: "Aggressive authority grants at register require kernel-issued lease_id + reason (Authority(child) ⊆ Authority(parent)).",
+          }, null, 2) }], isError: true };
+        }
+        const lease = activeLeases.get(lease_id);
+        if (!lease || lease.revoked) return { content: [{ type: "text" as const, text: `Lease '${lease_id}' not found or revoked` }], isError: true };
+        if (new Date(lease.expires_at).getTime() < Date.now()) return { content: [{ type: "text" as const, text: `Lease '${lease_id}' expired` }], isError: true };
+      }
       const now = new Date().toISOString();
       const agent = { agent_id, agent_type, role, authority: (authority ?? {}) as Record<string, string>, identity_proof: identity_proof ?? "pending", registered_at: now, last_seen: now, lease_ids: [] };
       registeredAgents.set(agent_id, agent);
@@ -421,47 +477,17 @@ async function issueLeaseViaKernel(args: {
   forbidden: string[];
   session_id?: string;
 }): Promise<{ ok: true; lease: LeaseRecord } | { ok: false; reason: string }> {
-  // DARWIN FIX OPTION-B: try arifOS kernel first; if kernel tool is
-  // absent or returns an outputSchema validation error (e.g. the
-  // arif_lease_issue MCP tool not registered in arifOS), fall back to
-  // a locally-minted lease so A-FORGE remains functional even when the
-  // federation kernel is degraded. The local lease is auditable (sha256
-  // hash-chained) and bounded by the same TTL, but does not have a
-  // sovereign 888_JUDGE signature — clearly marked in scope/source so
-  // downstream verifiers know it's federation-local, not kernel-minted.
-  try {
-    const result = await callMCP("arifos.arif_lease_issue", {
-      organ_id: "A-FORGE",
-      actor_id: args.agent_id,
-      scope: args.scope,
-      max_action_class: toArifosActionClass(args.max_action_class),
-      ttl_seconds: args.ttl_seconds,
-      forbidden: args.forbidden,
-      session_id: args.session_id,
-    }) as any;
-
-    const lease = result?.lease ?? result?.result?.lease;
-    if (!lease || !lease.lease_id) {
-      // Kernel tool exists but returned no lease — fall through to local
-      throw new Error(`Kernel returned no lease: ${JSON.stringify(result).slice(0, 200)}`);
-    }
-    const localLease = arifosLeaseToLocal(lease);
-    enforceOneSkillOneTool(localLease, lease.max_action_class || "OBSERVE", "lease_issue");
-    return { ok: true, lease: localLease };
-  } catch (kernelErr: any) {
-    // P0.3 FIX (2026-07-19): Local lease fallback is DISABLED by default.
-    // When the kernel is unreachable, A-FORGE MUST HOLD, not self-mint.
-    // Set ALLOW_LOCAL_LEASE_FALLBACK=true for local dev only.
-    const allowFallback = process.env.ALLOW_LOCAL_LEASE_FALLBACK === "true";
-    if (!allowFallback) {
-      const kmsg = String(kernelErr?.message ?? kernelErr);
-      process.stderr.write(`[A-FORGE] arif_lease_issue kernel call FAILED — HOLDING (no local fallback). ${kmsg.slice(0, 120)}\n`);
-      return { ok: false, reason: `KERNEL_UNREACHABLE: Lease requires arifOS kernel. ${kmsg.slice(0, 200)}` };
-    }
-
-    // Local-only fallback (dev mode only). Audit-trail this in the lease record.
-    const kmsg = String(kernelErr?.message ?? kernelErr);
-    process.stderr.write(`[A-FORGE] arif_lease_issue kernel call failed (${kmsg.slice(0, 120)}); minting local lease as fallback (dev mode)\n`);
+  // MEASURED 2026-10-27 (forge_surface_audit outbound-ABI): arifOS exposes NO
+  // lease verbs on its canonical MCP surface (9 tools; internal-only leases,
+  // drift_check.py: "leases are internal-only; use arif_init for authority
+  // bootstrap"). A call here could never succeed — pre-2026-10-25 the verb was
+  // rewritten to arif_judge and silently dropped (LEASE_CLASS_EXCEEDED), and
+  // the direct call surfaced as OUTBOUND_ABI_DRIFT. The legal kernel-derived
+  // lease path is an ACT: arif_init mints act_v1 → verifyActToken →
+  // registerActLease (source=kernel_act) at session bind.
+  if (process.env.ALLOW_LOCAL_LEASE_FALLBACK === "true") {
+    // Dev-only, unchanged semantics: clearly-marked local lease (auditable,
+    // sha256 tamper-evident, TTL-bounded — never a sovereign signature).
     const ttl_seconds = Math.min(Math.max(args.ttl_seconds ?? 300, 1), 3600);
     const expires_at = Date.now() + ttl_seconds * 1000;
     const lease_id = `LCL-${args.agent_id}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -489,10 +515,22 @@ async function issueLeaseViaKernel(args: {
     } catch { /* hash non-fatal */ }
     return { ok: true, lease: localLease };
   }
+  return {
+    ok: false,
+    reason:
+      "KERNEL_LEASES_INTERNAL_ONLY: arifOS exposes no lease verbs on its canonical surface. " +
+      "Authority bootstrap = arif_init ACT token → registerActLease (source=kernel_act). " +
+      "Present a kernel-signed ACT or HOLD.",
+  };
 }
 
-async function inspectLeaseViaKernel(lease_id: string): Promise<any> {
-  return callMCP("arifos.arif_lease_inspect", { lease_id });
+async function inspectLeaseViaKernel(_lease_id: string): Promise<{ lease?: any; result?: { lease?: any } } | null> {
+  // MEASURED 2026-10-27 (forge_surface_audit outbound-ABI): arifOS exposes no
+  // lease verbs on its canonical surface — there is no kernel lease store to
+  // inspect. Callers fall through to the A-FORGE registry (activeLeases),
+  // which holds ACT-bound leases registered at session init. Kept as a seam
+  // so a future kernel lease surface wires in at exactly one place.
+  return null;
 }
 
 async function revokeLeaseViaKernel(args: {
@@ -501,22 +539,19 @@ async function revokeLeaseViaKernel(args: {
   reason?: string;
   session_id?: string;
 }): Promise<{ ok: true; lease: LeaseRecord } | { ok: false; reason: string }> {
-  try {
-    const result = await callMCP("arifos.arif_lease_revoke", {
-      lease_id: args.lease_id,
-      actor_id: args.agent_id,
-      reason: args.reason ?? "a-forge-revoke",
-      session_id: args.session_id,
-    }) as any;
-
-    const lease = result?.lease ?? result?.result?.lease;
-    if (!lease || !lease.lease_id) {
-      return { ok: false, reason: `Kernel revoke returned no lease: ${JSON.stringify(result)}` };
-    }
-    return { ok: true, lease: arifosLeaseToLocal(lease) };
-  } catch (err: any) {
-    return { ok: false, reason: err?.message ?? String(err) };
+  // MEASURED 2026-10-27: no kernel lease verbs (internal-only leases) — the
+  // A-FORGE registry IS the lease store. Revoking a kernel_act-derived lease
+  // here is a real revocation of its bound authority: validators refuse
+  // revoked records.
+  const lease = activeLeases.get(args.lease_id);
+  if (!lease) {
+    return { ok: false, reason: `Lease '${args.lease_id}' not registered in A-FORGE lease registry` };
   }
+  if (lease.agent_id !== args.agent_id) {
+    return { ok: false, reason: `Lease '${args.lease_id}' belongs to '${lease.agent_id}', not '${args.agent_id}'` };
+  }
+  lease.revoked = true;
+  return { ok: true, lease };
 }
 
 /**
@@ -559,25 +594,43 @@ export async function validateLeaseForTool(
     const inspect = await inspectLeaseViaKernel(lease_id);
     const kernelLease = inspect?.lease ?? inspect?.result?.lease;
     if (!kernelLease || !kernelLease.lease_id) {
-      const fail = { ok: false as const, gate: "LEASE_KERNEL_UNKNOWN", reason: `arifOS does not recognise lease '${lease_id}'` };
-      logLeaseDecision(lease_id, tool, actionClass, fail);
-      return fail;
-    }
-    if (kernelLease.revoked === true) {
+      // P-3 (2026-10-20): the kernel has no lease store — arif_lease_inspect maps to
+      // arif_judge(validate) and structurally cannot know locally-registered leases.
+      // A locally registered lease (registerLocalLease — source=local, sha256
+      // tamper-evident, scope derived from the kernel-issued ACT auth band) is
+      // honoured here under the SAME conditions as the kernel-unreachable fallback
+      // (P1.3). Authority comes from the ACT band + registered record, never from
+      // the id string alone; scope/class checks still run below.
+      const localFallback = lease_id ? activeLeases.get(lease_id) : undefined;
+      if (localFallback && !localFallback.revoked && localFallback.expires_at > Date.now()) {
+        lease = localFallback;
+        process.stderr.write(
+          `[LEASE_GATE] kernel holds no lease record for ${lease_id}; honouring registered local lease (source=local, scope from ACT band)\n`,
+        );
+      } else {
+        const fail = {
+          ok: false as const,
+          gate: "LEASE_KERNEL_UNKNOWN",
+          reason: `arifOS holds no lease record for '${lease_id}' and no valid local lease is registered (kernel lease store is internal-only — no lease verbs on the canonical surface)`,
+        };
+        logLeaseDecision(lease_id, tool, actionClass, fail);
+        return fail;
+      }
+    } else if (kernelLease.revoked === true) {
       const fail = { ok: false as const, gate: "LEASE_REVOKED", reason: "Lease revoked by kernel" };
       logLeaseDecision(lease_id, tool, actionClass, fail);
       return fail;
+    } else {
+      const expiresAt = new Date(kernelLease.expires_at).getTime();
+      if (Date.now() > expiresAt) {
+        const fail = { ok: false as const, gate: "LEASE_EXPIRED", reason: "Lease expired according to kernel" };
+        logLeaseDecision(lease_id, tool, actionClass, fail);
+        return fail;
+      }
+      lease = arifosLeaseToLocal(kernelLease);
+      // Kernel-confirmed lease: keep local cache in sync as a read-only diagnostic.
+      activeLeases.set(lease_id, lease);
     }
-    const expiresAt = new Date(kernelLease.expires_at).getTime();
-    if (Date.now() > expiresAt) {
-      const fail = { ok: false as const, gate: "LEASE_EXPIRED", reason: "Lease expired according to kernel" };
-      logLeaseDecision(lease_id, tool, actionClass, fail);
-      return fail;
-    }
-    lease = arifosLeaseToLocal(kernelLease);
-    // Keep local cache in sync as a read-only diagnostic cache only.
-    // Authorization never comes from this cache.
-    activeLeases.set(lease_id, lease);
   } catch (err: any) {
     // P1.3: Check local cache for locally-minted fallback leases before failing.
     // When kernel is unreachable, a locally-registered lease (via registerLocalLease)
@@ -667,7 +720,7 @@ export function registerLeaseTools(server: McpServer): void {
       lease_id: z.string().optional().describe("Lease ID (status/revoke)"),
       agent_id: z.string().optional().describe("Agent ID (request/revoke)"),
       scope: z.array(z.string()).optional().describe("Tools to include (request)"),
-      max_action_class: z.enum(["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE", "PROPOSE", "MUTATE", "ATOMIC"]).default("EXECUTE_REVERSIBLE").describe("Max action class (request)"),
+      max_action_class: z.enum(["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE", "PROPOSE", "MUTATE", "ATOMIC"]).default("EXECUTE_REVERSIBLE").describe("Max action class (request). Valid enum: OBSERVE | SUGGEST | SIMULATE | DRAFT | QUEUE | EXECUTE_REVERSIBLE | EXECUTE_HIGH_IMPACT | IRREVERSIBLE | PROPOSE | MUTATE | ATOMIC. NOTE: This is an action class, NOT a governance tier label (do NOT pass T1, T2, or T3)."),
       ttl_seconds: z.number().default(300).describe("Lease TTL (request, max 3600)"),
       forbidden: z.array(z.string()).optional().describe("Forbidden tools (request)"),
       reason: z.string().optional().describe("Reason (revoke)"),
@@ -1060,6 +1113,10 @@ export function registerSkillTools(server: McpServer): void {
         .describe("arifOS seal verdict (required for arifos domain or execute_after_register)"),
       staging: z.boolean().default(false)
         .describe("If true, stage the generated skill for mesa/Landauer scan before production registration"),
+      revision_kind: z.enum(["harness_revision"]).optional()
+        .describe("Declare this forge as a revision of existing execution logic. Requires generalization_evidence; a declared revision without it is HELD (Harness Adaptation Gap, arXiv:2610.30499)."),
+      generalization_evidence: z.string().optional()
+        .describe("JSON GeneralizationEvidence: dev/held-out scores before+after, preregistration_sha256, heldout_provenance, optional run/outer cost. Required when revision_kind=harness_revision."),
     },
     async (args) => {
       try {
@@ -1107,13 +1164,44 @@ export function registerSkillTools(server: McpServer): void {
           );
         }
 
+        // ── Harness Adaptation Gap gate (arXiv:2610.30499) ──────────────
+        // A declared revision is judged on held-out evidence, never on the
+        // traces it was tuned on. This blocks PROMOTION only; it does not
+        // claim the forge itself failed.
+        let generalization = null;
+        if (args.revision_kind === "harness_revision") {
+          const { evaluateGeneralization, unmeasuredAssessment } = await import(
+            "../../domain/governance/GeneralizationGate.js"
+          );
+          if (!args.generalization_evidence) {
+            generalization = unmeasuredAssessment(
+              "revision_kind=harness_revision declared without generalization_evidence",
+            );
+          } else {
+            try {
+              generalization = evaluateGeneralization(JSON.parse(args.generalization_evidence));
+            } catch (err: any) {
+              generalization = unmeasuredAssessment(
+                `generalization_evidence is not valid JSON: ${err?.message ?? String(err)}`,
+              );
+            }
+          }
+        }
+        const blockedByGeneralization =
+          args.revision_kind === "harness_revision" && generalization !== null && !generalization.promotable;
+
         const isError = result.status === "WITHER" || result.status === "DORMANT";
         return {
           content: [{
             type: "text" as const,
-            text: JSON.stringify({ ...result, staging: stagingResult }, null, 2),
+            text: JSON.stringify({
+              ...result,
+              staging: stagingResult,
+              ...(generalization ? { generalization } : {}),
+              ...(blockedByGeneralization ? { promotion_blocked: "HARNESS_ADAPTATION_GAP" } : {}),
+            }, null, 2),
           }],
-          isError,
+          isError: isError || blockedByGeneralization,
         };
       } catch (err: any) {
         return {
@@ -1134,10 +1222,10 @@ export function registerSkillTools(server: McpServer): void {
   // ── forge_seal — VAULT999 skill binding (Phase 2 Sprint 4) ────────────────
   server.tool(
     "forge_seal",
-    "Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills cannot be deleted, demoted below TRUSTED, or expired. Requires REVIEWED tier + Tri-Witness PASS + F13 approval token.",
+    "Seal a Tri-Witness validated skill into permanent VAULT999 memory. Irreversible. Sealed skills cannot be deleted, demoted below TRUSTED, or expired. Requires REVIEWED tier + Tri-Witness PASS + live human confirmation (elicitation gate at the MCP boundary); human_approval_token is recorded for provenance.",
     {
       skill_name: z.string().describe("Tool name to seal (forge_*)"),
-      human_approval_token: z.string().describe("Audit-only human approval reference (recorded into seal receipt for F2 Truth provenance; NOT used as authorization gate — authorization comes from tri_witness_evidence + constitutional_chain_id)"),
+      human_approval_token: z.string().describe("F13 approval reference recorded into the seal receipt (F2 provenance). Authorization = live elicitation confirmation in this call + tri_witness_evidence + constitutional_chain_id."),
       tri_witness_evidence: z.string()
         .describe("JSON-serialized TriWitnessResult from prior validation (REQUIRED for Q9 self-seal rejection)"),
       constitutional_chain_id: z.string()
@@ -1146,6 +1234,27 @@ export function registerSkillTools(server: McpServer): void {
     },
     async (args) => {
       try {
+        // F13 human gate (audit 2026-10-28): the approval token was audit-only —
+        // recorded but never enforced. An irreversible VAULT999 binding now requires
+        // live human confirmation at the MCP boundary (same pattern forge_judge_proxy
+        // uses for IRREVERSIBLE tiers). Non-interactive clients fail closed.
+        const elicitReq = tradeConfirmationSchema(
+          `forge_seal IRREVERSIBLE: bind skill '${args.skill_name}' into permanent VAULT999 memory. Recorded approval token: ${String(args.human_approval_token).slice(0, 32)}…`,
+        );
+        const elicitResult = await elicitUser(server.server, elicitReq);
+        const auth = isGenuineAuthorization(elicitResult);
+        if (!auth.authorized) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              status: "HOLD",
+              gate: "HUMAN_CONFIRMATION_WITHHELD",
+              reason: auth.reason,
+              skill_name: args.skill_name,
+              constitutional_floor: "F13 SOVEREIGN",
+            }, null, 2) }],
+            isError: true,
+          };
+        }
         const { getForgeSealService } = await import("../../domain/governance/ForgeSealService.js");
         const { getTriWitnessValidator } = await import("../../domain/governance/TriWitnessValidator.js");
         const { getSkillStore } = await import("../../infrastructure/skills/SkillStore.js");
@@ -1796,7 +1905,7 @@ export function registerRealityLoopTools(server: McpServer): void {
       config: z.string().optional().describe('JSON config: {iteration_depth, max_hypotheses, action_budget, auto_execute, self_modify, seal_every_iteration, min_g_score=0.70, min_witness=0.70}. Thresholds are PHASE 1 HEURISTIC. Out-of-range (not in [0,1]) is clamped; non-finite falls back to default. Surfaced in start + seal response.'),
       // record mode args
       record_stage: z.string().optional().describe('Stage being recorded (record mode)'),
-      record_type: z.string().optional().describe('Type of record: evidence | hypothesis | action | entropy | mod | scar | violation'),
+      record_type: z.string().optional().describe('Type of record: evidence | hypothesis | action | entropy | mod | scar | violation | collapse'),
       record_value: z.string().optional().describe('JSON value to record'),
     },
     async (args) => {
@@ -1933,6 +2042,124 @@ export function registerRealityLoopTools(server: McpServer): void {
               case "violation":
                 result = recordFloorViolation(state, value as any);
                 break;
+              case "hypothesis": {
+                // Model proposes candidates + axes. Fields named score/G/eligible
+                // in the payload are NEVER read — the engine computes them.
+                const hv = value as Record<string, unknown>;
+                const rawList = Array.isArray(hv.hypotheses) ? (hv.hypotheses as unknown[]) : [hv];
+                const inputs = rawList.map((item) => {
+                  const rec = (item ?? {}) as Record<string, unknown>;
+                  return {
+                    statement: String(rec.statement ?? ""),
+                    supporting_evidence: Array.isArray(rec.supporting_evidence)
+                      ? (rec.supporting_evidence as string[])
+                      : [],
+                    contradicting_evidence: Array.isArray(rec.contradicting_evidence)
+                      ? (rec.contradicting_evidence as string[])
+                      : [],
+                    collapse_measurement: String(rec.collapse_measurement ?? ""),
+                    axes: (rec.axes ?? null) as any,
+                  };
+                });
+                if (inputs.some((h) => !h.statement.trim())) {
+                  return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", record_type: "hypothesis", error: "each hypothesis requires a non-empty statement" }, null, 2) }], isError: true };
+                }
+                let recorded: any[] = [];
+                try {
+                  recorded = setHypotheses(state, inputs as any);
+                } catch (err) {
+                  const e = err as InstanceType<typeof QuantumAxesError>;
+                  return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", record_type: "hypothesis", error: e?.message ?? String(err), failed_axes: e?.axesFailure ?? [] }, null, 2) }], isError: true };
+                }
+                const evaluations = recorded
+                  .filter((h) => h.axes != null)
+                  .map((h) => evaluateQuantumCandidate({
+                    hypothesisId: h.id,
+                    axes: h.axes,
+                    floor: state.effective_config.axis_floor,
+                    productFloor: state.effective_config.min_g_score,
+                    iteration: state.iteration,
+                  }));
+                const selection = selectAdmissible(evaluations);
+                // Telemetry provenance fix (2026-11-15): ingest MUST NOT write
+                // collapse telemetry. last_quantum_evaluation is set ONLY by a
+                // COLLAPSED result from collapseHypothesis. The selection above is
+                // advisory display for this response and never becomes provenance.
+                return {
+                  content: [{
+                    type: "text" as const,
+                    text: JSON.stringify({
+                      status: "OK",
+                      mode: "record",
+                      record_type: "hypothesis",
+                      session_id: args.session_id,
+                      hypotheses: recorded.map((h) => ({ id: h.id, axes: h.axes ?? null })),
+                      evaluations,
+                      selection: selection.status === "SELECTED"
+                        ? { status: "SELECTED", hypothesis_id: selection.evaluation.hypothesisId, score: selection.evaluation.score, min_axis: selection.evaluation.minAxis }
+                        : { status: "HOLD", reason: selection.reason },
+                      binding_gap: recorded.some((h) => h.axes == null)
+                        ? "candidates without axes cannot collapse (fail closed)"
+                        : undefined,
+                      timestamp: new Date().toISOString(),
+                    }, null, 2),
+                  }],
+                };
+              }
+              case "collapse": {
+                const cv = value as Record<string, unknown>;
+                let targetId = typeof cv.hypothesis_id === "string" ? cv.hypothesis_id : "";
+                if (!targetId) {
+                  // No explicit target: collapse the deterministic argmax selection.
+                  const evals = state.active_hypotheses
+                    .filter((h) => h.axes != null)
+                    .map((h) => evaluateQuantumCandidate({ hypothesisId: h.id, axes: h.axes!, floor: state.effective_config.axis_floor, productFloor: state.effective_config.min_g_score, iteration: state.iteration }));
+                  const sel = selectAdmissible(evals);
+                  if (sel.status !== "SELECTED") {
+                    return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", record_type: "collapse", reason: "no admissible candidate (A = empty) — least-bad fallback refused" }, null, 2) }] };
+                  }
+                  targetId = sel.evaluation.hypothesisId;
+                }
+                const target = state.active_hypotheses.find((h) => h.id === targetId);
+                if (!target) {
+                  return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", record_type: "collapse", reason: "hypothesis_not_found", hypothesis_id: targetId }, null, 2) }] };
+                }
+                if (target.axes == null) {
+                  return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", record_type: "collapse", reason: "axes_unbound: candidate carries no structured axes (fail closed)", hypothesis_id: targetId }, null, 2) }] };
+                }
+                // Re-evaluate at collapse time — the gate never trusts a stale object.
+                const evaluation = evaluateQuantumCandidate({ hypothesisId: target.id, axes: target.axes, floor: state.effective_config.axis_floor, productFloor: state.effective_config.min_g_score, iteration: state.iteration });
+                const outcome = collapseHypothesis(state, target.id, evaluation);
+                return {
+                  content: [{
+                    type: "text" as const,
+                    text: JSON.stringify({
+                      status: outcome.status === "COLLAPSED" ? "COLLAPSED" : "HOLD",
+                      mode: "record",
+                      record_type: "collapse",
+                      session_id: args.session_id,
+                      hypothesis_id: target.id,
+                      reason: outcome.status === "REFUSED" ? outcome.reason : undefined,
+                      failed: outcome.status === "REFUSED" ? outcome.failed : undefined,
+                      evaluation: {
+                        score: evaluation.score,
+                        min_axis: evaluation.minAxis,
+                        floor: evaluation.floor,
+                        product_floor: evaluation.productFloor,
+                        score_gate_passed: evaluation.scoreGatePassed,
+                        eligible: evaluation.eligible,
+                        failed_axes: evaluation.failedAxes,
+                        evaluator_version: evaluation.evaluatorVersion,
+                        input_hash: evaluation.inputHash,
+                        evaluated_at: evaluation.evaluatedAt,
+                      },
+                      quantum_g_score: evaluation.score,
+                      collapsed: target.collapsed,
+                      collapsed_at: target.collapsed_at ?? null,
+                    }, null, 2),
+                  }],
+                };
+              }
               default:
                 return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown record_type: ${args.record_type}` }, null, 2) }], isError: true };
             }
@@ -2029,6 +2256,11 @@ export function registerRealityLoopTools(server: McpServer): void {
                   },
                   threshold_validation: sealState.threshold_validation,
                   calibration_required: true,
+                  quantum_collapse: {
+                    quantum_g_score: sealState.last_quantum_evaluation?.score ?? null,
+                    evaluation: sealState.last_quantum_evaluation,
+                    evaluator_version_policy: "telemetry comes from the deterministic evaluator, never from prompt text or model-reported scores",
+                  },
                   w3_advisory: w3Advisory.length > 0 ? w3Advisory : undefined,
                   instruction: "Iteration sealed to VAULT999. Call forge_reality_loop mode=advance to land on RETURN.",
                 }, null, 2),
@@ -2251,7 +2483,10 @@ export function registerPredictTools(server: McpServer): void {
         target: proposed_action,
         intent: proposed_action,
         tool_name: "forge_predict",
-        metadata: params as any,
+        // R-2026-11-15 (external probe): `mode` was destructured then dropped,
+        // so the simulator never saw the caller's requested mode and silently
+        // substituted mc defaults. Pass it through.
+        metadata: { ...(params as Record<string, unknown>), ...(mode ? { mode } : {}) } as any,
       };
 
       // Use the canonical preActionSimulation module when possible (Tier 2 wiring)

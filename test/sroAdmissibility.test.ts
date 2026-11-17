@@ -8,7 +8,29 @@
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { evaluateSro, loadPolicy, SRO_GATED_COLLECTIONS } from "../src/interfaces/mcp/sroAdmissibility.js";
+import * as fs from "node:fs";
+import { fileURLToPath } from "node:url";
+
+// Parity SOT: the canonical JSON twin lives outside this repo
+// (/root/arifOS/config/memory-admissibility-policy.json) and is absent on CI
+// and non-root layouts. sroAdmissibility.js snapshots
+// MEMORY_ADMISSIBILITY_POLICY_JSON at import time, so this fallback must run
+// before that import. Drift between the checked-in copy (test/fixtures/) and
+// the live twin stays guarded by the arifOS twin test.
+if (!process.env.MEMORY_ADMISSIBILITY_POLICY_JSON) {
+  try {
+    fs.accessSync("/root/arifOS/config/memory-admissibility-policy.json");
+  } catch {
+    for (const base of ["../../", "../"]) {
+      const u = new URL(`${base}test/fixtures/memory-admissibility-policy.json`, import.meta.url);
+      if (fs.existsSync(u)) {
+        process.env.MEMORY_ADMISSIBILITY_POLICY_JSON = fileURLToPath(u);
+        break;
+      }
+    }
+  }
+}
+const { evaluateSro, loadPolicy, SRO_GATED_COLLECTIONS } = await import("../src/interfaces/mcp/sroAdmissibility.js");
 
 const NOW = new Date("2026-09-12T00:00:00Z");
 const FUTURE = new Date(NOW.getTime() + 30 * 86400_000).toISOString();

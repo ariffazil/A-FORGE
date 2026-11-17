@@ -124,7 +124,7 @@ class SheetsBridge(GoogleBridge):
     CONNECTOR_NAME = CONN
     SCOPES = SCOPES
     DEFAULT_PORT = DEFAULT_PORT
-    SERVICE_FN = _service_factory
+    SERVICE_FN = staticmethod(_service_factory)
     ACTIONS = ACTIONS
 
 

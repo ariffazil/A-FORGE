@@ -26,8 +26,30 @@ from pathlib import Path
 
 DEFAULT_DPI = 200
 DEFAULT_MODE = "base"
-HF_SPACE = "baidu/Unlimited-OCR"
+# 2026-10-28 (HERMES): Baidu released Unlimited-OCR-2 on 2026-10-27. The v1
+# Space still answers /run_ocr, but the v2 surface is the one with the
+# horizon endpoints (/parse_page, /parse_document) and it is the one the model
+# card documents. Overridable so a rollback needs no code edit.
+HF_SPACE = os.environ.get("UOCR_SPACE", "baidu/Unlimited-OCR-2")
+# v2 exposes these; v1 exposed only /run_ocr. Probed before use.
+HF_PARSE_PAGE = "/parse_page"
+HF_PARSE_DOCUMENT = "/parse_document"
 SCRIPT_DIR = Path(__file__).resolve().parent
+
+
+def _space_endpoints(space: str = HF_SPACE) -> list[str]:
+    """Live-probe the Space's named endpoints. Never assume; never hardcode."""
+    import urllib.request
+
+    slug = space.replace("/", "-").lower()
+    url = f"https://{slug}.hf.space/gradio_api/info"
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "arifOS/1.0"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8", errors="replace"))
+        return list((data.get("named_endpoints") or {}).keys())
+    except Exception:
+        return []
 
 
 # ── PDF Rasterizer ────────────────────────────────────────────────────
@@ -48,12 +70,30 @@ def pdf_to_images(pdf_path: str, dpi: int = DEFAULT_DPI) -> list[str]:
 
 # ── Gradio API Client ─────────────────────────────────────────────────
 class GradioOCRClient:
-    """Wraps the baidu/Unlimited-OCR Hugging Face Space Gradio API."""
+    """Wraps the baidu/Unlimited-OCR-2 Hugging Face Space Gradio API.
 
-    def __init__(self):
+    2026-10-28 (HERMES): endpoint drift fixed. v1 `/run_ocr` is replaced by the
+    v2 surface, and the endpoint is PROBED before use — a Space that does not
+    expose the endpoint we want raises instead of silently returning nothing.
+    """
+
+    def __init__(self, space: str = HF_SPACE):
         from gradio_client import Client
 
-        self._client = Client(HF_SPACE)
+        self.space = space
+        self._client = Client(space)
+
+    def _require(self, endpoint: str) -> None:
+        live = _space_endpoints(self.space)
+        if not live:
+            raise RuntimeError(
+                f"space {self.space} unreachable (endpoint probe failed) — HOLD, "
+                "do not fall back to a hardcoded URL"
+            )
+        if endpoint not in live:
+            raise RuntimeError(
+                f"space {self.space} does not expose {endpoint}; live: {live}"
+            )
 
     def ocr_page(
         self,
@@ -63,11 +103,40 @@ class GradioOCRClient:
     ) -> dict:
         from gradio_client import handle_file
 
+        self._require(HF_PARSE_PAGE)
         return self._client.predict(
-            image_path=handle_file(image_path),
-            mode=mode,
-            prompt=prompt,
-            api_name="/run_ocr",
+            handle_file(image_path),
+            prompt,
+            mode,
+            20000,
+            api_name=HF_PARSE_PAGE,
+        )
+
+    def ocr_document(
+        self,
+        image_paths: list[str],
+        mode: str = DEFAULT_MODE,
+        prompt: str = "Multi page parsing.",
+    ) -> dict:
+        """
+        HORIZON: parse every page of a document in ONE request so the model's
+        SR-SWA attention can use cross-page context.
+
+        The Space hard-caps a document at MAX_DOC_PAGES (20, read from its own
+        app.py). Longer documents must be chunked, and chunk boundaries are
+        where cross-page context is lost.
+        """
+        from gradio_client import handle_file
+
+        if not image_paths:
+            return {"text": "", "pages": 0, "error": "no images supplied"}
+        self._require(HF_PARSE_DOCUMENT)
+        return self._client.predict(
+            [handle_file(p) for p in image_paths],
+            prompt,
+            mode,
+            20000,
+            api_name=HF_PARSE_DOCUMENT,
         )
 
     def ocr_pdf_pages(

@@ -19,6 +19,7 @@ Output: JSON to stdout. Exit 0 on success, 1 on error.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -37,6 +38,27 @@ from google_workspace import (  # type: ignore[import-untyped]
 )
 
 
+def _apa_revoked(service: str):
+    """Return the APA revocation entry for this service, or None. Fail-closed."""
+    state_dir = os.environ.get("APA_STATE_DIR", "/var/lib/a-forge/apa")
+    path = os.path.join(state_dir, "revocations.json")
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        revoked = data.get("revoked") or {}
+        entry = revoked.get(service) or revoked.get("*")
+        if not entry:
+            return None
+        return entry if isinstance(entry, dict) else {"reason": str(entry)}
+    except FileNotFoundError:
+        return None
+    except Exception as exc:  # noqa: BLE001
+        return {
+            "reason": f"REVOCATION_STATE_UNREADABLE: {exc}",
+            "by": "apa-cli-fail-closed",
+        }
+
+
 def main() -> None:
     if len(sys.argv) < 2:
         print(
@@ -50,6 +72,11 @@ def main() -> None:
         sys.exit(1)
 
     service = sys.argv[1]
+    revoked = _apa_revoked(service)
+    if revoked:
+        reason = revoked.get("reason", "revoked")
+        print(json.dumps({"status": "HOLD", "error": f"APA_REVOKED: {reason}"}))
+        sys.exit(1)
     verb = sys.argv[2] if len(sys.argv) > 2 else ""
     args = _parse_args(sys.argv[3:])
 
@@ -99,9 +126,9 @@ def _parse_args(argv: list[str]) -> dict:
 
 
 def _handle_gmail(verb: str, args: dict) -> dict:
-    if verb == "read-unread":
+    if verb in ("read-unread", "read_unread", "search", "read"):
         return google_gmail_read_unread(
-            max_results=int(args.get("max", 10)),
+            max_results=int(args.get("max", args.get("limit", 10))),
             query=str(args.get("query", "is:unread")),
             actor_id=args.get("actor_id"),
         )

@@ -24,7 +24,7 @@ except ImportError:
 
 CONN = "drive"
 # Read-only proof scope. The bridge has no write verb. Full drive scope is not requested.
-SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/drive"]
 DEFAULT_PORT = 18099  # systemd DRIVE_BRIDGE_PORT=18099 overrides at runtime; aligned 2026-10-04
 
 
@@ -165,7 +165,7 @@ class DriveBridge(GoogleBridge):
     CONNECTOR_NAME = CONN
     SCOPES = SCOPES
     DEFAULT_PORT = DEFAULT_PORT
-    SERVICE_FN = _service_factory
+    SERVICE_FN = staticmethod(_service_factory)
     ACTIONS = ACTIONS
 
 

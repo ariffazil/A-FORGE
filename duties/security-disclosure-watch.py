@@ -107,8 +107,11 @@ BULK_LABELS = {"CATEGORY_UPDATES", "CATEGORY_PROMOTIONS", "CATEGORY_FORUMS", "CA
 OUR_ADDRS = ("arifbfazil@gmail.com", "arifbfazil@11715757.brevosend.com")
 NEVER_DISCLOSURE = ("notifications@github.com",)
 
+# 2026-10-20 scar: bare RCE/XSS are SUBSTRING matches in Gmail. "souRCE",
+# "resOURces", "aRCEhitect", "neceSSARily" all tripped the ACK clock on an
+# essay that was not a disclosure. Quote the acronyms so they match the TOKEN.
 TERMS = ("SSRF OR CVE OR vulnerability OR exploit OR \"responsible disclosure\" "
-         "OR \"security disclosure\" OR injection OR RCE OR XSS")
+         "OR \"security disclosure\" OR injection OR \"RCE\" OR \"XSS\"")
 
 
 def log(m: str) -> None:

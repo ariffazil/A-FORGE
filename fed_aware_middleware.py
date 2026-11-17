@@ -300,7 +300,9 @@ def _strip_responses_features(body: bytes, content_type: str) -> bytes:
 # v1 scope: chat/completions "messages" (the ASI failure surface).
 # Responses-API "input" bodies pass unguarded (documented follow-up).
 FED_GUARD_MAX_BODY_BYTES = int(os.environ.get("FED_GUARD_MAX_BODY_BYTES", "380000"))
-FED_GUARD_KEEP_LAST_MESSAGES = int(os.environ.get("FED_GUARD_KEEP_LAST_MESSAGES", "6"))
+FED_GUARD_KEEP_LAST_MESSAGES = int(
+    os.environ.get("FED_GUARD_KEEP_LAST_MESSAGES", "6")
+)
 
 
 def _fed_413_guard(body: dict[str, Any], body_bytes_len: int, model: str) -> bool:
@@ -312,10 +314,14 @@ def _fed_413_guard(body: dict[str, Any], body_bytes_len: int, model: str) -> boo
     msgs = body.get("messages")
     if not isinstance(msgs, list):
         return False  # non-chat body (e.g. embeddings) — leave untouched
-    system_msgs = [m for m in msgs if isinstance(m, dict) and m.get("role") == "system"]
-    tail = [m for m in msgs if isinstance(m, dict) and m.get("role") != "system"][
-        -FED_GUARD_KEEP_LAST_MESSAGES:
+    system_msgs = [
+        m for m in msgs if isinstance(m, dict) and m.get("role") == "system"
     ]
+    tail = [
+        m
+        for m in msgs
+        if isinstance(m, dict) and m.get("role") != "system"
+    ][-FED_GUARD_KEEP_LAST_MESSAGES:]
     if len(msgs) <= len(system_msgs) + len(tail):
         return False  # nothing droppable (single mega-message: agent-side duty)
     dropped = len(msgs) - len(system_msgs) - len(tail)
@@ -468,10 +474,7 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
             caps = [m.lstrip("fed/") for m in CAPABILITY_PREFIXES if "/" in m]
             data = {
                 "object": "list",
-                "data": [
-                    {"id": c, "object": "model", "owned_by": "fed"}
-                    for c in sorted(set(caps))
-                ],
+                "data": [{"id": c, "object": "model", "owned_by": "fed"} for c in sorted(set(caps))],
             }
             self._json(200, data)
             return
@@ -610,15 +613,10 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                     provider_api_key = _resolve_api_key(resolved_provider)
                     if not provider_api_key:
                         self._forward_to_litellm(
-                            forward_body,
-                            self.headers,
-                            resolved_model,
-                            resolved_provider,
-                            model,
+                            forward_body, self.headers, resolved_model, resolved_provider, model
                         )
                         return
                     import time as _time
-
                     _t0 = _time.time()
                     status, hdrs, resp_body = _proxy_to(
                         base_url.rstrip("/") + "/chat/completions",
@@ -645,11 +643,7 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                         try:
                             # T2-followup (2026-11-02): tag refusals so upstream
                             # classifier suppression is measurable, not hypothesised.
-                            _bl = (
-                                resp_body.decode("utf-8", "ignore").lower()
-                                if isinstance(resp_body, (bytes, bytearray))
-                                else ""
-                            )
+                            _bl = resp_body.decode("utf-8", "ignore").lower() if isinstance(resp_body, (bytes, bytearray)) else ""
                             _refused = (
                                 "content_filter" in _bl
                                 or '"refusal"' in _bl
@@ -678,14 +672,8 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                         except Exception:  # noqa: BLE001 — telemetry must never break proxying
                             pass
 
-                    hcsvog_fp_preview = (
-                        (result or {})
-                        .get("meta", {})
-                        .get("hcsvog", {})
-                        .get("h_fingerprint", "")
-                    )
+                    hcsvog_fp_preview = (result or {}).get("meta", {}).get("hcsvog", {}).get("h_fingerprint", "")
                     import threading as _threading
-
                     _threading.Thread(target=_report_telemetry, daemon=True).start()
                     self.send_response(status)
                     for k, v in hdrs.items():
@@ -700,12 +688,7 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                     self.send_header("X-Fed-Resolved-Provider", resolved_provider)
                     self.send_header("X-Fed-Original-Capability", model)
                     # ETCSOVG harness fingerprint passthrough (arxiv 2605.23950)
-                    hcsvog_fp = (
-                        (result or {})
-                        .get("meta", {})
-                        .get("hcsvog", {})
-                        .get("h_fingerprint", "")
-                    )
+                    hcsvog_fp = (result or {}).get("meta", {}).get("hcsvog", {}).get("h_fingerprint", "")
                     if hcsvog_fp:
                         self.send_header("X-Harness-Fingerprint", hcsvog_fp)
                     self.end_headers()
@@ -730,11 +713,7 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
                 # which already handles litellm aliases for agi-333 / asi-555 / etc.
                 forward_body = json.dumps(body).encode("utf-8")
                 self._forward_to_litellm(
-                    forward_body,
-                    self.headers,
-                    model,
-                    "fed-fallback",
-                    model,
+                    forward_body, self.headers, model, "fed-fallback", model,
                     outcome="fallback",
                 )
                 return
@@ -747,36 +726,16 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
         )
 
     def _forward_to_litellm(
-        self,
-        body_bytes,
-        headers,
-        resolved_model,
-        resolved_provider,
-        original_cap,
+        self, body_bytes, headers, resolved_model, resolved_provider, original_cap,
         outcome: str = "",
     ):
         # ZEN 2026-08-17: raw model name -> actor alias so :4000 never 400s.
-        # 2026-11-17 fix (333-AGI): do NOT rewrite raw model names on the
-        # Responses path. Codex sends mimo-v2.6-flash; the old rewrite sent it
-        # to asi-555, whose order-1 deployment is GLM on Z.AI — and Z.AI's
-        # coding base has no /responses route (404 -> "invalid JSON body" 400).
-        # Responses requests keep their own model group.
-        is_responses_path = self.path.startswith("/v1/responses")
-        if (not is_responses_path) and resolved_model not in (
-            "agi-333",
-            "asi-555",
-            "forge-777",
-            "apex-888",
-            "i-arif",
-        ):
+        if resolved_model not in ("agi-333", "asi-555", "forge-777", "apex-888", "i-arif"):
             alias = MODEL_TO_ACTOR.get(resolved_model)
             if alias:
                 try:
                     payload = json.loads(body_bytes)
-                    if (
-                        isinstance(payload, dict)
-                        and payload.get("model") == resolved_model
-                    ):
+                    if isinstance(payload, dict) and payload.get("model") == resolved_model:
                         payload["model"] = alias
                         body_bytes = json.dumps(payload).encode("utf-8")
                         sys.stderr.write(
@@ -795,7 +754,6 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
             else "http://127.0.0.1:4000/v1/chat/completions"
         )
         import time as _tm_fwd
-
         _t0_fwd = _tm_fwd.time()
         status, hdrs, resp_body = _proxy_to(
             litellm_target,
@@ -809,7 +767,6 @@ class FedAwareMiddleware(BaseHTTPRequestHandler):
             try:
                 import threading as _th_fwd
                 import urllib.request as _ur_fwd
-
                 _lat_fwd = round((_tm_fwd.time() - _t0_fwd) * 1000, 1)
                 _prov_fwd = str(resolved_provider)
                 _model_fwd = str(resolved_model)

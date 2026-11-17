@@ -47,12 +47,16 @@ test("G2: accepts full 64-hex signature (new tokens)", () => {
   const token = `act_v1.${payloadB64}.${fullSig(payloadB64)}`;
   const res = verifyLocalAct(token, { expectedActor: "333-agi" });
   assert.ok(res && res.ok, `expected ok, got: ${JSON.stringify(res)}`);
-  assert.equal((res as { actor?: string }).actor, "333-agi");
+  // F13 2026-10-22: actor = PRINCIPAL (IDENTITY_CANON), lane label moves to
+  // lane_actor. "333-agi" is the lane; its principal is OPENCODE.
+  assert.equal((res as { actor?: string }).actor, "OPENCODE");
+  assert.equal((res as { lane_actor?: string }).lane_actor, "333-agi");
   delete process.env.ARIFOS_SESSION_SECRET;
 });
 
-test("G2: accepts legacy 16-hex signature (compat window)", () => {
+test("G2: rejects legacy 16-hex signature (T04 post-cutoff 2026-10-27T00:00:00Z)", () => {
   process.env.ARIFOS_SESSION_SECRET = SECRET;
+  delete process.env.ARIFOS_REQUIRE_FULL_HMAC;
   const payloadB64 = b64url(
     JSON.stringify({
       act_v: 1,
@@ -65,7 +69,11 @@ test("G2: accepts legacy 16-hex signature (compat window)", () => {
   const res = verifyLocalAct(`act_v1.${payloadB64}.${legacySig}`, {
     expectedActor: "333-agi",
   });
-  assert.ok(res && res.ok, `expected ok for legacy sig, got: ${JSON.stringify(res)}`);
+  // T-04 (F2 receipt 2026-09-27): the 30-day compat window closed at
+  // 2026-10-27T00:00:00Z. Post-cutoff the server MUST hard-reject any
+  // signature below 64 hex chars (attacker-selectable HMAC downgrade).
+  assert.ok(res && !res.ok, `expected rejection for legacy sig, got: ${JSON.stringify(res)}`);
+  if (res && !res.ok) assert.equal(res.error, "ERR_ACT_SIGNATURE_NOT_FULL");
   delete process.env.ARIFOS_SESSION_SECRET;
 });
 

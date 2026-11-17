@@ -17,7 +17,11 @@ CFG=/root/A-FORGE/litellm-config.yaml
 UNIT=litellm-federation
 MARKER=/root/A-FORGE/.litellm-config.applied.sha256
 GW=http://127.0.0.1:4013
-KEY=$(grep -oE 'LITELLM_MASTER_KEY=sk-[A-Za-z0-9_.-]+' /root/.secrets/kunci-mas.flat.env | head -1 | cut -d= -f2)
+# 2026-10-20 claude-code-kvm8: env stores the key single-quoted, so the old
+# `=sk-` grep matched nothing and `set -e` killed this script silently (rc=1,
+# no output) — every config apply failed at line 20 before validating anything.
+KEY=$(sed -nE "s/^LITELLM_MASTER_KEY=['\"]?(sk-[^'\"]+)['\"]?[[:space:]]*$/\1/p" /root/.secrets/kunci-mas.flat.env | head -1)
+[ -n "$KEY" ] || { echo "FAIL: LITELLM_MASTER_KEY not found in env file"; exit 1; }
 
 echo "== 1) YAML validate =="
 python3 - "$CFG" <<'PY'
@@ -58,9 +62,10 @@ fi
 echo "healthy after ~$((i*2))s"
 
 echo "== 5) canary =="
+# 2026-11-07 333-AGI: canary moved mimo-v2.6-flash-payg -> fed/sealion. The MiMo PAYG lane now falls back to Groq gpt-oss-120b (reasoning), which returns empty content at max_tokens=20 -> every apply failed its own canary after a healthy restart. fed/sealion is RM0 and returns literal APPLY_OK (live probe 2026-11-07T02:33Z).
 CAN=$(curl -s --max-time 30 "$GW/v1/chat/completions" \
   -H "Authorization: Bearer $KEY" -H 'Content-Type: application/json' \
-  -d '{"model":"mimo-v2.6-flash-payg","messages":[{"role":"user","content":"reply exactly: APPLY_OK"}],"max_tokens":20}')
+  -d '{"model":"fed/sealion","messages":[{"role":"user","content":"reply exactly: APPLY_OK"}],"max_tokens":20}')
 echo "$CAN" | python3 -c "import sys,json; d=json.load(sys.stdin); c=d['choices'][0]['message']['content']; assert 'APPLY_OK' in c, d; print('canary OK:', c)"
 
 echo "$NEW_SHA" > "$MARKER"

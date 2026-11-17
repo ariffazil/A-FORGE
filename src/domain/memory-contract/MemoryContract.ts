@@ -322,9 +322,22 @@ export class MemoryContract {
   }
 
   /**
-   * Forget (soft-delete) a memory.
+   * Forget a memory — TOMBSTONE (soft-delete), NOT erasure.
+   *
+   * Federation policy alignment (2026-10-26, F13 hold): the kernel's
+   * arif_memory(mode=forget) runs with FORGET_ENFORCEMENT_ENABLED=False —
+   * erasure is simulated federation-wide (receipt only) until F13 ratifies the
+   * forget flow. Forge MUST NOT be more destructive than the kernel: this
+   * method previously HARD-DELETED the entry (irreversible erasure under a
+   * weaker gate than the kernel's). It now tombstones into quarantine with the
+   * forget reason, keeping the record auditable and recoverable (F2 provenance,
+   * F11 audit). When F13 ratifies real erasure, flip it here AND in the kernel
+   * together — never in one layer only (split-brain half-forgotten memories).
    */
-  async forget(request: ForgetRequest, opts?: { actorId?: string; sessionId?: string }): Promise<void> {
+  async forget(
+    request: ForgetRequest,
+    opts?: { actorId?: string; sessionId?: string }
+  ): Promise<{ tombstoned: true; erased: false; enforcement: "DISABLED_PENDING_F13"; memoryId: string }> {
     this.ensureInitialized();
 
     // AAA Gate: delete → 888-APEX
@@ -334,14 +347,29 @@ export class MemoryContract {
     if (!memory) {
       throw new Error(`Memory not found: ${request.memoryId}`);
     }
-    
+
     if (memory.tier === "sacred") {
       throw new Error(`Cannot forget sacred memory: ${request.memoryId}`);
     }
-    
-    // Actually remove for now (could be soft-delete with tombstone)
-    this.memories.delete(request.memoryId);
+
+    // Tombstone: isolate in quarantine, preserve content + provenance.
+    // Actual erasure stays disabled federation-wide until F13 ratification
+    // (kernel memory_gate.py: FORGET_ENFORCEMENT_ENABLED=False — do not
+    // out-destroy the kernel).
+    const previousTier = memory.tier;
+    memory.tier = "quarantine";
+    memory.verification = { status: "pending" };
+    memory.confidence = 0.3;
+    memory.modifiedAt = new Date().toISOString();
+    memory.reason = `FORGET-TOMBSTONE (was tier:${previousTier}): ${request.reason} — erasure DISABLED pending F13 ratification; actor=${opts?.actorId ?? "unknown"}`;
     await this.persistAllMemories();
+
+    return {
+      tombstoned: true,
+      erased: false,
+      enforcement: "DISABLED_PENDING_F13",
+      memoryId: request.memoryId,
+    };
   }
 
   /**

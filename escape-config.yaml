@@ -25,7 +25,7 @@ model_list:
     notes: ESCAPE HATCH — Gemini 3.6 Flash fallback. Latest, fast.
 - model_name: glm-5.2
   litellm_params:
-    model: openai/glm-5.2
+    model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     api_key: os.environ/ZAI_API_KEY
     order: 1
@@ -42,7 +42,7 @@ model_list:
       zai_endpoint: coding-plan
       zai_default_thinking: dynamic
       zai_reasoning_effort_default: max
-    notes: 'Z.ai GLM-5.2 via Coding Plan Pro — F13 ZEN 2026-08-12. model_name=zai-pro resolves to upstream glm-5.2. Coding endpoint: https://api.z.ai/api/coding/paas/v4. 8 capabilities live. Sovereignty caveat: US Entity List + PRC infra. NOTE: litellm model_group routing for zai-pro returns 404; work around is to add model_group_alias mapping zai-pro→glm-5.2 (planned fix).'
+    notes: 'Z.ai GLM-5.2 via Coding Plan Pro — F13 ZEN 2026-08-12. model_name=zai-pro resolves to upstream glm-5.3 (normalized 2026-10-14; z.ai silently redirected 5.2->5.3 anyway). Coding endpoint: https://api.z.ai/api/coding/paas/v4. 8 capabilities live. Sovereignty caveat: US Entity List + PRC infra. NOTE: litellm model_group routing for zai-pro returns 404; work around is to add model_group_alias mapping zai-pro→glm-5.2 (planned fix).'
 litellm_settings:
   num_retries: 2
   cooldown_time: 60

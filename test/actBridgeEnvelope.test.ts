@@ -21,7 +21,7 @@ import {
   validateEnvelope,
   type ActClaims,
   type EnvelopeBudget,
-} from "../infrastructure/governance/actBridge.js";
+} from "../src/infrastructure/governance/actBridge.js";
 
 const SECRET = "l11-test-0123456789abcdef";
 process.env.ARIFOS_SESSION_SECRET = SECRET;

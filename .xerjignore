@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.git/
+__pycache__/
+.venv/
+*.pyc
+forge_work/
+logs/
+data/
+benchmarks/
+deploy/
+node_modules/
+

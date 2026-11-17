@@ -77,6 +77,24 @@ ACTIONS = {
     "get_me": action_get_me,
 }
 
+def apa_revoked():
+    """Return the revocation entry for telegram, or None. Fail-closed."""
+    state_dir = os.environ.get("APA_STATE_DIR", "/var/lib/a-forge/apa")
+    path = os.path.join(state_dir, "revocations.json")
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        revoked = data.get("revoked") or {}
+        entry = revoked.get("telegram") or revoked.get("*")
+        if not entry:
+            return None
+        return entry if isinstance(entry, dict) else {"reason": str(entry)}
+    except FileNotFoundError:
+        return None
+    except Exception as exc:  # noqa: BLE001
+        return {"reason": f"REVOCATION_STATE_UNREADABLE: {exc}", "by": "apa-bridge-fail-closed"}
+
+
 class TelegramHandler(BaseHTTPRequestHandler):
     def _send(self, data, status=200):
         body = json.dumps(data, default=str).encode()
@@ -101,6 +119,13 @@ class TelegramHandler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", 0))
             body = json.loads(self.rfile.read(length)) if length else {}
             mode = body.get("mode")
+
+            rev = apa_revoked()
+            if rev:
+                reason = rev.get("reason", "revoked")
+                self._send({"ok": False, "verdict": "HOLD", "error": f"APA_REVOKED: {reason}", "revoked": rev}, 200)
+                return
+
             if mode not in ACTIONS:
                 self._send({"ok": False, "error": f"Unknown mode: {mode}"}, 400)
                 return

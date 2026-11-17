@@ -32,7 +32,8 @@ CONN = "gmail"
 # SCOPES: start read-only. To add gmail.send later, append it here
 # and re-consent in Google OAuth (one-time human gesture on the VPS).
 SCOPES = [
-    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.send",
 ]
 DEFAULT_PORT = 18097
 
@@ -247,7 +248,7 @@ class GmailBridge(GoogleBridge):
     CONNECTOR_NAME = CONN
     SCOPES = SCOPES
     DEFAULT_PORT = DEFAULT_PORT
-    SERVICE_FN = _service_factory
+    SERVICE_FN = staticmethod(_service_factory)
     ACTIONS = ACTIONS
 
 

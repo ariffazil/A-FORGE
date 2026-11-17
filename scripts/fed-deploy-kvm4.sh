@@ -17,19 +17,6 @@ if [ "$VERIFY_ONLY" = "0" ]; then
   # 1. backup remote + push SOT
   ssh -o BatchMode=yes $KVM4 "cp $REMOTE_CFG $REMOTE_CFG.bak-$STAMP"
   scp -o BatchMode=yes -q "$SOT" $KVM4:$REMOTE_CFG
-  # 1b. re-attach KVM4 audio lane (fed/audio-asr/tts + gemini-3.5-transcribe) from backup
-  scp -o BatchMode=yes -q "$(dirname "$0")/fed_audio_merge.py" $KVM4:/tmp/fed_audio_merge.py
-  ssh -o BatchMode=yes $KVM4 "python3 /tmp/fed_audio_merge.py $REMOTE_CFG.bak-$STAMP $REMOTE_CFG"
-  # 1c. strip KVM8-only callbacks (spend/PII) + redis cache — KVM4 is a workshop replica
-  ssh -o BatchMode=yes $KVM4 "python3 - <<'PYEOF'
-import re
-p = '/docker/litellm/config.yaml'
-src = open(p).read()
-src = re.sub(r'  callbacks:\n(?:  - [^\n]*\n)+', '', src)
-src = re.sub(r'  cache: true\n  cache_params:\n(?:    [^\n]*\n)+', '', src)
-open(p, 'w').write(src)
-print('stripped KVM8-only callbacks + cache')
-PYEOF"
   # 2. apply glm relay patch (kvm4-only divergence)
   ssh -o BatchMode=yes $KVM4 "python3 - <<'PYEOF'
 import re
@@ -41,13 +28,33 @@ for grp in ('glm-5.3', 'glm-5.2'):
     # inside each group block, rewrite the zai base + cred refs to the KVM8 shadow relay
     pat = re.compile(
         r'(- model_name: ' + grp + r'\n  litellm_params:\n(?:    [^\n]*\n)*?)'
-        r'    api_base: os\.environ/ZAI_API_BASE\n'
+        r'    api_base: https://api\.z\.ai/api/paas/v4\n'
         r'    ' + KS + r': os\.environ/ZAI_' + AKS + r'\n')
     src, n = pat.subn(
         r'\1    api_base: http://100.64.0.2:4013/v1  # KVM8 shadow relay (zai IP-entitlement, FED-BIJAKSANA 2026-09-06)\n'
         r'    ' + KS + r': os.environ/LITELLM_MASTER_' + AKS + r'\n', src, count=1)
     print(grp, 'relayed' if n else 'NO-MATCH')
 open(p, 'w').write(src)
+PYEOF"
+  # 2b. 2026-11-07 333-AGI: the literal patch above can NO-MATCH because the SOT moved
+  # ZAI base to os.environ/ZAI_API_BASE. This post-pass is idempotent and authoritative:
+  # relay EVERY zai deployment, make the runtime modules present, rewrite guardrail ref.
+  scp -o BatchMode=yes -q /root/A-FORGE/scripts/fed_context_guard.py $KVM4:/root/A-FORGE/scripts/data/
+  scp -o BatchMode=yes -q /root/.local/share/arifos/fed_attribution_callback.py $KVM4:/root/A-FORGE/scripts/data/
+  ssh -o BatchMode=yes $KVM4 "python3 - <<'PYEOF'
+p='/docker/litellm/config.yaml'
+s=open(p).read()
+s=s.replace('api_base: os.environ/ZAI_API_BASE','api_base: http://100.64.0.2:4013/v1')
+s=s.replace('api_base: https://api.z.ai/api/coding/paas/v4','api_base: http://100.64.0.2:4013/v1')
+lines=s.splitlines(); last=''
+for i,l in enumerate(lines):
+    if 'api_base:' in l: last=l
+    if l.strip()=='api_key: os.environ/ZAI_API_KEY' and '100.64.0.2:4013' in last:
+        lines[i]=l.replace('ZAI_API_KEY','LITELLM_MASTER_KEY')
+s='\n'.join(lines)+'\n'
+s=s.replace('guardrail: fed_context_guard.FedContextGuard','guardrail: data.fed_context_guard.FedContextGuard')
+open(p,'w').write(s)
+print('post-pass: relay_bases=%d guardrail_refs=%d' % (s.count('100.64.0.2:4013'), s.count('data.fed_context_guard')))
 PYEOF"
   # 3. restart + wait
   ssh -o BatchMode=yes $KVM4 "systemctl reset-failed fed-litellm 2>/dev/null || true; systemctl restart fed-litellm"
