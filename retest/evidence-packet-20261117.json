@@ -1,0 +1,114 @@
+{
+  "schema": "aforge.p1-5f-p1-6.retest.v1",
+  "run_id": "20261117A",
+  "generated_at": "2026-11-16T21:29:47Z",
+  "authority_basis": "F13 (Arif) order 2026-11-17: 'a and b' — run target-release retest + profile F6",
+  "scope": "P1-5f (A-FORGE->arifFLOW receipt emission) + P1-6 (telemetry wiring). P1-7 deprecation flags NOT touched.",
+  "target_release": {
+    "a_forge_deployed_commit": "1d35639",
+    "arifflow_daemon_pid": 675433,
+    "a_forge_mcp_pid_post_restart": 1120546
+  },
+  "harness": {
+    "path": "/root/A-FORGE/retest/retest-p1-5f-p1-6.mjs",
+    "sha256": "d24b96f2864595e55df4a5bf0c28f281feaaa8b02885d01668d1ff683a21cc87",
+    "note": "/root/A-FORGE/scripts and /root/A-FORGE/reports are chattr +i (immutable); harness placed in retest/",
+    "actor": "retest.p1-5-6",
+    "session": "retest-p1-5f-p1-6-20261117A"
+  },
+  "census": {
+    "before": { "receipts": 33330, "duplicates": 13, "sealed": 35036, "prod_fallback_lines": 0, "prod_replayed_lines": 51 },
+    "after":  { "receipts": 33709, "duplicates": 14, "sealed": 35421, "prod_fallback_lines": 0, "prod_replayed_lines": 120 },
+    "note": "prod fallback stayed at 0 lines throughout: the retest never pushed prod into the drop path"
+  },
+  "scenarios": {
+    "S1_retry": {
+      "verdict": "PASS",
+      "method": "3 emissions against unreachable arifFLOW (127.0.0.1:7079), isolated fallback file, then live emission + sweeper drain",
+      "checks": [
+        "3 emissions returned ok=false (honest failure, not false success)",
+        "3 fallback lines written (no silent drop)",
+        "recovery emission ok=true",
+        "sweeper replayed=3, failed=0, remaining=0",
+        "replayed ledger appended; markers durably present in /var/lib/arifflow/receipts.jsonl (3 hits)"
+      ],
+      "evidence_class": "MEASURED (loopback transport failure, prod daemon untouched)"
+    },
+    "S2_duplicate": {
+      "verdict": "PASS",
+      "method": "same receipt_id POSTed twice, then same content with fresh UUID",
+      "checks": [
+        "1st delivery stored (http 200)",
+        "2nd delivery status=duplicate, stored=false, fq_unchanged=true (dedupe.v1-receipt_id)",
+        "duplicate durably logged (duplicates.jsonl 13->14)"
+      ],
+      "residual_hazard": {
+        "observed": "fresh_uuid_copy_stored=true",
+        "meaning": "same content with a new receipt_id is a NEW receipt by design (documented by arifFLOW). Because the sweeper regenerates receipt_id at replay time, a request that LANDED but whose response was lost can be replayed as a second receipt and double-count in FQ.",
+        "severity": "LOW-MEDIUM — requires response loss after successful store; not observed in this run",
+        "evidence_class": "OBS (behaviour) / DER (FQ consequence)"
+      }
+    },
+    "S3_restart": {
+      "verdict": "PASS",
+      "method": "fresh-process emission + live `systemctl restart a-forge-mcp.service` + real MCP tool call after restart",
+      "checks": [
+        "cold-process emission ok=true (module re-init safe)",
+        "service healthy again after ~6s, tools_listed=99",
+        "live tools/call forge_health_check served by restarted process",
+        "receipt attributable to actor retest.p1-5-6 landed in arifFLOW after restart",
+        "kimi MCP stdio bridge reconnected without manual intervention",
+        "local audit sink (/root/.agent-workbench/mcp-audit.jsonl) mtime advanced post-restart"
+      ],
+      "evidence_class": "MEASURED (real service restart, ~6s blip)"
+    },
+    "S4_receipt_writer_failure": {
+      "verdict": "PASS",
+      "method": "loopback stub returning HTTP 500 on /ingest for the writer; both emission paths exercised",
+      "checks": [
+        "executor path (flowEmit): ok=false, fallback_written=true",
+        "shell bridge path (arifFlowBridge): ok=false, status=http_500",
+        "both failures persisted to fallback, delta=2, nothing dropped"
+      ],
+      "evidence_class": "SIMULATED_WRITER_FAILURE — HTTP 500 stub; production writer was NOT killed. A true daemon-side write error is still unproven."
+    }
+  },
+  "findings": [
+    {
+      "id": "F-ENV-SPELLING",
+      "severity": "LOW",
+      "statement": "Two modules read different env var names: receipts/arifflowClient.js reads ARIFLOW_URL (single F); bridges/arifFlowBridge.js reads ARIFFLOW_URL (double F). Neither is set in the systemd units, so production silently uses the hardcoded default http://127.0.0.1:7073 for both.",
+      "consequence": "The documented kill switch/seam (ARIFFLOW_URL=off, or pointing at another plane) disables or redirects only ONE of the two emitters. Incident isolation is half-blind.",
+      "evidence_class": "OBS",
+      "fix": "One spelling in both files (canonical: ARIFFLOW_URL, matching the bridge comment + AGENTS.md), or read one shared config value."
+    },
+    {
+      "id": "F-TELEMETRY-ZERO",
+      "severity": "INFO",
+      "statement": "forge_health_check post-restart reports telemetry.totalEvents=0 with since=2026-11-16T19:37:31Z, while a tool call was served seconds earlier.",
+      "consequence": "Either counters are not wired to the tool-call path or they measure a different stream. Cannot be used as P1-6 evidence until disambiguated.",
+      "evidence_class": "OBS"
+    },
+    {
+      "id": "F-SEALED-DIRS",
+      "severity": "INFO",
+      "statement": "/root/A-FORGE/scripts and /root/A-FORGE/reports carry chattr +i. New harnesses cannot be added there without unlocking the seal.",
+      "consequence": "Good for tamper-evidence; means retest tooling must live in a third location (retest/).",
+      "evidence_class": "OBS"
+    }
+  ],
+  "gate_recommendation": {
+    "verdict": "GO_ELIGIBLE",
+    "basis": "4/4 named scenarios pass on target release 1d35639; no silent drop observed on any failure path; prod fallback stayed empty.",
+    "conditions_before_flipping_P1-7": [
+      "Resolve F-ENV-SPELLING so the seam is testable and the kill switch is total, not partial",
+      "Accept S4 as SIMULATED unless a real daemon-writer error is induced on a maintenance window",
+      "Decide whether the fresh-UUID replay double-count (S2 residual) is acceptable or needs idempotency on content hash"
+    ],
+    "not_covered_by_this_run": [
+      "process death mid-write (SIGKILL between ingest and store) — only clean restart tested",
+      "concurrent sweeps across two processes replaying the same backlog",
+      "daemon disk-full during ingest"
+    ]
+  }
+}

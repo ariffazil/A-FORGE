@@ -1,0 +1,37 @@
+environment_bindings:
+  DEEPSEEK_API_KEY:
+    present: true
+    value_redacted: true
+  KIMI_API_KEY:
+    present: true
+    value_redacted: true
+  MIMO_PLATFORM_API_KEY:
+    present: true
+    value_redacted: true
+  MIMO_PLATFORM_BASE_URL:
+    present: true
+    value_redacted: true
+  MIMO_TOKEN_PLAN_API_KEY:
+    present: true
+    value_redacted: true
+  MIMO_TOKEN_PLAN_BASE_URL:
+    present: true
+    value_redacted: true
+  MINIMAX_MPLAN_KEY:
+    present: true
+    value_redacted: true
+  NOUS_API_KEY:
+    present: true
+    value_redacted: true
+  OPENCODE_GO_API_KEY:
+    present: true
+    value_redacted: true
+  QWEN_ARIFOS_API_KEY:
+    present: true
+    value_redacted: true
+  QWEN_HERMES_API_KEY:
+    present: true
+    value_redacted: true
+  ZAI_API_KEY:
+    present: true
+    value_redacted: true

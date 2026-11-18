@@ -1,0 +1,6 @@
+{
+  "request_id": "canary-req-001",
+  "task": "validate_schema_handoff",
+  "ready": true,
+  "evidence": "synthetic_canary_payload"
+}

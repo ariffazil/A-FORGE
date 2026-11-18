@@ -1,0 +1,216 @@
+# /root/A-FORGE/staging/litellm-config.canonical.yaml
+#
+# STATUS: STAGING_TESTED (APEX-ZEN Reality Loop)
+# AUTHORITY: F13 SOVEREIGN / Staging Test Passed on Port 4005
+# EVIDENCE: Endpoint health verified via isolated staging probe (2026-11-10T22:37)
+# Unhealthy rungs purged:
+#   - k3.1-pro (429 monthly quota exhausted)
+#   - deepseek-flash (402 insufficient balance)
+#   - mimo-v2.5-tts-voiceclone (429 quota exhausted)
+#   - nous claude-fable-latest (404 model name mismatch)
+#   - opencode qwen3.8-max (400 missing session header)
+#
+# Line count: ~180 lines (compressed from 2,953 lines)
+
+model_list:
+
+  # ==========================================================
+  # POOL 1: FAST
+  # a2h.simple, a2a.protocol, a2m.fast (GLM-5.3-Flash, MiMo-2.6-Flash)
+  # ==========================================================
+  - model_name: pool/fast
+    litellm_params:
+      model: openai/glm-5.3-flash
+      api_key: os.environ/ZAI_API_KEY
+      api_base: https://api.z.ai/api/coding/paas/v4
+      timeout: 45
+      max_retries: 1
+      tags:
+        - pool-fast
+        - primary
+
+  - model_name: pool/fast
+    litellm_params:
+      model: openai/mimo-v2.6-flash
+      api_key: os.environ/MIMO_PLATFORM_API_KEY
+      api_base: os.environ/MIMO_PLATFORM_BASE_URL
+      timeout: 45
+      max_retries: 1
+      tags:
+        - pool-fast
+        - secondary
+
+  # ==========================================================
+  # POOL 2: REASONING
+  # ambiguity, synthesis, planning, difficult human meaning (MiMo-Pro, Qwen-Max)
+  # ==========================================================
+  - model_name: pool/reasoning
+    litellm_params:
+      model: openai/mimo-v2.6-pro
+      api_key: os.environ/MIMO_PLATFORM_API_KEY
+      api_base: os.environ/MIMO_PLATFORM_BASE_URL
+      timeout: 120
+      max_retries: 1
+      tags:
+        - pool-reasoning
+        - primary
+
+  - model_name: pool/reasoning
+    litellm_params:
+      model: openai/qwen3.8-max
+      api_key: os.environ/QWEN_HERMES_API_KEY
+      api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+      timeout: 120
+      max_retries: 1
+      tags:
+        - pool-reasoning
+        - secondary
+
+  # ==========================================================
+  # POOL 3: CODER-DEEP
+  # architecture, cross-repository work, complex debugging (GLM-5.3-Flash, Qwen-Max)
+  # ==========================================================
+  - model_name: pool/coder-deep
+    litellm_params:
+      model: openai/glm-5.3-flash
+      api_key: os.environ/ZAI_API_KEY
+      api_base: https://api.z.ai/api/coding/paas/v4
+      timeout: 90
+      max_retries: 1
+      tags:
+        - pool-coder-deep
+        - primary
+
+  - model_name: pool/coder-deep
+    litellm_params:
+      model: openai/qwen3.8-max
+      api_key: os.environ/QWEN_HERMES_API_KEY
+      api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+      timeout: 180
+      max_retries: 1
+      tags:
+        - pool-coder-deep
+        - secondary
+
+  # ==========================================================
+  # POOL 4: GOVERNANCE
+  # constitutional analysis, 888 seal evaluation (Qwen-Max, MiMo-Pro)
+  # ==========================================================
+  - model_name: pool/governance
+    litellm_params:
+      model: openai/qwen3.8-max
+      api_key: os.environ/QWEN_ARIFOS_API_KEY
+      api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
+      timeout: 180
+      max_retries: 1
+      tags:
+        - pool-governance
+        - primary
+
+  - model_name: pool/governance
+    litellm_params:
+      model: openai/mimo-v2.6-pro
+      api_key: os.environ/MIMO_PLATFORM_API_KEY
+      api_base: os.environ/MIMO_PLATFORM_BASE_URL
+      timeout: 180
+      max_retries: 1
+      tags:
+        - pool-governance
+        - secondary
+
+  # ==========================================================
+  # POOL 5: MULTIMODAL
+  # image, document and video inputs (GLM-5.3-Flash VLM, MiMo-Flash, MiMo-Pro)
+  # ==========================================================
+  - model_name: pool/multimodal
+    litellm_params:
+      model: openai/glm-5.3-flash
+      api_key: os.environ/ZAI_API_KEY
+      api_base: https://api.z.ai/api/coding/paas/v4
+      timeout: 120
+      max_retries: 1
+      tags:
+        - pool-multimodal
+        - primary
+
+  - model_name: pool/multimodal
+    litellm_params:
+      model: openai/mimo-v2.6-flash
+      api_key: os.environ/MIMO_PLATFORM_API_KEY
+      api_base: os.environ/MIMO_PLATFORM_BASE_URL
+      timeout: 120
+      max_retries: 1
+      tags:
+        - pool-multimodal
+        - secondary
+
+  - model_name: pool/multimodal
+    litellm_params:
+      model: openai/mimo-v2.6-pro
+      api_key: os.environ/MIMO_PLATFORM_API_KEY
+      api_base: os.environ/MIMO_PLATFORM_BASE_URL
+      timeout: 120
+      max_retries: 1
+      tags:
+        - pool-multimodal
+        - fallback
+
+  # ==========================================================
+  # POOL 6: SPEECH
+  # outbound TTS (MiniMax Speech 2.8 HD)
+  # ==========================================================
+  - model_name: pool/speech
+    litellm_params:
+      model: openai/speech-2.8-hd
+      api_key: os.environ/MINIMAX_MPLAN_KEY
+      api_base: https://api.minimax.io/v1
+      timeout: 120
+      max_retries: 1
+      tags:
+        - pool-speech
+        - primary
+
+
+router_settings:
+  routing_strategy: simple-shuffle
+
+  num_retries: 1
+  timeout: 120
+  allowed_fails: 2
+  cooldown_time: 60
+
+  # Cross-pool fallback preserves semantic validity only
+  fallbacks:
+    - pool/fast:
+        - pool/reasoning
+
+    - pool/reasoning:
+        - pool/coder-deep
+
+  # Explicitly prohibited fallbacks:
+  # - pool/governance -> pool/fast (downgrade across constitutional boundary)
+  # - pool/multimodal -> non-multimodal pool
+  # - pool/speech -> text-only pool
+
+  # Backward-compatible model group aliases (100% legacy safety)
+  model_group_alias:
+    "i-arif": "pool/reasoning"
+    "hermes-asi": "pool/reasoning"
+    "hermes-asi-vision": "pool/multimodal"
+    "forge-777": "pool/fast"
+    "forge-builder": "pool/fast"
+    "forge-planner": "pool/reasoning"
+    "forge-economy": "pool/fast"
+    "forge-scout": "pool/fast"
+    "forge-scout-pro": "pool/reasoning"
+    "asi-555": "pool/fast"
+    "apex-888": "pool/governance"
+    "openclaw": "pool/fast"
+    "fed/vision": "pool/multimodal"
+    "fed/free": "pool/fast"
+    "fed/minimax-tts": "pool/speech"
+
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  store_model_in_db: false

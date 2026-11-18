@@ -1,0 +1,88 @@
+# /root/A-FORGE/staging/fed-routing-policy.yaml
+#
+# STATUS: STAGING (APEX-ZEN Reality Loop)
+# AUTHORITY: F13 SOVEREIGN / arifOS Constitutional Policy Resolver
+# PURPOSE: Policy resolver mapping governed request envelopes to 6 canonical model pools.
+
+schema_version: "fed-routing-policy/v1"
+default_entrypoint: fed
+default_verdict: HOLD
+
+rules:
+  - id: governance
+    priority: 100
+    match:
+      capabilities:
+        any:
+          - constitutional_audit
+          - authorization_review
+    requirements:
+      risk_tier: T3
+    pool: pool/governance
+
+  - id: multimodal
+    priority: 90
+    match:
+      capabilities:
+        any:
+          - vision_in
+          - document_vision
+          - video_in
+    pool: pool/multimodal
+
+  - id: speech
+    priority: 90
+    match:
+      capabilities:
+        any:
+          - audio_out
+          - text_to_speech
+    pool: pool/speech
+
+  - id: code-deep
+    priority: 80
+    match:
+      interaction: a2m
+      complexity: high
+      capabilities:
+        any:
+          - code_edit
+          - architecture_reasoning
+          - cross_repository_analysis
+    pool: pool/coder-deep
+
+  - id: reasoning
+    priority: 70
+    match:
+      ambiguity:
+        any:
+          - medium
+          - high
+    pool: pool/reasoning
+
+  - id: fast
+    priority: 10
+    match:
+      risk_tier:
+        any:
+          - T0
+          - T1
+      complexity:
+        any:
+          - low
+          - medium
+    pool: pool/fast
+
+attention_gate:
+  escalate_when:
+    - authority_missing
+    - irreversible_consequence
+    - requested_scope_exceeds_grant
+    - conflicting_evidence
+    - no_matching_route
+
+  do_not_escalate_when:
+    - provider_retry
+    - successful_fallback
+    - repairable_schema_failure
+    - repairable_compiler_failure
