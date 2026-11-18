@@ -7,7 +7,7 @@ import { z } from "zod";
  */
 export const ForgeVaultInputSchema = z.object({
   mode: z.enum(["read", "list", "write", "receipt"]).describe(
-    "Vault operation (read|list|write|receipt). For VAULT999 sealing, use arifOS arif_seal (port 8088).",
+    "Vault operation (read|list|write|receipt). For VAULT999 sealing, use arifOS arif_seal (port 8088). Refused by ACT/LEASE gate (unverified actor)? Sanctioned fallback: forge_receipt_draft (OBSERVE-class); never bypass.",
   ),
   name: z.string().optional().describe("Record name (read/write/receipt)"),
   category: z.string().optional().describe(

@@ -2781,7 +2781,7 @@ server.tool(
 //   Pattern: Stripe additive-only API evolution — old mode stays valid, routes to canonical.
 
 server.registerTool("forge_vault", {
-  description: "VAULT999 primitive (A-FORGE cache layer). Modes: read, list, write, receipt. For seal: use arifOS arif_seal (port 8088) or /root/scripts/federation_ritual.py seal.",
+  description: "VAULT999 primitive (A-FORGE cache layer). Modes: read, list, write, receipt. For seal: use arifOS arif_seal (port 8088) or /root/scripts/federation_ritual.py seal. If refused by ACT_GATE/LEASE_GATE (unverified actor), the sanctioned fallback is forge_receipt_draft (OBSERVE-class) — never bypass gates; close honest PARTIAL/UNSEALED per lane-b-unverified-close.",
   inputSchema: ForgeVaultInputSchema,
 }, async (input) => {
   const { mode, name, category, limit } = input;
