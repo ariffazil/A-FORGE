@@ -1,3 +1,4 @@
+# Bump log: 2026-11-19 02:5xZ 333-AGI (Arif live 'why mimo token plan suddenly unavailable' + 'align mimo token plan opencode/hermes/FED') — MiMo truth pass: (1) DELETED corpse aliases mimo-v2.6-pro-payg + mimo-v2.6-flash-payg + mimo-v2.6-pro-ultraspeed + their fallback groups (PAYG sk- 402-dead; payg endpoints hang HTTP 000 probed today; ultraspeed silently served gpt-oss-120b — CLOSES p1-fed-alias-silent-substitution-ultraspeed); (2) RE-PAIRED compat aliases mimo-v2.5 + mimo-v2.5-pro rungs api_key MIMO_API_KEY (429 dry) -> MIMO_INDIVIDUAL_PLAN_API_KEY (funded MAX seat 67.5B/82B, probe 200) so they serve declared v2.6 upstreams honestly; (3) fixed false-seat comments (forge-scout, forge-777 said TEAM/MIMO_API_KEY, actual key = INDIVIDUAL). Seat truth: env MIMO_INDIVIDUAL_PLAN_API_KEY = funded MAX seat (plan max, 67.47B/82B, period→2026-12-12, auto_renew true); stale short file variants 401-invalidated by vendor ~02:00-02:20 MYT (quarantined by sibling collapse session); team ttp-s0ic = auth-valid 429 dry, renews ~2026-12-01; PAYG sk- = 402 dead. Revert: cp /root/forge_work/backups/litellm-config.yaml.bak-mimoalign-20261118T175253Z /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
 # Bump log: 2026-11-11 06:44Z FI-003 qwen (F13 'go semua') — L-2 fix: removed orphaned gemini-2.5-flash fallback stanza (group deleted 2026-11-04 corpse prune); ADDED canary-openrouter free lane (standalone, zero fallback weight, registry route.fed.canary.openrouter-free). Revert: forge_work/backups/litellm-config.yaml.bak-canaryL2-20261111T064320Z.
 # Bump log: 2026-11-17 333-AGI — REMOVED SEA-LION (order 98) from forge-777 fallback chain. Root cause: 131k input + 128k output > 262k ctx overflow, recurring across codex/qwen-code (52x 'invalid JSON body' in 60 min). Rollback: cp /root/backups/litellm-config.yaml.bak-sealion-removal-20261116T192509Z /root/A-FORGE/litellm-config.yaml && /root/A-FORGE/scripts/apply-litellm-config.sh
 # OWNER: AAA INFRA STATE (F13 SOVEREIGN decree 2026-10-18) — perintah Arif: 'fix that litellm FED it under AAA infra state'.
@@ -820,7 +821,7 @@ model_list:
       order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault); rung inert
       by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
 - model_name: forge-scout
-  # KEY-REPAIR 2026-11-18 333-AGI: team-plan2 429 -> MIMO_API_KEY seat probed 200 (mimo-v2.6-flash lane)
+  # KEY-REPAIR 2026-11-18 333-AGI: team-plan2 429 -> INDIVIDUAL seat (MIMO_INDIVIDUAL_PLAN_API_KEY) probed 200 (mimo-v2.6-flash lane). Label fixed 2026-11-19: comment previously said MIMO_API_KEY; the wired key env is INDIVIDUAL.
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
@@ -1311,7 +1312,7 @@ model_list:
   litellm_params:
     # 2026-10-31 F13: upstream id must be the VENDOR id, not our alias name.
     # "mimo-v2.6-pro-payg" is a litellm alias -> vendor answered 400 Unsupported model.
-    # Repointed to the live MiMo TEAM seat (same vendor family, funded).
+    # Repointed to the live MiMo INDIVIDUAL seat (MIMO_INDIVIDUAL_PLAN_API_KEY, funded MAX 67.5B/82B). Seat label fixed 2026-11-19 — comment previously said TEAM.
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     additional_drop_params: [include]
@@ -2189,12 +2190,12 @@ model_list:
 # ALIAS: vendor retired the mimo-v2.5 / mimo-v2.5-pro model IDs on 2026-10-21.
 # This name is kept for picker compatibility but routes to a V2.6 upstream.
 - model_name: mimo-v2.5-pro
-  # PARKED 2026-11-18 333-AGI probe: MIMO_API_KEY seat quota exhausted (429); only INDIVIDUAL seat live
+  # RE-PAIRED 2026-11-19 (333-AGI, Arif mimo align): api_key -> MIMO_INDIVIDUAL_PLAN_API_KEY (funded MAX seat, probe 200) so this compat alias serves its DECLARED v2.6-pro upstream. Prev: MIMO_API_KEY seat 429-dry -> fallback silently substituted mimo-v2.6-flash.
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: os.environ/MIMO_BASE_URL
     additional_drop_params: [include]
-    api_key: os.environ/MIMO_API_KEY
+    api_key: os.environ/MIMO_INDIVIDUAL_PLAN_API_KEY
     order: 993
     supports_vision: true
     # Vendor cap (docs 2026-10-23): 100 RPM / 10M TPM per ACCOUNT per model,
@@ -2220,12 +2221,12 @@ model_list:
     notes: 'F13 2026-09-14: supports_vision enabled for image input.'
 # ALIAS: vendor retired this ID on 2026-10-21 — routes to openai/mimo-v2.6-flash.
 - model_name: mimo-v2.5
-  # PARKED 2026-11-18 333-AGI probe: MIMO_API_KEY seat quota exhausted (429); only INDIVIDUAL seat live
+  # RE-PAIRED 2026-11-19 (333-AGI, Arif mimo align): api_key -> MIMO_INDIVIDUAL_PLAN_API_KEY (funded MAX seat, probe 200) — serves declared v2.6-flash upstream. Prev: MIMO_API_KEY seat 429-dry -> fallback silently substituted glm-5.3 UNDER THE MIMO NAME.
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_BASE_URL
     additional_drop_params: [include]
-    api_key: os.environ/MIMO_API_KEY
+    api_key: os.environ/MIMO_INDIVIDUAL_PLAN_API_KEY
     order: 993
     supports_vision: true
     # Vendor cap: 100 RPM / 10M TPM per account per model.
@@ -2367,29 +2368,7 @@ model_list:
       Probed live: image 1024 tok, audio 25 tok (correct ASR), video 1144+19 tok.
       FPS 0.1-10, media_resolution default|max. Video ≤300MB URL / ≤50MB b64. Audio
       ≤100MB URL / ≤50MB b64. Image ≤50MB.'
-- model_name: mimo-v2.6-pro-payg
-  # PARKED 2026-11-18 333-AGI: MiMo PAYG platform balance insufficient (402)
-  litellm_params:
-    model: openai/mimo-v2.6-pro
-    api_base: os.environ/MIMO_PLATFORM_BASE_URL
-    additional_drop_params: [include]
-    api_key: os.environ/MIMO_PLATFORM_API_KEY
-    order: 994
-    supports_vision: true
-  model_info:
-    # --- declared cost class + price (SOURCE: /root/.config/federation-prices.yaml) ---
-    cost_class: payg
-    price_status: unverified
-    price_declared_at: '2026-11-12'
-    spendable: true
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_audio_input: true
-    supports_video_input: true
-    supports_vision: true
-    notes: 2026-09-22 Stage 1 sidecar — PAYG/platform endpoint 
-      (api.xiaomimimo.com). Distinct model_name for "have both" choice.
+# RETIRED 2026-11-19 (333-AGI, Arif mimo align): mimo-v2.6-pro-payg alias deleted — PAYG sk- key 402-dead, endpoint hangs (HTTP 000 probed 2026-11-19). Restore from backup litellm-config.yaml.bak-mimoalign-20261118T175253Z when PAYG topped up.
 - model_name: mimo-v2.6-flash
   # PARKED 2026-11-18 333-AGI probe: MIMO_API_KEY seat quota exhausted (429); only INDIVIDUAL seat live
   litellm_params:
@@ -2503,53 +2482,8 @@ model_list:
     notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url
       in content[]. Token Plan endpoint. Cheaper than Pro. Same modality support as
       v2.6-pro.'
-- model_name: mimo-v2.6-flash-payg
-  # PARKED 2026-11-18 333-AGI: MiMo PAYG platform balance insufficient (402)
-  litellm_params:
-    model: openai/mimo-v2.6-flash
-    api_base: os.environ/MIMO_PLATFORM_BASE_URL
-    additional_drop_params: [include]
-    api_key: os.environ/MIMO_PLATFORM_API_KEY
-    order: 992
-    supports_vision: true
-  model_info:
-    # --- declared cost class + price (SOURCE: /root/.config/federation-prices.yaml) ---
-    cost_class: payg
-    price_status: unverified
-    price_declared_at: '2026-11-12'
-    spendable: true
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_audio_input: true
-    supports_video_input: true
-    supports_vision: true
-    notes: 2026-09-22 Stage 1 sidecar — PAYG/platform endpoint. Distinct 
-      model_name for "have both" choice.
-- model_name: mimo-v2.6-pro-ultraspeed
-  # PARKED 2026-11-18 333-AGI: MiMo PAYG platform balance insufficient (402)
-  litellm_params:
-    model: openai/mimo-v2.6-pro-ultraspeed
-    api_base: os.environ/MIMO_PLATFORM_BASE_URL
-    additional_drop_params: [include]
-    api_key: os.environ/MIMO_PLATFORM_API_KEY
-    order: 996
-    supports_vision: true
-  model_info:
-    # --- declared cost class + price (SOURCE: /root/.config/federation-prices.yaml) ---
-    cost_class: payg
-    price_status: unverified
-    price_declared_at: '2026-11-12'
-    spendable: true
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_audio_input: true
-    supports_video_input: true
-    supports_vision: true
-    notes: 2026-09-22 Stage 1 sidecar — PAYG-only (token-plan /models probe did 
-      NOT list ultraspeed). Vendor-claimed 20x speed; pending live latency 
-      probe.
+# RETIRED 2026-11-19 (333-AGI, Arif mimo align): mimo-v2.6-flash-payg alias deleted — same PAYG corpse class (402 + hang). Restore from backup litellm-config.yaml.bak-mimoalign-20261118T175253Z when PAYG topped up.
+# RETIRED 2026-11-19 (333-AGI, Arif mimo align): mimo-v2.6-pro-ultraspeed alias deleted — PAYG-only model, PAYG sk- 402-dead; with fallback it SILENTLY served gpt-oss-120b under the mimo name (HTTP 200 wrong-model, closes p1-fed-alias-silent-substitution-ultraspeed). Restore from backup litellm-config.yaml.bak-mimoalign-20261118T175253Z when PAYG topped up + ultraspeed quota granted.
 - model_name: glm-5.2
   litellm_params:
     model: openai/glm-5.3
@@ -4557,15 +4491,10 @@ router_settings:
     - sovereign-west
   - mimo-v2.6-flash:
     - sovereign-west
-  - mimo-v2.6-pro-ultraspeed:
-    - sovereign-west
-  - mimo-v2.6-pro-payg:
-    - sovereign-west
-  - mimo-v2.6-flash-payg:
-    - sovereign-west
   - mimo-v2.5:
     - glm-5.3
     - sovereign-west
+  # RETIRED 2026-11-19 (333-AGI): fallback groups for deleted PAYG/ultraspeed aliases removed with the aliases.
   - kimi-k3:
     - mimo-v2.6-flash
     - glm-5.3
