@@ -1147,7 +1147,14 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             }
 
             // Check whitelist — tool-level denial → isError envelope (Phase A3)
-            if (!STATELESS_TOOLS.has(toolName)) {
+            // MCP 2026-07-28 stateless: allow OBSERVE-only forge_telegram(get_me)
+            // or calls carrying explicit (session_id, session_token) for kernel
+            // pre-validation below; anonymous MUTATE remains blocked.
+            const hasExplicitSession = Boolean(toolArgs?.session_id && toolArgs?.session_token);
+            const isStatelessTelegramObserve =
+              toolName === "forge_telegram" &&
+              String(toolArgs?.mode ?? toolArgs?.verb ?? "get_me") === "get_me";
+            if (!STATELESS_TOOLS.has(toolName) && !hasExplicitSession && !isStatelessTelegramObserve) {
               const msg = `Tool "${toolName}" requires session ownership. Use session-based connection or connect via stdio.`;
               process.stderr.write(`[A-FORGE-MCP] Rejected stateless call: ${toolName}\n`);
               res.writeHead(200, {
