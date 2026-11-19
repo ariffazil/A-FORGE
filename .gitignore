@@ -182,3 +182,8 @@ data/token_bank.db
 
 # machine-absolute dev shim (symlink -> /opt/aforge-publish)
 /python
+
+# F-8 (2026-10-25): generated runtime telemetry — not source, not evidence.
+# Retention owner = A-FORGE runtime state writer. File RETAINED on disk (frozen),
+# untracked by explicit reviewed change; churn no longer dirties the tree.
+data/web_federation_state.json

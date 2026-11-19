@@ -251,7 +251,13 @@ async function searxngWebSearch(
   count: number,
 ): Promise<{ ok: boolean; results: BraveResult[]; error?: string }> {
   try {
-    const params = new URLSearchParams({ q: query, format: "json", pageno: "1" });
+    // Engine pinning (2026-10-29, 333-AGI): the default engine list (101
+    // entries) is mostly dead providers from this box — an unpinned query
+    // returns results:[] and the ladder mis-attributes failure to searxng.
+    // Kernel probes same day: pinned bing/google/wikipedia return 10 real
+    // results each. Wiring owns engine selection; container config stays.
+    const engines = process.env.SEARXNG_ENGINES ?? "bing,google,wikipedia,bing news";
+    const params = new URLSearchParams({ q: query, format: "json", pageno: "1", engines });
     const resp = await fetch(`${SEARXNG_URL}/search?${params.toString()}`, {
       headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(12_000),

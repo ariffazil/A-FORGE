@@ -97,16 +97,30 @@ const KNOWN_ALIAS_GROUPS: Record<string, string[]> = {
 };
 
 /**
- * Run deduplication check against live MCP server tool registry.
- * Called once at startup. Non-blocking.
+ * A deprecation stub is not a duplicate capability.
+ *
+ * Measured 2026-10-31: `applyDeprecationAliases` (GC sweep #2, 2026-10-22) replaces the
+ * registered handler of every name in DEPRECATION_ALIASES with ONE identical stub —
+ * empty schema, deprecation description, read-only annotations, handler returning a
+ * pointer. N such names therefore share one fingerprint BY CONSTRUCTION. Reporting that
+ * as EXACT duplicate drift is a false positive: it counts retired surfaces as live
+ * capability, and inflates the headline tool count (118 registered vs 99 live).
+ *
+ * A stub is identified by its own description, which carries the deprecation pointer.
  */
+function isDeprecationStub(description: string): boolean {
+  return /DEPRECATED\s*\(?.{0,40}|deprecation pointer|use .* instead/i.test(description || "");
+}
+
 export function runDedupeCheck(server: McpServer): DedupeReport {
   const registeredTools = (server as any)._registeredTools as Record<string, any> ?? {};
   const fingerprints: ToolFingerprint[] = [];
+  let stubCount = 0;
 
   for (const [name, tool] of Object.entries(registeredTools)) {
     if (!tool || !tool.enabled) continue;
     const desc = tool.description || "";
+    if (isDeprecationStub(desc)) stubCount += 1;
     const schema = tool.inputSchema ?? {};
     fingerprints.push(fingerprintTool(name, desc, schema));
   }
@@ -123,6 +137,12 @@ export function runDedupeCheck(server: McpServer): DedupeReport {
   const duplicates: DedupeReport["duplicates"] = [];
   for (const [fp, names] of byFingerprint) {
     if (names.length > 1) {
+      // Identical deprecation stubs share a fingerprint by construction — not drift.
+      const allStub = names.every(n => {
+        const tool = registeredTools[n];
+        return tool ? isDeprecationStub(tool.description || "") : false;
+      });
+      if (allStub) continue;
       // Check if this is a known alias group
       const isKnownAlias = Object.values(KNOWN_ALIAS_GROUPS).some(
         group => names.every(n => group.includes(n) || Object.keys(KNOWN_ALIAS_GROUPS).includes(n))
@@ -148,8 +168,12 @@ export function runDedupeCheck(server: McpServer): DedupeReport {
   };
 
   // Print to stderr (non-blocking)
+  // 2026-10-31: report LIVE vs RETIRED explicitly. A retired stub is not a capability;
+  // quoting the registered total as the tool count overstates the surface by exactly
+  // stubCount (measured 118 registered / 19 stubs / 99 live).
   process.stderr.write(`\n[tool-dedupe] === MCP Tool Deduplication Check ===\n`);
-  process.stderr.write(`[tool-dedupe] Total: ${report.total} | Unique: ${report.unique}\n`);
+  process.stderr.write(`[tool-dedupe] Registered: ${report.total} | Deprecated stubs: ${stubCount} | Live: ${report.total - stubCount}\n`);
+  process.stderr.write(`[tool-dedupe] Unique fingerprints (all): ${report.unique}\n`);
   if (duplicates.length > 0) {
     for (const dup of duplicates) {
       process.stderr.write(`[tool-dedupe] ${dup.category.toUpperCase()}: ${dup.names.join(" = ")} (${dup.fingerprint})\n`);

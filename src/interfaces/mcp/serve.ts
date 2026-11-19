@@ -22,11 +22,14 @@ import path from "node:path";
 
 const PROTOCOL_VERSION = process.env.MCP_PROTOCOL_VERSION || "2025-06-18";
 
-import { server } from "./core.js";
+import { server, evaluateRefusalGate } from "./core.js";
+import { evaluateConstitutionalBind } from "./constitutionalBind.js";
 import { getConstitutionGate, CONSTITUTION_GATE } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
 import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpPolicyGate.js";
+import { validateIngressArgs } from "./statelessIngress.js";
+import { ensureSealLedgerRouting, sealLedgerHealth } from "./ledger/sealLedgerRouting.js";
 import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 
 // ── arifFlow Post-Execution Receipt Hook (F13-ratified 2026-09-17) ──
@@ -576,6 +579,15 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
   // Seal-A condition 3: production + FORGE_ACT_REQUIRE_MUTATE=0 → FATAL before bind.
   assertActMutationGateOrExit(process.env);
 
+  // Workstream A (2026-10-31): every launch path either binds an explicit
+  // ledger segment or dies with a precise config error. Never a silent
+  // fallback to the frozen archive.
+  const ledgerRouting = ensureSealLedgerRouting();
+  process.stderr.write(
+    `[A-FORGE-MCP] Seal ledger: ${ledgerRouting.path} (source=${ledgerRouting.source}` +
+      `${ledgerRouting.bound_env ? ", env bound at boot" : ""})\n`,
+  );
+
   const memoryContract = getMemoryContract();
 
   // Constitution gate active — all approvals route through arifOS:8088
@@ -672,29 +684,40 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
       // Health endpoint
       if (req.url === "/health" || (req.url === "/" && req.method === "GET")) {
         const now = Date.now();
-        res.writeHead(200, {
-          "Content-Type": "application/json",
-          "MCP-Protocol-Version": PROTOCOL_VERSION,
-        });
-        res.end(JSON.stringify({
-          ok: true,
-          service: "A-FORGE-MCP",
-          status: "healthy",
-          version: MCP_VERSION,
-          commit: BUILD_COMMIT,
-          transport: "streamable-http",
-          // F2-fidelity fix (MCP-PROBE-2026-08-08): bridge shares organ identity
-          // with the canonical server. authority_ceiling prevents downstream
-          // agents from misidentifying the bridge's authority tier.
-          authority_ceiling: "777_FORGE",
-          sessions: connected ? "active" : "pending",
-          tools_listed: getServerTools().length,
-          stateless_tools: STATELESS_TOOLS.size,
-          session: connected ? {
-            idle_seconds: Math.round((now - lastActivityTime) / 1000),
-            age_seconds: Math.round((now - serverStartTime) / 1000),
-          } : null,
-        }));
+        // Workstream A (2026-10-31): the health payload must state the ledger's
+        // own derivation. A frozen/unwritable/unwritten ledger that reports
+        // only ok:true is an archive pretending to be governance.
+        void sealLedgerHealth()
+          .then((sealLedger) => {
+            res.writeHead(200, {
+              "Content-Type": "application/json",
+              "MCP-Protocol-Version": PROTOCOL_VERSION,
+            });
+            res.end(JSON.stringify({
+              ok: true,
+              service: "A-FORGE-MCP",
+              status: "healthy",
+              version: MCP_VERSION,
+              commit: BUILD_COMMIT,
+              transport: "streamable-http",
+              // F2-fidelity fix (MCP-PROBE-2026-08-08): bridge shares organ identity
+              // with the canonical server. authority_ceiling prevents downstream
+              // agents from misidentifying the bridge's authority tier.
+              authority_ceiling: "777_FORGE",
+              sessions: connected ? "active" : "pending",
+              tools_listed: getServerTools().length,
+              stateless_tools: STATELESS_TOOLS.size,
+              seal_ledger: sealLedger,
+              session: connected ? {
+                idle_seconds: Math.round((now - lastActivityTime) / 1000),
+                age_seconds: Math.round((now - serverStartTime) / 1000),
+              } : null,
+            }));
+          })
+          .catch((err: any) => {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ ok: false, service: "A-FORGE-MCP", status: "degraded", error: err?.message ?? String(err) }));
+          });
         return;
       }
 
@@ -1237,6 +1260,50 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             // carries a session_id + session_token. If so, validate via
             // kernel and register as verified so derivePrincipal() sees
             // FULL authority.
+            // ── GATE 0: HUMAN REFUSAL (stateless HTTP ingress) ─────────────────────
+            // A human consequence-bearer can issue a scoped NO.
+            // If a valid refusal covers the scope, execution is BLOCKED immediately.
+            const refusalVerdict = await evaluateRefusalGate(toolName, (toolArgs && typeof toolArgs === "object") ? toolArgs : {});
+            if (refusalVerdict.blocked) {
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({
+                jsonrpc: "2.0",
+                id: msgId,
+                result: refusalVerdict.response,
+              }));
+              return;
+            }
+
+            // ── GATE 0b: CONSTITUTIONAL BINDING (F13 2026-10-31) ─────────────
+            // A mutation-class forge_shell may not reach the executor without a
+            // valid TaskIntent, fresh BaselineWitness (examined_count>0), exact
+            // ExecutionPlan (plan_hash match), ALLOW RiskEnvelope and a scoped,
+            // unexpired, single-use AuthorizationGrant. Fail closed. No warn mode.
+            {
+              const bindVerdict = evaluateConstitutionalBind(
+                toolName,
+                (toolArgs && typeof toolArgs === "object") ? toolArgs : {},
+              );
+              if (bindVerdict.blocked) {
+                process.stderr.write(
+                  `[A-FORGE-MCP] BINDING REFUSED (${bindVerdict.code}): ${toolName} — ${bindVerdict.reasons.join("; ")}\n`,
+                );
+                res.writeHead(200, {
+                  "Content-Type": "application/json",
+                  "X-AForge-Gate": "CONSTITUTIONAL_BIND",
+                });
+                res.end(toolIsErrorResult(msgId, `Constitutional binding refused: ${bindVerdict.code}`, {
+                  error_class: "CONSTITUTIONAL_BIND_REFUSED",
+                  recoverability: "AGENT_CAN_RETRY",
+                  gate: "CONSTITUTIONAL_BIND",
+                  code: bindVerdict.code,
+                  reasons: bindVerdict.reasons,
+                  tool: toolName,
+                }));
+                return;
+              }
+            }
+
             const preSessionId = (typeof toolArgs?.session_id === "string") ? toolArgs.session_id : undefined;
             const preSessionToken = (typeof toolArgs?.session_token === "string")
               ? toolArgs.session_token
@@ -1355,6 +1422,38 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               // Forward the args as-is; let the ACT path + PolicyGate derive principal.
               // Reference: VAULT999/process_violations/2026-08-13_F2-TRUTH_correction.json
               void toolArgs; // explicit: no mutation, no overwrite
+              // ── INGRESS VALIDATION (stateless path) ─────────────────────────
+              // The stdio/SDK path validates tools/call args against the tool's
+              // zod shape inside McpServer; this hand-rolled HTTP path did not,
+              // so a malformed payload reached tool code and died there as an
+              // opaque TypeError, which the policy interceptor then mislabelled
+              // as a gate failure. Measured 2026-10-29: forge_verify_timeline with
+              // a source item missing `sources` returned
+              //   "MCP Policy Gate engine error during pre-check ... reading 'length'"
+              // — wrong layer, wrong diagnosis, unrecoverable for the caller.
+              // Reject at the boundary with the field path instead.
+              const ingressIssues = validateIngressArgs(
+                getServerTools().find(t => t.name === toolName)?.inputSchema,
+                toolArgs,
+              );
+              if (ingressIssues) {
+                process.stderr.write(
+                  `[A-FORGE-MCP] INVALID_PARAMS (stateless) ${toolName}: ` +
+                  ingressIssues.map(i => `${i.path}: ${i.message}`).join(" | ") + "\n",
+                );
+                res.writeHead(200, {
+                  "Content-Type": "application/json",
+                  "X-AForge-Gate": "INVALID_PARAMS",
+                });
+                res.end(toolIsErrorResult(msgId, `Invalid arguments for ${toolName}`, {
+                  error_class: "INVALID_PARAMS",
+                  recoverability: "AGENT_CAN_RETRY",
+                  gate: "INGRESS_SCHEMA",
+                  tool: toolName,
+                  issues: ingressIssues,
+                }));
+                return;
+              }
               const _toolStartMs = Date.now();
               const result = await handler(toolArgs);
               const _toolDurationMs = Date.now() - _toolStartMs;

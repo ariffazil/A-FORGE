@@ -137,7 +137,7 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Agent identity management. Modes: register, status, list, kill. F11 AUTH.",
+      "purpose": "ACTUATOR [registry/OBSERVE] supervised by kernel 000_TRIAGE. Agent identity management. Modes: register, status, list, kill — register/kill are state-mutating. F11 AUTH.",
       "description_live": "Agent identity management. Modes: register, status, list, kill. F11 AUTH.",
       "description_canonical": "ACTUATOR · registry · OBSERVE · kernel-supervised by 000_TRIAGE (arif_triage). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. Agent identity management. Modes: register, status, list, kill. F11 AUTH.",
       "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
@@ -2866,7 +2866,7 @@
         "min_mode": "THINK",
         "risk_label": "R0"
       },
-      "purpose": "ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. VAULT999 primitive. Modes: read, list, write, seal.",
+      "purpose": "ACTUATOR [vault/OBSERVE] supervised by kernel 999_SEAL. VAULT999 cache primitive. Modes: read, list, write, receipt — write/receipt APPEND records; constitutional sealing stays in arifOS arif_seal.",
       "description_live": "VAULT999 primitive. Modes: read, list, write, seal.",
       "description_canonical": "ACTUATOR · vault · OBSERVE · kernel-supervised by 999_SEAL (arif_seal). Not a plugin. Not a kernel verb. A-FORGE hands only. Gates: session=Y lease=N gate=Y seal=N approval=N. VAULT999 primitive. Modes: read, list, write, seal.",
       "access_policy": "AAA_UNRESTRICTED_LOGICAL — deny only via kernel lease/gate/verdict, never hide tool",
