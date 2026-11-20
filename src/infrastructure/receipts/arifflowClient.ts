@@ -57,6 +57,10 @@ export interface FlowReceiptIngest {
   merkle_root: string | null;
   merkle_inclusion_proof: string | null;
   payload: Record<string, unknown> | null;
+  /** PHASE3 M3 (2026-11-21): cross-hop trace id (federation-request.v1 trace_id). */
+  trace_id?: string | null;
+  /** PHASE3 M3: caller-side idempotency key (<mission>:<object>:<attempt>). */
+  idempotency_key?: string | null;
 }
 
 export interface IngestResponse {
@@ -87,6 +91,11 @@ export interface EmitReceiptParams {
   lease_id?: string;
   details?: Record<string, unknown>;
   tri_witness_votes?: TriWitnessVotes;
+  /** PHASE3 M3: explicit cross-hop trace id; falls back to chain_id. */
+  trace_id?: string;
+  /** PHASE3 M3: explicit idempotency key; falls back to content-derived
+   *  session:step:summary so retried emissions dedup at arifFlow. */
+  idempotency_key?: string;
 }
 
 export interface HealthResponse {
@@ -240,6 +249,15 @@ export async function emitReceipt(
     tri_witness_votes: params.tri_witness_votes ?? null,
     merkle_root: null, merkle_inclusion_proof: null,
     payload,
+    // PHASE3 M3 (2026-11-21, doctrine ARIFOS-AGENTIC-FLOW-DOCTRINE-20261121):
+    // cross-hop identity — trace_id carries the federation trace across hops
+    // (explicit param > chain_id); idempotency_key defaults to a content-derived
+    // session:step:summary key so a retried emission dedups at arifFlow
+    // (idempotency.v1-actor-key) instead of minting a duplicate row.
+    trace_id: params.trace_id ?? params.chain_id ?? null,
+    idempotency_key:
+      params.idempotency_key ??
+      `${params.session_id}:${params.step_type || 'Execute'}:${params.summary.slice(0, 96)}`,
   };
   return c.ingest(ingest);
 }
