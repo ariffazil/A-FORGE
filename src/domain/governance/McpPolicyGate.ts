@@ -26,7 +26,7 @@
  * @phase 2 sprint 5.5
  */
 
-import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { AAEV1 } from "./amanahEnvelope.js";
 import { verifyAAE } from "./amanahEnvelope.js";
@@ -171,7 +171,7 @@ export function authorityPermits(authority: Authority, actionClass: ActionClass,
 
 // ── ACT (Arif's Capability Token) — P0.5 (2026-07-19) ──────────────────
 
-import { createHmac, timingSafeEqual, createHash } from "node:crypto";
+import { createHmac, timingSafeEqual, createHash, createPublicKey, verify as cryptoVerify } from "node:crypto";
 
 // ── P0 FIX (2026-08-13): Argument capture for forensic ───────────────────
 const REDACT_PATTERNS = [
@@ -298,6 +298,73 @@ export function verifyACT(act: string, expectedActorId: string, expectedSessionI
   return { valid: true, payload };
 }
 
+export interface PolicyGateProvenanceOptions {
+  policyPath?: string;
+  gitCommitPath?: string;
+  executableDir?: string;
+  attestationPath?: string;
+  publicKeyPath?: string;
+  publicKeyPem?: string;
+  auditLogPath?: string;
+}
+
+export interface ReleaseAttestation {
+  release_commit: string;
+  executable_tree_sha256: string;
+  policy_sha256: string;
+  issued_at: string;
+  key_id: string;
+  signature: string;
+}
+
+export function computeFileSha256(filePath: string): string | null {
+  try {
+    return createHash("sha256").update(readFileSync(filePath)).digest("hex");
+  } catch {
+    return null;
+  }
+}
+
+export function computeExecutableTreeSha256(rootDir: string): string | null {
+  try {
+    if (!existsSync(rootDir)) return null;
+    const files: string[] = [];
+    const walk = (dir: string, prefix: string): void => {
+      for (const entry of readdirSync(dir)) {
+        const full = join(dir, entry);
+        const rel = prefix ? `${prefix}/${entry}` : entry;
+        const st = statSync(full);
+        if (st.isDirectory()) {
+          walk(full, rel);
+        } else if (st.isFile() && /\.(ts|js|mjs)$/.test(entry)) {
+          files.push(rel);
+        }
+      }
+    };
+    walk(rootDir, "");
+    files.sort();
+    const h = createHash("sha256");
+    for (const rel of files) {
+      h.update(rel);
+      h.update("\0");
+      h.update(readFileSync(join(rootDir, rel)));
+    }
+    return h.digest("hex");
+  } catch {
+    return null;
+  }
+}
+
+export function canonicalAttestationPayload(att: Omit<ReleaseAttestation, "signature">): string {
+  return JSON.stringify({
+    release_commit: att.release_commit,
+    executable_tree_sha256: att.executable_tree_sha256,
+    policy_sha256: att.policy_sha256,
+    issued_at: att.issued_at,
+    key_id: att.key_id,
+  });
+}
+
 export class McpPolicyGate {
   private policies: Map<string, McpPolicy> = new Map();
   private defaultPolicy: McpPolicy;
@@ -326,13 +393,15 @@ export class McpPolicyGate {
   /** P0.1: Per-request verified session map replaces global activeActor. */
   private verifiedSessions: Map<string, { actorId: string; verifiedAt: number }> = new Map();
   private nonceStore: NonceStore;
+  private provenanceOpts: PolicyGateProvenanceOptions;
 
-  constructor(nonceStore?: NonceStore) {
+  constructor(nonceStore?: NonceStore, provenanceOpts?: PolicyGateProvenanceOptions) {
     this.defaultPolicy = buildDefaultSovereignPolicy();
     this.unverifiedPolicy = buildUnverifiedObserverPolicy();
     this.policies.set("default:sovereign", this.defaultPolicy);
     this.policies.set("default:unverified", this.unverifiedPolicy);
-    this.auditLog = "/root/A-FORGE/logs/mcp_policy_gate.log";
+    this.provenanceOpts = provenanceOpts ?? {};
+    this.auditLog = this.provenanceOpts.auditLogPath ?? "/root/A-FORGE/logs/mcp_policy_gate.log";
     this.nonceStore = nonceStore ?? globalNonceStore;
     this.loadFromDisk();  // load overrides if config exists
   }
@@ -955,12 +1024,18 @@ export class McpPolicyGate {
   private pinViolation: boolean = false;
   /** Head SHA observed at load time — reported so health can show the real posture. */
   private sawHeadSha: string | null = null;
+  private releaseCommit: string | null = null;
+  private policySha256: string | null = null;
+  private attestedPolicySha256: string | null = null;
+  private executableTreeSha256: string | null = null;
+  private attestedExecutableTreeSha256: string | null = null;
+  private releaseAlignment: boolean = false;
+  private policyAlignment: boolean = false;
+  private executableAlignment: boolean = false;
+  private signatureValid: boolean = false;
 
   private getCurrentHeadSha(): string | null {
-    // Read deploy-stamped commit from /root/A-FORGE/.git_commit (set by
-    // make deploy-local). Falls back to git rev-parse if file missing.
-    // Uses top-level fs import (no CommonJS require) to stay ESM-safe.
-    const stamp = "/root/A-FORGE/.git_commit";
+    const stamp = this.provenanceOpts.gitCommitPath ?? "/root/A-FORGE/.git_commit";
     try {
       const fromStamp = readFileSync(stamp, "utf-8").trim();
       if (fromStamp && fromStamp !== "UNAVAILABLE") return fromStamp;
@@ -970,16 +1045,11 @@ export class McpPolicyGate {
     return null;
   }
 
-  /** True when policy load was rejected due to commit-pin mismatch. */
+  /** True when policy load was rejected due to provenance/attestation failure. */
   isPinViolated(): boolean {
     return this.pinViolation;
   }
 
-  /**
-   * Observable pin posture (2026-10-26, 333-AGI). A control that names a
-   * defence it does not perform is worse than an unnamed one: this reports the
-   * policy actually in force, so /health cannot be read as "policies loaded".
-   */
   getPinStatus(): {
     pin_violated: boolean;
     pinned_commit: string | null;
@@ -987,6 +1057,16 @@ export class McpPolicyGate {
     effective_policy: string;
     allow_by_default: boolean;
     posture: "PINNED" | "PERMISSIVE_FALLBACK" | "FAIL_CLOSED_PIN_VIOLATION";
+    release_commit: string | null;
+    runtime_commit: string | null;
+    policy_sha256: string | null;
+    attested_policy_sha256: string | null;
+    executable_tree_sha256: string | null;
+    attested_executable_tree_sha256: string | null;
+    release_alignment: boolean;
+    policy_alignment: boolean;
+    executable_alignment: boolean;
+    signature_valid: boolean;
   } {
     return {
       pin_violated: this.pinViolation,
@@ -995,55 +1075,114 @@ export class McpPolicyGate {
       effective_policy: this.defaultPolicy.policy_id,
       allow_by_default: this.defaultPolicy.allow_by_default === true,
       posture: this.pinViolation ? "FAIL_CLOSED_PIN_VIOLATION" : "PINNED",
+      release_commit: this.releaseCommit,
+      runtime_commit: this.sawHeadSha,
+      policy_sha256: this.policySha256,
+      attested_policy_sha256: this.attestedPolicySha256,
+      executable_tree_sha256: this.executableTreeSha256,
+      attested_executable_tree_sha256: this.attestedExecutableTreeSha256,
+      release_alignment: this.releaseAlignment,
+      policy_alignment: this.policyAlignment,
+      executable_alignment: this.executableAlignment,
+      signature_valid: this.signatureValid,
     };
   }
 
+  private installFailClosedPolicyGate(reason: string): void {
+    this.pinViolation = true;
+    const failClosed: McpPolicy = {
+      policy_id: "fail_closed:constraint_pin_violation",
+      actor_id: "*",
+      role: "fail-closed",
+      description:
+        `Deny-by-default. Reviewed policies were NOT loaded: ${reason}`,
+      allow_by_default: false,
+      denied_mcp_servers: [],
+      allowed_mcp_servers: {},
+    };
+    this.defaultPolicy = failClosed;
+    this.policies.set("default:sovereign", failClosed);
+    process.stderr.write(
+      `[McpPolicyGate] FAIL_CLOSED_PROVENANCE: ${reason}. Every MCP tool call is denied until valid release attestation is present.\n`,
+    );
+  }
+
   private loadFromDisk(): void {
-    const path = "/root/A-FORGE/config/mcp_policies.json";
-    if (!existsSync(path)) return;
+    const path = this.provenanceOpts.policyPath ?? "/root/A-FORGE/config/mcp_policies.json";
+    if (!existsSync(path)) {
+      this.installFailClosedPolicyGate(`policy file missing: ${path}`);
+      return;
+    }
     try {
       const raw = readFileSync(path, "utf-8");
       const parsed = JSON.parse(raw) as { policies?: McpPolicy[]; pinned_commit?: string };
 
-      // Constraint pin check — refuse to load policies that don't match the
-      // current source HEAD. Sovereign override via env var.
-      const pinned = parsed.pinned_commit?.trim();
       const headSha = this.getCurrentHeadSha();
+      const headShort = headSha ? headSha.substring(0, 7) : null;
+      this.sawHeadSha = headShort;
+      this.policySha256 = computeFileSha256(path);
+      const execDir = this.provenanceOpts.executableDir ?? "/root/A-FORGE/src";
+      this.executableTreeSha256 = computeExecutableTreeSha256(execDir);
+
       const unpinned = process.env.AF_FORGE_POLICY_UNPINNED === "1";
-      if (pinned && headSha && !unpinned) {
-        const pinnedShort = pinned.substring(0, 7);
-        const headShort = headSha.substring(0, 7);
-        if (pinnedShort !== headShort) {
-          this.pinViolation = true;
-          this.sawHeadSha = headShort;
-          this.pinnedCommit = pinnedShort; // report what it WAS pinned to, not null
-          // 2026-11-16 (F13 "ya, baiki meterai"): a pin mismatch means no reviewed
-          // policy was loaded. Installing the allow-all sovereign default here was
-          // fail-OPEN. Fail-CLOSED instead: deny-by-default with an empty allowlist
-          // until a deliberate re-pin restores reviewed policies.
-          const failClosed: McpPolicy = {
-            policy_id: "fail_closed:constraint_pin_violation",
-            actor_id: "*",
-            role: "fail-closed",
-            description:
-              "Deny-by-default. Reviewed policies were NOT loaded because the policy " +
-              "pin does not match source HEAD. Re-pin deliberately to restore them.",
-            allow_by_default: false,
-            denied_mcp_servers: [],
-            allowed_mcp_servers: {},
-          };
-          this.defaultPolicy = failClosed;
-          this.policies.set("default:sovereign", failClosed);
-          process.stderr.write(
-            `[McpPolicyGate] CONSTRAINT_PIN_VIOLATION: policy pinned to ${pinnedShort} ` +
-            `but source HEAD is ${headShort}. Reviewed policies NOT loaded — ` +
-            `FAIL-CLOSED: deny-by-default in force; every MCP tool call is denied ` +
-            `until a deliberate re-pin. Override only with AF_FORGE_POLICY_UNPINNED=1.\n`,
+      if (!unpinned) {
+        const attPath =
+          this.provenanceOpts.attestationPath ??
+          process.env.AF_FORGE_RELEASE_ATTESTATION ??
+          "/var/lib/aforge/release-attestation.json";
+        const pubPath =
+          this.provenanceOpts.publicKeyPath ??
+          process.env.AF_FORGE_ATTESTATION_PUBKEY ??
+          "/etc/aforge/release-attestation.pub.pem";
+
+        if (!existsSync(attPath)) {
+          this.installFailClosedPolicyGate(`release attestation missing: ${attPath}`);
+          return;
+        }
+        const att = JSON.parse(readFileSync(attPath, "utf-8")) as Partial<ReleaseAttestation>;
+        const pubPem = this.provenanceOpts.publicKeyPem ?? (existsSync(pubPath) ? readFileSync(pubPath, "utf-8") : "");
+        if (!pubPem || !att.signature || !att.release_commit || !att.executable_tree_sha256 || !att.policy_sha256 || !att.issued_at || !att.key_id) {
+          this.installFailClosedPolicyGate("incomplete release attestation or missing public key");
+          return;
+        }
+
+        this.releaseCommit = att.release_commit.substring(0, 7);
+        this.pinnedCommit = this.releaseCommit;
+        this.attestedPolicySha256 = att.policy_sha256;
+        this.attestedExecutableTreeSha256 = att.executable_tree_sha256;
+
+        try {
+          const pubKey = createPublicKey(pubPem);
+          const payload = canonicalAttestationPayload({
+            release_commit: att.release_commit,
+            executable_tree_sha256: att.executable_tree_sha256,
+            policy_sha256: att.policy_sha256,
+            issued_at: att.issued_at,
+            key_id: att.key_id,
+          });
+          this.signatureValid = cryptoVerify(
+            null,
+            Buffer.from(payload, "utf8"),
+            pubKey,
+            Buffer.from(att.signature, "base64"),
+          );
+        } catch {
+          this.signatureValid = false;
+        }
+
+        this.policyAlignment = Boolean(this.policySha256 && this.policySha256 === att.policy_sha256);
+        this.executableAlignment = Boolean(this.executableTreeSha256 && this.executableTreeSha256 === att.executable_tree_sha256);
+        this.releaseAlignment = Boolean(headShort && headShort === this.releaseCommit);
+
+        if (!this.signatureValid || !this.policyAlignment || !this.executableAlignment || !this.releaseAlignment) {
+          this.installFailClosedPolicyGate(
+            `signature_valid=${this.signatureValid} policy_alignment=${this.policyAlignment} executable_alignment=${this.executableAlignment} release_alignment=${this.releaseAlignment}`,
           );
           return;
         }
-        this.pinnedCommit = pinnedShort;
-        process.stderr.write(`[McpPolicyGate] constraint pin OK (${pinnedShort})\n`);
+        process.stderr.write(`[McpPolicyGate] attested release provenance OK (${this.releaseCommit})\n`);
+      } else {
+        this.pinnedCommit = parsed.pinned_commit?.trim().substring(0, 7) ?? null;
       }
 
       for (const p of parsed.policies ?? []) {
@@ -1053,7 +1192,7 @@ export class McpPolicyGate {
         `[McpPolicyGate] loaded ${parsed.policies?.length ?? 0} policies from ${path}\n`,
       );
     } catch (e: any) {
-      process.stderr.write(`[McpPolicyGate] failed to load ${path}: ${e.message}\n`);
+      this.installFailClosedPolicyGate(`provenance evaluation error: ${e?.message ?? String(e)}`);
     }
   }
 
