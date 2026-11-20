@@ -1,0 +1,23 @@
+# SUDOERS DRAFT — ADMISSION PHASE 2 (NOT INSTALLED — ARIF PAUSE 2026-11-19)
+# Purpose: make Layer-3 (ENFORCEMENT) real for the admission membrane.
+# Install ONLY after: (1) deny-path fixtures pass, (2) bypass test passes
+# ("ordinary agent identity cannot trivially reach protected commands"),
+# (3) ARIF/F13 GO.
+#
+# Design: agents do NOT get blanket sudo. They get a single dispatch wrapper
+# that re-checks /run/arifos/admission.json (verdict + freshness) before the
+# bounded operation. Root-owned wrapper, agents cannot edit.
+#
+# Cmnd_Alias ADMIT_GATED = /usr/local/lib/arifos/forge-dispatch
+# %agents ALL=(root) NOPASSWD: /usr/local/lib/arifos/forge-dispatch *
+#
+# forge-dispatch (root-owned, 0755, immutable +i):
+#   1. arifos-admission collect (refresh, fail-closed on stale)
+#   2. read authority.deny + machine.health from admission.json
+#   3. DENY/UNKNOWN -> exit non-zero, emit reason + refusal receipt
+#   4. ALLOW -> exec the single whitelisted operation, emit execution receipt
+#
+# Bypass test (must FAIL to bypass before GO):
+#   sudo -u agent <direct protected command>  -> permission denied
+#   editing admission.json                    -> root-owned, immutable dir
+#   stale admission                           -> fail closed (fixture case 3)
