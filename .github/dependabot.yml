@@ -60,6 +60,14 @@ updates:
           - "@types/*"
       # NOTE: `zod fastmcp mcp-sdk tsx vitest typescript` are NOT in any group.
       # Each produces its own single-package PR with the constitutional denylist applied.
+    # zod 4.x is a BREAKING major release — dependabot must NOT open these PRs.
+    # Migrating zod 3→4 is a tracked engineering task (a human opts in), not an
+    # auto-bump: the 4.6.7 PR (#147) has failed CI since 2026-11-09 and the
+    # open-then-fail loop wastes the review surface. Ignore major bumps only;
+    # 3.x patch/minor bumps still flow.
+    ignore:
+      - dependency-name: "zod"
+        versions: [">=4.0.0"]
 
   # ── GitHub Actions versions ──────────────────────────────────────────────
   - package-ecosystem: "github-actions"
