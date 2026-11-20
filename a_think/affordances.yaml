@@ -1,3 +1,4 @@
+# Phantom sweep 2026-11-07 (333-AGI, F13 'abc go'): REMOVED 263 line-blocks covering 16 cards with no live registry counterpart (removal epoch 3c80cd97 shipped 19-tool surface): forge_browser_navigate, forge_docker, forge_execute, forge_github, forge_github_get_file, forge_judge_proxy, forge_postgres, forge_wealth, forge_well, forge_docsgpt, forge_git_commit, forge_github_create_or_update_file, forge_kernel, forge_compose, forge_gemini, forge_canon_recall — per this file's own law ('no fake alignment with unregistered tools'). Rollback: git revert / stash /root/forge_work/affordances.yaml.bak-20261107.
 # Phantom sweep 2026-10-20 (333-AGI): REMOVED 17 cards with no live registry counterpart: forge_browser_click, forge_browser_evaluate_js, forge_browser_extract_text, forge_browser_screenshot, forge_browser_type, forge_github_create_issue, forge_pipeline_run, forge_stage, forge_synthesize, forge_visual_qa, forge_visual_seal, forge_cool_pattern, forge_docs_lookup, forge_minimax_search, forge_proxy_call, forge_research, forge_whoami — per this file's own law ('no fake alignment with unregistered tools'). Rollback: git revert this commit.
 _comment: A-FORGE Affordance Cards — federation align v2. Actuators not plugins. Deny via gate/lease/SEAL only.
 tools:
@@ -55,23 +56,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_browser_navigate
-  purpose: ACTUATOR [browser/OBSERVE] supervised by kernel 777_FORGE. Navigate browser to URL.
-  affordance_class: browser
-  capability_surface: aforge.browser.browser_navigate
-  kernel_verb: 777_FORGE
-  mutation_class: OBSERVE
-  reads:
-  - web
-  - browser
-  writes:
-  - browser
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R1
 - name: forge_chart
   purpose: ACTUATOR [meta/OBSERVE] supervised by kernel 333_THINK. Agentic charting + quantum eureka discovery margin patterns. Input data series or records; returns S
   affordance_class: meta
@@ -103,22 +87,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_docker
-  purpose: 'ACTUATOR [docker/MUTATE] supervised by kernel 777_FORGE. Canonical Docker primitive. Modes: ps, logs, exec, images. Destructive operations stay out of this r'
-  affordance_class: docker
-  capability_surface: aforge.docker.docker
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - containers
-  writes:
-  - containers
-  external_side_effect: true
-  destructive: true
-  reversible: false
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R5
 - name: forge_docket_prep
   purpose: ACTUATOR [meta/OBSERVE] supervised by kernel 888_JUDGE. Package all evidence and hand off to arifOS. A-FORGE RELINQUISHES CONTROL — docket is read-only.
   affordance_class: meta
@@ -171,24 +139,6 @@ tools:
   - information_theory
   - moral_philosophy
   reference: G = (A·P·E·X)^(1/4) — canonical V3 geometric mean (pre-V3 A·P·E·X·Φ retired 2026-07-28, F13)
-- name: forge_execute
-  purpose: ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Execution and motor cortex (Stage 777 FORGE). Use this to execute an action plan. Requires cc_id for
-  affordance_class: execute
-  capability_surface: aforge.execute.execute
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - plans
-  - tools
-  writes:
-  - filesystem
-  - external_state
-  external_side_effect: true
-  destructive: true
-  reversible: false
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R5
 - name: forge_execute_sealed
   purpose: ACTUATOR [execute/MUTATE] supervised by kernel 777_FORGE. Execute with VAULT999 seal. FAILS HARD without valid seal — no self-authorization possible.
   affordance_class: execute
@@ -238,36 +188,6 @@ tools:
   requires_human_approval: true
   min_mode: GOVERN
   risk_label: R3
-- name: forge_github
-  purpose: 'ACTUATOR [git/OBSERVE] supervised by kernel 777_FORGE. Canonical GitHub primitive. Modes: search, pr. Use type for search variants instead of separate tool'
-  affordance_class: git
-  capability_surface: aforge.git.github
-  kernel_verb: 777_FORGE
-  mutation_class: OBSERVE
-  reads:
-  - repo_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_github_get_file
-  purpose: ACTUATOR [git/OBSERVE] supervised by kernel 111_OBSERVE. Read a file from GitHub. OBSERVE-class.
-  affordance_class: git
-  capability_surface: aforge.git.github_get_file
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - repo_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
 - name: forge_health_check
   purpose: ACTUATOR [health/OBSERVE] supervised by kernel 111_OBSERVE. Return A-FORGE server health and constitutional genome (v2.0) status.
   affordance_class: health
@@ -323,22 +243,6 @@ tools:
   reads:
   - system_state
   - services
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_judge_proxy
-  purpose: ACTUATOR [governance/OBSERVE] supervised by kernel 888_JUDGE. Proxy forwarder to canonical arifOS constitutional judge.
-  affordance_class: governance
-  capability_surface: aforge.governance.judge_proxy
-  kernel_verb: 888_JUDGE
-  mutation_class: OBSERVE
-  reads:
-  - constitution
-  - session
   writes: []
   external_side_effect: false
   destructive: false
@@ -439,22 +343,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_postgres
-  purpose: 'ACTUATOR [db/MUTATE] supervised by kernel 777_FORGE. Canonical Postgres primitive. Modes: query, schema. Writes require mutate=true and remain floor-gate'
-  affordance_class: db
-  capability_surface: aforge.db.postgres
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - database
-  writes:
-  - database
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
 - name: forge_probe
   purpose: ACTUATOR [probe/OBSERVE] supervised by kernel 111_OBSERVE. Federation organ liveness. Probes all 5 organs + latency. OBSERVE-class. P2.1 canonical gap fill.
   affordance_class: probe
@@ -792,36 +680,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_wealth
-  purpose: 'ACTUATOR [org_bridge/OBSERVE] supervised by kernel 444_ROUTE. Route to WEALTH capital intelligence organ. Modes: emv, conservation, flow, runway, wisdom.'
-  affordance_class: org_bridge
-  capability_surface: aforge.org_bridge.wealth
-  kernel_verb: 444_ROUTE
-  mutation_class: OBSERVE
-  reads:
-  - federation
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_well
-  purpose: 'ACTUATOR [org_bridge/OBSERVE] supervised by kernel 444_ROUTE. WELL human readiness primitive. Routes to WELL organ (port 18083). Modes: state, readiness, floors, '
-  affordance_class: org_bridge
-  capability_surface: aforge.org_bridge.well
-  kernel_verb: 444_ROUTE
-  mutation_class: OBSERVE
-  reads:
-  - federation
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
 - name: forge_witness
   purpose: ACTUATOR [governance/OBSERVE] supervised by kernel 888_JUDGE. APEX v36Ω tri-witness consensus gate. Computes W³ = ∛(Human × AI × External) via geometric mean (Nas
   affordance_class: governance
@@ -1076,22 +934,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_docsgpt
-  purpose: 'Governed DocsGPT knowledge query. Routes through constitutional membrane: F2 epistemic tags, F7 confidence cap, receipt-wrapped. Modes: query (OpenAI-compatible), native (DocsGPT /api/answer).'
-  affordance_class: research
-  capability_surface: aforge.research.docsgpt
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - tools
-  - system_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
 - name: forge_entropy_sweep
   purpose: 'Measure workspace entropy (ΔS) across the federation. Reports file count, uncommitted changes, temp files, dead processes, and entropy hotspots. Classification: OBSERVE (read-only).'
   affordance_class: meta
@@ -1149,64 +991,11 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_git_commit
-  purpose: 'Governed git commit with optional pre-commit checks. Delegates to forge_git(mode=commit) under a constitutional gate. F1 AMANAH: verifies working tree before commit. Classification: EXECUTE_HIGH_IMPACT
-    in actionClassifier.ts.'
-  affordance_class: git
-  capability_surface: aforge.git.git_commit
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - tools
-  - system_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_github_create_or_update_file
-  purpose: ACTUATOR · git · MUTATE. Create or update a file on GitHub.
-  affordance_class: git
-  capability_surface: aforge.git.github_create_or_update_file
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - tools
-  - system_state
-  - plans
-  writes:
-  - filesystem
-  - external_state
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: true
-  min_mode: GOVERN
-  risk_label: R3
 - name: forge_hf_import
   purpose: Governed Hugging Face import gate. Validate and import models/datasets through constitutional floors F1-F13. Returns verdict (SEAL/HOLD/VOID) with G-score, kappa-r, entropy pathway, and floor-by-floor
     results. The gate validates — the kernel seals. Uses arifOS hf_import_gate under constitutional governance.
   affordance_class: meta
   capability_surface: aforge.meta.hf_import
-  kernel_verb: 111_OBSERVE
-  mutation_class: OBSERVE
-  reads:
-  - tools
-  - system_state
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R0
-- name: forge_kernel
-  purpose: 'Constitutional kernel proxy. Routes to arifOS at :8088/mcp. Modes: init | observe | think | route | memory | judge | forge | seal. This is the LEGAL constitutional path — not a governance bypass.
-    Requires session ownership for seal/judge/forge modes.'
-  affordance_class: governance
-  capability_surface: aforge.governance.kernel
   kernel_verb: 111_OBSERVE
   mutation_class: OBSERVE
   reads:
@@ -1607,28 +1396,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R0
-- name: forge_compose
-  purpose: 'ACTUATOR [execute/MUTATE] Composition Bus — orchestrate multi-tool execution across MCP servers. 4 patterns: sequential, parallel, conditional, loop. Each step produces a receipt. DAG-based
-    resolution with cycle detection. Modes: execute, status, cancel, analyze. Constitutional: F1 AMANAH, F2 TRUTH, F4 CLARITY, F11 AUDIT.'
-  affordance_class: execute
-  capability_surface: aforge.execute.compose
-  kernel_verb: 777_FORGE
-  mutation_class: MUTATE
-  reads:
-  - plans
-  - tools
-  - session
-  - lease
-  writes:
-  - filesystem
-  - external_state
-  - receipts
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: GOVERN
-  risk_label: R2
 - name: forge_trust_score
   purpose: 'ACTUATOR [governance/OBSERVE] Trust scoring engine for external MCP servers. Scores on 5 dimensions (identity, uptime, auditability, mutation_risk, witnessability), maps to bands (ALLOW/LIMITED/HOLD/DENY),
     and gates access. Modes: score, evaluate, list, history, verify. Constitutional: F2 TRUTH, F7 HUMILITY, F11 AUDIT, F13 SOVEREIGN.'
@@ -1750,22 +1517,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R1
-- name: forge_gemini
-  purpose: 'Direct bridge to Google AI Studio Gemini. 4 verbs: generate, chat, models, health. Default model: gemini-3.6-flash. Federated under organ_capability.'
-  affordance_class: execute
-  capability_surface: aforge.execute.gemini
-  kernel_verb: 333_REASON
-  mutation_class: MUTATE
-  reads:
-  - prompts
-  writes:
-  - external_state
-  external_side_effect: true
-  destructive: false
-  reversible: true
-  requires_human_approval: false
-  min_mode: THINK
-  risk_label: R2
 - name: forge_rsi_dual_rate_fq
   purpose: RSI measurement — dual-rate FQ (Foresight Quotient) compute. OBSERVE-only, no mutation.
   affordance_class: probe
@@ -1891,19 +1642,6 @@ tools:
   requires_human_approval: false
   min_mode: THINK
   risk_label: R2
-- name: forge_canon_recall
-  purpose: 'ACTUATOR [probe/OBSERVE] Semantic recall over the federation canon corpus (instruction/canon/eureka/governance/scar/session_closure) with 3-lane embedding fallback: qwen3.7-text-embedding ->
-    bge-m3 -> substring. Returns top-K with provenance and lane used.'
-  affordance_class: memory
-  capability_surface: aforge.canon.recall
-  kernel_verb: MEMORY
-  mutation_class: OBSERVE
-  reads:
-  - canon_corpus
-  writes: []
-  external_side_effect: false
-  destructive: false
-  reversible: true
 - name: forge_chain_state
   purpose: 'PROBE [vault/OBSERVE] supervised by kernel 999_SEAL. Canonical VAULT999 chain heartbeat computed from chain bytes at read time: silence hours since newest record, phantom-seq detection (declared head vs rows present), declared-vs-observed divergence findings. Supersedes ad-hoc heartbeat reads from seal_chain_head.json or tasks.json.'
   affordance_class: probe

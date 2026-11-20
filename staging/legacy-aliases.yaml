@@ -1,0 +1,72 @@
+# /root/A-FORGE/staging/legacy-aliases.yaml
+#
+# STATUS: STAGING (APEX-ZEN Reality Loop)
+# AUTHORITY: Transitional Compatibility Resolver
+# PURPOSE: Maps historical agent-specific aliases to canonical pools with complexity escalation.
+
+schema_version: "legacy-aliases/v1"
+status: transitional
+
+aliases:
+  i-arif:
+    interaction: a2h
+    default_pool: pool/reasoning
+    resolver_required: true
+
+  hermes-asi:
+    interaction: a2h
+    default_pool: pool/reasoning
+    resolver_required: true
+
+  forge-777:
+    interaction: a2m
+    default_pool: pool/fast
+    resolver_required: true
+    escalation:
+      complexity_high: pool/coder-deep
+
+  forge-builder:
+    interaction: a2m
+    default_pool: pool/fast
+    resolver_required: true
+    escalation:
+      complexity_high: pool/coder-deep
+
+  forge-planner:
+    interaction: a2a
+    default_pool: pool/reasoning
+    resolver_required: true
+
+  asi-555:
+    interaction: a2a
+    default_pool: pool/fast
+    resolver_required: true
+
+  apex-888:
+    interaction: a2a
+    default_pool: pool/governance
+    resolver_required: true
+
+  fed/vision:
+    interaction: a2m
+    default_pool: pool/multimodal
+    resolver_required: true
+
+  fed/free:
+    interaction: a2a
+    default_pool: pool/fast
+    resolver_required: true
+
+  fed/minimax-tts:
+    interaction: a2h
+    default_pool: pool/speech
+    resolver_required: true
+
+migration:
+  emit_deprecation_receipt: true
+  record_callers: true
+  removal_requires:
+    - zero_observed_callers
+    - completed_observation_window
+    - rollback_tested
+    - human_authorization

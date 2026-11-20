@@ -15,10 +15,19 @@ import * as fs from "fs";
 import * as path from "path";
 import { canonicalActorId, samePrincipal } from "../../domain/governance/identityCanon.js";
 
+// D1 (F13 GO 2026-11-17): decision rows must carry the registry's canonical
+// action_class. Before this every emit site passed nothing, so
+// `opts.action_class || ""` wrote "" and M1 (which counts the MUTATE leg)
+// stayed blind to every ACT-gated mutation the gate actually saw.
+import { ACTION_REGISTRY } from "../../domain/governance/execution-authority.js";
+
 const ARIFOS_BASE = process.env.ARIFOS_BASE_URL || "http://127.0.0.1:8088";
+// D1 (F13 GO 2026-11-17): the federation's canonical decision ledger is
+// /var/lib/arifos/act_decision_events — the SAME path F6 meters read
+// (meters.py:F6_LEDGER_DIR). The old default wrote to an organ-local
+// forge_work/<date>/ dir, so M1 could never see an A-FORGE row.
 const ACT_DECISION_EVENT_DIR =
-  process.env.ACT_DECISION_EVENT_DIR ||
-  `/root/A-FORGE/forge_work/${new Date().toISOString().slice(0, 10)}/act_decision_events`;
+  process.env.ACT_DECISION_EVENT_DIR || "/var/lib/arifos/act_decision_events";
 const ACT_TIMEOUT_MS = Number(process.env.ARIFOS_ACT_TIMEOUT_MS || "2500");
 // P2.1 DUAL-ACCEPT (2026-08-07): Transition from SCT to ACT.
 // Accepts both sct_v1.* (legacy) and act_v1.* (new) for one TTL cycle (~8h).
@@ -574,7 +583,20 @@ export async function verifyFederationAct(
 
   // P2.1: Local decode is the primary path (no arifOS roundtrip needed)
   const local = verifyLocalAct(act, opts);
-  if (local) {
+  // FIX-FALLBACK (F13 2026-11-17): a local crypto failure is not a
+  // trustworthy rejection — the kernel holds the authoritative ACT secret,
+  // not A-FORGE's ARIFOS_SESSION_SECRET. Fall through to the arifOS roundtrip
+  // below and let the kernel accept/reject. Governance rejections
+  // (binding/authority/replay/expiry/version) still return locally.
+  const LOCAL_CRYPTO_ERRORS = new Set([
+    "ERR_ACT_SIGNATURE_INVALID",
+    "ERR_ACT_SIGNATURE_SHORT",
+    "ERR_ACT_SIGNATURE_NOT_FULL",
+    "ERR_ACT_NO_SECRET",
+  ]);
+  const localCryptoFailure =
+    local !== null && !local.ok && LOCAL_CRYPTO_ERRORS.has(local.error);
+  if (local && !localCryptoFailure) {
     // T-06 (F2 receipt 2026-09-27): floor enforcement at ACT gate (Option A).
     // After local crypto+claims pass, check replicated apex scalars against
     // canonical thresholds. Only enforced when:
@@ -624,8 +646,14 @@ export async function verifyFederationAct(
         params: {
           name: "arif_init",
           arguments: {
-            mode: "init",
-            session_token: act,
+            // F13 2026-11-17: mode=validate (tools.py:12661) returns
+            // {valid, claims, error, authority} via verify_act — the shape this
+            // fallback parses. mode=init created a session and returned no
+            // `valid` field, so every valid kernel ACT became ACT_INVALID.
+            mode: "validate",
+            // input contract: session_id must be stated explicitly (tools.py
+            // validate handler reads it; session_token alone -> MISSING_INPUT)
+            session_id: act,
             actor_id: opts.expectedActor || undefined,
           },
         },
@@ -725,6 +753,36 @@ export async function verifyFederationAct(
  * - requireAct=true and missing → ACT_REQUIRED
  * - otherwise allow (backward-compatible OBSERVE)
  */
+
+// ── A-MAP (F13 2026-11-17): MCP tool + mutation sub-action -> ACTION_REGISTRY ──
+// The 8-tier classifier is unchanged. This bridge only names the canonical
+// action key for the ACT decision row: a filesystem write is recorded as
+// MUTATE (write_file) while the engine still gates it as EXECUTE_REVERSIBLE.
+const MCP_ACTION_MAP: Record<string, Record<string, string>> = {
+  forge_filesystem: {
+    write: "write_file",
+    patch: "edit_file",
+    move: "write_file",
+    restore: "write_file",
+    delete: "rm_rf",
+  },
+  forge_vault: { write: "vault_seal", seal: "vault_seal" },
+  forge_git: { commit: "git_commit", push: "git_push", force_push: "git_force_push" },
+  forge_docker: { exec: "docker_exec" },
+};
+
+function _mappedActionClass(
+  toolName: string,
+  args: Record<string, unknown> | null | undefined,
+): string {
+  const mode = String(
+    (args && (args.mode ?? args.operation ?? args.verb ?? args.action)) || "",
+  ).toLowerCase();
+  const mapped = MCP_ACTION_MAP[toolName]?.[mode];
+  if (!mapped) return "";
+  return ACTION_REGISTRY[mapped]?.action_class || "";
+}
+
 export async function gateToolIngress(
   toolName: string,
   args: Record<string, unknown>,
@@ -735,8 +793,20 @@ export async function gateToolIngress(
     meta?: Record<string, unknown> | null;
     /** Fallback ACT token derived from a validated session (P2.1 fix for ACT_GATE regression) */
     sessionFallbackToken?: string | null;
+    /** D1: the class the caller gated on (classifyTool), stamped into the row */
+    actionClass?: string;
   } = {},
 ): Promise<ActGateResult | { ok: true; skipped: true }> {
+  // D1: the caller (mcp/core.ts) already classified the call with
+  // classifyTool(); ACTION_REGISTRY is only a fallback for legacy names.
+  // Preferring the caller is what keeps the row's class equal to the class
+  // the gate actually gated on.
+  const actionClass =
+    _mappedActionClass(toolName, args) ||
+    opts.actionClass ||
+    (ACTION_REGISTRY as Record<string, { action_class?: string }>)[toolName]?.action_class ||
+    "";
+
   const extraction = extractActFromCall(args, {
     headers: opts.headers,
     meta: opts.meta,
@@ -748,6 +818,7 @@ export async function gateToolIngress(
 
   if (extraction.status === "AMBIGUOUS") {
     emitDecisionEvent({
+      action_class: actionClass,
       tool: toolName, decision: "REJECT", reason_code: "ACT_AMBIGUOUS",
       actor_id: actor || undefined, require_act: true,
       act_source_count: extraction.source_count,
@@ -778,6 +849,7 @@ export async function gateToolIngress(
       });
       if (verified.ok) {
         emitDecisionEvent({
+          action_class: actionClass,
           tool: toolName, decision: "ALLOW", reason_code: "OK_SESSION_FALLBACK",
           actor_id: verified.actor || actor || undefined,
           require_act: true,
@@ -791,6 +863,7 @@ export async function gateToolIngress(
     }
     if (opts.requireAct) {
       emitDecisionEvent({
+        action_class: actionClass,
         tool: toolName, decision: "REJECT", reason_code: "ACT_REQUIRED",
         actor_id: actor || undefined, require_act: true,
       });
@@ -803,6 +876,7 @@ export async function gateToolIngress(
       };
     }
     emitDecisionEvent({
+      action_class: actionClass,
       tool: toolName, decision: "ALLOW", reason_code: "OK_NO_ACT_OBSERVE",
       actor_id: actor || undefined, require_act: false,
     });
@@ -815,6 +889,7 @@ export async function gateToolIngress(
   });
   if (!verified.ok) {
     emitDecisionEvent({
+      action_class: actionClass,
       tool: toolName, decision: "REJECT", reason_code: verified.error || "ACT_INVALID",
       actor_id: actor || undefined, require_act: true,
       act_fingerprint: extraction.sources.length > 0
@@ -827,6 +902,7 @@ export async function gateToolIngress(
     return { ...verified, extraction };
   }
   emitDecisionEvent({
+    action_class: actionClass,
     tool: toolName, decision: "ALLOW", reason_code: "OK",
     actor_id: verified.actor || actor || undefined,
     require_act: true,

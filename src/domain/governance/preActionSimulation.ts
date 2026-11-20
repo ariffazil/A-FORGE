@@ -196,7 +196,15 @@ async function predictCapitalConsequences(
     // Every argument name below is already declared by capital_primitive, so the
     // mapping is exact rather than approximate. monte-carlo is "mc".
     let result: Record<string, unknown>;
+    // R-2026-11-15 (external probe SEAL-30b82fe057ca4950): the requested mode was
+    // silently discarded — every non-EVOI call ran mode=mc with defaults and the
+    // gate still answered SEAL_CANDIDATE: a confident verdict about a question
+    // nobody asked. Law: honor the requested mode; any substitution HOLDs.
+    const rawRequestedMode = typeof meta.mode === "string" ? meta.mode.trim() : "";
+    const requestedMode = rawRequestedMode === "monte_carlo" ? "mc" : (rawRequestedMode || undefined);
+    let ranMode: string;
     if (meta.prior_pos !== undefined && meta.posterior_pos !== undefined && meta.well_cost_musd !== undefined && meta.p50_value_musd !== undefined) {
+      ranMode = "evoi";
       result = await callOrgan("wealth", "capital_primitive", {
         mode: "evoi",
         prior_pos: meta.prior_pos,
@@ -205,14 +213,22 @@ async function predictCapitalConsequences(
         p50_value_musd: meta.p50_value_musd,
         discount_rate: meta.discount_rate ?? 0.1,
       }) as Record<string, unknown>;
+    } else if (requestedMode && requestedMode !== "mc") {
+      // Pass the caller's params through verbatim; capital_primitive validates
+      // its own mode enum and fails loud on missing args (caught below → CAUTION).
+      ranMode = requestedMode;
+      const pass: Record<string, unknown> = { mode: ranMode };
+      for (const [k, v] of Object.entries(meta)) if (k !== "mode") pass[k] = v;
+      result = await callOrgan("wealth", "capital_primitive", pass) as Record<string, unknown>;
     } else {
+      ranMode = "mc";
       result = await callOrgan("wealth", "capital_primitive", {
         mode: "mc",
-        initial_value: typeof meta.value === "number" ? meta.value : 100,
-        growth_rate: typeof meta.growth === "number" ? meta.growth : 0.05,
-        volatility: typeof meta.volatility === "number" ? meta.volatility : 0.15,
-        periods: 12,
-        simulations: 1000,
+        initial_value: (meta.initial_value ?? meta.value ?? 100) as number,
+        growth_rate: (meta.growth_rate ?? meta.growth ?? 0.05) as number,
+        volatility: (meta.volatility ?? 0.15) as number,
+        periods: (meta.periods ?? 12) as number,
+        simulations: (meta.simulations ?? 1000) as number,
       }) as Record<string, unknown>;
     }
 
@@ -242,11 +258,18 @@ async function predictCapitalConsequences(
       if (pol > 0.3) risks.push(`High probability of loss: ${(pol * 100).toFixed(1)}%`);
     }
 
+    if (requestedMode && requestedMode !== ranMode) {
+      risks.push(
+        `Requested mode '${requestedMode}' not honored — simulator ran '${ranMode}'. ` +
+        `This prediction does not answer the caller's question and must not authorize it.`,
+      );
+    }
+
     const confidence = 0.7; // Monte Carlo is DER-level
 
     return {
       ...base,
-      tool: "capital_primitive(mode=mc)",
+      tool: `capital_primitive(mode=${ranMode})`,
       prediction,
       epistemic: "DER",
       confidence,

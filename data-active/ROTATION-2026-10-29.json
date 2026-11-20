@@ -1,0 +1,11 @@
+{
+  "rotated_utc": "2026-10-29T11:56:27Z",
+  "actor": "333-AGI ses_e78b36c74ffe7Qgo3BlMMuOEQ7",
+  "reason": "P0 council 2026-10-29: default seal segment frozen-by-design (chattr +i, 2026-09-14) with no active replacement configured; per arifSeal.ts:393-397 rotation prescription",
+  "previous_segment": "/root/A-FORGE/data/vault999_chain.jsonl",
+  "previous_seq": 73,
+  "previous_tail_hash": "7e09c8ba97bc24c4564ba2e4679bf6617c08b8c8303c0112bd7d2245cae9029c",
+  "previous_size_bytes": 75810,
+  "new_segment": "/root/A-FORGE/data-active/vault999_chain.jsonl",
+  "new_chain": "fresh genesis (GENESIS_BLOCK_arifOS_FORGE_v1); continuity held by this sidecar + receipt"
+}

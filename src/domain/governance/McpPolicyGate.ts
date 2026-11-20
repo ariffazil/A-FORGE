@@ -923,15 +923,25 @@ export class McpPolicyGate {
   }
 
   private appendAudit(v: VerdictResult): void {
+    const line = JSON.stringify(v) + "\n";
     try {
       if (!existsSync(dirname(this.auditLog))) {
         mkdirSync(dirname(this.auditLog), { recursive: true });
       }
-      const line = JSON.stringify(v) + "\n";
       appendFileSync(this.auditLog, line, "utf-8");
-    } catch {
-      // audit failures never block the main flow — but we log to stderr
-      process.stderr.write(`[McpPolicyGate] audit log write failed\n`);
+    } catch (e) {
+      // T1 2026-11-02: primary log went chattr +i on 2026-10-22; the swallowed
+      // EPERM left every ALLOW/DENY unrecorded for 11+ days. Never drop a decision:
+      // fall back to a writable sibling, and scream if even that fails.
+      // logs/ is chattr +i (dir AND files, 2026-11-02 probe) — repo root is writable by forge.
+      const fallback = "/root/A-FORGE/mcp_policy_gate.fallback.log";
+      const msg = (err: unknown) => (err instanceof Error ? err.message : String(err));
+      try {
+        appendFileSync(fallback, line, "utf-8");
+        process.stderr.write(`[McpPolicyGate] audit primary failed (${msg(e)}); decision appended to ${fallback}\n`);
+      } catch (e2) {
+        process.stderr.write(`[McpPolicyGate] AUDIT LOSS primary+fallback (${msg(e)} / ${msg(e2)}): ${line}`);
+      }
     }
   }
 
@@ -976,7 +986,7 @@ export class McpPolicyGate {
     head_sha: string | null;
     effective_policy: string;
     allow_by_default: boolean;
-    posture: "PINNED" | "PERMISSIVE_FALLBACK";
+    posture: "PINNED" | "PERMISSIVE_FALLBACK" | "FAIL_CLOSED_PIN_VIOLATION";
   } {
     return {
       pin_violated: this.pinViolation,
@@ -984,7 +994,7 @@ export class McpPolicyGate {
       head_sha: this.sawHeadSha ?? null,
       effective_policy: this.defaultPolicy.policy_id,
       allow_by_default: this.defaultPolicy.allow_by_default === true,
-      posture: this.pinViolation ? "PERMISSIVE_FALLBACK" : "PINNED",
+      posture: this.pinViolation ? "FAIL_CLOSED_PIN_VIOLATION" : "PINNED",
     };
   }
 
@@ -1007,14 +1017,28 @@ export class McpPolicyGate {
           this.pinViolation = true;
           this.sawHeadSha = headShort;
           this.pinnedCommit = pinnedShort; // report what it WAS pinned to, not null
-          // 2026-10-26 (333-AGI): the previous text claimed "fail-closed" while
-          // this return leaves only default:sovereign (allow_by_default: true)
-          // in force — i.e. fail-OPEN. Say what actually happens.
+          // 2026-11-16 (F13 "ya, baiki meterai"): a pin mismatch means no reviewed
+          // policy was loaded. Installing the allow-all sovereign default here was
+          // fail-OPEN. Fail-CLOSED instead: deny-by-default with an empty allowlist
+          // until a deliberate re-pin restores reviewed policies.
+          const failClosed: McpPolicy = {
+            policy_id: "fail_closed:constraint_pin_violation",
+            actor_id: "*",
+            role: "fail-closed",
+            description:
+              "Deny-by-default. Reviewed policies were NOT loaded because the policy " +
+              "pin does not match source HEAD. Re-pin deliberately to restore them.",
+            allow_by_default: false,
+            denied_mcp_servers: [],
+            allowed_mcp_servers: {},
+          };
+          this.defaultPolicy = failClosed;
+          this.policies.set("default:sovereign", failClosed);
           process.stderr.write(
             `[McpPolicyGate] CONSTRAINT_PIN_VIOLATION: policy pinned to ${pinnedShort} ` +
-            `but source HEAD is ${headShort}. Reviewed policies NOT loaded — falling back to ` +
-            `default:sovereign (allow_by_default=true): FAIL-OPEN, not fail-closed. ` +
-            `Re-pin deliberately after review, or override with AF_FORGE_POLICY_UNPINNED=1.\n`,
+            `but source HEAD is ${headShort}. Reviewed policies NOT loaded — ` +
+            `FAIL-CLOSED: deny-by-default in force; every MCP tool call is denied ` +
+            `until a deliberate re-pin. Override only with AF_FORGE_POLICY_UNPINNED=1.\n`,
           );
           return;
         }

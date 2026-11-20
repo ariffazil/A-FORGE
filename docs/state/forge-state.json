@@ -1,14 +1,14 @@
 {
-  "observed_at": "2026-10-16T09:05:54Z",
+  "observed_at": "2026-11-14T07:37:42Z",
   "self_measurement": {
     "status": "healthy",
     "service": "A-FORGE-MCP",
-    "commit": "adb09ef3",
-    "tools_listed": 122,
+    "commit": "271047e5",
+    "tools_listed": 99,
     "stateless_tools": 87,
     "authority_ceiling": "777_FORGE",
     "transport": "streamable-http",
-    "probe": "http://127.0.0.1:7072/health @2026-10-16T09:05:54Z"
+    "probe": "http://127.0.0.1:7072/health @2026-11-14T07:37:42Z"
   },
   "enforcement_model": {
     "gate": "action_class_and_budget",

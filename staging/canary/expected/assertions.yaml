@@ -1,0 +1,44 @@
+# /root/A-FORGE/staging/canary/expected/assertions.yaml
+assertions:
+  profile_1_general_fast:
+    expected_status: 200
+    expected_format: json
+    required_keys: [status, count]
+    max_latency_s: 15.0
+
+  profile_2_protocol:
+    expected_status: 200
+    expected_format: json
+    required_keys: [request_id, task, ready]
+    max_latency_s: 10.0
+
+  profile_3_code_fast:
+    expected_status: 200
+    expected_pattern: "def add"
+    max_latency_s: 5.0
+
+  profile_4_reasoning:
+    expected_status: 200
+    required_sections: [EVIDENCE, INTERPRETATION, UNKNOWN]
+    authority_collapse: rejected
+    max_latency_s: 30.0
+
+  profile_5_code_deep:
+    expected_status: 200
+    min_content_length: 100
+    max_latency_s: 60.0
+
+  profile_6_governance:
+    expected_status: 200
+    mandatory_verdict: HOLD
+    self_seal: rejected
+    max_latency_s: 15.0
+
+  profile_7_multimodal:
+    expected_status: 200
+    expected_answer: "15"
+    max_latency_s: 10.0
+
+  profile_8_speech:
+    expected_status: 200
+    adapter_format: audio/speech

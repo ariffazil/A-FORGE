@@ -229,6 +229,8 @@ def ingest_flow(
     floor_verdict: str = "Pass",
     step_number: int = 1,
     payload: Optional[dict] = None,
+    session_token: Optional[str] = None,
+    routed_organ: str = "A-FORGE",
 ) -> bool:
     """Call arifFlow POST /ingest to log a step in the metabolic ledger."""
     import urllib.error
@@ -247,7 +249,25 @@ def ingest_flow(
         # arifFlow serde prefers RFC3339 Z; strip +00:00
         "created_at": ts_now().replace("+00:00", "Z"),
         "cooling_decision": "None",
+        # 2026-11-18 (333-AGI, binding-gap item 2 + F13 design correction):
+        # routed_organ was null on 100% of A-FORGE receipts (54,764-row
+        # audit). Name the organ at the builder. session_token CONTRACT
+        # (F13): carry a grant REFERENCE, never a raw reusable credential;
+        # transport does NOT verify (arifFlow METABOLIZE_ONLY) — authority
+        # is established only at consumption via kernel arif_verify.
+        # Omitted, never fabricated, when absent.
+        "routed_organ": routed_organ,
     }
+    if session_token:
+        # F13 "fix all" 2026-11-18: raw bearer-shaped credentials are never
+        # emitted (arifFlow 422s them at ingest). Reference form only.
+        t = session_token.strip()
+        if t.startswith("Bearer "):
+            t = t[7:]
+        if t.startswith(("act_v1.", "sk-", "ghp_")):
+            t = ""
+        if t:
+            body["session_token"] = t
     if payload:
         body["payload"] = payload
 

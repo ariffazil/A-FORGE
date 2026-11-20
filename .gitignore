@@ -176,6 +176,7 @@ litellm-config.order-snapshot.json
 # Surface Guard baseline is runtime state, not source
 config/surface-snapshots.json
 data/token_bank.db
+token_bank.db
 
 # git credential store — NEVER commit (leaked in history once, rotation pending)
 .git-credentials
@@ -187,3 +188,4 @@ data/token_bank.db
 # Retention owner = A-FORGE runtime state writer. File RETAINED on disk (frozen),
 # untracked by explicit reviewed change; churn no longer dirties the tree.
 data/web_federation_state.json
+data-ledger/

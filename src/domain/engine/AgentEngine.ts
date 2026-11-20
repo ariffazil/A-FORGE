@@ -1150,6 +1150,9 @@ export class AgentEngine {
           receipt_id: randomUUID(),
           actor_id: this.profile.name,
           session_id: result.sessionId,
+          // 2026-11-18 (333-AGI, binding-gap item 2): name the organ — this
+          // raw fetch previously emitted routed_organ null on every row.
+          routed_organ: "A-FORGE",
           step_type: "Execute",
           epistemic_label: "Observation",
           cost_ns: 0,

@@ -1,0 +1,867 @@
+# npm test — full locally runnable suite — 2026-11-01T04:42:30+08:00
+
+> @ariffazil/a-forge@2026.09.30-fix pretest
+> node scripts/scar-lint.mjs
+
+[scar-lint] PASS — 0 of 149 test files import from ../dist/
+
+> @ariffazil/a-forge@2026.09.30-fix test
+> tsc -p tsconfig.json && node --test dist/test/actLeaseBasis.test.js dist/test/actLeaseScope.test.js dist/test/actIngressSigLength.test.js dist/test/claimGate.test.js dist/test/gAuthority.test.js dist/test/ephemeralSandboxProbe.test.js dist/test/ephemeralNoAmbientSecrets.test.js dist/test/ephemeralExitCodes.test.js dist/test/ephemeralRegistrationOrder.test.js dist/test/ephemeralForgeRunnerDelegation.test.js dist/test/ephemeralVerifier.test.js dist/test/generalizationGate.test.js dist/test/evidencePromotion.test.js dist/test/ephemeralComputeFn.test.js dist/test/ephemeralP1AAAdoption.test.js dist/test/capabilityAbi.test.js dist/test/missionContract.test.js dist/test/secretBroker.test.js dist/test/trafficShadow.test.js dist/test/evaluator.test.js dist/test/capabilityMarket.test.js dist/test/a2a.test.js dist/test/a2aOfferBridge.test.js dist/test/a2aVersionHeader.test.js dist/test/wmPromotionGate.test.js dist/test/retirementGate.test.js dist/test/EphemeralGenesisRunner.test.js dist/test/egressPolicySocket.test.js dist/test/mcp-http-transport.test.js dist/test/apexScalarReplication.test.js dist/test/arifFlowBridge.test.js dist/test/sroAdmissibility.test.js dist/test/scarReflex.test.js dist/test/actBridgeEnvelope.test.js dist/test/mcpPolicyGateActor.test.js dist/test/executorUnknownOutcome.test.js dist/test/actionClassifier.test.js dist/test/elicitationTrustVerification.test.js dist/test/deploymentDrift.test.js dist/test/ticketStore.test.js dist/test/sealVerdictParser.test.js dist/test/aaaActorRegistry.test.js dist/test/identityCanon.test.js dist/test/fqGateMessage.test.js dist/test/classifierCoverage.test.js dist/test/executeUnclassifiedGate.test.js dist/test/sealLedgerHealth.test.js
+
+[test:preflight] Backend: bwrap, Available: true
+[sandbox:provision] aforge-sandbox-mvwvav84-mrzx0j backend=bwrap policy=ephemeral-caplease-1793479355256-0wjqsg verdict=SABAR persistent=false
+[containment:bwrap] aforge-sandbox-mvwvavof-vmwyj7 policy=ephemeral-caplease-1793479355256-0wjqsg backend=bwrap
+▶ EphemeralGenesisRunner — State Machine
+  ✔ should create lease in GAP_DETECTED state (13.301838ms)
+  ✔ should transition: GAP_DETECTED → REUSE_CHECKED (no match) (0.635879ms)
+  ✔ should transition: GAP_DETECTED → REUSE_CHECKED (match found) (0.270687ms)
+  ✔ should block generation if reuse possible (wrong state) (1.778282ms)
+  ✔ should transition: REUSE_CHECKED → CAPABILITY_SPECIFIED (0.294785ms)
+  ✔ should block generation with forbidden patterns (22.287366ms)
+  ✔ should block lease grant before sandbox test (2.802065ms)
+  ✔ should block invocation without lease (1.217375ms)
+✔ EphemeralGenesisRunner — State Machine (51.158689ms)
+▶ EphemeralGenesisRunner — E2E GREEN Flow
+  ✔ Step 0: backend is available (2.403775ms)
+  ✔ Step 1: gap_detect (no existing tool) (0.229917ms)
+  ✔ Step 2: reuse_check (no match) (1.479801ms)
+  ✔ Step 3: specify capability (0.129796ms)
+  ✔ Step 4: generate tool code (15.641025ms)
+[sandbox:fail] aforge-sandbox-mvwvav84-mrzx0j exit=1 wall=55ms backend=bwrap killed=false overlay=false
+[sandbox:deprovision] aforge-sandbox-mvwvav84-mrzx0j
+[sandbox:provision] aforge-sandbox-mvwvaw6r-0ns4oa backend=bwrap policy=ephemeral-caplease-1793479356497-c2xgl2 verdict=SABAR persistent=false
+[containment:bwrap] aforge-sandbox-mvwvawn1-w6cjr6 policy=ephemeral-caplease-1793479356497-c2xgl2 backend=bwrap
+  ✖ Step 5: sandbox test (654.514249ms)
+  ✖ Step 6: grant lease (1.469115ms)
+  ✖ Step 7: invoke with real input (0.729369ms)
+  ✖ Step 8: verify output independently (0.266912ms)
+  ✖ Step 9: retire — sandbox destroyed, code nullified (2.36043ms)
+  ✖ E2E result summary: all 9 steps passed (0.398942ms)
+✖ EphemeralGenesisRunner — E2E GREEN Flow (1241.052992ms)
+[sandbox:fail] aforge-sandbox-mvwvaw6r-0ns4oa exit=1 wall=82ms backend=bwrap killed=false overlay=false
+[sandbox:provision] aforge-sandbox-mvwvawqu-31l7yy backend=bwrap policy=ephemeral-caplease-1793479357203-4upj4j verdict=SABAR persistent=false
+[containment:bwrap] aforge-sandbox-mvwvax4b-mx33tc policy=ephemeral-caplease-1793479357203-4upj4j backend=bwrap
+▶ EphemeralGenesisRunner — Adversarial Escape
+  ✔ ADV-1: Read /etc/passwd → BLOCKED (705.658597ms)
+[sandbox:fail] aforge-sandbox-mvwvawqu-31l7yy exit=1 wall=25ms backend=bwrap killed=false overlay=false
+[sandbox:provision] aforge-sandbox-mvwvax6m-4rtc9r backend=bwrap policy=ephemeral-caplease-1793479357765-e0fiyf verdict=SABAR persistent=false
+[containment:bwrap] aforge-sandbox-mvwvaxob-1sek8a policy=ephemeral-caplease-1793479357765-e0fiyf backend=bwrap
+  ✔ ADV-2: Network connection → BLOCKED (562.126342ms)
+[sandbox:fail] aforge-sandbox-mvwvax6m-4rtc9r exit=1 wall=42ms backend=bwrap killed=false overlay=false
+[adv-5] SKIPPED — bwrap 0.11.0 lacks --memory support
+[sandbox:provision] aforge-sandbox-mvwvaxqj-ebp71e backend=bwrap policy=ephemeral-caplease-1793479358523-ztop4a verdict=SABAR persistent=false
+[containment:bwrap] aforge-sandbox-mvwvaybo-lpa9s4 policy=ephemeral-caplease-1793479358523-ztop4a backend=bwrap
+  ✔ ADV-3: Environment secrets → BLOCKED (737.127096ms)
+  ✔ ADV-4: Spawn excessive processes → BLOCKED (12.279395ms)
+  ✔ ADV-5: Memory exhaustion → BLOCKED (0.592874ms)
+  ✔ ADV-6: Forbidden imports (subprocess, urllib) → BLOCKED at generate (8.313955ms)
+[sandbox:fail] aforge-sandbox-mvwvaxqj-ebp71e exit=1 wall=44ms backend=bwrap killed=false overlay=false
+[sandbox:provision] aforge-sandbox-mvwvayp8-bzj0sr backend=bwrap policy=ephemeral-caplease-1793479359765-mlmng9 verdict=SABAR persistent=false
+[containment:bwrap] aforge-sandbox-mvwvaz06-5tl621 policy=ephemeral-caplease-1793479359765-mlmng9 backend=bwrap
+  ✔ ADV-7: Write to unauthorized path → BLOCKED (821.176461ms)
+  ✔ ADV-8: Execute shell commands → BLOCKED at generate (18.92109ms)
+✔ EphemeralGenesisRunner — Adversarial Escape (3429.511425ms)
+▶ EphemeralGenesisRunner — Failure & Cleanup
+  ✔ FAIL-1: Expired lease rejects all transitions (0.591543ms)
+  ✔ FAIL-2: Sandbox unavailable → fail-closed (15.109372ms)
+  ✔ FAIL-3: Invalid state transitions are rejected (0.489829ms)
+[sandbox:fail] aforge-sandbox-mvwvayp8-bzj0sr exit=1 wall=26ms backend=bwrap killed=false overlay=false
+[sandbox:deprovision] aforge-sandbox-mvwvayp8-bzj0sr
+  ✔ FAIL-4: Retire cleans up even after failure (444.181318ms)
+  ✔ FAIL-5: Promotion blocked without 3+ uses (0.512312ms)
+  ✔ FAIL-6: Promotion blocked with low success rate (0.13887ms)
+  ✔ FAIL-7: getResult() returns full audit trail (0.172791ms)
+✔ EphemeralGenesisRunner — Failure & Cleanup (846.861228ms)
+▶ EphemeralGenesisRunner — Lease Integrity
+  ✔ LEASE-1: GREEN lease has network DENY (0.228184ms)
+  ✔ LEASE-2: persistentRegistration is always false (0.13306ms)
+  ✔ LEASE-3: selfPromotion is always false (0.087672ms)
+  ✔ LEASE-4: secrets paths are in filesystemDenied (0.136635ms)
+  ✔ LEASE-5: lease has expiry within 1 hour (0.11898ms)
+  ✔ LEASE-6: ALLOWLIST network requires domains (0.45122ms)
+✔ EphemeralGenesisRunner — Lease Integrity (1.431739ms)
+[A-FORGE-core] Constitution gate: arifOS:8088
+[FED-ALIGN] Loaded 100 actuator cards from /root/A-FORGE/a_think/federation_alignment_registry.json
+[A-FORGE] Registered 8 FORGE execution verbs (+ 1 split skillstore) + 4 sandbox persistence tools
+[A-FORGE] Registered auth_pipeline — the institutional protocol
+[McpPolicyGate] constraint pin OK (02b7f6b)
+[McpPolicyGate] loaded 1 policies from /root/A-FORGE/config/mcp_policies.json
+[PolicyInterceptor] installed — 107 tools wrapped with 5-layer policy pre-check
+[ElicitationGate] installed — 10 MUTATE tools gated with -32042 elicitation for external clients
+[Fingerprint] startup check: 108 tools, 108 unique fingerprints, 0 collisions
+[Fingerprint] ✅ All tools have unique fingerprints. Dedupe check passed.
+[Isomorphism] startup check: 17 pairs, 17 passed, 0 failed
+[Isomorphism]   ✅ IDENTITY: 6 pairs, 0 failed
+[Isomorphism]   ✅ AUTHORITY: 7 pairs, 0 failed
+[Isomorphism]   ✅ IRREVERSIBILITY: 4 pairs, 0 failed
+[Isomorphism] ✅ J‑space manifold STABLE. All 17 isomorphism pairs verified.
+[VerdictInterceptor] installed — 117 tools wrapped with VerdictEnvelope
+[2026-10-31T20:42:37.542Z] GET /.well-known/agent-card.json
+[2026-10-31T20:42:37.647Z] POST /a2a
+✔ A-FORGE does not serve an A2A surface (212.554279ms)
+[ArifSeal] Init error: Error: EPERM: operation not permitted, open '/root/A-FORGE/data/vault999_chain.jsonl'
+[2026-10-31T20:42:37.683Z] GET /contract
+✔ the published bridge contract does not advertise an A2A card route (33.125128ms)
+[forgeTools] Skill registry loaded (volatile)
+[forgeTools] Loaded 30 agent identities
+▶ A2ACapabilityOfferBridge — inbound offer
+  ✔ refuses peer offer without arifos_seal_id (F13) (9.197338ms)
+  ✔ accepts sealed peer offer (2.335472ms)
+  ✔ refuses when peer contract is invalid (5.509317ms)
+✔ A2ACapabilityOfferBridge — inbound offer (21.583935ms)
+▶ A2ACapabilityOfferBridge — outbound request
+  ✔ builds a capability_request with peer_contract_id (0.51065ms)
+✔ A2ACapabilityOfferBridge — outbound request (0.699073ms)
+▶ A2ACapabilityOfferBridge — inbound request
+  ✔ translates to a local lease when offer is sealed (1.75773ms)
+  ✔ drops a request whose offer lacks an arifOS seal (2.053255ms)
+✔ A2ACapabilityOfferBridge — inbound request (5.938024ms)
+✔ a2aCall declares A2A-Version 1.0 and survives the gateway version gate (170.347509ms)
+✔ negative control: the stub refuses an undeclared version, so the test above is not vacuous (47.169185ms)
+✔ WO-2: SEAL-shaped actor ids no longer resolve to any binding (fail-closed) (1.427002ms)
+✔ WO-2: near-miss shapes also resolve to null (0.276397ms)
+✔ WO-2: documented session:: namespace still binds (proper path preserved) (0.953478ms)
+✔ WO-2: exact registry entries unaffected (0.24456ms)
+✔ WO-2: prefix namespaces still bind (0.142255ms)
+✔ WO-2: unknown actors resolve null — never default to privileged (0.175805ms)
+✔ G2: accepts full 64-hex signature (new tokens) (4.710242ms)
+✔ G2: rejects legacy 16-hex signature (T04 post-cutoff 2026-10-27T00:00:00Z) (3.823675ms)
+✔ G2: rejects forged 64-hex signature (1.043063ms)
+✔ G2: rejects forged 16-hex signature (0.176327ms)
+✔ G2: rejects signature below the 16-char floor (0.264659ms)
+✔ G2: single-char tamper on full signature fails (1.575716ms)
+[LEASE_GATE] kernel holds no lease record for ACT-test-cek9if; honouring registered local lease (source=local, scope from ACT band)
+[LEASE_GATE] tool=forge_vault class=EXECUTE_REVERSIBLE lease_id=ACT-test-cek9if verdict=VERDICT_RESTRAINT_GATE reason=[VERDICT_GATE] forge_vault: VERDICT_LOOP_REQUIRED: INIT + arif_judge + arif_seal first (One Tool: Verdict Loop With Memory) — cannot proceed (One Tool + One Skill)
+[LEASE_GATE] kernel holds no lease record for ACT-test-fkn5pv; honouring registered local lease (source=local, scope from ACT band)
+[LEASE_GATE] tool=forge_vault class=EXECUTE_REVERSIBLE lease_id=ACT-test-fkn5pv verdict=SEAL
+[LEASE_GATE] tool=forge_vault class=EXECUTE_REVERSIBLE lease_id=<none> verdict=LEASE_REQUIRED reason=lease_id is required for non-OBSERVE actions
+[LEASE_GATE] kernel holds no lease record for ACT-test-pji0zf; honouring registered local lease (source=local, scope from ACT band)
+[LEASE_GATE] tool=forge_vault class=IRREVERSIBLE lease_id=ACT-test-pji0zf verdict=LEASE_CLASS_EXCEEDED reason=Lease permits up to 'EXECUTE_REVERSIBLE', but 'forge_vault' is class IRREVERSIBLE
+[LEASE_GATE] kernel holds no lease record for ACT-test-1n7xil; honouring registered local lease (source=local, scope from ACT band)
+[LEASE_GATE] tool=forge_shell class=EXECUTE_REVERSIBLE lease_id=ACT-test-1n7xil verdict=LEASE_SCOPE_DENIED reason=Tool 'forge_shell' is not in lease scope
+✔ lease verbs are not rewritten to a verdict tool (1.246389ms)
+✔ a kernel-ACT-derived lease passes the LEASE layer (verdict loop stays separate) (1.641034ms)
+✔ with a real verdict trace the same ACT lease authorises the action (0.304229ms)
+✔ no lease still fails closed for non-OBSERVE (0.421175ms)
+✔ an EXECUTE_REVERSIBLE lease cannot authorise IRREVERSIBLE (0.31741ms)
+✔ an ACT lease outside its scope is refused (0.530019ms)
+[A-FORGE-core] Constitution gate: arifOS:8088
+[FED-ALIGN] Loaded 100 actuator cards from /root/A-FORGE/a_think/federation_alignment_registry.json
+[A-FORGE] Registered 8 FORGE execution verbs (+ 1 split skillstore) + 4 sandbox persistence tools
+[A-FORGE] Registered auth_pipeline — the institutional protocol
+[McpPolicyGate] constraint pin OK (02b7f6b)
+[McpPolicyGate] loaded 1 policies from /root/A-FORGE/config/mcp_policies.json
+[PolicyInterceptor] installed — 107 tools wrapped with 5-layer policy pre-check
+[ElicitationGate] installed — 10 MUTATE tools gated with -32042 elicitation for external clients
+[Fingerprint] startup check: 108 tools, 108 unique fingerprints, 0 collisions
+[Fingerprint] ✅ All tools have unique fingerprints. Dedupe check passed.
+[Isomorphism] startup check: 17 pairs, 17 passed, 0 failed
+[Isomorphism]   ✅ IDENTITY: 6 pairs, 0 failed
+[Isomorphism]   ✅ AUTHORITY: 7 pairs, 0 failed
+[Isomorphism]   ✅ IRREVERSIBILITY: 4 pairs, 0 failed
+[Isomorphism] ✅ J‑space manifold STABLE. All 17 isomorphism pairs verified.
+[VerdictInterceptor] installed — 117 tools wrapped with VerdictEnvelope
+[McpPolicyGate] audit log write failed
+[ArifSeal] Init error: Error: EPERM: operation not permitted, open '/root/A-FORGE/data/vault999_chain.jsonl'
+[forgeTools] Skill registry loaded (volatile)
+[forgeTools] Loaded 30 agent identities
+[A-THINK] Loaded 118 affordance cards from /root/A-FORGE/a_think/affordances.yaml
+[A-THINK] forge_surface_guard: OK (risk=R0, destructive=false)
+[A-THINK] forge_shell_ledger: OK (risk=R0, destructive=false)
+[A-THINK] Guard initialized: 118 cards
+[A-THINK]   forge_shell_ledger: risk=R0 destructive=false
+[A-THINK]   forge_surface_audit: risk=R0 destructive=false
+[A-THINK]   forge_surface_guard: risk=R0 destructive=false
+[callMCP] arifos.arif_init → canonicalTool=arif_init, url=http://127.0.0.1:8088/mcp
+[callMCP] arif_init — jsonRpcError=false, hasResult=true
+[callMCP] arif_init — isError=false, hasStructured=true
+[callMCP] arif_init — resultObj.status=completed, verdict=HOLD, httpOk=true
+[DEPRECATION] McpPolicyGate.setActor("arif") is deprecated (L09, 2026-09-25). Migrate to registerVerifiedSession() or registerKernelVerifiedSession(). Per-actor keying used — global "__legacy_active" attribution is disabled.
+{"ts":"2026-10-31T20:42:40.026Z","source":"A-FORGE-mcp","level":"info","component":"mcp","tool":"forge_session_init","action":"success","metadata":{"durationMs":2240}}
+[LEASE_GATE] kernel holds no lease record for ACT-arif-mvwvayvr-gvivay; honouring registered local lease (source=local, scope from ACT band)
+[LEASE_GATE] tool=forge_reality_loop class=EXECUTE_REVERSIBLE lease_id=ACT-arif-mvwvayvr-gvivay verdict=SEAL
+[McpPolicyGate] audit log write failed
+✔ forge_session_init consumes advertised act credential and preserves full A-FORGE leaseScope (2610.842906ms)
+{"level":"info","component":"flowSweeper","msg":"fallback sweep","reason":"emit-success","fallback_path":"/root/.agent-workbench/aforge-flow-fallback.jsonl","replayed_path":"/root/.agent-workbench/aforge-flow-fallback.jsonl.replayed","total_lines":1,"parsed":1,"unparsable":0,"already_replayed":0,"attempted":1,"replayed":1,"failed":0,"remaining":0,"dry_run":false,"errors":[]}
+[callMCP] arifos.arif_init → canonicalTool=arif_init, url=http://127.0.0.1:8088/mcp
+[callMCP] arif_init — jsonRpcError=false, hasResult=true
+[callMCP] arif_init — isError=false, hasStructured=true
+[callMCP] arif_init — resultObj.status=completed, verdict=HOLD, httpOk=true
+[DEPRECATION] McpPolicyGate.setActor("arif") is deprecated (L09, 2026-09-25). Migrate to registerVerifiedSession() or registerKernelVerifiedSession(). Per-actor keying used — global "__legacy_active" attribution is disabled.
+{"ts":"2026-10-31T20:42:42.355Z","source":"A-FORGE-mcp","level":"info","component":"mcp","tool":"forge_session_init","action":"success","metadata":{"durationMs":2250}}
+✔ forge_session_init with session_token does not collapse ACT_DERIVED scope to arif_seal only (2325.476798ms)
+✔ 06 a deliberate single-token grant of a shared name is honoured, not widened (1.157987ms)
+✔ 07 a kernel-verb list that merely contains arif_seal is NOT a narrow grant (0.117507ms)
+✔ H1: money/send/sealed-execute tools are EXECUTE_HIGH_IMPACT (1.719062ms)
+✔ H2: remote-repo file writer resolves to IRREVERSIBLE (severity floor) (0.207232ms)
+✔ H3: forge_predict stays OBSERVE (pure evidence tool, no session gating) (0.286242ms)
+✔ H4: former name-drift tools are classified (no fail-closed HOLD on live surface) (0.197768ms)
+✔ fail-closed contract: unknown tool → MUTATE floor, unclassified, gate HOLDs (0.136466ms)
+✔ seals are IRREVERSIBLE (constitutional floor) (0.267563ms)
+✔ mode-aware filesystem ladder: read < write < delete (0.706054ms)
+✔ mode-aware vault: append-only write is REVERSIBLE, read is OBSERVE (0.153201ms)
+✔ shell is governed EXECUTE_REVERSIBLE (T1 2026-07-19 pin) (0.650671ms)
+✔ severity ordering: IRREVERSIBLE outranks every class (0.566535ms)
+✔ P7: forge_lease request is a REQUEST, not an action (bootstrap-circularity fix 2026-10-20) (0.266752ms)
+✔ P1: formerly-unclassified live tools now have explicit classes (0.169546ms)
+✔ P1: false-readonly closures — write modes may not hide behind an OBSERVE base (0.171159ms)
+✔ P1: arif_report (KERNEL cross-organ) — write modes governed, reads free (0.167984ms)
+✔ F1 carrier: verb-carrier args classify by the action, not the OBSERVE default (0.133171ms)
+✔ F1 carrier: missing or unknown action on a required-carrier tool fails closed (0.392562ms)
+▶ Apex Scalar Replication — fetchApexScalars()
+  ✔ full response — all 5 scalars replicated with correct values (84.162454ms)
+  ✔ arifOS unreachable — returns null (graceful degradation) (3.255488ms)
+  ✔ partial response — only available scalars are non-null (27.810754ms)
+  ✔ status field is REPLICATED, never MEASURED (F2 + F7 provenance) (14.273473ms)
+  ✔ non-200 HTTP response — returns null (graceful degradation) (18.606756ms)
+  ✔ missing apex_scalars key — returns null (10.258788ms)
+  ✔ non-numeric value (null) in scalar — that scalar returns null (9.314916ms)
+✔ Apex Scalar Replication — fetchApexScalars() (170.682884ms)
+[arifFlowBridge] arifFlow unreachable: fetch failed (fail-open; further warnings suppressed)
+✔ emitFlowReceipt posts canonical receipt shape to /ingest (85.287711ms)
+✔ emitFlowReceipt fails open when arifFlow is unreachable (34.6455ms)
+✔ ARIFFLOW_URL=off disables emission (1.425479ms)
+▶ CapabilityAbiSchema — validation
+  ✔ accepts a valid ABI (13.907321ms)
+  ✔ rejects an ABI with empty capability_id (2.347751ms)
+  ✔ rejects an ABI with intent shorter than 10 characters (0.303008ms)
+  ✔ rejects an ABI with missing forged_by (1.338248ms)
+  ✔ rejects invalid authority_class (0.409167ms)
+  ✔ rejects SELF_CERTIFIED verifier method (not in enum) (0.642529ms)
+✔ CapabilityAbiSchema — validation (24.914328ms)
+▶ evaluateAdmissibility — all gates pass
+  ✔ returns ok=true with no failing gates when all conditions are met (2.819703ms)
+✔ evaluateAdmissibility — all gates pass (3.141988ms)
+▶ evaluateAdmissibility — H_A (authority + identity)
+  ✔ fails H_A when identity is not valid (0.224068ms)
+  ✔ fails H_A when forged_by is empty (3.5218ms)
+✔ evaluateAdmissibility — H_A (authority + identity) (4.166122ms)
+▶ evaluateAdmissibility — H_S (containment + safety)
+  ✔ fails H_S when containment is unavailable for IRREVERSIBLE authority (1.137665ms)
+  ✔ passes H_S for OBSERVE authority even without containment (0.114893ms)
+✔ evaluateAdmissibility — H_S (containment + safety) (1.369074ms)
+▶ evaluateAdmissibility — H_E (evidence + provenance)
+  ✔ fails H_E when merkle chain is not intact (0.935951ms)
+  ✔ fails H_E when no receipts are present (0.128292ms)
+✔ evaluateAdmissibility — H_E (evidence + provenance) (1.191276ms)
+▶ evaluateAdmissibility — H_R (rollback)
+  ✔ fails H_R when rollback is none and authority is IRREVERSIBLE with incompatible rollback (0.200952ms)
+  ✔ passes H_R when rollback_compatible is true (0.714677ms)
+✔ evaluateAdmissibility — H_R (rollback) (1.080088ms)
+▶ evaluateAdmissibility — H_V (independent verifier)
+  ✔ fails H_V when verifier external executor is not registered (0.135394ms)
+  ✔ fails H_V when external_executor is empty (0.104207ms)
+✔ evaluateAdmissibility — H_V (independent verifier) (0.335205ms)
+▶ evaluateAdmissibility — non-compensatory
+  ✔ returns ok=false when exactly one gate fails (0.107192ms)
+  ✔ returns all failing gates when multiple fail (0.078869ms)
+✔ evaluateAdmissibility — non-compensatory (0.263588ms)
+▶ CapabilityMarket — publishOffer (F13 gate)
+  ✔ refuses offer without arifos_seal_id (0.650761ms)
+  ✔ accepts offer with arifos_seal_id (0.585103ms)
+✔ CapabilityMarket — publishOffer (F13 gate) (3.470523ms)
+▶ CapabilityMarket — match (best-fit)
+  ✔ returns null when no offer matches capability_id (0.249387ms)
+  ✔ returns the highest-scored offer for a capability_id (0.701117ms)
+✔ CapabilityMarket — match (best-fit) (1.401744ms)
+▶ CapabilityMarket — subscribe (translate to local lease)
+  ✔ refuses when offer lacks arifos_seal_id (0.3776ms)
+  ✔ returns a local lease for a sealed offer (0.371771ms)
+  ✔ refuses mismatched capability_id (0.979777ms)
+✔ CapabilityMarket — subscribe (translate to local lease) (2.150042ms)
+▶ CapabilityMarket — review (routes to EvidencePromotionGate)
+  ✔ returns ok_to_propose=false when evidence is below thresholds (0.307333ms)
+✔ CapabilityMarket — review (routes to EvidencePromotionGate) (0.451861ms)
+▶ claimGate - seam block
+  ✔ reports the kernel path and eligible class set (10.952875ms)
+  ✔ honours the operator switch FORGE_CLAIM_GATE (0.819766ms)
+✔ claimGate - seam block (17.53428ms)
+▶ claimGate - extractStatedClaim
+  ✔ returns null when the caller states no claim (2.814655ms)
+  ✔ reads justification + claim_class (3.115548ms)
+  ✔ accepts alias fields (1.468946ms)
+  ✔ an undeclared claim text yields UNCLASSIFIED (1.346711ms)
+  ✔ an unknown declared class yields UNCLASSIFIED and sets declared_unknown (0.190687ms)
+✔ claimGate - extractStatedClaim (10.022682ms)
+▶ claimGate — refusal
+  ✔ REFUSES a NARRATIVE-class justification on a MUTATE tool (183.111144ms)
+  ✔ REFUSES a justification with no declared class at all (140.02685ms)
+  ✔ REFUSES an explicit UNCLASSIFIED declaration (112.780375ms)
+  ✔ REFUSES an overclaim: declared MECHANISM, text infers NARRATIVE (92.617433ms)
+  ✔ REFUSES a declared class with no justification text (0.533084ms)
+  ✔ FAIL-CLOSED when the kernel is unreachable (0.250898ms)
+  ✔ FAIL-CLOSED on a non-JSON child exit (0.146401ms)
+  ✔ refusal surfaces as an MCP error response and an HTTP 423 body (241.720558ms)
+✔ claimGate — refusal (772.29153ms)
+▶ claimGate - action-eligible claims pass
+  ✔ PASSES MEASURED (93.483429ms)
+  ✔ PASSES MECHANISM (93.357789ms)
+  ✔ PASSES PATTERN (226.891447ms)
+  ✔ PASSES when no claim is stated at all (additive: existing calls untouched) (0.69009ms)
+  ✔ SKIPS read-only action classes (nothing to justify) (0.201033ms)
+[A-FORGE-core] Constitution gate: arifOS:8088
+[FED-ALIGN] Loaded 100 actuator cards from /root/A-FORGE/a_think/federation_alignment_registry.json
+[A-FORGE] Registered 8 FORGE execution verbs (+ 1 split skillstore) + 4 sandbox persistence tools
+[A-FORGE] Registered auth_pipeline — the institutional protocol
+[McpPolicyGate] constraint pin OK (02b7f6b)
+[McpPolicyGate] loaded 1 policies from /root/A-FORGE/config/mcp_policies.json
+[PolicyInterceptor] installed — 107 tools wrapped with 5-layer policy pre-check
+[ElicitationGate] installed — 10 MUTATE tools gated with -32042 elicitation for external clients
+[Fingerprint] startup check: 108 tools, 108 unique fingerprints, 0 collisions
+[Fingerprint] ✅ All tools have unique fingerprints. Dedupe check passed.
+[Isomorphism] startup check: 17 pairs, 17 passed, 0 failed
+[Isomorphism]   ✅ IDENTITY: 6 pairs, 0 failed
+[Isomorphism]   ✅ AUTHORITY: 7 pairs, 0 failed
+[Isomorphism]   ✅ IRREVERSIBILITY: 4 pairs, 0 failed
+[Isomorphism] ✅ J‑space manifold STABLE. All 17 isomorphism pairs verified.
+[VerdictInterceptor] installed — 117 tools wrapped with VerdictEnvelope
+  ✔ documents the kernel boundary: declaration over a signal-free text passes (84.069614ms)
+  ✔ SKIPS when the operator disables the gate (FORGE_CLAIM_GATE=0) (0.772164ms)
+✔ claimGate - action-eligible claims pass (499.977891ms)
+▶ claimGate - ingress wiring
+  ✔ is called at both MCP dispatcher wrappers and at POST /execute (1.41948ms)
+✔ claimGate - ingress wiring (1.500632ms)
+[2026-10-31T20:42:38.093Z] POST /execute
+[ArifSeal] Init error: Error: EPERM: operation not permitted, open '/root/A-FORGE/data/vault999_chain.jsonl'
+[forgeTools] Skill registry loaded (volatile)
+[forgeTools] Loaded 30 agent identities
+[2026-10-31T20:42:38.438Z] POST /execute
+[2026-10-31T20:42:38.549Z] POST /execute
+▶ claimGate - POST /execute end-to-end
+  ✔ refuses a mutation justified by a NARRATIVE claim (HTTP 423) (2747.178229ms)
+✔ claimGate - POST /execute end-to-end (2747.453003ms)
+✔ snapshot is non-vacuous: the recorded surface has plausibly many tools (1.116543ms)
+✔ every snapshot tool is explicitly classified (0.839956ms)
+✔ every snapshot tool resolves to a defined action class (0.449598ms)
+✔ no dead classifier entries: classified ⊆ snapshot ∪ cross-organ (0.411521ms)
+✔ cross-organ allowlist stays honest: each pinned name is classified (0.144768ms)
+✔ unknown-tool contract: MUTATE floor, unclassified, governance required (0.191739ms)
+✔ live registry drift (optional): live tools === snapshot (5.837362ms)
+✔ stale deployed stamp vs advanced HEAD ⇒ drift TRUE (F-01 blindspot) (0.993679ms)
+✔ deployed == source == HEAD ⇒ no drift (0.1337ms)
+✔ deployed == HEAD with stale source marker ⇒ no drift (marker is secondary) (0.126351ms)
+✔ HEAD UNAVAILABLE (git failure) ⇒ legacy marker-pair fallback (1.560863ms)
+✔ deployed UNAVAILABLE ⇒ never assert drift (no invented signal) (0.130978ms)
+▶ resolveEgressProfile
+  ✔ 'default' → direct (1.741045ms)
+  ✔ 'direct' → direct (0.211309ms)
+  ✔ 'mubeng' → unavailable with reason (15.95018ms)
+  ✔ 'corp-proxy' → unavailable with reason (0.254934ms)
+  ✔ 'tor' → unavailable with reason (0.179451ms)
+✔ resolveEgressProfile (19.730981ms)
+▶ validateAndResolve
+  ✔ undefined/empty → default direct (graceful) (0.488247ms)
+  ✔ 'default' string → ok, direct (0.251199ms)
+  ✔ 'mubeng' string → ok, unavailable (NOT error) (0.217538ms)
+  ✔ unknown profile → error with valid list (5.424809ms)
+  ✔ non-string input → error (0.242757ms)
+✔ validateAndResolve (7.097232ms)
+▶ fetchCacheKey — egress profile isolation
+  ✔ default vs direct produce SAME key (both are direct) (1.305208ms)
+  ✔ different profiles produce DIFFERENT keys (0.158579ms)
+  ✔ same profile produces SAME key (idempotent) (0.138768ms)
+  ✔ omitted egress_profile defaults to 'default' in key (0.16555ms)
+  ✔ different URL + same profile = different keys (0.215464ms)
+✔ fetchCacheKey — egress profile isolation (2.281521ms)
+▶ EgressPolicy does not change default behavior
+  ✔ validateAndResolve(null) returns default/direct (0.197968ms)
+  ✔ default resolution is a direct type (tool skip) (0.115775ms)
+✔ EgressPolicy does not change default behavior (0.427224ms)
+✔ S1: fabricated session_id is NOT trusted (was: any string >8 chars) (1.130233ms)
+✔ S1: forged SEAL-* session_id is NOT trusted (P0.2 doctrine preserved) (0.148383ms)
+✔ S1: fabricated lease_id alone is NOT trusted (was: any string >4 chars) (0.179041ms)
+✔ S1: self-acknowledgement booleans are NOT trusted (nothing mints them) (0.192289ms)
+✔ S1: anonymous caller with no credentials is external (0.378771ms)
+✔ S1 POSITIVE CONTROL: a kernel-registered session IS trusted (0.512894ms)
+✔ S1b: a sovereign NAME alone is no longer trusted (flips the S1 characterization) (0.544722ms)
+✔ S1b: the sovereign name fold is now symmetric (0.821139ms)
+✔ S1b: a sovereign name with an unparseable or OBSERVE_ONLY ACT is still refused (0.765045ms)
+✔ S1c POSITIVE CONTROL: sovereign name + validly signed ACT IS trusted (1.029904ms)
+✔ S1c: a FORGED signature is refused (this is what S1b could not catch) (0.473474ms)
+✔ S1c: a valid ACT bound to a DIFFERENT actor is refused (binding, not possession) (0.474205ms)
+✔ S1c: an expired ACT is refused (1.389095ms)
+✔ S1c: an OBSERVE_ONLY ACT does not confer sovereign trust (0.308827ms)
+▶ non-API: compute_fn
+  ✔ routes through sandbox; python launcher emitted; transitions to tested on exit 0 (496.365343ms)
+  ✔ invoke() routes through sandbox; non-API execute path (392.65864ms)
+  ✔ verify() refuses SELF_CERTIFIED even for an invoked compute_fn (591.527064ms)
+(node:3890650) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✔ verify() with schema_invariant passes for a happy compute_fn (539.360985ms)
+✔ non-API: compute_fn (2023.567835ms)
+▶ non-API: data_parser
+  ✔ emits a python launcher; passes when exit 0 (457.77843ms)
+✔ non-API: data_parser (458.703455ms)
+▶ non-API: format_converter
+  ✔ emits a bash launcher when language=bash (428.476427ms)
+✔ non-API: format_converter (429.100098ms)
+▶ non-API: api_wrapper routes through sandbox (no host fetch)
+  ✔ emits a curl launcher; allowedDomains is the api host (4.982183ms)
+  ✔ CONTAINMENT_UNAVAILABLE surfaced when backend missing (1.122413ms)
+✔ non-API: api_wrapper routes through sandbox (no host fetch) (6.680052ms)
+▶ ephemeral sandbox — exit codes preserved
+  ✔ compute_fn template: exit 7 surfaces in errors[] and stderr_hash is non-empty (406.129473ms)
+  ✔ compute_fn template: exit 0 transitions to tested (455.871244ms)
+  ✔ engine propagates ContainmentUnavailableError verbatim (404.959537ms)
+✔ ephemeral sandbox — exit codes preserved (1268.499495ms)
+▶ forge/EphemeralGenesisRunner — deprecation + importability
+  ✔ is importable (0.708738ms)
+  ✔ carries @deprecated 2026-08-01 in its header (0.33858ms)
+  ✔ canonical engine instance is reachable from the same import path (0.860167ms)
+✔ forge/EphemeralGenesisRunner — deprecation + importability (3.129009ms)
+▶ ephemeral templates — no ambient secret leaks
+  ✔ mulerouter_image_gen has authRef, no MULEROUTER_API_KEY literal (2.107248ms)
+  ✔ mulerouter_tts has authRef, no MULEROUTER_API_KEY literal (0.305902ms)
+  ✔ mulerouter_music has authRef, no MULEROUTER_API_KEY literal (0.373804ms)
+  ✔ mulerouter_vision has authRef, no MULEROUTER_API_KEY literal (0.277788ms)
+  ✔ generic_api_wrapper has authRef, no MULEROUTER_API_KEY literal (0.35174ms)
+✔ ephemeral templates — no ambient secret leaks (4.665234ms)
+▶ P1-AA — description discoverability
+  ✔ forge_ephemeral description lists all 9 modes (1.398609ms)
+  ✔ forge_ephemeral description surfaces SELF_CERTIFIED as inadmissible (0.751382ms)
+  ✔ forge_ephemeral description states the 4-stage promotion rule (0.636609ms)
+  ✔ forge_ephemeral description says temporary by default (0.329566ms)
+✔ P1-AA — description discoverability (6.252527ms)
+▶ P1-AA — telemetry event shape
+  ✔ AuditEventAction includes ephemeral_lifecycle (0.440865ms)
+  ✔ ephemeralTools calls telemetry.logEvent with the right shape (2.644839ms)
+  ✔ ephemeralTools does not log args or generated code into telemetry (5.662497ms)
+✔ P1-AA — telemetry event shape (9.376999ms)
+▶ P1-AA — project_id label surface
+  ✔ input schema declares optional project_id with UNKNOWN default (0.587625ms)
+✔ P1-AA — project_id label surface (0.813487ms)
+▶ P1-AA — fail_closed signal
+  ✔ P0.4 / ContainmentUnavailableError maps to fail_closed outcome (2.632309ms)
+✔ P1-AA — fail_closed signal (3.053445ms)
+▶ ephemeral — policy gate membership
+  ✔ forge_ephemeral is in ELICITATION_GATE_TOOLS (5.708258ms)
+✔ ephemeral — policy gate membership (6.851761ms)
+▶ ephemeral — registration order in core.ts
+  ✔ registerEphemeralTools precedes installPolicyInterceptor (1.910781ms)
+✔ ephemeral — registration order in core.ts (2.116511ms)
+▶ SandboxExecutor — factory
+  ✔ returns a DefaultSandboxExecutor from getDefaultSandboxExecutor() (7.855034ms)
+✔ SandboxExecutor — factory (9.966598ms)
+▶ SandboxExecutor — bwrap probe
+  ✔ isAvailable() returns a boolean (608.167024ms)
+  ✔ on af-forge, bwrap is available (587.021269ms)
+✔ SandboxExecutor — bwrap probe (1195.645072ms)
+▶ SandboxExecutor — error contract
+  ✔ ContainmentUnavailableError carries the CONTAINMENT_UNAVAILABLE code (0.652484ms)
+✔ SandboxExecutor — error contract (0.869071ms)
+▶ VerifierRegistry — SELF_CERTIFIED rejection
+  ✔ throws when SELF_CERTIFIED is supplied (5.969491ms)
+✔ VerifierRegistry — SELF_CERTIFIED rejection (6.985943ms)
+▶ VerifierRegistry — known_answer
+  ✔ returns failed receipt when fixturesPath missing (1.899543ms)
+  ✔ returns passed receipt when fixture hash matches implementation (0.550099ms)
+✔ VerifierRegistry — known_answer (2.92485ms)
+▶ VerifierRegistry — schema_invariant
+  ✔ returns failed when outputSchema missing (1.620984ms)
+  ✔ returns passed when schema parse succeeds (0.800377ms)
+  ✔ returns failed when schema parse throws (0.72973ms)
+✔ VerifierRegistry — schema_invariant (3.601811ms)
+▶ VerifierRegistry — independent_recompute
+  ✔ returns failed when alternateImplementation missing (0.414125ms)
+  ✔ returns passed when primary hash matches alternate (0.219191ms)
+✔ VerifierRegistry — independent_recompute (0.816631ms)
+▶ VerifierRegistry — domain_witness
+  ✔ returns failed when arifosSessionId missing (0.380273ms)
+  ✔ returns passed receipt with arifos-arif_judge signature when anchored (0.47068ms)
+✔ VerifierRegistry — domain_witness (0.959506ms)
+▶ VerifierRegistry — singleton
+  ✔ exports SELF_CERTIFIED sentinel (0.103657ms)
+✔ VerifierRegistry — singleton (0.184788ms)
+▶ VerifierRegistry — singletons constructable
+  ✔ KnownAnswerVerifier/SchemaInvariantVerifier/IndependentRecomputeVerifier/DomainWitnessVerifier are direct-constructable (0.10606ms)
+✔ VerifierRegistry — singletons constructable (0.177397ms)
+▶ ArifOsEvaluator — canonical G is the 4-dial geometric mean
+  ✔ emits exactly A, P, E, X, G — no Φ (5.600414ms)
+  ✔ ranking is sorted by score descending (0.408385ms)
+  ✔ per-model entries have signed_by = arifos-arif_judge (0.334895ms)
+✔ ArifOsEvaluator — canonical G is the 4-dial geometric mean (7.651478ms)
+▶ assertCanonicalGShape — drift guard
+  ✔ throws on extra dial Φ (0.917804ms)
+  ✔ throws when a dial is missing (0.251208ms)
+✔ assertCanonicalGShape — drift guard (3.696282ms)
+▶ EvidencePromotionGate — default thresholds
+  ✔ matches the documented default table (0.97585ms)
+✔ EvidencePromotionGate — default thresholds (2.703897ms)
+▶ EvidencePromotionGate — happy path
+  ✔ returns ok_to_propose=true when all gates pass (0.389627ms)
+✔ EvidencePromotionGate — happy path (0.537031ms)
+▶ EvidencePromotionGate — failing gates
+  ✔ blocks when instantiation_count below threshold (0.599724ms)
+  ✔ blocks when success_rate below threshold (0.215516ms)
+  ✔ blocks when independent_verifier_passes below threshold (0.459533ms)
+  ✔ blocks when empirical_capability_score below threshold (0.41135ms)
+  ✔ blocks when verifier_methods has no domain_witness or independent_recompute (0.528237ms)
+  ✔ accepts known_answer + independent_recompute diversity (0.389107ms)
+✔ EvidencePromotionGate — failing gates (3.40251ms)
+▶ EvidencePromotionGate — custom thresholds
+  ✔ honours a custom threshold set (1.314221ms)
+✔ EvidencePromotionGate — custom thresholds (1.487363ms)
+[A-FORGE-core] Constitution gate: arifOS:8088
+[FED-ALIGN] Loaded 100 actuator cards from /root/A-FORGE/a_think/federation_alignment_registry.json
+[A-FORGE] Registered 8 FORGE execution verbs (+ 1 split skillstore) + 4 sandbox persistence tools
+[A-FORGE] Registered auth_pipeline — the institutional protocol
+[McpPolicyGate] constraint pin OK (02b7f6b)
+[McpPolicyGate] loaded 1 policies from /root/A-FORGE/config/mcp_policies.json
+[PolicyInterceptor] installed — 107 tools wrapped with 5-layer policy pre-check
+[ElicitationGate] installed — 10 MUTATE tools gated with -32042 elicitation for external clients
+[Fingerprint] startup check: 108 tools, 108 unique fingerprints, 0 collisions
+[Fingerprint] ✅ All tools have unique fingerprints. Dedupe check passed.
+[Isomorphism] startup check: 17 pairs, 17 passed, 0 failed
+[Isomorphism]   ✅ IDENTITY: 6 pairs, 0 failed
+[Isomorphism]   ✅ AUTHORITY: 7 pairs, 0 failed
+[Isomorphism]   ✅ IRREVERSIBILITY: 4 pairs, 0 failed
+[Isomorphism] ✅ J‑space manifold STABLE. All 17 isomorphism pairs verified.
+[VerdictInterceptor] installed — 117 tools wrapped with VerdictEnvelope
+[2026-10-31T20:42:39.950Z] POST /execute
+[2026-10-31T20:42:39.967Z] POST /execute
+[ArifSeal] Init error: Error: EPERM: operation not permitted, open '/root/A-FORGE/data/vault999_chain.jsonl'
+▶ POST /execute - unclassified tool gate
+  ✔ holds an unclassified tool, and does not blanket-block a classified one (2074.860055ms)
+✔ POST /execute - unclassified tool gate (2076.526128ms)
+[forgeTools] Skill registry loaded (volatile)
+[forgeTools] Loaded 30 agent identities
+✔ executeCommand: timeout yields UNKNOWN_OUTCOME, NOT FAILURE (54.878058ms)
+✔ executeCommand: non-timeout error stays FAILURE (0.885605ms)
+✔ reconcile: independent probe promotes UNKNOWN → SUCCESS with probe receipt (0.722118ms)
+✔ reconcile: independent probe demotes UNKNOWN → FAILURE with probe receipt (0.21947ms)
+✔ reconcile: INDETERMINATE probe stays UNKNOWN_OUTCOME (escalate FRAME/human) (0.195143ms)
+✔ reconcile: SELF-PROBE rejected (Q9 anti-self-seal), stays UNKNOWN_OUTCOME (0.307463ms)
+✔ reconcile: missing actionHash in probe → rejected (0.22588ms)
+✔ reconcile: unknown actionHash returns UNKNOWN with reason (0.162375ms)
+✔ reconcile: original outcome_class != UNKNOWN → no-op (0.355676ms)
+✔ DENIED before dispatch: missing receiptId refuses with outcome_class=DENIED, no results (0.344308ms)
+✔ DENIED before dispatch: verdict=HOLD refuses with outcome_class=DENIED, no results (0.157607ms)
+✔ outcomeClassFromStatus: maps PARTIAL→RECOVERY, REFUSED→DENIED (0.091098ms)
+✔ ALL_OUTCOME_CLASSES contains all 5 (0.269097ms)
+✔ arifFlowBridge: outcome_class=UNKNOWN_OUTCOME → floor_verdict=Caution (52.676619ms)
+✔ arifFlowBridge: outcome_class=SUCCESS preserves caller-supplied floor_verdict (18.664133ms)
+[recordExperienceTrace] P2 proposal prop-1793479358402-forge_execute for tool=forge_execute
+[recordExperienceTrace] P2 proposal prop-1793479358511-forge_execute for tool=forge_execute
+✔ decision-invariance: F1 q=0.49 -> HOLD (21.103861ms)
+✔ decision-invariance: F2 q=0.50 -> pass (boundary) (3.56094ms)
+✔ decision-invariance: F3 q=0.51 -> pass (1.210285ms)
+✔ decision-invariance: F4 null -> fail-closed 0.0 (3.830145ms)
+✔ decision-invariance: F5 unreachable -> HOLD (3.096219ms)
+✔ decision-invariance: F6 OBSERVE -> exempt (1.749127ms)
+✔ message truth (HOLD): names rollup + binding actor + labels pooled counts (1.619001ms)
+✔ message truth (pass): same provenance on the pass branch (2.073286ms)
+✔ synthetic actors never named as binding actor (4.938015ms)
+▶ gAuthority — canonical G equation
+  ✔ pins the 4-dial geometric mean string (12.169529ms)
+  ✔ excludes Φ from the canonical dials (0.98148ms)
+  ✔ CANONICAL_G_DIAL_COUNT is 4 (0.984464ms)
+  ✔ CANONICAL_G_IS_GEOMETRIC_MEAN is true (3.626869ms)
+  ✔ CANONICAL_G_SOURCE is arif_think(mode='apex') (0.203716ms)
+  ✔ CANONICAL_G_MODULE is the arifOS module (0.276738ms)
+✔ gAuthority — canonical G equation (22.649943ms)
+▶ gAuthority — local stamp
+  ✔ stamps local products with derived_local + invent_g=false (0.773888ms)
+  ✔ accepts an alternate authority kind (0.472032ms)
+✔ gAuthority — local stamp (1.794145ms)
+▶ gAuthority — type discriminator
+  ✔ exposes GAuthority as a string-literal union (1.066968ms)
+✔ gAuthority — type discriminator (1.507194ms)
+▶ GeneralizationGate — promotion is earned, not assumed
+  ✔ GENERALIZES when held-out improvement clears the CI floor and dev is not inflated (10.642127ms)
+  ✔ refuses a dev-inflated revision as OVERFIT (sabotage case) (8.918127ms)
+  ✔ returns UNPROVEN for the paper's headline shape: +2.80 points, interval straddling zero (4.043286ms)
+  ✔ calls a lost capability REGRESSION when dev is flat (1.665561ms)
+  ✔ flags a cheaper-but-not-better revision as COST_CUT_REGRESSION (3.274707ms)
+✔ GeneralizationGate — promotion is earned, not assumed (30.421692ms)
+▶ GeneralizationGate — fail-closed
+  ✔ UNMEASURED when the revision has no pre-registration (HOLDOUT R7) (0.86899ms)
+  ✔ UNMEASURED when the held-out set has no provenance (HOLDOUT R8) (0.460054ms)
+  ✔ UNMEASURED when a non-hex pre-registration string is supplied (1.952012ms)
+  ✔ UNMEASURED when dev and held-out arrays are unpaired (0.320383ms)
+  ✔ UNPROVEN when there are too few held-out items to form an interval (1.731742ms)
+  ✔ exported unmeasuredAssessment is always non-promotable (1.269304ms)
+✔ GeneralizationGate — fail-closed (7.16243ms)
+▶ GeneralizationGate — reproducibility and policy
+  ✔ is deterministic for the same seed (18.869833ms)
+  ✔ honours a tightened maxGap policy (8.099363ms)
+  ✔ reports the policy it applied (3.252224ms)
+✔ GeneralizationGate — reproducibility and policy (30.539878ms)
+✔ shared fixture hash intact (2.442703ms)
+✔ all fixture cases resolve identically to the Python canon (1.717049ms)
+✔ same-principal equivalences (0.409076ms)
+✔ different principals stay different (0.364359ms)
+✔ the 2026-10-21 false-mismatch pair now resolves (2.072945ms)
+✔ Amanah release semantics: same principal different case releases (0.169215ms)
+✔ F13 2026-10-22: role strings resolve to nothing — never to a principal (0.147582ms)
+✔ F13-approved person-name aliases resolve to the sovereign principal (0.131939ms)
+[A-FORGE-core] Constitution gate: arifOS:8088
+[FED-ALIGN] Loaded 100 actuator cards from /root/A-FORGE/a_think/federation_alignment_registry.json
+[A-FORGE] Registered 8 FORGE execution verbs (+ 1 split skillstore) + 4 sandbox persistence tools
+[A-FORGE] Registered auth_pipeline — the institutional protocol
+[McpPolicyGate] constraint pin OK (02b7f6b)
+[McpPolicyGate] loaded 1 policies from /root/A-FORGE/config/mcp_policies.json
+[PolicyInterceptor] installed — 107 tools wrapped with 5-layer policy pre-check
+[ElicitationGate] installed — 10 MUTATE tools gated with -32042 elicitation for external clients
+[Fingerprint] startup check: 108 tools, 108 unique fingerprints, 0 collisions
+[Fingerprint] ✅ All tools have unique fingerprints. Dedupe check passed.
+[Isomorphism] startup check: 17 pairs, 17 passed, 0 failed
+[Isomorphism]   ✅ IDENTITY: 6 pairs, 0 failed
+[Isomorphism]   ✅ AUTHORITY: 7 pairs, 0 failed
+[Isomorphism]   ✅ IRREVERSIBILITY: 4 pairs, 0 failed
+[Isomorphism] ✅ J‑space manifold STABLE. All 17 isomorphism pairs verified.
+[VerdictInterceptor] installed — 117 tools wrapped with VerdictEnvelope
+[2026-10-31T20:42:40.463Z] OPTIONS /mcp
+✔ MCP OPTIONS exposes browser transport CORS headers (36.390482ms)
+[2026-10-31T20:42:40.503Z] POST /mcp
+✔ MCP initialize rejects an untrusted browser origin (51.336758ms)
+[ArifSeal] Init error: Error: EPERM: operation not permitted, open '/root/A-FORGE/data/vault999_chain.jsonl'
+[2026-10-31T20:42:40.560Z] POST /mcp
+[A-FORGE] MCP: fresh initialize — creating new transport
+✔ MCP initialize without Origin reaches the transport gate (44.487301ms)
+[forgeTools] Skill registry loaded (volatile)
+[forgeTools] Loaded 30 agent identities
+▶ MissionContractSchema — validation
+  ✔ accepts a valid MissionContract (7.359257ms)
+  ✔ rejects a contract with empty mission_id (15.251447ms)
+  ✔ rejects a contract with no acceptance criteria (10.953506ms)
+  ✔ rejects a contract with expected_outcome shorter than 10 characters (5.496098ms)
+  ✔ rejects SELF_CERTIFIED verifier method (8.507918ms)
+✔ MissionContractSchema — validation (49.320769ms)
+▶ checkMissionCompatibility — compatible
+  ✔ returns ok=true when mission matches ABI (15.396636ms)
+✔ checkMissionCompatibility — compatible (15.591659ms)
+▶ checkMissionCompatibility — capability_id mismatch
+  ✔ detects when mission.capability_id differs from abi.capability_id (0.433042ms)
+✔ checkMissionCompatibility — capability_id mismatch (2.300189ms)
+▶ checkMissionCompatibility — side effects
+  ✔ detects when mission declares a side effect not in ABI (1.420252ms)
+✔ checkMissionCompatibility — side effects (1.675476ms)
+▶ checkMissionCompatibility — budget
+  ✔ detects when mission budget exceeds ABI resource timeout (2.054227ms)
+✔ checkMissionCompatibility — budget (2.291365ms)
+▶ checkMissionCompatibility — rollback
+  ✔ detects when ABI rollback=none but mission claims rollback strategy (0.590499ms)
+  ✔ detects human_undo_required with must_complete_before_signoff (0.20515ms)
+✔ checkMissionCompatibility — rollback (1.020329ms)
+▶ checkMissionCompatibility — acceptance criteria
+  ✔ detects when no criteria are hard (1.742858ms)
+  ✔ detects when a hard criterion is not in verifier.criteria_ids (0.288015ms)
+✔ checkMissionCompatibility — acceptance criteria (2.245575ms)
+▶ RetirementGate — no triggers
+  ✔ extends when nothing fires (0.644121ms)
+✔ RetirementGate — no triggers (1.579921ms)
+▶ RetirementGate — age trigger
+  ✔ retires when age > threshold (0.401114ms)
+✔ RetirementGate — age trigger (0.624573ms)
+▶ RetirementGate — verifier_pass_rate trigger
+  ✔ retires when baseline - current >= threshold (0.225571ms)
+✔ RetirementGate — verifier_pass_rate trigger (0.459974ms)
+▶ RetirementGate — canonical_g trigger
+  ✔ retires when baseline - current >= threshold (0.450569ms)
+✔ RetirementGate — canonical_g trigger (0.58362ms)
+▶ RetirementGate — invocations trigger
+  ✔ retires when invocations_since_last_verify >= threshold (0.760057ms)
+✔ RetirementGate — invocations trigger (1.21305ms)
+▶ RetirementGate — soft_delete policy emits no snapshot
+  ✔ returns no snapshot_id when on_retire=soft_delete (1.019537ms)
+✔ RetirementGate — soft_delete policy emits no snapshot (1.296967ms)
+▶ Scar Reflex Gate
+  ✔ should match scar by keyword tokens (8.310481ms)
+  ✔ should not match unrelated commands (0.292802ms)
+  ✔ should sort by scar_pressure descending (0.25812ms)
+  ✔ FAIL-CLOSED: missing index surfaces a CRITICAL hit, not [] (0.237508ms)
+  ✔ FAIL-CLOSED: corrupt JSON surfaces a CRITICAL hit (2.478226ms)
+  ✔ REGRESSION (ChatGPT-2026-09-17): benign printf/uname/id must not match (1.859394ms)
+  ✔ REGRESSION: bare 'git push' must still match 'push without tests' scar (1.877381ms)
+✔ Scar Reflex Gate (21.105904ms)
+▶ sealLedgerHealth
+  ✔ defaults to the frozen archive path and labels the source (4.243779ms)
+  ✔ honours AFORGE_SEAL_LEDGER and reports a writable path truthfully (15.133949ms)
+  ✔ a writable path is genuinely appendable (not just stat-able) (15.589727ms)
+  ✔ an unwritable path reports false AND a reason — never a bare false (6.39269ms)
+✔ sealLedgerHealth (43.207721ms)
+[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "SEAL_REJECTED"
+[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "SEAL_REJECTED"
+[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "SEAL_REJECTED: SELF-SEAL DETECTED (Q9)"
+[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "SELF_SEAL_REJECTED"
+[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "SELF_SEAL_REJECTED: SELF-SEAL DETECTED (Q9)"
+[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "SELF_SEAL_VALIDATION_FAILED"
+[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "SELF_SEAL_VALIDATION_FAILED: SELF-SEAL DETECTED (Q9)"
+[A-FORGE] Unknown SEAL-family verdict — fail-closed HOLD (no prefix->PASS inference): "SEALED"
+[A-FORGE] Unknown SEAL-family verdict — fail-closed HOLD (no prefix->PASS inference): "SEAL_APPROVED_MAYBE"
+[A-FORGE] Unknown SEAL-family verdict — fail-closed HOLD (no prefix->PASS inference): "SEALISH"
+[A-FORGE] Unknown SEAL-family verdict — fail-closed HOLD (no prefix->PASS inference): "SEAL-5D425FC9AD8244FA"
+[A-FORGE] Unexpected arifOS verdict format: ""
+[A-FORGE] Unexpected arifOS verdict format: "totally unexpected json blob"
+[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "SEAL_REJECTED"
+[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "SELF_SEAL_REJECTED"
+[A-FORGE] Negative SEAL-family verdict rejected (WO-1/R18): "SELF_SEAL_VALIDATION_FAILED"
+[A-FORGE] Unknown SEAL-family verdict — fail-closed HOLD (no prefix->PASS inference): "SEALED"
+[A-FORGE] Unknown SEAL-family verdict — fail-closed HOLD (no prefix->PASS inference): "SEAL-ABC"
+[A-FORGE] Unknown SEAL-family verdict — fail-closed HOLD (no prefix->PASS inference): "SEALX"
+[A-FORGE] Unknown SEAL-family verdict — fail-closed HOLD (no prefix->PASS inference): "SEAL:"
+[A-FORGE] Unknown SEAL-family verdict — fail-closed HOLD (no prefix->PASS inference): "SEAL VERDICT ID 123"
+✔ WO-1: exact SEAL maps to PASS with low risk (1.279078ms)
+✔ WO-1: case/whitespace normalization still yields PASS for exact SEAL (0.169745ms)
+✔ WO-1: SEAL_REJECTED maps to VOID — the R18 regression (1.125697ms)
+✔ WO-1: every negative SEAL-family token maps to VOID (0.811974ms)
+✔ WO-1: unknown SEAL-prefixed strings fail closed to HOLD, never PASS (0.375737ms)
+✔ WO-1: defer/hold vocabulary preserved (0.142916ms)
+✔ WO-1: isError dominates to VOID regardless of text (2.02297ms)
+✔ WO-1: empty and garbage input fail closed to HOLD (0.777812ms)
+✔ WO-1: no SEAL-prefixed string outside exact 'SEAL' reaches PASS (exhaustive sweep) (1.323455ms)
+▶ ProcessEnvSecretBroker
+  ✔ resolves a present env-var and records an audit entry (4.922442ms)
+  ✔ throws on empty secret (F9 — never silently expose ambient) (1.203645ms)
+  ✔ revokes a scope so subsequent resolves throw (5.821708ms)
+  ✔ rejects non-env refs (caller must use ArifOsVaultSecretBroker) (0.309386ms)
+✔ ProcessEnvSecretBroker (15.986355ms)
+▶ ArifOsVaultSecretBroker
+  ✔ returns arifos-vault:<id> for vault refs and logs the audit hash (1.039478ms)
+  ✔ rejects env refs (caller must use ProcessEnvSecretBroker) (0.335236ms)
+✔ ArifOsVaultSecretBroker (4.415037ms)
+▶ Singleton — getDefaultSecretBroker()
+  ✔ returns the ProcessEnvSecretBroker singleton (1.270115ms)
+✔ Singleton — getDefaultSecretBroker() (1.516617ms)
+✔ policy twin loads and matches the YAML SOT shape (parity with Python gate) (4.316198ms)
+✔ ACTIVE with future expiry admitted in default mode (0.304709ms)
+✔ EXPIRED refused in default mode, admitted + labelled HISTORICAL in historical mode (0.149816ms)
+✔ temporal guard: ACTIVE with past expires_at → EXPIRED_BY_TIME (status lies, time does not) (0.4184ms)
+✔ supersession chain refused in default mode (0.206511ms)
+✔ missing SRO block and wrong version fail closed (0.215035ms)
+✔ unknown mode fails closed everywhere (0.172639ms)
+✔ historical mode leaves ACTIVE records unlabelled (0.137508ms)
+✔ FileTicketStore is replaced by the constitution gate (arifOS :8088) (1.742708ms)
+▶ shouldSample — deterministic
+  ✔ returns false when sample_rate=0 (0.794788ms)
+  ✔ returns true when sample_rate=1 (0.156476ms)
+  ✔ is deterministic for the same inputs (0.616498ms)
+✔ shouldSample — deterministic (2.687082ms)
+▶ TrafficShadow — canaryTraffic
+  ✔ does not sample shadow tier (1.789999ms)
+  ✔ samples canary tier (0.140161ms)
+✔ TrafficShadow — canaryTraffic (2.121028ms)
+▶ TrafficShadow — shouldRollback
+  ✔ does not rollback when window is empty (0.475167ms)
+  ✔ does not rollback when fail_rate below threshold (0.294764ms)
+  ✔ rolls back when fail_rate above threshold (0.343367ms)
+✔ TrafficShadow — shouldRollback (1.435084ms)
+▶ TrafficShadow — promotion gate
+  ✔ canPromoteToCanary requires arifos_seal_id when tier is canary (2.296973ms)
+  ✔ canPromoteToCanary is permissive for non-canary tiers (0.197098ms)
+✔ TrafficShadow — promotion gate (2.657307ms)
+▶ WmPromotionGate — empty slice
+  ✔ rejects empty slice (1.242374ms)
+✔ WmPromotionGate — empty slice (6.439951ms)
+▶ WmPromotionGate — passing slice
+  ✔ promotes when all gates pass (0.354785ms)
+✔ WmPromotionGate — passing slice (0.535818ms)
+▶ WmPromotionGate — failing slice
+  ✔ blocks when canonical_g below threshold (0.509578ms)
+  ✔ blocks when verifier_passes below threshold (0.352581ms)
+  ✔ blocks when evidence_quality below threshold (0.181173ms)
+✔ WmPromotionGate — failing slice (1.85764ms)
+ℹ tests 381
+ℹ suites 92
+ℹ pass 375
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8813.679057
+
+✖ failing tests:
+
+test at dist/test/EphemeralGenesisRunner.test.js:273:5
+✖ Step 5: sandbox test (654.514249ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///root/A-FORGE/dist/test/EphemeralGenesisRunner.test.js:279:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist/test/EphemeralGenesisRunner.test.js:285:5
+✖ Step 6: grant lease (1.469115ms)
+  Error: Cannot grant lease in state: FAILED
+      at EphemeralGenesisRunner.grantLease (file:///root/A-FORGE/dist/src/domain/containment/EphemeralGenesisRunner.js:358:19)
+      at TestContext.<anonymous> (file:///root/A-FORGE/dist/test/EphemeralGenesisRunner.test.js:288:30)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7)
+
+test at dist/test/EphemeralGenesisRunner.test.js:292:5
+✖ Step 7: invoke with real input (0.729369ms)
+  Error: Cannot invoke in state: FAILED
+      at EphemeralGenesisRunner.invoke (file:///root/A-FORGE/dist/src/domain/containment/EphemeralGenesisRunner.js:376:19)
+      at TestContext.<anonymous> (file:///root/A-FORGE/dist/test/EphemeralGenesisRunner.test.js:301:37)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7)
+
+test at dist/test/EphemeralGenesisRunner.test.js:308:5
+✖ Step 8: verify output independently (0.266912ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///root/A-FORGE/dist/test/EphemeralGenesisRunner.test.js:312:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist/test/EphemeralGenesisRunner.test.js:315:5
+✖ Step 9: retire — sandbox destroyed, code nullified (2.36043ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  false !== true
+  
+      at TestContext.<anonymous> (file:///root/A-FORGE/dist/test/EphemeralGenesisRunner.test.js:322:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at dist/test/EphemeralGenesisRunner.test.js:326:5
+✖ E2E result summary: all 9 steps passed (0.398942ms)
+  AssertionError [ERR_ASSERTION]: Unexpected errors: Sandbox test failed: exit=1 killed=false stderr_hash=sha256:d391f9649528c6fd stderr_bytes=111, Invalid state: FAILED
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (file:///root/A-FORGE/dist/test/EphemeralGenesisRunner.test.js:331:16)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at async Suite.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

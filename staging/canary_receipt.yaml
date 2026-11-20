@@ -1,0 +1,55 @@
+all_canaries_passed: true
+canary_timestamp: '2026-11-10T14:41:58Z'
+legacy_shims:
+  forge-777:
+    ok: true
+    resolved: forge-777
+  i-arif:
+    ok: true
+    resolved: i-arif
+production_untouched: true
+profiles:
+  code_deep:
+    analysis_delivered: true
+    elapsed: 31.757
+    positive: true
+    resolved_model: pool/coder-deep
+    status: 200
+  code_fast:
+    elapsed: 1.616
+    minimum_diff: true
+    positive: true
+    resolved_model: pool/fast
+    status: 200
+  general_fast:
+    contract_verified: true
+    elapsed: 17.098
+    positive: true
+    resolved_model: pool/fast
+    status: 200
+  governance:
+    elapsed: 3.755
+    enforced_hold: true
+    positive: true
+    resolved_model: pool/governance
+    status: 200
+  multimodal:
+    answered: true
+    elapsed: 1.049
+    positive: true
+    resolved_model: pool/multimodal
+    status: 200
+  protocol:
+    elapsed: 5.431
+    positive: true
+    resolved_model: pool/fast
+    schema_validity: true
+    status: 200
+  reasoning:
+    elapsed: 14.864
+    positive: true
+    resolved_model: pool/reasoning
+    status: 200
+    triad_separated: true
+staging_port: 4005
+verdict: CANARY_COMPLETED_PENDING_HUMAN_SEAL

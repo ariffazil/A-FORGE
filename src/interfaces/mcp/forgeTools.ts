@@ -66,6 +66,11 @@ import {
   recordModification,
   recordScar,
   recordFloorViolation,
+  setHypotheses,
+  evaluateQuantumCandidate,
+  collapseHypothesis,
+  selectAdmissible,
+  QuantumAxesError,
 } from "../../domain/reality-loop/engine.js";
 import type { RealityLoopConfig } from "../../domain/reality-loop/types.js";
 import type {
@@ -715,7 +720,7 @@ export function registerLeaseTools(server: McpServer): void {
       lease_id: z.string().optional().describe("Lease ID (status/revoke)"),
       agent_id: z.string().optional().describe("Agent ID (request/revoke)"),
       scope: z.array(z.string()).optional().describe("Tools to include (request)"),
-      max_action_class: z.enum(["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE", "PROPOSE", "MUTATE", "ATOMIC"]).default("EXECUTE_REVERSIBLE").describe("Max action class (request)"),
+      max_action_class: z.enum(["OBSERVE", "SUGGEST", "SIMULATE", "DRAFT", "QUEUE", "EXECUTE_REVERSIBLE", "EXECUTE_HIGH_IMPACT", "IRREVERSIBLE", "PROPOSE", "MUTATE", "ATOMIC"]).default("EXECUTE_REVERSIBLE").describe("Max action class (request). Valid enum: OBSERVE | SUGGEST | SIMULATE | DRAFT | QUEUE | EXECUTE_REVERSIBLE | EXECUTE_HIGH_IMPACT | IRREVERSIBLE | PROPOSE | MUTATE | ATOMIC. NOTE: This is an action class, NOT a governance tier label (do NOT pass T1, T2, or T3)."),
       ttl_seconds: z.number().default(300).describe("Lease TTL (request, max 3600)"),
       forbidden: z.array(z.string()).optional().describe("Forbidden tools (request)"),
       reason: z.string().optional().describe("Reason (revoke)"),
@@ -1900,7 +1905,7 @@ export function registerRealityLoopTools(server: McpServer): void {
       config: z.string().optional().describe('JSON config: {iteration_depth, max_hypotheses, action_budget, auto_execute, self_modify, seal_every_iteration, min_g_score=0.70, min_witness=0.70}. Thresholds are PHASE 1 HEURISTIC. Out-of-range (not in [0,1]) is clamped; non-finite falls back to default. Surfaced in start + seal response.'),
       // record mode args
       record_stage: z.string().optional().describe('Stage being recorded (record mode)'),
-      record_type: z.string().optional().describe('Type of record: evidence | hypothesis | action | entropy | mod | scar | violation'),
+      record_type: z.string().optional().describe('Type of record: evidence | hypothesis | action | entropy | mod | scar | violation | collapse'),
       record_value: z.string().optional().describe('JSON value to record'),
     },
     async (args) => {
@@ -2037,6 +2042,124 @@ export function registerRealityLoopTools(server: McpServer): void {
               case "violation":
                 result = recordFloorViolation(state, value as any);
                 break;
+              case "hypothesis": {
+                // Model proposes candidates + axes. Fields named score/G/eligible
+                // in the payload are NEVER read — the engine computes them.
+                const hv = value as Record<string, unknown>;
+                const rawList = Array.isArray(hv.hypotheses) ? (hv.hypotheses as unknown[]) : [hv];
+                const inputs = rawList.map((item) => {
+                  const rec = (item ?? {}) as Record<string, unknown>;
+                  return {
+                    statement: String(rec.statement ?? ""),
+                    supporting_evidence: Array.isArray(rec.supporting_evidence)
+                      ? (rec.supporting_evidence as string[])
+                      : [],
+                    contradicting_evidence: Array.isArray(rec.contradicting_evidence)
+                      ? (rec.contradicting_evidence as string[])
+                      : [],
+                    collapse_measurement: String(rec.collapse_measurement ?? ""),
+                    axes: (rec.axes ?? null) as any,
+                  };
+                });
+                if (inputs.some((h) => !h.statement.trim())) {
+                  return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", record_type: "hypothesis", error: "each hypothesis requires a non-empty statement" }, null, 2) }], isError: true };
+                }
+                let recorded: any[] = [];
+                try {
+                  recorded = setHypotheses(state, inputs as any);
+                } catch (err) {
+                  const e = err as InstanceType<typeof QuantumAxesError>;
+                  return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", record_type: "hypothesis", error: e?.message ?? String(err), failed_axes: e?.axesFailure ?? [] }, null, 2) }], isError: true };
+                }
+                const evaluations = recorded
+                  .filter((h) => h.axes != null)
+                  .map((h) => evaluateQuantumCandidate({
+                    hypothesisId: h.id,
+                    axes: h.axes,
+                    floor: state.effective_config.axis_floor,
+                    productFloor: state.effective_config.min_g_score,
+                    iteration: state.iteration,
+                  }));
+                const selection = selectAdmissible(evaluations);
+                // Telemetry provenance fix (2026-11-15): ingest MUST NOT write
+                // collapse telemetry. last_quantum_evaluation is set ONLY by a
+                // COLLAPSED result from collapseHypothesis. The selection above is
+                // advisory display for this response and never becomes provenance.
+                return {
+                  content: [{
+                    type: "text" as const,
+                    text: JSON.stringify({
+                      status: "OK",
+                      mode: "record",
+                      record_type: "hypothesis",
+                      session_id: args.session_id,
+                      hypotheses: recorded.map((h) => ({ id: h.id, axes: h.axes ?? null })),
+                      evaluations,
+                      selection: selection.status === "SELECTED"
+                        ? { status: "SELECTED", hypothesis_id: selection.evaluation.hypothesisId, score: selection.evaluation.score, min_axis: selection.evaluation.minAxis }
+                        : { status: "HOLD", reason: selection.reason },
+                      binding_gap: recorded.some((h) => h.axes == null)
+                        ? "candidates without axes cannot collapse (fail closed)"
+                        : undefined,
+                      timestamp: new Date().toISOString(),
+                    }, null, 2),
+                  }],
+                };
+              }
+              case "collapse": {
+                const cv = value as Record<string, unknown>;
+                let targetId = typeof cv.hypothesis_id === "string" ? cv.hypothesis_id : "";
+                if (!targetId) {
+                  // No explicit target: collapse the deterministic argmax selection.
+                  const evals = state.active_hypotheses
+                    .filter((h) => h.axes != null)
+                    .map((h) => evaluateQuantumCandidate({ hypothesisId: h.id, axes: h.axes!, floor: state.effective_config.axis_floor, productFloor: state.effective_config.min_g_score, iteration: state.iteration }));
+                  const sel = selectAdmissible(evals);
+                  if (sel.status !== "SELECTED") {
+                    return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", record_type: "collapse", reason: "no admissible candidate (A = empty) — least-bad fallback refused" }, null, 2) }] };
+                  }
+                  targetId = sel.evaluation.hypothesisId;
+                }
+                const target = state.active_hypotheses.find((h) => h.id === targetId);
+                if (!target) {
+                  return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", record_type: "collapse", reason: "hypothesis_not_found", hypothesis_id: targetId }, null, 2) }] };
+                }
+                if (target.axes == null) {
+                  return { content: [{ type: "text" as const, text: JSON.stringify({ status: "HOLD", record_type: "collapse", reason: "axes_unbound: candidate carries no structured axes (fail closed)", hypothesis_id: targetId }, null, 2) }] };
+                }
+                // Re-evaluate at collapse time — the gate never trusts a stale object.
+                const evaluation = evaluateQuantumCandidate({ hypothesisId: target.id, axes: target.axes, floor: state.effective_config.axis_floor, productFloor: state.effective_config.min_g_score, iteration: state.iteration });
+                const outcome = collapseHypothesis(state, target.id, evaluation);
+                return {
+                  content: [{
+                    type: "text" as const,
+                    text: JSON.stringify({
+                      status: outcome.status === "COLLAPSED" ? "COLLAPSED" : "HOLD",
+                      mode: "record",
+                      record_type: "collapse",
+                      session_id: args.session_id,
+                      hypothesis_id: target.id,
+                      reason: outcome.status === "REFUSED" ? outcome.reason : undefined,
+                      failed: outcome.status === "REFUSED" ? outcome.failed : undefined,
+                      evaluation: {
+                        score: evaluation.score,
+                        min_axis: evaluation.minAxis,
+                        floor: evaluation.floor,
+                        product_floor: evaluation.productFloor,
+                        score_gate_passed: evaluation.scoreGatePassed,
+                        eligible: evaluation.eligible,
+                        failed_axes: evaluation.failedAxes,
+                        evaluator_version: evaluation.evaluatorVersion,
+                        input_hash: evaluation.inputHash,
+                        evaluated_at: evaluation.evaluatedAt,
+                      },
+                      quantum_g_score: evaluation.score,
+                      collapsed: target.collapsed,
+                      collapsed_at: target.collapsed_at ?? null,
+                    }, null, 2),
+                  }],
+                };
+              }
               default:
                 return { content: [{ type: "text" as const, text: JSON.stringify({ error: `Unknown record_type: ${args.record_type}` }, null, 2) }], isError: true };
             }
@@ -2133,6 +2256,11 @@ export function registerRealityLoopTools(server: McpServer): void {
                   },
                   threshold_validation: sealState.threshold_validation,
                   calibration_required: true,
+                  quantum_collapse: {
+                    quantum_g_score: sealState.last_quantum_evaluation?.score ?? null,
+                    evaluation: sealState.last_quantum_evaluation,
+                    evaluator_version_policy: "telemetry comes from the deterministic evaluator, never from prompt text or model-reported scores",
+                  },
                   w3_advisory: w3Advisory.length > 0 ? w3Advisory : undefined,
                   instruction: "Iteration sealed to VAULT999. Call forge_reality_loop mode=advance to land on RETURN.",
                 }, null, 2),
@@ -2355,7 +2483,10 @@ export function registerPredictTools(server: McpServer): void {
         target: proposed_action,
         intent: proposed_action,
         tool_name: "forge_predict",
-        metadata: params as any,
+        // R-2026-11-15 (external probe): `mode` was destructured then dropped,
+        // so the simulator never saw the caller's requested mode and silently
+        // substituted mc defaults. Pass it through.
+        metadata: { ...(params as Record<string, unknown>), ...(mode ? { mode } : {}) } as any,
       };
 
       // Use the canonical preActionSimulation module when possible (Tier 2 wiring)

@@ -157,9 +157,14 @@ const GATE_PATTERNS: RegExp[] = [
   /\bbrew\s+uninstall\b/,
   /\bcargo\s+publish\b/,
 
-  // Network writes (still gated — external side effects)
-  /\bcurl\s+.*-X\s*(POST|PUT|DELETE|PATCH)\b/,
-  /\bwget\s+.*-O\s+/,
+  // Network writes (external side effects) — egress, never read-only.
+  // 2026-11-14 (333-AGI): any curl/wget invocation is egress-capable.
+  // Bare `curl URL` is NOT proof of GET: .curlrc / CURL_HOME can inject
+  // --request/--data, --config can load a method override, and new flags
+  // (--json, --request, --method) appear faster than a blacklist can track.
+  // Read-only network fetch must use the governed egress tool, not shell curl.
+  /\bcurl\b/,
+  /\bwget\b/,
   /\bscp\b/,
   /\brsync\b/,
 

@@ -23,11 +23,13 @@ import path from "node:path";
 const PROTOCOL_VERSION = process.env.MCP_PROTOCOL_VERSION || "2025-06-18";
 
 import { server, evaluateRefusalGate } from "./core.js";
+import { evaluateConstitutionalBind } from "./constitutionalBind.js";
 import { getConstitutionGate, CONSTITUTION_GATE } from "../../application/approval/index.js";
 import { getMemoryContract } from "../../domain/memory-contract/index.js";
 import { telemetry } from "./telemetry.js";
 import { getMcpPolicyGate, EXAMPLE_POLICIES } from "../../domain/governance/McpPolicyGate.js";
 import { validateIngressArgs } from "./statelessIngress.js";
+import { ensureSealLedgerRouting, sealLedgerHealth } from "./ledger/sealLedgerRouting.js";
 import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 
 // ── arifFlow Post-Execution Receipt Hook (F13-ratified 2026-09-17) ──
@@ -35,61 +37,11 @@ import type { VerdictResult } from "../../domain/governance/McpPolicyGate.js";
 // F2 TRUTH: receipts are evidence of execution, not assertion.
 // Fire-and-forget: never blocks the MCP response.
 
-const ARIFLOW_INGEST = "http://127.0.0.1:7073/ingest";
+// P1-7 (ARIF GO 2026-11-14): legacy local receipt mint REMOVED — canonical emitter
+// lives in core.ts (buildFlowReceipt/postFlowReceipt/withFlowReceipt) covering every
+// transport. This block previously minted schema-incomplete receipts (missing
+// receipt_id/created_at/cooling_decision) that silently 400'd at arifFlow /ingest.
 
-function classifyFlowStepType(toolName: string): string {
-  if (toolName.includes("check") || toolName.includes("verify") || toolName.includes("probe") ||
-      toolName.includes("health") || toolName.includes("scan") || toolName.includes("fingerprint")) {
-    return "Verify";
-  }
-  if (toolName.includes("seal") || toolName.includes("vault") || toolName.includes("canonize")) {
-    return "Seal";
-  }
-  if (toolName.includes("route") || toolName.includes("dispatch")) {
-    return "Route";
-  }
-  return "Execute";
-}
-
-function classifyFlowEpistemic(toolName: string): string {
-  if (toolName.includes("probe") || toolName.includes("health") || toolName.includes("status") ||
-      toolName.includes("scan") || toolName.includes("observe")) {
-    return "Observation";
-  }
-  if (toolName.includes("compute") || toolName.includes("score") || toolName.includes("evaluate")) {
-    return "Derivation";
-  }
-  if (toolName.includes("think") || toolName.includes("reason") || toolName.includes("analyze")) {
-    return "Interpretation";
-  }
-  return "Derivation";
-}
-
-let _flowReceiptSeq = 0;
-
-function mintFlowReceipt(
-  toolName: string,
-  actorId: string,
-  sessionId: string,
-  durationMs: number,
-  isError: boolean,
-): void {
-  const receipt = {
-    actor_id: actorId || "aforge-stateless",
-    session_id: sessionId || "http-stateless",
-    step_type: classifyFlowStepType(toolName),
-    step_number: ++_flowReceiptSeq,
-    epistemic_label: classifyFlowEpistemic(toolName),
-    floor_verdict: isError ? "Void" : "Pass",
-    cost_ns: Math.max(1, Math.round(durationMs * 1_000_000)),
-    payload: { tool: toolName, source: "aforge-post-exec-hook" },
-  };
-  fetch(ARIFLOW_INGEST, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(receipt),
-  }).catch(() => {}); // fire-and-forget; never blocks, never throws
-}
 import { aThinkCheck, aThinkErrorResponse } from "../../domain/governance/aThinkGuard.js";
 import { assertActMutationGateOrExit } from "../../infrastructure/governance/actIngress.js";
 import { classifyTool, requiresGovernance } from "../../domain/governance/actionClassifier.js";
@@ -181,6 +133,11 @@ const STATELESS_TOOLS = new Set([
   "forge_shell_status",
   "forge_shell_ledger",
   "forge_shell_alert_history",
+  // R-2026-11-15 (external probe SEAL-30b82fe057ca4950): chain heartbeat is a
+  // pure read (actionClassifier OBSERVE_TOOLS; R5 header: never writes a chain)
+  // but was absent here, so stateless external agents got SESSION_REQUIRED —
+  // the federation's liveness pulse was unobservable from outside.
+  "forge_chain_state",
   "forge_registry",
   "forge_document_ingest",                                   // Phase 1 — read-only, no side effects
 
@@ -577,6 +534,15 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
   // Seal-A condition 3: production + FORGE_ACT_REQUIRE_MUTATE=0 → FATAL before bind.
   assertActMutationGateOrExit(process.env);
 
+  // Workstream A (2026-10-31): every launch path either binds an explicit
+  // ledger segment or dies with a precise config error. Never a silent
+  // fallback to the frozen archive.
+  const ledgerRouting = ensureSealLedgerRouting();
+  process.stderr.write(
+    `[A-FORGE-MCP] Seal ledger: ${ledgerRouting.path} (source=${ledgerRouting.source}` +
+      `${ledgerRouting.bound_env ? ", env bound at boot" : ""})\n`,
+  );
+
   const memoryContract = getMemoryContract();
 
   // Constitution gate active — all approvals route through arifOS:8088
@@ -673,29 +639,40 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
       // Health endpoint
       if (req.url === "/health" || (req.url === "/" && req.method === "GET")) {
         const now = Date.now();
-        res.writeHead(200, {
-          "Content-Type": "application/json",
-          "MCP-Protocol-Version": PROTOCOL_VERSION,
-        });
-        res.end(JSON.stringify({
-          ok: true,
-          service: "A-FORGE-MCP",
-          status: "healthy",
-          version: MCP_VERSION,
-          commit: BUILD_COMMIT,
-          transport: "streamable-http",
-          // F2-fidelity fix (MCP-PROBE-2026-08-08): bridge shares organ identity
-          // with the canonical server. authority_ceiling prevents downstream
-          // agents from misidentifying the bridge's authority tier.
-          authority_ceiling: "777_FORGE",
-          sessions: connected ? "active" : "pending",
-          tools_listed: getServerTools().length,
-          stateless_tools: STATELESS_TOOLS.size,
-          session: connected ? {
-            idle_seconds: Math.round((now - lastActivityTime) / 1000),
-            age_seconds: Math.round((now - serverStartTime) / 1000),
-          } : null,
-        }));
+        // Workstream A (2026-10-31): the health payload must state the ledger's
+        // own derivation. A frozen/unwritable/unwritten ledger that reports
+        // only ok:true is an archive pretending to be governance.
+        void sealLedgerHealth()
+          .then((sealLedger) => {
+            res.writeHead(200, {
+              "Content-Type": "application/json",
+              "MCP-Protocol-Version": PROTOCOL_VERSION,
+            });
+            res.end(JSON.stringify({
+              ok: true,
+              service: "A-FORGE-MCP",
+              status: "healthy",
+              version: MCP_VERSION,
+              commit: BUILD_COMMIT,
+              transport: "streamable-http",
+              // F2-fidelity fix (MCP-PROBE-2026-08-08): bridge shares organ identity
+              // with the canonical server. authority_ceiling prevents downstream
+              // agents from misidentifying the bridge's authority tier.
+              authority_ceiling: "777_FORGE",
+              sessions: connected ? "active" : "pending",
+              tools_listed: getServerTools().length,
+              stateless_tools: STATELESS_TOOLS.size,
+              seal_ledger: sealLedger,
+              session: connected ? {
+                idle_seconds: Math.round((now - lastActivityTime) / 1000),
+                age_seconds: Math.round((now - serverStartTime) / 1000),
+              } : null,
+            }));
+          })
+          .catch((err: any) => {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ ok: false, service: "A-FORGE-MCP", status: "degraded", error: err?.message ?? String(err) }));
+          });
         return;
       }
 
@@ -1170,7 +1147,14 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
             }
 
             // Check whitelist — tool-level denial → isError envelope (Phase A3)
-            if (!STATELESS_TOOLS.has(toolName)) {
+            // MCP 2026-07-28 stateless: allow OBSERVE-only forge_telegram(get_me)
+            // or calls carrying explicit (session_id, session_token) for kernel
+            // pre-validation below; anonymous MUTATE remains blocked.
+            const hasExplicitSession = Boolean(toolArgs?.session_id && toolArgs?.session_token);
+            const isStatelessTelegramObserve =
+              toolName === "forge_telegram" &&
+              String(toolArgs?.mode ?? toolArgs?.verb ?? "get_me") === "get_me";
+            if (!STATELESS_TOOLS.has(toolName) && !hasExplicitSession && !isStatelessTelegramObserve) {
               const msg = `Tool "${toolName}" requires session ownership. Use session-based connection or connect via stdio.`;
               process.stderr.write(`[A-FORGE-MCP] Rejected stateless call: ${toolName}\n`);
               res.writeHead(200, {
@@ -1250,6 +1234,36 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 result: refusalVerdict.response,
               }));
               return;
+            }
+
+            // ── GATE 0b: CONSTITUTIONAL BINDING (F13 2026-10-31) ─────────────
+            // A mutation-class forge_shell may not reach the executor without a
+            // valid TaskIntent, fresh BaselineWitness (examined_count>0), exact
+            // ExecutionPlan (plan_hash match), ALLOW RiskEnvelope and a scoped,
+            // unexpired, single-use AuthorizationGrant. Fail closed. No warn mode.
+            {
+              const bindVerdict = evaluateConstitutionalBind(
+                toolName,
+                (toolArgs && typeof toolArgs === "object") ? toolArgs : {},
+              );
+              if (bindVerdict.blocked) {
+                process.stderr.write(
+                  `[A-FORGE-MCP] BINDING REFUSED (${bindVerdict.code}): ${toolName} — ${bindVerdict.reasons.join("; ")}\n`,
+                );
+                res.writeHead(200, {
+                  "Content-Type": "application/json",
+                  "X-AForge-Gate": "CONSTITUTIONAL_BIND",
+                });
+                res.end(toolIsErrorResult(msgId, `Constitutional binding refused: ${bindVerdict.code}`, {
+                  error_class: "CONSTITUTIONAL_BIND_REFUSED",
+                  recoverability: "AGENT_CAN_RETRY",
+                  gate: "CONSTITUTIONAL_BIND",
+                  code: bindVerdict.code,
+                  reasons: bindVerdict.reasons,
+                  tool: toolName,
+                }));
+                return;
+              }
             }
 
             const preSessionId = (typeof toolArgs?.session_id === "string") ? toolArgs.session_id : undefined;
@@ -1417,14 +1431,8 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
                 verdict: normalized?.isError ? "failure" : "success",
                 actor_id: toolArgs?.actor_id ?? "stateless-client",
               }, `${toolName} → ${normalized?.isError ? "isError" : "success"}`);
-              // ── arifFlow post-execution receipt (F13-ratified 2026-09-17) ──
-              mintFlowReceipt(
-                toolName,
-                toolArgs?.actor_id ?? toolArgs?.actorId ?? "",
-                toolArgs?.session_id ?? "",
-                _toolDurationMs,
-                !!(normalized && typeof normalized === "object" && normalized.isError),
-              );
+              // P1-5 full hook: receipt minted at the registration chokepoint (core.ts
+              // withFlowReceipt) — covers every transport; no double-mint here.
               res.writeHead(200, { "Content-Type": "application/json" });
               res.end(jsonRpcResult(msgId, normalized));
             } catch (err: any) {

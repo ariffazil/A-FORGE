@@ -41,6 +41,9 @@ export interface FlowReceiptIngest {
   actor_id: string;
   session_id: string;
   session_token: string | null;
+  /** 2026-11-18 (333-AGI, binding-gap item 2): name the organ at the builder —
+   *  44,573/54,764 receipts had routed_organ null (54,764-row audit). */
+  routed_organ: string | null;
   step_type: RustStepType;
   topology_id: string | null;
   lane_id: number | null;
@@ -194,7 +197,26 @@ export async function emitReceipt(
     created_at: new Date().toISOString(),
     actor_id: params.actor_id,
     session_id: params.session_id,
-    session_token: null,
+    // 2026-11-18 (333-AGI, binding-gap item 2 + F13 design correction):
+    // session_token was hardcoded null on every A-FORGE receipt (54,764-row
+    // audit: A-FORGE 0/6,522). CONTRACT (F13, 2026-11-18): receipts carry a
+    // grant REFERENCE — issuer id + scope + verification decision bound to
+    // this action — NEVER a raw reusable credential (act_v1 bearer string).
+    // Transport does NOT verify: arifFlow is METABOLIZE_ONLY (carries, never
+    // judges). A token-shaped string here proves nothing; authority is only
+    // established at consumption via kernel arif_verify (token_valid /
+    // scope_valid / replay_safe). Null, never fabricated, when absent.
+    // 2026-11-18 (F13 "fix all"): raw-credential guard — an act_v1./sk-/ghp_
+    // shaped lease is NEVER emitted (arifFlow 422s it at ingest anyway);
+    // carry session_grant.grant_ref when the full schema wiring lands.
+    session_token: (() => {
+      const raw = (params.lease_id || '').trim().replace(/^Bearer\s+/i, '');
+      if (raw.startsWith('act_v1.') || raw.startsWith('sk-') || raw.startsWith('ghp_')) {
+        return null; // raw credential — never emitted; 422 at ingest regardless
+      }
+      return raw || null;
+    })(),
+    routed_organ: params.organ || 'A-FORGE',
     step_type: (params.step_type || 'Execute') as RustStepType,
     topology_id: null, lane_id: null, step_number: 0,
     cost_ns: params.cost_ns || 0,

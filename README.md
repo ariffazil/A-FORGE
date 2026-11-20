@@ -1,12 +1,12 @@
 <!-- CURRENT-VERIFIED-STATE :: 2026-10-11 hand-audit evidence lives in the GENERATED block below + docs/state/forge-state.json · pre-doctrine text: docs/archive/README-2026-10-16-pre-doctrine.md -->
 
 <!-- SOT-MANIFEST
-federation_release: v2026.09.17
-last_verified: 2026-09-16T16:35:00Z
-live_commit: cbc25cb4 (runtime-reported via :7072/health)
+federation_release: v2026.09.30-fix
+last_verified: 2026-11-14T07:37:42Z
+live_commit: 271047e5 (runtime-reported via :7072/health)
 sense_port: 7071 (healthy)
 forge_port: 7072 (healthy)
-tools_live: 122 (tools_listed via :7072/health · re-probed 2026-10-11) · 87 stateless
+tools_live: 99 (tools_listed via :7072/health · re-probed 2026-11-14) · 87 stateless
 authority_ceiling: 777_FORGE (execution only — never adjudicate)
 apex_zen: A2A delegates ⊥ MCP equips ⊥ ACT mutates ⊥ arifOS governs ⊥ F13 decides
 act_ingress: HMAC-SHA256 PATH PRESENT · end-to-end identity binding NOT proven (sessionGate verdict-string inference is an open defect — see generated block)
@@ -19,7 +19,7 @@ public_a2a_card: none by default — A-FORGE is actuator, not a public A2A mind
 <!-- GENERATED:CURRENT-STATE:BEGIN · source: scripts/generate_forge_state.py · never hand-edit -->
 > ### ⚠️ Current verified state — generated, never hand-edited
 >
-> **Runtime self-measurement** (`http://127.0.0.1:7072/health @2026-10-16T09:05:54Z`): **healthy** · commit `adb09ef3` · tools listed **122** (87 stateless) · authority ceiling `777_FORGE` · transport streamable-http.
+> **Runtime self-measurement** (`http://127.0.0.1:7072/health @2026-11-14T07:37:42Z`): **healthy** · commit `271047e5` · tools listed **99** (87 stateless) · authority ceiling `777_FORGE` · transport streamable-http.
 >
 > **Independent/hand audit** (2026-10-11, live re-probe by FI-008 (forge_registry_status + observed MUTATE-class call)): a MUTATE-class call without presented authority was stopped by A_THINK_GUARD (BUDGET: max_tools=0). Enforcement is **action class + budget — NOT a SEAL verdict binding**. **Audit follow-up (2026-10-19, code re-read):** two defects from that audit are already fixed in code — `invocationLog.ts` now writes `verdict`, `gate`, `can_claim_success` and defaults `ok:false` on HOLD/VOID; `sessionGate.ts` now verifies only `actor.actor_verified === true` (the `status=="resumed"` / `verdict=="SEAL"` inference is removed). **Still open:** `forgeShell.ts`, `mcp-bridge.ts`, and `interfaces/mcp/core.ts:1452` still infer identity/validity from `status=="PASS"/"resumed" || verdict=="SEAL"`; `mcp-bridge.ts` also defaults `scope_valid`/`replay_safe` to true when `meta.*` is absent; default session ids still use a `SEAL-` prefix; refusal-cause coverage in the ledger is not proven.
 >
@@ -80,7 +80,7 @@ npm ci && npm run build && npm start
 
 # inspect the live registry — no session, no mutation
 curl -sf http://localhost:7072/health | jq '{status, commit, tools_listed, stateless_tools}'
-# → { "status": "healthy", "commit": "adb09ef3", "tools_listed": 122, "stateless_tools": 87 }   (probe 2026-10-16)
+# → { "status": "healthy", "commit": "271047e5", "tools_listed": 99, "stateless_tools": 87 }   (probe 2026-11-14)
 
 curl -sf http://localhost:7072/tools/list | jq 'map({name, description})[:5]'
 ```
