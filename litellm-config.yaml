@@ -1742,6 +1742,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_reasoning: true
     supports_vision: true
     supports_audio_input: true
     supports_video_input: true
@@ -1780,6 +1781,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_reasoning: true
     supports_vision: true
     supports_audio_input: true
     supports_video_input: true
@@ -1818,6 +1820,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_reasoning: true
     supports_vision: true
     supports_audio_input: true
     supports_video_input: true
@@ -1856,6 +1859,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_reasoning: true
     supports_vision: true
     supports_audio_input: true
     supports_video_input: true
@@ -1892,6 +1896,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_reasoning: true
     supports_vision: true
     supports_audio_input: true
     supports_video_input: true
@@ -1928,6 +1933,7 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
+    supports_reasoning: true
     supports_vision: true
     supports_audio_input: true
     supports_video_input: true
@@ -1935,6 +1941,65 @@ model_list:
     notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url
       in content[]. Token Plan endpoint. Cheaper than Pro. Same modality support as
       v2.6-pro.'
+- model_name: mimo-v2.6-pro-ultraspeed
+  litellm_params:
+    model: openai/mimo-v2.6-pro-ultraspeed
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params:
+    - include
+    api_key: os.environ/MIMO_INDIVIDUAL_PLAN_API_KEY
+    order: 1
+    rpm: 90
+    tpm: 9000000
+  model_info:
+    cost_class: plan
+    price_status: plan_quota
+    price_usd_per_1m_in: 0.0
+    price_usd_per_1m_out: 0.0
+    price_source: mimo_token_plan_seat
+    price_declared_at: '2026-11-21'
+    spendable: false
+    quota_bearing: true
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_reasoning: true
+    supports_vision: false
+    supports_audio_input: false
+    supports_video_input: false
+    notes: 'NEW ENTITLEMENT 2026-11-21: MiMo-V2.6-Pro-UltraSpeed entered Token Plan
+      (Pro/Max promo, vendor notice 2026-11-20); previously PAYG-only. Chat verified
+      200 on the individual MAX seat (content=ULTRA_OK, reasoning_tokens=14) so the
+      v2.5-era "no thinking mode" scar does not carry. TEXT ONLY declared: image/audio/
+      video were NOT re-probed on this id, so capability flags stay false rather than
+      inherit v2.6-pro claims. Team seats 429 dry -> order-991 rung below.'
+- model_name: mimo-v2.6-pro-ultraspeed
+  litellm_params:
+    model: openai/mimo-v2.6-pro-ultraspeed
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params:
+    - include
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 991
+    rpm: 90
+    tpm: 9000000
+  model_info:
+    cost_class: plan
+    price_status: plan_quota
+    price_usd_per_1m_in: 0.0
+    price_usd_per_1m_out: 0.0
+    price_source: mimo_token_plan_seat
+    price_declared_at: '2026-11-21'
+    spendable: false
+    quota_bearing: true
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_reasoning: true
+    supports_vision: false
+    notes: 'Self-heal rung: team seat is 429 dry until ~2026-12-01; kept at order 991
+      so the alias becomes multi-seat the moment the team quota renews, without a
+      config change. Individual seat (order 1) is the live path.'
 - model_name: glm-5.2
   litellm_params:
     model: openai/glm-5.3
