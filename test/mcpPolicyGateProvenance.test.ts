@@ -9,6 +9,7 @@ import {
   canonicalAttestationPayload,
   computeExecutableTreeSha256,
   computeFileSha256,
+  deriveGateHealthStatus,
 } from "../src/domain/governance/McpPolicyGate.js";
 import { NonceStore } from "../src/domain/governance/nonceStore.js";
 
@@ -186,4 +187,15 @@ test("6. Attestation missing -> FAIL CLOSED, never fall back to allow_by_default
   } finally {
     rmSync(f.dir, { recursive: true, force: true });
   }
+});
+
+// 2026-11-21 (333-AGI): Machine Rule 1 — every green can go red. The sense-port
+// /health `status`/`ok`/`degraded_mode` fields must flip on pin violation, because
+// the federation heartbeat reads verdict/status (organ_heartbeat_daemon.py:83).
+test("7. deriveGateHealthStatus — pin violation turns health red (green can go red)", () => {
+  assert.equal(deriveGateHealthStatus(false, false, false), "healthy");
+  assert.equal(deriveGateHealthStatus(true, false, false), "degraded");
+  assert.equal(deriveGateHealthStatus(false, true, false), "degraded");
+  assert.equal(deriveGateHealthStatus(false, false, true), "degraded");
+  assert.equal(deriveGateHealthStatus(true, true, true), "degraded");
 });

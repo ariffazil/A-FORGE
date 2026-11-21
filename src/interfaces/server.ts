@@ -71,7 +71,7 @@ import {
 import { validateSession } from "../domain/session/sessionGate.js";
 import { classifyTool, isClassifiedTool, requiresGovernance, requires888Hold } from "../domain/governance/actionClassifier.js";
 import { sealLedgerHealth } from "./mcp/shell/arifSeal.js";
-import { getMcpPolicyGate } from "../domain/governance/McpPolicyGate.js";
+import { getMcpPolicyGate, deriveGateHealthStatus } from "../domain/governance/McpPolicyGate.js";
 import {
   gateToolClaim,
   claimGateHoldBody,
@@ -1190,9 +1190,12 @@ app.get("/health", async (_req: Request, res: Response) => {
   // 2026-10-26 (333-AGI): a frozen/unwritable seal ledger must be visible in
   // health, never swallowed. See sealLedgerHealth() for the freeze note.
   const sealLedger = await sealLedgerHealth();
+  // 2026-11-21 (333-AGI): pin violation now flips ok/degraded_mode/status —
+  // the heartbeat reads verdict/status, so health must be able to go red.
+  const policyGateStatus = getMcpPolicyGate().getPinStatus();
   res.json({
-    ok: !isDegradedMode && !deploymentDrift, // legacy alias — prefer status
-    degraded_mode: isDegradedMode || deploymentDrift,
+    ok: !isDegradedMode && !deploymentDrift && !policyGateStatus.pin_violated, // legacy alias — prefer status
+    degraded_mode: isDegradedMode || deploymentDrift || policyGateStatus.pin_violated,
     service: "A-FORGE-sense",
     version: FORGE_VERSION,
     federation_schema_version: "2.0.0",
@@ -1212,8 +1215,8 @@ app.get("/health", async (_req: Request, res: Response) => {
     // 2026-10-26 (333-AGI): the pin violation used to be stderr-only. Health now
     // states which policy is actually in force, so a green boot cannot be read
     // as "reviewed policies loaded".
-    policy_gate: getMcpPolicyGate().getPinStatus(),
-    status: isDegradedMode || deploymentDrift ? "degraded" : "healthy",
+    policy_gate: policyGateStatus,
+    status: deriveGateHealthStatus(policyGateStatus.pin_violated, isDegradedMode, deploymentDrift),
     apex_scalars: apexScalars,
     // F2-fidelity fix (MCP-PROBE-2026-08-08): UNMEASURED is by-design delegation
     // to the kernel, not decorative threshold. See R2-CONTRADICTION-REGISTER C11.

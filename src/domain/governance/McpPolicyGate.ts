@@ -1208,6 +1208,21 @@ export class McpPolicyGate {
   }
 }
 
+/**
+ * Health-status mapping for the sense-port /health field (Machine Rule 1,
+ * 2026-11-21): a FAIL_CLOSED_PIN_VIOLATION must turn `status`/`ok` red —
+ * the federation heartbeat reads verdict/status, so a gate that fails closed
+ * while health stays "healthy" is a green that can never go red.
+ * Exported for unit proof in test/mcpPolicyGateProvenance.test.ts.
+ */
+export function deriveGateHealthStatus(
+  pinViolated: boolean,
+  degraded: boolean,
+  drift: boolean,
+): "degraded" | "healthy" {
+  return degraded || drift || pinViolated ? "degraded" : "healthy";
+}
+
 // ── Default sovereign policy ──────────────────────────────────────────
 
 function buildDefaultSovereignPolicy(): McpPolicy {
