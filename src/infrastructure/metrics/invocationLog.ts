@@ -109,29 +109,82 @@ function round3(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
 
+/** Hard bound on a recorded refusal cause. A ledger line is not a log dump. */
+const REFUSAL_CAUSE_MAX = 200;
+
+/** Same redaction intent as domain/engine/redact.ts, applied on every path. */
+const SECRET_PATTERNS: Array<[RegExp, string]> = [
+  // Real provider keys carry hyphens (sk-live-…, sk-proj-…), so the class
+  // must include '-' as well as case: domain/engine/redact.ts's lowercase-only
+  // form misses them.
+  [/sk-[A-Za-z0-9_\-]{12,}/g, "sk-[redacted]"],
+  [/Bearer\s+[A-Za-z0-9._\-]{8,}/gi, "Bearer [redacted]"],
+  [/\b(api[_-]?key|token|secret|password|authorization)\b\s*[:=]\s*\S+/gi, "$1=[redacted]"],
+  [/https?:\/\/[^\s]+/gi, "[url]"],
+];
+
+/**
+ * Bound and redact an error-derived refusal cause.
+ *
+ * F9/F1: a failed invocation must never persist secrets, stack dumps or
+ * unbounded exception text. Control characters and newlines are collapsed so
+ * one invocation always stays one JSONL line.
+ */
+export function sanitizeRefusalCause(raw: string): string {
+  let s = String(raw)
+    .replace(/[\u0000-\u001f\u007f]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  for (const [pattern, replacement] of SECRET_PATTERNS) s = s.replace(pattern, replacement);
+  if (!s) return "unspecified_failure";
+  return s.length > REFUSAL_CAUSE_MAX ? `${s.slice(0, REFUSAL_CAUSE_MAX - 1)}…` : s;
+}
+
+/**
+ * Derive the refusal cause for one invocation (P0-1).
+ *
+ * Precedence:
+ *  1. an explicitly supplied refusal_cause is preserved verbatim;
+ *  2. a HOLD/VOID constitutional refusal keeps its existing cause derivation;
+ *  3. any other failed invocation (ok === false) gets a sanitized cause from
+ *     its error, or the stable fallback `unspecified_failure`;
+ *  4. a successful invocation is never given a fabricated cause.
+ *
+ * This function observes failures. It never turns an ordinary runtime error
+ * into a constitutional verdict — `verdict` stays null when no authoritative
+ * verdict was supplied.
+ */
+export function deriveRefusalCause(opts: InvocationOptions, okFlag: boolean): string | null {
+  if (opts.refusalCause) return opts.refusalCause;
+  if (opts.verdict === "HOLD" || opts.verdict === "VOID") {
+    return opts.error ? sanitizeRefusalCause(opts.error) : "UNSPECIFIED_REFUSAL";
+  }
+  if (!okFlag) {
+    return opts.error ? sanitizeRefusalCause(opts.error) : "unspecified_failure";
+  }
+  return null;
+}
+
 /** Build the record exactly as invocation_log.py builds it. */
 export function buildInvocationRecord(tool: string, opts: InvocationOptions = {}): Record<string, unknown> {
   const now = Date.now();
+  // F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.7.
+  // Default ok:false when a HOLD/VOID verdict is present — invocationLog
+  // MUST NOT persist a kernel refusal as execution success.
+  const okFlag = opts.ok !== false && opts.verdict !== "HOLD" && opts.verdict !== "VOID";
   const rec: Record<string, unknown> = {
     ts: new Date(now).toISOString().slice(0, 19) + "Z",
     organ: ORGAN,
     tool,
     actor_id: opts.actorId ?? null,
-    // F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.7.
-    // Default ok:false when a HOLD/VOID verdict is present — invocationLog
-    // MUST NOT persist a kernel refusal as execution success.
-    ok: opts.ok !== false && opts.verdict !== "HOLD" && opts.verdict !== "VOID",
+    ok: okFlag,
     can_claim_success: opts.can_claim_success ?? (opts.verdict !== "HOLD" && opts.verdict !== "VOID"),
     verdict: opts.verdict ?? null,
     gate: opts.gate ?? null,
     // E5 (FEDERATION_REALITY_DISTILLATION 2026-10-19): governance semantics stay
     // on the receipt. A HOLD/VOID without its cause is a fidelity failure.
     governance_verdict: opts.governanceVerdict ?? opts.verdict ?? null,
-    refusal_cause:
-      opts.refusalCause ??
-      (opts.verdict === "HOLD" || opts.verdict === "VOID"
-        ? (opts.error ? String(opts.error).slice(0, 200) : "UNSPECIFIED_REFUSAL")
-        : null),
+    refusal_cause: deriveRefusalCause(opts, okFlag),
     duration_ms: opts.durationMs === null || opts.durationMs === undefined ? null : round3(opts.durationMs),
     session_id: opts.sessionId ?? null,
     epoch: now / 1000,
