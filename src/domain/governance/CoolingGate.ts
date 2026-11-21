@@ -29,7 +29,8 @@ function getCoolingStatePath(): string {
   return process.env.COOLING_STATE_PATH ?? "/root/AAA/registries/cooling_state.json";
 }
 
-const AUTONOMOUS_KERNEL_SESSION = "SEAL-c001c0ffeec001d0";
+// Non-SEAL sentinel (F13 plan-2026-10-11-0742 F.4) — see LongTermMemory.ts.
+const AUTONOMOUS_KERNEL_SESSION = "aforge-c001c0ffeec001d0";
 
 // ═══════════════════════════════════════════════════════════
 // Constants

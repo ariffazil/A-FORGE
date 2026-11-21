@@ -17,7 +17,8 @@ import { homedir } from "node:os";
 import { aaaMemoryGate, type MemoryReceipt } from "../aaa/AaaMemoryLinkage.js";
 import type { MemoryAction } from "../aaa/AaaCapabilityGraph.js";
 
-const AUTONOMOUS_KERNEL_SESSION = "SEAL-c0dec0dec0dec0de";
+// Non-SEAL sentinel (F13 plan-2026-10-11-0742 F.4) — see LongTermMemory.ts.
+const AUTONOMOUS_KERNEL_SESSION = "aforge-c0dec0dec0dec0de";
 
 // ============================================================================
 // MEMORY TIERS

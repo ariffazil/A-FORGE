@@ -23,7 +23,10 @@ import { arifosStore, arifosSearch } from "./ArifOSMemoryClient.js";
 import { logFederationFailure } from "./LongTermMemoryFailureLog.js";
 import { aaaMemoryGate, type MemoryReceipt } from "../../domain/aaa/AaaMemoryLinkage.js";
 
-const AUTONOMOUS_KERNEL_SESSION = "SEAL-17a17a17a17a17a1";
+// Non-SEAL sentinel (F13 plan-2026-10-11-0742 F.4): autonomous writes must not
+// manufacture a SEAL_SESSION_PATTERN-matching id — genuine SEAL-* ids are
+// kernel-minted only.
+const AUTONOMOUS_KERNEL_SESSION = "aforge-17a17a17a17a17a1";
 
 interface FederationRecord {
   id: string;

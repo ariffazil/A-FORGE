@@ -134,7 +134,7 @@ export interface ActionRequest {
   tier: EpistemicTier;
   /** Actor invoking the action (e.g. "arif-fazil", "opencode-session-1"). */
   actor: string;
-  /** Session identifier (e.g. "SEAL-81c333c962734407"). */
+  /** Session identifier (kernel-minted SEAL-* token, or a non-SEAL internal sentinel). */
   session_id: string;
   /** Plain-language intent for the action. */
   intent: string;

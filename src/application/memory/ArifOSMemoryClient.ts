@@ -108,7 +108,10 @@ export async function arifosStore(params: {
 }): Promise<ArifosStoreResult> {
   const actorId = params.actor_id ?? DEFAULT_ACTOR_ID;
   const tier = params.tier ?? "session";
-  const session_id = params.session_id ?? "SEAL-a11fa11fa11fa11f";
+  // F13 ruling (plan-2026-10-11-0742 F.4, ShortTermMemory precedent): defaults
+  // must never match SEAL_SESSION_PATTERN (/^SEAL-[a-f0-9]{16}$/) or a
+  // no-session caller inherits format-level SEAL authority by string shape.
+  const session_id = params.session_id ?? "aforge-anonymous";
   const ctx = params.context ?? "normal";
 
   try {
@@ -244,7 +247,7 @@ export async function arifosSearch(params: {
           arguments: {
             mode: "search",
             query: params.query,
-            session_id: params.session_id ?? "SEAL-a11fa11fa11fa11f",
+            session_id: params.session_id ?? "aforge-anonymous",
             actor_id: actorId,
             limit: params.limit ?? 5,
             context: params.context ?? "normal",
