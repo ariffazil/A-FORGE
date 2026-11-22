@@ -3398,7 +3398,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/OPENROUTER_API_KEY
-    order: 91
+    order: 5
   model_info:
     cost_class: payg
     price_status: unverified
@@ -3411,7 +3411,54 @@ model_list:
     mode: chat
     notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
       direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*. | PROMOTED 2026-11-22 333-AGI (F13 directive: make sure openrouter is part of i-ARIF): order 91 -> 5, now a live i-arif rung. Restore order 91 to park.'
+- model_name: i-arif
+  litellm_params:
+    model: openai/google/gemini-3.1-pro-preview
+    api_base: https://openrouter.ai/api/v1
+    additional_drop_params:
+    - include
+    api_key: os.environ/OPENROUTER_API_KEY
+    order: 6
+    extra_body:
+      provider:
+        order:
+        - Google AI Studio
+        - Google
+        allow_fallbacks: true
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'i-arif A2H DIALECT VOICE (Penang Utara) — wired 2026-11-22 by 333-AGI under the F13
+      directive to choose the most A2H model that speaks Penang Utara and put it in the i-arif
+      chain. MEASURED 2026-11-22, 2-prompt dialect battery vs 15 candidates: this rung produced
+      the most authentic northern register (baq hang / habaq awai-awai / nasi kandaq / beratoq /
+      mengulaq / sabaq). Runner-up google/gemini-3.8-flash (cheaper and faster, near-equal
+      fidelity); z-ai/glm-5.3 best short-form but reasoning-starved at low max_tokens;
+      moonshotai/kimi-k3 warm but uses Kedah/Perlis mok; x-ai/grok-4.20 fastest but fabricated
+      BM shop addresses; deepseek/minimax/qwen weak on dialect. INVARIANT NOTE: validator
+      active_gemini_count 1 -> 2 (FED contract bans gemini rungs; already failing at 1 via
+      gemini-flash-lite) — F13-open: amend contract or drop this rung. Revert: delete this block
+      and restore order 91 on the openrouter deepseek rung.'
+  model_info:
+    cost_class: payg
+    price_status: openrouter_listed_tiered
+    price_source: openrouter_models_endpoints_api_2026-11-22
+    price_declared_at: '2026-11-22'
+    spendable: true
+    input_cost_per_token: 1.0e-06
+    output_cost_per_token: 6.0e-06
+    max_input_tokens: 1048576
+    max_output_tokens: 65536
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'A2H dialect voice rung. OpenRouter provider pinned Google AI Studio -> Google with
+      allow_fallbacks true so a Google outage degrades to another host instead of killing the
+      rung. OpenRouter tiers 2026-11-22: 1.0/6.0, 2.0/12.0, 3.6/21.6 USD per 1M — declared value
+      is the cheapest tier; price_status tiered.'
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
