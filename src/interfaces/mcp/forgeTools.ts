@@ -1518,7 +1518,7 @@ export function registerGovernedTools(server: McpServer): void {
   // ── forge_evaluate — standalone G = (A·P·E·X)^(1/4) gate ──────────────────
   server.tool(
     "forge_evaluate",
-    "APEX v36Ω evaluation gate (G-SPACE CANONICAL). Computes G = (A·P·E·X)^(1/4) with is_canonical_g=true. P=Present Authority (T-000 canonical; not Purpose, not Physics — F13 ruling 2026-10-02). Φ is scar pressure, not a 5th dial. Returns SEAL/REVIEW/VOID. Does NOT generate code. HARAM: do not confuse with forge_apex_encode Jacobian G_local (is_canonical_g=false).",
+    "Static tool-registration gate (H1 Option A: G_spec / spec_stability). Computes G_spec = (A·P·E·X)^(1/4) where P=spec_stability (NOT runtime authority; runtime_authority_granted=false). Returns SEAL/REVIEW/VOID for tool specs only. Refuses runtime-authority claims as VOID. Does NOT generate code or grant execution authority.",
     {
       tool_name: z.string().describe("Proposed tool name (forge_* convention)"),
       description: z.string().min(10).max(2000).describe("Natural-language description"),

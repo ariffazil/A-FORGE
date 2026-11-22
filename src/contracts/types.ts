@@ -123,6 +123,14 @@ export interface GateDecision {
 
   /** G = (A · P · E · X)^(1/4) — local actuator estimate (NOT kernel G-fold) */
   G: number;
+  /** H1 Option A: static tool-registration score alias (explicitly non-authoritative) */
+  G_spec?: number;
+  /** H1 Option A: static spec-stability dial alias of scores.P (NOT runtime authority) */
+  spec_stability?: number;
+  /** H1 Option A: explicitly pins forge_evaluate to static tool-registration gating only */
+  gate_scope?: "static_tool_registration";
+  /** H1 Option A: forge_evaluate never grants runtime execution authority */
+  runtime_authority_granted?: false;
   /** C_dark = A · (1-P) · (1-X) — local misalignment vector */
   C_dark: number;
   /** Authority stamp — constitutional G is arif_think.mode=apex only */
