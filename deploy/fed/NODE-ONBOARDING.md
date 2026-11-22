@@ -23,24 +23,41 @@ kvm2  azwaos / flow-edge      fed-tunnel.service: 127.0.0.1:4000 → kvm4 litell
 
 ## 1. kvm4 repair (highest-value stabilization)
 
-Observed defect: `token_bank.db` is 0 bytes with no `token_bank_spend` table, so
-the spend callback has nowhere to INSERT. Requests still return 200; rows are lost.
+**Root cause (OBS 2026-11-22T07:52Z):** two defects stacked.
+
+1. `/root/A-FORGE/scripts/data` is bind-mounted into the container **read-only**
+   (`RW=false`). Every SQLite write fails with `attempt to write a readonly database`,
+   and `fed_spend_callback.py` catches and discards the exception. Requests return 200
+   while every lineage row is lost.
+2. `token_bank.db` was 0 bytes with no `token_bank_spend` table (fixed additively on
+   2026-11-22T07:48Z; schema now present, rows still 0 because of defect 1).
+
+Fix requires a container **recreate** (mount flags cannot change on a running
+container). Compose project `fed`, file `/docker/litellm/docker-compose.yml`,
+restart policy `always`.
 
 Order of operations (each step reversible, each step gated):
 
-1. **Back up** the current callback + config:
+0. **Prove the mount state:**
+   `docker inspect litellm --format '{{range .Mounts}}{{.Destination}} RW={{.RW}}{{println}}{{end}}'`
+   Expect `/app/data RW=false` before the fix.
+1. **Back up** the current callback + config + compose:
    `cp /root/A-FORGE/scripts/data/fed_attribution_callback.py{,.bak-$(date -u +%Y%m%dT%H%M%SZ)}`
    `cp /docker/litellm/config.yaml{,.bak-$(date -u +%Y%m%dT%H%M%SZ)}`
-2. **Initialize the ledger** (additive, idempotent):
+   `cp /docker/litellm/docker-compose.yml{,.bak-$(date -u +%Y%m%dT%H%M%SZ)}`
+2. **Flip the mount to rw** in `/docker/litellm/docker-compose.yml`:
+   `/root/A-FORGE/scripts/data:/app/data:ro` → `...:rw`
+3. **Initialize the ledger** (additive, idempotent) — already done once:
    `python3 scripts/init_fed_ledger.py --db /root/A-FORGE/scripts/data/token_bank.db`
-3. **Deploy the same callback version as kvm8** (PR-FED-1 artifact) into
+4. **Deploy the same callback version as kvm8** (PR-FED-1 artifact) into
    `/root/A-FORGE/scripts/data/fed_attribution_callback.py`.
-4. **Set the node identity** on the receiving gateway:
-   `FED_ENTRY_GATEWAY=litellm_kvm4_4000` in the container environment.
-5. **Restart only litellm** (deploy gate) and watch:
+5. **Set the node identity** on the receiving gateway:
+   `FED_ENTRY_GATEWAY=litellm_kvm4_4000` in the compose environment.
+6. **Recreate only litellm** (deploy gate):
+   `cd /docker/litellm && docker compose up -d` and watch:
    `docker logs --since 5m litellm | grep -iE "attribution|traceback|error"`
-6. **Canary:** `python3 scripts/fed_flow_probe.py --live --base-url http://100.64.0.5:4000/v1 --node kvm4`
-7. **Receipt:** append before/after row counts + canary verdict.
+7. **Canary:** `python3 scripts/fed_flow_probe.py --live --base-url http://100.64.0.5:4000/v1 --node kvm4`
+8. **Receipt:** append before/after row counts + canary verdict.
 
 ## 2. kvm2 (edge consumer)
 

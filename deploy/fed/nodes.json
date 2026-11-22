@@ -34,7 +34,7 @@
         "callback": "/root/A-FORGE/scripts/data/fed_attribution_callback.py",
         "ledger": "/root/A-FORGE/scripts/data/token_bank.db",
         "status": "active_degraded_ledger",
-        "observed_defect": "token_bank.db is 0 bytes with no token_bank_spend table (probed 2026-11-22T07:43Z); spend inserts cannot land"
+        "observed_defect": "token_bank.db 0 bytes with no token_bank_spend table AND /root/A-FORGE/scripts/data is bind-mounted into the container RW=false (probed 2026-11-22T07:52Z). Every ledger write fails with 'attempt to write a readonly database' and the spend callback swallows the exception. Requests return 200 while lineage is lost."
       }
     },
     "kvm2": {
