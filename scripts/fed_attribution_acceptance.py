@@ -139,6 +139,8 @@ body = r.get("raw", b"").decode(errors="replace")
 mode_ok = h.get("x-arifos-model-integrity-mode") == "strict"
 if r["status"] == 200:
     identity_ok = h.get("x-arifos-model-substituted") in ("true", "false")
+elif r["status"] == 409:
+    identity_ok = "MODEL_SUBSTITUTED" in body and h.get("x-arifos-model-substituted") == "true"
 elif r["status"] == 502:
     identity_ok = "MODEL_IDENTITY_UNKNOWN" in body
 else:

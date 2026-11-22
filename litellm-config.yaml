@@ -1,4 +1,204 @@
 model_list:
+- model_name: code-change
+  litellm_params:
+    model: openai/deepseek/deepseek-v4.1-flash
+    api_base: https://openrouter.ai/api/v1
+    api_key: os.environ/OPENROUTER_API_KEY
+    order: 1
+  model_info:
+    route_class: openrouter-backbone
+    capability: code-change
+- model_name: code-change
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 2
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: code-change
+- model_name: code-change
+  litellm_params:
+    model: openai/qwen2.5:3b
+    api_base: http://127.0.0.1:11434/v1
+    api_key: os.environ/OLLAMA_API_KEY
+    order: 3
+  model_info:
+    route_class: local-airgapped
+    capability: code-change
+- model_name: architecture-synthesis
+  litellm_params:
+    model: openai/deepseek/deepseek-v4.1-flash
+    api_base: https://openrouter.ai/api/v1
+    api_key: os.environ/OPENROUTER_API_KEY
+    order: 1
+  model_info:
+    route_class: openrouter-backbone
+    capability: architecture-synthesis
+- model_name: architecture-synthesis
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_MPLAN_KEY
+    order: 2
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: architecture-synthesis
+- model_name: architecture-synthesis
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 3
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: architecture-synthesis
+- model_name: independent-verification
+  litellm_params:
+    model: openai/glm-5.3-flash
+    api_base: https://api.z.ai/api/coding/paas/v4
+    api_key: os.environ/ZAI_API_KEY
+    order: 1
+  model_info:
+    route_class: independent-family
+    capability: independent-verification
+- model_name: independent-verification
+  litellm_params:
+    model: openai/MiniMax-M3.1-Flash
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_MPLAN_KEY
+    order: 2
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: independent-verification
+- model_name: independent-verification
+  litellm_params:
+    model: openai/qwen2.5:7b
+    api_base: http://127.0.0.1:11434/v1
+    api_key: os.environ/OLLAMA_API_KEY
+    order: 3
+  model_info:
+    route_class: local-airgapped
+    capability: independent-verification
+- model_name: structured-extraction
+  litellm_params:
+    model: openai/deepseek/deepseek-v4.1-flash
+    api_base: https://openrouter.ai/api/v1
+    api_key: os.environ/OPENROUTER_API_KEY
+    order: 1
+  model_info:
+    route_class: openrouter-backbone
+    capability: structured-extraction
+- model_name: structured-extraction
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 2
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: structured-extraction
+- model_name: structured-extraction
+  litellm_params:
+    model: openai/qwen2.5:3b
+    api_base: http://127.0.0.1:11434/v1
+    api_key: os.environ/OLLAMA_API_KEY
+    order: 3
+  model_info:
+    route_class: local-airgapped
+    capability: structured-extraction
+- model_name: multimodal-analysis
+  litellm_params:
+    model: openai/deepseek/deepseek-v4.1-flash
+    api_base: https://openrouter.ai/api/v1
+    api_key: os.environ/OPENROUTER_API_KEY
+    order: 1
+  model_info:
+    route_class: openrouter-backbone
+    capability: multimodal-analysis
+- model_name: multimodal-analysis
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 2
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: multimodal-analysis
+- model_name: multimodal-analysis
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_MPLAN_KEY
+    order: 3
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: multimodal-analysis
+- model_name: research-synthesis
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_MPLAN_KEY
+    order: 1
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: research-synthesis
+- model_name: research-synthesis
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 2
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: research-synthesis
+- model_name: research-synthesis
+  litellm_params:
+    model: openai/deepseek/deepseek-v4.1-flash
+    api_base: https://openrouter.ai/api/v1
+    api_key: os.environ/OPENROUTER_API_KEY
+    order: 3
+  model_info:
+    route_class: openrouter-backbone
+    capability: research-synthesis
+- model_name: realtime-speech
+  litellm_params:
+    model: openai/speech-2.8-hd
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_MPLAN_KEY
+    order: 1
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: realtime-speech
+- model_name: realtime-speech
+  litellm_params:
+    model: openai/mimo-v2.5-tts-voiceclone
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 2
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: realtime-speech
+- model_name: persona-expression
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_MPLAN_KEY
+    order: 1
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: persona-expression
+    authority: none
+- model_name: persona-expression
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: https://token-plan-sgp.xiaomimimo.com/v1
+    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
+    order: 2
+  model_info:
+    route_class: prepaid-flat-rate
+    capability: persona-expression
+    authority: none
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek-flash
@@ -1997,9 +2197,9 @@ model_list:
     mode: chat
     supports_reasoning: true
     supports_vision: false
-    notes: 'Self-heal rung: team seat is 429 dry until ~2026-12-01; kept at order 991
-      so the alias becomes multi-seat the moment the team quota renews, without a
-      config change. Individual seat (order 1) is the live path.'
+    notes: 'Self-heal rung: team seat is 429 dry until ~2026-12-01; kept at order
+      991 so the alias becomes multi-seat the moment the team quota renews, without
+      a config change. Individual seat (order 1) is the live path.'
 - model_name: glm-5.2
   litellm_params:
     model: openai/glm-5.3
@@ -3411,7 +3611,9 @@ model_list:
     mode: chat
     notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
       direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
-      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*. | PROMOTED 2026-11-22 333-AGI (F13 directive: make sure openrouter is part of i-ARIF): order 91 -> 5, now a live i-arif rung. Restore order 91 to park.'
+      via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.
+      | PROMOTED 2026-11-22 333-AGI (F13 directive: make sure openrouter is part of
+      i-ARIF): order 91 -> 5, now a live i-arif rung. Restore order 91 to park.'
 - model_name: i-arif
   litellm_params:
     model: openai/google/gemini-3.1-pro-preview
@@ -3431,17 +3633,18 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'i-arif A2H DIALECT VOICE (Penang Utara) — wired 2026-11-22 by 333-AGI under the F13
-      directive to choose the most A2H model that speaks Penang Utara and put it in the i-arif
-      chain. MEASURED 2026-11-22, 2-prompt dialect battery vs 15 candidates: this rung produced
-      the most authentic northern register (baq hang / habaq awai-awai / nasi kandaq / beratoq /
-      mengulaq / sabaq). Runner-up google/gemini-3.8-flash (cheaper and faster, near-equal
-      fidelity); z-ai/glm-5.3 best short-form but reasoning-starved at low max_tokens;
-      moonshotai/kimi-k3 warm but uses Kedah/Perlis mok; x-ai/grok-4.20 fastest but fabricated
-      BM shop addresses; deepseek/minimax/qwen weak on dialect. INVARIANT NOTE: validator
-      active_gemini_count 1 -> 2 (FED contract bans gemini rungs; already failing at 1 via
-      gemini-flash-lite) — F13-open: amend contract or drop this rung. Revert: delete this block
-      and restore order 91 on the openrouter deepseek rung.'
+    notes: 'i-arif A2H DIALECT VOICE (Penang Utara) — wired 2026-11-22 by 333-AGI
+      under the F13 directive to choose the most A2H model that speaks Penang Utara
+      and put it in the i-arif chain. MEASURED 2026-11-22, 2-prompt dialect battery
+      vs 15 candidates: this rung produced the most authentic northern register (baq
+      hang / habaq awai-awai / nasi kandaq / beratoq / mengulaq / sabaq). Runner-up
+      google/gemini-3.8-flash (cheaper and faster, near-equal fidelity); z-ai/glm-5.3
+      best short-form but reasoning-starved at low max_tokens; moonshotai/kimi-k3
+      warm but uses Kedah/Perlis mok; x-ai/grok-4.20 fastest but fabricated BM shop
+      addresses; deepseek/minimax/qwen weak on dialect. INVARIANT NOTE: validator
+      active_gemini_count 1 -> 2 (FED contract bans gemini rungs; already failing
+      at 1 via gemini-flash-lite) — F13-open: amend contract or drop this rung. Revert:
+      delete this block and restore order 91 on the openrouter deepseek rung.'
   model_info:
     cost_class: payg
     price_status: openrouter_listed_tiered
@@ -3455,10 +3658,10 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'A2H dialect voice rung. OpenRouter provider pinned Google AI Studio -> Google with
-      allow_fallbacks true so a Google outage degrades to another host instead of killing the
-      rung. OpenRouter tiers 2026-11-22: 1.0/6.0, 2.0/12.0, 3.6/21.6 USD per 1M — declared value
-      is the cheapest tier; price_status tiered.'
+    notes: 'A2H dialect voice rung. OpenRouter provider pinned Google AI Studio ->
+      Google with allow_fallbacks true so a Google outage degrades to another host
+      instead of killing the rung. OpenRouter tiers 2026-11-22: 1.0/6.0, 2.0/12.0,
+      3.6/21.6 USD per 1M — declared value is the cheapest tier; price_status tiered.'
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -3487,7 +3690,10 @@ model_list:
       via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.
       | PROMOTED 2026-11-11 333-AGI (F13 ''tukar laa, openrouter kan ada''): judge
       head; restores judge/author provider separation (author head = glm-5.3-flash@zai).
-      Old order 7. | PINNED 2026-11-21 (F13 ''forge next''): class openrouter_router_lane - model pinned (deepseek/deepseek-v4.1-flash), provider pinned (deepseek only, allow_fallbacks false), auto_router denied; resolved-model receipt via x-litellm-model-name sweep 2026-11-21.'
+      Old order 7. | PINNED 2026-11-21 (F13 ''forge next''): class openrouter_router_lane
+      - model pinned (deepseek/deepseek-v4.1-flash), provider pinned (deepseek only,
+      allow_fallbacks false), auto_router denied; resolved-model receipt via x-litellm-model-name
+      sweep 2026-11-21.'
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
