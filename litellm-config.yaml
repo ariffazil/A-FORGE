@@ -3439,54 +3439,6 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 384000
     mode: chat
-- model_name: mistral-large-latest
-  litellm_params:
-    model: openai/mistral-large-latest
-    api_base: https://api.mistral.ai/v1
-    additional_drop_params:
-    - include
-    api_key: os.environ/MISTRAL_API_KEY
-    order: 992
-    mode: chat
-  model_info:
-    cost_class: payg
-    price_status: unverified
-    price_declared_at: '2026-11-12'
-    spendable: true
-    max_input_tokens: 128000
-    max_output_tokens: 128000
-- model_name: codestral-latest
-  litellm_params:
-    model: openai/codestral-latest
-    api_base: https://api.mistral.ai/v1
-    additional_drop_params:
-    - include
-    api_key: os.environ/MISTRAL_API_KEY
-    order: 990
-    mode: chat
-  model_info:
-    cost_class: payg
-    price_status: unverified
-    price_declared_at: '2026-11-12'
-    spendable: true
-    max_input_tokens: 32000
-    max_output_tokens: 32000
-- model_name: mistral-small-latest
-  litellm_params:
-    model: openai/mistral-small-latest
-    api_base: https://api.mistral.ai/v1
-    additional_drop_params:
-    - include
-    api_key: os.environ/MISTRAL_API_KEY
-    order: 997
-    mode: chat
-  model_info:
-    cost_class: payg
-    price_status: unverified
-    price_declared_at: '2026-11-12'
-    spendable: true
-    max_input_tokens: 32000
-    max_output_tokens: 32000
 - model_name: sovereign-west
   litellm_params:
     model: openai/openai/gpt-oss-120b
