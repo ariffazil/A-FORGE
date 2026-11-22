@@ -354,6 +354,8 @@ _PR_FED_1_COLUMNS: list[tuple[str, str]] = [
     ("accepted_output_tokens", "INTEGER"),
     ("token_source_limitation", "TEXT"),
     ("response_status", "TEXT"),
+    ("finish_reason", "TEXT"),
+    ("latency_ms", "REAL"),
     ("outcome_state", "TEXT"),
     ("candidate_result_id", "TEXT"),
     ("accepted_by", "TEXT"),
@@ -1049,6 +1051,10 @@ def _extract_api_base(data, response=None) -> str:
     hp_base = hp.get("api_base")
     if isinstance(hp_base, str) and hp_base.strip():
         return hp_base.strip()
+    extra_hdrs = {str(k).lower(): v for k, v in _extra(response).items()}
+    hdr_base = extra_hdrs.get("x-litellm-model-api-base") or extra_hdrs.get("x-litellm-api-base")
+    if isinstance(hdr_base, str) and hdr_base.strip():
+        return hdr_base.strip()
     return ""
 
 
@@ -1574,12 +1580,39 @@ def _resolve_fallback_edge(
     return edge
 
 
+def _extract_finish_reason(response) -> str:
+    """Extract completion finish_reason (BBB/CCC/DDD receipt parity) without reading content."""
+    choices = getattr(response, "choices", None)
+    if isinstance(choices, (list, tuple)) and choices:
+        fr = getattr(choices[0], "finish_reason", None)
+        cleaned = _clean_meta_str(fr, max_len=64)
+        if cleaned:
+            return cleaned
+    return ""
+
+
+def _compute_latency_ms(start_time, end_time) -> float | None:
+    """Compute elapsed latency in ms from callback start_time/end_time (datetime or float)."""
+    if start_time is None or end_time is None:
+        return None
+    try:
+        if isinstance(start_time, datetime) and isinstance(end_time, datetime):
+            delta = (end_time - start_time).total_seconds() * 1000.0
+        else:
+            delta = (float(end_time) - float(start_time)) * 1000.0
+        return round(delta, 3) if delta >= 0.0 else None
+    except (TypeError, ValueError):
+        return None
+
+
 def attribution(
     data,
     response,
     request_headers=None,
     mode=None,
     user_api_key_dict=None,
+    start_time=None,
+    end_time=None,
 ) -> dict:
     """Compute the full canonical attribution record. Pure; no side effects."""
     recalled_ctx = _recall_ctx(data)
@@ -1692,6 +1725,8 @@ def attribution(
         "cache_state": cache_state,
         "attribution_status": status,
         "response_status": response_status,
+        "finish_reason": _extract_finish_reason(response),
+        "latency_ms": _compute_latency_ms(start_time, end_time),
         "transport_protocol": taxonomy["transport_protocol"],
         "entry_gateway": taxonomy["entry_gateway"],
         "routing_intermediary": taxonomy["routing_intermediary"],
@@ -1875,6 +1910,8 @@ def write_spend_row(
     *,
     user_api_key_dict=None,
     request_headers=None,
+    start_time=None,
+    end_time=None,
     max_retries: int = 2,
 ) -> dict:
     """Write ONE lineage-complete spend row. Idempotent on inner_attempt_id / call_id.
@@ -1887,6 +1924,8 @@ def write_spend_row(
         response_obj,
         request_headers=request_headers,
         user_api_key_dict=user_api_key_dict,
+        start_time=start_time,
+        end_time=end_time,
     )
     model = (kwargs.get("model") if isinstance(kwargs, dict) else None) or "UNKNOWN"
     hidden = _spend_hidden(response_obj)
@@ -1963,6 +2002,8 @@ def write_spend_row(
         None,  # accepted_output_tokens — downstream only
         rec["token_source_limitation"],
         rec["response_status"],
+        rec["finish_reason"],
+        rec["latency_ms"],
         "outcome_pending",  # outcome_state
         rec["candidate_result_id"],
         None,  # accepted_by — downstream only
@@ -2116,7 +2157,9 @@ class FedAttributionCallback(CustomLogger):
     def log_success_event(self, kwargs, response_obj, start_time, end_time):
         """Spend write with full attribution (single canonical writer of token_bank_spend)."""
         try:
-            return write_spend_row(kwargs, response_obj)
+            return write_spend_row(
+                kwargs, response_obj, start_time=start_time, end_time=end_time
+            )
         except Exception as e:  # noqa: BLE001 — bounded visibility; never report success on failure
             _warn(f"spend write failed: {type(e).__name__}: {e}")
             return {"ok": False, "error": f"{type(e).__name__}: {e}"}

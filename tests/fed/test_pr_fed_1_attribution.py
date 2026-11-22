@@ -844,3 +844,32 @@ def test_neg_12_routing_invariance_unmodified(tmp_path: Path):
     returned = asyncio.run(cb.async_pre_call_hook(None, None, data, "completion"))
     assert returned is data
     assert data == snapshot
+
+
+def test_pos_12_x_litellm_model_api_base_header_and_bbb_receipt_fields(tmp_path: Path):
+    """Catches OpenRouter hop via x-litellm-model-api-base header + records finish_reason & latency_ms."""
+    mod, db_path = _load_candidate(tmp_path)
+    kw = {
+        "model": "apex-888",
+        "litellm_call_id": "pos-12-or-hdr",
+        "metadata": {"user_api_key_alias": "vk-apex-888"},
+    }
+    resp = _make_response(
+        model="deepseek/deepseek-v4.1-flash",
+        provider="DeepSeek",
+        served_group="apex-888",
+        call_id="pos-12-or-hdr",
+    )
+    resp._hidden_params["additional_headers"]["x-litellm-model-api-base"] = "https://openrouter.ai/api/v1"
+    resp.choices[0].finish_reason = "stop"
+
+    cb = mod.FedAttributionCallback()
+    res = cb.log_success_event(kw, resp, 100.0, 100.425)
+    assert res["ok"] is True
+    row = _fetch_rows(db_path)[0]
+    assert row["api_base_host_redacted"] == "openrouter.ai"
+    assert row["routing_intermediary"] == "openrouter"
+    assert row["serving_provider"] == "deepseek"
+    assert row["failure_domain"] == "intermediary:openrouter"
+    assert row["finish_reason"] == "stop"
+    assert row["latency_ms"] == 425.0
