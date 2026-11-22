@@ -765,6 +765,19 @@ export interface EvaluateOptions {
  *   Test 3 — Goodhart stress test: adversarial ASR under G < 10%
  *   Test 4 — Threshold calibration: ROC on held-out data
  */
+const RUNTIME_AUTHORITY_CLAIM_RE =
+  /\b(runtime_authority|self_authorize|bypass_arifos|override_f13|grant_runtime_authority)\b/i;
+
+function claimsRuntimeAuthority(spec: CandidateSpec): boolean {
+  const haystack = [
+    spec.tool_name,
+    spec.description,
+    spec.implementation ?? "",
+    ...(spec.required_permissions ?? []),
+  ].join(" ");
+  return RUNTIME_AUTHORITY_CLAIM_RE.test(haystack);
+}
+
 export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDecision> {
   const { spec, evaluatorCount = 1, consultScars } = opts;
 
@@ -802,8 +815,18 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
 
   const { G, C_dark } = computeGate(scores);
 
-  // Step 3: Render verdict
-  const { verdict, reason } = renderVerdict(G, C_dark, omega);
+  // Step 3: Render verdict (H1 Option A: refuse any runtime-authority claim as VOID)
+  const runtimeAuthorityClaim = claimsRuntimeAuthority(spec);
+  const rendered = runtimeAuthorityClaim
+    ? {
+        verdict: "VOID" as const,
+        reason: "H1 static-gate refusal: forge_evaluate is a static tool-registration gate (G_spec/spec_stability) and refuses runtime-authority claims",
+      }
+    : renderVerdict(G, C_dark, omega);
+  const { verdict, reason } = rendered;
+  if (runtimeAuthorityClaim) {
+    scores.rationale.push(reason);
+  }
 
   // Step 4: Build GateDecision with ATP scalars
   const now = new Date().toISOString();
@@ -817,6 +840,10 @@ export async function evaluateCandidate(opts: EvaluateOptions): Promise<GateDeci
     tool_name: spec.tool_name,
     fingerprint,
     G,
+    G_spec: G,
+    spec_stability: scores.P,
+    gate_scope: "static_tool_registration",
+    runtime_authority_granted: false,
     C_dark,
     scores,
     verdict,
@@ -878,7 +905,15 @@ export function evaluateDryRun(spec: CandidateSpec, evaluatorCount = 1): Omit<Ga
   };
 
   const { G, C_dark } = computeGate(scores);
-  const { verdict, reason } = renderVerdict(G, C_dark, omega);
+  const runtimeAuthorityClaim = claimsRuntimeAuthority(spec);
+  const { verdict } = runtimeAuthorityClaim
+    ? { verdict: "VOID" as const }
+    : renderVerdict(G, C_dark, omega);
+  if (runtimeAuthorityClaim) {
+    scores.rationale.push(
+      "H1 static-gate refusal: forge_evaluate is a static tool-registration gate (G_spec/spec_stability) and refuses runtime-authority claims",
+    );
+  }
   const now = new Date().toISOString();
 
   // Dry-run: no bridge, no W3 → QDF stays PARTIAL (static compute)
@@ -894,9 +929,13 @@ export function evaluateDryRun(spec: CandidateSpec, evaluatorCount = 1): Omit<Ga
     tool_name: spec.tool_name,
     fingerprint,
     G,
+    G_spec: G,
+    spec_stability: scores.P,
+    gate_scope: "static_tool_registration",
+    runtime_authority_granted: false,
     C_dark,
     scores,
-    verdict: scores.X === 0 ? "VOID" : verdict, // HARAM CRITICAL → VOID even in dry run
+    verdict: runtimeAuthorityClaim || scores.X === 0 ? "VOID" : verdict, // HARAM CRITICAL or runtime-authority claim → VOID even in dry run
     verdict_namespace: "apex.tool_registration",
     apex_scalars: dryScalars,
     is_canonical_qdf: false,
