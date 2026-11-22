@@ -39,6 +39,7 @@ import {
   curriculumScore,
   type WebIntent,
 } from "../../domain/web/federation.js";
+import { guardedFetch, validatePublicUrl } from "../../infrastructure/egress/ssrfGuard.js";
 
 // ── Configuration ─────────────────────────────────────────────────────────────
 
@@ -1127,75 +1128,12 @@ export async function handleForgeBrowserEvaluateJs(args: any) {
 }
 
 // ── SSRF Guard ──────────────────────────────────────────────────────────────
-
-const BLOCKED_HOSTS = new Set([
-  "localhost", "localhost.", "0.0.0.0",
-  "metadata.google.internal", "metadata.azure.internal",
-  "169.254.169.254", "metadata.google.internal.",
-]);
-
-const PRIVATE_CIDRS: Array<[number, number, number]> = [
-  [0x7F000000, 0xFF000000, 8],   // 127.0.0.0/8
-  [0x0A000000, 0xFF000000, 8],   // 10.0.0.0/8
-  [0xAC100000, 0xFFF00000, 12],  // 172.16.0.0/12
-  [0xC0A80000, 0xFFFF0000, 16],  // 192.168.0.0/16
-  [0xA9FE0000, 0xFFFF0000, 16],  // 169.254.0.0/16
-  [0x64400000, 0xFFC00000, 10],  // 100.64.0.0/10 (CGNAT)
-];
-
-function ip4ToInt(ip: string): number | null {
-  const parts = ip.split(".").map(Number);
-  if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255)) return null;
-  return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
-}
-
-function isPrivateOrReserved(ip: string): boolean {
-  // IPv6 loopback and private ranges
-  if (ip === "::1" || ip === "0:0:0:0:0:0:0:1") return true;
-  if (ip.startsWith("fc") || ip.startsWith("fd")) return true; // ULA
-  if (ip.startsWith("fe80")) return true; // link-local
-  if (ip === "0.0.0.0") return true;
-
-  const intIp = ip4ToInt(ip);
-  if (intIp === null) return false; // IPv6 non-mapped — skip for now
-  for (const [network, mask] of PRIVATE_CIDRS) {
-    if ((intIp & mask) === (network & mask)) return true;
-  }
-  return false;
-}
-
-async function ssrfGuard(rawUrl: string): Promise<{ ok: boolean; error?: string }> {
-  let parsed: URL;
-  try {
-    parsed = new URL(rawUrl);
-  } catch {
-    return { ok: false, error: "INVALID_URL" };
-  }
-  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-    return { ok: false, error: `SSRF_BLOCKED: scheme ${parsed.protocol} not allowed` };
-  }
-  const hostname = parsed.hostname.toLowerCase();
-  if (BLOCKED_HOSTS.has(hostname)) {
-    return { ok: false, error: `SSRF_BLOCKED: host ${hostname} is blocked` };
-  }
-  const port = parsed.port ? parseInt(parsed.port, 10) : (parsed.protocol === "https:" ? 443 : 80);
-  if (port !== 80 && port !== 443) {
-    return { ok: false, error: `SSRF_BLOCKED: port ${port} not allowed (only 80/443)` };
-  }
-  // DNS resolution check — block private/loopback IPs
-  try {
-    const { lookup } = await import("node:dns/promises");
-    const results = await lookup(hostname, { all: true, family: 0 });
-    for (const r of results) {
-      if (isPrivateOrReserved(r.address)) {
-        return { ok: false, error: `SSRF_BLOCKED: ${hostname} resolves to private IP ${r.address}` };
-      }
-    }
-  } catch {
-    // DNS failure — let the fetch/browser handle it (could be transient)
-  }
-  return { ok: true };
-}
+// The single owner of outbound URL validation lives in
+// src/infrastructure/egress/ssrfGuard.ts. This file previously carried its own
+// copy, which validated only the caller-supplied URL while the fetch ran with
+// `redirect: "follow"` — so the server's `Location` target was never checked.
+//
+// Do not reintroduce a local guard here. One owner, one policy.
 
 // ── SPA Shell Detection ─────────────────────────────────────────────────────
 
@@ -1398,8 +1336,9 @@ export async function handleForgeWebExtract(args: any) {
   const effectiveTimeout = Math.min(timeout_ms ?? 30000, 120000);
   const renderMode = render ?? "auto";
 
-  // SSRF guard
-  const ssrf = await ssrfGuard(url);
+  // SSRF guard — the shared one (src/infrastructure/egress/ssrfGuard.ts).
+  // It resolves DNS and requires every resolved address to be public.
+  const ssrf = await validatePublicUrl(url);
   if (!ssrf.ok) {
     return gatewayError(request_id, ssrf.error!, { tool: "forge_web_extract", url, reason: "ssrf_blocked" });
   }
@@ -1423,7 +1362,10 @@ export async function handleForgeWebExtract(args: any) {
       await mkdir(dlDir, { recursive: true });
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), effectiveTimeout);
-      const resp = await fetch(url, { signal: controller.signal, headers: fetchHeaders, redirect: "follow" });
+      // Redirects are followed manually and every hop is re-validated, so a
+      // `Location` header cannot aim the download at an internal host.
+      const guarded = await guardedFetch(url, { signal: controller.signal, headers: fetchHeaders });
+      const resp = guarded.response;
       clearTimeout(timer);
       if (!resp.ok) {
         return gatewayError(request_id, `Download failed: HTTP ${resp.status}`, { tool: "forge_web_extract", url, route: "download" });
@@ -1457,11 +1399,12 @@ export async function handleForgeWebExtract(args: any) {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), Math.min(effectiveTimeout, 15000));
-    const resp = await fetch(url, { signal: controller.signal, redirect: "follow", headers: fetchHeaders });
+    const guarded = await guardedFetch(url, { signal: controller.signal, headers: fetchHeaders });
+    const resp = guarded.response;
     clearTimeout(timer);
     const html = await resp.text();
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-    staticResult = { html, status: resp.status, finalUrl: resp.url, title: titleMatch?.[1]?.trim() ?? "" };
+    staticResult = { html, status: resp.status, finalUrl: guarded.finalUrl, title: titleMatch?.[1]?.trim() ?? "" };
   } catch (err: any) {
     staticError = err?.message ?? String(err);
   }

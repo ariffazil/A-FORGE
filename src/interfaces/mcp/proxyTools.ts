@@ -14,7 +14,8 @@ import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import TurndownService from "turndown";
 import { registerLatentTrigger } from "../../infrastructure/causality/latentTriggerRegistry.js";
-import { validateAndResolve, type EgressProfileName } from "../../infrastructure/egress/EgressPolicy.js";
+import { validateAndResolve, canonicalSearxngBase, type EgressProfileName } from "../../infrastructure/egress/EgressPolicy.js";
+import { guardedFetch, validatePublicUrl } from "../../infrastructure/egress/ssrfGuard.js";
 import { SupabaseVaultClient } from "../../infrastructure/vault/SupabaseVaultClient.js";
 
 const ALLOWED_ROOTS = ["/root", "/tmp", "/data", "/var/log"];
@@ -64,43 +65,14 @@ for (const tag of ["script", "style", "nav", "footer", "aside", "noscript"]) {
   });
 }
 
-// ── SSRF Protection — Block private/internal IPs ────────────────────────────
-const BLOCKED_IP_PATTERNS = [
-  /^127\./,
-  /^0\./,
-  /^10\./,
-  /^172\.(1[6-9]|2\d|3[01])\./,
-  /^192\.168\./,
-  /^169\.254\./,
-  /^::1$/,
-  /^fc00:/i,
-  /^fe80:/i,
-  /^fd00:/i,
-];
-
-function isPrivateHost(hostname: string): boolean {
-  // Block localhost variants
-  if (["localhost", "0.0.0.0", "[::1]", "metadata.google.internal"].includes(hostname)) return true;
-  // Block private IP ranges
-  return BLOCKED_IP_PATTERNS.some((p) => p.test(hostname));
-}
-
-function ssrfCheck(urlStr: string): { safe: boolean; error?: string } {
-  try {
-    const u = new URL(urlStr);
-    // Block non-HTTP schemes
-    if (!["http:", "https:"].includes(u.protocol)) {
-      return { safe: false, error: `F12 INJECTION: Blocked scheme '${u.protocol}'. Only http/https allowed.` };
-    }
-    // Block private/internal networks
-    if (isPrivateHost(u.hostname)) {
-      return { safe: false, error: `F12 INJECTION: Blocked private/internal host '${u.hostname}'. SSRF protection active.` };
-    }
-    return { safe: true };
-  } catch {
-    return { safe: false, error: `Invalid URL: ${urlStr}` };
-  }
-}
+// ── SSRF Protection ──────────────────────────────────────────────────────────
+// The single owner of outbound URL validation lives in
+// src/infrastructure/egress/ssrfGuard.ts. It resolves DNS and requires EVERY
+// resolved address to be public (the previous local regex matched the hostname
+// STRING only, so a hostname resolving to a private address passed — including
+// the 100.64.0.0/10 tailnet where every federation organ lives).
+//
+// Do not reintroduce a local guard here. One owner, one policy.
 
 // ── Prompt Injection Scanner ─────────────────────────────────────────────────
 const INJECTION_PATTERNS = [
@@ -1449,7 +1421,11 @@ async function checkRobotsTxt(url: string): Promise<{ allowed: boolean; reason?:
     if (cached && Date.now() - cached.fetchedAt < ROBOTS_CACHE_TTL_MS) {
       return cached.allowed ? { allowed: true } : { allowed: false, reason: "Blocked by robots.txt" };
     }
-    const resp = await fetch(robotsUrl, { signal: AbortSignal.timeout(3000) });
+    // Fetched through the shared guard: robots.txt is served by the same host
+    // as the target, but a redirect could otherwise aim it at an internal
+    // address. Every hop is re-validated.
+    const guarded = await guardedFetch(robotsUrl, { signal: AbortSignal.timeout(3000) });
+    const resp = guarded.response;
     if (!resp.ok) {
       robotsCache.set(robotsUrl, { allowed: true, fetchedAt: Date.now() });
       return { allowed: true }; // No robots.txt = allow all
@@ -1548,10 +1524,24 @@ async function executeFetch(params: {
 
   // ── SearxNG Search Mode (sovereignty fallback) ──────────────────────────
   // When `query` is provided, route through self-hosted SearxNG instead of
-  // fetching a URL directly. Bypasses SSRF/robots.txt (internal service).
+  // fetching a URL directly. SearxNG is an INTERNAL service, so it is reached
+  // through the config-owned canonical base — never through a caller-supplied
+  // URL. Previously `params.url` was accepted as the SearxNG base, which let a
+  // caller point this branch at ANY internal host with no SSRF check at all
+  // (measured 2026-11-22: a fetch to 127.0.0.1:8081/ was attempted).
   // Supports: forge_fetch(query="latest AI news", mode="search")
   if (params.query) {
-    const searxngBase = (params.searxng_url || params.url || "http://localhost:8080").replace(/\/+$/, "");
+    const canonicalBase = canonicalSearxngBase();
+    // An explicit `searxng_url` is honoured only when it names the canonical
+    // service. A different host is refused loudly rather than silently ignored.
+    if (params.searxng_url && params.searxng_url.replace(/\/+$/, "") !== canonicalBase) {
+      return text({
+        status: "BLOCKED",
+        reason: `F12 INJECTION: searxng_url must name the canonical SearxNG service ('${canonicalBase}'); caller-supplied internal hosts are not reachable.`,
+        trust_status: "UNTRUSTED_EXTERNAL_CONTENT",
+      }, true);
+    }
+    const searxngBase = canonicalBase;
     const num = Math.min(params.num_results ?? 10, 20);
     const searchUrl = `${searxngBase}/search?${new URLSearchParams({ q: params.query, format: "json", pageno: "1" })}`;
     try {
@@ -1613,24 +1603,50 @@ async function executeFetch(params: {
 
   try {
     // ── P0: SSRF Protection ──────────────────────────────────────────────────
-    const ssrf = ssrfCheck(url);
-    if (!ssrf.safe) return text({ status: "BLOCKED", reason: ssrf.error, trust_status: "UNTRUSTED_EXTERNAL_CONTENT" }, true);
+    // The shared guard (src/infrastructure/egress/ssrfGuard.ts) resolves DNS and
+    // requires every resolved address to be public. The previous local guard
+    // matched the hostname STRING only, so a hostname resolving to a private
+    // address passed — including the 100.64.0.0/10 tailnet.
+    const ssrf = await validatePublicUrl(url);
+    if (!ssrf.ok) return text({ status: "BLOCKED", reason: ssrf.error, trust_status: "UNTRUSTED_EXTERNAL_CONTENT" }, true);
 
     // ── P0: robots.txt compliance ───────────────────────────────────────────
     const robotsCheck = await checkRobotsTxt(url);
     if (!robotsCheck.allowed) return text({ status: "BLOCKED", reason: robotsCheck.reason, trust_status: "UNTRUSTED_EXTERNAL_CONTENT" }, true);
 
     // ── Fetch with redirect tracking ────────────────────────────────────────
+    // Redirects are followed manually and every hop is re-validated against the
+    // same policy, so a `Location` header cannot aim the tool at an internal host.
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), effectiveTimeout);
-    const resp = await fetch(url, {
-      signal: controller.signal,
-      redirect: follow_redirects ? "follow" : "manual",
-      headers: {
-        "User-Agent": "A-FORGE/1.0 (arifOS Federation; +https://arif-fazil.com)",
-        "Accept": "application/agent+json, text/html, application/json;q=0.9, */*;q=0.5",
-      },
-    });
+    const fetchHeaders = {
+      "User-Agent": "A-FORGE/1.0 (arifOS Federation; +https://arif-fazil.com)",
+      "Accept": "application/agent+json, text/html, application/json;q=0.9, */*;q=0.5",
+    };
+    let resp: Response;
+    let urlFinal: string;
+    try {
+      if (follow_redirects) {
+        const guarded = await guardedFetch(url, { headers: fetchHeaders, signal: controller.signal });
+        resp = guarded.response;
+        urlFinal = guarded.finalUrl;
+      } else {
+        // Caller asked for the redirect response itself — one hop, no following.
+        const single = await fetch(ssrf.url, {
+          signal: controller.signal,
+          redirect: "manual",
+          headers: fetchHeaders,
+        });
+        resp = single;
+        urlFinal = ssrf.url;
+      }
+    } catch (err: any) {
+      clearTimeout(timer);
+      if (err?.code === "SSRF_BLOCKED") {
+        return text({ status: "BLOCKED", reason: err.message, trust_status: "UNTRUSTED_EXTERNAL_CONTENT" }, true);
+      }
+      throw err;
+    }
     clearTimeout(timer);
 
     if (!resp.ok) return text({ status: "error", http_status: resp.status, status_text: resp.statusText, trust_status: "UNTRUSTED_EXTERNAL_CONTENT" }, true);
@@ -1647,7 +1663,6 @@ async function executeFetch(params: {
     }
 
     const contentType = resp.headers.get("content-type") || "";
-    const urlFinal = resp.url || url;
     const fetchedAt = new Date().toISOString();
     const contentHash = sha256(raw);
     const totalChars = raw.length;

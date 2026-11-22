@@ -55,6 +55,18 @@ function isKnownProfile(name: string): name is EgressProfileName {
   return PROFILE_REGISTRY.has(name as EgressProfileName);
 }
 
+// ── Sanctioned internal services ─────────────────────────────────────────────
+// Internal services are reached by a CONFIG-OWNED base URL, never by a
+// caller-supplied URL. The caller cannot choose the destination, so no SSRF
+// decision is needed on this path — and none is granted to the caller.
+//
+// This is the single owner of the canonical SearxNG base. Two files previously
+// declared it with DIFFERENT defaults (gatewayTools.ts: "http://127.0.0.1:8080",
+// proxyTools.ts: "http://localhost:8080") — one owner, one value.
+export function canonicalSearxngBase(): string {
+  return (process.env.SEARXNG_URL ?? "http://127.0.0.1:8080").replace(/\/+$/, "");
+}
+
 // ── Resolver implementation ─────────────────────────────────────────────────
 export function resolveEgressProfile(profile: EgressProfileName): EgressResolution {
   switch (profile) {
