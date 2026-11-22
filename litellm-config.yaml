@@ -3420,6 +3420,11 @@ model_list:
     - include
     api_key: os.environ/OPENROUTER_API_KEY
     order: 1
+    extra_body:
+      provider:
+        order:
+        - deepseek
+        allow_fallbacks: false
   model_info:
     cost_class: payg
     price_status: unverified
@@ -3435,7 +3440,7 @@ model_list:
       via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.
       | PROMOTED 2026-11-11 333-AGI (F13 ''tukar laa, openrouter kan ada''): judge
       head; restores judge/author provider separation (author head = glm-5.3-flash@zai).
-      Old order 7.'
+      Old order 7. | PINNED 2026-11-21 (F13 ''forge next''): class openrouter_router_lane - model pinned (deepseek/deepseek-v4.1-flash), provider pinned (deepseek only, allow_fallbacks false), auto_router denied; resolved-model receipt via x-litellm-model-name sweep 2026-11-21.'
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
