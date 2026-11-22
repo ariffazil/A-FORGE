@@ -1,0 +1,92 @@
+{
+  "contract": "arifos.fed-attribution.v1",
+  "captured_at": "2026-11-22T07:45:00Z",
+  "evidence": "OBS where config path + base_url were read live; UNKNOWN where only the binary was found",
+  "rules": [
+    "an agent is attributed by explicit metadata first, then by its authenticated key/team, then by tags, then by known service identity",
+    "never infer actor from prompt text",
+    "an agent that cannot send headers is still attributable through a per-actor virtual key",
+    "subagents inherit the parent actor unless they set their own actor metadata"
+  ],
+  "agents": [
+    {
+      "name": "hermes",
+      "fi": "FI-000",
+      "binary": "/root/.local/bin/hermes",
+      "fed_route": {
+        "config": "/root/.hermes/config.yaml",
+        "base_url": "http://127.0.0.1:4000/v1",
+        "key_env": "FED_ZEN_KEY"
+      },
+      "injection": ["key_mapping"],
+      "status": "route_obs_key_mapping_unverified",
+      "note": "three model.* blocks point at :4000/v1; providers block declares FED_ZEN_KEY"
+    },
+    {
+      "name": "opencode",
+      "fi": "FI-001",
+      "binary": "/root/.opencode/bin/opencode",
+      "fed_route": {
+        "config": "/root/.config/opencode/opencode.json",
+        "provider": "litellm-federation",
+        "base_url": "http://127.0.0.1:4000/v1",
+        "key_env": "LITELLM_MASTER_KEY"
+      },
+      "injection": ["provider_settings_headers_candidate", "key_mapping"],
+      "status": "route_obs_header_injection_staged",
+      "note": "provider package is aisdk:@ai-sdk/openai-compatible; settings.headers is the candidate injection point — verify at deploy"
+    },
+    {
+      "name": "kimi-code",
+      "fi": "FI-008",
+      "binary": "/root/.kimi-code/bin/kimi",
+      "fed_route": {
+        "config": "/root/.kimi/config.toml",
+        "base_url": "http://127.0.0.1:4000/v1",
+        "key_env": "UNKNOWN"
+      },
+      "injection": ["key_mapping"],
+      "status": "route_obs_key_mapping_unverified"
+    },
+    {
+      "name": "codex",
+      "fi": "FI-005",
+      "binary": "/root/.npm-global/bin/codex",
+      "fed_route": {"config": "/root/.codex/config.toml", "base_url": null, "key_env": "UNKNOWN"},
+      "injection": ["key_mapping"],
+      "status": "route_unverified"
+    },
+    {
+      "name": "claude-code",
+      "fi": "FI-002",
+      "binary": "/root/.local/bin/claude",
+      "fed_route": {"config": "/root/.claude/settings.json", "base_url": null, "key_env": "UNKNOWN"},
+      "injection": ["key_mapping"],
+      "status": "route_unverified"
+    },
+    {
+      "name": "qwen-code",
+      "fi": "UNKNOWN",
+      "binary": "/root/.local/bin/qwen",
+      "fed_route": {"config": "UNKNOWN", "base_url": null, "key_env": "UNKNOWN"},
+      "injection": ["key_mapping"],
+      "status": "route_unverified"
+    },
+    {
+      "name": "agy",
+      "fi": "UNKNOWN",
+      "binary": "/root/.local/bin/agy",
+      "fed_route": {"config": "UNKNOWN", "base_url": null, "key_env": "UNKNOWN"},
+      "injection": ["key_mapping"],
+      "status": "route_unverified"
+    },
+    {
+      "name": "openclaw",
+      "fi": "UNKNOWN",
+      "binary": "/root/.local/bin/openclaw",
+      "fed_route": {"config": "UNKNOWN", "base_url": null, "key_env": "UNKNOWN"},
+      "injection": ["key_mapping"],
+      "status": "route_unverified"
+    }
+  ]
+}

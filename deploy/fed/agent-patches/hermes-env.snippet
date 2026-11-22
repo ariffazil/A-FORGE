@@ -1,0 +1,10 @@
+# Hermes FED attribution env (source in the Hermes launch wrapper, not in git secrets)
+# STAGED — verify with fed_flow_probe.py --live --actor hermes
+
+export ARIFOS_ACTOR_ID="${ARIFOS_ACTOR_ID:-hermes}"
+export ARIFOS_NODE_ID="${ARIFOS_NODE_ID:-kvm8}"
+export ARIFOS_PURPOSE="${ARIFOS_PURPOSE:-interactive}"
+export ARIFOS_ATTRIBUTION_CONTRACT="arifos.fed-attribution.v1"
+
+# FED_ZEN_KEY should become a per-actor virtual key (fed-actor-hermes).
+# Until then, key/team mapping still yields confidence 0.95 when the key is unique.

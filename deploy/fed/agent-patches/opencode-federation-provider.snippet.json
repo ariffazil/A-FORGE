@@ -1,0 +1,17 @@
+{
+  "_status": "STAGED_UNVERIFIED — apply only after a live canary proves settings.headers is forwarded",
+  "_target": "/root/.config/opencode/opencode.json → providers.litellm-federation.settings.headers",
+  "providers": {
+    "litellm-federation": {
+      "settings": {
+        "headers": {
+          "x-arifos-actor-id": "{env:ARIFOS_ACTOR_ID}",
+          "x-arifos-node-id": "{env:ARIFOS_NODE_ID}",
+          "x-arifos-session-id": "{env:ARIFOS_SESSION_ID}",
+          "x-arifos-purpose": "interactive",
+          "x-arifos-attribution-contract": "arifos.fed-attribution.v1"
+        }
+      }
+    }
+  }
+}

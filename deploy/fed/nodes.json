@@ -1,0 +1,74 @@
+{
+  "contract": "arifos.fed-attribution.v1",
+  "captured_at": "2026-11-22T07:45:00Z",
+  "evidence": "OBS — live probes 2026-11-22 (tailscale, ss, curl, ssh read-only)",
+  "purpose": "Canonical node/gateway registry for FED attribution. One row per machine that can originate or front inference.",
+  "rules": [
+    "entry_gateway is stamped by the RECEIVING gateway, never by the caller",
+    "origin_node is stamped by the caller and survives every hop",
+    "gateway id format is <transport>_<node>_<port>",
+    "a node may consume inference without hosting it (kvm2 → kvm4 tunnel)"
+  ],
+  "nodes": {
+    "kvm8": {
+      "hostnames": ["af-forge", "kvm8", "forge"],
+      "role": "primary",
+      "loopback_gateway": "litellm_kvm8_4000",
+      "inference": {
+        "listen": ["127.0.0.1:4000", "100.64.0.2:4000", "127.0.0.1:4010"],
+        "upstream": "litellm-federation docker :4013 (HAProxy :4000 front)",
+        "config": "/root/A-FORGE/litellm-config.yaml",
+        "callback": "/root/.local/share/arifos/fed_attribution_callback.py",
+        "ledger": "/root/.local/share/arifos/token_bank.db",
+        "status": "active_primary"
+      }
+    },
+    "kvm4": {
+      "hostnames": ["kvm4-forge", "srv1946043"],
+      "role": "standby_front_door",
+      "loopback_gateway": "litellm_kvm4_4000",
+      "inference": {
+        "listen": ["100.64.0.5:4000"],
+        "upstream": "docker litellm :4000",
+        "config": "/docker/litellm/config.yaml",
+        "callback": "/root/A-FORGE/scripts/data/fed_attribution_callback.py",
+        "ledger": "/root/A-FORGE/scripts/data/token_bank.db",
+        "status": "active_degraded_ledger",
+        "observed_defect": "token_bank.db is 0 bytes with no token_bank_spend table (probed 2026-11-22T07:43Z); spend inserts cannot land"
+      }
+    },
+    "kvm2": {
+      "hostnames": ["azwaos", "flow-edge", "kvm2"],
+      "role": "edge_consumer",
+      "loopback_gateway": "litellm_kvm4_4000",
+      "inference": {
+        "listen": ["127.0.0.1:4000"],
+        "upstream": "fed-tunnel.service → kvm4 litellm (no local litellm)",
+        "config": null,
+        "callback": null,
+        "ledger": null,
+        "status": "consumer_only"
+      },
+      "side_services": ["arifosmcp.service", "fed-router.service (:7074)", "fed-tunnel.service"]
+    }
+  },
+  "future_node_template": {
+    "hostnames": ["<hostname>"],
+    "role": "edge_consumer | front_door | primary",
+    "loopback_gateway": "litellm_<node>_<port>",
+    "inference": {
+      "listen": ["<ip>:<port>"],
+      "upstream": "<gateway path>",
+      "config": "<litellm config path or null>",
+      "callback": "<fed_attribution_callback.py path or null>",
+      "ledger": "<token_bank.db path or null>",
+      "status": "planned"
+    },
+    "enrollment": [
+      "add node row here + deploy/fed/NODE-ONBOARDING.md checklist",
+      "set FED_ENTRY_GATEWAY=litellm_<node>_<port> on the receiving gateway",
+      "ensure ledger schema exists before traffic (init_fed_ledger.py)",
+      "run fed_flow_probe.py --live and attach the receipt"
+    ]
+  }
+}
