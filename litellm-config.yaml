@@ -21,9 +21,12 @@ model_list:
 #   qwen3.8-max 1/0/1 (serves via router fallback)   qwen3.6-plus 2/0/2 (same)
 #
 # Measured DOWN for callers right now — no servable rung and no fallback:
-#   qwen3.7-max 429 · qwen3.7-plus 429 · qwen3.6-flash 429
 #   fed/audio-voiceclone 429 · fed/vision-parked 403 · qwen3.8-max-0902 404
 #   realtime-speech 429 (MiniMax speech seat, not the Qwen tail)
+#   qwen3.7-max, qwen3.7-plus and qwen3.6-flash were on this list on 2026-11-23; they were
+#   given the same fallback chain as qwen3.8-max / qwen3.6-plus (A-FORGE f530055a) and now
+#   answer 200 served by mimo-v2.6-flash. That is a substitution, not a Qwen answer — the
+#   served model is exposed in the response.
 #
 # Re-probe after 2026-11-30T16:00Z. The method and the next measurement date live in ledger
 # row p3-fed-effective-depth-vs-declared-depth-20261123. Do not restore or prune on the date
