@@ -8,12 +8,13 @@ model_list:
   model_info:
     route_class: openrouter-backbone
     capability: code-change
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 2
 - model_name: code-change
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 2
+    order: 999
   model_info:
     route_class: prepaid-flat-rate
     capability: code-change
@@ -44,21 +45,23 @@ model_list:
   model_info:
     route_class: prepaid-flat-rate
     capability: architecture-synthesis
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 3
 - model_name: architecture-synthesis
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 3
+    order: 999
   model_info:
     route_class: prepaid-flat-rate
     capability: architecture-synthesis
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
 - model_name: independent-verification
   litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     api_key: os.environ/ZAI_API_KEY
-    order: 1
+    order: 900
   model_info:
     route_class: independent-family
     capability: independent-verification
@@ -89,12 +92,13 @@ model_list:
   model_info:
     route_class: openrouter-backbone
     capability: structured-extraction
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 2
 - model_name: structured-extraction
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 2
+    order: 999
   model_info:
     route_class: prepaid-flat-rate
     capability: structured-extraction
@@ -116,12 +120,13 @@ model_list:
   model_info:
     route_class: openrouter-backbone
     capability: multimodal-analysis
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 2
 - model_name: multimodal-analysis
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 2
+    order: 999
   model_info:
     route_class: prepaid-flat-rate
     capability: multimodal-analysis
@@ -143,12 +148,13 @@ model_list:
   model_info:
     route_class: prepaid-flat-rate
     capability: research-synthesis
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 2
 - model_name: research-synthesis
   litellm_params:
     model: openai/mimo-v2.6-pro
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 2
+    order: 999
   model_info:
     route_class: prepaid-flat-rate
     capability: research-synthesis
@@ -189,12 +195,13 @@ model_list:
     route_class: prepaid-flat-rate
     capability: persona-expression
     authority: none
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 2
 - model_name: persona-expression
   litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: https://token-plan-sgp.xiaomimimo.com/v1
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 2
+    order: 999
   model_info:
     route_class: prepaid-flat-rate
     capability: persona-expression
@@ -254,6 +261,7 @@ model_list:
       — 1M-capable primary for constitutional judging of large evidence. | DEMOTED
       2026-11-11: live probe 402 insufficient-balance (key DEEPSEEK_API_KEY, seat
       empty since 2026-10-21 -$0.00). Kept for top-up restore.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 6
 - model_name: apex-888
   litellm_params:
     model: openai/glm-5.3-flash
@@ -261,7 +269,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 6
+    order: 900
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -277,6 +285,7 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'apex-888 P4 (ZAI GLM-5.3-Flash): 1M context fallback judge.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -284,7 +293,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 995
+    order: 999
     min_tokens: 200
   model_info:
     cost_class: quarantined
@@ -302,6 +311,7 @@ model_list:
       Token Plan Max restored 2026-08-18. | QUARANTINE 2026-11-11 (F13 relayed order):
       orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault); rung inert by
       design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 993
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -309,7 +319,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 993
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -327,6 +337,7 @@ model_list:
     notes: 'apex-888 → QWEN qwen3.8-max — fallback judge lane. Vision + function calling.
       | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 991
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.7-max
@@ -334,7 +345,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 991
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -351,6 +362,7 @@ model_list:
       F13 FI-008 — older model fallback for when qwen3.8-max failover chains exhaust.
       | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -358,7 +370,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 997
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -374,6 +386,7 @@ model_list:
       relayed order): orig key env=QWEN_ARIFOS_API_KEY (value intact in vault); rung
       inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
     mode: chat
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 993
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.7-max
@@ -381,7 +394,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 993
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -398,6 +411,7 @@ model_list:
       F13 FI-008 — older model parallel to arifOS qwen3.8-max failover. | QUARANTINE
       2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY (value intact
       in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -405,7 +419,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 990
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -421,6 +435,7 @@ model_list:
       relayed order): orig key env=QWEN_HERMES_API_KEY (value intact in vault); rung
       inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
     mode: chat
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.7-max
@@ -428,7 +443,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 995
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -445,6 +460,7 @@ model_list:
       2026-09-21 F13 FI-008 — older model parallel to ariffazil qwen3.8-max failover.
       | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
 - model_name: asi-555
   litellm_params:
     model: openai/glm-5.3-flash
@@ -452,7 +468,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 1
+    order: 900
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -492,6 +508,7 @@ model_list:
     supports_video_input: true
     supports_vision: true
     notes: MiMo V2.5 Token Plan — 82B credits, 20% off-peak discount.
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 992
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -499,7 +516,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 992
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -516,6 +533,7 @@ model_list:
       F13 FI-008 — Team Owner seat qwen3.8-max fallback. | QUARANTINE 2026-11-11 (F13
       relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.7-max
@@ -523,7 +541,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 998
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -542,6 +560,7 @@ model_list:
       F13 FI-008 — older model parallel to Team Owner qwen3.8-max. | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -549,7 +568,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 997
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -565,6 +584,7 @@ model_list:
       relayed order): orig key env=QWEN_ARIFOS_API_KEY (value intact in vault); rung
       inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
     mode: chat
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 993
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.7-max
@@ -572,7 +592,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 993
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -589,6 +609,7 @@ model_list:
       F13 FI-008 — older model parallel to arifOS qwen3.8-max failover. | QUARANTINE
       2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY (value intact
       in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
@@ -596,7 +617,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 990
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -612,6 +633,7 @@ model_list:
       relayed order): orig key env=QWEN_HERMES_API_KEY (value intact in vault); rung
       inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
     mode: chat
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.7-max
@@ -619,7 +641,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 995
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -682,6 +704,7 @@ model_list:
     mode: image
     notes: ' | QUARANTINE-DELTA 2026-11-11 (verifier A1/A2/A3): orig key env=QWEN_TEAM_OWNER_API_KEY;
       restore via litellm-config.yaml.bak-quarantine-delta-20261111T141301Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 993
 - model_name: asi-555
   litellm_params:
     model: openai/deepseek-v4-flash-0731
@@ -689,7 +712,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 993
+    order: 999
     min_tokens: 200
   model_info:
     cost_class: quarantined
@@ -708,6 +731,41 @@ model_list:
       requires max_tokens>=200, min content budget] | QUARANTINE 2026-11-11 (F13 relayed
       order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault); rung inert
       by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+- model_name: asi-555
+  litellm_params:
+    model: openai/deepseek-flash
+    api_base: https://api.deepseek.com/v1
+    additional_drop_params:
+    - include
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 5
+    min_tokens: 200
+  model_info:
+    cost_class: payg
+    price_status: live_probe
+    spendable: true
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'asi-555 P5 (added 2026-11-23 FED audit): verifier lane had ONE healthy rung (mimo-v2.6-pro). DeepSeek direct added for independent failure domain. Probe UP.'
+- model_name: asi-555
+  litellm_params:
+    model: openai/deepseek/deepseek-v4.1-flash
+    api_base: https://openrouter.ai/api/v1
+    additional_drop_params:
+    - include
+    api_key: os.environ/OPENROUTER_API_KEY
+    order: 6
+  model_info:
+    cost_class: payg
+    price_status: live_probe
+    spendable: true
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'asi-555 P6 (added 2026-11-23 FED audit): OpenRouter independent boundary for verifier redundancy. Probe UP.'
 - model_name: forge-scout
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -735,6 +793,7 @@ model_list:
     notes: 'forge-scout P1 (MiMo V2.5 omni-modal): multimodal evidence reader — screenshots,
       diagrams, browser DOM, logs. License: coding-tools-only compliant. Token Plan
       Max 82B credits fresh 2026-09-13. PONG 1500ms.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 992
 - model_name: forge-scout
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -742,7 +801,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 992
+    order: 999
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -789,6 +848,7 @@ model_list:
     notes: 'forge-scout-pro P1 (MiMo V2.5 Pro 1T/42B MoE): heavy multimodal synthesis
       — design review, architecture diff, multimodal contract analysis. Token Plan
       Max. PONG 1840ms.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 992
 - model_name: forge-scout-pro
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -796,7 +856,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 992
+    order: 999
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -842,6 +902,7 @@ model_list:
     notes: forge-builder P1 (DeepSeek V4.1-Flash) — canonical name updated 2026-09-28
       (v4-flash retired upstream 2026-09-10). Cost-frontier for high-volume builder
       loops. ZAI glm-5.3-flash remains P2.
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 3
 - model_name: forge-builder
   litellm_params:
     model: openai/glm-5.3-flash
@@ -849,7 +910,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 3
+    order: 900
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -918,6 +979,7 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'forge-economy P3 (MiMo V2.5): 82B credits, multimodal fallback for forge-economy.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 995
 - model_name: forge-economy
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -925,7 +987,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 995
+    order: 999
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -971,6 +1033,7 @@ model_list:
       and /v1/t2a_v2). Models and base URLs unchanged.'
     notes: 'forge-planner P1 (MiniMax-M3): 1M ctx, task decomposition, scope/budget/architecture
       planning. Token Plan Max fresh 2026-09-13.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 2
 - model_name: forge-planner
   litellm_params:
     model: openai/glm-5.3-flash
@@ -978,7 +1041,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 2
+    order: 900
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -1020,6 +1083,7 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'forge-planner P3 (MiMo V2.5): cheap planner fallback.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 998
 - model_name: forge-planner
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -1027,7 +1091,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 998
+    order: 999
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -1073,6 +1137,7 @@ model_list:
     notes: 'forge-judge P1 (MiniMax-M3 Token Plan Max): constitutional adjudication
       lane — diff+receipt comparison. 1M ctx, multimodal evidence accepted. Fresh
       2026-09-13.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
 - model_name: forge-777
   litellm_params:
     model: openai/glm-5.3-flash
@@ -1080,7 +1145,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 1
+    order: 900
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -1155,6 +1220,7 @@ model_list:
     notes: 'Stage 2 (2026-09-22): forge-777 P1 — MiMo-V2.6-Pro PAYG/platform. AA Index
       46, $0.43/$0.87 per 1M. Multimodal text+image+video+audio. Primary quality tier
       for federation; V2.5 demoted to order 5 fallback.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 996
 - model_name: forge-777
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -1162,7 +1228,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 996
+    order: 999
     rpm: 90
     tpm: 9000000
   model_info:
@@ -1276,6 +1342,43 @@ model_list:
     mode: chat
     notes: opencode alias compressed -> forge-777 chain via deepseek-flash (V4.1 canonical,
       updated 2026-09-28).
+- model_name: opencode
+  litellm_params:
+    model: openai/deepseek/deepseek-v4.1-flash
+    api_base: https://openrouter.ai/api/v1
+    additional_drop_params:
+    - include
+    api_key: os.environ/OPENROUTER_API_KEY
+    order: 2
+  model_info:
+    cost_class: payg
+    price_status: live_probe
+    spendable: true
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'opencode P2 (added 2026-11-23 FED audit): lane had exactly one rung (deepseek-flash) = single-provider SPOF. OpenRouter rung added behind the head.'
+- model_name: opencode
+  litellm_params:
+    model: openai/mimo-v2.6-flash
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params:
+    - include
+    api_key: os.environ/MIMO_INDIVIDUAL_PLAN_API_KEY
+    order: 3
+    rpm: 90
+    tpm: 9000000
+  model_info:
+    cost_class: plan
+    price_status: plan_quota
+    spendable: false
+    quota_bearing: true
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'opencode P3 (added 2026-11-23 FED audit): MiMo individual-plan seat, third vendor family. Probe UP 2026-11-23.'
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek-flash
@@ -1302,6 +1405,7 @@ model_list:
       F13 FI-008 from order=1 to break race with hermes-asi Block-2 qwen3.8-max (both
       were at order=1). Name canonicalized 2026-09-28. Kept as last-resort-first before
       kimi-k3.
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 2
 - model_name: openclaw
   litellm_params:
     model: openai/glm-5.3-flash
@@ -1309,7 +1413,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 2
+    order: 900
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -1325,6 +1429,7 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'openclaw P2 (ZAI GLM-5.3-Flash): 1M context, 3x quota.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.8-max
@@ -1332,7 +1437,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 995
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1354,6 +1459,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.7-plus
@@ -1361,7 +1467,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 997
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1382,6 +1488,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.7-max
@@ -1389,7 +1496,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 998
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1409,6 +1516,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
 - model_name: openclaw
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -1416,7 +1524,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 998
+    order: 999
     min_tokens: 200
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -1437,6 +1545,62 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+- model_name: openclaw
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    additional_drop_params:
+    - include
+    api_key: os.environ/MINIMAX_MPLAN_KEY
+    order: 1
+    min_tokens: 200
+  model_info:
+    cost_class: plan
+    price_status: plan_quota
+    spendable: false
+    quota_bearing: true
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'openclaw SENSE-lane head (repaired 2026-11-23 FED audit): before repair every rung in this lane was dead (z.ai 429 monthly + 4x quarantined Qwen key, /health 503 healthy=0). MiniMax-M3 1M ctx multimodal per federation-lane-routing. Probe UP 2026-11-23.'
+- model_name: openclaw
+  litellm_params:
+    model: openai/deepseek-flash
+    api_base: https://api.deepseek.com/v1
+    additional_drop_params:
+    - include
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 2
+    min_tokens: 200
+  model_info:
+    cost_class: payg
+    price_status: live_probe
+    spendable: true
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'openclaw P2 (added 2026-11-23 FED audit): DeepSeek Flash direct, vision-capable. Probe UP 2026-11-23.'
+- model_name: openclaw
+  litellm_params:
+    model: openai/deepseek/deepseek-v4.1-flash
+    api_base: https://openrouter.ai/api/v1
+    additional_drop_params:
+    - include
+    api_key: os.environ/OPENROUTER_API_KEY
+    order: 3
+  model_info:
+    cost_class: payg
+    price_status: live_probe
+    spendable: true
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'openclaw P3 (added 2026-11-23 FED audit): OpenRouter deepseek-v4.1-flash, independent vendor boundary. Probe UP 2026-11-23.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
 - model_name: hermes-asi
   litellm_params:
     model: openai/qwen3.8-max
@@ -1444,7 +1608,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 998
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1465,6 +1629,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
 - model_name: hermes-asi
   litellm_params:
     model: openai/qwen3.7-plus
@@ -1472,7 +1637,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 990
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1492,6 +1657,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
 - model_name: hermes-asi
   litellm_params:
     model: openai/qwen3.7-max
@@ -1499,7 +1665,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 990
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1518,6 +1684,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -1525,7 +1692,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 998
+    order: 999
     min_tokens: 200
     max_input_tokens: 131072
     max_output_tokens: 131072
@@ -1545,6 +1712,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
 - model_name: qwen3.6-plus
   litellm_params:
     model: openai/qwen3.6-plus
@@ -1552,7 +1720,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 997
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1570,6 +1738,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
 - model_name: qwen3.6-plus
   litellm_params:
     model: openai/qwen3.6-plus
@@ -1577,7 +1746,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 995
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -1592,6 +1761,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
 - model_name: qwen3.8-max
   litellm_params:
     model: openai/qwen3.8-max
@@ -1599,7 +1769,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 990
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1619,6 +1789,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
 - model_name: qwen3.8-max
   litellm_params:
     model: openai/qwen3.8-max
@@ -1626,7 +1797,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 990
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -1646,6 +1817,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
 - model_name: qwen3.7-max
   litellm_params:
     model: openai/qwen3.7-max
@@ -1653,7 +1825,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 990
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -1669,6 +1841,7 @@ model_list:
     notes: 'FI-003 2026-10-06: verified WORKS on owner seat (individual seat quota-dead).
       | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
 - model_name: qwen3.7-max
   litellm_params:
     model: openai/qwen3.7-max
@@ -1676,7 +1849,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 995
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -1691,6 +1864,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
 - model_name: qwen3.7-plus
   litellm_params:
     model: openai/qwen3.7-plus
@@ -1698,7 +1872,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 990
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -1715,6 +1889,7 @@ model_list:
     notes: 'FI-003 2026-10-06: verified WORKS on owner seat. | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 996
 - model_name: qwen3.7-plus
   litellm_params:
     model: openai/qwen3.7-plus
@@ -1722,7 +1897,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 996
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -1737,6 +1912,7 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 991
 - model_name: qwen3.6-flash
   litellm_params:
     model: openai/qwen3.6-flash
@@ -1744,7 +1920,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 991
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -1761,6 +1937,7 @@ model_list:
     notes: 'FI-003 2026-10-06: verified WORKS on owner seat. | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
 - model_name: qwen3.6-flash
   litellm_params:
     model: openai/qwen3.6-flash
@@ -1768,7 +1945,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 997
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -1991,6 +2168,7 @@ model_list:
       Probed live: image 1024 tok, audio 25 tok (correct ASR), video 1144+19 tok.
       FPS 0.1-10, media_resolution default|max. Video ≤300MB URL / ≤50MB b64. Audio
       ≤100MB URL / ≤50MB b64. Image ≤50MB.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 991
 - model_name: mimo-v2.6-pro
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -1998,7 +2176,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 991
+    order: 999
     supports_vision: true
     rpm: 90
     tpm: 9000000
@@ -2104,6 +2282,7 @@ model_list:
     notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url
       in content[]. Token Plan endpoint. Cheaper than Pro. Same modality support as
       v2.6-pro.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 991
 - model_name: mimo-v2.6-flash
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -2111,7 +2290,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 991
+    order: 999
     supports_vision: true
     rpm: 90
     tpm: 9000000
@@ -2173,6 +2352,7 @@ model_list:
       v2.5-era "no thinking mode" scar does not carry. TEXT ONLY declared: image/audio/
       video were NOT re-probed on this id, so capability flags stay false rather than
       inherit v2.6-pro claims. Team seats 429 dry -> order-991 rung below.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 991
 - model_name: mimo-v2.6-pro-ultraspeed
   litellm_params:
     model: openai/mimo-v2.6-pro-ultraspeed
@@ -2180,7 +2360,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 991
+    order: 999
     rpm: 90
     tpm: 9000000
   model_info:
@@ -2312,6 +2492,7 @@ model_list:
       on real 1600px outcrop vs qwen3.8-max >180s timeout. Interactive vision lane.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MiMo PAYG 'Insufficient account balance' (live 2026-11-23); restore: order -> 996
 - model_name: fed/vision
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -2319,7 +2500,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_PLATFORM_API_KEY
-    order: 996
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -2336,6 +2517,7 @@ model_list:
     supports_vision: true
     notes: 'VISION PRIMARY (2026-11-10 alignment): mimo-v2.6-flash via MIMO_PLATFORM_BASE_URL
       (PAYG). Real-image-verified.'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 993
 - model_name: fed/vision
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -2343,7 +2525,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 993
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -2522,13 +2704,14 @@ model_list:
     mode: chat
     supports_audio_input: true
     supports_video_input: true
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 3
 - litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 3
+    order: 900
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -2547,13 +2730,14 @@ model_list:
     max_input_tokens: 1000000
     max_output_tokens: 128000
   model_name: fed/vision
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
 - litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 998
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -2633,13 +2817,14 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: fed/vision-parked
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MiniMax-M3 on /anthropic/v1 returns 404 page not found (live 2026-11-23); OpenAI-compat rung added at order 3; restore: order -> 994
 - litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/anthropic/v1
     additional_drop_params:
     - include
     api_key: os.environ/MINIMAX_MPLAN_KEY
-    order: 994
+    order: 999
     min_tokens: 200
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -2666,6 +2851,7 @@ model_list:
   model_name: hermes-asi-vision
 - litellm_params:
     model: deepseek/deepseek-flash
+    api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
     order: 2
     min_tokens: 200
@@ -2688,13 +2874,14 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MiMo PAYG 'Insufficient account balance' (live 2026-11-23); restore: order -> 996
 - litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_PLATFORM_BASE_URL
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_PLATFORM_API_KEY
-    order: 996
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -2711,13 +2898,14 @@ model_list:
       lane.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 992
 - litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_TOKEN_PLAN_BASE_URL
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 992
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -2737,13 +2925,14 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 5
 - litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 5
+    order: 900
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -2763,13 +2952,14 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
 - litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 990
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -2791,13 +2981,14 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 991
 - litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 991
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -2819,13 +3010,14 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 992
 - litellm_params:
     model: openai/qwen3.6-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 992
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -2847,6 +3039,26 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
+- model_name: hermes-asi-vision
+  litellm_params:
+    model: openai/MiniMax-M3
+    api_base: https://api.minimax.io/v1
+    additional_drop_params:
+    - include
+    api_key: os.environ/MINIMAX_MPLAN_KEY
+    order: 3
+    min_tokens: 200
+  model_info:
+    cost_class: plan
+    price_status: plan_quota
+    spendable: false
+    quota_bearing: true
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'hermes-asi-vision P3 (added 2026-11-23 FED audit): OpenAI-compat MiniMax-M3. The pre-existing anthropic-base rung 404s (parked), leaving the vision lane with one live provider. Probe UP.'
 - model_name: fed/audio-voiceclone
   litellm_params:
     model: openai/mimo-v2.5-tts-voiceclone
@@ -2896,6 +3108,7 @@ model_list:
       voice_id from registry.
     max_input_tokens: 1048576
     max_output_tokens: 131072
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
@@ -2903,7 +3116,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 997
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -2921,6 +3134,7 @@ model_list:
     notes: 'apex-888 -> QWEN qwen3.8-max live Individual plan fallback | QUARANTINE
       2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY (value intact
       in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -2928,7 +3142,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 995
+    order: 999
     min_tokens: 200
   model_info:
     cost_class: quarantined
@@ -2945,6 +3159,7 @@ model_list:
     notes: 'apex-888 -> QWEN deepseek-v4-pro live Individual plan | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_HERMES_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 992
 - model_name: forge-777
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -2952,7 +3167,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 992
+    order: 999
     min_tokens: 200
   model_info:
     cost_class: quarantined
@@ -2970,6 +3185,7 @@ model_list:
       secondary fallback via Aliyun Individual plan. VERIFIED LIVE. | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
 - model_name: forge-777
   litellm_params:
     model: openai/qwen3.8-max
@@ -2977,7 +3193,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 990
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -3034,6 +3250,7 @@ model_list:
     max_output_tokens: 8192
     mode: chat
     notes: fed/sealion -> AI Singapore Qwen-SEA-LION-v4.5-27B-IT fallback
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 992
 - model_name: qwen3.8-max-0902
   litellm_params:
     model: openai/qwen3.8-max-0902
@@ -3041,7 +3258,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 992
+    order: 999
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -3165,6 +3382,7 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MiMo PAYG 'Insufficient account balance' (live 2026-11-23); restore: order -> 997
 - model_name: i-arif
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -3172,7 +3390,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/MIMO_PLATFORM_API_KEY
-    order: 997
+    order: 999
     rpm: 90
     tpm: 9000000
     max_input_tokens: 1048576
@@ -3194,6 +3412,7 @@ model_list:
     supports_video_input: true
     supports_vision: true
     supports_function_calling: true
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 991
 - model_name: i-arif
   litellm_params:
     model: openai/qwen3.8-max
@@ -3201,7 +3420,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 991
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -3225,6 +3444,7 @@ model_list:
     supports_function_calling: true
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_INDIVIDUAL_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Kimi coding 'monthly usage limit reached' (live 2026-11-23); restore: order -> 995
 - model_name: i-arif
   litellm_params:
     model: openai/k3.1-pro
@@ -3232,7 +3452,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/KIMI_API_KEY
-    order: 995
+    order: 998
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -3284,6 +3504,7 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 991
 - model_name: i-arif
   litellm_params:
     model: openai/qwen3.8-max
@@ -3291,7 +3512,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 991
+    order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -3349,6 +3570,7 @@ model_list:
     supports_video_input: true
     supports_vision: true
     supports_function_calling: true
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
 - model_name: i-arif
   litellm_params:
     model: openai/glm-5.3-flash
@@ -3356,7 +3578,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 1
+    order: 900
     max_input_tokens: 1000000
     max_output_tokens: 128000
     mode: chat
@@ -3543,6 +3765,25 @@ model_list:
     notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
       direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
       via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+- model_name: forge-777
+  litellm_params:
+    model: openai/deepseek-v4-pro
+    api_base: https://api.deepseek.com/v1
+    additional_drop_params:
+    - include
+    api_key: os.environ/DEEPSEEK_API_KEY
+    order: 4
+    min_tokens: 200
+  model_info:
+    cost_class: payg
+    price_status: live_probe
+    spendable: true
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: false
+    supports_function_calling: true
+    notes: 'forge-777 P4 (added 2026-11-23 FED audit): DeepSeek V4.1 Pro direct on DEEPSEEK_API_KEY — probe UP 2026-11-23. Restores the declared cascade deepseek-v4-pro before MiniMax-M3 without displacing the live head.'
 - model_name: i-arif
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -3667,6 +3908,27 @@ model_list:
     notes: 'P2-cost OpenRouter rung wired 2026-10-21 by 333-AGI (F13 option b; DeepSeek
       direct seat EMPTY: balance -$0.00 is_available=false probed 2026-10-21). V4.1-Flash
       via OpenRouter $0.049/$0.375 per M, 1M ctx. Revert: restore .bak-deepseek-or-p2-*.'
+- model_name: hermes-asi
+  litellm_params:
+    model: openai/mimo-v2.6-pro
+    api_base: os.environ/MIMO_BASE_URL
+    additional_drop_params:
+    - include
+    api_key: os.environ/MIMO_INDIVIDUAL_PLAN_API_KEY
+    order: 10
+    rpm: 90
+    tpm: 9000000
+  model_info:
+    cost_class: plan
+    price_status: plan_quota
+    spendable: false
+    quota_bearing: true
+    max_input_tokens: 1048576
+    max_output_tokens: 131072
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'hermes-asi P10 (added 2026-11-23 FED audit): third live vendor family behind deepseek-flash(8)/openrouter(9). Probe UP.'
 - model_name: deepseek-flash
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -3910,12 +4172,13 @@ model_list:
     supports_function_calling: true
     notes: 2026-10-28 Gemini 2.5 Flash-Lite — cheapest paid rung, highest RPD. Text
       only. Use for bulk/trivial. Live probe 200 2026-10-28.
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
 - model_name: qwen-auto
   litellm_params:
     model: openai/auto
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     api_key: os.environ/QWEN_QUARANTINED_20261111
-    order: 997
+    order: 999
     additional_drop_params:
     - include
     - temperature
@@ -4003,6 +4266,13 @@ router_settings:
   allowed_fails: 2
   cooldown_time: 60
   fallbacks:
+
+  - deepseek-flash:
+    - deepseek-v4-flash
+    - sovereign-west
+  - mimo-v2.6-pro-ultraspeed:
+    - mimo-v2.6-pro
+    - sovereign-west
   - i-arif:
     - mimo-v2.6-pro
     - deepseek-v4-flash
