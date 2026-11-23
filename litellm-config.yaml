@@ -1,4 +1,34 @@
 model_list:
+# ---------------------------------------------------------------------------
+# FED DEPTH READING — measured 2026-11-23 (FI-003, F13 "sah P3")
+#
+# The rung count of a group is NOT its effective depth. Read it like this:
+#
+#   * Every rung whose api_base is token-plan*.qwencloudapi.com or
+#     token-plan.ap-southeast-1.maas.aliyuncs.com sits on the Qwen team-owner
+#     seat, which answers 429 insufficient_quota until 2026-11-30T16:00Z.
+#     Those rungs are declared, not servable. They come back on their own.
+#   * A group name with no non-tail rung AND no router fallback is HARD DOWN
+#     for callers until the quota resets.
+#
+# Measured 2026-11-23 — declared / servable / tail:
+#   apex-888 6/3/3          asi-555 7/4/3           forge-777 9/7/2
+#   hermes-asi 7/3/4       openclaw 8/4/4          i-arif 11/9/2
+#   hermes-asi-vision 9/6/3  fed/vision 5/4/1     code-change 3/2/1
+#   architecture-synthesis 3/2/1  structured-extraction 3/2/1
+#   multimodal-analysis 3/2/1   research-synthesis 3/2/1
+#   persona-expression 2/1/1   realtime-speech 2/1/1
+#   qwen3.8-max 1/0/1 (serves via router fallback)   qwen3.6-plus 2/0/2 (same)
+#
+# Measured DOWN for callers right now — no servable rung and no fallback:
+#   qwen3.7-max 429 · qwen3.7-plus 429 · qwen3.6-flash 429
+#   fed/audio-voiceclone 429 · fed/vision-parked 403 · qwen3.8-max-0902 404
+#   realtime-speech 429 (MiniMax speech seat, not the Qwen tail)
+#
+# Re-probe after 2026-11-30T16:00Z. The method and the next measurement date live in ledger
+# row p3-fed-effective-depth-vs-declared-depth-20261123. Do not restore or prune on the date
+# alone — probe the seat first.
+# ---------------------------------------------------------------------------
 - model_name: code-change
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
