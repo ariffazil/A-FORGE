@@ -1,0 +1,44 @@
+# FED KVM4 deployment artifact manifest.
+#
+# The deploy source is an EXPLICIT identity, never the mutable working directory. Two seats
+# equal is not two seats ratified: on 2026-11-23 the parity deploy copied a dirty
+# scripts/fed_context_guard.py into production twice, and it had to be restored by hand each time.
+#
+# Rules enforced by scripts/fed-deploy-artifacts.py (fail closed, never silently fall back):
+#   * source_type git              -> bytes come from `git show <source_sha>:<path>`; the working
+#                                      tree is never read, so an uncommitted change cannot travel.
+#   * source_type external_attested -> bytes come from an explicit path and MUST match an approved
+#                                      sha256 and carry an owner; no silent filesystem fallback.
+#   * anything else                -> rejected before any byte moves.
+#
+# The litellm config also needs a kvm4-only divergence (ZAI relay + guardrail ref). That patch is
+# applied to the STAGED copy after resolution, so the deployed bytes are the patched ones; the
+# recorded hashes describe exactly what went to the host.
+
+version: 1
+
+artifacts:
+  - id: litellm-config
+    source_type: git
+    repository: A-FORGE
+    path: litellm-config.yaml
+    destination: /docker/litellm/config.yaml
+    # the kvm4-only divergence is applied to the staged copy after resolution
+    divergence: kvm4-zai-relay
+
+  - id: fed-context-guard
+    source_type: git
+    repository: A-FORGE
+    path: scripts/fed_context_guard.py
+    destination: /root/A-FORGE/scripts/data/fed_context_guard.py
+
+  - id: fed-attribution-callback
+    # A-FORGE source (PR-FED-1 attribution contract) that currently lives OUTSIDE the repository,
+    # so it cannot be produced from a commit yet. It is deployed as an attested external artifact:
+    # owner + approved hash, verified before anything moves. When its owner adopts it into the repo,
+    # this entry becomes source_type git with no change to the deploy mechanism.
+    source_type: external_attested
+    owner: A-FORGE (PR-FED-1 canonical attribution contract; file kept outside the repo until its owner adopts it)
+    source_path: /root/.local/share/arifos/fed_attribution_callback.py
+    sha256: e3a165d618ac8fa3c8da04558c3f2f9987e5e2edc30c437264f079f37197f9cc
+    destination: /root/A-FORGE/scripts/data/fed_attribution_callback.py
