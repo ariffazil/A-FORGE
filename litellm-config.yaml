@@ -55,16 +55,6 @@ model_list:
   model_info:
     route_class: prepaid-flat-rate
     capability: architecture-synthesis
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
-- model_name: independent-verification
-  litellm_params:
-    model: openai/glm-5.3-flash
-    api_base: https://api.z.ai/api/coding/paas/v4
-    api_key: os.environ/ZAI_API_KEY
-    order: 900
-  model_info:
-    route_class: independent-family
-    capability: independent-verification
 - model_name: independent-verification
   litellm_params:
     model: openai/MiniMax-M3.1-Flash
@@ -261,31 +251,6 @@ model_list:
       — 1M-capable primary for constitutional judging of large evidence. | DEMOTED
       2026-11-11: live probe 402 insufficient-balance (key DEEPSEEK_API_KEY, seat
       empty since 2026-10-21 -$0.00). Kept for top-up restore.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 6
-- model_name: apex-888
-  litellm_params:
-    model: openai/glm-5.3-flash
-    api_base: https://api.z.ai/api/coding/paas/v4
-    additional_drop_params:
-    - include
-    api_key: os.environ/ZAI_API_KEY
-    order: 900
-  model_info:
-    cost_class: plan
-    price_status: plan_quota
-    price_usd_per_1m_in: 0.0
-    price_usd_per_1m_out: 0.0
-    price_source: zai_coding_plan_seat
-    price_declared_at: '2026-11-12'
-    spendable: false
-    quota_bearing: true
-    max_input_tokens: 1000000
-    max_output_tokens: 128000
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: 'apex-888 P4 (ZAI GLM-5.3-Flash): 1M context fallback judge.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek-v4-pro
@@ -1223,34 +1188,6 @@ model_list:
 # PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 996
 - model_name: forge-777
   litellm_params:
-    model: openai/mimo-v2.6-flash
-    api_base: os.environ/MIMO_BASE_URL
-    additional_drop_params:
-    - include
-    api_key: os.environ/MIMO_TOKEN_PLAN_API_KEY
-    order: 999
-    rpm: 90
-    tpm: 9000000
-  model_info:
-    cost_class: plan
-    price_status: plan_quota
-    price_usd_per_1m_in: 0.0
-    price_usd_per_1m_out: 0.0
-    price_source: mimo_token_plan_seat
-    price_declared_at: '2026-11-12'
-    spendable: false
-    quota_bearing: true
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_audio_input: true
-    supports_video_input: true
-    supports_vision: true
-    notes: 'Stage 2 (2026-09-22): forge-777 P1 — MiMo-V2.6-Pro PAYG/platform. AA Index
-      46, $0.43/$0.87 per 1M. Multimodal text+image+video+audio. Primary quality tier
-      for federation; V2.5 demoted to order 5 fallback.'
-- model_name: forge-777
-  litellm_params:
     model: openai/glm-5.3
     api_base: os.environ/ZAI_API_BASE
     additional_drop_params:
@@ -1296,28 +1233,6 @@ model_list:
     supports_function_calling: true
     notes: 'forge-777 P5 RESTORED 2026-11-07: direct probe HTTP 200 ($49.92 balance).
       Restored to order 1 alongside MiMo. DeepSeek-V4.1-Flash canonical.'
-- model_name: forge-777
-  litellm_params:
-    model: openai/k3.1-pro
-    api_base: https://api.kimi.com/coding/v1
-    additional_drop_params:
-    - include
-    api_key: os.environ/KIMI_API_KEY
-    order: 998
-  model_info:
-    cost_class: plan
-    price_status: plan_quota
-    price_usd_per_1m_in: 0.0
-    price_usd_per_1m_out: 0.0
-    price_source: kimi_coding_plan_seat
-    price_declared_at: '2026-11-12'
-    spendable: false
-    quota_bearing: true
-    mode: chat
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    notes: forge-777 fallback — Kimi K3 coding plan. Billing cycle exhausted (403).
-      Will recover when cycle refreshes.
 - model_name: opencode
   litellm_params:
     model: openai/deepseek-flash
