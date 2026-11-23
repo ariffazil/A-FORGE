@@ -1593,56 +1593,28 @@ model_list:
     notes: 'FI-003 2026-10-06: verified WORKS on owner seat. | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-- model_name: kimi-k3.1-pro
-  litellm_params:
-    model: openai/k3.1-pro
-    api_base: https://api.kimi.com/coding/v1
-    additional_drop_params:
-    - include
-    api_key: os.environ/KIMI_API_KEY
-    order: 991
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: KIMI DIRECT — k3.1-pro flagship (Pro plan, Standard tier). Alias 2026-10-27.
-  model_info:
-    cost_class: plan
-    price_status: plan_quota
-    price_usd_per_1m_in: 0.0
-    price_usd_per_1m_out: 0.0
-    price_source: kimi_coding_plan_seat
-    price_declared_at: '2026-11-12'
-    spendable: false
-    quota_bearing: true
-- model_name: kimi-k3.1-pro-highspeed
-  litellm_params:
-    model: openai/k3.1-pro-highspeed
-    api_base: https://api.kimi.com/coding/v1
-    additional_drop_params:
-    - include
-    api_key: os.environ/KIMI_API_KEY
-    order: 997
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: KIMI DIRECT — k3.1-pro-highspeed (Pro plan, 2-3x faster, 2x credit). Alias
-      2026-10-27.
-  model_info:
-    cost_class: plan
-    price_status: plan_quota
-    price_usd_per_1m_in: 0.0
-    price_usd_per_1m_out: 0.0
-    price_source: kimi_coding_plan_seat
-    price_declared_at: '2026-11-12'
-    spendable: false
-    quota_bearing: true
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
+# 2026-11-23 (FI-003, F13 "buang juga dua sibling kimi-k3.1-pro tu") — kimi-k3.1-pro REMOVED from
+# active routing. Same seat and same measured cause as kimi-k3: os.environ/KIMI_API_KEY answers
+# HTTP 429 "exceeded_current_quota_error — You've reached your monthly usage limit for this
+# billing cycle" on https://api.kimi.com/coding/v1 under both the chat-completions and the
+# Anthropic Messages protocol (measured, credential never printed). The endpoint is valid and the
+# plan is a paid seat; the shared Kimi monthly quota is exhausted for this cycle, so this group
+# could not serve and only extended the fallback walk with a duplicate 429 and no semantic
+# progress. No replacement rung was added. RESTORE ONLY AFTER one fresh probe returns a non-empty
+# response on this seat after the quota reset: re-add the deployment
+# (model openai/k3.1-pro, api_base https://api.kimi.com/coding/v1, order 991, spendable false) plus its
+# router_settings.fallbacks entry (mimo-v2.6-flash, glm-5.3, sovereign-west).
+# 2026-11-23 (FI-003, F13 "buang juga dua sibling kimi-k3.1-pro tu") — kimi-k3.1-pro-highspeed REMOVED from
+# active routing. Same seat and same measured cause as kimi-k3: os.environ/KIMI_API_KEY answers
+# HTTP 429 "exceeded_current_quota_error — You've reached your monthly usage limit for this
+# billing cycle" on https://api.kimi.com/coding/v1 under both the chat-completions and the
+# Anthropic Messages protocol (measured, credential never printed). The endpoint is valid and the
+# plan is a paid seat; the shared Kimi monthly quota is exhausted for this cycle, so this group
+# could not serve and only extended the fallback walk with a duplicate 429 and no semantic
+# progress. No replacement rung was added. RESTORE ONLY AFTER one fresh probe returns a non-empty
+# response on this seat after the quota reset: re-add the deployment
+# (model openai/k3.1-pro-highspeed, api_base https://api.kimi.com/coding/v1, order 997, spendable false) plus its
+# router_settings.fallbacks entry (mimo-v2.6-flash, glm-5.3).
 - model_name: mimo-v2.5-pro
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -3766,8 +3738,9 @@ model_list:
 # https://api.kimi.com/coding/v1, order 992, spendable false — plus its
 # router_settings.fallbacks entry (mimo-v2.6-flash, glm-5.3, sovereign-west), and put 'kimi-k3'
 # back into the verification list in scripts/fed-deploy-kvm4.sh.
-# SIBLINGS NOT REMOVED: kimi-k3.1-pro and kimi-k3.1-pro-highspeed share the same seat and the same
-# quota exhaustion — outside this order, so left alone.
+# SIBLINGS ALSO PARKED (same seat, same exhausted quota): kimi-k3.1-pro and
+# kimi-k3.1-pro-highspeed were removed from active routing in the same order, one hour
+# later (F13 "buang juga dua sibling kimi-k3.1-pro tu"); each carries its own tombstone.
 - model_name: canary-openrouter
   litellm_params:
     model: openai/nvidia/nemotron-3.5-lightning:free
@@ -3931,13 +3904,6 @@ router_settings:
   - mimo-v2.5:
     - glm-5.3
     - sovereign-west
-  - kimi-k3.1-pro:
-    - mimo-v2.6-flash
-    - glm-5.3
-    - sovereign-west
-  - kimi-k3.1-pro-highspeed:
-    - mimo-v2.6-flash
-    - glm-5.3
   - glm-5.2:
     - glm-5.3
     - mimo-v2.6-flash
