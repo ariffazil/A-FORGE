@@ -462,44 +462,26 @@ model_list:
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
 - model_name: fed/image-gen
   litellm_params:
-    model: gemini/gemini-2.5-flash-image
-    api_key: os.environ/GEMINI_API_KEY
-    additional_drop_params: ["include"]
-  safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
+    model: openai/MiniMax-H3-Image
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_MPLAN_KEY
   model_info:
-    mode: chat
+    mode: image_generation
     supports_vision: true
     spendable: true
-    cost_class: payg
-    notes: "2026-11-23 (FI-003, F13 'sah (b)'): image lane moved off the KVM4 wan-image-shim (100.64.0.5:4020 - ufw there admits only 172.16.0.0/16, and the shim's own upstream key returns 401 InvalidApiKey) onto the Gemini seat that is present and entitled on this host. Primary image model for the lane."
+    cost_class: mplan
+    notes: "2026-11-23 (FI-003, F13 'guna yang ada'): image lane on the MiniMax seat that is ALREADY paid for (MINIMAX_MPLAN_KEY, the M Plan credential) — measured HTTP 200 with a real JPEG (331,243 bytes, magic ffd8ffe1) through api.minimax.io/v1/images/generations, the OpenAI-shaped surface litellm's openai/ provider can call (litellm 1.110.1 has no minimax image provider). MiniMax's own image models: MiniMax-H3-Image and MiniMax-H3-Image-Highspeed. The two Gemini rungs retired here answered 402 'prepayment credits depleted' and would have required a top-up — which is not needed while this seat answers. Call this lane on POST /v1/images/generations."
 - model_name: fed/image-gen
   litellm_params:
-    model: gemini/gemini-3.1-flash-image
-    api_key: os.environ/GEMINI_API_KEY
-    additional_drop_params: ["include"]
-  safety_settings:
-    - category: HARM_CATEGORY_HARASSMENT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_HATE_SPEECH
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_SEXUALLY_EXPLICIT
-      threshold: BLOCK_NONE
-    - category: HARM_CATEGORY_DANGEROUS_CONTENT
-      threshold: BLOCK_NONE
+    model: openai/MiniMax-H3-Image-Highspeed
+    api_base: https://api.minimax.io/v1
+    api_key: os.environ/MINIMAX_MPLAN_KEY
   model_info:
-    mode: chat
+    mode: image_generation
     supports_vision: true
     spendable: true
-    cost_class: payg
-    notes: "2026-11-23 (FI-003, F13 'sah (b)'): second image rung, a different image model on the same entitled Gemini seat, so a single model outage does not empty the lane. MiniMax image stays on its own Media MCP (:18100), not a FED rung: no MiniMax image model was verified against the M Plan credential."
+    cost_class: mplan
+    notes: "2026-11-23 (FI-003, F13 'guna yang ada'): second image rung on the same paid MiniMax seat, the highspeed model of the same family, so one model outage does not empty the lane."
 # PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 993
 - model_name: asi-555
   litellm_params:
