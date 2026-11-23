@@ -2932,6 +2932,36 @@ router_settings:
     - deepseek-flash
     - glm-5.3-flash
     - fed/sealion
+  allowed_fails_policy:
+    cooldown_time: 60
+  model_group_alias:
+    vision: fed/vision
+    gemini-vision: fed/vision
+    qwen-vision: fed/vision
+    sealion: fed/sealion
+    deepseek-v4-flash-vision-exp: deepseek-v4-flash-vision
+    deepseek-v3.2: i-arif
+    qwen-coder: forge-777
+    qwen3.8-27b: i-arif
+    qwen3.8-2.4t-a95b: i-arif
+    qwen-plus-latest: i-arif
+    qwen3-max-preview: i-arif
+    agi-333: i-arif
+    hermes-default: i-arif
+    qwen3-coder-plus: forge-777
+    qwen3-coder-flash: forge-777
+    qwen3-coder-next: forge-777
+    qwen3-coder-30b-a3b-instruct: forge-777
+    qwen3-coder-480b-a35b-instruct: forge-777
+    qwen3-vl-235b-a22b-instruct: fed/vision
+    qwen3-vl-235b-a22b-thinking: fed/vision
+    qwen3-vl-32b-instruct: fed/vision
+    qwen3-vl-32b-thinking: fed/vision
+    qwen3-vl-30b-a3b-instruct: fed/vision
+    qwen3-vl-30b-a3b-thinking: fed/vision
+    qwen3-vl-8b-instruct: fed/vision
+    qwen3-vl-8b-thinking: fed/vision
+    qwen3-next-80b-a3b-instruct: asi-555
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
