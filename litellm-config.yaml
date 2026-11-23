@@ -1593,32 +1593,6 @@ model_list:
     notes: 'FI-003 2026-10-06: verified WORKS on owner seat. | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-- model_name: kimi-k3
-  litellm_params:
-    model: openai/k3.1-pro
-    api_base: https://api.kimi.com/coding/v1
-    additional_drop_params:
-    - include
-    api_key: os.environ/KIMI_API_KEY
-    order: 992
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: KIMI DIRECT — kimi-k3 via Moonshot API. 1M ctx, coding specialist.
-  model_info:
-    cost_class: plan
-    price_status: plan_quota
-    price_usd_per_1m_in: 0.0
-    price_usd_per_1m_out: 0.0
-    price_source: kimi_coding_plan_seat
-    price_declared_at: '2026-11-12'
-    spendable: false
-    quota_bearing: true
-    max_input_tokens: 131072
-    max_output_tokens: 131072
-    mode: chat
 - model_name: kimi-k3.1-pro
   litellm_params:
     model: openai/k3.1-pro
@@ -3782,6 +3756,18 @@ model_list:
       group. Wired 2026-10-29 F13 sambung. | QUARANTINE 2026-11-11 (F13 relayed order):
       orig key env=QWEN_INDIVIDUAL_API_KEY (value intact in vault); rung inert by
       design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
+# 2026-11-23 (FI-003, F13 "buang group kimi-k3 tu") — kimi-k3 REMOVED from active routing.
+# Reason measured, not assumed: the Kimi seat (os.environ/KIMI_API_KEY) answers HTTP 429
+# "exceeded_current_quota_error — monthly usage limit reached for this billing cycle" on
+# api.kimi.com/coding/v1 under BOTH the chat-completions and the Anthropic Messages protocol, so
+# the rung could not answer and only burned the fallback walk. The endpoint is valid and the plan
+# is a paid seat: this is quota exhaustion, not a dead credential. No replacement rung was added.
+# RESTORE (when the cycle resets): re-add one rung — model openai/k3.1-pro, api_base
+# https://api.kimi.com/coding/v1, order 992, spendable false — plus its
+# router_settings.fallbacks entry (mimo-v2.6-flash, glm-5.3, sovereign-west), and put 'kimi-k3'
+# back into the verification list in scripts/fed-deploy-kvm4.sh.
+# SIBLINGS NOT REMOVED: kimi-k3.1-pro and kimi-k3.1-pro-highspeed share the same seat and the same
+# quota exhaustion — outside this order, so left alone.
 - model_name: canary-openrouter
   litellm_params:
     model: openai/nvidia/nemotron-3.5-lightning:free
@@ -3943,10 +3929,6 @@ router_settings:
   - mimo-v2.6-flash:
     - sovereign-west
   - mimo-v2.5:
-    - glm-5.3
-    - sovereign-west
-  - kimi-k3:
-    - mimo-v2.6-flash
     - glm-5.3
     - sovereign-west
   - kimi-k3.1-pro:

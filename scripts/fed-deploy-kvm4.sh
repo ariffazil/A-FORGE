@@ -87,6 +87,9 @@ def hit(g):
         print(f"{g:26s} {e.code} {e.read(110).decode()[:100]}")
     except Exception as e:
         print(f"{g:26s} ERR {str(e)[:70]}")
-for g in ['glm-5.3', 'glm-5.2', 'i-arif', 'deepseek-v4-flash-vision', 'kimi-k3', 'agi-333']:
+# 2026-11-23 (FI-003, F13 "buang group kimi-k3 tu"): 'kimi-k3' removed from this list — the
+# group was removed from active routing (Kimi seat quota exhausted for the billing cycle).
+# The tombstone in litellm-config.yaml records the restore steps.
+for g in ['glm-5.3', 'glm-5.2', 'i-arif', 'deepseek-v4-flash-vision', 'agi-333']:
     hit(g)
 PYEOF
