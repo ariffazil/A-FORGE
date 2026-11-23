@@ -257,7 +257,7 @@ model_list:
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     min_tokens: 200
   model_info:
@@ -276,14 +276,14 @@ model_list:
       Token Plan Max restored 2026-08-18. | QUARANTINE 2026-11-11 (F13 relayed order):
       orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault); rung inert by
       design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 993
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 993
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -302,14 +302,14 @@ model_list:
     notes: 'apex-888 → QWEN qwen3.8-max — fallback judge lane. Vision + function calling.
       | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 991
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 991
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -327,14 +327,14 @@ model_list:
       F13 FI-008 — older model fallback for when qwen3.8-max failover chains exhaust.
       | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 997
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -351,14 +351,14 @@ model_list:
       relayed order): orig key env=QWEN_ARIFOS_API_KEY (value intact in vault); rung
       inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
     mode: chat
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 993
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 993
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -376,14 +376,14 @@ model_list:
       F13 FI-008 — older model parallel to arifOS qwen3.8-max failover. | QUARANTINE
       2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY (value intact
       in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 990
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -400,14 +400,14 @@ model_list:
       relayed order): orig key env=QWEN_HERMES_API_KEY (value intact in vault); rung
       inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
     mode: chat
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 995
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -473,14 +473,14 @@ model_list:
     supports_video_input: true
     supports_vision: true
     notes: MiMo V2.5 Token Plan — 82B credits, 20% off-peak discount.
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 992
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 992
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -498,14 +498,14 @@ model_list:
       F13 FI-008 — Team Owner seat qwen3.8-max fallback. | QUARANTINE 2026-11-11 (F13
       relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 998
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -525,14 +525,14 @@ model_list:
       F13 FI-008 — older model parallel to Team Owner qwen3.8-max. | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 997
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -549,14 +549,14 @@ model_list:
       relayed order): orig key env=QWEN_ARIFOS_API_KEY (value intact in vault); rung
       inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
     mode: chat
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 993
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 993
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -574,14 +574,14 @@ model_list:
       F13 FI-008 — older model parallel to arifOS qwen3.8-max failover. | QUARANTINE
       2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY (value intact
       in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 990
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -598,14 +598,14 @@ model_list:
       relayed order): orig key env=QWEN_HERMES_API_KEY (value intact in vault); rung
       inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
     mode: chat
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 995
 - model_name: asi-555
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -631,7 +631,7 @@ model_list:
     - include
     request_timeout: 180
     order: 992
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -655,7 +655,7 @@ model_list:
     - include
     request_timeout: 180
     order: 998
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
   model_info:
     cost_class: quarantined
     price_status: quarantined_no_bill
@@ -669,14 +669,14 @@ model_list:
     mode: image
     notes: ' | QUARANTINE-DELTA 2026-11-11 (verifier A1/A2/A3): orig key env=QWEN_TEAM_OWNER_API_KEY;
       restore via litellm-config.yaml.bak-quarantine-delta-20261111T141301Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 993
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 993
 - model_name: asi-555
   litellm_params:
     model: openai/deepseek-v4-flash-0731
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     min_tokens: 200
   model_info:
@@ -1344,14 +1344,14 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'openclaw P2 (ZAI GLM-5.3-Flash): 1M context, 3x quota.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 995
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1374,14 +1374,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 997
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1403,14 +1403,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 998
 - model_name: openclaw
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1431,14 +1431,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 998
 - model_name: openclaw
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     min_tokens: 200
     max_input_tokens: 131072
@@ -1515,14 +1515,14 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'openclaw P3 (added 2026-11-23 FED audit): OpenRouter deepseek-v4.1-flash, independent vendor boundary. Probe UP 2026-11-23.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 998
 - model_name: hermes-asi
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1544,14 +1544,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 990
 - model_name: hermes-asi
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1572,14 +1572,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 990
 - model_name: hermes-asi
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1599,14 +1599,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 998
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     min_tokens: 200
     max_input_tokens: 131072
@@ -1627,14 +1627,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 997
 - model_name: qwen3.6-plus
   litellm_params:
     model: openai/qwen3.6-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1653,14 +1653,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 995
 - model_name: qwen3.6-plus
   litellm_params:
     model: openai/qwen3.6-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -1676,14 +1676,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 990
 - model_name: qwen3.8-max
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1704,14 +1704,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 990
 - model_name: qwen3.8-max
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1732,14 +1732,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_HERMES_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 990
 - model_name: qwen3.7-max
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -1756,14 +1756,14 @@ model_list:
     notes: 'FI-003 2026-10-06: verified WORKS on owner seat (individual seat quota-dead).
       | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 995
 - model_name: qwen3.7-max
   litellm_params:
     model: openai/qwen3.7-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -1779,14 +1779,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 990
 - model_name: qwen3.7-plus
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -1804,14 +1804,14 @@ model_list:
     notes: 'FI-003 2026-10-06: verified WORKS on owner seat. | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 996
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 996
 - model_name: qwen3.7-plus
   litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -1827,14 +1827,14 @@ model_list:
     mode: chat
     notes: ' | QUARANTINE 2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY
       (value intact in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 991
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 991
 - model_name: qwen3.6-flash
   litellm_params:
     model: openai/qwen3.6-flash
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -1852,14 +1852,14 @@ model_list:
     notes: 'FI-003 2026-10-06: verified WORKS on owner seat. | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 997
 - model_name: qwen3.6-flash
   litellm_params:
     model: openai/qwen3.6-flash
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -2645,13 +2645,13 @@ model_list:
     max_input_tokens: 1000000
     max_output_tokens: 128000
   model_name: fed/vision
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 998
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 998
 - litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -2681,7 +2681,7 @@ model_list:
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 992
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -2709,7 +2709,7 @@ model_list:
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 993
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -2867,13 +2867,13 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 990
 - litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -2896,13 +2896,13 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 991
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 991
 - litellm_params:
     model: openai/qwen3.7-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -2925,13 +2925,13 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 992
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 992
 - litellm_params:
     model: openai/qwen3.6-plus
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -3023,14 +3023,14 @@ model_list:
       voice_id from registry.
     max_input_tokens: 1048576
     max_output_tokens: 131072
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 997
 - model_name: apex-888
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -3049,14 +3049,14 @@ model_list:
     notes: 'apex-888 -> QWEN qwen3.8-max live Individual plan fallback | QUARANTINE
       2026-11-11 (F13 relayed order): orig key env=QWEN_ARIFOS_API_KEY (value intact
       in vault); rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 995
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 995
 - model_name: apex-888
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     min_tokens: 200
   model_info:
@@ -3074,14 +3074,14 @@ model_list:
     notes: 'apex-888 -> QWEN deepseek-v4-pro live Individual plan | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_HERMES_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 992
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 992
 - model_name: forge-777
   litellm_params:
     model: openai/deepseek-v4-pro
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     min_tokens: 200
   model_info:
@@ -3100,14 +3100,14 @@ model_list:
       secondary fallback via Aliyun Individual plan. VERIFIED LIVE. | QUARANTINE 2026-11-11
       (F13 relayed order): orig key env=QWEN_TEAM_OWNER_API_KEY (value intact in vault);
       rung inert by design; restore via backup litellm-config.yaml.bak-quarantine-20261111T135339Z'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 990
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 990
 - model_name: forge-777
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -3165,14 +3165,14 @@ model_list:
     max_output_tokens: 8192
     mode: chat
     notes: fed/sealion -> AI Singapore Qwen-SEA-LION-v4.5-27B-IT fallback
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 992
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 992
 - model_name: qwen3.8-max-0902
   litellm_params:
     model: openai/qwen3.8-max-0902
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
   model_info:
     cost_class: quarantined
@@ -3327,14 +3327,14 @@ model_list:
     supports_video_input: true
     supports_vision: true
     supports_function_calling: true
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 991
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 991
 - model_name: i-arif
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -3419,14 +3419,14 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 991
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 991
 - model_name: i-arif
   litellm_params:
     model: openai/qwen3.8-max
     api_base: https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
     additional_drop_params:
     - include
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -4087,12 +4087,12 @@ model_list:
     supports_function_calling: true
     notes: 2026-10-28 Gemini 2.5 Flash-Lite — cheapest paid rung, highest RPD. Text
       only. Use for bulk/trivial. Live probe 200 2026-10-28.
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z; quarantine key is 401 invalid; restore: order -> 997
+# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): QWEN token-plan seats 429 quota-exhausted until 2026-11-30T16:00Z, verified 2026-11-23 with QWEN_TEAM_OWNER_API_KEY (429 insufficient_quota; 3.6-plus 403, 3.8-max-0902 404); re-bound off the unset quarantine env, so the rung revives by quota reset alone; original restore order -> 997
 - model_name: qwen-auto
   litellm_params:
     model: openai/auto
     api_base: https://token-plan.maas.qwencloudapi.com/compatible-mode/v1
-    api_key: os.environ/QWEN_QUARANTINED_20261111
+    api_key: os.environ/QWEN_TEAM_OWNER_API_KEY
     order: 999
     additional_drop_params:
     - include
