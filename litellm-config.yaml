@@ -465,6 +465,7 @@ model_list:
     model: openai/MiniMax-H3-Image
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_MPLAN_KEY
+    num_retries: 0
   model_info:
     mode: image_generation
     supports_vision: true
@@ -476,6 +477,7 @@ model_list:
     model: openai/MiniMax-H3-Image-Highspeed
     api_base: https://api.minimax.io/v1
     api_key: os.environ/MINIMAX_MPLAN_KEY
+    num_retries: 0
   model_info:
     mode: image_generation
     supports_vision: true
