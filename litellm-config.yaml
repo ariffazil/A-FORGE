@@ -326,6 +326,7 @@ model_list:
       2026-11-11: live probe 402 insufficient-balance (key DEEPSEEK_API_KEY, seat
       empty since 2026-10-21 -$0.00). Kept for top-up restore.'
 # PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
+# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200 (glm-5.3 + glm-5.4 probed); order restored per park note.
 - model_name: asi-555
   litellm_params:
     model: openai/glm-5.3-flash
@@ -333,7 +334,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 900
+    order: 1
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -569,6 +570,7 @@ model_list:
       (v4-flash retired upstream 2026-09-10). Cost-frontier for high-volume builder
       loops. ZAI glm-5.3-flash remains P2.
 # PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 3
+# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200; order restored per park note.
 - model_name: forge-builder
   litellm_params:
     model: openai/glm-5.3-flash
@@ -576,7 +578,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 900
+    order: 3
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -700,6 +702,7 @@ model_list:
     notes: 'forge-planner P1 (MiniMax-M3): 1M ctx, task decomposition, scope/budget/architecture
       planning. Token Plan Max fresh 2026-09-13.'
 # PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 2
+# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200; order restored per park note.
 - model_name: forge-planner
   litellm_params:
     model: openai/glm-5.3-flash
@@ -707,7 +710,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 900
+    order: 2
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -804,6 +807,36 @@ model_list:
       lane — diff+receipt comparison. 1M ctx, multimodal evidence accepted. Fresh
       2026-09-13.'
 # PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
+# SUPERSEDED 2026-11-24 (F13 order: upgrade i-ARIF + 777-Forge to GLM-5.4): forge-777 head is now glm-5.4 order 1; glm-5.3-flash restored at order 2.
+- model_name: forge-777
+  litellm_params:
+    model: openai/glm-5.4
+    api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params:
+    - include
+    api_key: os.environ/ZAI_API_KEY
+    order: 1
+    max_input_tokens: 200000
+    max_output_tokens: 128000
+    mode: chat
+  model_info:
+    cost_class: plan
+    price_status: plan_quota
+    price_usd_per_1m_in: 0.0
+    price_usd_per_1m_out: 0.0
+    price_source: zai_coding_plan_seat
+    price_declared_at: '2026-11-24'
+    spendable: false
+    quota_bearing: true
+    max_input_tokens: 200000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'forge-777 HEAD order 1 (F13 order 2026-11-24: upgrade i-ARIF + 777-Forge
+      to GLM-5.4; A2M primary executor per routing context). Loop Transformer flagship,
+      200K ctx (1M NOT entitled — [1m]=1211), live 200 served=glm-5.4 both wire
+      protocols. max_tokens>=2048; bound effort to avoid marathon loops.'
 - model_name: forge-777
   litellm_params:
     model: openai/glm-5.3-flash
@@ -811,7 +844,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 900
+    order: 2
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -829,7 +862,8 @@ model_list:
     notes: 'forge-777 CO-PRIMARY (promoted 5->1 2026-11-10, F13 VLM-update directive;
       live probe FLASH-LIVE-OK): ZAI GLM-5.3-Flash — native VLM (image/video/file
       input), 1M context, 128K out, 3x quota, thinking always-on (max_tokens>=2048).
-      Coding lane.'
+      Coding lane. RESTORED 2026-11-24 (order 900->2, FI-003 zai-5.4 update; ZAI
+      lane answers 200 post quota-reset — glm-5.3 + glm-5.4 both live-probed).'
 - model_name: forge-777
   litellm_params:
     model: openai/MiniMax-M3
@@ -1022,6 +1056,7 @@ model_list:
       were at order=1). Name canonicalized 2026-09-28. Kept as last-resort-first before
       kimi-k3.
 # PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 2
+# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200; order restored per park note.
 - model_name: openclaw
   litellm_params:
     model: openai/glm-5.3-flash
@@ -1029,7 +1064,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 900
+    order: 2
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -1760,6 +1795,39 @@ model_list:
     mode: chat
     notes_fed_park: 'PARKED 2026-10-31: Token Plan usage limit reached (429) — direct
       probe against api.minimax.io with MINIMAX_MPLAN_KEY. Unpark to order 0 on topup.'
+- model_name: glm-5.4
+  litellm_params:
+    model: openai/glm-5.4
+    api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params:
+    - include
+    api_key: os.environ/ZAI_API_KEY
+    order: 0
+    max_input_tokens: 200000
+    max_output_tokens: 128000
+    mode: chat
+  model_info:
+    cost_class: plan
+    price_status: plan_quota
+    price_usd_per_1m_in: 0.0
+    price_usd_per_1m_out: 0.0
+    price_source: zai_coding_plan_seat
+    price_declared_at: '2026-11-24'
+    spendable: false
+    quota_bearing: true
+    max_input_tokens: 200000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'GLM-5.4 plan flagship (F13 order 2026-11-24, FI-003). Loop Transformer
+      (750B-class, 78 stored / 106 effective layers). LIVE-probed 2026-11-24 from
+      litellm container: /models 13 ids incl glm-5.4; chat 200 served=glm-5.4 on
+      OpenAI-compat AND Anthropic-compat; glm-5.4[1m]=400 code 1211 BOTH endpoints
+      (200K std ctx on this seat — 1M tier NOT entitled); image_in wire-200 (2x2
+      color-read imperfect — do not trust for pixel-exact vision; vision heads stay
+      glm-5.3-flash). A2M/A2A heavy-execution tier; marathon-thinking risk on
+      high/max effort — prefer bounded effort + max_tokens>=2048.'
 - model_name: glm-5.3
   litellm_params:
     model: openai/glm-5.3
@@ -1786,13 +1854,14 @@ model_list:
     supports_audio_input: true
     supports_video_input: true
 # PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 3
+# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200; order restored per park note.
 - litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 900
+    order: 3
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -1896,13 +1965,14 @@ model_list:
     max_output_tokens: 131072
   model_name: hermes-asi-vision
 # PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 5
+# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200; order restored per park note.
 - litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 900
+    order: 5
     max_input_tokens: 1048576
     max_output_tokens: 131072
     mode: chat
@@ -2234,6 +2304,36 @@ model_list:
     supports_vision: true
     supports_function_calling: true
 # PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
+# SUPERSEDED 2026-11-24 (F13 order: upgrade i-ARIF to GLM-5.4): i-arif head is now glm-5.4 order 1; glm-5.3-flash restored at order 2.
+- model_name: i-arif
+  litellm_params:
+    model: openai/glm-5.4
+    api_base: https://api.z.ai/api/coding/paas/v4
+    additional_drop_params:
+    - include
+    api_key: os.environ/ZAI_API_KEY
+    order: 1
+    max_input_tokens: 200000
+    max_output_tokens: 128000
+    mode: chat
+  model_info:
+    cost_class: plan
+    price_status: plan_quota
+    price_usd_per_1m_in: 0.0
+    price_usd_per_1m_out: 0.0
+    price_source: zai_coding_plan_seat
+    price_declared_at: '2026-11-24'
+    spendable: false
+    quota_bearing: true
+    max_input_tokens: 200000
+    max_output_tokens: 128000
+    mode: chat
+    supports_vision: true
+    supports_function_calling: true
+    notes: 'i-arif HEAD order 1 (F13 order 2026-11-24: upgrade i-ARIF to GLM-5.4;
+      A2H async-synthesis backend — flash stays for live/sync chat + vision).
+      Live 200 served=glm-5.4 OpenAI+Anthropic compat. 200K ctx ([1m]=1211 not
+      entitled). max_tokens>=2048 (reasoning-starvation law).'
 - model_name: i-arif
   litellm_params:
     model: openai/glm-5.3-flash
@@ -2241,7 +2341,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/ZAI_API_KEY
-    order: 900
+    order: 2
     max_input_tokens: 1000000
     max_output_tokens: 128000
     mode: chat
@@ -2250,7 +2350,8 @@ model_list:
     notes: 'i-arif GLM-5.3-Flash (Z.AI) CO-PRIMARY order 1 (promoted 10->1 2026-11-10,
       F13 VLM-update directive; live probe FLASH-LIVE-OK). Native VLM: image/video/file
       input, 1M ctx, 128K out, 3x plan quota. Thinking always-on — callers MUST floor
-      max_tokens>=2048 (reasoning-starvation law).'
+      max_tokens>=2048 (reasoning-starvation law). RESTORED 2026-11-24 (order
+      900->2 behind glm-5.4 head; ZAI lane live 200).'
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -2860,6 +2961,7 @@ router_settings:
     - mimo-v2.6-pro
     - deepseek-v4-flash
     - glm-5.3-flash
+    - glm-5.4
   - asi-555:
     - deepseek-v4-flash
     - glm-5.3
@@ -2871,6 +2973,7 @@ router_settings:
     - deepseek-v4-flash
     - glm-5.3
     - mimo-v2.6-flash
+    - glm-5.4
   - forge-scout:
     - mimo-v2.6-pro
   - forge-scout-pro:
@@ -2914,6 +3017,9 @@ router_settings:
     - glm-5.3
     - mimo-v2.6-flash
   - glm-5.3:
+    - mimo-v2.6-flash
+  - glm-5.4:
+    - glm-5.3
     - mimo-v2.6-flash
   - MiniMax-M3:
     - mimo-v2.6-flash
