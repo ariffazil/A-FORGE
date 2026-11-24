@@ -227,12 +227,21 @@ interface EvidenceItem {
   source_type: "primary" | "official" | "reporting" | "secondary";
   extraction_status: "ok" | "partial" | "failed";
   content_hash?: string;
+  /** Lexical relevance of this result to the query (0..1). ATTACHED, never used to drop results. */
+  relevance?: number;
 }
+
+// ── Relevance instrument — see src/domain/web/relevance.ts ───────────────────
+// Extracted to a pure module so it can be unit-tested without importing this
+// side-effectful MCP gateway. The score is ATTACHED to evidence; it is never
+// used to drop results — it only gates the LFD learning signal.
+import { relevanceScore, anyRelevant } from "../../domain/web/relevance.js";
 
 function normalizeEvidenceItem(
   raw: { title: string; url: string; description?: string; snippet?: string; age?: string },
   provider: string,
   rank: number,
+  query?: string,
 ): EvidenceItem {
   const excerpt = raw.description || raw.snippet || "";
   // Simple source-type heuristics
@@ -252,6 +261,7 @@ function normalizeEvidenceItem(
     rank,
     source_type,
     extraction_status: excerpt.length > 10 ? "ok" : "partial",
+    ...(query ? { relevance: relevanceScore(query, raw.title || "", excerpt) } : {}),
   };
 }
 
@@ -508,25 +518,43 @@ async function webSearchWithFallback(
   }).filter((s) => s.lfdScore > 0 || s.score >= 0.9) // curriculum gate; keep strong priors eligible on easy
     .sort((a, b) => b.lfdScore - a.lfdScore);
 
-  // FREE-FIRST (2026-11-01, FI-008; F13 order "web search free at least"):
-  // local SearXNG costs RM0 and is healthy on this box, but the LFD weight
-  // layer (exa saturated at 3.0) starved it 905:32 — the free lane only ran
-  // when paid lanes failed. For discovery/verification intents, hoist searxng
-  // to the front when its circuit is closed; paid lanes remain the scored
-  // fallback on failure/empty. extraction/research stay quality-ordered
-  // (searxng extraction prior 0.2, research 0.6 — quality matters there).
-  // Note: medium/hard difficulty can curriculum-filter searxng out of `scored`
-  // entirely (lfdScore=0, cap 0.75 < 0.9) — re-insert it in that case.
-  // Kill-switch: AFORGE_WEB_FREE_FIRST=0 restores pure LFD order.
-  const freeFirst = process.env.AFORGE_WEB_FREE_FIRST !== "0"
+  // FREE-FIRST (2026-11-01, FI-008; F13 order "web search free at least").
+  // 2026-11-24 tier-0 repair (FI-008): default mode is now "tiebreak" — searxng
+  // is hoisted to the front ONLY when it ties the best eligible lane, or when
+  // every higher-ranked lane is quota-dead / circuit-open. The old unconditional
+  // hoist let a junk lane win every discovery query and then REWARD itself,
+  // climbing to the 3.0 clamp. Modes:
+  //   tiebreak (default) — free lane leads only on a tie or when paid lanes are dead
+  //   strict             — legacy behaviour: always hoist searxng first
+  //   0 / false          — pure LFD order
+  // No lane is ever removed: searxng stays in the fallback chain in every mode,
+  // so "free at least" still holds — it just no longer outranks a healthier lane.
+  const freeFirstRaw = (process.env.AFORGE_WEB_FREE_FIRST ?? "tiebreak").toLowerCase();
+  const freeFirstOn = freeFirstRaw !== "0" && freeFirstRaw !== "false"
     && (intent === "discovery" || intent === "verification")
     && !circuitIsOpen("searxng");
-  if (freeFirst) {
+  if (freeFirstOn) {
     const i = scored.findIndex((s) => s.provider === "searxng");
-    if (i > 0) {
-      scored.unshift(...scored.splice(i, 1));
-    } else if (i < 0) {
-      scored.unshift({ provider: "searxng", score: 0.75, lfdScore: 0, reasons: ["free-first"] });
+    if (freeFirstRaw === "strict") {
+      if (i > 0) {
+        scored.unshift(...scored.splice(i, 1));
+      } else if (i < 0) {
+        scored.unshift({ provider: "searxng", score: 0.75, lfdScore: 0, reasons: ["free-first"] });
+      }
+    } else {
+      const searxLfd = i >= 0 ? scored[i].lfdScore : 0;
+      const bestOther = scored.reduce(
+        (m, s) => (s.provider === "searxng" ? m : Math.max(m, s.lfdScore)),
+        0,
+      );
+      const allOthersDead = scored
+        .filter((s) => s.provider !== "searxng")
+        .every((s) => Boolean(quotaDeadUntil(s.provider)) || circuitIsOpen(s.provider));
+      if (i > 0 && (bestOther <= searxLfd + 1e-9 || allOthersDead)) {
+        scored.unshift(...scored.splice(i, 1));
+      } else if (i < 0 && (bestOther <= 1e-9 || allOthersDead)) {
+        scored.unshift({ provider: "searxng", score: 0.75, lfdScore: 0, reasons: ["free-first:tiebreak"] });
+      }
     }
   }
 
@@ -561,10 +589,27 @@ async function webSearchWithFallback(
 
     if (attempt.ok && attempt.results.length > 0) {
       circuitRecordSuccess(provider);
-      federationHysteron.lfdRecord(provider, difficulty, 1); // LFD: winner
+      const relScores = attempt.results.map((r: any) =>
+        relevanceScore(query, r.title ?? "", r.description ?? r.snippet ?? ""),
+      );
+      const maxRelevance = relScores.length ? Math.max(...relScores) : 0;
+      const relevant = anyRelevant(relScores);
+      // Relevance-gated learning only. Results are returned exactly as before —
+      // nothing is filtered. A junk lane simply stops being learned as a winner.
+      federationHysteron.lfdRecord(provider, difficulty, relevant ? 1 : 0);
+      if (!relevant) {
+        void recordReceipt({
+          kind: "lanes_relevance_alarm",
+          provider,
+          difficulty,
+          max_relevance: maxRelevance,
+          result_count: attempt.results.length,
+          query_chars: query.length,
+        });
+      }
       // Normalize results to evidence items
       attempt.results.forEach((r, i) => {
-        evidence.push(normalizeEvidenceItem(r, provider, i + 1));
+        evidence.push(normalizeEvidenceItem(r, provider, i + 1, query));
       });
       return { ...attempt, provider, evidence, quotaSkipped };
     }
@@ -594,16 +639,61 @@ async function webSearchWithFallback(
 // ── Context7 docs lookup ──────────────────────────────────────────────────────
 
 async function context7Lookup(query: string, _corpus: string, maxResults: number): Promise<{ ok: boolean; results: any[]; error?: string }> {
-  try {
-    const res = await callHttpMcp(CONTEXT7_MCP_URL, "search", { query, limit: maxResults }) as any;
-    if (res && typeof res === "object") {
-      const results = Array.isArray(res.results) ? res.results : Array.isArray(res) ? res : [];
-      return { ok: true, results };
+  const errors: string[] = [];
+  const looksLikeError = (s: string) =>
+    /input validation error|invalid arguments|not\s*found|unreachable|unknown tool|error:/i.test(s);
+  const coerce = (res: any): any[] => {
+    if (typeof res === "string") {
+      const s = res.trim();
+      return s && !looksLikeError(s) ? [{ title: "context7", url: "", description: s }] : [];
     }
-    return { ok: false, results: [], error: "context7 returned unexpected shape" };
+    if (res && typeof res === "object") {
+      if (Array.isArray(res.results)) return res.results;
+      if (Array.isArray(res.documents)) return res.documents;
+      if (Array.isArray(res)) return res;
+      if (typeof res.content === "string" && res.content.trim() && !looksLikeError(res.content)) {
+        return [{ title: "context7", url: "", description: res.content }];
+      }
+    }
+    return [];
+  };
+  const extractId = (text: string): string | undefined => {
+    const m = /Context7-compatible library ID:\s*(\S+)/i.exec(text) ?? /library\s*ID:\s*(\S+)/i.exec(text);
+    return m?.[1];
+  };
+
+  // Canonical flow, verified against the live schema 2026-11-24 FI-008:
+  //   resolve-library-id { query, libraryName }  -> prose listing library IDs
+  //   query-docs { libraryId, query }            -> prose documentation
+  // The legacy single-tool `search` did not exist on mcp.context7.com, which is
+  // why the docs corpus returned "Tool search not found" (0 results).
+  try {
+    const resolved = await callHttpMcp(CONTEXT7_MCP_URL, "resolve-library-id", { query, libraryName: query });
+    const resolvedText = typeof resolved === "string" ? resolved : JSON.stringify(resolved);
+    const libraryId = extractId(resolvedText);
+    if (libraryId) {
+      const docs = await callHttpMcp(CONTEXT7_MCP_URL, "query-docs", { libraryId, query });
+      const out = coerce(docs);
+      if (out.length) return { ok: true, results: out.slice(0, Math.max(1, maxResults)) };
+      errors.push("query-docs: empty");
+    } else {
+      errors.push("resolve-library-id: no libraryId in response");
+    }
   } catch (err: any) {
-    return { ok: false, results: [], error: `context7 unreachable: ${err?.message ?? String(err)}` };
+    errors.push(`resolve->query-docs: ${err?.message ?? String(err)}`);
   }
+
+  // Legacy fallback (older servers exposing a generic "search" tool)
+  try {
+    const legacy = await callHttpMcp(CONTEXT7_MCP_URL, "search", { query, limit: maxResults });
+    const out = coerce(legacy);
+    if (out.length) return { ok: true, results: out };
+    errors.push("search(legacy): empty");
+  } catch (err: any) {
+    errors.push(`search(legacy): ${err?.message ?? String(err)}`);
+  }
+
+  return { ok: false, results: [], error: `context7 unreachable: ${errors.join(" | ")}` };
 }
 
 // ── GitHub REST helpers ───────────────────────────────────────────────────────
@@ -751,8 +841,18 @@ export async function handleForgeSearch(args: any) {
   if (source === "docs") {
     const corpus = args.corpus ?? "all";
     const lookup = await context7Lookup(query, corpus, count);
-    const results = lookup.ok ? lookup.results : [];
-    const gaps = lookup.ok ? [] : [lookup.error ?? "context7 index unavailable"];
+    // Lift the source URL out of the context7 prose ("Source: https://…") so
+    // docs results are citable like web results instead of carrying url: "".
+    const results = (lookup.ok ? lookup.results : []).map((r: any) => {
+      if (r && !r.url && typeof r.description === "string") {
+        const m = /Source:\s*(https?:\/\/\S+)/i.exec(r.description);
+        if (m) return { ...r, url: m[1] };
+      }
+      return r;
+    });
+    const gaps = lookup.ok
+      ? (results.length === 0 ? ["context7 returned 0 documents for this query"] : [])
+      : [lookup.error ?? "context7 index unavailable"];
     const receipt_id = await recordReceipt({ ...receiptMeta, provider: "context7", result_count: results.length });
     return {
       content: [{
