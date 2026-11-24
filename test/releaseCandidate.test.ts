@@ -4,15 +4,16 @@ import { mkdtempSync, rmSync, writeFileSync, mkdirSync, readFileSync, readdirSyn
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { execSync } from "node:child_process";
+import { statSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 import { computeExecutableTreeSha256, computeFileSha256, canonicalAttestationPayload } from "../src/domain/governance/McpPolicyGate.js";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const REPO_ROOT = resolve(join(__dirname, "..", ".."));
 
 function sha256(input: string): string {
-  import crypto from "node:crypto";
-  return crypto.createHash("sha256").update(input).digest("hex");
+  return createHash("sha256").update(input).digest("hex");
 }
 
 function setupTempRepo(): { tempDir: string; cleanup: () => void } {
@@ -84,7 +85,13 @@ function runBuilder(tempDir: string, env: Record<string, string> = {}): { manife
   // Find the generated manifest file
   const outputDir = join(tempDir, "dist", "release-candidate");
   const files = readdirSync(outputDir);
-  const manifestPath = join(outputDir, files[0]);
+  // Select the manifest by matching the digest printed on stdout. files[0] and
+  // mtime-newest both flake: readdir order is arbitrary across builds and fs
+  // mtime granularity can tie, so a stale manifest masked every change.
+  const printedDigest = output.split("\n").map((l) => l.trim()).filter(Boolean).pop() ?? "";
+  const hit = files.find((f) => JSON.parse(readFileSync(join(outputDir, f), "utf-8")).candidate_manifest_sha256 === printedDigest);
+  if (!hit) throw new Error(`no manifest matches printed digest ${printedDigest}`);
+  const manifestPath = join(outputDir, hit);
   const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
 
   return { manifest, digest: output };
@@ -229,7 +236,10 @@ test("release candidate generation — manifest mutation invalidates verificatio
     const { manifest: manifest1 } = runBuilder(tempDir);
     const outputDir = join(tempDir, "dist", "release-candidate");
     const files = readdirSync(outputDir);
-    const manifestPath = join(outputDir, files[0]);
+    // Read the NEWEST manifest: each build writes a new candidate file (unique candidate_id),
+    // so files[0] would return the first run's manifest and mask every change.
+    const newest = files.map((f) => ({ f, m: statSync(join(outputDir, f)).mtimeMs })).sort((a, b) => b.m - a.m)[0].f;
+    const manifestPath = join(outputDir, newest);
 
     // Mutate the manifest file (change a field)
     const mutated = { ...manifest1, policy_sha256: "mutated" };
