@@ -204,3 +204,13 @@ export {
   type FaultFixCycle,
   type ExecutorContext,
 } from "./faultFixFlow.js";
+
+// AuthorizationGrant — schema + validator (Workstream A)
+export {
+  validateAuthorizationGrant,
+  recordGrantUsage,
+  resetGrantUsage,
+  createTestGrant,
+  type AuthorizationGrant,
+  type ValidationResult,
+} from "./AuthorizationGrant.js";
