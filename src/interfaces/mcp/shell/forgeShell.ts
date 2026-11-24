@@ -805,8 +805,11 @@ async function verifyArifOSSession(session_id: string): Promise<AuthorityEnvelop
 
 /**
  * Roundtrip to arifOS :8088/mcp to verify a SEAL session id is live.
- * Returns true only when arifOS confirms actor_verified=true AND verdict=SEAL.
- * F13 SOVEREIGN OVERRIDE per audit chain trace_id=plan-2026-10-11-0742 F.3.
+ * Returns true only when arifOS explicitly confirms actor_verified=true.
+ * status/verdict/session_id text is NEVER identity evidence (FTG-01/FTG-03,
+ * 2026-11-24; wire probe: kernel echoes status="completed" + session_id even
+ * for unbound canary sessions). F13 SOVEREIGN OVERRIDE per audit chain
+ * trace_id=plan-2026-10-11-0742 F.3.
  */
 async function arifVerifySealLive(session_id: string): Promise<boolean> {
   try {
@@ -831,13 +834,27 @@ async function arifVerifySealLive(session_id: string): Promise<boolean> {
     const body = await resp.json() as any;
     const resultText = body?.result?.content?.[0]?.text;
     if (!resultText) {
-      return body?.result?.actor?.actor_verified === true || body?.result?.status === "completed";
+      return sealLiveFromValidateResult(body?.result);
     }
     const result = typeof resultText === "string" ? JSON.parse(resultText) : resultText;
-    return result?.status === "completed" || result?.actor?.actor_verified === true || result?.session_id === session_id;
+    return sealLiveFromValidateResult(result);
   } catch {
     return false;
   }
+}
+
+/**
+ * Identity predicate for a live sealed session (FTG-01/FTG-03, 2026-11-24).
+ *
+ * True ONLY when the kernel explicitly reports actor_verified === true.
+ * status text ("completed"), verdict text ("SEAL") and session_id echo are NOT
+ * identity evidence — the kernel emits all three for unbound canary sessions
+ * (wire probe 2026-11-24: ses_probe_bogus_000 returned status="completed",
+ * verdict="HOLD", actor_verified=false). Mirrors E4 convention
+ * (sessionGate.ts:319, core.ts:1751). Fail closed: unknown shape -> false.
+ */
+export function sealLiveFromValidateResult(result: any): boolean {
+  return result?.actor?.actor_verified === true || result?.actor_verified === true;
 }
 
 /**
