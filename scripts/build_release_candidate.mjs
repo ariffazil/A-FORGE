@@ -55,7 +55,7 @@ function getGitCommit() {
  */
 function getParentCommit() {
   try {
-    return execSync("git rev-parse HEAD~1", { cwd: REPO_ROOT, encoding: "utf-8" }).trim();
+    return execSync("git rev-parse HEAD~1", { cwd: REPO_ROOT, encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] }).trim();
   } catch {
     // If no parent (initial commit), return empty string
     return "";
@@ -128,13 +128,15 @@ function buildCandidateManifest() {
   const buildTimestamp = new Date().toISOString(); // EXEMPT from hash input (documented)
   const requestedServiceScope = "aforge-release"; // Default scope; could be made configurable
 
-  // Candidate ID: sha256 of release_commit + build_timestamp (for uniqueness per build)
-  // Note: build_timestamp is NOT included in candidate_manifest_sha256
-  const candidateIdInput = `${releaseCommit}|${buildTimestamp}`;
+  // Candidate ID: deterministic identity over the declared core (commit +
+  // policy + tree). Same inputs = same candidate. build_timestamp stays the
+  // only per-build field and is exempt from candidate_manifest_sha256.
+  const candidateIdInput = `${releaseCommit}:${policySha256}:${executableTreeSha256}`;
   const candidateId = sha256(candidateIdInput).slice(0, 16);
 
-  // Rollback target = parent_commit
-  const rollbackTarget = parentCommit;
+  // Rollback target = parent_commit. Single-commit repo: no prior state exists,
+  // so the rollback target is the release commit itself (re-apply same commit).
+  const rollbackTarget = parentCommit || releaseCommit;
 
   // Test receipt refs - placeholder for now (could be populated from test runs)
   const testReceiptRefs = [];
@@ -157,7 +159,12 @@ function buildCandidateManifest() {
 
   // Compute candidate_manifest_sha256 over ALL fields EXCEPT build_timestamp
   // This ensures determinism: same declared inputs -> same manifest_sha256
-  const { build_timestamp: _, ...manifestForHash } = manifest;
+  // build_timestamp AND candidate_id are build-instance-unique (both derived
+  // from the clock) and are EXEMPT from candidate_manifest_sha256. The digest
+  // must depend ONLY on the declared input set: release/parent commit, policy
+  // hash, executable-tree hash, changed files, scope, rollback target.
+  // Same inputs -> same digest, even across a second boundary.
+  const { build_timestamp: _t, candidate_id: _c, ...manifestForHash } = manifest;
   const canonicalManifest = canonicalAttestationPayload(manifestForHash);
   const candidateManifestSha256 = sha256(canonicalManifest);
 

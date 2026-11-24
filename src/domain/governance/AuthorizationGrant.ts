@@ -166,13 +166,13 @@ export function createTestGrant(overrides: Partial<AuthorizationGrant> = {}): Au
   const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
 
   return {
-    grant_id: `grant-${sha256(`${now.toISOString()}-${Math.random()}`).slice(0, 12)}`,
-    candidate_digest: overrides.candidate_digest || "test-digest",
+    grant_id: overrides.grant_id ?? `grant-${sha256(`${now.toISOString()}-${Math.random()}`).slice(0, 12)}`,
+    candidate_digest: overrides.candidate_digest || "digest-x",
     repository: overrides.repository || "ariffazil/a-forge",
     operation: overrides.operation || "release",
     service_scope: overrides.service_scope || "aforge-release",
-    baseline_digest: overrides.baseline_digest || "test-baseline",
-    expires_at: expiresAt.toISOString(),
+    baseline_digest: overrides.baseline_digest || "baseline-y",
+    expires_at: overrides.expires_at ?? expiresAt.toISOString(),
     use_limit: overrides.use_limit ?? 1,
     authorized_by: overrides.authorized_by || "F13",
     signature: overrides.signature,
