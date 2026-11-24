@@ -816,7 +816,7 @@ model_list:
     - include
     api_key: os.environ/ZAI_API_KEY
     order: 1
-    max_input_tokens: 200000
+    max_input_tokens: 1048576
     max_output_tokens: 128000
     mode: chat
   model_info:
@@ -828,14 +828,14 @@ model_list:
     price_declared_at: '2026-11-24'
     spendable: false
     quota_bearing: true
-    max_input_tokens: 200000
+    max_input_tokens: 1048576
     max_output_tokens: 128000
     mode: chat
     supports_vision: true
     supports_function_calling: true
     notes: 'forge-777 HEAD order 1 (F13 order 2026-11-24: upgrade i-ARIF + 777-Forge
       to GLM-5.4; A2M primary executor per routing context). Loop Transformer flagship,
-      200K ctx (1M NOT entitled — [1m]=1211), live 200 served=glm-5.4 both wire
+      1M ctx (seat-probed 1,048,027 in; [1m]=1211 = unknown id), live 200 served=glm-5.4 both wire
       protocols. max_tokens>=2048; bound effort to avoid marathon loops.'
 - model_name: forge-777
   litellm_params:
@@ -1803,7 +1803,7 @@ model_list:
     - include
     api_key: os.environ/ZAI_API_KEY
     order: 0
-    max_input_tokens: 200000
+    max_input_tokens: 1048576
     max_output_tokens: 128000
     mode: chat
   model_info:
@@ -1815,7 +1815,7 @@ model_list:
     price_declared_at: '2026-11-24'
     spendable: false
     quota_bearing: true
-    max_input_tokens: 200000
+    max_input_tokens: 1048576
     max_output_tokens: 128000
     mode: chat
     supports_vision: true
@@ -1824,7 +1824,7 @@ model_list:
       (750B-class, 78 stored / 106 effective layers). LIVE-probed 2026-11-24 from
       litellm container: /models 13 ids incl glm-5.4; chat 200 served=glm-5.4 on
       OpenAI-compat AND Anthropic-compat; glm-5.4[1m]=400 code 1211 BOTH endpoints
-      (200K std ctx on this seat — 1M tier NOT entitled); image_in wire-200 (2x2
+      (seat-probed 1,048,027 in = 200; [1m]=1211 = unknown id); image_in wire-200 (2x2
       color-read imperfect — do not trust for pixel-exact vision; vision heads stay
       glm-5.3-flash). A2M/A2A heavy-execution tier; marathon-thinking risk on
       high/max effort — prefer bounded effort + max_tokens>=2048.'
@@ -2313,7 +2313,7 @@ model_list:
     - include
     api_key: os.environ/ZAI_API_KEY
     order: 1
-    max_input_tokens: 200000
+    max_input_tokens: 1048576
     max_output_tokens: 128000
     mode: chat
   model_info:
@@ -2325,15 +2325,14 @@ model_list:
     price_declared_at: '2026-11-24'
     spendable: false
     quota_bearing: true
-    max_input_tokens: 200000
+    max_input_tokens: 1048576
     max_output_tokens: 128000
     mode: chat
     supports_vision: true
     supports_function_calling: true
     notes: 'i-arif HEAD order 1 (F13 order 2026-11-24: upgrade i-ARIF to GLM-5.4;
       A2H async-synthesis backend — flash stays for live/sync chat + vision).
-      Live 200 served=glm-5.4 OpenAI+Anthropic compat. 200K ctx ([1m]=1211 not
-      entitled). max_tokens>=2048 (reasoning-starvation law).'
+      Live 200 served=glm-5.4 OpenAI+Anthropic compat. 1M ctx (seat-probed 1,048,027 in). max_tokens>=2048 (reasoning-starvation law).'
 - model_name: i-arif
   litellm_params:
     model: openai/glm-5.3-flash
