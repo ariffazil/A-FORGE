@@ -150,7 +150,16 @@ test("ADR-015 TS: LegacySealProjection separates consumer meanings", () => {
     },
   };
 
-  assert.equal(LegacySealProjection.projectAuthorized(t), true);
+  // DELIBERATE FLIP 2026-11-24 — F13 ARIFOS::CONSEQUENCE_BOUND_CLOSURE.
+  // projectAuthorized() was verdict-only authorization and has been RETIRED.
+  // The hazard is now asserted ABSENT, not asserted working: having a SEAL
+  // verdict and a grant attached must not by itself expose an authorization
+  // boolean. Authorization requires consumeExecutionGrant().
+  assert.equal(
+    (LegacySealProjection as any).projectAuthorized,
+    undefined,
+    "verdict-only authorization must not be exported"
+  );
   assert.equal(LegacySealProjection.projectReceiptWritten(t), true);
   assert.equal(LegacySealProjection.projectCompleted(t), true);
   assert.equal(LegacySealProjection.projectDeployed(t), true);

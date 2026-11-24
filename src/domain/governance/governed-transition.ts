@@ -6,9 +6,18 @@
  *  1. Orthogonal authority domains composed under AuthorityEnvelope
  *  2. Bounded ExecutionAuthorizationGrant with strict parameter verification
  *  3. SovereignAttestation with subject-hash binding
- *  4. Consumer-specific legacy projections (LegacySealProjection)
+ *  4. (RETIRED 2026-11-24) LegacySealProjection — verdict-only authorization
+ *     removed under F13 ARIFOS::CONSEQUENCE_BOUND_CLOSURE. See tombstone below.
  *  5. Formula-version registry and Jacobian non-authority invariant
+ *
+ * 2026-11-24 — F13 ARIFOS::CONSEQUENCE_BOUND_CLOSURE::2026-11-24
+ *   This module is the CANONICAL owner of execution-grant validation and
+ *   consumption. Verdict strings (SEAL/PASS/resumed/chat approval) are NOT
+ *   authorization. Only a bound, unexpired, unconsumed grant authorizes.
  */
+
+import { closeSync, mkdirSync, openSync, writeSync } from "node:fs";
+import { join } from "node:path";
 
 export type AssuranceLevel =
   | "anonymous"
@@ -142,6 +151,155 @@ export function validateExecutionGrant(
   return { valid: true, reason: "valid" };
 }
 
+export interface ExecutionGrantExpectation {
+  proposal_hash: string;
+  plan_hash: string;
+  executor_id: string;
+  actor_id: string;
+  allowed_operation: string;
+  baseline_hash: string;
+  target?: string;
+  at_time?: Date;
+}
+
+const GRANT_REQUIRED_FIELDS: (keyof ExecutionAuthorizationGrant)[] = [
+  "authorization_grant_id",
+  "proposal_hash",
+  "plan_hash",
+  "session_id",
+  "actor_id",
+  "executor_id",
+  "allowed_operation",
+  "target_scope",
+  "baseline_hash",
+  "policy_version",
+  "issued_at",
+  "expires_at",
+  "issuer",
+];
+
+/**
+ * Consume an execution grant: validate every binding, then atomically claim it
+ * exactly once. This is the ONLY authorization path for consequential work.
+ *
+ * Fail-closed contract:
+ *   - missing/empty expectation field        -> deny (INVALID_STRUCTURE)
+ *   - grant missing any required binding     -> deny (INVALID_STRUCTURE)
+ *   - actor / operation / baseline mismatch  -> deny
+ *   - expired / revoked / already used       -> deny
+ *   - ledger unavailable                     -> deny
+ *
+ * Atomicity: single O_EXCL file creation keyed by grant id. Two concurrent
+ * callers cannot both succeed; the second receives EEXIST -> deny.
+ *
+ * Durability: the marker survives restart, so bouncing the service cannot
+ * re-authorize a replayed grant (an in-process Map could not do this).
+ */
+export function consumeExecutionGrant(
+  grant: ExecutionAuthorizationGrant,
+  expected: ExecutionGrantExpectation,
+  ledgerDir: string = process.env.A_FORGE_GRANT_LEDGER_DIR ||
+    "/root/A-FORGE/.grant-ledger"
+): GrantValidationResult {
+  // 1. Expectation must be complete. Absent evidence is not permission.
+  const expectationFields: (keyof ExecutionGrantExpectation)[] = [
+    "proposal_hash",
+    "plan_hash",
+    "executor_id",
+    "actor_id",
+    "allowed_operation",
+    "baseline_hash",
+  ];
+  for (const f of expectationFields) {
+    const v = expected[f];
+    if (typeof v !== "string" || v.trim() === "") {
+      return {
+        valid: false,
+        reason: `expectation_incomplete: ${String(f)} missing or empty`,
+      };
+    }
+  }
+
+  // 2. Grant must be structurally complete.
+  if (!grant || typeof grant !== "object") {
+    return { valid: false, reason: "grant_missing_or_not_an_object" };
+  }
+  for (const f of GRANT_REQUIRED_FIELDS) {
+    const v = (grant as any)[f];
+    if (v === undefined || v === null || (typeof v === "string" && v.trim() === "")) {
+      return { valid: false, reason: `grant_incomplete: ${String(f)} missing` };
+    }
+  }
+  if (!Array.isArray(grant.target_scope)) {
+    return { valid: false, reason: "grant_incomplete: target_scope must be an array" };
+  }
+
+  // 3. Bindings the shared validator does not cover.
+  if (grant.actor_id !== expected.actor_id) {
+    return {
+      valid: false,
+      reason: `actor_mismatch: grant bound to ${grant.actor_id}, caller ${expected.actor_id}`,
+    };
+  }
+  if (grant.allowed_operation !== expected.allowed_operation) {
+    return {
+      valid: false,
+      reason: `operation_mismatch: grant allows ${grant.allowed_operation}, requested ${expected.allowed_operation}`,
+    };
+  }
+  if (grant.baseline_hash !== expected.baseline_hash) {
+    return {
+      valid: false,
+      reason: `baseline_mismatch: grant bound to ${grant.baseline_hash}, current ${expected.baseline_hash}`,
+    };
+  }
+
+  // 4. Shared validator: revoked / consumed / expired / proposal / plan /
+  //    executor / target_scope containment.
+  const validated = validateExecutionGrant(grant, expected);
+  if (!validated.valid) {
+    return validated;
+  }
+
+  // 5. Atomic durable claim.
+  try {
+    mkdirSync(ledgerDir, { recursive: true });
+    const marker = join(ledgerDir, `${grant.authorization_grant_id}.claimed`);
+    const fd = openSync(marker, "wx");
+    try {
+      const record = {
+        grant_id: grant.authorization_grant_id,
+        actor_id: grant.actor_id,
+        executor_id: grant.executor_id,
+        operation: grant.allowed_operation,
+        session_id: grant.session_id,
+        proposal_hash: grant.proposal_hash,
+        plan_hash: grant.plan_hash,
+        baseline_hash: grant.baseline_hash,
+        target: expected.target ?? null,
+        issuer: grant.issuer,
+        policy_version: grant.policy_version,
+        claimed_at: new Date().toISOString(),
+      };
+      writeSync(fd, `${JSON.stringify(record)}\n`);
+    } finally {
+      closeSync(fd);
+    }
+    return { valid: true, reason: "grant_consumed" };
+  } catch (err: any) {
+    if (err?.code === "EEXIST") {
+      return {
+        valid: false,
+        reason: `grant_already_consumed at ${grant.authorization_grant_id}`,
+      };
+    }
+    return {
+      valid: false,
+      reason: `grant_ledger_unavailable: ${err?.message ?? "unknown"}`,
+    };
+  }
+}
+
 export interface HumanMandate {
   sovereign: string;
   mandate_ref?: string | null;
@@ -227,11 +385,19 @@ export interface GovernedTransition {
   attestation?: SovereignAttestation | null;
 }
 
+// ── LegacySealProjection — REDUCED 2026-11-24 ────────────────────────────────
+// F13 ARIFOS::CONSEQUENCE_BOUND_CLOSURE::2026-11-24, principle AMBIL YANG
+// JERNIH BUANG YANG KERUH.
+//
+// RETIRED: `projectAuthorized(t) => t.authorization.verdict === "SEAL"`.
+// That was verdict-only authorization — a typed string, a status label, or a
+// SEAL-shaped session id could satisfy it. Classified LEGACY_HAZARD.
+// Authorization now lives only in consumeExecutionGrant().
+//
+// RETAINED: the remaining projections read STATUS, not authority. They answer
+// "did this happen?" not "was this permitted?". They are not an authorization
+// path and must never be used as one.
 export class LegacySealProjection {
-  static projectAuthorized(t: GovernedTransition): boolean {
-    return t.authorization.verdict === "SEAL";
-  }
-
   static projectReceiptWritten(t: GovernedTransition): boolean {
     return Boolean(t.witness.receipt_id);
   }
