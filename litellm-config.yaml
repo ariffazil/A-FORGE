@@ -277,7 +277,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 8
+    order: 2
     min_tokens: 200
   model_info:
     cost_class: payg
@@ -303,7 +303,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 990
+    order: 3
     min_tokens: 200
   model_info:
     cost_class: payg
@@ -405,7 +405,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 5
+    order: 901
     min_tokens: 200
   model_info:
     cost_class: payg
@@ -550,7 +550,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 901
     min_tokens: 200
   model_info:
     cost_class: payg
@@ -603,7 +603,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 1000
     min_tokens: 200
   model_info:
     cost_class: payg
@@ -950,7 +950,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 3
+    order: 991
     min_tokens: 200
   model_info:
     cost_class: payg
@@ -975,7 +975,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 1
+    order: 4
     min_tokens: 200
   model_info:
     cost_class: payg
@@ -1036,7 +1036,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 8
+    order: 11
     min_tokens: 200
   model_info:
     cost_class: payg
@@ -1107,7 +1107,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 2
+    order: 901
     min_tokens: 200
   model_info:
     cost_class: payg
@@ -1554,7 +1554,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 0
+    order: 2
     min_tokens: 200
     mode: chat
     notes: 'UPDATED 2026-09-13: alias compat-routes server-side to DeepSeek-V4.1-Flash
@@ -1581,7 +1581,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 0
+    order: 2
     min_tokens: 200
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1611,7 +1611,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 2
+    order: 1000
     min_tokens: 200
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -1668,7 +1668,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 0
+    order: 2
     min_tokens: 200
     mode: chat
     notes: CANONICAL DeepSeek V4.1-Flash group (added 2026-09-28). Resolves the i-arif
@@ -1916,7 +1916,7 @@ model_list:
     model: deepseek/deepseek-flash
     api_base: https://api.deepseek.com/v1
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 2
+    order: 1000
     min_tokens: 200
     max_input_tokens: 1048576
     max_output_tokens: 131072
@@ -2350,7 +2350,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 3
+    order: 999
     mode: chat
     notes: 'PARKED 2026-11-10: DeepSeek balance negative (-0.14). Unpark on topup.'
   model_info:
@@ -2369,7 +2369,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 4
+    order: 1000
     mode: chat
     notes: 'PARKED 2026-11-10: DeepSeek balance negative (-0.14). Unpark on topup.'
   model_info:
@@ -2388,7 +2388,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 0
+    order: 2
     min_tokens: 200
     mode: chat
   model_info:
@@ -2474,7 +2474,7 @@ model_list:
     additional_drop_params:
     - include
     api_key: os.environ/DEEPSEEK_API_KEY
-    order: 4
+    order: 992
     min_tokens: 200
   model_info:
     cost_class: payg
