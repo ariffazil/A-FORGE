@@ -189,3 +189,6 @@ token_bank.db
 # untracked by explicit reviewed change; churn no longer dirties the tree.
 data/web_federation_state.json
 data-ledger/
+
+# Runtime search quota ledger
+data/search_quota_ledger.json
