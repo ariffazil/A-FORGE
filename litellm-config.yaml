@@ -2208,36 +2208,16 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Kimi coding 'monthly usage limit reached' (live 2026-11-23); restore: order -> 995
-- model_name: i-arif
-  litellm_params:
-    model: openai/k3.1-pro
-    api_base: https://api.kimi.com/coding/v1
-    additional_drop_params:
-    - include
-    api_key: os.environ/KIMI_API_KEY
-    order: 998
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
-    notes: i-arif Kimi k3.1-pro. 1M ctx, coding & deep reasoning specialist, vision
-      & tool use. ADDED to i-arif 2026-11-10.
-  model_info:
-    cost_class: plan
-    price_status: plan_quota
-    price_usd_per_1m_in: 0.0
-    price_usd_per_1m_out: 0.0
-    price_source: kimi_coding_plan_seat
-    price_declared_at: '2026-11-12'
-    spendable: false
-    quota_bearing: true
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    supports_function_calling: true
+# TOMBSTONE 2026-11-25 (333-AGI, F13 "remove qwen token plan and kimi plan") — Kimi coding seat
+# REMOVED from active routing. Probe 2026-11-25T21:10Z on https://api.kimi.com/coding/v1 with the
+# live KIMI_API_KEY (credential never printed): HTTP 429 exceeded_current_quota_error,
+# "You've reached your monthly usage limit for this billing cycle" — same cause as the 2026-11-23
+# tombstone in this file. The endpoint is valid; the shared monthly quota is exhausted.
+# RESTORE (when the cycle resets): re-add one i-arif rung — model openai/k3.1-pro, api_base
+# https://api.kimi.com/coding/v1, additional_drop_params [include], api_key os.environ/KIMI_API_KEY,
+# order 998, spendable false, quota_bearing true, price_source kimi_coding_plan_seat.
+# Full removed rung + prior witness notes preserved in
+# /root/A-FORGE/litellm-config.yaml.bak-fedclean-20261124T211043Z (sha256 593691a0...e48bec7).
 - model_name: i-arif
   litellm_params:
     model: openai/MiniMax-M3
