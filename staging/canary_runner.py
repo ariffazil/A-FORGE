@@ -24,6 +24,10 @@ RECEIPT_FILE = "/root/A-FORGE/staging/canary_receipt.yaml"
 IMAGE = "ghcr.io/berriai/litellm@sha256:af8050ea45707c42a0572c5cceaa5cebaa89cee4c5cd0585cf879a529804b898"
 
 MASTER_KEY = "sk-canary-test-key"
+# Never hardcode the DSN: the previous literal password was published in this file
+# on a public repo (found 2026-11-25). The canary now requires the env var and
+# fails loudly instead of shipping a credential.
+DATABASE_URL = os.environ["DATABASE_URL"]
 
 def port_is_open(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -45,7 +49,7 @@ def start_isolated_proxy():
         "-v", f"{STAGING_CONFIG}:/app/config.yaml:ro",
         "-v", "/root/.local/share/arifos:/app/data:rw",
         "-e", f"LITELLM_MASTER_KEY={MASTER_KEY}",
-        "-e", "DATABASE_URL=postgresql://arifos_admin:ArifPostgres2026!@127.0.0.1:5432/litellm",
+        "-e", f"DATABASE_URL={DATABASE_URL}",
         "--env-file", "/root/.secrets/kunci-mas.flat.env",
         "--env-file", "/root/.config/mimo/team-plan.env",
         IMAGE,
