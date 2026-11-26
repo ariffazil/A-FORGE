@@ -105,6 +105,27 @@ try {
   // Non-critical — health will report "unknown"
 }
 
+// Same stamps :7071 reads on each /health (server.ts). Module-load BUILD_COMMIT
+// is only the fallback, so a stamp rewrite is visible without a second restart.
+function readLiveReleaseIdentity(): { identity_hash: string; commit: string } {
+  const root = process.env.AF_FORGE_DEPLOY_ROOT || "/root/A-FORGE";
+  let identity_hash = "UNAVAILABLE";
+  try {
+    const raw = fs.readFileSync(path.join(root, ".identity_hash"), "utf8").trim();
+    if (raw) identity_hash = raw;
+  } catch {
+    /* stamp missing */
+  }
+  let commit = BUILD_COMMIT;
+  try {
+    const raw = fs.readFileSync(path.join(root, ".git_commit"), "utf8").trim();
+    if (raw) commit = raw.substring(0, 7);
+  } catch {
+    /* keep BUILD_COMMIT */
+  }
+  return { identity_hash, commit };
+}
+
 const SESSION_IDLE_TIMEOUT_MS = 30 * 60 * 1000;  // 30 min idle before auto-close
 const SESSION_CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // check every 5 min
 const SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;    // hard max 24h regardless of activity
@@ -648,12 +669,14 @@ export async function startMcpServer(transportType: "stdio" | "sse" | "streamabl
               "Content-Type": "application/json",
               "MCP-Protocol-Version": PROTOCOL_VERSION,
             });
+            const live = readLiveReleaseIdentity();
             res.end(JSON.stringify({
               ok: true,
               service: "A-FORGE-MCP",
               status: "healthy",
               version: MCP_VERSION,
-              commit: BUILD_COMMIT,
+              commit: live.commit,
+              identity_hash: live.identity_hash,
               transport: "streamable-http",
               // F2-fidelity fix (MCP-PROBE-2026-08-08): bridge shares organ identity
               // with the canonical server. authority_ceiling prevents downstream
