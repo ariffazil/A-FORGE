@@ -22,10 +22,10 @@
       "id": "aforge",
       "url": "http://localhost:7072",
       "required_tools": [
-        "forge_execute",
+        "forge_execute_sealed",
         "forge_shell",
         "forge_git",
-        "forge_docker"
+        "forge_vps_services"
       ]
     },
     {

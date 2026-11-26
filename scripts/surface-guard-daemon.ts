@@ -42,7 +42,7 @@ function loadConfig(): OrganConfig[] {
     // Fallback to hardcoded
     return [
       { id: 'arifos', url: 'http://localhost:8088', required_tools: ['arif_init', 'arif_observe', 'arif_think', 'arif_route', 'arif_judge', 'arif_act', 'arif_seal'] },
-      { id: 'aforge', url: 'http://localhost:7072', required_tools: ['forge_execute', 'forge_shell', 'forge_git', 'forge_docker'] },
+      { id: 'aforge', url: 'http://localhost:7072', required_tools: ['forge_execute_sealed', 'forge_shell', 'forge_git', 'forge_vps_services'] },
       { id: 'geox', url: 'http://localhost:8081', required_tools: ['geox_well_ingest', 'geox_petrophysics', 'geox_seismic_compute', 'geox_basin'] },
       { id: 'wealth', url: 'http://localhost:18082', required_tools: ['wealth_compute_npv', 'wealth_compute_emv', 'wealth_monte_carlo_simulate'] },
       { id: 'well', url: 'http://localhost:18083', required_tools: ['well_validate_vitality', 'well_assess_homeostasis'] },
