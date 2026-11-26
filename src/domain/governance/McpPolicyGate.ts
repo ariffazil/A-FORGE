@@ -373,8 +373,8 @@ export class McpPolicyGate {
    *
    * 2026-10-29 (housekeeping): the sovereign policy was selected by matching
    * the caller-supplied actor_id as a *string*. A caller claiming "arif"
-   * therefore received `default:sovereign` — the policy whose
-   * `allow_by_default` is true and whose allowlist reaches every MCP server
+   * therefore received `default:sovereign`. That policy is now
+   * deny-by-default for forge tools; its historical shape allowed every MCP server
    * (github, postgres, cloudflare, docker, hostinger, …).
    *
    * Mutation was already refused by the independent authority layer, which
@@ -1225,42 +1225,157 @@ export function deriveGateHealthStatus(
 
 // ── Default sovereign policy ──────────────────────────────────────────
 
+// Deny-by-default forge allowlist (2026-11-26).
+// `allow_by_default` is false. Every tool :7072 listed on that date is named
+// here except forge_registry_status, which stays off so a policy-gate
+// deny is provable (L3 tool_not_in_explicit_allowlist). It is OBSERVE and
+// stateless, and it is not canary/1 (that is forge_surface_audit).
+// auth_pipeline has no forge_ prefix; it is named on server "unknown" only.
+// Non-forge servers keep an empty default_tool_policy so this flag flip does
+// not blank them — this process does not census those prefixes.
+export const FORGE_POLICY_OMITTED_TOOL = "forge_registry_status";
+
+const FORGE_NAMED_ALLOW = [
+  "forge_abort",
+  "forge_agent",
+  "forge_apex_emd",
+  "forge_apex_encode",
+  "forge_apex_goal_status",
+  "forge_apex_metabolize",
+  "forge_apex_recompute",
+  "forge_canonize",
+  "forge_chain_state",
+  "forge_chart",
+  "forge_check_governance",
+  "forge_collect_evidence",
+  "forge_compile_task",
+  "forge_cool",
+  "forge_dispatch_lane",
+  "forge_docket_prep",
+  "forge_document_ingest",
+  "forge_drive_create",
+  "forge_entropy_sweep",
+  "forge_ephemeral",
+  "forge_evaluate",
+  "forge_execute_sealed",
+  "forge_experience_query",
+  "forge_experience_trace",
+  "forge_fetch",
+  "forge_filesystem",
+  "forge_fingerprint_check",
+  "forge_git",
+  "forge_gmail",
+  "forge_health_check",
+  "forge_heart_critique",
+  "forge_hf_import",
+  "forge_isomorphism_check",
+  "forge_job",
+  "forge_journalctl",
+  "forge_lease",
+  "forge_lock",
+  "forge_memory",
+  "forge_netdata_alarms",
+  "forge_netdata_metrics",
+  "forge_parallel",
+  "forge_parallel_cancel",
+  "forge_parallel_list",
+  "forge_parallel_status",
+  "forge_policy",
+  "forge_predict",
+  "forge_probe",
+  "forge_probe_site",
+  "forge_reality_loop",
+  "forge_receipt_draft",
+  "forge_register",
+  "forge_registry",
+  "forge_rsi_dual_rate_fq",
+  "forge_rsi_impulse_response",
+  "forge_rsi_state_vector",
+  "forge_runtime_verify",
+  "forge_sandbox_auto_evict",
+  "forge_sandbox_list_paused",
+  "forge_sandbox_pause",
+  "forge_sandbox_resume",
+  "forge_sandbox_run",
+  "forge_scan",
+  "forge_scar",
+  "forge_seal",
+  "forge_seal_run",
+  "forge_search",
+  "forge_security_drift_scan",
+  "forge_send_confirm",
+  "forge_session_init",
+  "forge_shell",
+  "forge_shell_alert_history",
+  "forge_shell_dryrun",
+  "forge_shell_ledger",
+  "forge_shell_status",
+  "forge_skill",
+  "forge_skill_select_query",
+  "forge_skillstore_read",
+  "forge_skillstore_write",
+  "forge_status",
+  "forge_surface_audit",
+  "forge_surface_guard",
+  "forge_telegram",
+  "forge_tier_bind",
+  "forge_transfer_confirm",
+  "forge_trust_score",
+  "forge_vault",
+  "forge_verify_timeline",
+  "forge_vps_cron",
+  "forge_vps_ports",
+  "forge_vps_services",
+  "forge_web_extract",
+  "forge_web_zen",
+  "forge_witness",
+  "forge_wm_gaps",
+  "forge_wm_quality",
+  "forge_wm_stats",
+  "forge_worktree",
+] as const;
+
+function explicitAllow(toolNames: readonly string[]): Record<string, ToolPolicy> {
+  const tools: Record<string, ToolPolicy> = {};
+  for (const name of toolNames) {
+    if (name === FORGE_POLICY_OMITTED_TOOL) continue;
+    tools[name] = { description: "explicit allow" };
+  }
+  return tools;
+}
+
+const NON_FORGE_SERVERS = [
+  "arifos", "geox", "wealth", "well", "aaa", "hermes",
+  "github", "postgres", "supabase", "qdrant",
+  "cloudflare", "docker", "hostinger",
+  "minimax", "brave", "perplexity", "exa",
+  "context7", "sequential",
+  "playwright", "chrome", "meyhem",
+] as const;
+
+function blanketServer(): ServerPolicy {
+  return { allow: true, tools: {}, default_tool_policy: {} };
+}
+
 function buildDefaultSovereignPolicy(): McpPolicy {
+  const allowed_mcp_servers: Record<string, ServerPolicy> = {
+    forge: { allow: true, tools: explicitAllow(FORGE_NAMED_ALLOW) },
+    unknown: { allow: true, tools: explicitAllow(["auth_pipeline"]) },
+  };
+  for (const server of NON_FORGE_SERVERS) {
+    allowed_mcp_servers[server] = blanketServer();
+  }
   return {
     policy_id: "default:sovereign",
     actor_id: "arif",
     role: "sovereign",
     description:
-      "Default sovereign policy. All federation organs allowed. " +
-      "MUTATE tools (forge_execute, forge_filesystem write, forge_git commit, DB writes) " +
-      "remain gated by downstream forge_gate / forge_shell checks — this layer trusts the agent.",
-    allow_by_default: true,
+      "Default sovereign policy. allow_by_default is false. " +
+      "Forge tools are the explicit FORGE_NAMED_ALLOW list; an unnamed forge tool is denied. " +
+      "MUTATE tools remain gated by the authority layer and by forge_gate / forge_shell.",
+    allow_by_default: false,
     denied_mcp_servers: [],
-    allowed_mcp_servers: {
-      forge:   { allow: true, tools: {} },
-      arifos:  { allow: true, tools: {} },
-      geox:    { allow: true, tools: {} },
-      wealth:  { allow: true, tools: {} },
-      well:    { allow: true, tools: {} },
-      aaa:     { allow: true, tools: {} },
-      hermes:  { allow: true, tools: {} },
-      github:  { allow: true, tools: {} },
-      postgres:{ allow: true, tools: {} },
-      supabase:{ allow: true, tools: {} },
-      qdrant:  { allow: true, tools: {} },
-      cloudflare:{ allow: true, tools: {} },
-      docker:  { allow: true, tools: {} },
-      hostinger:{ allow: true, tools: {} },
-      minimax: { allow: true, tools: {} },
-      brave:   { allow: true, tools: {} },
-      perplexity:{ allow: true, tools: {} },
-      exa:     { allow: true, tools: {} },
-      context7:{ allow: true, tools: {} },
-      sequential:{ allow: true, tools: {} },
-      playwright:{ allow: true, tools: {} },
-      chrome:  { allow: true, tools: {} },
-      meyhem:  { allow: true, tools: {} },
-    },
+    allowed_mcp_servers,
   };
 }
 
@@ -1271,9 +1386,9 @@ function buildDefaultSovereignPolicy(): McpPolicy {
 // credential-bearing external servers (github, postgres, supabase,
 // cloudflare, docker, hostinger, …) do not.
 //
-// `default_tool_policy: {}` keeps OBSERVE-class tools on the allowed organs
-// working: with allow_by_default false, a tool that is not individually
-// named would otherwise be refused outright.
+// forge and aforge name every tool except FORGE_POLICY_OMITTED_TOOL.
+// Other federation organs keep an empty default_tool_policy: this process
+// does not census their tools, and blanking them would lock the box.
 
 const UNVERIFIED_ALLOWED_SERVERS = [
   "forge",
@@ -1290,8 +1405,13 @@ const UNVERIFIED_ALLOWED_SERVERS = [
 function buildUnverifiedObserverPolicy(): McpPolicy {
   const allowed_mcp_servers: Record<string, ServerPolicy> = {};
   for (const server of UNVERIFIED_ALLOWED_SERVERS) {
-    allowed_mcp_servers[server] = { allow: true, tools: {}, default_tool_policy: {} };
+    if (server === "forge" || server === "aforge") {
+      allowed_mcp_servers[server] = { allow: true, tools: explicitAllow(FORGE_NAMED_ALLOW) };
+    } else {
+      allowed_mcp_servers[server] = blanketServer();
+    }
   }
+  allowed_mcp_servers.unknown = { allow: true, tools: explicitAllow(["auth_pipeline"]) };
   return {
     policy_id: "default:unverified",
     actor_id: "",

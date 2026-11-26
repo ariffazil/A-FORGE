@@ -25,7 +25,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
-import { McpPolicyGate, type ToolCallRequest } from "../src/domain/governance/McpPolicyGate.js";
+import { FORGE_POLICY_OMITTED_TOOL, McpPolicyGate, type ToolCallRequest } from "../src/domain/governance/McpPolicyGate.js";
 
 const SECRET = "housekeeping-test-secret-0123456789ab";
 
@@ -152,4 +152,18 @@ test("OBSERVE-class access for an unverified caller is preserved", () => {
     const v = gate.evaluate(req({ tool_name: tool, arguments: {} }));
     assert.equal(v.verdict, "ALLOW", `${tool} must stay reachable at OBSERVE class`);
   }
+});
+
+test("sovereign allow_by_default is false and one omitted tool is a policy deny", () => {
+  const gate = new McpPolicyGate();
+  assert.equal(gate.getPinStatus().allow_by_default, false);
+  assert.equal(gate.getPinStatus().pin_violated, false);
+  for (const tool of ["forge_health_check", "forge_probe", "forge_shell", "forge_surface_audit"]) {
+    const v = gate.evaluate(req({ tool_name: tool, arguments: {} }));
+    assert.equal(v.verdict, "ALLOW", `${tool} must stay on the explicit allowlist`);
+    assert.equal(v.policy_id, "default:unverified");
+  }
+  const omitted = gate.evaluate(req({ tool_name: FORGE_POLICY_OMITTED_TOOL, arguments: {} }));
+  assert.equal(omitted.verdict, "DENY");
+  assert.match(omitted.reasons.join(" "), /tool_not_in_explicit_allowlist/);
 });
