@@ -1556,8 +1556,8 @@ export const EXAMPLE_POLICIES: McpPolicy[] = [
     policy_id: "agent:forge-worker",
     actor_id: "forge-worker",
     role: "forge",
-    description: "Forge worker: broad filesystem + shell, but no secrets, no vault, no sovereign commands.",
-    allow_by_default: true,
+    description: "Forge worker: explicit allowlist only (R-01 hardened 2026-11-26); no secrets, no vault, no sovereign commands.",
+    allow_by_default: false,
     denied_mcp_servers: [],
     allowed_mcp_servers: {
       forge: {

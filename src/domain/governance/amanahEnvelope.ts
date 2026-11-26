@@ -22,7 +22,7 @@
  * Sign: HMAC-SHA256 (organ secret). Hash: BLAKE3 (intent canonical JSON).
  */
 
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { blake3 } from "hash-wasm";
 import type { ActionClass } from "./actionClassifier.js";
 import { NonceStore, type NonceCheckResult } from "./nonceStore.js";
@@ -64,6 +64,50 @@ function canonicalIntent(intent: string): string {
 
 // ─── AAE Builder ───────────────────────────────────────────────────────────────
 
+export interface ScopedIdempotencyContext {
+  /** Target resource or surface (e.g. "repo:/root/A-FORGE", "service:aaa-a2a") */
+  target: string;
+  /** Authorized scope / blast boundary (e.g. "worktree:r01", "read-only") */
+  scope: string;
+  /** Authorization / verdict reference binding this execution (e.g. "verdict:888-001") */
+  authorization_ref: string;
+  /** Explicit validity window / epoch bucket (e.g. "2026-11-26T19:00Z/PT5M" or epoch ms) */
+  validity_window: string | number;
+}
+
+/**
+ * R-05 (2026-11-26): Derive a deterministic idempotency key bound to
+ * intent + target + scope + authorization_ref + validity_window.
+ *
+ * Two identical commands in different validity windows or under different
+ * authorizations produce DISTINCT keys (legitimate repeat actions are NOT
+ * falsely rejected), while retries within the same window/auth deduplicate.
+ */
+export function deriveScopedIdempotencyKey(
+  intent: string,
+  ctx: ScopedIdempotencyContext,
+): string {
+  const missing: string[] = [];
+  if (!intent || !intent.trim()) missing.push("intent");
+  if (!ctx.target || !ctx.target.trim()) missing.push("target");
+  if (!ctx.scope || !ctx.scope.trim()) missing.push("scope");
+  if (!ctx.authorization_ref || !ctx.authorization_ref.trim()) missing.push("authorization_ref");
+  if (ctx.validity_window === undefined || ctx.validity_window === null || String(ctx.validity_window).trim() === "") {
+    missing.push("validity_window");
+  }
+  if (missing.length > 0) {
+    throw new Error(`F11_IDEMPOTENCY_CONTEXT_INCOMPLETE: missing ${missing.join(", ")}`);
+  }
+  const canonical = JSON.stringify({
+    authorization_ref: ctx.authorization_ref.trim(),
+    intent: intent.trim(),
+    scope: ctx.scope.trim(),
+    target: ctx.target.trim(),
+    validity_window: String(ctx.validity_window).trim(),
+  });
+  return `idem_${createHash("sha256").update(canonical).digest("hex").slice(0, 32)}`;
+}
+
 export interface AAEV1Options {
   actor_id?: string;  // Required at runtime (F1 AMANAH), optional in type to allow test
   intent: string;
@@ -74,6 +118,8 @@ export interface AAEV1Options {
   expiry_ms?: number;         // Default: 5 minutes from now
   nonce?: string;
   idempotency_key?: string;
+  /** Optional scoped context to derive a deterministic idempotency_key (R-05) */
+  idempotency_context?: ScopedIdempotencyContext;
   organ_secret: string;       // HMAC signing key (organ-specific)
   issuer?: string;            // Default: "a-forge"
   judgment_reference?: string; // Verdict ID from the judgment that authorized this action
@@ -146,6 +192,7 @@ export async function buildAAE(options: AAEV1Options): Promise<AAEV1> {
     expiry_ms,
     nonce,
     idempotency_key,
+    idempotency_context,
     organ_secret,
     issuer = "a-forge",
     judgment_reference,
@@ -159,6 +206,12 @@ export async function buildAAE(options: AAEV1Options): Promise<AAEV1> {
   if (reversibility < 0 || reversibility > 1) {
     throw new Error(`AAE: reversibility must be 0.0–1.0, got ${reversibility}`);
   }
+
+  const resolvedIdempotencyKey =
+    idempotency_key ??
+    (idempotency_context
+      ? deriveScopedIdempotencyKey(intent, idempotency_context)
+      : generateNonce());
 
   const now = Date.now();
   const intent_hash = await computeIntentHash(intent);
@@ -176,7 +229,7 @@ export async function buildAAE(options: AAEV1Options): Promise<AAEV1> {
     evidence_refs,
     expiry,
     nonce: nonce ?? generateNonce(),
-    idempotency_key: idempotency_key ?? generateNonce(),
+    idempotency_key: resolvedIdempotencyKey,
     issued_at: now,
     issuer,
     judgment_reference,
