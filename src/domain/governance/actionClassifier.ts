@@ -308,11 +308,13 @@ export function classifyTool(
     if (mode === "revoke") return "EXECUTE_REVERSIBLE";
   }
   // forge_postgres: query/schema=OBSERVE (read), query with mutate=true=EXECUTE_HIGH_IMPACT
-  // forge_ephemeral: inspect_gap/list_templates/list_active=OBSERVE, rest=EXECUTE_REVERSIBLE
+  // forge_ephemeral: inspect_gap/list_templates/list_active=OBSERVE;
+  // G6 (F13 2026-11-27): generate/invoke/propose_promotion create/run dynamic tools -> EXECUTE_HIGH_IMPACT.
   if (toolName === "forge_ephemeral") {
     if (!mode) return "OBSERVE"; // default: stateless list_templates probe
     if (["inspect_gap", "list_templates", "list_active"].includes(mode)) return "OBSERVE";
-    if (["generate", "sandbox_test", "invoke", "verify", "retire", "propose_promotion"].includes(mode)) return "EXECUTE_REVERSIBLE";
+    if (["generate", "invoke", "propose_promotion"].includes(mode)) return "EXECUTE_HIGH_IMPACT";
+    if (["sandbox_test", "verify", "retire"].includes(mode)) return "EXECUTE_REVERSIBLE";
   }
   // forge_reality_loop: start/list/report/metrics=OBSERVE, advance/record/seal/destroy=EXECUTE_REVERSIBLE
   if (toolName === "forge_reality_loop") {
@@ -322,10 +324,10 @@ export function classifyTool(
   }
   // forge_calendar: list/default=OBSERVE, create=EXECUTE_REVERSIBLE
   // forge_sheets: read/default=OBSERVE, append=EXECUTE_REVERSIBLE
-  // forge_gmail: read-unread/default=OBSERVE, send=EXECUTE_REVERSIBLE
+  // forge_gmail: read-unread/default=OBSERVE; G6 (F13 2026-11-27): send=IRREVERSIBLE (external egress cannot be recalled)
   if (toolName === "forge_gmail") {
     if (!mode || mode === "read-unread") return "OBSERVE";
-    if (mode === "send") return "EXECUTE_REVERSIBLE";
+    if (mode === "send") return "IRREVERSIBLE";
   }
   // forge_telegram: get_me/default=OBSERVE, send/send_message/send_file=IRREVERSIBLE
   // HUMAN_RASA G1 (2026-11-01): a sent Telegram message cannot be recalled —
@@ -335,8 +337,8 @@ export function classifyTool(
     if (!mode || mode === "get_me") return "OBSERVE";
     if (mode === "send" || mode === "send_message" || mode === "send_file") return "IRREVERSIBLE";
   }
-  // forge_drive_create: always a reversible external write
-  if (toolName === "forge_drive_create") return "EXECUTE_REVERSIBLE";
+  // forge_drive_create: G6 (F13 2026-11-27): external Drive write -> EXECUTE_HIGH_IMPACT
+  if (toolName === "forge_drive_create") return "EXECUTE_HIGH_IMPACT";
   // forge_trust_score: list/history/verify=OBSERVE (read-only trust ledger queries),
   // score/evaluate=EXECUTE_REVERSIBLE (persist to Postgres trust_scores + trust_history).
   if (toolName === "forge_trust_score") {

@@ -206,7 +206,9 @@ test("F1 carrier: verb-carrier args classify by the action, not the OBSERVE defa
     "telegram send must require governance",
   );
   // Same defect class on the Workspace trio.
-  assert.equal(classifyTool("forge_gmail", { verb: "send" }), "EXECUTE_REVERSIBLE");
+  // G6 (F13 2026-11-27): gmail send = external egress that cannot be recalled —
+  // raised to IRREVERSIBLE (was EXECUTE_REVERSIBLE), matching forge_telegram.
+  assert.equal(classifyTool("forge_gmail", { verb: "send" }), "IRREVERSIBLE");
   // Their read verbs stay reads.
   assert.equal(classifyTool("forge_gmail", { verb: "read-unread" }), "OBSERVE");
   // String carrier regression (legacy callers pass args.mode as string).
