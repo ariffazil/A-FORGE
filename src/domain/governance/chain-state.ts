@@ -30,8 +30,12 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 /** Canonical chain locations, in precedence order. First readable wins; the
  *  rest are reported as alternates so duplicate-chain confusion is visible. */
 export const CHAIN_CANDIDATES = [
-  "/root/arifOS/VAULT999/SEALED_EVENTS.jsonl", // canonical sealed events (symlink target of vault999)
-  "/root/.local/share/arifos/vault999/seal_chain.jsonl", // receipt chain (same underlying file via symlink)
+  // F13 2026-11-27: the live runtime chain is canonical. The legacy path below
+  // is NOT a symlink to it — distinct inodes (2759765 vs 3327874), and it went
+  // dead 2026-10-28. Kept in first position, it made every heartbeat read
+  // history: 1363 rows, zero with a `seq` field, "SILENT 713h".
+  "/root/.local/share/arifos/vault999/seal_chain.jsonl", // canonical live chain (seq-indexed)
+  "/root/arifOS/VAULT999/SEALED_EVENTS.jsonl", // LEGACY archive (quarantined 2026-11-27) — fallback only
 ] as const;
 
 export type EvidenceClass = "OBS" | "DER" | "UNMEASURED";
