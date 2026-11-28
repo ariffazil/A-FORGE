@@ -1,78 +1,4 @@
 model_list:
-# 2026-11-23 (FI-003, F13 "sah config-clean") — fed/vision-parked REMOVED from active routing.
-# Reason measured, not assumed: the Qwen token-plan seat answers HTTP 429 '1-month quota exhausted' (resets 2026-11-30 16:00 UTC).
-# RESTORE (after the seat recovers): re-add one rung and, if the name had a fallback
-# chain, its router_settings.fallbacks entry.
-# 2026-11-23 (FI-003, F13 "sah config-clean") — gemini-flash-lite REMOVED from active routing.
-# Reason measured, not assumed: Gemini answers HTTP 402 'prepayment credits are depleted'.
-# RESTORE (after the seat recovers): re-add one rung and, if the name had a fallback
-# chain, its router_settings.fallbacks entry.
-# 2026-11-23 (FI-003, F13 "sah config-clean") — qwen-auto REMOVED from active routing.
-# Reason measured, not assumed: the Qwen token-plan seat answers HTTP 429 '1-month quota exhausted' (resets 2026-11-30 16:00 UTC); the name keeps serving because it now points directly at the family it already served through the router fallback.
-# RESTORE (after the seat recovers): re-add one rung and, if the name had a fallback
-# chain, its router_settings.fallbacks entry.
-# 2026-11-23 (FI-003, F13 "sah config-clean") — qwen3.6-flash REMOVED from active routing.
-# Reason measured, not assumed: the Qwen token-plan seat answers HTTP 429 '1-month quota exhausted' (resets 2026-11-30 16:00 UTC).
-# RESTORE (after the seat recovers): re-add one rung and, if the name had a fallback
-# chain, its router_settings.fallbacks entry.
-# 2026-11-23 (FI-003, F13 "sah config-clean") — qwen3.6-plus REMOVED from active routing.
-# Reason measured, not assumed: the Qwen token-plan seat answers HTTP 429 '1-month quota exhausted' (resets 2026-11-30 16:00 UTC); the name keeps serving because it now points directly at the family it already served through the router fallback.
-# RESTORE (after the seat recovers): re-add one rung and, if the name had a fallback
-# chain, its router_settings.fallbacks entry.
-# 2026-11-23 (FI-003, F13 "sah config-clean") — qwen3.7-max REMOVED from active routing.
-# Reason measured, not assumed: the Qwen token-plan seat answers HTTP 429 '1-month quota exhausted' (resets 2026-11-30 16:00 UTC).
-# RESTORE (after the seat recovers): re-add one rung and, if the name had a fallback
-# chain, its router_settings.fallbacks entry.
-# 2026-11-23 (FI-003, F13 "sah config-clean") — qwen3.7-plus REMOVED from active routing.
-# Reason measured, not assumed: the Qwen token-plan seat answers HTTP 429 '1-month quota exhausted' (resets 2026-11-30 16:00 UTC).
-# RESTORE (after the seat recovers): re-add one rung and, if the name had a fallback
-# chain, its router_settings.fallbacks entry.
-# 2026-11-23 (FI-003, F13 "sah config-clean") — qwen3.8-max REMOVED from active routing.
-# Reason measured, not assumed: the Qwen token-plan seat answers HTTP 429 '1-month quota exhausted' (resets 2026-11-30 16:00 UTC); the name keeps serving because it now points directly at the family it already served through the router fallback.
-# RESTORE (after the seat recovers): re-add one rung and, if the name had a fallback
-# chain, its router_settings.fallbacks entry.
-# 2026-11-23 (FI-003, F13 "sah config-clean") — qwen3.8-max-0902 REMOVED from active routing.
-# Reason measured, not assumed: the Qwen token-plan seat answers HTTP 429 '1-month quota exhausted' (resets 2026-11-30 16:00 UTC).
-# RESTORE (after the seat recovers): re-add one rung and, if the name had a fallback
-# chain, its router_settings.fallbacks entry.
-# 2026-11-23 (FI-003, F13 "sah config-clean") — sovereign-west REMOVED from active routing.
-# Reason measured, not assumed: Groq answers HTTP 403 (Cloudflare 1010) from this host.
-# RESTORE (after the seat recovers): re-add one rung and, if the name had a fallback
-# chain, its router_settings.fallbacks entry.
-# ---------------------------------------------------------------------------
-# FED DEPTH READING — measured 2026-11-23 (FI-003, F13 "sah p3", then "sah config-clean")
-#
-# The rung count of a group is NOT its effective depth. Read it like this:
-#
-#   * Every rung whose api_base is token-plan.*.qwencloudapi.com or
-#     token-plan.ap-southeast-1.maas.aliyuncs.com sits on the Qwen team-owner
-#     seat, which answers 429 insufficient_quota until 2026-11-30T16:00Z.
-#     Those rungs are declared, not servable. They come back on their own.
-#   * A group name with no servable rung AND no fallback is HARD DOWN for callers.
-#
-# Reconciled 2026-11-23: 121 rungs across 52 groups. The Qwen token-plan tail, the
-# Groq rungs (403 Cloudflare 1010 from this host) and the Gemini group (402 prepayment credits
-# depleted) were removed as dead — see the tombstones at the head of model_list.
-#
-# Seat state measured 2026-11-23T15:40Z (one bounded probe per seat):
-#   answering 200 today : 89 rungs — MiniMax M Plan, MiMo individual MAX, DeepSeek
-#                          direct, OpenRouter, Nous, MiMo platform-independent, Ollama local,
-#                          Pollinations, Cloudflare Workers AI
-#   quota-blocked       : 32 rungs — 
-#                          ZAI_API_KEY (13 rungs): Z.AI quota exhausted, resets 2026-11-24 15:31 [2026-11-24T15:31Z]
-#                          MIMO_TOKEN_PLAN_API_KEY (16 rungs): MiMo team token-plan quota exhausted, resets ~2026-12-01 [~2026-12-01]
-#                          MIMO_TEAM_PLAN2_API_KEY (2 rungs): MiMo team plan2 quota exhausted, resets ~2026-12-01 [~2026-12-01]
-#                          KIMI_API_KEY (1 rungs): Kimi coding-API monthly quota exhausted [next cycle]
-#   still dead elsewhere : 0 rungs on seats that are neither alive nor quota-blocked
-#
-# Measured DOWN for callers right now:
-#   fed/audio-voiceclone 429 · realtime-speech 429 (both on the MiniMax speech seat)
-#   qwen3.8-max, qwen3.6-plus and qwen-auto now serve mimo-v2.6-flash / deepseek-flash directly —
-#     the same served model they returned through the router fallback, with no dead rung left
-#
-# Re-probe after each reset above, then rewrite this block with the new numbers. Do not restore
-# or prune on the date alone — probe the seat first.
-# ---------------------------------------------------------------------------
 - model_name: code-change
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -82,7 +8,6 @@ model_list:
   model_info:
     route_class: openrouter-backbone
     capability: code-change
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 2
 - model_name: code-change
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -119,7 +44,6 @@ model_list:
   model_info:
     route_class: prepaid-flat-rate
     capability: architecture-synthesis
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 3
 - model_name: architecture-synthesis
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -156,7 +80,6 @@ model_list:
   model_info:
     route_class: openrouter-backbone
     capability: structured-extraction
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 2
 - model_name: structured-extraction
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -184,7 +107,6 @@ model_list:
   model_info:
     route_class: openrouter-backbone
     capability: multimodal-analysis
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 2
 - model_name: multimodal-analysis
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -212,7 +134,6 @@ model_list:
   model_info:
     route_class: prepaid-flat-rate
     capability: research-synthesis
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 2
 - model_name: research-synthesis
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -259,7 +180,6 @@ model_list:
     route_class: prepaid-flat-rate
     capability: persona-expression
     authority: none
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 2
 - model_name: persona-expression
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -325,8 +245,6 @@ model_list:
       — 1M-capable primary for constitutional judging of large evidence. | DEMOTED
       2026-11-11: live probe 402 insufficient-balance (key DEEPSEEK_API_KEY, seat
       empty since 2026-10-21 -$0.00). Kept for top-up restore.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
-# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200 (glm-5.3 + glm-5.4 probed); order restored per park note.
 - model_name: asi-555
   litellm_params:
     model: openai/glm-5.3-flash
@@ -385,7 +303,14 @@ model_list:
     supports_vision: true
     spendable: true
     cost_class: mplan
-    notes: "2026-11-23 (FI-003, F13 'guna yang ada'): image lane on the MiniMax seat that is ALREADY paid for (MINIMAX_MPLAN_KEY, the M Plan credential) — measured HTTP 200 with a real JPEG (331,243 bytes, magic ffd8ffe1) through api.minimax.io/v1/images/generations, the OpenAI-shaped surface litellm's openai/ provider can call (litellm 1.110.1 has no minimax image provider). MiniMax's own image models: MiniMax-H3-Image and MiniMax-H3-Image-Highspeed. The two Gemini rungs retired here answered 402 'prepayment credits depleted' and would have required a top-up — which is not needed while this seat answers. Call this lane on POST /v1/images/generations."
+    notes: '2026-11-23 (FI-003, F13 ''guna yang ada''): image lane on the MiniMax
+      seat that is ALREADY paid for (MINIMAX_MPLAN_KEY, the M Plan credential) — measured
+      HTTP 200 with a real JPEG (331,243 bytes, magic ffd8ffe1) through api.minimax.io/v1/images/generations,
+      the OpenAI-shaped surface litellm''s openai/ provider can call (litellm 1.110.1
+      has no minimax image provider). MiniMax''s own image models: MiniMax-H3-Image
+      and MiniMax-H3-Image-Highspeed. The two Gemini rungs retired here answered 402
+      ''prepayment credits depleted'' and would have required a top-up — which is
+      not needed while this seat answers. Call this lane on POST /v1/images/generations.'
 - model_name: fed/image-gen
   litellm_params:
     model: openai/MiniMax-H3-Image-Highspeed
@@ -397,7 +322,9 @@ model_list:
     supports_vision: true
     spendable: true
     cost_class: mplan
-    notes: "2026-11-23 (FI-003, F13 'guna yang ada'): second image rung on the same paid MiniMax seat, the highspeed model of the same family, so one model outage does not empty the lane."
+    notes: '2026-11-23 (FI-003, F13 ''guna yang ada''): second image rung on the same
+      paid MiniMax seat, the highspeed model of the same family, so one model outage
+      does not empty the lane.'
 - model_name: asi-555
   litellm_params:
     model: openai/deepseek-flash
@@ -416,7 +343,9 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'asi-555 P5 (added 2026-11-23 FED audit): verifier lane had ONE healthy rung (mimo-v2.6-pro). DeepSeek direct added for independent failure domain. Probe UP.'
+    notes: 'asi-555 P5 (added 2026-11-23 FED audit): verifier lane had ONE healthy
+      rung (mimo-v2.6-pro). DeepSeek direct added for independent failure domain.
+      Probe UP.'
 - model_name: asi-555
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -432,7 +361,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'asi-555 P6 (added 2026-11-23 FED audit): OpenRouter independent boundary for verifier redundancy. Probe UP.'
+    notes: 'asi-555 P6 (added 2026-11-23 FED audit): OpenRouter independent boundary
+      for verifier redundancy. Probe UP.'
 - model_name: forge-scout
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -460,7 +390,6 @@ model_list:
     notes: 'forge-scout P1 (MiMo V2.5 omni-modal): multimodal evidence reader — screenshots,
       diagrams, browser DOM, logs. License: coding-tools-only compliant. Token Plan
       Max 82B credits fresh 2026-09-13. PONG 1500ms.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 992
 - model_name: forge-scout
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -515,7 +444,6 @@ model_list:
     notes: 'forge-scout-pro P1 (MiMo V2.5 Pro 1T/42B MoE): heavy multimodal synthesis
       — design review, architecture diff, multimodal contract analysis. Token Plan
       Max. PONG 1840ms.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 992
 - model_name: forge-scout-pro
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -569,8 +497,6 @@ model_list:
     notes: forge-builder P1 (DeepSeek V4.1-Flash) — canonical name updated 2026-09-28
       (v4-flash retired upstream 2026-09-10). Cost-frontier for high-volume builder
       loops. ZAI glm-5.3-flash remains P2.
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 3
-# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200; order restored per park note.
 - model_name: forge-builder
   litellm_params:
     model: openai/glm-5.3-flash
@@ -647,7 +573,6 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'forge-economy P3 (MiMo V2.5): 82B credits, multimodal fallback for forge-economy.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 995
 - model_name: forge-economy
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -701,8 +626,6 @@ model_list:
       and /v1/t2a_v2). Models and base URLs unchanged.'
     notes: 'forge-planner P1 (MiniMax-M3): 1M ctx, task decomposition, scope/budget/architecture
       planning. Token Plan Max fresh 2026-09-13.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 2
-# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200; order restored per park note.
 - model_name: forge-planner
   litellm_params:
     model: openai/glm-5.3-flash
@@ -752,7 +675,6 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'forge-planner P3 (MiMo V2.5): cheap planner fallback.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 998
 - model_name: forge-planner
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -806,8 +728,6 @@ model_list:
     notes: 'forge-judge P1 (MiniMax-M3 Token Plan Max): constitutional adjudication
       lane — diff+receipt comparison. 1M ctx, multimodal evidence accepted. Fresh
       2026-09-13.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
-# SUPERSEDED 2026-11-24 (F13 order: upgrade i-ARIF + 777-Forge to GLM-5.4): forge-777 head is now glm-5.4 order 1; glm-5.3-flash restored at order 2.
 - model_name: forge-777
   litellm_params:
     model: openai/glm-5.4
@@ -835,8 +755,8 @@ model_list:
     supports_function_calling: true
     notes: 'forge-777 HEAD order 1 (F13 order 2026-11-24: upgrade i-ARIF + 777-Forge
       to GLM-5.4; A2M primary executor per routing context). Loop Transformer flagship,
-      1M ctx (seat-probed 1,048,027 in; [1m]=1211 = unknown id), live 200 served=glm-5.4 both wire
-      protocols. max_tokens>=2048; bound effort to avoid marathon loops.'
+      1M ctx (seat-probed 1,048,027 in; [1m]=1211 = unknown id), live 200 served=glm-5.4
+      both wire protocols. max_tokens>=2048; bound effort to avoid marathon loops.'
 - model_name: forge-777
   litellm_params:
     model: openai/glm-5.3-flash
@@ -862,8 +782,8 @@ model_list:
     notes: 'forge-777 CO-PRIMARY (promoted 5->1 2026-11-10, F13 VLM-update directive;
       live probe FLASH-LIVE-OK): ZAI GLM-5.3-Flash — native VLM (image/video/file
       input), 1M context, 128K out, 3x quota, thinking always-on (max_tokens>=2048).
-      Coding lane. RESTORED 2026-11-24 (order 900->2, FI-003 zai-5.4 update; ZAI
-      lane answers 200 post quota-reset — glm-5.3 + glm-5.4 both live-probed).'
+      Coding lane. RESTORED 2026-11-24 (order 900->2, FI-003 zai-5.4 update; ZAI lane
+      answers 200 post quota-reset — glm-5.3 + glm-5.4 both live-probed).'
 - model_name: forge-777
   litellm_params:
     model: openai/MiniMax-M3
@@ -920,7 +840,6 @@ model_list:
     notes: 'Stage 2 (2026-09-22): forge-777 P1 — MiMo-V2.6-Pro PAYG/platform. AA Index
       46, $0.43/$0.87 per 1M. Multimodal text+image+video+audio. Primary quality tier
       for federation; V2.5 demoted to order 5 fallback.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 996
 - model_name: forge-777
   litellm_params:
     model: openai/glm-5.3
@@ -1007,7 +926,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'opencode P2 (added 2026-11-23 FED audit): lane had exactly one rung (deepseek-flash) = single-provider SPOF. OpenRouter rung added behind the head.'
+    notes: 'opencode P2 (added 2026-11-23 FED audit): lane had exactly one rung (deepseek-flash)
+      = single-provider SPOF. OpenRouter rung added behind the head.'
 - model_name: opencode
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -1028,7 +948,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'opencode P3 (added 2026-11-23 FED audit): MiMo individual-plan seat, third vendor family. Probe UP 2026-11-23.'
+    notes: 'opencode P3 (added 2026-11-23 FED audit): MiMo individual-plan seat, third
+      vendor family. Probe UP 2026-11-23.'
 - model_name: hermes-asi
   litellm_params:
     model: openai/deepseek-flash
@@ -1055,8 +976,6 @@ model_list:
       F13 FI-008 from order=1 to break race with hermes-asi Block-2 qwen3.8-max (both
       were at order=1). Name canonicalized 2026-09-28. Kept as last-resort-first before
       kimi-k3.
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 2
-# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200; order restored per park note.
 - model_name: openclaw
   litellm_params:
     model: openai/glm-5.3-flash
@@ -1099,7 +1018,10 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'openclaw SENSE-lane head (repaired 2026-11-23 FED audit): before repair every rung in this lane was dead (z.ai 429 monthly + 4x quarantined Qwen key, /health 503 healthy=0). MiniMax-M3 1M ctx multimodal per federation-lane-routing. Probe UP 2026-11-23.'
+    notes: 'openclaw SENSE-lane head (repaired 2026-11-23 FED audit): before repair
+      every rung in this lane was dead (z.ai 429 monthly + 4x quarantined Qwen key,
+      /health 503 healthy=0). MiniMax-M3 1M ctx multimodal per federation-lane-routing.
+      Probe UP 2026-11-23.'
 - model_name: openclaw
   litellm_params:
     model: openai/deepseek-flash
@@ -1118,7 +1040,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'openclaw P2 (added 2026-11-23 FED audit): DeepSeek Flash direct, vision-capable. Probe UP 2026-11-23.'
+    notes: 'openclaw P2 (added 2026-11-23 FED audit): DeepSeek Flash direct, vision-capable.
+      Probe UP 2026-11-23.'
 - model_name: openclaw
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -1134,49 +1057,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'openclaw P3 (added 2026-11-23 FED audit): OpenRouter deepseek-v4.1-flash, independent vendor boundary. Probe UP 2026-11-23.'
-- model_name: qwen3.6-plus
-  litellm_params:
-    model: openai/mimo-v2.6-flash
-    api_base: https://token-plan-sgp.xiaomimimo.com/v1
-    api_key: os.environ/MIMO_INDIVIDUAL_PLAN_API_KEY
-    order: 999
-  model_info:
-    route_class: prepaid-flat-rate
-    capability: structured-extraction
-    notes: '2026-11-23 (FI-003, F13 ''sah config-clean''): the Qwen token-plan seat is 429 ''1-month quota exhausted'' and was retired from the lane. This name reached mimo-v2.6-flash through the router fallback; it now points there directly, so the served model is unchanged and no dead rung is left in the group.'
-- model_name: qwen3.8-max
-  litellm_params:
-    model: openai/mimo-v2.6-flash
-    api_base: https://token-plan-sgp.xiaomimimo.com/v1
-    api_key: os.environ/MIMO_INDIVIDUAL_PLAN_API_KEY
-    order: 999
-  model_info:
-    route_class: prepaid-flat-rate
-    capability: structured-extraction
-    notes: '2026-11-23 (FI-003, F13 ''sah config-clean''): the Qwen token-plan seat is 429 ''1-month quota exhausted'' and was retired from the lane. This name reached mimo-v2.6-flash through the router fallback; it now points there directly, so the served model is unchanged and no dead rung is left in the group.'
-# 2026-11-23 (FI-003, F13 "buang juga dua sibling kimi-k3.1-pro tu") — kimi-k3.1-pro REMOVED from
-# active routing. Same seat and same measured cause as kimi-k3: os.environ/KIMI_API_KEY answers
-# HTTP 429 "exceeded_current_quota_error — You've reached your monthly usage limit for this
-# billing cycle" on https://api.kimi.com/coding/v1 under both the chat-completions and the
-# Anthropic Messages protocol (measured, credential never printed). The endpoint is valid and the
-# plan is a paid seat; the shared Kimi monthly quota is exhausted for this cycle, so this group
-# could not serve and only extended the fallback walk with a duplicate 429 and no semantic
-# progress. No replacement rung was added. RESTORE ONLY AFTER one fresh probe returns a non-empty
-# response on this seat after the quota reset: re-add the deployment
-# (model openai/k3.1-pro, api_base https://api.kimi.com/coding/v1, order 991, spendable false) plus its
-# router_settings.fallbacks entry (mimo-v2.6-flash, glm-5.3, sovereign-west).
-# 2026-11-23 (FI-003, F13 "buang juga dua sibling kimi-k3.1-pro tu") — kimi-k3.1-pro-highspeed REMOVED from
-# active routing. Same seat and same measured cause as kimi-k3: os.environ/KIMI_API_KEY answers
-# HTTP 429 "exceeded_current_quota_error — You've reached your monthly usage limit for this
-# billing cycle" on https://api.kimi.com/coding/v1 under both the chat-completions and the
-# Anthropic Messages protocol (measured, credential never printed). The endpoint is valid and the
-# plan is a paid seat; the shared Kimi monthly quota is exhausted for this cycle, so this group
-# could not serve and only extended the fallback walk with a duplicate 429 and no semantic
-# progress. No replacement rung was added. RESTORE ONLY AFTER one fresh probe returns a non-empty
-# response on this seat after the quota reset: re-add the deployment
-# (model openai/k3.1-pro-highspeed, api_base https://api.kimi.com/coding/v1, order 997, spendable false) plus its
-# router_settings.fallbacks entry (mimo-v2.6-flash, glm-5.3).
+    notes: 'openclaw P3 (added 2026-11-23 FED audit): OpenRouter deepseek-v4.1-flash,
+      independent vendor boundary. Probe UP 2026-11-23.'
 - model_name: mimo-v2.5-pro
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -1309,7 +1191,6 @@ model_list:
       Probed live: image 1024 tok, audio 25 tok (correct ASR), video 1144+19 tok.
       FPS 0.1-10, media_resolution default|max. Video ≤300MB URL / ≤50MB b64. Audio
       ≤100MB URL / ≤50MB b64. Image ≤50MB.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 991
 - model_name: mimo-v2.6-pro
   litellm_params:
     model: openai/mimo-v2.6-pro
@@ -1423,7 +1304,6 @@ model_list:
     notes: 'MULTIMODAL UNDERSTANDING LIVE 2026-10-18: image_url + input_audio + video_url
       in content[]. Token Plan endpoint. Cheaper than Pro. Same modality support as
       v2.6-pro.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 991
 - model_name: mimo-v2.6-flash
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -1493,7 +1373,6 @@ model_list:
       v2.5-era "no thinking mode" scar does not carry. TEXT ONLY declared: image/audio/
       video were NOT re-probed on this id, so capability flags stay false rather than
       inherit v2.6-pro claims. Team seats 429 dry -> order-991 rung below.'
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 991
 - model_name: mimo-v2.6-pro-ultraspeed
   litellm_params:
     model: openai/mimo-v2.6-pro-ultraspeed
@@ -1633,7 +1512,6 @@ model_list:
       on real 1600px outcrop vs qwen3.8-max >180s timeout. Interactive vision lane.'
     max_input_tokens: 1048576
     max_output_tokens: 131072
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 993
 - model_name: fed/vision
   litellm_params:
     model: openai/mimo-v2.6-flash
@@ -1822,12 +1700,12 @@ model_list:
     supports_function_calling: true
     notes: 'GLM-5.4 plan flagship (F13 order 2026-11-24, FI-003). Loop Transformer
       (750B-class, 78 stored / 106 effective layers). LIVE-probed 2026-11-24 from
-      litellm container: /models 13 ids incl glm-5.4; chat 200 served=glm-5.4 on
-      OpenAI-compat AND Anthropic-compat; glm-5.4[1m]=400 code 1211 BOTH endpoints
-      (seat-probed 1,048,027 in = 200; [1m]=1211 = unknown id); image_in wire-200 (2x2
-      color-read imperfect — do not trust for pixel-exact vision; vision heads stay
-      glm-5.3-flash). A2M/A2A heavy-execution tier; marathon-thinking risk on
-      high/max effort — prefer bounded effort + max_tokens>=2048.'
+      litellm container: /models 13 ids incl glm-5.4; chat 200 served=glm-5.4 on OpenAI-compat
+      AND Anthropic-compat; glm-5.4[1m]=400 code 1211 BOTH endpoints (seat-probed
+      1,048,027 in = 200; [1m]=1211 = unknown id); image_in wire-200 (2x2 color-read
+      imperfect — do not trust for pixel-exact vision; vision heads stay glm-5.3-flash).
+      A2M/A2A heavy-execution tier; marathon-thinking risk on high/max effort — prefer
+      bounded effort + max_tokens>=2048.'
 - model_name: glm-5.3
   litellm_params:
     model: openai/glm-5.3
@@ -1853,8 +1731,6 @@ model_list:
     mode: chat
     supports_audio_input: true
     supports_video_input: true
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 3
-# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200; order restored per park note.
 - litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
@@ -1880,7 +1756,6 @@ model_list:
     max_input_tokens: 1000000
     max_output_tokens: 128000
   model_name: fed/vision
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MiniMax-M3 on /anthropic/v1 returns 404 page not found (live 2026-11-23); OpenAI-compat rung added at order 3; restore: order -> 994
 - litellm_params:
     model: openai/MiniMax-M3
     api_base: https://api.minimax.io/anthropic/v1
@@ -1937,7 +1812,6 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): MIMO token-plan seat 'quota exhausted' (live 2026-11-23); individual seat is the live one; restore: order -> 992
 - litellm_params:
     model: openai/mimo-v2.6-flash
     api_base: os.environ/MIMO_TOKEN_PLAN_BASE_URL
@@ -1964,8 +1838,6 @@ model_list:
     max_input_tokens: 1048576
     max_output_tokens: 131072
   model_name: hermes-asi-vision
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 5
-# RESTORED 2026-11-24 (FI-003 zai-5.4 update): ZAI lane live 200; order restored per park note.
 - litellm_params:
     model: openai/glm-5.3-flash
     api_base: https://api.z.ai/api/coding/paas/v4
@@ -2011,7 +1883,9 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'hermes-asi-vision P3 (added 2026-11-23 FED audit): OpenAI-compat MiniMax-M3. The pre-existing anthropic-base rung 404s (parked), leaving the vision lane with one live provider. Probe UP.'
+    notes: 'hermes-asi-vision P3 (added 2026-11-23 FED audit): OpenAI-compat MiniMax-M3.
+      The pre-existing anthropic-base rung 404s (parked), leaving the vision lane
+      with one live provider. Probe UP.'
 - model_name: fed/audio-voiceclone
   litellm_params:
     model: openai/mimo-v2.5-tts-voiceclone
@@ -2208,16 +2082,6 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-# TOMBSTONE 2026-11-25 (333-AGI, F13 "remove qwen token plan and kimi plan") — Kimi coding seat
-# REMOVED from active routing. Probe 2026-11-25T21:10Z on https://api.kimi.com/coding/v1 with the
-# live KIMI_API_KEY (credential never printed): HTTP 429 exceeded_current_quota_error,
-# "You've reached your monthly usage limit for this billing cycle" — same cause as the 2026-11-23
-# tombstone in this file. The endpoint is valid; the shared monthly quota is exhausted.
-# RESTORE (when the cycle resets): re-add one i-arif rung — model openai/k3.1-pro, api_base
-# https://api.kimi.com/coding/v1, additional_drop_params [include], api_key os.environ/KIMI_API_KEY,
-# order 998, spendable false, quota_bearing true, price_source kimi_coding_plan_seat.
-# Full removed rung + prior witness notes preserved in
-# /root/A-FORGE/litellm-config.yaml.bak-fedclean-20261124T211043Z (sha256 593691a0...e48bec7).
 - model_name: i-arif
   litellm_params:
     model: openai/MiniMax-M3
@@ -2283,8 +2147,6 @@ model_list:
     supports_video_input: true
     supports_vision: true
     supports_function_calling: true
-# PARKED 2026-11-23 (333-AGI FED audit, probe-verified): Z.ai coding plan 429 'Weekly/Monthly Limit Exhausted', resets 2026-11-24 15:31:55; restore: order -> 1
-# SUPERSEDED 2026-11-24 (F13 order: upgrade i-ARIF to GLM-5.4): i-arif head is now glm-5.4 order 1; glm-5.3-flash restored at order 2.
 - model_name: i-arif
   litellm_params:
     model: openai/glm-5.4
@@ -2311,8 +2173,9 @@ model_list:
     supports_vision: true
     supports_function_calling: true
     notes: 'i-arif HEAD order 1 (F13 order 2026-11-24: upgrade i-ARIF to GLM-5.4;
-      A2H async-synthesis backend — flash stays for live/sync chat + vision).
-      Live 200 served=glm-5.4 OpenAI+Anthropic compat. 1M ctx (seat-probed 1,048,027 in). max_tokens>=2048 (reasoning-starvation law).'
+      A2H async-synthesis backend — flash stays for live/sync chat + vision). Live
+      200 served=glm-5.4 OpenAI+Anthropic compat. 1M ctx (seat-probed 1,048,027 in).
+      max_tokens>=2048 (reasoning-starvation law).'
 - model_name: i-arif
   litellm_params:
     model: openai/glm-5.3-flash
@@ -2329,8 +2192,8 @@ model_list:
     notes: 'i-arif GLM-5.3-Flash (Z.AI) CO-PRIMARY order 1 (promoted 10->1 2026-11-10,
       F13 VLM-update directive; live probe FLASH-LIVE-OK). Native VLM: image/video/file
       input, 1M ctx, 128K out, 3x plan quota. Thinking always-on — callers MUST floor
-      max_tokens>=2048 (reasoning-starvation law). RESTORED 2026-11-24 (order
-      900->2 behind glm-5.4 head; ZAI lane live 200).'
+      max_tokens>=2048 (reasoning-starvation law). RESTORED 2026-11-24 (order 900->2
+      behind glm-5.4 head; ZAI lane live 200).'
   model_info:
     cost_class: plan
     price_status: plan_quota
@@ -2485,7 +2348,9 @@ model_list:
     mode: chat
     supports_vision: false
     supports_function_calling: true
-    notes: 'forge-777 P4 (added 2026-11-23 FED audit): DeepSeek V4.1 Pro direct on DEEPSEEK_API_KEY — probe UP 2026-11-23. Restores the declared cascade deepseek-v4-pro before MiniMax-M3 without displacing the live head.'
+    notes: 'forge-777 P4 (added 2026-11-23 FED audit): DeepSeek V4.1 Pro direct on
+      DEEPSEEK_API_KEY — probe UP 2026-11-23. Restores the declared cascade deepseek-v4-pro
+      before MiniMax-M3 without displacing the live head.'
 - model_name: i-arif
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2630,7 +2495,8 @@ model_list:
     mode: chat
     supports_vision: true
     supports_function_calling: true
-    notes: 'hermes-asi P10 (added 2026-11-23 FED audit): third live vendor family behind deepseek-flash(8)/openrouter(9). Probe UP.'
+    notes: 'hermes-asi P10 (added 2026-11-23 FED audit): third live vendor family
+      behind deepseek-flash(8)/openrouter(9). Probe UP.'
 - model_name: deepseek-flash
   litellm_params:
     model: openai/deepseek/deepseek-v4.1-flash
@@ -2829,43 +2695,6 @@ model_list:
     mode: chat
     notes: R1-independent rung2 · local ollama qwen2.5:7b · probe 200 26s 2026-10-30
       · stronger witness, slower
-- model_name: qwen-auto
-  litellm_params:
-    model: openai/deepseek-flash
-    api_base: https://api.deepseek.com/v1
-    additional_drop_params:
-    - include
-    api_key: os.environ/DEEPSEEK_API_KEY
-    order: 8
-    min_tokens: 200
-  model_info:
-    cost_class: payg
-    price_status: ledger_implied
-    price_usd_per_1m_in: 0.0185
-    price_usd_per_1m_out: 0.0
-    price_source: litellm_spend_logs_2026-11-05..11-12
-    price_declared_at: '2026-11-12'
-    spendable: true
-    input_cost_per_token: 3.0e-07
-    output_cost_per_token: 1.2e-06
-    max_input_tokens: 1048576
-    max_output_tokens: 131072
-    mode: chat
-    supports_vision: true
-    notes: '2026-11-23 (FI-003, F13 ''sah config-clean''): the Qwen token-plan seat is 429 ''1-month quota exhausted'' and was retired from the lane. This name reached deepseek-flash through the router fallback; it now points there directly, so the served model is unchanged and no dead rung is left in the group.'
-# 2026-11-23 (FI-003, F13 "buang group kimi-k3 tu") — kimi-k3 REMOVED from active routing.
-# Reason measured, not assumed: the Kimi seat (os.environ/KIMI_API_KEY) answers HTTP 429
-# "exceeded_current_quota_error — monthly usage limit reached for this billing cycle" on
-# api.kimi.com/coding/v1 under BOTH the chat-completions and the Anthropic Messages protocol, so
-# the rung could not answer and only burned the fallback walk. The endpoint is valid and the plan
-# is a paid seat: this is quota exhaustion, not a dead credential. No replacement rung was added.
-# RESTORE (when the cycle resets): re-add one rung — model openai/k3.1-pro, api_base
-# https://api.kimi.com/coding/v1, order 992, spendable false — plus its
-# router_settings.fallbacks entry (mimo-v2.6-flash, glm-5.3, sovereign-west), and put 'kimi-k3'
-# back into the verification list in scripts/fed-deploy-kvm4.sh.
-# SIBLINGS ALSO PARKED (same seat, same exhausted quota): kimi-k3.1-pro and
-# kimi-k3.1-pro-highspeed were removed from active routing in the same order, one hour
-# later (F13 "buang juga dua sibling kimi-k3.1-pro tu"); each carries its own tombstone.
 - model_name: canary-openrouter
   litellm_params:
     model: openai/nvidia/nemotron-3.5-lightning:free
@@ -2933,23 +2762,23 @@ router_settings:
   cooldown_time: 60
   fallbacks:
   - deepseek-flash:
-    - deepseek-v4-flash
+    - mimo-v2.6-flash
   - mimo-v2.6-pro-ultraspeed:
     - mimo-v2.6-pro
   - i-arif:
     - mimo-v2.6-pro
-    - deepseek-v4-flash
+    - deepseek-flash
     - glm-5.3-flash
     - glm-5.4
   - asi-555:
-    - deepseek-v4-flash
+    - deepseek-flash
     - glm-5.3
     - mimo-v2.6-flash
   - apex-888:
     - glm-5.3
-    - deepseek-v4-flash
+    - deepseek-flash
   - forge-777:
-    - deepseek-v4-flash
+    - deepseek-flash
     - glm-5.3
     - mimo-v2.6-flash
     - glm-5.4
@@ -2971,23 +2800,17 @@ router_settings:
     - glm-5.3-flash
     - mimo-v2.6-flash
   - openclaw:
-    - deepseek-v4-flash
+    - deepseek-flash
     - glm-5.3-flash
     - mimo-v2.6-flash
   - opencode:
     - forge-777
-    - deepseek-v4-flash
+    - deepseek-flash
     - glm-5.3-flash
   - hermes-asi:
-    - deepseek-v4-flash
+    - deepseek-flash
     - glm-5.3
     - mimo-v2.6-flash
-  - qwen3.8-max:
-    - mimo-v2.6-flash
-    - deepseek-v4-flash
-  - qwen3.6-plus:
-    - mimo-v2.6-flash
-    - deepseek-v4-flash
   - mimo-v2.5-pro:
     - mimo-v2.6-flash
   - mimo-v2.5:
@@ -3002,21 +2825,17 @@ router_settings:
     - mimo-v2.6-flash
   - MiniMax-M3:
     - mimo-v2.6-flash
-    - deepseek-v4-flash
+    - deepseek-flash
   - MiniMax-M3.1-Flash-Preview:
     - mimo-v2.6-flash
-    - deepseek-v4-flash
+    - deepseek-flash
   - fed/vision:
-    - deepseek-v4-flash-vision
+    - deepseek-flash
   - hermes-asi-vision:
     - glm-5.3-flash
-    - deepseek-v4-flash
+    - deepseek-flash
   - fed/sealion:
     - mimo-v2.6-flash
-  - qwen-auto:
-    - deepseek-flash
-    - glm-5.3-flash
-    - fed/sealion
   allowed_fails_policy:
     cooldown_time: 60
   model_group_alias:
