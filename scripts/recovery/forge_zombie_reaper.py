@@ -140,6 +140,39 @@ def scan_surface(name, path):
     return items
 
 
+SCAN_RETENTION = 48   # hourly scans kept: 48 = two days of history
+
+
+def prune_scans(keep: int = SCAN_RETENTION, base: str | None = None) -> int:
+    """Drop superseded scan files, keeping the newest `keep` of each kind.
+
+    The consumer reads ONE file. AAA/scripts/cockpit_probe.py takes the newest:
+        snaps = sorted(RECOVERY_SCAN_DIR.glob("cron-snapshots/reaper-*.json"))[-1]
+        reaps = sorted(RECOVERY_SCAN_DIR.glob("reap-*.json"))[-1]
+    Every earlier scan is superseded state that nothing reads. Measured
+    2026-11-28: 1865 reap scans + 1865 cron snapshots had piled up to 263 MB
+    with no bound at all, while the cockpit read exactly one of them. This is
+    the entropy containment the reaper's own doctrine asks for: the scan is
+    evidence of NOW, not a museum.
+
+    Returns the number of files removed.
+    """
+    root = Path(base or OUTPUT_BASE)
+    removed = 0
+    for sub, pattern in ((".", "reap-*.json"), ("cron-snapshots", "reaper-*.json")):
+        d = root if sub == "." else root / sub
+        if not d.exists():
+            continue
+        files = sorted(d.glob(pattern), key=lambda p: p.name)
+        for f in files[: max(0, len(files) - keep)]:
+            try:
+                f.unlink()
+                removed += 1
+            except Exception:
+                pass
+    return removed
+
+
 def reap_once():
     """Run one reaping pass. Return aggregate report."""
     scan_ts = datetime.now(timezone.utc).isoformat()
@@ -188,12 +221,15 @@ def reap_once():
         )
     )
 
+    pruned = prune_scans()
+
     return {
         "scan_id": scan_id,
         "scan_path": str(out_path),
         "total_items": len(all_items),
         "by_verdict": dict(by_verdict),
         "by_surface": dict(by_surface),
+        "pruned_superseded": pruned,
     }
 
 
