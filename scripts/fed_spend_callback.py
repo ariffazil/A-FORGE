@@ -1,101 +1,61 @@
-#!/usr/bin/env python3
-"""FED Spend Callback — writes per-call token bank to token_bank.db
+"""FED Spend Callback — Thin Compatibility Adapter (PR-FED-1 Convergence).
 
-Created 2026-09-21 FI-008 — closes token_bank_spend staleness (last entry
-2026-08-30). Wired via litellm_settings.callbacks in litellm-config.yaml.
+CONVERGENCE NOTICE (PR-FED-1, 2026-11-22):
+This module previously operated as an independent 7-column / 10-column writer
+to ``token_bank_spend`` (and was updated in PR #120). To eliminate duplicate
+writers and silent schema drift, all production spend writes now flow through
+the single canonical writer: ``scripts/fed_attribution_callback.py``.
 
-Hooks into LiteLLM proxy's log_success_event for every successful chat
-completion. Writes per-call: provider, model, agent_id, tokens_in,
-tokens_out, estimated_cost_usd, called_at.
-
-Failures are silently caught so the proxy never crashes on a callback error
-(F1: witness, not act; per-call accounting must never block the lane).
+This adapter preserves:
+  * ``FedSpendCallback`` / ``proxy_handler_instance`` (delegates directly to
+    ``FedAttributionCallback`` with inner_attempt_id deduplication so even if
+    both callbacks are accidentally wired, no duplicate row is created).
+  * ``HOST_MAP``, ``GROUP_AGENT_MAP``, ``_resolve_provider``, ``_resolve_agent``
+    compatibility helpers for PR #120 host-fixture readers.
 """
 
+from __future__ import annotations
+
 import os
-import sqlite3
-import datetime
 import sys
+from pathlib import Path
 
-from litellm.integrations.custom_logger import CustomLogger
+_SCRIPT_DIR = str(Path(__file__).resolve().parent)
+if _SCRIPT_DIR not in sys.path:
+    sys.path.insert(0, _SCRIPT_DIR)
 
-DB = "/app/data/token_bank.db"
+import fed_attribution_callback as _canonical
 
-# 2026-10-21 ACAH2 — silent `except Exception: pass` hid spend-callback
-# breakage for weeks (token_bank staleness was the exact symptom). Bounded
-# visibility: first 5 failures + every 100th go to stderr, never crash proxy.
-_FAIL_COUNT = [0]
+DB = _canonical.SPEND_DB
+HOST_MAP = dict(_canonical.VERIFIED_DIRECT_HOST_MAP)
+GROUP_AGENT_MAP = dict(_canonical.GROUP_AGENT_MAP)
 
 
-class FedSpendCallback(CustomLogger):
-    """LiteLLM success callback — persists per-call spend to token_bank.db.
+def _resolve_provider(kwargs, hidden):
+    """Compatibility wrapper delegating to canonical provider taxonomy."""
+    class _ShimResp:
+        _hidden_params = hidden or {}
+        model = (kwargs or {}).get("model", "")
 
-    Must extend CustomLogger; LiteLLM rejects classes that don't.
-    """
+    tax = _canonical.resolve_provider_taxonomy(kwargs or {}, _ShimResp())
+    return tax["serving_provider"], tax["api_base_host_redacted"]
+
+
+def _resolve_agent(kwargs):
+    """Compatibility wrapper delegating to canonical caller identity resolution."""
+    res = _canonical.resolve_caller_identity(kwargs or {})
+    return res["actor_id"]
+
+
+class FedSpendCallback(_canonical.FedAttributionCallback):
+    """Deprecated alias for FedAttributionCallback — single canonical writer."""
 
     def log_success_event(self, kwargs, response_obj, start_time, end_time):
-        try:
-            model = kwargs.get("model", "unknown") or "unknown"
-            hidden = getattr(response_obj, "_hidden_params", {}) or {}
-            provider = (
-                hidden.get("custom_llm_provider")
-                or kwargs.get("custom_llm_provider")
-                or "unknown"
-            )
-            agent_id = (
-                kwargs.get("user_api_key_user_id") or kwargs.get("user_id") or "unknown"
-            )
-
-            usage = getattr(response_obj, "usage", None)
-            tokens_in = int(getattr(usage, "prompt_tokens", 0) or 0) if usage else 0
-            tokens_out = (
-                int(getattr(usage, "completion_tokens", 0) or 0) if usage else 0
-            )
-
-            cost = float(hidden.get("response_cost", 0.0) or 0.0)
-
-            called_at = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-
-            con = sqlite3.connect(DB, timeout=5.0)
-            # WAL + busy_timeout: spend writes must not starve under the
-            # proxy's read load (timeout=2.0 alone lost the race).
-            con.execute("PRAGMA journal_mode=WAL")
-            con.execute("PRAGMA busy_timeout=5000")
-            con.execute(
-                "INSERT INTO token_bank_spend "
-                "(provider_name, model_id, agent_id, tokens_in, tokens_out, "
-                " estimated_cost_usd, called_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (
-                    provider,
-                    model,
-                    agent_id,
-                    tokens_in,
-                    tokens_out,
-                    cost,
-                    called_at,
-                ),
-            )
-            con.commit()
-            con.close()
-        except Exception as e:
-            # Never crash the proxy on callback error (F1 witness, not act) —
-            # but never hide it either. Bounded stderr visibility.
-            _FAIL_COUNT[0] += 1
-            n = _FAIL_COUNT[0]
-            if n <= 5 or n % 100 == 0:
-                print(
-                    f"[fed_spend_callback] write failed x{n}: {e}",
-                    file=sys.stderr,
-                    flush=True,
-                )
-
-    async def async_log_success_event(self, kwargs, response_obj, start_time, end_time):
-        # Async wrapper — proxy may call this for streaming responses.
-        return self.log_success_event(kwargs, response_obj, start_time, end_time)
+        if os.environ.get("FED_TOKEN_BANK_DB"):
+            _canonical.SPEND_DB = os.environ["FED_TOKEN_BANK_DB"]
+        elif DB != _canonical.SPEND_DB:
+            _canonical.SPEND_DB = DB
+        return super().log_success_event(kwargs, response_obj, start_time, end_time)
 
 
-# LiteLLM callback loader requires an INSTANCE, not a class.
-# Point callbacks config at this module-level instance.
-# 2026-09-21 FI-008: litellm raises ValueError if class is passed instead.
 proxy_handler_instance = FedSpendCallback()
